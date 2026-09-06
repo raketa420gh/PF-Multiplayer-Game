@@ -125,6 +125,7 @@ GameObject:
   - component: {fileID: 4987995244523592122}
   - component: {fileID: 1446910309059182330}
   - component: {fileID: 4446209643178555732}
+  - component: {fileID: 2125881683373333069}
   m_Layer: 0
   m_Name: CharacterView
   m_TagString: Untagged
@@ -168,6 +169,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 4446209643178555732}
+  - {fileID: 2125881683373333069}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4446209643178555732
 MonoBehaviour:
@@ -209,6 +211,20 @@ MonoBehaviour:
     MinImpactfulCollisionAlignment: 0.3
     ImpactStartCorrectionTime: 0.1
     ImpactCorrectionTimeComplete: 0.3
+--- !u!114 &2125881683373333069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1416608935480129280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 731de5f6b789469ca8451f8a08bea320, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Player
+  _moveSpeed: 5
+  _speedMultiplier: 2
 --- !u!1 &7369359248933925277
 GameObject:
   m_ObjectHideFlags: 0
