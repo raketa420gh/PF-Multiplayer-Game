@@ -5,8 +5,12 @@ namespace Game.Scripts
 {
     public sealed class PlayerInputPolling : MonoBehaviour
     {
-        [SerializeField] private NetworkEvents _networkEvents;
+        [SerializeField] 
+        private NetworkEvents _networkEvents;
 
+        private readonly string _verticalAxis = "Vertical";
+        private readonly string _horizontalAxis = "Horizontal";
+        
         private PlayerInputData _playerInput;
 
         private void OnEnable()
@@ -21,17 +25,8 @@ namespace Game.Scripts
 
         private void Update()
         {
-            float dx = Input.GetAxis("Horizontal");
-            float dz = Input.GetAxis("Vertical");
-
-            NetworkButtons buttons = new NetworkButtons();
-            buttons.Set(PlayerInputButtons.Sprint, Input.GetKey(KeyCode.LeftShift));
-
-            _playerInput = new PlayerInputData
-            {
-                MoveDirection = new Vector2(dx, dz),
-                Buttons = buttons
-            };
+            _playerInput.MoveDirection = new Vector2(Input.GetAxis(_verticalAxis), Input.GetAxis(_horizontalAxis));
+            _playerInput.Buttons.Set(PlayerInputButtons.Sprint, Input.GetKey(KeyCode.LeftShift));
         }
 
         private void OnInput(NetworkRunner runner, NetworkInput input)
