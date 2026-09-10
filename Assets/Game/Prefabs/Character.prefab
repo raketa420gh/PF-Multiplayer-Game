@@ -126,6 +126,8 @@ GameObject:
   - component: {fileID: 1446910309059182330}
   - component: {fileID: 4446209643178555732}
   - component: {fileID: 1163737671477557297}
+  - component: {fileID: 7076024994672392556}
+  - component: {fileID: 5132479467681930763}
   m_Layer: 0
   m_Name: Character
   m_TagString: Untagged
@@ -170,6 +172,8 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 4446209643178555732}
   - {fileID: 1163737671477557297}
+  - {fileID: 7076024994672392556}
+  - {fileID: 5132479467681930763}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4446209643178555732
 MonoBehaviour:
@@ -225,6 +229,35 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.MoveComponent
   _moveSpeed: 5
   _speedMultiplier: 2
+  _angularSpeed: 720
+--- !u!114 &7076024994672392556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1416608935480129280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7955de552f4549cea3654d8c04459329, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.HealthComponent
+  _CurrentHealth: 100
+  _MaxHealth: 100
+--- !u!114 &5132479467681930763
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1416608935480129280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 934f0abea94d4401ab195f7dd931ad3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.GameObjects.Content.Character
+  _healthComponent: {fileID: 7076024994672392556}
+  _moveComponent: {fileID: 1163737671477557297}
 --- !u!1 &7369359248933925277
 GameObject:
   m_ObjectHideFlags: 0

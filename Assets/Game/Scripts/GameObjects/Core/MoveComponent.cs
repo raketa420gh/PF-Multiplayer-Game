@@ -14,13 +14,25 @@ namespace Game.Scripts
         [SerializeField]
         private float _angularSpeed = 720;
         
+        private ICondition _condition;
+        
+        public interface ICondition
+        {
+            public bool IsMet();
+        }
+        
         public void Move(Vector3 direction, bool isSprint)
         {
-            if (direction == Vector3.zero)
+            if (direction == Vector3.zero || _condition != null && !_condition.IsMet())
                 return;
             
             UpdateRotation(direction, Runner.DeltaTime);
             UpdatePosition(direction, isSprint, Runner.DeltaTime);
+        }
+        
+        public void SetCondition(ICondition condition)
+        {
+            _condition = condition;
         }
 
         private void UpdateRotation(Vector2 direction, float deltaTime)
