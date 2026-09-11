@@ -5,6 +5,11 @@ namespace Game.Scripts
 {
     public sealed class MoveComponent : NetworkBehaviour
     {
+        public interface ICondition
+        {
+            public bool IsMet();
+        }
+
         [SerializeField]
         private float _moveSpeed = 5;
 
@@ -13,14 +18,14 @@ namespace Game.Scripts
 
         [SerializeField]
         private float _angularSpeed = 720;
-        
+
         private ICondition _condition;
-        
-        public interface ICondition
+
+        public void SetCondition(ICondition condition)
         {
-            public bool IsMet();
+            _condition = condition;
         }
-        
+
         public void Move(Vector3 direction, bool isSprint)
         {
             if (direction == Vector3.zero || _condition != null && !_condition.IsMet())
@@ -28,11 +33,6 @@ namespace Game.Scripts
             
             UpdateRotation(direction, Runner.DeltaTime);
             UpdatePosition(direction, isSprint, Runner.DeltaTime);
-        }
-        
-        public void SetCondition(ICondition condition)
-        {
-            _condition = condition;
         }
 
         private void UpdateRotation(Vector2 direction, float deltaTime)
