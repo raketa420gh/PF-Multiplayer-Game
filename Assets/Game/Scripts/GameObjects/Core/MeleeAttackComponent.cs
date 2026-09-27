@@ -18,9 +18,15 @@ namespace Game.Scripts
 
         [SerializeField]
         private int _damage = 1;
+        
+        [SerializeField]
+        private float _cooldown = 1;
 
         [SerializeField]
         private LayerMask _layerMask;
+
+        [Networked]
+        public TickTimer _timeStamp { get; set; }
 
         private static readonly Collider[] s_colliders = new Collider[16];
         private ICondition _condition;
@@ -32,6 +38,9 @@ namespace Game.Scripts
 
         public void Attack()
         {
+            if (_timeStamp.IsRunning(Runner))
+                return;
+            
             if (_condition != null && !_condition.IsMet())
                 return;
             
@@ -58,6 +67,8 @@ namespace Game.Scripts
                     break;
                 }
             }
+            
+            _timeStamp = TickTimer.CreateFromSeconds(Runner, _cooldown);
         }
 
         private void OnDrawGizmosSelected()

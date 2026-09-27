@@ -13,10 +13,19 @@ namespace Game.Scripts
         
         public bool IsDead => CurrentHealth <= 0;
         public bool IsAlive => CurrentHealth > 0;
+        public bool IsNotFull => CurrentHealth < MaxHealth && CurrentHealth > 0;
 
         public override void Spawned()
         {
             CurrentHealth = MaxHealth;
+        }
+
+        public void Restore(int heal)
+        {
+            if (heal <= 0)
+                return;
+            
+            CurrentHealth = Math.Min(MaxHealth, CurrentHealth + heal);
         }
 
         public void TakeDamage(int damage)

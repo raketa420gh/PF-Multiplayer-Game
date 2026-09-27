@@ -86,7 +86,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1446910309059182330, guid: 4d8a17e5bfed5504498928558f8957c8, type: 3}
       propertyPath: NetworkedBehaviours.Array.size
-      value: 5
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 1446910309059182330, guid: 4d8a17e5bfed5504498928558f8957c8, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[2]'
@@ -100,6 +100,14 @@ PrefabInstance:
       propertyPath: 'NetworkedBehaviours.Array.data[4]'
       value: 
       objectReference: {fileID: 2897036842200181761}
+    - target: {fileID: 1446910309059182330, guid: 4d8a17e5bfed5504498928558f8957c8, type: 3}
+      propertyPath: 'NetworkedBehaviours.Array.data[5]'
+      value: 
+      objectReference: {fileID: 8880208143995595570}
+    - target: {fileID: 1446910309059182330, guid: 4d8a17e5bfed5504498928558f8957c8, type: 3}
+      propertyPath: 'NetworkedBehaviours.Array.data[6]'
+      value: 
+      objectReference: {fileID: 2400332808688722312}
     - target: {fileID: 4987995244523592122, guid: 4d8a17e5bfed5504498928558f8957c8, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -156,6 +164,17 @@ MonoBehaviour:
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+--- !u!114 &2400332808688722312 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2781255085348622895, guid: 4d8a17e5bfed5504498928558f8957c8, type: 3}
+  m_PrefabInstance: {fileID: 564833672313664423}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d90030c6a8f41f9b03e0f98f2439efd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.PlayerColorComponent
 --- !u!114 &2897036842200181761 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3450573787108532134, guid: 4d8a17e5bfed5504498928558f8957c8, type: 3}
@@ -194,3 +213,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7955de552f4549cea3654d8c04459329, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.HealthComponent
+--- !u!114 &8880208143995595570 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9001120581236299925, guid: 4d8a17e5bfed5504498928558f8957c8, type: 3}
+  m_PrefabInstance: {fileID: 564833672313664423}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56b20c0124ab443e9ca9ed6731eeb715, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.CapsuleInteractComponent

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.Scripts.GameObjects.Content
 {
-    public sealed class Medkit : NetworkBehaviour, IInteractableComponent
+    public sealed class MedkitPickUp : NetworkBehaviour, IInteractableComponent
     {
         [SerializeField]
         private float _radius = 0.25f;
