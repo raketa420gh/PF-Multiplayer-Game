@@ -1,10 +1,13 @@
-﻿using Fusion;
+﻿using System;
+using Fusion;
 using UnityEngine;
 
 namespace Game.Scripts.GameObjects.Content
 {
     public sealed class MedkitPickUp : NetworkBehaviour, IInteractableComponent
     {
+        public event Action OnInteracted;
+        
         [SerializeField]
         private float _radius = 0.25f;
         
@@ -17,7 +20,9 @@ namespace Game.Scripts.GameObjects.Content
         [SerializeField]
         private float _cooldown;
 
-        [Networked]
+        public bool IsActive => _timestamp.ExpiredOrNotRunning(Runner);
+
+        [Networked, OnChangedRender(nameof(InvokeInteracted))]
         private TickTimer _timestamp { get; set; }
 
         public void Interact(GameObject interactor)
@@ -31,5 +36,7 @@ namespace Game.Scripts.GameObjects.Content
                 _timestamp = TickTimer.CreateFromSeconds(Runner, _cooldown);
             }
         }
+        
+        private void InvokeInteracted() => OnInteracted?.Invoke();
     }
 }
