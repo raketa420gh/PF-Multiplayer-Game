@@ -11,13 +11,26 @@ namespace Game.Scripts
         [SerializeField]
         private HealthBarView _healthBarView;
 
-        public override void Spawned() => UpdateHealth(_healthComponent.CurrentHealth);
-        public override void Render() => UpdateHealth(_healthComponent.CurrentHealth);
-
-        private void UpdateHealth(int health)
+        public override void Spawned()
         {
-            _healthBarView.SetText($"{health}/{_healthComponent.MaxHealth}");
+            _healthComponent.OnHealthChanged += OnHealthChanged;
+            UpdateHealth(_healthComponent.CurrentHealth);
+        }
+
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            _healthComponent.OnHealthChanged -= OnHealthChanged;
+        }
+
+        private void UpdateHealth(int current)
+        {
+            _healthBarView.SetText($"{current}/{_healthComponent.MaxHealth}");
             _healthBarView.SetProgress(_healthComponent.Progress);
+        }
+
+        private void OnHealthChanged(int previous, int current)
+        {
+            UpdateHealth(current);
         }
     }
 }
