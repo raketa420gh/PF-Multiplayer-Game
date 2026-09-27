@@ -32,7 +32,7 @@ namespace Game.Scripts
                 _resetInputs = false;
             }
             
-            _playerInput.MoveDirection = new Vector2(Input.GetAxis(_verticalAxis), Input.GetAxis(_horizontalAxis));
+            _playerInput.MoveDirection = new Vector2(Input.GetAxis(_verticalAxis), -Input.GetAxis(_horizontalAxis));
             _playerInput.Buttons.Set(PlayerInputButtons.Sprint, Input.GetKey(KeyCode.LeftShift));
             
             if (Input.GetKeyDown(KeyCode.Space))

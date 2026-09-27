@@ -35,7 +35,7 @@ namespace Game.Scripts
             UpdatePosition(direction, isSprint, Runner.DeltaTime);
         }
 
-        private void UpdateRotation(Vector2 direction, float deltaTime)
+        private void UpdateRotation(Vector3 direction, float deltaTime)
         {
             Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
             Quaternion currentRotation = transform.rotation;
