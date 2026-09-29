@@ -1,14 +1,17 @@
-﻿using Fusion;
+﻿using System;
+using Fusion;
 using UnityEngine;
 
 namespace Game.Scripts
 {
-    public sealed class MoveComponent : NetworkBehaviour
+    public sealed class MoveComponent : NetworkBehaviour, IBeforeTick
     {
         public interface ICondition
         {
             public bool IsMet();
         }
+
+        public event Action<bool> OnMovingStateChanged;
 
         [SerializeField]
         private float _moveSpeed = 5;
@@ -20,19 +23,30 @@ namespace Game.Scripts
         private float _angularSpeed = 720;
 
         private ICondition _condition;
+        
+        [Networked, OnChangedRender(nameof(InvokeMovingStateChanged))]
+        public NetworkBool IsMoving { get; private set; }
 
         public void SetCondition(ICondition condition)
         {
             _condition = condition;
         }
 
+        void IBeforeTick.BeforeTick()
+        {
+            IsMoving = false;
+        }
+
         public void Move(Vector3 direction, bool isSprint)
         {
             if (direction == Vector3.zero || _condition != null && !_condition.IsMet())
                 return;
-            
-            UpdateRotation(direction, Runner.DeltaTime);
-            UpdatePosition(direction, isSprint, Runner.DeltaTime);
+
+            float deltaTime = Runner.DeltaTime;
+            UpdateRotation(direction, deltaTime);
+            UpdatePosition(direction, isSprint, deltaTime);
+
+            IsMoving = true;
         }
 
         private void UpdateRotation(Vector3 direction, float deltaTime)
@@ -51,6 +65,11 @@ namespace Game.Scripts
                 moveSpeed *= _speedMultiplier;
             
             transform.position += direction * deltaTime * moveSpeed;
+        }
+
+        private void InvokeMovingStateChanged()
+        {
+            OnMovingStateChanged?.Invoke(IsMoving);
         }
     }
 }
