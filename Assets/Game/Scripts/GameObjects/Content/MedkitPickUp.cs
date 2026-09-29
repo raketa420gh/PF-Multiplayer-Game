@@ -20,10 +20,15 @@ namespace Game.Scripts.GameObjects.Content
         [SerializeField]
         private float _cooldown;
 
-        public bool IsActive => _timestamp.ExpiredOrNotRunning(Runner);
-
         [Networked, OnChangedRender(nameof(InvokeInteracted))]
         private TickTimer _timestamp { get; set; }
+
+        public bool IsActive => _timestamp.ExpiredOrNotRunning(Runner);
+
+        public override void Spawned()
+        {
+            Runner.SetIsSimulated(Object, true);
+        }
 
         public void Interact(GameObject interactor)
         {
