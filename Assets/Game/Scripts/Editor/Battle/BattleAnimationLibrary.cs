@@ -80,6 +80,9 @@ namespace Game.Scripts.Editor.Battle
     {
         public const float FullDrawTime = 0.9f;
         public const float ReloadTime = 0.6f;
+        public const float ArrowMinSpeed = 14f;
+        public const float ArrowMaxSpeed = 30f;
+        public const float ArrowGravity = -9.81f;
         public const float CrouchDrop = 0.45f;
 
         private static readonly Vector3 s_rightShoulder = new(0.25f, 1.505f, -0.067f);
@@ -93,7 +96,7 @@ namespace Game.Scripts.Editor.Battle
         {
             BodyPose idle = SwordShield(new(0.24f, 1.46f, 0.36f), new(-0.25f, 0.75f, 0.6f), s_shieldRest, s_shieldRestNormal);
             BodyPose block = SwordShield(new(0.3f, 1.32f, 0.22f), new(0.15f, 0.7f, 0.7f),
-                new(-0.1f, 1.38f, 0.36f), new(0.05f, 0.08f, 1f), 15f);
+                new(-0.06f, 1.47f, 0.34f), new(0.02f, 0.1f, 1f), 15f);
 
             return new WeaponDefinition
             {
@@ -109,7 +112,7 @@ namespace Game.Scripts.Editor.Battle
                 {
                     new AttackDefinition
                     {
-                        Windup = 0.28f, Active = 0.16f, Recovery = 0.36f, ComboStart = 0.36f, ComboEnd = 0.66f,
+                        Windup = 0.4f, Active = 0.2f, Recovery = 0.5f, ComboStart = 0.5f, ComboEnd = 0.9f,
                         Damage = 22, MoveMultiplier = 0.7f,
                         WindupPose = SwordShield(new(0.36f, 1.7f, 0.1f), new(0.5f, 0.7f, -0.5f), yaw: 20f),
                         MidPose = SwordShield(new(0.2f, 1.56f, 0.46f), new(0.18f, 0.46f, 0.87f)),
@@ -117,7 +120,7 @@ namespace Game.Scripts.Editor.Battle
                     },
                     new AttackDefinition
                     {
-                        Windup = 0.24f, Active = 0.16f, Recovery = 0.36f, ComboStart = 0.32f, ComboEnd = 0.62f,
+                        Windup = 0.36f, Active = 0.2f, Recovery = 0.5f, ComboStart = 0.46f, ComboEnd = 0.86f,
                         Damage = 22, MoveMultiplier = 0.7f,
                         WindupPose = SwordShield(new(0f, 1.38f, 0.3f), new(-0.85f, 0.15f, 0.25f), yaw: -15f),
                         MidPose = SwordShield(new(0.14f, 1.38f, 0.48f), new(0f, 0.1f, 1f)),
@@ -125,7 +128,7 @@ namespace Game.Scripts.Editor.Battle
                     },
                     new AttackDefinition
                     {
-                        Windup = 0.32f, Active = 0.16f, Recovery = 0.46f, ComboStart = 0.4f, ComboEnd = 0.7f,
+                        Windup = 0.45f, Active = 0.2f, Recovery = 0.6f, ComboStart = 0.55f, ComboEnd = 0.95f,
                         Damage = 30, MoveMultiplier = 0.6f, Stagger = 0.2f,
                         WindupPose = SwordShield(new(0.22f, 1.88f, 0f), new(0.1f, 0.5f, -0.85f), pitch: -10f),
                         MidPose = SwordShield(new(0.2f, 1.78f, 0.38f), new(-0.05f, 0.6f, 0.8f)),
@@ -141,9 +144,9 @@ namespace Game.Scripts.Editor.Battle
                 BlockMove = 0.6f,
                 Block = block,
                 BlockHit = SwordShield(new(0.3f, 1.3f, 0.2f), new(0.15f, 0.7f, 0.7f),
-                    new(-0.14f, 1.3f, 0.27f), new(-0.25f, 0.35f, 0.9f), 8f, -4f),
+                    new(-0.1f, 1.4f, 0.26f), new(-0.25f, 0.35f, 0.9f), 8f, -4f),
                 BlockLowered = SwordShield(new(0.3f, 1.3f, 0.2f), new(0.15f, 0.7f, 0.7f),
-                    new(-0.18f, 1.26f, 0.3f), new(-0.2f, 0.15f, 0.95f), 8f),
+                    new(-0.14f, 1.34f, 0.3f), new(-0.2f, 0.15f, 0.95f), 8f),
                 DeflectPose = SwordShield(new(0.34f, 1.62f, 0.2f), new(0.3f, 0.85f, 0.3f), s_shieldRest, s_shieldRestNormal, 12f, -6f),
                 BlockSocket = WeaponSocket.LeftShield,
                 BlockBoxCenter = Vector3.zero,
@@ -167,7 +170,7 @@ namespace Game.Scripts.Editor.Battle
                 {
                     new AttackDefinition
                     {
-                        Windup = 0.45f, Active = 0.2f, Recovery = 0.5f, ComboStart = 0.55f, ComboEnd = 0.9f,
+                        Windup = 0.6f, Active = 0.26f, Recovery = 0.7f, ComboStart = 0.75f, ComboEnd = 1.2f,
                         Damage = 38, MoveMultiplier = 0.5f, Stagger = 0.25f,
                         WindupPose = TwoHanded(new(0.3f, 1.45f, 0.12f), new(0.85f, 0.2f, -0.5f), yaw: 35f),
                         MidPose = TwoHanded(new(0.1f, 1.4f, 0.44f), new(-0.1f, 0.08f, 1f)),
@@ -175,7 +178,7 @@ namespace Game.Scripts.Editor.Battle
                     },
                     new AttackDefinition
                     {
-                        Windup = 0.4f, Active = 0.2f, Recovery = 0.5f, ComboStart = 0.5f, ComboEnd = 0.85f,
+                        Windup = 0.55f, Active = 0.26f, Recovery = 0.7f, ComboStart = 0.7f, ComboEnd = 1.15f,
                         Damage = 38, MoveMultiplier = 0.5f, Stagger = 0.25f,
                         WindupPose = TwoHanded(new(-0.18f, 1.45f, 0.2f), new(-0.85f, 0.2f, -0.45f), yaw: -30f),
                         MidPose = TwoHanded(new(0.06f, 1.4f, 0.44f), new(0.1f, 0.08f, 1f)),
@@ -183,7 +186,7 @@ namespace Game.Scripts.Editor.Battle
                     },
                     new AttackDefinition
                     {
-                        Windup = 0.5f, Active = 0.2f, Recovery = 0.65f, ComboStart = 0.6f, ComboEnd = 0.95f,
+                        Windup = 0.7f, Active = 0.26f, Recovery = 0.85f, ComboStart = 0.85f, ComboEnd = 1.3f,
                         Damage = 52, MoveMultiplier = 0.4f, Stagger = 0.4f,
                         WindupPose = TwoHanded(new(0.06f, 1.86f, 0.04f), new(0f, 0.55f, -0.83f), pitch: -12f),
                         MidPose = TwoHanded(new(0.06f, 1.74f, 0.36f), new(0f, 0.6f, 0.8f)),

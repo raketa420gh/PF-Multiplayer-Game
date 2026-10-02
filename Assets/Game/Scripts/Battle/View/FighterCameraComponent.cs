@@ -10,9 +10,6 @@ namespace Game.Scripts.Battle
         private FighterComponent _fighter;
 
         [SerializeField]
-        private GameObject[] _hiddenForOwner;
-
-        [SerializeField]
         private float _fieldOfView = 75f;
 
         [SerializeField]
@@ -41,9 +38,6 @@ namespace Game.Scripts.Battle
 
             if (!enabled)
                 return;
-
-            foreach (GameObject hidden in _hiddenForOwner)
-                hidden.SetActive(false);
 
             _context.Camera.fieldOfView = _fieldOfView;
             _context.Camera.nearClipPlane = _nearClip;

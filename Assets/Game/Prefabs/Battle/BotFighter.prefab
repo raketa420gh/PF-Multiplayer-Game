@@ -58,16 +58,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3651238473193750635, guid: cfc79025ddb8ce4479ce5ccd5434507d, type: 3}
       propertyPath: NetworkedBehaviours.Array.size
-      value: 15
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 3651238473193750635, guid: cfc79025ddb8ce4479ce5ccd5434507d, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[13]'
       value: 
       objectReference: {fileID: 6641951672208192153}
-    - target: {fileID: 3651238473193750635, guid: cfc79025ddb8ce4479ce5ccd5434507d, type: 3}
-      propertyPath: 'NetworkedBehaviours.Array.data[14]'
-      value: 
-      objectReference: {fileID: 8144901246335548027}
     - target: {fileID: 4040876478493371300, guid: cfc79025ddb8ce4479ce5ccd5434507d, type: 3}
       propertyPath: m_Name
       value: BotFighter
@@ -117,14 +113,4 @@ MonoBehaviour:
   _attackPause: {x: 0.5, y: 1.4}
   _blockChance: 0.7
   _rangedDistance: {x: 7, y: 14}
---- !u!114 &8144901246335548027 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 9097532032117610484, guid: cfc79025ddb8ce4479ce5ccd5434507d, type: 3}
-  m_PrefabInstance: {fileID: 1101250682002664847}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e78856d51e354ac38edd28da971b0b0c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.HealthBarComponent
+  _aimSpread: {x: 2.5, y: 1.5}

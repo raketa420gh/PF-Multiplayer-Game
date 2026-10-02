@@ -98,6 +98,13 @@ namespace Game.Scripts.Battle
             ShowPopup(hit.Point, GetText(hit), isBlocked ? _blockColor : hit.Zone == HitZone.Head ? _headColor : _hitColor);
         }
 
+        public void PlayWorldHit(Vector3 point, Vector3 normal)
+        {
+            _blockVfx.transform.SetPositionAndRotation(point, Quaternion.LookRotation(normal));
+            _blockVfx.Play();
+            PlayClip(_blockClip, point);
+        }
+
         public void PlaySwing(Vector3 position)
         {
             PlayClip(_swingClip, position);

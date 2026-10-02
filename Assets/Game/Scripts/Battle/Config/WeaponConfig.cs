@@ -175,10 +175,10 @@ namespace Game.Scripts.Battle
         private float _reloadTime = 0.6f;
 
         [SerializeField]
-        private float _minSpeed = 18f;
+        private float _minSpeed = 14f;
 
         [SerializeField]
-        private float _maxSpeed = 45f;
+        private float _maxSpeed = 30f;
 
         [SerializeField]
         private int _minDamage = 10;

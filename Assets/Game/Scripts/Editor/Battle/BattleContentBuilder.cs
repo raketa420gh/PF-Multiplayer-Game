@@ -16,8 +16,6 @@ namespace Game.Scripts.Editor.Battle
         public const string DummyPath = BattleEditorUtility.PrefabsFolder + "/TrainingDummy.prefab";
         public const string ShieldDummyPath = BattleEditorUtility.PrefabsFolder + "/ShieldDummy.prefab";
 
-        private const string HealthBarPath = "Assets/Game/Prefabs/HealthBar.prefab";
-
         private sealed class BlockBox
         {
             public Vector3 Center;
@@ -134,6 +132,9 @@ namespace Game.Scripts.Editor.Battle
 
             BattleEditorUtility.Set(so, "_ranged._fullDrawTime", BattleAnimationLibrary.FullDrawTime);
             BattleEditorUtility.Set(so, "_ranged._reloadTime", BattleAnimationLibrary.ReloadTime);
+            BattleEditorUtility.Set(so, "_ranged._minSpeed", BattleAnimationLibrary.ArrowMinSpeed);
+            BattleEditorUtility.Set(so, "_ranged._maxSpeed", BattleAnimationLibrary.ArrowMaxSpeed);
+            BattleEditorUtility.Set(so, "_ranged._gravity", BattleAnimationLibrary.ArrowGravity);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return new Loadout { Config = config, Block = definition.CanBlock ? sampler.SampleBlock(definition, isMirrored) : null };
@@ -263,7 +264,7 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_hitboxRoot", hitboxRoot);
             BattleEditorUtility.Set(so, "_loadout", configs);
             BattleEditorUtility.Set(so, "_blockHitboxes", blockHitboxes);
-            BattleEditorUtility.Set(so, "_hitMask", (LayerMask)(1 << hitboxLayer));
+            BattleEditorUtility.Set(so, "_hitMask", (LayerMask)((1 << hitboxLayer) | 1));
             so.ApplyModifiedPropertiesWithoutUndo();
 
             so = new SerializedObject(fighter);
@@ -286,12 +287,7 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_headBone", animator.GetBoneTransform(HumanBodyBones.Head));
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            GameObject healthBar = CreateHealthBar(root.transform, health, 2.15f);
-
-            so = new SerializedObject(root.AddComponent<FighterCameraComponent>());
-            BattleEditorUtility.Set(so, "_fighter", fighter);
-            BattleEditorUtility.Set(so, "_hiddenForOwner", new[] { healthBar });
-            so.ApplyModifiedPropertiesWithoutUndo();
+            BattleEditorUtility.Set(root.AddComponent<FighterCameraComponent>(), "_fighter", fighter);
 
             so = new SerializedObject(root.AddComponent<WeaponViewComponent>());
             BattleEditorUtility.Set(so, "_combat", combat);
@@ -303,7 +299,10 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_arrowPrefab", arrow);
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            BattleEditorUtility.Set(root.AddComponent<HitFeedbackComponent>(), "_receiver", receiver);
+            so = new SerializedObject(root.AddComponent<HitFeedbackComponent>());
+            BattleEditorUtility.Set(so, "_receiver", receiver);
+            BattleEditorUtility.Set(so, "_combat", combat);
+            so.ApplyModifiedPropertiesWithoutUndo();
 
             return SavePrefab(root, FighterPath);
         }
@@ -369,7 +368,6 @@ namespace Game.Scripts.Editor.Battle
             hitboxRoot.Offset = new Vector3(0f, 1f, 0f);
 
             SetupReceiver(receiver, health, hitboxRoot, zones);
-            CreateHealthBar(parent, health, 2.1f);
             BattleEditorUtility.Set(root.AddComponent<HitFeedbackComponent>(), "_receiver", receiver);
 
             return SavePrefab(root, hasShield ? ShieldDummyPath : DummyPath);
@@ -382,21 +380,6 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_hitboxRoot", hitboxRoot);
             BattleEditorUtility.Set(so, "_zoneConfig", zones);
             so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static GameObject CreateHealthBar(Transform parent, HealthComponent health, float height)
-        {
-            GameObject healthBar = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(HealthBarPath), parent);
-            healthBar.transform.localPosition = new Vector3(0f, height, 0f);
-            healthBar.transform.localScale *= 0.3f;
-            healthBar.AddComponent<BillboardComponent>();
-
-            SerializedObject so = new SerializedObject(healthBar.AddComponent<HealthBarComponent>());
-            BattleEditorUtility.Set(so, "_healthComponent", health);
-            BattleEditorUtility.Set(so, "_healthBarView", healthBar.GetComponent<HealthBarView>());
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            return healthBar;
         }
 
         private static ZoneHitbox CreateBoxHitbox(Transform parent, HitboxRoot root, string name, HitZone zone, Vector3 position,

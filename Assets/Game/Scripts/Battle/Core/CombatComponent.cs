@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
@@ -28,6 +29,8 @@ namespace Game.Scripts.Battle
 
     public sealed class CombatComponent : NetworkBehaviour, DamageReceiverComponent.IOwner
     {
+        public event Action<Vector3, Vector3> OnWorldHit;
+
         public WeaponConfig[] Loadout => _loadout;
         public WeaponConfig Weapon => _loadout[WeaponSlot];
         public MeleeAttackConfig Attack => Weapon.Attacks[AttackIndex];
@@ -125,6 +128,15 @@ namespace Game.Scripts.Battle
         [Networked]
         private float _stateDuration { get; set; }
 
+        [Networked]
+        private int _worldHitCount { get; set; }
+
+        [Networked]
+        private Vector3 _worldHitPoint { get; set; }
+
+        [Networked]
+        private Vector3 _worldHitNormal { get; set; }
+
         private struct Tally
         {
             public HitboxRoot Root;
@@ -139,10 +151,22 @@ namespace Game.Scripts.Battle
         private static readonly List<HitboxRoot> s_rayRoots = new(8);
         private static readonly List<Tally> s_tallies = new(8);
         private readonly List<HitboxRoot> _hitRoots = new(8);
+        private int _renderedWorldHits;
+        private bool _hasWorldHit;
+        private LagCompensatedHit _worldHit;
 
         public override void Spawned()
         {
             _receiver.SetOwner(this);
+            _renderedWorldHits = _worldHitCount;
+        }
+
+        public override void Render()
+        {
+            if (_renderedWorldHits != _worldHitCount)
+                OnWorldHit?.Invoke(_worldHitPoint, _worldHitNormal);
+
+            _renderedWorldHits = _worldHitCount;
         }
 
         public void SetInitialSlot(int slot)
@@ -329,6 +353,7 @@ namespace Game.Scripts.Battle
                 return;
 
             s_tallies.Clear();
+            _hasWorldHit = false;
 
             for (int i = 0; i < TracePoints; i++)
             {
@@ -348,13 +373,19 @@ namespace Game.Scripts.Battle
             if (_drawTraces)
                 Debug.DrawLine(from, to, Color.red, 1f);
 
-            Runner.RaycastAllSorted(from, to, Object.InputAuthority, s_hits, _hitMask, HitOptions.SubtickAccuracy);
+            Runner.RaycastAllSorted(from, to, Object.InputAuthority, s_hits, _hitMask,
+                HitOptions.SubtickAccuracy | HitOptions.IncludePhysX);
             s_rayRoots.Clear();
 
             foreach (LagCompensatedHit hit in s_hits)
             {
                 if (hit.Hitbox == null)
-                    continue;
+                {
+                    _hasWorldHit = true;
+                    _worldHit = hit;
+
+                    break;
+                }
 
                 HitboxRoot root = hit.Hitbox.Root;
 
@@ -447,6 +478,14 @@ namespace Game.Scripts.Battle
                 });
 
                 isDeflected |= result == HitResult.Blocked;
+            }
+
+            if (_hasWorldHit)
+            {
+                _worldHitPoint = _worldHit.Point;
+                _worldHitNormal = _worldHit.Normal;
+                _worldHitCount++;
+                isDeflected = true;
             }
 
             if (isDeflected)

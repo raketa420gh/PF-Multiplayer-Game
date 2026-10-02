@@ -40,6 +40,9 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private Vector2 _rangedDistance = new(7f, 14f);
 
+        [SerializeField]
+        private Vector2 _aimSpread = new(2.5f, 1.5f);
+
         private const int ModeCount = 4;
         private const float HomeRadius = 1f;
 
@@ -50,6 +53,7 @@ namespace Game.Scripts.Battle
         private float _nextStrafeTime;
         private float _releaseTime;
         private int _plannedChain;
+        private Vector2 _aimError;
         private int _reactedAttackTick;
         private bool _isReactionBlock;
         private bool _wasAttackDown;
@@ -222,11 +226,10 @@ namespace Game.Scripts.Battle
         private void ThinkRanged(FighterComponent target, CombatComponent combat, RangedConfig ranged, float distance,
             ref PlayerInputData input, ref bool isAttackDown)
         {
-            float speed = ranged.MaxSpeed;
-            float flightTime = distance / speed;
-            Vector3 aimPoint = target.Body.ChestPosition + target.Move.Velocity * flightTime;
+            float flightTime = distance / ranged.MaxSpeed;
+            Vector3 aimPoint = target.Body.ChestPosition;
             aimPoint.y += 0.5f * -ranged.Gravity * flightTime * flightTime;
-            AimAt(aimPoint);
+            AimAt(aimPoint, _aimError);
 
             if (Mode == BotMode.Passive || Mode == BotMode.Block)
                 return;
@@ -249,6 +252,7 @@ namespace Game.Scripts.Battle
             {
                 isAttackDown = true;
                 _releaseTime = float.MaxValue;
+                _aimError = new Vector2(Random.Range(-_aimSpread.y, _aimSpread.y), Random.Range(-_aimSpread.x, _aimSpread.x));
             }
         }
 
@@ -261,11 +265,11 @@ namespace Game.Scripts.Battle
             _nextStrafeTime = time + Random.Range(0.8f, 2f);
         }
 
-        private void AimAt(Vector3 point)
+        private void AimAt(Vector3 point, Vector2 error = default)
         {
             Vector3 direction = point - _fighter.Body.EyePosition;
-            float yaw = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
-            float pitch = -Mathf.Atan2(direction.y, new Vector2(direction.x, direction.z).magnitude) * Mathf.Rad2Deg;
+            float yaw = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + error.y;
+            float pitch = -Mathf.Atan2(direction.y, new Vector2(direction.x, direction.z).magnitude) * Mathf.Rad2Deg + error.x;
             float step = _turnSpeed * Runner.DeltaTime;
 
             _look.y = Mathf.MoveTowardsAngle(_look.y, yaw, step);
