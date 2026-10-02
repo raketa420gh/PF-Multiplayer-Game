@@ -68,6 +68,7 @@ MonoBehaviour:
   - {fileID: 3450573787108532134}
   - {fileID: 7925490500122029023}
   - {fileID: 193254857190967674}
+  - {fileID: 2235690709198912850}
   - {fileID: 6711396010120847753}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &5132479467681930763
@@ -214,6 +215,7 @@ MonoBehaviour:
   _layerMask:
     serializedVersion: 2
     m_Bits: 8
+  __attackEvents: 0
 --- !u!1 &5830888158229974356
 GameObject:
   m_ObjectHideFlags: 0
@@ -225,6 +227,7 @@ GameObject:
   - component: {fileID: 8131200056358294972}
   - component: {fileID: 7925490500122029023}
   - component: {fileID: 193254857190967674}
+  - component: {fileID: 2235690709198912850}
   m_Layer: 3
   m_Name: '[Visual]'
   m_TagString: Untagged
@@ -277,6 +280,20 @@ MonoBehaviour:
   _renderer: {fileID: 9024516552766465661}
   _blue: {fileID: 2100000, guid: 96e095a857bbd354ebe5543a369fdf71, type: 2}
   _red: {fileID: 2100000, guid: 6e5c3d4384d45f04290da9dd5ba97ef3, type: 2}
+--- !u!114 &2235690709198912850
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5830888158229974356}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c111bb33a2c34eda8da4f68b36af3316, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.MeleeAnimComponent
+  _meleeAttackComponent: {fileID: 3450573787108532134}
+  _animator: {fileID: 9024516552762251453}
 --- !u!1 &8270488326646776411
 GameObject:
   m_ObjectHideFlags: 0

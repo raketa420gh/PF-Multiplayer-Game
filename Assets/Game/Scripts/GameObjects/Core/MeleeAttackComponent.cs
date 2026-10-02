@@ -1,4 +1,5 @@
-﻿using Fusion;
+﻿using System;
+using Fusion;
 using UnityEngine;
 
 namespace Game.Scripts
@@ -9,6 +10,8 @@ namespace Game.Scripts
         {
             bool IsMet();
         }
+
+        public event Action OnAttack;
 
         [SerializeField]
         private Transform _attackPoint;
@@ -27,10 +30,29 @@ namespace Game.Scripts
 
         [Networked]
         public TickTimer _timeStamp { get; set; }
+        
+        [Networked]
+        public int _attackEvents { get; set; }
 
         private static readonly Collider[] s_colliders = new Collider[16];
         private ICondition _condition;
-        
+        private int _localAttackEvents;
+
+        public override void Spawned()
+        {
+            _localAttackEvents = _attackEvents;
+        }
+
+        public override void Render()
+        {
+            for (int i = _localAttackEvents; i < _attackEvents; i++)
+            {
+                OnAttack?.Invoke();
+            }
+
+            _localAttackEvents = _attackEvents;
+        }
+
         public void SetCondition(ICondition condition)
         {
             _condition = condition;
@@ -69,6 +91,7 @@ namespace Game.Scripts
             }
             
             _timeStamp = TickTimer.CreateFromSeconds(Runner, _cooldown);
+            _attackEvents++;
         }
 
         private void OnDrawGizmosSelected()
