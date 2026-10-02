@@ -82,11 +82,29 @@ namespace Game.Scripts.Editor.Dungeon
 
             DungeonMapBuilder.Build(director);
             DungeonUiBuilder.Build(context, database, camera);
+            BuildSwarmWall(context);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings();
             Debug.Log($"[{nameof(DungeonSceneBuilder)}] Scene built: {ScenePath}");
+        }
+
+        private static void BuildSwarmWall(DungeonContext context)
+        {
+            GameObject go = new GameObject("[SwarmWall]");
+            MeshFilter filter = go.AddComponent<MeshFilter>();
+            MeshRenderer renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = DungeonPropBuilder.SwarmWall;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.lightProbeUsage = LightProbeUsage.Off;
+
+            SerializedObject so = new SerializedObject(go.AddComponent<SwarmWallView>());
+            BattleEditorUtility.Set(so, "_context", context);
+            BattleEditorUtility.Set(so, "_filter", filter);
+            BattleEditorUtility.Set(so, "_renderer", renderer);
+            BattleEditorUtility.Set(so, "_floorDrop", DungeonMapBuilder.FloorDrop);
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void SetupLighting()

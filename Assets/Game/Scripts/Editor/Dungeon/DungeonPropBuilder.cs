@@ -28,6 +28,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static Material PortalBlue => Emissive("PortalBlue", new Color(0.2f, 0.5f, 1f), 4f);
         public static Material PortalRed => Emissive("PortalRed", new Color(1f, 0.25f, 0.15f), 4f);
         public static Material ShrineGlow => Emissive("ShrineGlow", new Color(0.9f, 0.8f, 0.4f), 2.5f);
+        public static Material SwarmWall => TransparentEmissive("SwarmWall", new Color(0.4f, 0.05f, 0.25f, 0.35f), 1.5f);
 
         public static Material Textured(string name, string texture, float tiling, float smoothness, float metallic = 0f)
         {
@@ -49,6 +50,23 @@ namespace Game.Scripts.Editor.Dungeon
             material.SetFloat("_Smoothness", smoothness);
             material.SetFloat("_Metallic", metallic);
             material.SetTextureScale("_BaseMap", Vector2.one * tiling);
+            EditorUtility.SetDirty(material);
+
+            return material;
+        }
+
+        public static Material TransparentEmissive(string name, Color color, float intensity)
+        {
+            Material material = Emissive(name, color, intensity);
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 0f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_ZWrite", 0f);
+            material.SetFloat("_Cull", 0f);
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
             EditorUtility.SetDirty(material);
 
             return material;

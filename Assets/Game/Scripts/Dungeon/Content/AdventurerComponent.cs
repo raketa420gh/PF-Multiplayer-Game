@@ -198,7 +198,6 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
-            SimulatePending();
             SimulateRest();
             SimulateSwarm();
         }
@@ -354,6 +353,7 @@ namespace Game.Scripts.Dungeon
                 return;
 
             CombatComponent combat = _fighter.Combat;
+            SimulatePending();
 
             if (Pending == PendingAction.Interact && !buttons.IsSet(PlayerInputButtons.Interact))
                 CancelPending();
