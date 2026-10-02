@@ -20,15 +20,13 @@ namespace Game.Scripts.Editor.Battle
         [MenuItem("Tools/Game/Battle/Build Animations")]
         public static void Build()
         {
+            Build(Game.Scripts.Editor.Dungeon.DungeonWeaponLibrary.CreateAll());
+        }
+
+        public static void Build(WeaponDefinition[] weapons)
+        {
             BattleEditorUtility.EnsureFolder(BattleEditorUtility.AnimationsFolder);
             SetupModel();
-
-            WeaponDefinition[] weapons =
-            {
-                BattleAnimationLibrary.CreateSwordShield(),
-                BattleAnimationLibrary.CreateGreatsword(),
-                BattleAnimationLibrary.CreateBow()
-            };
 
             using BattlePoseRig rig = new BattlePoseRig();
 
@@ -38,6 +36,10 @@ namespace Game.Scripts.Editor.Battle
 
             foreach (WeaponDefinition weapon in weapons)
                 BuildWeapon(rig, upper, weapon);
+
+            AddKeyed(rig, upper, FighterAnimComponent.CastState, 2f, BattleAnimationLibrary.CastKeys());
+            AddKeyed(rig, upper, FighterAnimComponent.UseState, 2f, BattleAnimationLibrary.UseKeys());
+            AddKeyed(rig, upper, FighterAnimComponent.InteractState, 2f, BattleAnimationLibrary.InteractKeys());
 
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
@@ -66,6 +68,7 @@ namespace Game.Scripts.Editor.Battle
             controller.AddParameter(FighterAnimComponent.MoveYParam, AnimatorControllerParameterType.Float);
             controller.AddParameter(FighterAnimComponent.CrouchParam, AnimatorControllerParameterType.Float);
             controller.AddParameter(FighterAnimComponent.MirrorParam, AnimatorControllerParameterType.Bool);
+            controller.AddParameter(FighterAnimComponent.ActionSpeedParam, AnimatorControllerParameterType.Float);
             controller.AddLayer(UpperLayerName);
 
             AnimatorControllerLayer[] layers = controller.layers;
@@ -128,7 +131,7 @@ namespace Game.Scripts.Editor.Battle
             stand.AddChild(walkBack, new Vector2(0f, -0.7f));
             stand.AddChild(walkLeft, new Vector2(-0.85f, 0f));
             stand.AddChild(walkRight, new Vector2(0.85f, 0f));
-            stand.AddChild(run, new Vector2(0f, 1.7f));
+            stand.AddChild(run, new Vector2(0f, 2.5f));
 
             BlendTree crouched = CreateMoveTree(root, "Crouch", 1f);
             crouched.AddChild(crouchIdle, Vector2.zero);
@@ -183,10 +186,12 @@ namespace Game.Scripts.Editor.Battle
 
             if (weapon.Kind == WeaponKind.Ranged)
             {
-                AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.DrawSuffix, BattleAnimationLibrary.FullDrawTime + 0.1f,
-                    BattleAnimationLibrary.DrawKeys(weapon));
-                AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.ReleaseSuffix, BattleAnimationLibrary.ReloadTime,
-                    BattleAnimationLibrary.ReleaseKeys(weapon));
+                float drawTime = weapon.DrawTime > 0f ? weapon.DrawTime : BattleAnimationLibrary.FullDrawTime;
+                float reloadTime = weapon.ReloadTime > 0f ? weapon.ReloadTime : BattleAnimationLibrary.ReloadTime;
+                AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.DrawSuffix, drawTime + 0.1f,
+                    BattleAnimationLibrary.DrawKeys(weapon, drawTime));
+                AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.ReleaseSuffix, reloadTime,
+                    BattleAnimationLibrary.ReleaseKeys(weapon, reloadTime));
             }
         }
 
@@ -201,6 +206,8 @@ namespace Game.Scripts.Editor.Battle
             state.motion = clip;
             state.mirrorParameterActive = true;
             state.mirrorParameter = FighterAnimComponent.MirrorParam;
+            state.speedParameterActive = true;
+            state.speedParameter = FighterAnimComponent.ActionSpeedParam;
 
             return state;
         }

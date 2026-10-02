@@ -10,6 +10,13 @@ namespace Game.Scripts.Battle
         Block
     }
 
+    public enum DamageType : byte
+    {
+        Physical,
+        Magical,
+        True
+    }
+
     [CreateAssetMenu(menuName = "Game/Battle/Hit Zone Config")]
     public sealed class HitZoneConfig : ScriptableObject
     {

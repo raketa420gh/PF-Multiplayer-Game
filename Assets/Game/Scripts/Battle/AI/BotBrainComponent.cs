@@ -173,7 +173,6 @@ namespace Game.Scripts.Battle
             if (distance > reach * 0.8f)
             {
                 input.MoveDirection = new Vector2(_strafe * 0.3f, 1f);
-                input.Buttons.Set(PlayerInputButtons.Sprint, distance > 6f);
             }
             else if (distance < reach * 0.45f)
             {

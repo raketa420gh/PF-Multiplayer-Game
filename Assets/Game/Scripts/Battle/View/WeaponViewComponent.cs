@@ -13,13 +13,14 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private Transform[] _sockets;
 
-        private readonly List<WeaponVisual>[] _visuals = new List<WeaponVisual>[8];
+        private List<WeaponVisual>[] _visuals;
         private int _shownSlot = -1;
         private bool _wasActivePhase;
 
         public override void Spawned()
         {
-            WeaponConfig[] loadout = _combat.Loadout;
+            WeaponConfig[] loadout = _combat.Catalog;
+            _visuals = new List<WeaponVisual>[loadout.Length];
 
             for (int i = 0; i < loadout.Length; i++)
             {
@@ -36,7 +37,7 @@ namespace Game.Scripts.Battle
 
         public override void Render()
         {
-            int slot = _combat.WeaponSlot;
+            int slot = _combat.WeaponIndex;
 
             if (slot != _shownSlot)
                 ShowSlot(slot);

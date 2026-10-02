@@ -1,0 +1,327 @@
+using System;
+using Fusion;
+using UnityEngine;
+
+namespace Game.Scripts.Dungeon
+{
+    public enum SessionState : byte
+    {
+        Lobby,
+        InDungeon,
+        Dead,
+        Extracted
+    }
+
+    /// Per-player persistent object: lobby state, class, level, kit and stash. Lives for the whole connection.
+    public sealed class PlayerSessionComponent : NetworkBehaviour, InventoryActionsComponent.IOwner
+    {
+        public const byte LoadKit = 0;
+        public const byte LoadStash = 1;
+
+        public event Action OnStateChanged;
+
+        public InventoryComponent Kit => _kit;
+        public InventoryComponent Stash => _stash;
+        public InventoryActionsComponent Actions => _actions;
+        public string DisplayName => Name.ToString();
+        public ClassConfig Class => FindClass(ClassId);
+        public AdventurerComponent Adventurer => Runner != null && Runner.TryFindBehaviour(AdventurerId, out NetworkBehaviour b) ? b as AdventurerComponent : null;
+
+        [Networked]
+        public SessionState State { get; private set; }
+
+        [Networked]
+        public byte ClassId { get; private set; }
+
+        [Networked]
+        public int Level { get; private set; }
+
+        [Networked]
+        public int Experience { get; private set; }
+
+        [Networked]
+        public NetworkString<_32> Name { get; private set; }
+
+        [Networked]
+        public NetworkBehaviourId AdventurerId { get; private set; }
+
+        [Networked]
+        public int LastRunValue { get; private set; }
+
+        [Networked]
+        public int LastRunKills { get; private set; }
+
+        [Networked]
+        public int LastRunExperience { get; private set; }
+
+        [Networked]
+        public NetworkBool HasLoadedKit { get; private set; }
+
+        [SerializeField]
+        private InventoryComponent _kit;
+
+        [SerializeField]
+        private InventoryComponent _stash;
+
+        [SerializeField]
+        private InventoryActionsComponent _actions;
+
+        [SerializeField]
+        private ClassConfig[] _classes;
+
+        [SerializeField]
+        private DungeonConfig _config;
+
+        private readonly byte[][][] _loadChunks = new byte[2][][];
+        private readonly byte[] _loadBuffer = new byte[InventoryComponent.Capacity * ItemStack.ByteSize * 2];
+        private int _loadedChunks;
+        private int _loadTarget;
+        private SessionState _renderedState;
+        private int _savedKitVersion = -1;
+        private int _savedStashVersion = -1;
+
+        public override void Spawned()
+        {
+            _actions.SetOwner(this);
+            _renderedState = State;
+
+            if (HasStateAuthority)
+            {
+                Level = Mathf.Max(1, Level);
+                Name = "Player " + Object.InputAuthority.PlayerId;
+            }
+
+            if (!HasInputAuthority)
+                return;
+
+            if (DungeonContext.Instance != null)
+                DungeonContext.Instance.SetLocalSession(this);
+
+            RpcSetProfile(StashService.LoadLevel(), StashService.LoadExperience(), StashService.LoadClass(), StashService.LoadName());
+            SendInventory(LoadKit, StashService.LoadKit());
+            SendInventory(LoadStash, StashService.LoadStash());
+        }
+
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            if (DungeonContext.Instance != null && DungeonContext.Instance.LocalSession == this)
+                DungeonContext.Instance.SetLocalSession(null);
+        }
+
+        public override void Render()
+        {
+            if (_renderedState != State)
+            {
+                _renderedState = State;
+                OnStateChanged?.Invoke();
+            }
+
+            if (!HasInputAuthority || State != SessionState.Lobby || !HasLoadedKit)
+                return;
+
+            if (_savedKitVersion != _kit.Version)
+            {
+                _savedKitVersion = _kit.Version;
+                StashService.SaveKit(_kit);
+            }
+
+            if (_savedStashVersion != _stash.Version)
+            {
+                _savedStashVersion = _stash.Version;
+                StashService.SaveStash(_stash);
+            }
+
+            StashService.SaveProfile(Level, Experience, ClassId, DisplayName);
+        }
+
+        public void OnDied(AdventurerComponent adventurer)
+        {
+            LastRunValue = 0;
+            LastRunKills = adventurer.Kills;
+            LastRunExperience = adventurer.RunExperience;
+            _kit.Clear();
+            State = SessionState.Dead;
+            AdventurerId = default;
+        }
+
+        public void OnExtracted(AdventurerComponent adventurer)
+        {
+            LastRunValue = adventurer.Inventory.TotalValue();
+            LastRunKills = adventurer.Kills;
+            LastRunExperience = adventurer.RunExperience + 5;
+            AddExperience(5);
+            _kit.CopyFrom(adventurer.Inventory);
+            State = SessionState.Extracted;
+            AdventurerId = default;
+        }
+
+        public void OnAdventurerSpawned(AdventurerComponent adventurer)
+        {
+            AdventurerId = adventurer.Id;
+            State = SessionState.InDungeon;
+        }
+
+        public void AddExperience(int amount)
+        {
+            Experience += amount;
+
+            while (Level < _config.MaxLevel && Experience >= _config.ExperienceForLevel(Level))
+            {
+                Experience -= _config.ExperienceForLevel(Level);
+                Level++;
+            }
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcSelectClass(byte classId)
+        {
+            if (State != SessionState.Lobby)
+                return;
+
+            ClassId = classId;
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcResetKit()
+        {
+            if (State != SessionState.Lobby)
+                return;
+
+            GiveDefaultKit();
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcEnterDungeon()
+        {
+            if (State != SessionState.Lobby || DungeonContext.Instance == null)
+                return;
+
+            if (_kit.CountItems() == 0 && _kit.GetEquipped(EquipSlot.Weapon1Main).IsEmpty)
+                GiveDefaultKit();
+
+            DungeonContext.Instance.Director.SpawnAdventurer(this);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcReturnToLobby()
+        {
+            if (State is SessionState.Dead or SessionState.Extracted)
+                State = SessionState.Lobby;
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RpcSetProfile(int level, int experience, byte classId, string name)
+        {
+            Level = Mathf.Clamp(level, 1, _config.MaxLevel);
+            Experience = Mathf.Max(0, experience);
+            ClassId = classId;
+
+            if (!string.IsNullOrWhiteSpace(name))
+                Name = name;
+        }
+
+        private void GiveDefaultKit()
+        {
+            ClassConfig config = Class;
+            _kit.Clear();
+
+            foreach (StartingItem entry in config.StartingKit)
+            {
+                if (entry.Item == null)
+                    continue;
+
+                ItemStack stack = ItemStack.Create(entry.Item, entry.Count, entry.Item.BaseRarity);
+
+                if (entry.IsEquipped)
+                    _kit.SetEquipment(entry.Slot, stack);
+                else
+                    _kit.TryAdd(stack);
+            }
+
+            HasLoadedKit = true;
+        }
+
+        private void SendInventory(byte kind, byte[] data)
+        {
+            _actions.SendLoad(kind, data ?? Array.Empty<byte>());
+        }
+
+        private ClassConfig FindClass(int id)
+        {
+            foreach (ClassConfig config in _classes)
+            {
+                if (config.Id == id)
+                    return config;
+            }
+
+            return _classes[0];
+        }
+
+        bool InventoryActionsComponent.IOwner.CanEquip(ItemConfig item, EquipSlot slot)
+        {
+            ClassConfig config = Class;
+
+            return item switch
+            {
+                WeaponItemConfig weapon => config.CanUseWeapon(weapon.WeaponClass),
+                ArmorItemConfig armor => config.CanWearArmor(armor.ArmorType),
+                _ => true
+            };
+        }
+
+        bool InventoryActionsComponent.IOwner.CanAccess(InventoryComponent other)
+        {
+            return other == _stash && State == SessionState.Lobby;
+        }
+
+        void InventoryActionsComponent.IOwner.OnUseItem(InventoryComponent source, int bagIndex, EquipSlot slot)
+        {
+        }
+
+        void InventoryActionsComponent.IOwner.OnDropItem(ItemStack stack)
+        {
+            _stash.TryAdd(stack);
+        }
+
+        void InventoryActionsComponent.IOwner.OnLoadChunk(byte kind, byte chunk, byte chunkCount, byte[] data)
+        {
+            if (kind > LoadStash)
+                return;
+
+            if (_loadTarget != kind || _loadChunks[kind] == null || _loadChunks[kind].Length != chunkCount)
+            {
+                _loadChunks[kind] = new byte[chunkCount][];
+                _loadTarget = kind;
+                _loadedChunks = 0;
+            }
+
+            if (_loadChunks[kind][chunk] == null)
+                _loadedChunks++;
+
+            _loadChunks[kind][chunk] = data;
+
+            if (_loadedChunks < chunkCount)
+                return;
+
+            int offset = 0;
+
+            foreach (byte[] part in _loadChunks[kind])
+            {
+                Array.Copy(part, 0, _loadBuffer, offset, part.Length);
+                offset += part.Length;
+            }
+
+            InventoryComponent target = kind == LoadKit ? _kit : _stash;
+            StashService.Deserialize(target, _loadBuffer, offset);
+            _loadChunks[kind] = null;
+
+            if (kind == LoadKit)
+            {
+                if (offset == 0)
+                    GiveDefaultKit();
+                else
+                    HasLoadedKit = true;
+            }
+        }
+    }
+}

@@ -218,6 +218,7 @@ namespace Game.Scripts.Battle
         public MeleeAttackConfig[] Attacks => _attacks;
         public BlockConfig Block => _block;
         public RangedConfig Ranged => _ranged;
+        public DamageType DamageType => _damageType;
 
         public PlayerInputButtons AttackButton =>
             _mainHand == HandSide.Right ? PlayerInputButtons.Primary : PlayerInputButtons.Secondary;
@@ -254,5 +255,8 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private RangedConfig _ranged = new();
+
+        [SerializeField]
+        private DamageType _damageType = DamageType.Physical;
     }
 }

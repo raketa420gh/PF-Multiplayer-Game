@@ -73,6 +73,13 @@ namespace Game.Scripts.Editor.Battle
 
         public BodyPose DrawPose;
         public BodyPose ReleasePose;
+
+        public float DrawTime;
+        public float ReloadTime;
+        public float ArrowMinSpeed;
+        public float ArrowMaxSpeed;
+        public int ArrowMinDamage;
+        public int ArrowMaxDamage;
     }
 
     /// Hand-authored key poses (root space, character faces +Z) and timings shared by clips and weapon configs.
@@ -91,6 +98,7 @@ namespace Game.Scripts.Editor.Battle
         private static readonly Vector3 s_shieldRestNormal = new(-0.35f, 0f, 0.94f);
         private static readonly Vector3 s_shieldBack = new(-0.32f, 1.2f, 0.14f);
         private static readonly Vector3 s_shieldBackNormal = new(-0.7f, 0f, 0.7f);
+        private static readonly Vector3 s_offHandRest = new(-0.3f, 0.98f, 0.14f);
 
         public static WeaponDefinition CreateSwordShield()
         {
@@ -267,24 +275,24 @@ namespace Game.Scripts.Editor.Battle
             };
         }
 
-        public static List<PoseKey> DrawKeys(WeaponDefinition weapon)
+        public static List<PoseKey> DrawKeys(WeaponDefinition weapon, float drawTime)
         {
             return new List<PoseKey>
             {
                 new(0f, weapon.Idle),
-                new(FullDrawTime, weapon.DrawPose, Ease.Out),
-                new(FullDrawTime + 0.1f, weapon.DrawPose)
+                new(drawTime, weapon.DrawPose, Ease.Out),
+                new(drawTime + 0.1f, weapon.DrawPose)
             };
         }
 
-        public static List<PoseKey> ReleaseKeys(WeaponDefinition weapon)
+        public static List<PoseKey> ReleaseKeys(WeaponDefinition weapon, float reloadTime)
         {
             return new List<PoseKey>
             {
                 new(0f, weapon.DrawPose),
                 new(0.06f, weapon.ReleasePose, Ease.Out),
-                new(0.25f, weapon.ReleasePose),
-                new(ReloadTime, weapon.Idle)
+                new(Mathf.Min(0.25f, reloadTime * 0.4f), weapon.ReleasePose),
+                new(reloadTime, weapon.Idle)
             };
         }
 
@@ -311,6 +319,64 @@ namespace Game.Scripts.Editor.Battle
             pose.Off = Interpolate(before.Off, a.Off, b.Off, after.Off, alpha);
 
             return pose;
+        }
+
+        /// One-handed weapon without a shield: the off hand rests by the hip.
+        internal static BodyPose OneHanded(Vector3 grip, Vector3 blade, float yaw = 0f, float pitch = 0f)
+        {
+            BodyPose pose = Upper(yaw, pitch);
+            pose.Main = new HandPose(grip, blade, grip - s_rightShoulder);
+            pose.Off = new HandPose(s_offHandRest, new Vector3(0.2f, -0.3f, 0.9f), new Vector3(-0.9f, 0f, 0.2f));
+            pose.OffSocket = WeaponSocket.LeftHand;
+
+            return pose;
+        }
+
+        /// Both hands raised in front of the chest for spell casting.
+        internal static BodyPose Cast(float spread, float forward, float height, float pitch = 0f)
+        {
+            BodyPose pose = Upper(0f, pitch);
+            Vector3 right = new Vector3(spread, height, forward);
+            Vector3 left = new Vector3(-spread, height, forward);
+            pose.Main = new HandPose(right, Vector3.forward, right - s_rightShoulder);
+            pose.Off = new HandPose(left, Vector3.forward, left - s_leftShoulder);
+            pose.OffSocket = WeaponSocket.LeftHand;
+
+            return pose;
+        }
+
+        public static List<PoseKey> CastKeys()
+        {
+            return new List<PoseKey>
+            {
+                new(0f, Cast(0.22f, 0.3f, 1.25f)),
+                new(0.35f, Cast(0.16f, 0.42f, 1.42f, -4f), Ease.Out),
+                new(1f, Cast(0.14f, 0.5f, 1.45f, -6f)),
+                new(1.4f, Cast(0.26f, 0.62f, 1.4f, 4f), Ease.In),
+                new(2f, Cast(0.22f, 0.3f, 1.25f))
+            };
+        }
+
+        public static List<PoseKey> UseKeys()
+        {
+            return new List<PoseKey>
+            {
+                new(0f, OneHanded(new(0.26f, 1.05f, 0.3f), new(0.2f, 0.4f, 0.9f))),
+                new(0.4f, OneHanded(new(0.08f, 1.52f, 0.22f), new(-0.3f, 0.95f, 0.1f), pitch: 6f), Ease.Out),
+                new(1.6f, OneHanded(new(0.06f, 1.55f, 0.2f), new(-0.3f, 0.95f, 0.1f), pitch: 8f)),
+                new(2f, OneHanded(new(0.26f, 1.05f, 0.3f), new(0.2f, 0.4f, 0.9f)))
+            };
+        }
+
+        public static List<PoseKey> InteractKeys()
+        {
+            return new List<PoseKey>
+            {
+                new(0f, OneHanded(new(0.26f, 1.05f, 0.3f), new(0.2f, 0.4f, 0.9f))),
+                new(0.3f, OneHanded(new(0.2f, 1.12f, 0.62f), new(0.1f, -0.5f, 0.85f), pitch: 10f), Ease.Out),
+                new(1.7f, OneHanded(new(0.16f, 1.08f, 0.66f), new(0.1f, -0.5f, 0.85f), pitch: 12f)),
+                new(2f, OneHanded(new(0.26f, 1.05f, 0.3f), new(0.2f, 0.4f, 0.9f)))
+            };
         }
 
         public static BodyPose Idle(float time)
@@ -379,12 +445,12 @@ namespace Game.Scripts.Editor.Battle
             offset = new Vector3(direction.x, 0f, direction.y) * (along * stride * 0.5f) + Vector3.up * height;
         }
 
-        private static BodyPose SwordShield(Vector3 grip, Vector3 blade, float yaw = 0f, float pitch = 0f)
+        internal static BodyPose SwordShield(Vector3 grip, Vector3 blade, float yaw = 0f, float pitch = 0f)
         {
             return SwordShield(grip, blade, s_shieldBack, s_shieldBackNormal, yaw, pitch);
         }
 
-        private static BodyPose SwordShield(Vector3 grip, Vector3 blade, Vector3 shield, Vector3 shieldNormal,
+        internal static BodyPose SwordShield(Vector3 grip, Vector3 blade, Vector3 shield, Vector3 shieldNormal,
             float yaw = 0f, float pitch = 0f)
         {
             BodyPose pose = Upper(yaw, pitch);
@@ -395,7 +461,7 @@ namespace Game.Scripts.Editor.Battle
             return pose;
         }
 
-        private static BodyPose TwoHanded(Vector3 grip, Vector3 blade, float offHand = -0.14f, float yaw = 0f, float pitch = 0f)
+        internal static BodyPose TwoHanded(Vector3 grip, Vector3 blade, float offHand = -0.14f, float yaw = 0f, float pitch = 0f)
         {
             Vector3 offGrip = grip + blade.normalized * offHand;
             BodyPose pose = Upper(yaw, pitch);
@@ -406,7 +472,7 @@ namespace Game.Scripts.Editor.Battle
             return pose;
         }
 
-        private static BodyPose Bow(Vector3 bow, Vector3 stave, Vector3 arrowDirection, Vector3 drawHand, float yaw = 0f)
+        internal static BodyPose Bow(Vector3 bow, Vector3 stave, Vector3 arrowDirection, Vector3 drawHand, float yaw = 0f)
         {
             BodyPose pose = Upper(yaw, 0f);
             pose.Main = new HandPose(drawHand, Vector3.up, drawHand - s_rightShoulder);
@@ -416,7 +482,7 @@ namespace Game.Scripts.Editor.Battle
             return pose;
         }
 
-        private static BodyPose Upper(float yaw, float pitch)
+        internal static BodyPose Upper(float yaw, float pitch)
         {
             Vector3 spine = new Vector3(pitch, yaw, 0f);
 

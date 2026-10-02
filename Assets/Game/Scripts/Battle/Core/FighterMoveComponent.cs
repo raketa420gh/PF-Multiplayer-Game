@@ -35,7 +35,7 @@ namespace Game.Scripts.Battle
             _controller.rotationSpeed = 0f;
         }
 
-        public void Simulate(Vector2 move, Vector2 look, bool isSprint, bool isCrouch, bool isJump, float speedMultiplier)
+        public void Simulate(Vector2 move, Vector2 look, bool isWalk, bool isCrouch, bool isJump, float speedMultiplier)
         {
             Pitch = Mathf.Clamp(look.x, -MaxPitch, MaxPitch);
             transform.rotation = Quaternion.Euler(0f, look.y, 0f);
@@ -47,7 +47,7 @@ namespace Game.Scripts.Battle
             if (isJump && CrouchAmount < 0.5f)
                 _controller.Jump();
 
-            _controller.maxSpeed = GetSpeed(move, isSprint) * speedMultiplier;
+            _controller.maxSpeed = GetSpeed(move, isWalk) * speedMultiplier;
             _controller.Move(transform.rotation * new Vector3(move.x, 0f, move.y));
         }
 
@@ -57,11 +57,19 @@ namespace Game.Scripts.Battle
             _controller.Teleport(position, Quaternion.Euler(0f, yaw, 0f));
         }
 
-        private float GetSpeed(Vector2 move, bool isSprint)
+        public void AddImpulse(Vector3 impulse)
         {
-            bool canSprint = isSprint && move.y > 0.5f && CrouchAmount < 0.5f;
-            float speed = canSprint ? _config.SprintSpeed : _config.WalkSpeed;
-            speed = Mathf.Lerp(speed, _config.CrouchSpeed, CrouchAmount);
+            _controller.Velocity += impulse;
+        }
+
+        private float GetSpeed(Vector2 move, bool isWalk)
+        {
+            float speed = _config.RunSpeed;
+
+            if (isWalk)
+                speed *= _config.WalkMultiplier;
+
+            speed = Mathf.Lerp(speed, speed * _config.CrouchMultiplier, CrouchAmount);
 
             if (move.y < -0.1f)
                 speed *= _config.BackpedalMultiplier;

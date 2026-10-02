@@ -1,0 +1,822 @@
+using System.Collections.Generic;
+using Fusion;
+using Game.Scripts.Battle;
+using UnityEngine;
+
+namespace Game.Scripts.Dungeon
+{
+    public enum AdventurerState : byte
+    {
+        Alive,
+        Dead,
+        Extracted
+    }
+
+    public enum PendingAction : byte
+    {
+        None,
+        Ability,
+        Consumable,
+        Interact,
+        Utility
+    }
+
+    /// The player's body inside the dungeon: class, inventory, interaction, abilities, death and extraction on top of the fighter.
+    public sealed class AdventurerComponent : NetworkBehaviour, InventoryActionsComponent.IOwner, DamageReceiverComponent.IDefense
+    {
+        public const int AbilityCapacity = 8;
+        public const float InteractRange = 2.6f;
+        public const byte BusyCast = 0;
+        public const byte BusyUse = 1;
+        public const byte BusyInteract = 2;
+
+        public FighterComponent Fighter => _fighter;
+        public InventoryComponent Inventory => _inventory;
+        public InventoryActionsComponent Actions => _actions;
+        public StatusEffectComponent Effects => _effects;
+        public AdventurerStats Stats => _stats;
+        public ClassConfig Class => _class;
+        public PlayerSessionComponent Session => _session;
+        public IReadOnlyList<AbilityConfig> Abilities => _abilities;
+        public InteractableComponent LookTarget => _lookTarget;
+        public bool IsInvisible => _effects.Has(StatusEffectKind.Invisible);
+        public ContainerComponent OpenedContainer => Runner != null && Runner.TryFindBehaviour(OpenContainerId, out NetworkBehaviour b) ? b as ContainerComponent : null;
+
+        [Networked]
+        public byte ClassId { get; private set; }
+
+        [Networked]
+        public AdventurerState State { get; private set; }
+
+        [Networked]
+        public byte Floor { get; private set; }
+
+        [Networked]
+        public int Kills { get; private set; }
+
+        [Networked]
+        public int RunExperience { get; private set; }
+
+        [Networked]
+        public NetworkBehaviourId OpenContainerId { get; private set; }
+
+        [Networked]
+        public PendingAction Pending { get; private set; }
+
+        [Networked]
+        public NetworkBool IsResting { get; private set; }
+
+        [Networked]
+        public NetworkBool IsInSwarm { get; private set; }
+
+        [SerializeField]
+        private FighterComponent _fighter;
+
+        [SerializeField]
+        private InventoryComponent _inventory;
+
+        [SerializeField]
+        private InventoryActionsComponent _actions;
+
+        [SerializeField]
+        private StatusEffectComponent _effects;
+
+        [SerializeField]
+        private ItemDatabase _database;
+
+        [SerializeField]
+        private ClassConfig[] _classes;
+
+        [SerializeField]
+        private DungeonConfig _config;
+
+        [SerializeField]
+        private LayerMask _interactMask;
+
+        [SerializeField]
+        private NetworkObject _worldItemPrefab;
+
+        [SerializeField]
+        private NetworkObject _corpsePrefab;
+
+        [SerializeField]
+        private NetworkObject _campfirePrefab;
+
+        [SerializeField]
+        private WeaponConfig _fistsWeapon;
+
+        [SerializeField]
+        private float _restHealInterval = 2f;
+
+        [Networked, Capacity(AbilityCapacity)]
+        private NetworkArray<TickTimer> _cooldowns => default;
+
+        [Networked, Capacity(AbilityCapacity)]
+        private NetworkArray<byte> _charges => default;
+
+        [Networked]
+        private byte _pendingIndex { get; set; }
+
+        [Networked]
+        private NetworkBehaviourId _pendingTarget { get; set; }
+
+        [Networked]
+        private int _pendingCompleteTick { get; set; }
+
+        [Networked]
+        private int _inventoryVersion { get; set; }
+
+        [Networked]
+        private TickTimer _restTimer { get; set; }
+
+        [Networked]
+        private TickTimer _removeTimer { get; set; }
+
+        private readonly List<AbilityConfig> _abilities = new();
+        private readonly AdventurerStats _stats = new();
+        private ClassConfig _class;
+        private PlayerSessionComponent _session;
+        private InteractableComponent _lookTarget;
+        private float _swarmAccumulator;
+        private int _appliedVersion = -1;
+        private bool _wasAlive = true;
+
+        public override void Spawned()
+        {
+            _class = FindClass(ClassId);
+            _abilities.Clear();
+            _abilities.AddRange(_class.Skills);
+            _abilities.AddRange(_class.Spells);
+
+            _fighter.SetStats(_stats);
+            _fighter.Receiver.SetDefense(this);
+            _fighter.OnSimulateInput += OnSimulateInput;
+            _actions.SetOwner(this);
+            _fighter.Combat.Projectiles.OnReceiverHit += OnProjectileHit;
+            ResolveSession();
+
+            if (HasStateAuthority)
+            {
+                for (int i = 0; i < _abilities.Count; i++)
+                    _charges.Set(i, (byte)_abilities[i].Charges);
+            }
+
+            if (HasInputAuthority && DungeonContext.Instance != null)
+                DungeonContext.Instance.SetLocalAdventurer(this);
+
+            RefreshStats(true);
+        }
+
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            _fighter.OnSimulateInput -= OnSimulateInput;
+            _fighter.Combat.Projectiles.OnReceiverHit -= OnProjectileHit;
+
+            if (DungeonContext.Instance != null && DungeonContext.Instance.LocalAdventurer == this)
+                DungeonContext.Instance.SetLocalAdventurer(null);
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            if (_session == null)
+                ResolveSession();
+
+            if (_appliedVersion != _inventory.Version)
+                RefreshStats(false);
+
+            if (!HasStateAuthority)
+                return;
+
+            if (State == AdventurerState.Alive && _fighter.Health.IsDead)
+                Die();
+
+            if (State != AdventurerState.Alive)
+            {
+                if (_removeTimer.Expired(Runner))
+                    Runner.Despawn(Object);
+
+                return;
+            }
+
+            SimulatePending();
+            SimulateRest();
+            SimulateSwarm();
+        }
+
+        public override void Render()
+        {
+            if (_appliedVersion != _inventory.Version)
+                RefreshStats(false);
+
+            if (HasInputAuthority)
+                _lookTarget = FindInteractable();
+        }
+
+        public void Setup(byte classId, PlayerSessionComponent session)
+        {
+            ClassId = classId;
+            _session = session;
+            Floor = 1;
+            State = AdventurerState.Alive;
+        }
+
+        public float GetCooldownLeft(int ability)
+        {
+            return _cooldowns[ability].RemainingTime(Runner) ?? 0f;
+        }
+
+        public int GetCharges(int ability)
+        {
+            return _charges[ability];
+        }
+
+        public float InteractProgress => Pending == PendingAction.Interact ? _fighter.Combat.BusyProgress : 0f;
+
+        public void OpenContainer(ContainerComponent container)
+        {
+            OpenContainerId = container.Inventory.Id;
+        }
+
+        public void CloseContainer()
+        {
+            OpenContainerId = default;
+        }
+
+        public void Extract()
+        {
+            if (State != AdventurerState.Alive)
+                return;
+
+            State = AdventurerState.Extracted;
+            _fighter.SetInputBlocked(true);
+            _session?.OnExtracted(this);
+            _removeTimer = TickTimer.CreateFromSeconds(Runner, 1.5f);
+        }
+
+        public void Descend(Vector3 position, float yaw)
+        {
+            Floor = 2;
+            _fighter.Move.Teleport(position, yaw);
+            _fighter.SetLook(new Vector2(0f, yaw));
+            CloseContainer();
+            RpcTeleported(yaw);
+        }
+
+        public void AddExperience(int amount)
+        {
+            RunExperience += amount;
+            _session?.AddExperience(amount);
+        }
+
+        public void AddKill()
+        {
+            Kills++;
+        }
+
+        public void ApplyDamageOverTime(float amount)
+        {
+            _fighter.Health.TakeDamage(Mathf.RoundToInt(amount));
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+        private void RpcTeleported(float yaw)
+        {
+            if (DungeonContext.Instance != null)
+                DungeonContext.Instance.Battle.Input.SetLook(new Vector2(0f, yaw));
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcCloseContainer()
+        {
+            CloseContainer();
+        }
+
+        private void ResolveSession()
+        {
+            if (_session != null || Runner == null)
+                return;
+
+            if (Runner.TryGetPlayerObject(Object.InputAuthority, out NetworkObject playerObject))
+                _session = playerObject.GetComponent<PlayerSessionComponent>();
+        }
+
+        private ClassConfig FindClass(int id)
+        {
+            foreach (ClassConfig config in _classes)
+            {
+                if (config.Id == id)
+                    return config;
+            }
+
+            return _classes[0];
+        }
+
+        private void RefreshStats(bool fillHealth)
+        {
+            _appliedVersion = _inventory.Version;
+            int level = _session != null ? _session.Level : 1;
+            _stats.Recalculate(_class, _inventory, _effects, _fighter.Combat.WeaponSlot, ClassConfig.PerkCountForLevel(level));
+
+            if (!HasStateAuthority)
+                return;
+
+            _fighter.Health.SetMaxHealth(_stats.MaxHealth, fillHealth);
+            ApplyWeaponSlots();
+        }
+
+        private void ApplyWeaponSlots()
+        {
+            CombatComponent combat = _fighter.Combat;
+            combat.SetSlotWeapon(0, ResolveWeaponIndex(EquipSlot.Weapon1Main, EquipSlot.Weapon1Off));
+            combat.SetSlotWeapon(1, ResolveWeaponIndex(EquipSlot.Weapon2Main, EquipSlot.Weapon2Off));
+        }
+
+        private int ResolveWeaponIndex(EquipSlot mainSlot, EquipSlot offSlot)
+        {
+            WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(mainSlot);
+            WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(offSlot);
+            CombatComponent combat = _fighter.Combat;
+
+            if (main == null)
+                return Mathf.Max(0, combat.FindCatalogIndex(off != null && off.Weapon != null ? off.Weapon : _fistsWeapon));
+
+            WeaponConfig config = main.Weapon;
+
+            if (off != null && off.WeaponClass == WeaponClass.Shield && main.WeaponWithShield != null)
+                config = main.WeaponWithShield;
+
+            return Mathf.Max(0, combat.FindCatalogIndex(config));
+        }
+
+        private void OnSimulateInput(NetworkButtons buttons, NetworkButtons previous)
+        {
+            if (!HasStateAuthority || State != AdventurerState.Alive)
+                return;
+
+            CombatComponent combat = _fighter.Combat;
+
+            if (Pending == PendingAction.Interact && !buttons.IsSet(PlayerInputButtons.Interact))
+                CancelPending();
+
+            if (Pending != PendingAction.None && combat.State != CombatState.Busy)
+                CancelPending();
+
+            if (Pending != PendingAction.None)
+                return;
+
+            IsResting = buttons.IsSet(PlayerInputButtons.Rest) && combat.State == CombatState.Idle;
+
+            if (buttons.WasPressed(previous, PlayerInputButtons.Interact))
+                TryInteract();
+
+            for (int i = 0; i < 2 && i < _class.Skills.Length; i++)
+            {
+                if (buttons.WasPressed(previous, PlayerInputButtons.Skill1 + i))
+                    TryUseAbility(i);
+            }
+
+            for (int i = 0; i < 5 && i < _class.Spells.Length; i++)
+            {
+                if (buttons.WasPressed(previous, PlayerInputButtons.Spell1 + i))
+                    TryUseAbility(_class.Skills.Length + i);
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                if (buttons.WasPressed(previous, PlayerInputButtons.Utility1 + i))
+                    OnUseItem(_inventory, -1, (EquipSlot)((int)EquipSlot.Utility1 + i));
+            }
+        }
+
+        private void TryInteract()
+        {
+            InteractableComponent target = FindInteractable();
+
+            if (target == null || !target.IsAvailable)
+                return;
+
+            float duration = target.HoldTime / _stats.InteractionSpeed;
+
+            if (!_fighter.Combat.StartBusy(duration, BusyInteract))
+                return;
+
+            Pending = PendingAction.Interact;
+            _pendingTarget = target.Id;
+            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(duration / Runner.DeltaTime);
+        }
+
+        private void TryUseAbility(int index)
+        {
+            if (index >= _abilities.Count)
+                return;
+
+            AbilityConfig ability = _abilities[index];
+
+            if (!_cooldowns[index].ExpiredOrNotRunning(Runner) || (ability.IsSpell && _charges[index] == 0))
+                return;
+
+            float duration = Mathf.Max(0.05f, ability.CastTime / (ability.IsSpell ? _stats.CastSpeed : _stats.ActionSpeed));
+
+            if (!_fighter.Combat.StartBusy(duration, BusyCast))
+                return;
+
+            Pending = PendingAction.Ability;
+            _pendingIndex = (byte)index;
+            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(duration / Runner.DeltaTime);
+        }
+
+        private void SimulatePending()
+        {
+            if (Pending == PendingAction.None || Runner.Tick < _pendingCompleteTick)
+                return;
+
+            PendingAction action = Pending;
+            Pending = PendingAction.None;
+
+            switch (action)
+            {
+                case PendingAction.Interact:
+                    if (Runner.TryFindBehaviour(_pendingTarget, out NetworkBehaviour behaviour) && behaviour is InteractableComponent target && target.IsAvailable)
+                        target.Complete(this);
+                    break;
+                case PendingAction.Ability:
+                    ApplyAbility(_pendingIndex);
+                    break;
+                case PendingAction.Consumable:
+                    ApplyConsumable((EquipSlot)_pendingIndex);
+                    break;
+                case PendingAction.Utility:
+                    ApplyUtility((EquipSlot)_pendingIndex);
+                    break;
+            }
+        }
+
+        private void CancelPending()
+        {
+            if (Pending == PendingAction.Interact && Runner.TryFindBehaviour(_pendingTarget, out NetworkBehaviour behaviour) && behaviour is InteractableComponent target)
+                target.Cancel(this);
+
+            Pending = PendingAction.None;
+            _fighter.Combat.CancelBusy();
+        }
+
+        private void ApplyAbility(int index)
+        {
+            AbilityConfig ability = _abilities[index];
+            CombatComponent combat = _fighter.Combat;
+            float buffDuration = ability.Duration * _stats.BuffDurationMultiplier;
+
+            switch (ability.Kind)
+            {
+                case AbilityKind.Heal:
+                    if (ability.Duration > 0f)
+                        _effects.Add(StatusEffectKind.HealOverTime, ability.Magnitude * HealScale(), ability.Duration);
+                    else
+                        _fighter.Health.Restore(Mathf.RoundToInt(ability.Magnitude * HealScale()));
+                    break;
+                case AbilityKind.Buff:
+                    _effects.Add(ability.Effect, ability.Magnitude, buffDuration);
+                    break;
+                case AbilityKind.Shield:
+                    _effects.Add(StatusEffectKind.Protection, ability.Magnitude, buffDuration);
+                    break;
+                case AbilityKind.Invisibility:
+                    _effects.Add(StatusEffectKind.Invisible, 1f, buffDuration);
+                    break;
+                case AbilityKind.Dash:
+                    _fighter.Move.AddImpulse(-transform.forward * ability.Magnitude + Vector3.up * 2f);
+                    break;
+                case AbilityKind.Projectile:
+                    FireSpell(ability, combat);
+                    break;
+                case AbilityKind.AreaDamage:
+                    AreaDamage(ability, combat);
+                    break;
+            }
+
+            if (ability.IsSpell)
+                _charges.Set(index, (byte)Mathf.Max(0, _charges[index] - 1));
+
+            _cooldowns.Set(index, TickTimer.CreateFromSeconds(Runner, ability.Cooldown));
+        }
+
+        private float HealScale()
+        {
+            return 1f + DungeonFormulas.PowerBonus(_stats.MagicalPower) * 0.5f;
+        }
+
+        private void FireSpell(AbilityConfig ability, CombatComponent combat)
+        {
+            int damage = combat.ScaleDamage(Mathf.RoundToInt(ability.Magnitude), ability.DamageType);
+            Vector3 origin = combat.Body.EyePosition + combat.Body.AimDirection * 0.4f;
+            Quaternion aim = combat.Body.AimRotation;
+
+            for (int i = 0; i < ability.ProjectileCount; i++)
+            {
+                float spread = ability.ProjectileCount > 1 ? Mathf.Lerp(-ability.ProjectileSpread, ability.ProjectileSpread, i / (ability.ProjectileCount - 1f)) : 0f;
+                Vector3 direction = aim * Quaternion.Euler(0f, spread, 0f) * Vector3.forward;
+                combat.Projectiles.Fire(origin, direction * ability.ProjectileSpeed, ability.ProjectileGravity, damage, 0.1f,
+                    ability.DamageType, ability.ProjectileKind, ability.Radius, (byte)ability.Effect, ability.EffectMagnitude, ability.EffectDuration);
+            }
+        }
+
+        private void AreaDamage(AbilityConfig ability, CombatComponent combat)
+        {
+            int damage = combat.ScaleDamage(Mathf.RoundToInt(ability.Magnitude), ability.DamageType);
+            Vector3 center = transform.position + Vector3.up;
+
+            foreach (FighterComponent fighter in FighterComponent.All)
+            {
+                if (fighter == _fighter || !fighter.Receiver.CanBeHitBy(_fighter.Receiver))
+                    continue;
+
+                Vector3 point = fighter.Body.ChestPosition;
+
+                if ((point - center).sqrMagnitude > ability.Radius * ability.Radius)
+                    continue;
+
+                if (ability.Effect == StatusEffectKind.HealOverTime)
+                    continue;
+
+                fighter.Receiver.ApplyHit(new HitRequest
+                {
+                    BaseDamage = damage,
+                    BodyRays = 1,
+                    Zone = HitZone.Torso,
+                    Point = point,
+                    Normal = (point - center).normalized,
+                    AttackerPosition = center,
+                    StaggerDuration = 0.25f,
+                    DamageType = ability.DamageType,
+                    Attacker = _fighter.Receiver
+                });
+            }
+        }
+
+        private void OnProjectileHit(in ProjectileData data, DamageReceiverComponent receiver)
+        {
+            if (data.Effect == 0 || !receiver.TryGetComponent(out StatusEffectComponent effects))
+                return;
+
+            effects.Add((StatusEffectKind)data.Effect, data.EffectMagnitude, data.EffectDuration);
+        }
+
+        private void ApplyConsumable(EquipSlot slot)
+        {
+            ItemStack stack = _inventory.GetEquipped(slot);
+            ConsumableItemConfig item = _database.Get<ConsumableItemConfig>(stack.ItemId);
+
+            if (item == null)
+                return;
+
+            float tier = Mathf.Max(0, stack.Rarity - (int)ItemRarity.Common);
+
+            switch (item.Effect)
+            {
+                case ConsumableEffect.HealInstant:
+                    _fighter.Health.Restore(Mathf.RoundToInt(item.Magnitude + tier * 4f));
+                    break;
+                case ConsumableEffect.HealOverTime:
+                    _effects.Add(StatusEffectKind.HealOverTime, item.Magnitude, Mathf.Max(1f, item.Duration - tier * 2.5f));
+                    break;
+                case ConsumableEffect.Protection:
+                    _effects.Add(StatusEffectKind.Protection, item.Magnitude + tier * 5f, item.Duration);
+                    break;
+                case ConsumableEffect.Haste:
+                    _effects.Add(StatusEffectKind.Haste, item.Magnitude, item.Duration);
+                    break;
+            }
+
+            Consume(slot, stack);
+        }
+
+        private void ApplyUtility(EquipSlot slot)
+        {
+            ItemStack stack = _inventory.GetEquipped(slot);
+            UtilityItemConfig item = _database.Get<UtilityItemConfig>(stack.ItemId);
+
+            if (item == null)
+                return;
+
+            switch (item.UtilityKind)
+            {
+                case UtilityKind.Campfire:
+                    if (_campfirePrefab != null)
+                        Runner.Spawn(_campfirePrefab, transform.position + transform.forward * 1.2f, Quaternion.identity);
+                    break;
+                case UtilityKind.ThrowingWeapon:
+                    CombatComponent combat = _fighter.Combat;
+                    combat.Projectiles.Fire(combat.Body.EyePosition, combat.Body.AimDirection * 16f, -9.81f,
+                        combat.ScaleDamage(item.Damage, DamageType.Physical), 0.2f, DamageType.Physical, ProjectileKind.Thrown);
+                    break;
+                default:
+                    return;
+            }
+
+            Consume(slot, stack);
+        }
+
+        private void Consume(EquipSlot slot, ItemStack stack)
+        {
+            _inventory.SetEquipment(slot, stack.Count > 1 ? stack.WithCount(stack.Count - 1) : default);
+        }
+
+        private void SimulateRest()
+        {
+            if (!IsResting || _fighter.Move.Velocity.sqrMagnitude > 0.05f)
+            {
+                _restTimer = TickTimer.None;
+
+                return;
+            }
+
+            if (!_restTimer.IsRunning)
+                _restTimer = TickTimer.CreateFromSeconds(Runner, _restHealInterval);
+
+            if (_restTimer.Expired(Runner))
+            {
+                _fighter.Health.Restore(1);
+                _restTimer = TickTimer.CreateFromSeconds(Runner, _restHealInterval);
+            }
+        }
+
+        private void SimulateSwarm()
+        {
+            MatchComponent match = DungeonContext.Instance != null ? DungeonContext.Instance.Match : null;
+
+            if (match == null)
+            {
+                IsInSwarm = false;
+
+                return;
+            }
+
+            float damage = match.GetSwarmDamage(Floor, transform.position);
+            IsInSwarm = damage > 0f;
+
+            if (match.IsTimeUp)
+            {
+                _fighter.Health.Kill();
+
+                return;
+            }
+
+            _swarmAccumulator += damage * Runner.DeltaTime;
+
+            if (_swarmAccumulator >= 1f)
+            {
+                int tick = Mathf.FloorToInt(_swarmAccumulator);
+                _swarmAccumulator -= tick;
+                _fighter.Health.TakeDamage(tick);
+            }
+        }
+
+        private void Die()
+        {
+            State = AdventurerState.Dead;
+            Pending = PendingAction.None;
+            _fighter.SetInputBlocked(true);
+            CloseContainer();
+            SpawnCorpse();
+            _session?.OnDied(this);
+            _removeTimer = TickTimer.CreateFromSeconds(Runner, 2.5f);
+        }
+
+        private void SpawnCorpse()
+        {
+            if (_corpsePrefab == null)
+                return;
+
+            Vector3 position = transform.position;
+            Quaternion rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
+
+            Runner.Spawn(_corpsePrefab, position, rotation, PlayerRef.None, (_, corpse) =>
+            {
+                CorpseComponent body = corpse.GetComponent<CorpseComponent>();
+                body.Setup(_inventory, _class, _session != null ? _session.DisplayName : "Adventurer");
+            });
+
+            _inventory.Clear();
+        }
+
+        private InteractableComponent FindInteractable()
+        {
+            FighterBodyComponent body = _fighter.Body;
+            Vector3 origin = body.EyePosition;
+            Vector3 direction = HasInputAuthority && DungeonContext.Instance != null
+                ? Quaternion.Euler(DungeonContext.Instance.Battle.Input.LookRotation.x, DungeonContext.Instance.Battle.Input.LookRotation.y, 0f) * Vector3.forward
+                : body.AimDirection;
+
+            PhysicsScene scene = Runner.GetPhysicsScene();
+
+            if (!scene.Raycast(origin, direction, out RaycastHit hit, InteractRange, _interactMask, QueryTriggerInteraction.Collide))
+                return null;
+
+            return hit.collider.GetComponentInParent<InteractableComponent>();
+        }
+
+        bool InventoryActionsComponent.IOwner.CanEquip(ItemConfig item, EquipSlot slot)
+        {
+            return item switch
+            {
+                WeaponItemConfig weapon => _class.CanUseWeapon(weapon.WeaponClass),
+                ArmorItemConfig armor => _class.CanWearArmor(armor.ArmorType),
+                _ => true
+            };
+        }
+
+        bool InventoryActionsComponent.IOwner.CanAccess(InventoryComponent other)
+        {
+            if (other.Id != OpenContainerId)
+                return false;
+
+            return (other.transform.position - transform.position).sqrMagnitude < 25f;
+        }
+
+        void InventoryActionsComponent.IOwner.OnUseItem(InventoryComponent source, int bagIndex, EquipSlot slot)
+        {
+            OnUseItem(source, bagIndex, slot);
+        }
+
+        private void OnUseItem(InventoryComponent source, int bagIndex, EquipSlot slot)
+        {
+            if (State != AdventurerState.Alive || Pending != PendingAction.None)
+                return;
+
+            if (bagIndex >= 0)
+            {
+                ItemStack stack = source.Bag[bagIndex];
+                ItemConfig config = source.GetConfig(stack);
+
+                if (config == null || config.Kind is not (ItemKind.Consumable or ItemKind.Utility))
+                    return;
+
+                slot = FindFreeUtilitySlot();
+
+                if (slot == EquipSlot.Count)
+                    return;
+
+                source.RemoveAt(bagIndex);
+                _inventory.SetEquipment(slot, stack.At(0, 0));
+            }
+
+            ItemStack equipped = _inventory.GetEquipped(slot);
+            ItemConfig item = _database.Get(equipped.ItemId);
+            float useTime;
+            PendingAction action;
+
+            switch (item)
+            {
+                case ConsumableItemConfig consumable:
+                    useTime = consumable.UseTime / _stats.InteractionSpeed;
+                    action = PendingAction.Consumable;
+                    break;
+                case UtilityItemConfig utility when utility.UtilityKind != UtilityKind.Lockpick:
+                    useTime = utility.UseTime / _stats.InteractionSpeed;
+                    action = PendingAction.Utility;
+                    break;
+                default:
+                    return;
+            }
+
+            if (!_fighter.Combat.StartBusy(useTime, BusyUse))
+                return;
+
+            Pending = action;
+            _pendingIndex = (byte)slot;
+            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(useTime / Runner.DeltaTime);
+        }
+
+        private EquipSlot FindFreeUtilitySlot()
+        {
+            for (EquipSlot slot = EquipSlot.Utility1; slot <= EquipSlot.Utility4; slot++)
+            {
+                if (_inventory.GetEquipped(slot).IsEmpty)
+                    return slot;
+            }
+
+            return EquipSlot.Count;
+        }
+
+        void InventoryActionsComponent.IOwner.OnDropItem(ItemStack stack)
+        {
+            if (_worldItemPrefab == null)
+                return;
+
+            Vector3 position = transform.position + transform.forward * 0.8f + Vector3.up * 0.3f;
+            Runner.Spawn(_worldItemPrefab, position, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), PlayerRef.None,
+                (_, item) => item.GetComponent<WorldItemComponent>().Setup(stack));
+        }
+
+        void InventoryActionsComponent.IOwner.OnLoadChunk(byte kind, byte chunk, byte chunkCount, byte[] data)
+        {
+        }
+
+        int DamageReceiverComponent.IDefense.ModifyIncomingDamage(int damage, DamageType type, HitZone zone)
+        {
+            int reduced = _stats.ModifyIncomingDamage(damage, type, zone);
+
+            return _effects.Absorb(reduced);
+        }
+    }
+}

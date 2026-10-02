@@ -4,6 +4,17 @@ using UnityEngine;
 
 namespace Game.Scripts.Battle
 {
+    public enum ProjectileKind : byte
+    {
+        Arrow,
+        Magic,
+        Fire,
+        Ice,
+        Dark,
+        Holy,
+        Thrown
+    }
+
     public struct ProjectileData : INetworkStruct
     {
         public int FireTick;
@@ -13,10 +24,17 @@ namespace Game.Scripts.Battle
         public Vector3 HitPoint;
         public float Gravity;
         public float StaggerDuration;
+        public float Radius;
+        public float EffectMagnitude;
+        public float EffectDuration;
         public short Damage;
+        public byte Kind;
+        public byte DamageType;
+        public byte Effect;
         public NetworkBool IsHidden;
 
         public bool IsFlying => FireTick > 0 && FinishTick == 0;
+        public ProjectileKind KindValue => (ProjectileKind)Kind;
 
         public Vector3 GetPosition(float time)
         {
@@ -32,6 +50,11 @@ namespace Game.Scripts.Battle
     public sealed class ProjectileComponent : NetworkBehaviour
     {
         public const int Capacity = 8;
+
+        /// Raised on the state authority when a projectile lands on a receiver (used for spell side effects).
+        public delegate void ProjectileHitHandler(in ProjectileData data, DamageReceiverComponent receiver);
+
+        public event ProjectileHitHandler OnReceiverHit;
 
         public NetworkArray<ProjectileData> Projectiles => _projectiles;
 
@@ -51,6 +74,7 @@ namespace Game.Scripts.Battle
         private int _fireCount { get; set; }
 
         private static readonly List<LagCompensatedHit> s_hits = new(16);
+        private static readonly List<LagCompensatedHit> s_overlaps = new(16);
 
         public override void FixedUpdateNetwork()
         {
@@ -69,7 +93,9 @@ namespace Game.Scripts.Battle
             }
         }
 
-        public void Fire(Vector3 origin, Vector3 velocity, float gravity, int damage, float staggerDuration)
+        public void Fire(Vector3 origin, Vector3 velocity, float gravity, int damage, float staggerDuration,
+            DamageType damageType = DamageType.Physical, ProjectileKind kind = ProjectileKind.Arrow,
+            float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f)
         {
             _projectiles.Set(_fireCount % Capacity, new ProjectileData
             {
@@ -78,7 +104,13 @@ namespace Game.Scripts.Battle
                 Velocity = velocity,
                 Gravity = gravity,
                 Damage = (short)damage,
-                StaggerDuration = staggerDuration
+                StaggerDuration = staggerDuration,
+                DamageType = (byte)damageType,
+                Kind = (byte)kind,
+                Radius = radius,
+                Effect = effect,
+                EffectMagnitude = effectMagnitude,
+                EffectDuration = effectDuration
             });
             _fireCount++;
         }
@@ -99,9 +131,11 @@ namespace Game.Scripts.Battle
 
                 data.FinishTick = Runner.Tick;
                 data.HitPoint = hit.Point;
-                data.IsHidden = hit.Hitbox != null;
+                data.IsHidden = hit.Hitbox != null || data.KindValue != ProjectileKind.Arrow;
 
-                if (hit.Hitbox != null)
+                if (data.Radius > 0f)
+                    Explode(data, hit.Point);
+                else if (hit.Hitbox != null)
                     ApplyHit(data, hit, from);
 
                 return;
@@ -131,8 +165,57 @@ namespace Game.Scripts.Battle
                 Point = hit.Point,
                 Normal = hit.Normal,
                 AttackerPosition = from,
-                StaggerDuration = data.StaggerDuration
+                StaggerDuration = data.StaggerDuration,
+                DamageType = (DamageType)data.DamageType,
+                Attacker = _ownReceiver
             });
+
+            OnReceiverHit?.Invoke(data, receiver);
+        }
+
+        private void Explode(in ProjectileData data, Vector3 point)
+        {
+            Runner.LagCompensation.OverlapSphere(point, data.Radius, Object.InputAuthority, s_overlaps, _hitMask, HitOptions.None);
+
+            for (int i = 0; i < s_overlaps.Count; i++)
+            {
+                LagCompensatedHit hit = s_overlaps[i];
+
+                if (hit.Hitbox == null || !hit.Hitbox.Root.TryGetComponent(out DamageReceiverComponent receiver))
+                    continue;
+
+                if (!receiver.CanBeHitBy(_ownReceiver) || WasAlreadyHit(receiver, i))
+                    continue;
+
+                float distance = Vector3.Distance(point, hit.Hitbox.Root.transform.position + Vector3.up);
+                float falloff = Mathf.Clamp01(1f - distance / (data.Radius * 1.5f));
+
+                receiver.ApplyHit(new HitRequest
+                {
+                    BaseDamage = Mathf.RoundToInt(data.Damage * Mathf.Lerp(0.4f, 1f, falloff)),
+                    BodyRays = 1,
+                    Zone = HitZone.Torso,
+                    Point = hit.Point,
+                    Normal = (hit.Point - point).normalized,
+                    AttackerPosition = point,
+                    StaggerDuration = data.StaggerDuration,
+                    DamageType = (DamageType)data.DamageType,
+                    Attacker = _ownReceiver
+                });
+
+                OnReceiverHit?.Invoke(data, receiver);
+            }
+        }
+
+        private static bool WasAlreadyHit(DamageReceiverComponent receiver, int index)
+        {
+            for (int i = 0; i < index; i++)
+            {
+                if (s_overlaps[i].Hitbox != null && s_overlaps[i].Hitbox.Root == receiver.HitboxRoot)
+                    return true;
+            }
+
+            return false;
         }
     }
 }

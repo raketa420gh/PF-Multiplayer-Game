@@ -15,6 +15,19 @@ namespace Game.Scripts
         Weapon2 = 8,
         Weapon3 = 9,
         Weapon4 = 10,
-        BotMode = 11
+        BotMode = 11,
+        Interact = 12,
+        Skill1 = 13,
+        Skill2 = 14,
+        Spell1 = 15,
+        Spell2 = 16,
+        Spell3 = 17,
+        Spell4 = 18,
+        Spell5 = 19,
+        Utility1 = 20,
+        Utility2 = 21,
+        Utility3 = 22,
+        Utility4 = 23,
+        Rest = 24
     }
 }

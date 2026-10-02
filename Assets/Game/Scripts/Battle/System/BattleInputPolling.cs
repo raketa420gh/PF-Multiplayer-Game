@@ -6,6 +6,7 @@ namespace Game.Scripts.Battle
     public sealed class BattleInputPolling : MonoBehaviour
     {
         public Vector2 LookRotation => _look;
+        public bool IsUiOpen => _isUiOpen;
 
         [SerializeField]
         private NetworkEvents _networkEvents;
@@ -18,6 +19,7 @@ namespace Game.Scripts.Battle
         private Vector2 _look;
         private NetworkButtons _buttons;
         private bool _resetButtons;
+        private bool _isUiOpen;
 
         private void OnEnable()
         {
@@ -55,6 +57,19 @@ namespace Game.Scripts.Battle
             Accumulate(PlayerInputButtons.Weapon3, Input.GetKey(KeyCode.Alpha3));
             Accumulate(PlayerInputButtons.Weapon4, Input.GetKey(KeyCode.Alpha4));
             Accumulate(PlayerInputButtons.BotMode, Input.GetKey(KeyCode.B));
+            Accumulate(PlayerInputButtons.Interact, Input.GetKey(KeyCode.F));
+            Accumulate(PlayerInputButtons.Skill1, Input.GetKey(KeyCode.Q));
+            Accumulate(PlayerInputButtons.Skill2, Input.GetKey(KeyCode.E));
+            Accumulate(PlayerInputButtons.Spell1, Input.GetKey(KeyCode.Z));
+            Accumulate(PlayerInputButtons.Spell2, Input.GetKey(KeyCode.X));
+            Accumulate(PlayerInputButtons.Spell3, Input.GetKey(KeyCode.V));
+            Accumulate(PlayerInputButtons.Spell4, Input.GetKey(KeyCode.R));
+            Accumulate(PlayerInputButtons.Spell5, Input.GetKey(KeyCode.T));
+            Accumulate(PlayerInputButtons.Utility1, Input.GetKey(KeyCode.Alpha5));
+            Accumulate(PlayerInputButtons.Utility2, Input.GetKey(KeyCode.Alpha6));
+            Accumulate(PlayerInputButtons.Utility3, Input.GetKey(KeyCode.Alpha7));
+            Accumulate(PlayerInputButtons.Utility4, Input.GetKey(KeyCode.Alpha8));
+            Accumulate(PlayerInputButtons.Rest, Input.GetKey(KeyCode.G));
         }
 
         public void SetLook(Vector2 look)
@@ -62,8 +77,29 @@ namespace Game.Scripts.Battle
             _look = look;
         }
 
+        /// While a menu is open the cursor is free and no gameplay input is produced.
+        public void SetUiOpen(bool isOpen)
+        {
+            _isUiOpen = isOpen;
+
+            if (isOpen)
+                Cursor.lockState = CursorLockMode.None;
+            else
+                Cursor.lockState = CursorLockMode.Locked;
+
+            Cursor.visible = isOpen;
+        }
+
         private void UpdateCursor()
         {
+            if (_isUiOpen)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+
+                return;
+            }
+
             if (Input.GetKeyDown(KeyCode.Escape))
                 Cursor.lockState = CursorLockMode.None;
             else if (Input.GetMouseButtonDown(0) && Cursor.lockState != CursorLockMode.Locked)

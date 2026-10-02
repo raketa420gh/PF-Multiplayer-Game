@@ -2,12 +2,13 @@ using UnityEngine;
 
 namespace Game.Scripts.Battle
 {
+    /// Dark and Darker style locomotion: running is the default, Shift toggles a slow quiet walk.
     [CreateAssetMenu(menuName = "Game/Battle/Movement Config")]
     public sealed class MovementConfig : ScriptableObject
     {
-        public float WalkSpeed => _walkSpeed;
-        public float SprintSpeed => _sprintSpeed;
-        public float CrouchSpeed => _crouchSpeed;
+        public float RunSpeed => _runSpeed;
+        public float WalkMultiplier => _walkMultiplier;
+        public float CrouchMultiplier => _crouchMultiplier;
         public float BackpedalMultiplier => _backpedalMultiplier;
         public float StrafeMultiplier => _strafeMultiplier;
         public float Acceleration => _acceleration;
@@ -19,16 +20,16 @@ namespace Game.Scripts.Battle
         public float CrouchHeight => _crouchHeight;
 
         [SerializeField]
-        private float _walkSpeed = 3.2f;
+        private float _runSpeed = 4.2f;
 
         [SerializeField]
-        private float _sprintSpeed = 5.4f;
+        private float _walkMultiplier = 0.4f;
 
         [SerializeField]
-        private float _crouchSpeed = 1.7f;
+        private float _crouchMultiplier = 0.65f;
 
         [SerializeField]
-        private float _backpedalMultiplier = 0.7f;
+        private float _backpedalMultiplier = 0.6f;
 
         [SerializeField]
         private float _strafeMultiplier = 0.85f;

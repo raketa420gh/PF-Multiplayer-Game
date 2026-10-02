@@ -16,7 +16,8 @@ namespace Game.Scripts.Battle
         BlockImpact,
         Draw,
         Reload,
-        Stagger
+        Stagger,
+        Busy
     }
 
     public enum AttackPhase : byte
@@ -27,18 +28,39 @@ namespace Game.Scripts.Battle
         Recovery
     }
 
+    /// Stats that scale combat: implemented by the adventurer (class + gear) and by monsters.
+    public interface ICombatStats
+    {
+        float GetDamageMultiplier(DamageType type);
+        float ActionSpeed { get; }
+        float MoveSpeedMultiplier { get; }
+    }
+
     public sealed class CombatComponent : NetworkBehaviour, DamageReceiverComponent.IOwner
     {
+        public const byte NoWeapon = 255;
+
         public event Action<Vector3, Vector3> OnWorldHit;
 
-        public WeaponConfig[] Loadout => _loadout;
-        public WeaponConfig Weapon => _loadout[WeaponSlot];
+        /// Every weapon the prefab knows about; slots map onto this catalog.
+        public WeaponConfig[] Catalog => _loadout;
+        public int SlotCount => _slotCount;
+        public int WeaponIndex => GetWeaponIndex(WeaponSlot);
+        public WeaponConfig Weapon => _loadout[WeaponIndex];
         public MeleeAttackConfig Attack => Weapon.Attacks[AttackIndex];
-        public float StateTime => Runner.SecondsSince(StateTick);
+        public float StateTime => Runner.SecondsSince(StateTick) * TimeScale;
         public float EquipTime => _equipTime;
         public bool IsComboWindowOpen => State == CombatState.Attack && Attack.IsComboWindow(StateTime);
         public bool IsComboQueued => _comboQueued;
         public float DrawPower => State == CombatState.Draw ? Weapon.Ranged.GetPower(StateTime) : 0f;
+        public float BusyProgress => State == CombatState.Busy && _stateDuration > 0f ? Mathf.Clamp01(StateTime / _stateDuration) : 0f;
+        public byte BusyKind => _busyKind;
+        public float TimeScale => State is CombatState.Attack or CombatState.BlockRaise or CombatState.Draw or CombatState.Reload ? ActionSpeed : 1f;
+        public float ActionSpeed => _stats?.ActionSpeed ?? 1f;
+        public DamageReceiverComponent Receiver => _receiver;
+        public ProjectileComponent Projectiles => _projectiles;
+        public FighterBodyComponent Body => _body;
+        public bool IsBlocking => State == CombatState.Block;
 
         public AttackPhase Phase
         {
@@ -67,6 +89,7 @@ namespace Game.Scripts.Battle
                     CombatState.Draw => Weapon.Ranged.DrawMoveMultiplier,
                     CombatState.Deflected => _deflectedMoveMultiplier,
                     CombatState.Stagger => _staggerMoveMultiplier,
+                    CombatState.Busy or CombatState.Equip => _busyMoveMultiplier,
                     _ => 1f
                 };
             }
@@ -106,6 +129,9 @@ namespace Game.Scripts.Battle
         private LayerMask _hitMask;
 
         [SerializeField]
+        private int _slotCount = 4;
+
+        [SerializeField]
         private float _equipTime = 0.5f;
 
         [SerializeField]
@@ -115,9 +141,13 @@ namespace Game.Scripts.Battle
         private float _staggerMoveMultiplier = 0.3f;
 
         [SerializeField]
+        private float _busyMoveMultiplier = 0.65f;
+
+        [SerializeField]
         private bool _drawTraces;
 
         private const int TracePoints = 5;
+        private const int MaxSlots = 4;
 
         [Networked]
         private byte _pendingSlot { get; set; }
@@ -129,6 +159,9 @@ namespace Game.Scripts.Battle
         private float _stateDuration { get; set; }
 
         [Networked]
+        private byte _busyKind { get; set; }
+
+        [Networked]
         private int _worldHitCount { get; set; }
 
         [Networked]
@@ -136,6 +169,12 @@ namespace Game.Scripts.Battle
 
         [Networked]
         private Vector3 _worldHitNormal { get; set; }
+
+        [Networked, Capacity(MaxSlots)]
+        private NetworkArray<byte> _slotWeapons => default;
+
+        [Networked]
+        private NetworkBool _slotsInitialized { get; set; }
 
         private struct Tally
         {
@@ -151,6 +190,7 @@ namespace Game.Scripts.Battle
         private static readonly List<HitboxRoot> s_rayRoots = new(8);
         private static readonly List<Tally> s_tallies = new(8);
         private readonly List<HitboxRoot> _hitRoots = new(8);
+        private ICombatStats _stats;
         private int _renderedWorldHits;
         private bool _hasWorldHit;
         private LagCompensatedHit _worldHit;
@@ -159,6 +199,14 @@ namespace Game.Scripts.Battle
         {
             _receiver.SetOwner(this);
             _renderedWorldHits = _worldHitCount;
+
+            if (HasStateAuthority && !_slotsInitialized)
+            {
+                for (int i = 0; i < MaxSlots; i++)
+                    _slotWeapons.Set(i, (byte)(i < _loadout.Length ? i : 0));
+
+                _slotsInitialized = true;
+            }
         }
 
         public override void Render()
@@ -169,15 +217,69 @@ namespace Game.Scripts.Battle
             _renderedWorldHits = _worldHitCount;
         }
 
+        public void SetStats(ICombatStats stats)
+        {
+            _stats = stats;
+        }
+
+        public int GetWeaponIndex(int slot)
+        {
+            int index = _slotWeapons[Mathf.Clamp(slot, 0, MaxSlots - 1)];
+
+            return index < _loadout.Length ? index : 0;
+        }
+
+        public int FindCatalogIndex(WeaponConfig config)
+        {
+            return Array.IndexOf(_loadout, config);
+        }
+
+        /// Assigns which catalog weapon a weapon slot holds. State authority only.
+        public void SetSlotWeapon(int slot, int catalogIndex)
+        {
+            _slotWeapons.Set(slot, (byte)Mathf.Clamp(catalogIndex, 0, _loadout.Length - 1));
+            _slotsInitialized = true;
+
+            if (slot == WeaponSlot && State != CombatState.Busy)
+                SetState(CombatState.Equip);
+
+            UpdateBlockHitboxes();
+        }
+
         public void SetInitialSlot(int slot)
         {
-            WeaponSlot = (byte)Mathf.Clamp(slot, 0, _loadout.Length - 1);
+            WeaponSlot = (byte)Mathf.Clamp(slot, 0, _slotCount - 1);
             _pendingSlot = WeaponSlot;
         }
 
         public void ResetState()
         {
             SetState(CombatState.Idle);
+            UpdateBlockHitboxes();
+        }
+
+        /// Interrupts combat for a cast, a consumable or an interaction.
+        public bool StartBusy(float duration, byte kind)
+        {
+            if (State is CombatState.Attack or CombatState.Stagger or CombatState.Busy)
+                return false;
+
+            SetState(CombatState.Busy, duration);
+            _busyKind = kind;
+            UpdateBlockHitboxes();
+
+            return true;
+        }
+
+        public void CancelBusy()
+        {
+            if (State == CombatState.Busy)
+                SetState(CombatState.Idle);
+        }
+
+        public void Stagger(float duration)
+        {
+            SetState(CombatState.Stagger, duration);
             UpdateBlockHitboxes();
         }
 
@@ -211,6 +313,7 @@ namespace Game.Scripts.Battle
                 case CombatState.Deflected:
                 case CombatState.Reload:
                 case CombatState.Stagger:
+                case CombatState.Busy:
                     if (time >= _stateDuration)
                         SetState(CombatState.Idle);
                     break;
@@ -306,10 +409,18 @@ namespace Game.Scripts.Battle
 
             float power = ranged.GetPower(time);
             Vector3 direction = _body.AimDirection;
-            _projectiles.Fire(_body.EyePosition, direction * ranged.GetSpeed(power), ranged.Gravity,
-                ranged.GetDamage(power), ranged.StaggerDuration);
+            int damage = ScaleDamage(ranged.GetDamage(power), Weapon.DamageType);
+            _projectiles.Fire(_body.EyePosition, direction * ranged.GetSpeed(power), ranged.Gravity, damage,
+                ranged.StaggerDuration, Weapon.DamageType, ProjectileKind.Arrow);
 
             SetState(CombatState.Reload, ranged.ReloadTime);
+        }
+
+        public int ScaleDamage(int baseDamage, DamageType type)
+        {
+            float multiplier = _stats?.GetDamageMultiplier(type) ?? 1f;
+
+            return Mathf.Max(1, Mathf.RoundToInt(baseDamage * multiplier));
         }
 
         private void SetState(CombatState state, float duration = 0f)
@@ -323,7 +434,7 @@ namespace Game.Scripts.Battle
 
         private int GetRequestedSlot(NetworkButtons buttons, NetworkButtons previous)
         {
-            for (int i = 0; i < _loadout.Length; i++)
+            for (int i = 0; i < _slotCount; i++)
             {
                 if (buttons.WasPressed(previous, PlayerInputButtons.Weapon1 + i))
                     return i;
@@ -334,16 +445,18 @@ namespace Game.Scripts.Battle
 
         private void UpdateBlockHitboxes()
         {
+            int weaponIndex = WeaponIndex;
+
             for (int i = 0; i < _blockHitboxes.Length; i++)
             {
                 if (_blockHitboxes[i] != null)
-                    _hitboxRoot.SetHitboxActive(_blockHitboxes[i], State == CombatState.Block && i == WeaponSlot);
+                    _hitboxRoot.SetHitboxActive(_blockHitboxes[i], State == CombatState.Block && i == weaponIndex);
             }
         }
 
         private void Trace(WeaponConfig weapon, MeleeAttackConfig attack, float time)
         {
-            float from = Mathf.Max(time - Runner.DeltaTime, attack.ActiveStart);
+            float from = Mathf.Max(time - Runner.DeltaTime * ActionSpeed, attack.ActiveStart);
             float to = Mathf.Min(time, attack.ActiveEnd);
             bool isMirrored = weapon.IsMirrored;
 
@@ -457,6 +570,7 @@ namespace Game.Scripts.Battle
         private void ResolveTallies(WeaponConfig weapon, MeleeAttackConfig attack)
         {
             bool isDeflected = false;
+            int damage = ScaleDamage(attack.Damage, weapon.DamageType);
 
             foreach (Tally tally in s_tallies)
             {
@@ -467,14 +581,16 @@ namespace Game.Scripts.Battle
 
                 HitResult result = receiver.ApplyHit(new HitRequest
                 {
-                    BaseDamage = attack.Damage,
+                    BaseDamage = damage,
                     BodyRays = tally.BodyRays,
                     BlockRays = tally.BlockRays,
                     Zone = tally.Zone,
                     Point = tally.Point,
                     Normal = tally.Normal,
                     AttackerPosition = transform.position,
-                    StaggerDuration = attack.StaggerDuration
+                    StaggerDuration = attack.StaggerDuration,
+                    DamageType = weapon.DamageType,
+                    Attacker = _receiver
                 });
 
                 isDeflected |= result == HitResult.Blocked;

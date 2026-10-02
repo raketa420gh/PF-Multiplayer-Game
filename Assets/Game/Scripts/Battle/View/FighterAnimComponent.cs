@@ -19,6 +19,10 @@ namespace Game.Scripts.Battle
         public const string MoveYParam = "MoveY";
         public const string CrouchParam = "Crouch";
         public const string MirrorParam = "Mirror";
+        public const string ActionSpeedParam = "ActionSpeed";
+        public const string CastState = "Cast";
+        public const string UseState = "Use";
+        public const string InteractState = "Interact";
 
         [SerializeField]
         private FighterComponent _fighter;
@@ -60,6 +64,10 @@ namespace Game.Scripts.Battle
         private static readonly int s_locomotion = Animator.StringToHash(LocomotionState);
         private static readonly int s_air = Animator.StringToHash(AirState);
         private static readonly int s_death = Animator.StringToHash(DeathState);
+        private static readonly int s_actionSpeed = Animator.StringToHash(ActionSpeedParam);
+        private static readonly int s_cast = Animator.StringToHash(CastState);
+        private static readonly int s_use = Animator.StringToHash(UseState);
+        private static readonly int s_interact = Animator.StringToHash(InteractState);
 
         private struct WeaponStates
         {
@@ -84,7 +92,7 @@ namespace Game.Scripts.Battle
 
         public override void Spawned()
         {
-            WeaponConfig[] loadout = _fighter.Combat.Loadout;
+            WeaponConfig[] loadout = _fighter.Combat.Catalog;
             _weaponStates = new WeaponStates[loadout.Length];
 
             for (int i = 0; i < loadout.Length; i++)
@@ -152,7 +160,7 @@ namespace Game.Scripts.Battle
         {
             FighterMoveComponent move = _fighter.Move;
             Vector3 velocity = Quaternion.Inverse(transform.rotation) * move.Velocity;
-            float walkSpeed = move.Config.WalkSpeed;
+            float walkSpeed = move.Config.RunSpeed * move.Config.WalkMultiplier;
             float crouch = new NetworkBehaviourBufferInterpolator(move).Float(nameof(FighterMoveComponent.CrouchAmount));
 
             _animator.SetFloat(s_moveX, velocity.x / walkSpeed, _moveDamping, deltaTime);
@@ -177,7 +185,7 @@ namespace Game.Scripts.Battle
 
             CombatComponent combat = _fighter.Combat;
             WeaponConfig weapon = combat.Weapon;
-            WeaponStates states = _weaponStates[combat.WeaponSlot];
+            WeaponStates states = _weaponStates[combat.WeaponIndex];
             float time = combat.StateTime;
             int token = 0;
             int state;
@@ -215,6 +223,10 @@ namespace Game.Scripts.Battle
                     state = states.Idle;
                     token = combat.StateTick;
                     break;
+                case CombatState.Busy:
+                    state = combat.BusyKind == 1 ? s_use : combat.BusyKind == 2 ? s_interact : s_cast;
+                    token = combat.StateTick;
+                    break;
                 default:
                     state = states.Idle;
                     time = 0f;
@@ -222,6 +234,7 @@ namespace Game.Scripts.Battle
             }
 
             _animator.SetBool(s_mirror, weapon.IsMirrored);
+            _animator.SetFloat(s_actionSpeed, combat.TimeScale);
 
             if (state == _upperState && token == _upperToken)
                 return;

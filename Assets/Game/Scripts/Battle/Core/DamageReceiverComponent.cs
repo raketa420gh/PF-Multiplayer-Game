@@ -21,6 +21,8 @@ namespace Game.Scripts.Battle
         public Vector3 Normal;
         public Vector3 AttackerPosition;
         public float StaggerDuration;
+        public DamageType DamageType;
+        public DamageReceiverComponent Attacker;
     }
 
     public struct HitEventData : INetworkStruct
@@ -41,11 +43,19 @@ namespace Game.Scripts.Battle
             void OnHitReceived(HitResult result, float staggerDuration);
         }
 
+        /// Optional second interface: armor, resistances and shields of the receiver.
+        public interface IDefense
+        {
+            int ModifyIncomingDamage(int damage, DamageType type, HitZone zone);
+        }
+
         public event Action<HitEventData> OnHitEvent;
 
         public HitboxRoot HitboxRoot => _hitboxRoot;
         public bool IsAlive => _health.IsAlive;
         public int Team => _team;
+        public DamageReceiverComponent LastAttacker => _lastAttacker;
+        public HealthComponent Health => _health;
 
         [SerializeField]
         private HealthComponent _health;
@@ -67,6 +77,8 @@ namespace Game.Scripts.Battle
         private const int NoTeam = 0;
 
         private IOwner _owner;
+        private IDefense _defense;
+        private DamageReceiverComponent _lastAttacker;
         private int _renderedEvents;
         private int _team = NoTeam;
 
@@ -88,6 +100,11 @@ namespace Game.Scripts.Battle
             _owner = owner;
         }
 
+        public void SetDefense(IDefense defense)
+        {
+            _defense = defense;
+        }
+
         public void SetTeam(int team)
         {
             _team = team;
@@ -95,7 +112,7 @@ namespace Game.Scripts.Battle
 
         public bool CanBeHitBy(DamageReceiverComponent attacker)
         {
-            return IsAlive && (_team == NoTeam || _team != attacker.Team);
+            return IsAlive && (attacker == null || _team == NoTeam || _team != attacker.Team);
         }
 
         public HitResult ApplyHit(in HitRequest request)
@@ -115,6 +132,12 @@ namespace Game.Scripts.Battle
             float zoneMultiplier = result == HitResult.Blocked ? 1f : _zoneConfig.GetMultiplier(request.Zone);
             float mitigation = block != null ? block.Mitigation * blockedShare : 0f;
             int damage = Mathf.RoundToInt(request.BaseDamage * zoneMultiplier * (1f - mitigation));
+
+            if (_defense != null && damage > 0)
+                damage = Mathf.Max(0, _defense.ModifyIncomingDamage(damage, request.DamageType, request.Zone));
+
+            if (request.Attacker != null)
+                _lastAttacker = request.Attacker;
 
             _health.TakeDamage(damage);
 

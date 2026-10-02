@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
@@ -13,6 +14,10 @@ namespace Game.Scripts.Battle
 
         public static IReadOnlyList<FighterComponent> All => s_all;
 
+        /// Raised on every peer when the fighter dies (state change) and on the state authority before input is processed.
+        public event Action OnDied;
+        public event Action<NetworkButtons, NetworkButtons> OnSimulateInput;
+
         public HealthComponent Health => _health;
         public FighterMoveComponent Move => _move;
         public FighterBodyComponent Body => _body;
@@ -20,6 +25,9 @@ namespace Game.Scripts.Battle
         public DamageReceiverComponent Receiver => _receiver;
         public bool IsBot => _inputSource != null;
         public float RespawnTimeLeft => _respawnTimer.RemainingTime(Runner) ?? 0f;
+        public NetworkButtons PreviousButtons => _previousButtons;
+        public Vector2 Look => _look;
+        public bool IsInputBlocked => _isInputBlocked;
 
         [SerializeField]
         private HealthComponent _health;
@@ -51,8 +59,13 @@ namespace Game.Scripts.Battle
         [Networked]
         private Vector3 _spawnPosition { get; set; }
 
+        [Networked]
+        private NetworkBool _isInputBlocked { get; set; }
+
         private static readonly List<FighterComponent> s_all = new();
         private IInputSource _inputSource;
+        private ICombatStats _stats;
+        private bool _wasAlive = true;
 
         public override void Spawned()
         {
@@ -82,23 +95,72 @@ namespace Game.Scripts.Battle
                 return;
 
             NetworkButtons buttons = input.Buttons;
+
+            if (_isInputBlocked)
+            {
+                input.MoveDirection = Vector2.zero;
+                buttons = default;
+                input.Buttons = buttons;
+            }
+
             _look = input.LookRotation;
 
             if (_health.IsAlive)
+            {
                 SimulateAlive(input, buttons);
+            }
             else
+            {
                 SimulateDead();
+            }
 
             if (HasStateAuthority && !IsBot && buttons.WasPressed(_previousButtons, PlayerInputButtons.BotMode))
                 BotBrainComponent.CycleModes();
 
+            OnSimulateInput?.Invoke(buttons, _previousButtons);
             _previousButtons = buttons;
+        }
+
+        public override void Render()
+        {
+            bool isAlive = _health.IsAlive;
+
+            if (_wasAlive && !isAlive)
+                OnDied?.Invoke();
+
+            _wasAlive = isAlive;
         }
 
         public void SetInputSource(IInputSource inputSource, int team)
         {
             _inputSource = inputSource;
             _receiver.SetTeam(team);
+        }
+
+        public void SetStats(ICombatStats stats)
+        {
+            _stats = stats;
+            _combat.SetStats(stats);
+        }
+
+        public void SetInputBlocked(bool isBlocked)
+        {
+            _isInputBlocked = isBlocked;
+        }
+
+        public void SetLook(Vector2 look)
+        {
+            _look = look;
+        }
+
+        public void Revive(Vector3 position, float yaw)
+        {
+            _respawnTimer = TickTimer.None;
+            _receiver.HitboxRoot.HitboxRootActive = true;
+            _health.Restore(_health.MaxHealth);
+            _combat.ResetState();
+            _move.Teleport(position, yaw);
+            _look = new Vector2(0f, yaw);
         }
 
         private bool TryGetInput(out PlayerInputData input)
@@ -121,37 +183,34 @@ namespace Game.Scripts.Battle
 
         private void SimulateAlive(PlayerInputData input, NetworkButtons buttons)
         {
-            bool isSprint = buttons.IsSet(PlayerInputButtons.Sprint) && _combat.State == CombatState.Idle;
+            bool isWalk = buttons.IsSet(PlayerInputButtons.Sprint);
             bool isJump = buttons.WasPressed(_previousButtons, PlayerInputButtons.Jump);
+            float speed = _combat.MoveMultiplier * (_stats?.MoveSpeedMultiplier ?? 1f);
 
-            _move.Simulate(input.MoveDirection, input.LookRotation, isSprint,
-                buttons.IsSet(PlayerInputButtons.Crouch), isJump, _combat.MoveMultiplier);
+            _move.Simulate(input.MoveDirection, input.LookRotation, isWalk,
+                buttons.IsSet(PlayerInputButtons.Crouch), isJump, speed);
             _body.UpdateHitboxes();
             _combat.Simulate(buttons, _previousButtons);
-
         }
 
         private void SimulateDead()
         {
-            if (!_respawnTimer.IsRunning)
+            if (!_respawnTimer.IsRunning && _respawnDelay > 0f)
             {
                 _combat.ResetState();
                 _receiver.HitboxRoot.HitboxRootActive = false;
                 _respawnTimer = TickTimer.CreateFromSeconds(Runner, _respawnDelay);
             }
+            else if (_respawnDelay <= 0f && _receiver.HitboxRoot.HitboxRootActive)
+            {
+                _combat.ResetState();
+                _receiver.HitboxRoot.HitboxRootActive = false;
+            }
 
             _move.Simulate(Vector2.zero, _look, false, false, false, 0f);
 
-            if (HasStateAuthority && _respawnTimer.Expired(Runner))
-                Respawn();
-        }
-
-        private void Respawn()
-        {
-            _respawnTimer = TickTimer.None;
-            _receiver.HitboxRoot.HitboxRootActive = true;
-            _health.Restore(_health.MaxHealth);
-            _move.Teleport(_spawnPosition, _look.y);
+            if (HasStateAuthority && _respawnDelay > 0f && _respawnTimer.Expired(Runner))
+                Revive(_spawnPosition, _look.y);
         }
     }
 }

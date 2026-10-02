@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Fusion;
 using Game.Scripts.Battle;
+using Game.Scripts.Editor.Dungeon;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -16,21 +17,55 @@ namespace Game.Scripts.Editor.Battle
         public const string DummyPath = BattleEditorUtility.PrefabsFolder + "/TrainingDummy.prefab";
         public const string ShieldDummyPath = BattleEditorUtility.PrefabsFolder + "/ShieldDummy.prefab";
 
-        private sealed class BlockBox
+        internal sealed class BlockBox
         {
             public Vector3 Center;
             public Quaternion Rotation;
             public Vector3 Extents;
         }
 
-        private sealed class Loadout
+        internal sealed class Loadout
         {
+            public string Name;
             public WeaponConfig Config;
             public BlockBox Block;
         }
 
+        /// Everything the fighter prefab is made of, so other builders can add components before saving.
+        internal sealed class FighterParts
+        {
+            public GameObject Root;
+            public Animator Animator;
+            public SkinnedMeshRenderer Renderer;
+            public HealthComponent Health;
+            public FighterMoveComponent Move;
+            public FighterBodyComponent Body;
+            public CombatComponent Combat;
+            public DamageReceiverComponent Receiver;
+            public ProjectileComponent Projectiles;
+            public FighterComponent Fighter;
+            public HitboxRoot HitboxRoot;
+            public Transform[] Sockets;
+        }
+
         [MenuItem("Tools/Game/Battle/Build Content")]
         public static void Build()
+        {
+            Loadout[] loadouts = BuildWeapons(out GameObject arrow, out GameObject orb);
+            HitZoneConfig zones = BattleEditorUtility.LoadOrCreate<HitZoneConfig>($"{BattleEditorUtility.ConfigsFolder}/HitZones.asset");
+
+            FighterParts parts = CreateFighter(loadouts, arrow, orb, 4, "Fighter");
+            GameObject fighter = SavePrefab(parts.Root, FighterPath);
+            BuildBot(fighter);
+            GameObject dummy = BuildDummy(zones, null, null);
+            BuildDummy(zones, loadouts[0], AssetDatabase.LoadAssetAtPath<GameObject>($"{BattleEditorUtility.PrefabsFolder}/Shield.prefab"));
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[{nameof(BattleContentBuilder)}] Content built: {fighter.name}, {dummy.name}");
+        }
+
+        /// Builds weapon visuals and configs for the full catalog, in DungeonWeaponLibrary.CatalogOrder.
+        internal static Loadout[] BuildWeapons(out GameObject arrow, out GameObject magicOrb)
         {
             BattleEditorUtility.EnsureFolder(BattleEditorUtility.ConfigsFolder);
             BattleEditorUtility.EnsureFolder(BattleEditorUtility.PrefabsFolder);
@@ -38,41 +73,66 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.EnsureLayer(BattleEditorUtility.HitboxLayer);
 
             GameObject sword = BattleWeaponPrefabBuilder.BuildSword("Sword", 0.12f, 0.9f, 0.06f, 0.2f, 0.08f);
+            GameObject falchion = BattleWeaponPrefabBuilder.BuildSword("Falchion", 0.12f, 0.95f, 0.085f, 0.16f, 0.08f);
+            GameObject longsword = BattleWeaponPrefabBuilder.BuildSword("Longsword", 0.18f, 1.05f, 0.06f, 0.26f, 0.18f);
             GameObject greatsword = BattleWeaponPrefabBuilder.BuildSword("Greatsword", 0.18f, 1.35f, 0.07f, 0.32f, 0.22f);
+            GameObject dagger = BattleWeaponPrefabBuilder.BuildSword("Dagger", 0.06f, 0.42f, 0.04f, 0.1f, 0.06f);
+            GameObject axe = DungeonWeaponPrefabBuilder.BuildAxe("BattleAxe", 1.15f, 0.32f);
+            GameObject mace = DungeonWeaponPrefabBuilder.BuildMace();
+            GameObject spear = DungeonWeaponPrefabBuilder.BuildSpear();
+            GameObject staff = DungeonWeaponPrefabBuilder.BuildStaff();
+            GameObject torch = DungeonWeaponPrefabBuilder.BuildTorch();
+            GameObject crossbow = DungeonWeaponPrefabBuilder.BuildCrossbow();
             GameObject shield = BattleWeaponPrefabBuilder.BuildShield();
             GameObject bow = BattleWeaponPrefabBuilder.BuildBow();
-            GameObject arrow = BattleWeaponPrefabBuilder.BuildArrow();
+            arrow = BattleWeaponPrefabBuilder.BuildArrow();
+            magicOrb = DungeonWeaponPrefabBuilder.BuildMagicOrb();
 
-            WeaponDefinition swordShield = BattleAnimationLibrary.CreateSwordShield();
-            Loadout[] loadouts;
+            WeaponDefinition[] definitions = DungeonWeaponLibrary.CreateAll();
+            Dictionary<string, (GameObject prefab, WeaponSocket socket)[]> attachments = new()
+            {
+                [DungeonWeaponLibrary.SwordShield] = new[] { (sword, WeaponSocket.RightHand), (shield, WeaponSocket.LeftShield) },
+                [DungeonWeaponLibrary.Greatsword] = new[] { (greatsword, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Bow] = new[] { (bow, WeaponSocket.LeftHand) },
+                [DungeonWeaponLibrary.SwordShieldLeft] = new[] { (sword, WeaponSocket.LeftHand), (shield, WeaponSocket.RightShield) },
+                [DungeonWeaponLibrary.Fists] = Array.Empty<(GameObject, WeaponSocket)>(),
+                [DungeonWeaponLibrary.ArmingSword] = new[] { (sword, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Falchion] = new[] { (falchion, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Longsword] = new[] { (longsword, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.BattleAxe] = new[] { (axe, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Spear] = new[] { (spear, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Mace] = new[] { (mace, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Dagger] = new[] { (dagger, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Crossbow] = new[] { (crossbow, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Staff] = new[] { (staff, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Torch] = new[] { (torch, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.MaceShield] = new[] { (mace, WeaponSocket.RightHand), (shield, WeaponSocket.LeftShield) }
+            };
+
+            string[] order = DungeonWeaponLibrary.CatalogOrder;
+            Loadout[] loadouts = new Loadout[order.Length];
 
             using (TraceSampler sampler = new TraceSampler())
             {
-                loadouts = new[]
+                for (int i = 0; i < order.Length; i++)
                 {
-                    CreateWeapon(sampler, "SwordShield", swordShield, HandSide.Right,
-                        (sword, WeaponSocket.RightHand), (shield, WeaponSocket.LeftShield)),
-                    CreateWeapon(sampler, "Greatsword", BattleAnimationLibrary.CreateGreatsword(), HandSide.Right,
-                        (greatsword, WeaponSocket.RightHand)),
-                    CreateWeapon(sampler, "Bow", BattleAnimationLibrary.CreateBow(), HandSide.Right,
-                        (bow, WeaponSocket.LeftHand)),
-                    CreateWeapon(sampler, "SwordShieldLeft", swordShield, HandSide.Left,
-                        (sword, WeaponSocket.LeftHand), (shield, WeaponSocket.RightShield))
-                };
+                    string name = order[i];
+                    bool isLeft = name == DungeonWeaponLibrary.SwordShieldLeft;
+                    WeaponDefinition definition = DungeonWeaponLibrary.Find(definitions, isLeft ? DungeonWeaponLibrary.SwordShield : name);
+                    loadouts[i] = CreateWeapon(sampler, name, definition, isLeft ? HandSide.Left : HandSide.Right, attachments[name]);
+                }
             }
 
-            BodyConfig body = CreateBodyConfig();
             MovementConfig movement = BattleEditorUtility.LoadOrCreate<MovementConfig>($"{BattleEditorUtility.ConfigsFolder}/Movement.asset");
-            BattleEditorUtility.Set(movement, "_crouchHeight", 1.4f);
-            HitZoneConfig zones = BattleEditorUtility.LoadOrCreate<HitZoneConfig>($"{BattleEditorUtility.ConfigsFolder}/HitZones.asset");
+            SerializedObject so = new SerializedObject(movement);
+            BattleEditorUtility.Set(so, "_runSpeed", 4.2f);
+            BattleEditorUtility.Set(so, "_walkMultiplier", 0.4f);
+            BattleEditorUtility.Set(so, "_crouchMultiplier", 0.65f);
+            BattleEditorUtility.Set(so, "_backpedalMultiplier", 0.6f);
+            BattleEditorUtility.Set(so, "_crouchHeight", 1.4f);
+            so.ApplyModifiedPropertiesWithoutUndo();
 
-            GameObject fighter = BuildFighter(body, movement, zones, loadouts, arrow);
-            BuildBot(fighter);
-            GameObject dummy = BuildDummy(zones, null, null);
-            BuildDummy(zones, loadouts[0], shield);
-
-            AssetDatabase.SaveAssets();
-            Debug.Log($"[{nameof(BattleContentBuilder)}] Content built: {fighter.name}, {dummy.name}");
+            return loadouts;
         }
 
         private static Loadout CreateWeapon(TraceSampler sampler, string assetName, WeaponDefinition definition, HandSide mainHand,
@@ -88,6 +148,7 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_animationPrefix", definition.Prefix);
             BattleEditorUtility.Set(so, "_deflectDuration", definition.DeflectDuration);
             BattleEditorUtility.Set(so, "_reach", definition.Reach);
+            BattleEditorUtility.Set(so, "_damageType", DamageType.Physical);
 
             so.FindProperty("_attachments").arraySize = attachments.Length;
 
@@ -130,14 +191,21 @@ namespace Game.Scripts.Editor.Battle
                 BattleEditorUtility.Set(so, "_block._moveMultiplier", definition.BlockMove);
             }
 
-            BattleEditorUtility.Set(so, "_ranged._fullDrawTime", BattleAnimationLibrary.FullDrawTime);
-            BattleEditorUtility.Set(so, "_ranged._reloadTime", BattleAnimationLibrary.ReloadTime);
-            BattleEditorUtility.Set(so, "_ranged._minSpeed", BattleAnimationLibrary.ArrowMinSpeed);
-            BattleEditorUtility.Set(so, "_ranged._maxSpeed", BattleAnimationLibrary.ArrowMaxSpeed);
+            BattleEditorUtility.Set(so, "_ranged._fullDrawTime", definition.DrawTime > 0f ? definition.DrawTime : BattleAnimationLibrary.FullDrawTime);
+            BattleEditorUtility.Set(so, "_ranged._reloadTime", definition.ReloadTime > 0f ? definition.ReloadTime : BattleAnimationLibrary.ReloadTime);
+            BattleEditorUtility.Set(so, "_ranged._minSpeed", definition.ArrowMinSpeed > 0f ? definition.ArrowMinSpeed : BattleAnimationLibrary.ArrowMinSpeed);
+            BattleEditorUtility.Set(so, "_ranged._maxSpeed", definition.ArrowMaxSpeed > 0f ? definition.ArrowMaxSpeed : BattleAnimationLibrary.ArrowMaxSpeed);
+            BattleEditorUtility.Set(so, "_ranged._minDamage", definition.ArrowMinDamage > 0 ? definition.ArrowMinDamage : 14);
+            BattleEditorUtility.Set(so, "_ranged._maxDamage", definition.ArrowMaxDamage > 0 ? definition.ArrowMaxDamage : 31);
             BattleEditorUtility.Set(so, "_ranged._gravity", BattleAnimationLibrary.ArrowGravity);
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            return new Loadout { Config = config, Block = definition.CanBlock ? sampler.SampleBlock(definition, isMirrored) : null };
+            return new Loadout
+            {
+                Name = assetName,
+                Config = config,
+                Block = definition.CanBlock && definition.Prefix != DungeonWeaponLibrary.Fists ? sampler.SampleBlock(definition, isMirrored) : null
+            };
         }
 
         private static BodyConfig CreateBodyConfig()
@@ -164,11 +232,14 @@ namespace Game.Scripts.Editor.Battle
             return config;
         }
 
-        private static GameObject BuildFighter(BodyConfig bodyConfig, MovementConfig movement, HitZoneConfig zones,
-            Loadout[] loadouts, GameObject arrow)
+        /// Assembles an unsaved fighter with the whole weapon catalog, hitboxes, animation, camera and views.
+        internal static FighterParts CreateFighter(Loadout[] loadouts, GameObject arrow, GameObject magicOrb, int slotCount, string name)
         {
+            BodyConfig bodyConfig = CreateBodyConfig();
+            MovementConfig movement = BattleEditorUtility.LoadOrCreate<MovementConfig>($"{BattleEditorUtility.ConfigsFolder}/Movement.asset");
+            HitZoneConfig zones = BattleEditorUtility.LoadOrCreate<HitZoneConfig>($"{BattleEditorUtility.ConfigsFolder}/HitZones.asset");
             int hitboxLayer = LayerMask.NameToLayer(BattleEditorUtility.HitboxLayer);
-            GameObject root = new GameObject("Fighter") { layer = LayerMask.NameToLayer(BattleEditorUtility.CharacterLayer) };
+            GameObject root = new GameObject(name) { layer = LayerMask.NameToLayer(BattleEditorUtility.CharacterLayer) };
 
             CharacterController collider = root.AddComponent<CharacterController>();
             collider.height = 1.85f;
@@ -265,6 +336,7 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_loadout", configs);
             BattleEditorUtility.Set(so, "_blockHitboxes", blockHitboxes);
             BattleEditorUtility.Set(so, "_hitMask", (LayerMask)((1 << hitboxLayer) | 1));
+            BattleEditorUtility.Set(so, "_slotCount", slotCount);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             so = new SerializedObject(fighter);
@@ -297,6 +369,7 @@ namespace Game.Scripts.Editor.Battle
             so = new SerializedObject(root.AddComponent<ProjectileViewComponent>());
             BattleEditorUtility.Set(so, "_projectiles", projectiles);
             BattleEditorUtility.Set(so, "_arrowPrefab", arrow);
+            BattleEditorUtility.Set(so, "_magicPrefab", magicOrb);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             so = new SerializedObject(root.AddComponent<HitFeedbackComponent>());
@@ -304,7 +377,21 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_combat", combat);
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            return SavePrefab(root, FighterPath);
+            return new FighterParts
+            {
+                Root = root,
+                Animator = animator,
+                Renderer = renderer,
+                Health = health,
+                Move = move,
+                Body = body,
+                Combat = combat,
+                Receiver = receiver,
+                Projectiles = projectiles,
+                Fighter = fighter,
+                HitboxRoot = hitboxRoot,
+                Sockets = sockets
+            };
         }
 
         private static void BuildBot(GameObject fighterPrefab)
@@ -373,7 +460,7 @@ namespace Game.Scripts.Editor.Battle
             return SavePrefab(root, hasShield ? ShieldDummyPath : DummyPath);
         }
 
-        private static void SetupReceiver(DamageReceiverComponent receiver, HealthComponent health, HitboxRoot hitboxRoot, HitZoneConfig zones)
+        internal static void SetupReceiver(DamageReceiverComponent receiver, HealthComponent health, HitboxRoot hitboxRoot, HitZoneConfig zones)
         {
             SerializedObject so = new SerializedObject(receiver);
             BattleEditorUtility.Set(so, "_health", health);
@@ -382,7 +469,7 @@ namespace Game.Scripts.Editor.Battle
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static ZoneHitbox CreateBoxHitbox(Transform parent, HitboxRoot root, string name, HitZone zone, Vector3 position,
+        internal static ZoneHitbox CreateBoxHitbox(Transform parent, HitboxRoot root, string name, HitZone zone, Vector3 position,
             Vector3 extents, int layer)
         {
             ZoneHitbox hitbox = CreateHitbox(parent, root, name, zone, position, layer);
@@ -392,7 +479,7 @@ namespace Game.Scripts.Editor.Battle
             return hitbox;
         }
 
-        private static ZoneHitbox CreateSphereHitbox(Transform parent, HitboxRoot root, string name, HitZone zone, Vector3 position,
+        internal static ZoneHitbox CreateSphereHitbox(Transform parent, HitboxRoot root, string name, HitZone zone, Vector3 position,
             float radius, int layer)
         {
             ZoneHitbox hitbox = CreateHitbox(parent, root, name, zone, position, layer);
@@ -413,7 +500,7 @@ namespace Game.Scripts.Editor.Battle
             return hitbox;
         }
 
-        private static GameObject SavePrefab(GameObject root, string path)
+        internal static GameObject SavePrefab(GameObject root, string path)
         {
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             Object.DestroyImmediate(root);
@@ -480,6 +567,7 @@ namespace Game.Scripts.Editor.Battle
 
             private void Play(string state, float normalizedTime)
             {
+                _animator.SetFloat(FighterAnimComponent.ActionSpeedParam, 1f);
                 _animator.Play(state, 1, Mathf.Clamp(normalizedTime, 0f, 0.999f));
                 _animator.Update(0f);
             }
