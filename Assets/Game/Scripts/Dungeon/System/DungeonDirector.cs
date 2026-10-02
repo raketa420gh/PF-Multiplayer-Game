@@ -282,7 +282,7 @@ namespace Game.Scripts.Dungeon
 
             _spawned.Clear();
             _isPopulated = false;
-            _match.Reset();
+            _match.ResetMatch();
         }
 
         private static T Pick<T>(T[] options, System.Random random, Func<T, float> weight) where T : class

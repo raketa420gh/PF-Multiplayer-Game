@@ -24,7 +24,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static Material ZombieSkin => Textured("ZombieSkin", "ZombieSkin", 0.9f, 0.3f);
         public static Material ClothRed => Textured("ClothRed", "ClothRed", 1f, 0.1f);
         public static Material Gold => Textured("Gold", "Gold", 0.8f, 0.75f, 0.8f);
-        public static Material Fire => BattleEditorUtility.GetUnlitMaterial("Fire", new Color(1f, 0.6f, 0.15f, 1f));
+        public static Material Fire => FireMaterial();
         public static Material PortalBlue => Emissive("PortalBlue", new Color(0.2f, 0.5f, 1f), 4f);
         public static Material PortalRed => Emissive("PortalRed", new Color(1f, 0.25f, 0.15f), 4f);
         public static Material ShrineGlow => Emissive("ShrineGlow", new Color(0.9f, 0.8f, 0.4f), 2.5f);
@@ -49,6 +49,35 @@ namespace Game.Scripts.Editor.Dungeon
             material.SetFloat("_Smoothness", smoothness);
             material.SetFloat("_Metallic", metallic);
             material.SetTextureScale("_BaseMap", Vector2.one * tiling);
+            EditorUtility.SetDirty(material);
+
+            return material;
+        }
+
+        private static Material FireMaterial()
+        {
+            BattleEditorUtility.EnsureFolder(MaterialsFolder);
+            string path = $"{MaterialsFolder}/Fire.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+
+            if (material == null)
+            {
+                material = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{DungeonTextureBuilder.Folder}/Flame.png"));
+            material.SetColor("_BaseColor", new Color(1f, 0.7f, 0.3f, 1f));
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 2f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_ZWrite", 0f);
+            material.SetFloat("_Cull", 0f);
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
             EditorUtility.SetDirty(material);
 
             return material;
@@ -153,7 +182,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         public static GameObject Wall(float length, string name)
         {
-            Mesh mesh = new DungeonMeshBuilder(0.5f).Box(new Vector3(0f, WallHeight * 0.5f, 0f), new Vector3(length, WallHeight, WallThickness)).Save(name);
+            Mesh mesh = new DungeonMeshBuilder(0.5f).Box(new Vector3(0f, WallHeight * 0.5f, 0f), new Vector3(length, WallHeight + 0.3f, WallThickness)).Save(name);
 
             return MeshObject(name, null, mesh, StoneWall);
         }
@@ -188,9 +217,9 @@ namespace Game.Scripts.Editor.Dungeon
         {
             float side = (wallLength - 2.2f) * 0.5f;
             Mesh mesh = new DungeonMeshBuilder(0.5f)
-                .Box(new Vector3(-1.1f - side * 0.5f, WallHeight * 0.5f, 0f), new Vector3(side, WallHeight, WallThickness))
-                .Box(new Vector3(1.1f + side * 0.5f, WallHeight * 0.5f, 0f), new Vector3(side, WallHeight, WallThickness))
-                .Box(new Vector3(0f, 3f + (WallHeight - 3f) * 0.5f, 0f), new Vector3(2.2f, WallHeight - 3f, WallThickness))
+                .Box(new Vector3(-1.1f - side * 0.5f, WallHeight * 0.5f, 0f), new Vector3(side, WallHeight + 0.3f, WallThickness))
+                .Box(new Vector3(1.1f + side * 0.5f, WallHeight * 0.5f, 0f), new Vector3(side, WallHeight + 0.3f, WallThickness))
+                .Box(new Vector3(0f, 3f + (WallHeight - 3f) * 0.5f + 0.075f, 0f), new Vector3(2.2f, WallHeight - 3f + 0.15f, WallThickness))
                 .Box(new Vector3(-1.2f, 1.5f, 0f), new Vector3(0.2f, 3f, WallThickness + 0.2f))
                 .Box(new Vector3(1.2f, 1.5f, 0f), new Vector3(0.2f, 3f, WallThickness + 0.2f))
                 .Box(new Vector3(0f, 3.1f, 0f), new Vector3(2.6f, 0.2f, WallThickness + 0.2f))
@@ -352,7 +381,7 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject root = new GameObject("Brazier");
             MeshObject("Bowl", root.transform, mesh, RustyMetal, default, default, true, false);
             Flame(root.transform, new Vector3(0f, 1.05f, 0f), 1.6f);
-            PointLight(root.transform, new Vector3(0f, 1.6f, 0f), new Color(1f, 0.6f, 0.25f), 11f, 3.5f, true, true);
+            PointLight(root.transform, new Vector3(0f, 1.6f, 0f), new Color(1f, 0.6f, 0.25f), 11f, 3.5f, true);
 
             return root;
         }

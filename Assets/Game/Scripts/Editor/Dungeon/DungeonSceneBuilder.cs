@@ -81,7 +81,7 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
 
             DungeonMapBuilder.Build(director);
-            DungeonUiBuilder.Build(context, database);
+            DungeonUiBuilder.Build(context, database, camera);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);

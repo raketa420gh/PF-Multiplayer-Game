@@ -36,8 +36,11 @@ namespace Game.Scripts.Editor.Dungeon
             public readonly List<Transform> MonsterSpawns = new();
             public readonly List<ContainerComponent> Containers = new();
             public readonly List<PortalComponent> EscapePortals = new();
+            public readonly List<LeverComponent> Levers = new();
+            public readonly List<TrapComponent> Traps = new();
             public PortalComponent DescendPortal;
             public Transform DescendDestination;
+            public DoorComponent LockedDoor;
             public Vector3 Center;
         }
 
@@ -166,9 +169,20 @@ namespace Game.Scripts.Editor.Dungeon
                 }
             }
 
-            BuildEdges(kit, floor, rooms);
+            BuildEdges(kit, floor, rooms, result);
+            LinkLevers(result);
 
             return result;
+        }
+
+        private static void LinkLevers(FloorResult result)
+        {
+            if (result.Levers.Count == 0)
+                return;
+
+            TrapComponent blade = result.Traps.Find(trap => trap.Kind == TrapKind.SwingingBlade);
+            result.Levers[0].Setup(result.LockedDoor, blade);
+            EditorUtility.SetDirty(result.Levers[0]);
         }
 
         private static Vector3 ModuleCenter(int x, int z)
@@ -176,7 +190,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new Vector3((x - 1) * Module, 0f, (z - 1) * Module);
         }
 
-        private static void BuildEdges(Kit kit, Transform floor, Room[,] rooms)
+        private static void BuildEdges(Kit kit, Transform floor, Room[,] rooms, FloorResult result)
         {
             Transform edges = new GameObject("Edges").transform;
             edges.SetParent(floor, false);
@@ -197,17 +211,17 @@ namespace Game.Scripts.Editor.Dungeon
                     if (z == Grid - 1)
                         Place(kit.Wall, edges, center + new Vector3(0f, 0f, half), 0f);
                     else
-                        Opening(kit, edges, center + new Vector3(0f, 0f, half), 0f, rooms[z, x], rooms[z + 1, x]);
+                        Opening(kit, edges, center + new Vector3(0f, 0f, half), 0f, rooms[z, x], rooms[z + 1, x], result);
 
                     if (x == Grid - 1)
                         Place(kit.Wall, edges, center + new Vector3(half, 0f, 0f), 90f);
                     else
-                        Opening(kit, edges, center + new Vector3(half, 0f, 0f), 90f, rooms[z, x], rooms[z, x + 1]);
+                        Opening(kit, edges, center + new Vector3(half, 0f, 0f), 90f, rooms[z, x], rooms[z, x + 1], result);
                 }
             }
         }
 
-        private static void Opening(Kit kit, Transform parent, Vector3 position, float yaw, Room a, Room b)
+        private static void Opening(Kit kit, Transform parent, Vector3 position, float yaw, Room a, Room b, FloorResult result)
         {
             bool isBlocked = (a == Room.Armory && b == Room.Crypt) || (a == Room.Shrine && b == Room.Library) || (a == Room.TrapCorridor && b == Room.Treasury);
 
@@ -225,13 +239,24 @@ namespace Game.Scripts.Editor.Dungeon
 
             bool hasDoor = a is Room.Crypt or Room.Library or Room.Treasury or Room.Armory || b is Room.Crypt or Room.Library or Room.Treasury or Room.Armory;
 
-            if (hasDoor)
-                Place(kit.Door, parent, position, yaw, false);
+            if (!hasDoor)
+                return;
+
+            DoorComponent door = Place(kit.Door, parent, position, yaw, false).GetComponent<DoorComponent>();
+            bool isTreasury = a == Room.Treasury || b == Room.Treasury;
+
+            if (!isTreasury || result.LockedDoor != null)
+                return;
+
+            BattleEditorUtility.Set(door, "_startsLocked", true);
+            result.LockedDoor = door;
         }
 
         private static void Decorate(Kit kit, Transform module, Transform markers, Room room, int x, int z, FloorResult result, int floorIndex)
         {
             float half = Module * 0.5f;
+            Place(kit.Torch, module, new Vector3(-4.5f, 2.6f, half - 0.35f), 180f);
+            Place(kit.Torch, module, new Vector3(4.5f, 2.6f, -half + 0.35f), 0f);
 
             switch (room)
             {
@@ -301,7 +326,7 @@ namespace Game.Scripts.Editor.Dungeon
                     Container(kit.Barrel, module, result, new Vector3(5.5f, 0f, -4.4f), 0f);
                     Place(kit.Table, module, new Vector3(-4f, 0f, 1f), 90f);
                     Place(kit.Banner, module, new Vector3(0f, 3.6f, -half + 0.4f), 0f);
-                    Place(kit.Lever, module, new Vector3(6.3f, 0f, 3f), -90f);
+                    result.Levers.Add(Place(kit.Lever, module, new Vector3(6.3f, 0f, 3f), -90f, false).GetComponent<LeverComponent>());
                     Monster(markers, result, module.position + new Vector3(2f, 0f, 1f), 90f);
                     Monster(markers, result, module.position + new Vector3(-2f, 0f, -2f), 0f);
                     break;
@@ -337,13 +362,13 @@ namespace Game.Scripts.Editor.Dungeon
                     break;
 
                 case Room.TrapCorridor:
-                    Place(kit.BladeTrap, module, new Vector3(0f, 0f, -3.5f), 90f, false);
-                    Place(kit.BladeTrap, module, new Vector3(0f, 0f, 3.5f), 90f, false);
+                    result.Traps.Add(Place(kit.BladeTrap, module, new Vector3(0f, 0f, -3.5f), 90f, false).GetComponent<TrapComponent>());
+                    result.Traps.Add(Place(kit.BladeTrap, module, new Vector3(0f, 0f, 3.5f), 90f, false).GetComponent<TrapComponent>());
                     Place(kit.SpikeTrap, module, new Vector3(0f, 0f, 0f), 0f, false);
                     Place(kit.Rubble, module, new Vector3(-4.5f, 0f, -4.5f), 0f);
                     Place(kit.Rubble, module, new Vector3(4.5f, 0f, 4.5f), 70f);
                     Container(kit.LargeChest, module, result, new Vector3(5.5f, 0f, -5.5f), -90f);
-                    Place(kit.Lever, module, new Vector3(-6.3f, 0f, 4f), 90f);
+                    result.Levers.Add(Place(kit.Lever, module, new Vector3(-6.3f, 0f, 4f), 90f, false).GetComponent<LeverComponent>());
                     Monster(markers, result, module.position + new Vector3(-3f, 0f, 2f), 90f);
                     break;
 

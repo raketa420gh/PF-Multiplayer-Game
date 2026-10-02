@@ -158,52 +158,6 @@ namespace Game.Scripts.Dungeon
         public virtual bool CanEquip(EquipSlot slot) => false;
     }
 
-    [CreateAssetMenu(menuName = "Game/Dungeon/Weapon Item")]
-    public sealed class WeaponItemConfig : ItemConfig
-    {
-        public override ItemKind Kind => ItemKind.Weapon;
-        public WeaponConfig Weapon => _weapon;
-        public WeaponConfig WeaponWithShield => _weaponWithShield;
-        public WeaponClass WeaponClass => _weaponClass;
-        public bool IsTwoHanded => _isTwoHanded;
-        public bool IsOffHand => _isOffHand;
-        public float MoveSpeedPenalty => _moveSpeedPenalty;
-        public DamageType DamageType => _damageType;
-        public float LightRange => _lightRange;
-
-        [SerializeField]
-        private WeaponConfig _weapon;
-
-        [SerializeField]
-        private WeaponConfig _weaponWithShield;
-
-        [SerializeField]
-        private WeaponClass _weaponClass;
-
-        [SerializeField]
-        private bool _isTwoHanded;
-
-        [SerializeField]
-        private bool _isOffHand;
-
-        [SerializeField]
-        private float _moveSpeedPenalty;
-
-        [SerializeField]
-        private DamageType _damageType = DamageType.Physical;
-
-        [SerializeField]
-        private float _lightRange;
-
-        public override bool CanEquip(EquipSlot slot)
-        {
-            bool isMain = slot is EquipSlot.Weapon1Main or EquipSlot.Weapon2Main;
-            bool isOff = slot is EquipSlot.Weapon1Off or EquipSlot.Weapon2Off;
-
-            return _isOffHand ? isOff : isMain;
-        }
-    }
-
     public enum ArmorVisual : byte
     {
         None,
@@ -224,48 +178,6 @@ namespace Game.Scripts.Dungeon
         Cloak
     }
 
-    [CreateAssetMenu(menuName = "Game/Dungeon/Armor Item")]
-    public sealed class ArmorItemConfig : ItemConfig
-    {
-        public override ItemKind Kind => ItemKind.Armor;
-        public EquipSlot Slot => _slot;
-        public ArmorType ArmorType => _armorType;
-        public float ArmorRating => _armorRating;
-        public float MagicResistance => _magicResistance;
-        public float MoveSpeedPenalty => _moveSpeedPenalty;
-        public ArmorVisual Visual => _visual;
-        public Color VisualColor => _visualColor;
-
-        [SerializeField]
-        private EquipSlot _slot;
-
-        [SerializeField]
-        private ArmorType _armorType;
-
-        [SerializeField]
-        private float _armorRating;
-
-        [SerializeField]
-        private float _magicResistance;
-
-        [SerializeField]
-        private float _moveSpeedPenalty;
-
-        [SerializeField]
-        private ArmorVisual _visual;
-
-        [SerializeField]
-        private Color _visualColor = Color.gray;
-
-        public override bool CanEquip(EquipSlot slot)
-        {
-            if (_slot == EquipSlot.Ring1)
-                return slot is EquipSlot.Ring1 or EquipSlot.Ring2;
-
-            return slot == _slot;
-        }
-    }
-
     public enum ConsumableEffect : byte
     {
         HealOverTime,
@@ -274,108 +186,10 @@ namespace Game.Scripts.Dungeon
         Haste
     }
 
-    [CreateAssetMenu(menuName = "Game/Dungeon/Consumable Item")]
-    public sealed class ConsumableItemConfig : ItemConfig
-    {
-        public override ItemKind Kind => ItemKind.Consumable;
-        public ConsumableEffect Effect => _effect;
-        public float Magnitude => _magnitude;
-        public float Duration => _duration;
-        public float UseTime => _useTime;
-
-        [SerializeField]
-        private ConsumableEffect _effect;
-
-        [SerializeField]
-        private float _magnitude = 20f;
-
-        [SerializeField]
-        private float _duration = 12f;
-
-        [SerializeField]
-        private float _useTime = 1f;
-
-        public override bool CanEquip(EquipSlot slot)
-        {
-            return slot is >= EquipSlot.Utility1 and <= EquipSlot.Utility4;
-        }
-    }
-
     public enum UtilityKind : byte
     {
         ThrowingWeapon,
         Campfire,
         Lockpick
-    }
-
-    [CreateAssetMenu(menuName = "Game/Dungeon/Utility Item")]
-    public sealed class UtilityItemConfig : ItemConfig
-    {
-        public override ItemKind Kind => ItemKind.Utility;
-        public UtilityKind UtilityKind => _utilityKind;
-        public int Damage => _damage;
-        public float UseTime => _useTime;
-
-        [SerializeField]
-        private UtilityKind _utilityKind;
-
-        [SerializeField]
-        private int _damage;
-
-        [SerializeField]
-        private float _useTime = 0.5f;
-
-        public override bool CanEquip(EquipSlot slot)
-        {
-            return slot is >= EquipSlot.Utility1 and <= EquipSlot.Utility4;
-        }
-    }
-
-    [CreateAssetMenu(menuName = "Game/Dungeon/Treasure Item")]
-    public sealed class TreasureItemConfig : ItemConfig
-    {
-        public override ItemKind Kind => ItemKind.Treasure;
-    }
-
-    [CreateAssetMenu(menuName = "Game/Dungeon/Item Database")]
-    public sealed class ItemDatabase : ScriptableObject
-    {
-        public ItemConfig[] Items => _items;
-
-        [SerializeField]
-        private ItemConfig[] _items = Array.Empty<ItemConfig>();
-
-        [SerializeField]
-        private Color[] _rarityColors =
-        {
-            new(0.55f, 0.55f, 0.55f), new(0.85f, 0.85f, 0.85f), new(0.35f, 0.75f, 0.35f), new(0.3f, 0.5f, 0.95f),
-            new(0.65f, 0.35f, 0.9f), new(0.95f, 0.65f, 0.2f), new(0.95f, 0.35f, 0.25f)
-        };
-
-        public ItemConfig Get(int id)
-        {
-            return id > 0 && id <= _items.Length ? _items[id - 1] : null;
-        }
-
-        public T Get<T>(int id) where T : ItemConfig
-        {
-            return Get(id) as T;
-        }
-
-        public ItemConfig Find(string displayName)
-        {
-            foreach (ItemConfig item in _items)
-            {
-                if (item.DisplayName == displayName)
-                    return item;
-            }
-
-            return null;
-        }
-
-        public Color GetRarityColor(ItemRarity rarity)
-        {
-            return _rarityColors[Mathf.Clamp((int)rarity, 0, _rarityColors.Length - 1)];
-        }
     }
 }

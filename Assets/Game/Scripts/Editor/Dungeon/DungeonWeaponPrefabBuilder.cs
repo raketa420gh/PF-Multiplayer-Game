@@ -92,7 +92,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static GameObject BuildTorch()
         {
             Material wood = BattleEditorUtility.GetMaterial("DarkWood", new Color(0.22f, 0.14f, 0.08f));
-            Material fire = BattleEditorUtility.GetUnlitMaterial("Fire", new Color(1f, 0.6f, 0.15f, 1f));
+            Material fire = DungeonPropBuilder.Fire;
             GameObject root = new GameObject("Torch");
             Transform parent = root.transform;
 

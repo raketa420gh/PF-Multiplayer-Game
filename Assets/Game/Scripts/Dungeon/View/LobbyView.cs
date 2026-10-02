@@ -121,7 +121,7 @@ namespace Game.Scripts.Dungeon
             int unlocked = _session != null ? ClassConfig.PerkCountForLevel(_session.Level) : 1;
 
             for (int i = 0; i < config.Perks.Length; i++)
-                _builder.AppendLine(i < unlocked ? $"  ✓ {config.Perks[i].Name} — {config.Perks[i].Description}" : $"  <color=#777>{config.Perks[i].Name} (level {1 + i * 5})</color>");
+                _builder.AppendLine(i < unlocked ? $"  * {config.Perks[i].Name} — {config.Perks[i].Description}" : $"  <color=#777>{config.Perks[i].Name} (level {1 + i * 5})</color>");
 
             return _builder.ToString();
         }

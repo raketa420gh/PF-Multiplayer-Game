@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d988ee4bac2acf74b80699d6e83c0b70, type: 3}
+  m_Name: Rogue
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
+  _id: 2
+  _displayName: Rogue
+  _description: Fast, quiet, fragile. Hides in the dark and strikes first.
+  _baseStats:
+    Strength: 9
+    Vigor: 6
+    Agility: 25
+    Dexterity: 20
+    Will: 10
+    Knowledge: 10
+    Resourcefulness: 25
+  _color: {r: 0.4, g: 0.4, b: 0.5, a: 1}
+  _bodyColor: {r: 0.3, g: 0.32, b: 0.36, a: 1}
+  _skills:
+  - {fileID: 11400000, guid: c689fd81d98b1154ca0c9efae6f27b6e, type: 2}
+  - {fileID: 11400000, guid: f0e51cdde4e877d4eb7a7aebde4e01b6, type: 2}
+  _spells: []
+  _perks:
+  - _name: Back Attack
+    _description: +10% physical damage.
+    _modifiers:
+    - Stat: 14
+      Value: 0.1
+  - _name: Dagger Mastery
+    _description: +5 physical power.
+    _modifiers:
+    - Stat: 11
+      Value: 5
+  - _name: Creep
+    _description: +10 move speed.
+    _modifiers:
+    - Stat: 10
+      Value: 10
+  - _name: Poisoned Weapon
+    _description: +5% physical damage.
+    _modifiers:
+    - Stat: 14
+      Value: 0.05
+  _startingKit:
+  - _item: {fileID: 11400000, guid: ad21c4a24d0706b45bbe07e6b4b2a8f9, type: 2}
+    _slot: 9
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: e3e688c85b8dfb64a82ff8f698cbfb01, type: 2}
+    _slot: 11
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 1c93d3ed1b117404d9652a61d10c17de, type: 2}
+    _slot: 0
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 0fc68e335350e6a48983dd2bd9dbe79b, type: 2}
+    _slot: 1
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 37adef9c744db10419e3b6e086d7e458, type: 2}
+    _slot: 4
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 281bfe6e316403549a6634a2cefb629b, type: 2}
+    _slot: 13
+    _count: 2
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 4eaa8cb45665cd0429d1f03654919c37, type: 2}
+    _slot: 14
+    _count: 3
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 1cf148bc8a302b84d87d1896014a5456, type: 2}
+    _slot: 15
+    _count: 3
+    _isEquipped: 1
+  _allowedWeapons: 03000906
+  _allowedArmor: 0001

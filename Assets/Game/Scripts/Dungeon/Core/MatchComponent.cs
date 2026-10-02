@@ -64,7 +64,7 @@ namespace Game.Scripts.Dungeon
             State = MatchState.Finished;
         }
 
-        public void Reset()
+        public void ResetMatch()
         {
             State = MatchState.Waiting;
         }

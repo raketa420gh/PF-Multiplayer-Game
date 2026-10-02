@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d988ee4bac2acf74b80699d6e83c0b70, type: 3}
+  m_Name: Cleric
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
+  _id: 5
+  _displayName: Cleric
+  _description: Holy healer in heavy armor. Bane of the undead.
+  _baseStats:
+    Strength: 11
+    Vigor: 13
+    Agility: 12
+    Dexterity: 14
+    Will: 23
+    Knowledge: 20
+    Resourcefulness: 12
+  _color: {r: 0.95, g: 0.9, b: 0.6, a: 1}
+  _bodyColor: {r: 0.75, g: 0.72, b: 0.65, a: 1}
+  _skills:
+  - {fileID: 11400000, guid: 5294531f43826e04f80cd129e483ecae, type: 2}
+  - {fileID: 11400000, guid: f3a46063383555c459823cc1d5d4b240, type: 2}
+  _spells:
+  - {fileID: 11400000, guid: 009d8b368d9e3af4c98a34122d675bbb, type: 2}
+  - {fileID: 11400000, guid: 43630be57ea6f6a479fce89f8813a426, type: 2}
+  - {fileID: 11400000, guid: 2f8468850155d814aa92603757f85b80, type: 2}
+  - {fileID: 11400000, guid: f4af9394ef714ae419afb67462b26389, type: 2}
+  - {fileID: 11400000, guid: 9b7f3df24024f6d42ae18a686077eb87, type: 2}
+  _perks:
+  - _name: Advanced Healer
+    _description: +4 magical power.
+    _modifiers:
+    - Stat: 12
+      Value: 4
+  - _name: Holy Aura
+    _description: +15 armor and magic resistance.
+    _modifiers:
+    - Stat: 8
+      Value: 15
+    - Stat: 9
+      Value: 15
+  - _name: Blunt Weapon Mastery
+    _description: +10 physical power.
+    _modifiers:
+    - Stat: 11
+      Value: 10
+  - _name: Perseverance
+    _description: +10 armor rating.
+    _modifiers:
+    - Stat: 8
+      Value: 10
+  _startingKit:
+  - _item: {fileID: 11400000, guid: 4cef8ba6992e9ef49ae289de8a2e48cf, type: 2}
+    _slot: 9
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: c52b74ed91a0f4844a83fc48c5717b79, type: 2}
+    _slot: 10
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: e3e688c85b8dfb64a82ff8f698cbfb01, type: 2}
+    _slot: 11
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 9567da2b0972cbf498fb3898aa21e5e3, type: 2}
+    _slot: 0
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: b9cb163780bddbe4aaa69e94f9735eec, type: 2}
+    _slot: 1
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: eba932971e829744a96b43400e358adc, type: 2}
+    _slot: 4
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 1cf148bc8a302b84d87d1896014a5456, type: 2}
+    _slot: 13
+    _count: 3
+    _isEquipped: 1
+  _allowedWeapons: 02070809
+  _allowedArmor: 00010203

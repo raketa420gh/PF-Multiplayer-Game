@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f261bad0ea354dc4497c57c3bbeef061, type: 3}
+  m_Name: Crossbow
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Battle.WeaponConfig
+  _displayName: Crossbow
+  _kind: 2
+  _mainHand: 0
+  _animationPrefix: Crossbow
+  _attachments:
+  - _prefab: {fileID: 9149340927644430595, guid: 9f39081cdc2aa98498ab37cc4a06ff81, type: 3}
+    _socket: 0
+  _deflectDuration: 0
+  _reach: 0
+  _attacks: []
+  _block:
+    _canBlock: 0
+    _raiseTime: 0.2
+    _mitigation: 1
+    _impactDuration: 0.25
+    _recoveryDuration: 0.35
+    _angleTolerance: 100
+    _moveMultiplier: 0.55
+  _ranged:
+    _minDrawTime: 0.35
+    _fullDrawTime: 0.3
+    _reloadTime: 1.8
+    _minSpeed: 36
+    _maxSpeed: 40
+    _minDamage: 30
+    _maxDamage: 39
+    _gravity: -9.81
+    _lifetime: 5
+    _drawMoveMultiplier: 0.5
+    _staggerDuration: 0.15
+  _damageType: 0

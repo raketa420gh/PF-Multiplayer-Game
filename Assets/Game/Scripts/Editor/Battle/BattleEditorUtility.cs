@@ -170,6 +170,12 @@ namespace Game.Scripts.Editor.Battle
                 case int number:
                     property.intValue = number;
                     break;
+                case byte number:
+                    property.intValue = number;
+                    break;
+                case short number:
+                    property.intValue = number;
+                    break;
                 case bool flag:
                     property.boolValue = flag;
                     break;

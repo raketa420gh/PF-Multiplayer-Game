@@ -242,8 +242,6 @@ namespace Game.Scripts.Battle
 
             if (slot == WeaponSlot && State != CombatState.Busy)
                 SetState(CombatState.Equip);
-
-            UpdateBlockHitboxes();
         }
 
         public void SetInitialSlot(int slot)
@@ -449,9 +447,19 @@ namespace Game.Scripts.Battle
 
             for (int i = 0; i < _blockHitboxes.Length; i++)
             {
-                if (_blockHitboxes[i] != null)
-                    _hitboxRoot.SetHitboxActive(_blockHitboxes[i], State == CombatState.Block && i == weaponIndex);
+                Hitbox hitbox = _blockHitboxes[i];
+
+                if (hitbox != null && IsRegistered(hitbox))
+                    _hitboxRoot.SetHitboxActive(hitbox, State == CombatState.Block && i == weaponIndex);
             }
+        }
+
+        /// The root assigns hitbox indices when it starts; until then activation changes must wait.
+        private bool IsRegistered(Hitbox hitbox)
+        {
+            int index = hitbox.HitboxIndex;
+
+            return index >= 0 && index < _hitboxRoot.Hitboxes.Length && _hitboxRoot.Hitboxes[index] == hitbox;
         }
 
         private void Trace(WeaponConfig weapon, MeleeAttackConfig attack, float time)

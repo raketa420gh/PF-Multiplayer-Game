@@ -26,6 +26,7 @@ namespace Game.Scripts.Editor.Dungeon
             Write("ClothRed", ClothRed, 0.25f);
             Write("Gold", Gold, 0.3f);
             Write("Dirt", Dirt, 0.6f);
+            WriteFlame();
 
             AssetDatabase.Refresh();
             Debug.Log($"[{nameof(DungeonTextureBuilder)}] Textures built in {Folder}");
@@ -37,6 +38,38 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         private delegate Color Sampler(float u, float v, out float height);
+
+        /// Soft radial sprite for fire and glow particles (RGBA, alpha fades to the edge).
+        private static void WriteFlame()
+        {
+            const int size = 128;
+            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            Color[] pixels = new Color[size * size];
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x + 0.5f) / size - 0.5f;
+                    float dy = (y + 0.5f) / size - 0.5f;
+                    float distance = Mathf.Sqrt(dx * dx + dy * dy) * 2f;
+                    float alpha = Mathf.Clamp01(1f - distance);
+                    alpha = alpha * alpha * (3f - 2f * alpha);
+                    pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply();
+            string path = $"{Folder}/Flame.png";
+            File.WriteAllBytes(path, texture.EncodeToPNG());
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.alphaIsTransparency = true;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.SaveAndReimport();
+            UnityEngine.Object.DestroyImmediate(texture);
+        }
 
         private static void Write(string name, Sampler sampler, float normalStrength)
         {

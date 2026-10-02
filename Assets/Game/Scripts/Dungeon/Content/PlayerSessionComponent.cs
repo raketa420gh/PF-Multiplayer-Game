@@ -175,10 +175,12 @@ namespace Game.Scripts.Dungeon
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcSelectClass(byte classId)
         {
-            if (State != SessionState.Lobby)
+            if (State != SessionState.Lobby || ClassId == classId)
                 return;
 
             ClassId = classId;
+            _stash.TakeAllFrom(_kit);
+            GiveDefaultKit();
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]

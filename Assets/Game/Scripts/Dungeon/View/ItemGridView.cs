@@ -26,6 +26,7 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _cellSize = 48f;
 
+        private static readonly Color s_cellColor = new(0.16f, 0.14f, 0.11f, 0.85f);
         private readonly List<ItemView> _items = new();
         private readonly List<Image> _cells = new();
         private InventoryView _owner;
@@ -99,14 +100,14 @@ namespace Game.Scripts.Dungeon
                 int cx = i % _inventory.Width;
                 int cy = i / _inventory.Width;
                 bool inside = cx >= x && cx < x + width && cy >= y && cy < y + height;
-                _cells[i].color = inside ? (isValid ? new Color(0.3f, 0.7f, 0.3f, 0.6f) : new Color(0.8f, 0.2f, 0.2f, 0.6f)) : new Color(0f, 0f, 0f, 0.55f);
+                _cells[i].color = inside ? (isValid ? new Color(0.3f, 0.7f, 0.3f, 0.6f) : new Color(0.8f, 0.2f, 0.2f, 0.6f)) : s_cellColor;
             }
         }
 
         public void ClearHighlight()
         {
             foreach (Image cell in _cells)
-                cell.color = new Color(0f, 0f, 0f, 0.55f);
+                cell.color = s_cellColor;
         }
 
         private void BuildCells()

@@ -43,7 +43,7 @@ namespace Game.Scripts.Dungeon
         private const float HomeRadius = 0.8f;
         private const float WaypointRadius = 0.5f;
 
-        private readonly NavMeshPath _path = new();
+        private NavMeshPath _path;
         private Vector3 _home;
         private float _homeYaw;
         private Vector2 _look;
@@ -63,6 +63,7 @@ namespace Game.Scripts.Dungeon
 
         public override void Spawned()
         {
+            _path = new NavMeshPath();
             _fighter.SetInputSource(this, 2);
             _home = transform.position;
             _homeYaw = transform.eulerAngles.y;

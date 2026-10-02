@@ -234,7 +234,7 @@ namespace Game.Scripts.Dungeon
 
         public void OpenContainer(ContainerComponent container)
         {
-            OpenContainerId = container.Inventory.Id;
+            OpenContainerId = container.Id;
         }
 
         public void CloseContainer()
@@ -727,7 +727,9 @@ namespace Game.Scripts.Dungeon
 
         bool InventoryActionsComponent.IOwner.CanAccess(InventoryComponent other)
         {
-            if (other.Id != OpenContainerId)
+            ContainerComponent container = OpenedContainer;
+
+            if (container == null || container.Inventory != other)
                 return false;
 
             return (other.transform.position - transform.position).sqrMagnitude < 25f;

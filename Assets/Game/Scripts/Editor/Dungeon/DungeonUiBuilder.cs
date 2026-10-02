@@ -24,11 +24,13 @@ namespace Game.Scripts.Editor.Dungeon
         private static readonly Color s_panelLight = new(0.12f, 0.1f, 0.08f, 0.95f);
         private static readonly Color s_frame = new(0.45f, 0.36f, 0.22f, 1f);
 
-        public static GameObject Build(DungeonContext context, ItemDatabase database)
+        public static GameObject Build(DungeonContext context, ItemDatabase database, Camera camera)
         {
             GameObject canvasObject = new GameObject("[UI]");
             Canvas canvas = canvasObject.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = camera;
+            canvas.planeDistance = 0.06f;
             CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
@@ -115,7 +117,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             GameObject root = new GameObject("Cell", typeof(RectTransform));
             Image image = root.AddComponent<Image>();
-            image.color = new Color(0f, 0f, 0f, 0.55f);
+            image.color = new Color(0.16f, 0.14f, 0.11f, 0.85f);
             image.raycastTarget = true;
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, DungeonPropBuilder.PrefabsFolder + "/UI/Cell.prefab");
             Object.DestroyImmediate(root);
