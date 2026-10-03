@@ -1,30 +1,30 @@
 using System.Linq;
 using Fusion;
 using Game.Scripts.Battle;
+using Game.Scripts.Dungeon;
+using Game.Scripts.Editor.Dungeon;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace Game.Scripts.Editor.Battle
 {
+    /// Gameplay test ground: naked adventurer, weapon table, chests, dummies, inventory and looting as in the dungeon, developer spawns.
     internal static class BattleSceneBuilder
     {
         private const string PopupPath = BattleEditorUtility.PrefabsFolder + "/DamagePopup.prefab";
 
-        private const string HelpText =
-            "<b>Controls</b>\n" +
-            "WASD — move, Shift — sprint, Space — jump\n" +
-            "Ctrl / C — crouch (crouch + look down to duck under swings)\n" +
-            "LMB — attack / draw bow, RMB — block / cancel draw\n" +
-            "LMB inside the green window — continue combo\n" +
-            "1 — sword & shield, 2 — greatsword, 3 — bow\n" +
-            "4 — sword in left hand (RMB attack, LMB block)\n" +
-            "B — bot mode: Passive / Block / Attack / Spar\n" +
-            "H — toggle help, Esc — release cursor";
+        private static readonly string[] s_monsters = { "SkeletonSwordsman", "SkeletonArcher", "Zombie", "SkeletonChampion" };
+        private static readonly string[] s_monsterLabels = { "Skeleton", "Archer", "Zombie", "Champion" };
+        private static readonly string[] s_dungeonOnlyHud = { "Minimap", "TimerBack", "Timer", "Swarm", "ModuleBack", "Module", "Floor" };
+        private static readonly string[] s_tableItems =
+        {
+            "Arming Sword", "Round Shield", "Falchion", "Zweihander", "Battle Axe", "Spear", "Flanged Mace", "Rondel Dagger", "Recurve Bow",
+            "Crossbow", "Torch", "Bandage", "Potion of Healing", "Potion of Protection", "Ale", "Throwing Knife", "Francisca Axe"
+        };
 
         [MenuItem("Tools/Game/Battle/Build Scene")]
         public static void Build()
@@ -33,19 +33,38 @@ namespace Game.Scripts.Editor.Battle
                 return;
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            EditorSceneManager.SaveScene(scene, BattleEditorUtility.ScenePath);
 
-            BuildWorld();
+            Transform world = BuildWorld();
+            DungeonSceneBuilder.BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/SandboxVolume.asset", 0f);
             Camera camera = BuildCamera();
             Transform spawns = new GameObject("[Spawns]").transform;
-            BattleContext context = BuildSystem(camera, spawns);
-            BuildHud(context);
+            ItemDatabase database = AssetDatabase.LoadAssetAtPath<ItemDatabase>(DungeonContentBuilder.DatabasePath);
+            DungeonContext context = BuildSystem(camera, world, spawns, database, out SandboxDirector director);
 
+            GameObject canvas = DungeonUiBuilder.Build(new DungeonUiBuilder.Inputs
+            {
+                Context = context,
+                Database = database,
+                Camera = camera,
+                PreviewRig = AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("PreviewRig")),
+                PieceSet = AssetDatabase.LoadAssetAtPath<ArmorPieceSetConfig>($"{DungeonContentBuilder.ConfigsFolder}/ArmorPieces.asset"),
+                FloorMaps = new Texture2D[0],
+                ModuleNames = new string[0]
+            });
+
+            foreach (string name in s_dungeonOnlyHud)
+                canvas.transform.Find("HUD/" + name).gameObject.SetActive(false);
+
+            DungeonUiBuilder.BuildDevPanel(canvas, director, s_monsterLabels);
+
+            EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, BattleEditorUtility.ScenePath);
             AddToBuildSettings();
             Debug.Log($"[{nameof(BattleSceneBuilder)}] Scene built: {BattleEditorUtility.ScenePath}");
         }
 
-        private static void BuildWorld()
+        private static Transform BuildWorld()
         {
             Transform world = new GameObject("[World]").transform;
             Material ground = BattleEditorUtility.GetMaterial("Ground", new Color(0.32f, 0.36f, 0.3f), 0f, 0.1f);
@@ -70,6 +89,8 @@ namespace Game.Scripts.Editor.Battle
 
             for (int i = 0; i < 3; i++)
                 Box("ArcheryTarget" + i, world, new Vector3(14f + i * 3f, 1.2f, 20f + i * 5f), new Vector3(1.2f, 1.2f, 0.3f), target);
+
+            return world;
         }
 
         private static void Box(string name, Transform parent, Vector3 position, Vector3 scale, Material material)
@@ -83,55 +104,59 @@ namespace Game.Scripts.Editor.Battle
             GameObject go = new GameObject("[Camera]") { tag = "MainCamera" };
             go.transform.SetPositionAndRotation(new Vector3(0f, 4f, -16f), Quaternion.Euler(15f, 0f, 0f));
             Camera camera = go.AddComponent<Camera>();
+            camera.nearClipPlane = 0.04f;
             go.AddComponent<AudioListener>();
-            go.AddComponent<UniversalAdditionalCameraData>();
+            go.AddComponent<UniversalAdditionalCameraData>().renderPostProcessing = true;
 
             return camera;
         }
 
-        private static BattleContext BuildSystem(Camera camera, Transform spawns)
+        private static DungeonContext BuildSystem(Camera camera, Transform world, Transform spawns, ItemDatabase database, out SandboxDirector director)
         {
             GameObject system = new GameObject("[System]");
             NetworkEvents events = system.AddComponent<NetworkEvents>();
             system.AddComponent<BattleBootstrapper>();
             BattleInputPolling input = system.AddComponent<BattleInputPolling>();
-            BattleSpawner spawner = system.AddComponent<BattleSpawner>();
-            BattleContext context = system.AddComponent<BattleContext>();
+            BattleContext battle = system.AddComponent<BattleContext>();
             system.AddComponent<CombatDebugView>();
             BattleFeedback feedback = BuildFeedback(system.transform);
 
             BattleEditorUtility.Set(input, "_networkEvents", events);
 
-            SerializedObject so = new SerializedObject(context);
+            SerializedObject so = new SerializedObject(battle);
             BattleEditorUtility.Set(so, "_camera", camera);
             BattleEditorUtility.Set(so, "_input", input);
             BattleEditorUtility.Set(so, "_feedback", feedback);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            DungeonContext context = system.AddComponent<DungeonContext>();
+            so = new SerializedObject(context);
+            BattleEditorUtility.Set(so, "_battle", battle);
+            BattleEditorUtility.Set(so, "_items", database);
+            BattleEditorUtility.Set(so, "_classes", DungeonSceneBuilder.LoadClasses());
+            BattleEditorUtility.Set(so, "_config", AssetDatabase.LoadAssetAtPath<DungeonConfig>(DungeonContentBuilder.DungeonConfigPath));
+            BattleEditorUtility.Set(so, "_isSandbox", true);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             Transform[] playerPoints = Enumerable.Range(0, 4)
                 .Select(i => Point(spawns, "Player" + i, new Vector3((i - 1.5f) * 3f, 0f, -12f), 0f))
                 .ToArray();
 
-            so = new SerializedObject(spawner);
+            director = system.AddComponent<SandboxDirector>();
+            so = new SerializedObject(director);
             BattleEditorUtility.Set(so, "_networkEvents", events);
-            BattleEditorUtility.Set(so, "_fighterPrefab", LoadNetworkObject(BattleContentBuilder.FighterPath));
+            BattleEditorUtility.Set(so, "_context", context);
+            BattleEditorUtility.Set(so, "_sessionPrefab", LoadNetworkObject(DungeonContentBuilder.Prefab("PlayerSession")));
+            BattleEditorUtility.Set(so, "_adventurerPrefab", LoadNetworkObject(DungeonContentBuilder.Prefab("Adventurer")));
+            BattleEditorUtility.Set(so, "_worldItemPrefab", LoadNetworkObject(DungeonContentBuilder.Prefab("WorldItem")));
             BattleEditorUtility.Set(so, "_botPrefab", LoadNetworkObject(BattleContentBuilder.BotPath));
-            BattleEditorUtility.Set(so, "_playerPoints", playerPoints);
-
-            (Vector3 position, int slot)[] bots =
+            BattleEditorUtility.Set(so, "_monsters", s_monsters.Select(name => LoadNetworkObject(DungeonContentBuilder.Prefab(name))).ToArray());
+            BattleEditorUtility.Set(so, "_playerSpawns", playerPoints);
+            BattleEditorUtility.Set(so, "_containers", new[]
             {
-                (new Vector3(-6f, 0f, 8f), 0),
-                (new Vector3(0f, 0f, 11f), 1),
-                (new Vector3(8f, 0f, 18f), 2)
-            };
-            so.FindProperty("_bots").arraySize = bots.Length;
-
-            for (int i = 0; i < bots.Length; i++)
-            {
-                BattleEditorUtility.Set(so, $"_bots.Array.data[{i}].Point", Point(spawns, "Bot" + i, bots[i].position, 180f));
-                BattleEditorUtility.Set(so, $"_bots.Array.data[{i}].WeaponSlot", bots[i].slot);
-                BattleEditorUtility.Set(so, $"_bots.Array.data[{i}].Mode", BotMode.Passive);
-            }
+                PlaceContainer("SmallOakChest", world, new Vector3(-7f, 0f, -10f), 90f),
+                PlaceContainer("LargeOakChest", world, new Vector3(7f, 0f, -10f), -90f)
+            });
 
             (Vector3 position, string prefab)[] dummies =
             {
@@ -148,9 +173,42 @@ namespace Game.Scripts.Editor.Battle
                 BattleEditorUtility.Set(so, $"_dummies.Array.data[{i}].Prefab", LoadNetworkObject(dummies[i].prefab));
             }
 
+            BuildTable(so, world, spawns, database);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return context;
+        }
+
+        /// A row of tables in front of the spawn with one of every weapon plus belt items, each on its own point.
+        private static void BuildTable(SerializedObject director, Transform world, Transform spawns, ItemDatabase database)
+        {
+            const float step = 0.52f;
+            GameObject table = AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("Table"));
+
+            for (int i = 0; i < 4; i++)
+            {
+                GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(table, world);
+                instance.transform.position = new Vector3((i - 1.5f) * 2.2f, 0f, -9f);
+            }
+
+            director.FindProperty("_table").arraySize = s_tableItems.Length;
+
+            for (int i = 0; i < s_tableItems.Length; i++)
+            {
+                ItemConfig item = database.Find(s_tableItems[i]);
+                Vector3 position = new Vector3((i - (s_tableItems.Length - 1) * 0.5f) * step, 0.82f, -9.3f);
+                BattleEditorUtility.Set(director, $"_table.Array.data[{i}].Item", item);
+                BattleEditorUtility.Set(director, $"_table.Array.data[{i}].Count", item.MaxStack);
+                BattleEditorUtility.Set(director, $"_table.Array.data[{i}].Point", Point(spawns, "Table" + i, position, 0f));
+            }
+        }
+
+        private static ContainerComponent PlaceContainer(string prefab, Transform world, Vector3 position, float yaw)
+        {
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab(prefab)), world);
+            instance.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
+
+            return instance.GetComponent<ContainerComponent>();
         }
 
         private static NetworkObject LoadNetworkObject(string path)
@@ -240,114 +298,6 @@ namespace Game.Scripts.Editor.Battle
             Object.DestroyImmediate(go);
 
             return prefab.GetComponent<TextMeshPro>();
-        }
-
-        private static void BuildHud(BattleContext context)
-        {
-            GameObject canvasObject = new GameObject("[HUD]");
-            Canvas canvas = canvasObject.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 1f;
-
-            Transform root = canvasObject.transform;
-            Vector2 center = new Vector2(0.5f, 0.5f);
-            Vector2 bottomLeft = Vector2.zero;
-            Vector2 bottomRight = new Vector2(1f, 0f);
-            Vector2 topLeft = new Vector2(0f, 1f);
-            Vector2 topRight = Vector2.one;
-
-            CreateImage("Crosshair", root, center, Vector2.zero, new Vector2(6f, 6f), new Color(1f, 1f, 1f, 0.85f));
-            BattleEditorUtility.CreateSwingHint(root, context);
-            Image combo = CreateImage("ComboIndicator", root, center, new Vector2(0f, -34f), new Vector2(46f, 8f), Color.white);
-
-            CreateImage("HealthBack", root, bottomLeft, new Vector2(40f, 40f), new Vector2(360f, 30f), new Color(0f, 0f, 0f, 0.6f));
-            Image healthFill = CreateImage("HealthFill", root, bottomLeft, new Vector2(44f, 44f), new Vector2(352f, 22f), new Color(0.75f, 0.15f, 0.12f));
-            MakeFilled(healthFill);
-            TMP_Text healthText = CreateText("HealthText", root, bottomLeft, new Vector2(48f, 42f), new Vector2(352f, 26f), 20f, TextAlignmentOptions.MidlineLeft);
-
-            TMP_Text weaponText = CreateText("WeaponText", root, bottomRight, new Vector2(-40f, 76f), new Vector2(600f, 40f), 30f, TextAlignmentOptions.MidlineRight);
-            TMP_Text stateText = CreateText("StateText", root, bottomRight, new Vector2(-40f, 40f), new Vector2(600f, 32f), 24f, TextAlignmentOptions.MidlineRight);
-            TMP_Text botModeText = CreateText("BotModeText", root, topRight, new Vector2(-40f, -40f), new Vector2(600f, 32f), 24f, TextAlignmentOptions.MidlineRight);
-
-            HudPanelView drawPanel = CreatePanel("DrawPanel", root, center, new Vector2(0f, -70f), new Vector2(220f, 12f));
-            CreateImage("Back", drawPanel.transform, center, Vector2.zero, new Vector2(220f, 12f), new Color(0f, 0f, 0f, 0.6f));
-            Image drawFill = CreateImage("Fill", drawPanel.transform, center, Vector2.zero, new Vector2(216f, 8f), new Color(1f, 0.85f, 0.3f));
-            MakeFilled(drawFill);
-
-            HudPanelView deathPanel = CreatePanel("DeathPanel", root, center, new Vector2(0f, 120f), new Vector2(900f, 200f));
-            TMP_Text deathText = CreateText("Text", deathPanel.transform, center, Vector2.zero, new Vector2(900f, 200f), 64f, TextAlignmentOptions.Center);
-            deathText.color = new Color(0.9f, 0.2f, 0.15f);
-
-            HudPanelView helpPanel = CreatePanel("HelpPanel", root, topLeft, new Vector2(30f, -30f), new Vector2(760f, 300f));
-            CreateImage("Back", helpPanel.transform, topLeft, Vector2.zero, new Vector2(760f, 300f), new Color(0f, 0f, 0f, 0.45f));
-            TMP_Text help = CreateText("Text", helpPanel.transform, topLeft, new Vector2(16f, -12f), new Vector2(730f, 280f), 22f, TextAlignmentOptions.TopLeft);
-            help.text = HelpText;
-
-            drawPanel.gameObject.SetActive(false);
-            deathPanel.gameObject.SetActive(false);
-
-            SerializedObject so = new SerializedObject(canvasObject.AddComponent<BattleHudView>());
-            BattleEditorUtility.Set(so, "_context", context);
-            BattleEditorUtility.Set(so, "_healthFill", healthFill);
-            BattleEditorUtility.Set(so, "_healthText", healthText);
-            BattleEditorUtility.Set(so, "_weaponText", weaponText);
-            BattleEditorUtility.Set(so, "_stateText", stateText);
-            BattleEditorUtility.Set(so, "_botModeText", botModeText);
-            BattleEditorUtility.Set(so, "_comboIndicator", combo);
-            BattleEditorUtility.Set(so, "_drawPanel", drawPanel);
-            BattleEditorUtility.Set(so, "_drawFill", drawFill);
-            BattleEditorUtility.Set(so, "_deathPanel", deathPanel);
-            BattleEditorUtility.Set(so, "_deathText", deathText);
-            BattleEditorUtility.Set(so, "_helpPanel", helpPanel);
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static RectTransform CreateRect(string name, Transform parent, Vector2 anchor, Vector2 position, Vector2 size)
-        {
-            RectTransform rect = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            rect.anchorMin = rect.anchorMax = rect.pivot = anchor;
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-
-            return rect;
-        }
-
-        private static Image CreateImage(string name, Transform parent, Vector2 anchor, Vector2 position, Vector2 size, Color color)
-        {
-            Image image = CreateRect(name, parent, anchor, position, size).gameObject.AddComponent<Image>();
-            image.color = color;
-            image.raycastTarget = false;
-
-            return image;
-        }
-
-        private static void MakeFilled(Image image)
-        {
-            image.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-            image.type = Image.Type.Filled;
-            image.fillMethod = Image.FillMethod.Horizontal;
-            image.fillOrigin = (int)Image.OriginHorizontal.Left;
-        }
-
-        private static TMP_Text CreateText(string name, Transform parent, Vector2 anchor, Vector2 position, Vector2 size, float fontSize,
-            TextAlignmentOptions alignment)
-        {
-            TextMeshProUGUI text = CreateRect(name, parent, anchor, position, size).gameObject.AddComponent<TextMeshProUGUI>();
-            text.fontSize = fontSize;
-            text.alignment = alignment;
-            text.raycastTarget = false;
-            text.text = string.Empty;
-
-            return text;
-        }
-
-        private static HudPanelView CreatePanel(string name, Transform parent, Vector2 anchor, Vector2 position, Vector2 size)
-        {
-            return CreateRect(name, parent, anchor, position, size).gameObject.AddComponent<HudPanelView>();
         }
 
         private static void AddToBuildSettings()

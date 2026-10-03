@@ -43,10 +43,14 @@ namespace Game.Scripts.Battle
             void OnHitReceived(HitResult result, float staggerDuration);
         }
 
-        /// Optional second interface: armor, resistances and shields of the receiver.
-        public interface IDefense
+        /// Optional second interface: outgoing hit bonuses and incoming armor, resistances, guard and poise of the receiver.
+        public interface IHitModifier
         {
+            float WeakpointMultiplier { get; }
+            float ImpactMultiplier { get; }
             int ModifyIncomingDamage(int damage, DamageType type, HitZone zone);
+            float ModifyBlockMitigation(float mitigation);
+            float ModifyIncomingStagger(int damage, float staggerDuration);
         }
 
         public event Action<HitEventData> OnHitEvent;
@@ -80,7 +84,7 @@ namespace Game.Scripts.Battle
         private const int NoTeam = 0;
 
         private IOwner _owner;
-        private IDefense _defense;
+        private IHitModifier _modifier;
         private DamageReceiverComponent _lastAttacker;
         private int _renderedEvents;
         private int _team = NoTeam;
@@ -103,9 +107,9 @@ namespace Game.Scripts.Battle
             _owner = owner;
         }
 
-        public void SetDefense(IDefense defense)
+        public void SetModifier(IHitModifier modifier)
         {
-            _defense = defense;
+            _modifier = modifier;
         }
 
         public void SetTeam(int team)
@@ -132,12 +136,14 @@ namespace Game.Scripts.Battle
 
             HitResult result = blockRays == 0 ? HitResult.Hit : bodyRays == 0 ? HitResult.Blocked : HitResult.PartialBlock;
             float blockedShare = blockRays / (float)(blockRays + bodyRays);
-            float zoneMultiplier = result == HitResult.Blocked ? 1f : _zoneConfig.GetMultiplier(request.Zone);
-            float mitigation = block != null ? block.Mitigation * blockedShare : 0f;
+            IHitModifier attacker = request.Attacker != null ? request.Attacker._modifier : null;
+            float weakpoint = request.Zone == HitZone.Head ? attacker?.WeakpointMultiplier ?? 1f : 1f;
+            float zoneMultiplier = result == HitResult.Blocked ? 1f : _zoneConfig.GetMultiplier(request.Zone) * weakpoint;
+            float mitigation = block != null ? (_modifier?.ModifyBlockMitigation(block.Mitigation) ?? block.Mitigation) * blockedShare : 0f;
             int damage = Mathf.RoundToInt(request.BaseDamage * zoneMultiplier * (1f - mitigation));
 
-            if (_defense != null && damage > 0)
-                damage = Mathf.Max(0, _defense.ModifyIncomingDamage(damage, request.DamageType, request.Zone));
+            if (_modifier != null && damage > 0)
+                damage = Mathf.Max(0, _modifier.ModifyIncomingDamage(damage, request.DamageType, request.Zone));
 
             if (request.Attacker != null)
                 _lastAttacker = request.Attacker;
@@ -154,7 +160,8 @@ namespace Game.Scripts.Battle
             });
             _eventCount++;
 
-            _owner?.OnHitReceived(result, request.StaggerDuration);
+            float stagger = request.StaggerDuration * (attacker?.ImpactMultiplier ?? 1f);
+            _owner?.OnHitReceived(result, _modifier?.ModifyIncomingStagger(damage, stagger) ?? stagger);
 
             if (request.Attacker != null)
                 request.Attacker.OnHitDealt?.Invoke(this, result, damage);

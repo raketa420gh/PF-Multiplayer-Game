@@ -128,7 +128,7 @@ namespace Game.Scripts.Battle
 
             foreach (LagCompensatedHit hit in s_hits)
             {
-                if (hit.Hitbox != null && hit.Hitbox.Root == _ownReceiver.HitboxRoot)
+                if (hit.Hitbox != null && (hit.Hitbox.Root == _ownReceiver.HitboxRoot || !ZoneHitbox.IsInsideShape(Runner, hit, Object.InputAuthority)))
                     continue;
 
                 data.FinishTick = Runner.Tick;

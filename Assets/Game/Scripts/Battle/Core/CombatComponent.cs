@@ -33,6 +33,7 @@ namespace Game.Scripts.Battle
     {
         float GetDamageMultiplier(DamageType type);
         float ActionSpeed { get; }
+        float HandlingSpeed { get; }
         float MoveSpeedMultiplier { get; }
     }
 
@@ -55,7 +56,12 @@ namespace Game.Scripts.Battle
         public float DrawPower => State == CombatState.Draw ? Weapon.Ranged.GetPower(StateTime) : 0f;
         public float BusyProgress => State == CombatState.Busy && _stateDuration > 0f ? Mathf.Clamp01(StateTime / _stateDuration) : 0f;
         public byte BusyKind => _busyKind;
-        public float TimeScale => State is CombatState.Attack or CombatState.BlockRaise or CombatState.BlockImpact or CombatState.Draw or CombatState.Reload ? ActionSpeed : 1f;
+        public float TimeScale => State switch
+        {
+            CombatState.Attack or CombatState.BlockRaise or CombatState.BlockImpact or CombatState.Draw => ActionSpeed,
+            CombatState.Equip or CombatState.Reload => _stats?.HandlingSpeed ?? 1f,
+            _ => 1f
+        };
         public float ActionSpeed => (_stats?.ActionSpeed ?? 1f) * _baseActionSpeed;
         public Hitbox[] BlockHitboxes => _blockHitboxes;
         public DamageReceiverComponent Receiver => _receiver;
@@ -197,6 +203,7 @@ namespace Game.Scripts.Battle
         private ICombatStats _stats;
         private bool _isBlockHeld;
         private bool _isBlockSuppressed;
+        private bool _isAttackSuppressed;
         private int _renderedWorldHits;
         private bool _hasWorldHit;
         private LagCompensatedHit _worldHit;
@@ -232,6 +239,12 @@ namespace Game.Scripts.Battle
         public void SetBlockSuppressed(bool isSuppressed)
         {
             _isBlockSuppressed = isSuppressed;
+        }
+
+        /// While a belt item is in hand the primary button uses it instead of attacking.
+        public void SetAttackSuppressed(bool isSuppressed)
+        {
+            _isAttackSuppressed = isSuppressed;
         }
 
         public int GetWeaponIndex(int slot)
@@ -308,8 +321,8 @@ namespace Game.Scripts.Battle
         public void Simulate(NetworkButtons buttons, NetworkButtons previous)
         {
             WeaponConfig weapon = Weapon;
-            bool isAttackHeld = buttons.IsSet(weapon.AttackButton);
-            bool isAttackPressed = buttons.WasPressed(previous, weapon.AttackButton);
+            bool isAttackHeld = buttons.IsSet(weapon.AttackButton) && !_isAttackSuppressed;
+            bool isAttackPressed = buttons.WasPressed(previous, weapon.AttackButton) && !_isAttackSuppressed;
             bool isBlockHeld = buttons.IsSet(weapon.BlockButton) && weapon.Block.CanBlock && !_isBlockSuppressed;
             bool isBlockPressed = buttons.WasPressed(previous, weapon.BlockButton) && !_isBlockSuppressed;
             float time = StateTime;
@@ -538,7 +551,7 @@ namespace Game.Scripts.Battle
 
                 HitboxRoot root = hit.Hitbox.Root;
 
-                if (root == _hitboxRoot || _hitRoots.Contains(root) || s_rayRoots.Contains(root))
+                if (root == _hitboxRoot || _hitRoots.Contains(root) || s_rayRoots.Contains(root) || !ZoneHitbox.IsInsideShape(Runner, hit, Object.InputAuthority))
                     continue;
 
                 s_rayRoots.Add(root);

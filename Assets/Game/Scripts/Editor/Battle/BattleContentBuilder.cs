@@ -25,6 +25,7 @@ namespace Game.Scripts.Editor.Battle
             public Vector3 Extents;
             public Vector3 Center;
             public Quaternion Rotation;
+            public bool IsRound;
         }
 
         internal sealed class Loadout
@@ -331,6 +332,7 @@ namespace Game.Scripts.Editor.Battle
                     continue;
 
                 blockHitboxes[i] = CreateBoxHitbox(sockets[(int)block.Socket], hitboxRoot, "Block" + i, HitZone.Block, block.LocalCenter, block.Extents, hitboxLayer);
+                BattleEditorUtility.Set(blockHitboxes[i], "_isRound", block.IsRound);
             }
 
             hitboxRoot.InitHitboxes();
@@ -469,6 +471,7 @@ namespace Game.Scripts.Editor.Battle
                 BlockBox block = shieldLoadout.Block;
                 Hitbox blockHitbox = CreateBoxHitbox(hitboxes, hitboxRoot, "Block", HitZone.Block, block.Center, block.Extents, hitboxLayer);
                 blockHitbox.transform.localRotation = block.Rotation;
+                BattleEditorUtility.Set(blockHitbox, "_isRound", block.IsRound);
 
                 GameObject shield = (GameObject)PrefabUtility.InstantiatePrefab(shieldPrefab, visual);
                 shield.transform.SetLocalPositionAndRotation(block.Center - block.Rotation * block.LocalCenter, block.Rotation);
@@ -607,7 +610,8 @@ namespace Game.Scripts.Editor.Battle
                     LocalCenter = bounds.center,
                     Extents = Vector3.Max(bounds.extents, Vector3.one * 0.02f),
                     Center = center,
-                    Rotation = rotation
+                    Rotation = rotation,
+                    IsRound = socketId is WeaponSocket.LeftShield or WeaponSocket.RightShield
                 };
             }
 

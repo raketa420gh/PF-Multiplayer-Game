@@ -45,7 +45,8 @@ namespace Game.Scripts.Battle
                 _health.Restore(_health.MaxHealth);
             }
 
-            if (_blockHitbox != null)
+            // The root assigns hitbox indices when it starts; until then activation changes must wait.
+            if (_blockHitbox != null && _blockHitbox.HitboxIndex >= 0 && _blockHitbox.HitboxIndex < _receiver.HitboxRoot.Hitboxes.Length && _receiver.HitboxRoot.Hitboxes[_blockHitbox.HitboxIndex] == _blockHitbox)
                 _receiver.HitboxRoot.SetHitboxActive(_blockHitbox, IsBlocking);
         }
 

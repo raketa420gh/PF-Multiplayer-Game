@@ -70,10 +70,6 @@ namespace Game.Scripts.Battle
             Accumulate(PlayerInputButtons.Spell3, Input.GetKey(KeyCode.V));
             Accumulate(PlayerInputButtons.Spell4, Input.GetKey(KeyCode.R));
             Accumulate(PlayerInputButtons.Spell5, Input.GetKey(KeyCode.T));
-            Accumulate(PlayerInputButtons.Utility1, Input.GetKey(KeyCode.Alpha5));
-            Accumulate(PlayerInputButtons.Utility2, Input.GetKey(KeyCode.Alpha6));
-            Accumulate(PlayerInputButtons.Utility3, Input.GetKey(KeyCode.Alpha7));
-            Accumulate(PlayerInputButtons.Utility4, Input.GetKey(KeyCode.Alpha8));
             Accumulate(PlayerInputButtons.Rest, Input.GetKey(KeyCode.G));
         }
 

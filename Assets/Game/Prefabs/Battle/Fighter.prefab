@@ -53,6 +53,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 0
 --- !u!1 &624038453279002815
 GameObject:
   m_ObjectHideFlags: 0
@@ -106,6 +107,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 0
 --- !u!1 &1090051150088142733
 GameObject:
   m_ObjectHideFlags: 0
@@ -159,6 +161,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 0
 --- !u!1 &1104159508731948936
 GameObject:
   m_ObjectHideFlags: 0
@@ -212,6 +215,61 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 0
+--- !u!1 &2605482359216603845
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1035568622222764980}
+  - component: {fileID: 4371627371583487892}
+  m_Layer: 8
+  m_Name: Head
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1035568622222764980
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2605482359216603845}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.74, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4434409775299899741}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4371627371583487892
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2605482359216603845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ad97ad4173f3fd4bad9efef1ae7ab7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Battle.ZoneHitbox
+  Type: 2
+  SphereRadius: 0.14
+  CapsuleRadius: 0
+  BoxExtents: {x: 0, y: 0, z: 0}
+  CapsuleExtents: 0
+  Offset: {x: 0, y: 0, z: 0}
+  Root: {fileID: 6525108741798033173}
+  GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  _zone: 1
+  _isRound: 0
 --- !u!1 &2624557974562561830
 GameObject:
   m_ObjectHideFlags: 0
@@ -298,6 +356,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 0
 --- !u!1 &3712292435016218070
 GameObject:
   m_ObjectHideFlags: 0
@@ -351,6 +410,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 0
 --- !u!1 &4040876478493371300
 GameObject:
   m_ObjectHideFlags: 0
@@ -523,7 +583,7 @@ MonoBehaviour:
   _move: {fileID: 8054434580021788037}
   _chestPoint: {x: 0, y: 1.35, z: 0}
   _upperHitboxes:
-  - {fileID: 1281269972222439996}
+  - {fileID: 1035568622222764980}
   - {fileID: 5558190351821206478}
   _lowerHitboxes:
   - {fileID: 7680704260220594360}
@@ -545,7 +605,7 @@ MonoBehaviour:
   Offset: {x: 0, y: 1, z: 0}
   GizmosColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   Hitboxes:
-  - {fileID: 1192691648390431322}
+  - {fileID: 4371627371583487892}
   - {fileID: 8061494121079906153}
   - {fileID: 5707010360315885719}
   - {fileID: 3837810583813786873}
@@ -881,6 +941,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 2
+  _isRound: 0
 --- !u!1 &5257947350242441623
 GameObject:
   m_ObjectHideFlags: 0
@@ -934,6 +995,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 0
 --- !u!1 &5954354555988682024
 GameObject:
   m_ObjectHideFlags: 0
@@ -963,66 +1025,13 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1281269972222439996}
+  - {fileID: 1035568622222764980}
   - {fileID: 5558190351821206478}
   - {fileID: 7680704260220594360}
   - {fileID: 3160648136336845783}
   - {fileID: 3461744007389828201}
   m_Father: {fileID: 2215187202086747464}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &6328285059339346159
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1281269972222439996}
-  - component: {fileID: 1192691648390431322}
-  m_Layer: 8
-  m_Name: Head
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1281269972222439996
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6328285059339346159}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.74, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4434409775299899741}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1192691648390431322
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6328285059339346159}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5ad97ad4173f3fd4bad9efef1ae7ab7f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Battle.ZoneHitbox
-  Type: 2
-  SphereRadius: 0.14
-  CapsuleRadius: 0
-  BoxExtents: {x: 0, y: 0, z: 0}
-  CapsuleExtents: 0
-  Offset: {x: 0, y: 0, z: 0}
-  Root: {fileID: 6525108741798033173}
-  GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  _zone: 1
 --- !u!1 &6405235464668124923
 GameObject:
   m_ObjectHideFlags: 0
@@ -1076,6 +1085,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 2
+  _isRound: 0
 --- !u!1 &6427651543160457420
 GameObject:
   m_ObjectHideFlags: 0
@@ -1129,6 +1139,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 0
+  _isRound: 0
 --- !u!1 &6595921165952901293
 GameObject:
   m_ObjectHideFlags: 0
@@ -1182,6 +1193,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 1
 --- !u!1 &6764891245839409358
 GameObject:
   m_ObjectHideFlags: 0
@@ -1235,6 +1247,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 0
+  _isRound: 0
 --- !u!1 &7154715038929781981
 GameObject:
   m_ObjectHideFlags: 0
@@ -1288,6 +1301,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 0
 --- !u!1 &7196249820128098377
 GameObject:
   m_ObjectHideFlags: 0
@@ -1404,6 +1418,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 1
 --- !u!1 &8958287428124071052
 GameObject:
   m_ObjectHideFlags: 0
@@ -1457,6 +1472,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 1
 --- !u!1 &9030237035539264788
 GameObject:
   m_ObjectHideFlags: 0
@@ -1510,6 +1526,7 @@ MonoBehaviour:
   Root: {fileID: 6525108741798033173}
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 3
+  _isRound: 0
 --- !u!1001 &6054183199947882899
 PrefabInstance:
   m_ObjectHideFlags: 0

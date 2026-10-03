@@ -82,7 +82,12 @@ namespace Game.Scripts.Battle
             if (!isLocal && weapon.Block.CanBlock && weaponIndex < blocks.Length && blocks[weaponIndex] != null)
             {
                 Hitbox block = blocks[weaponIndex];
-                DrawBox(block.Position, block.transform.rotation, block.BoxExtents, combat.State == CombatState.Block ? _blockActiveColor : _blockIdleColor);
+                Color color = combat.State == CombatState.Block ? _blockActiveColor : _blockIdleColor;
+
+                if (block is ZoneHitbox { IsRound: true })
+                    DrawDisc(block.Position, block.transform.rotation, Mathf.Min(block.BoxExtents.x, block.BoxExtents.y), color);
+                else
+                    DrawBox(block.Position, block.transform.rotation, block.BoxExtents, color);
             }
 
             if (combat.State != CombatState.Attack)
@@ -131,6 +136,20 @@ namespace Game.Scripts.Battle
             {
                 Line(center + rotation * Vector3.Scale(s_corners[s_edges[i]], extents),
                     center + rotation * Vector3.Scale(s_corners[s_edges[i + 1]], extents));
+            }
+        }
+
+        private void DrawDisc(Vector3 center, Quaternion rotation, float radius, Color color)
+        {
+            const int segments = 24;
+            GL.Color(color);
+
+            for (int i = 0; i < segments; i++)
+            {
+                Vector3 from = center + rotation * (Quaternion.Euler(0f, 0f, i * 360f / segments) * Vector3.right * radius);
+                Vector3 to = center + rotation * (Quaternion.Euler(0f, 0f, (i + 1) * 360f / segments) * Vector3.right * radius);
+                Line(from, to);
+                Line(center, from);
             }
         }
 
