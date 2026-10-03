@@ -2,14 +2,14 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Switches between tavern, HUD, inventory and result screens and owns the cursor state.
+    /// Switches between the loading, HUD, inventory and result screens of a gameplay scene and owns the cursor state.
     public sealed class DungeonUiRoot : MonoBehaviour
     {
         [SerializeField]
         private DungeonContext _context;
 
         [SerializeField]
-        private LobbyView _lobby;
+        private LoadingView _loading;
 
         [SerializeField]
         private DungeonHudView _hud;
@@ -38,6 +38,7 @@ namespace Game.Scripts.Dungeon
         private SessionState _shownState = (SessionState)255;
         private bool _isInventoryOpen;
         private int _wheelSkill = -1;
+        private readonly System.Collections.Generic.List<int> _wheelSpells = new();
         private readonly System.Collections.Generic.List<(string, string, Color, string)> _wheelEntries = new();
         private Fusion.NetworkBehaviourId _openedContainer;
 
@@ -55,7 +56,7 @@ namespace Game.Scripts.Dungeon
 
         private void Start()
         {
-            ShowLobby(false);
+            ShowLoading();
         }
 
         private void Update()
@@ -125,20 +126,25 @@ namespace Game.Scripts.Dungeon
                 _wheelEntries.Add(("Bear", "Br", new Color(0.7f, 0.5f, 0.3f), "+50% HP, slow, heavy claws"));
                 _wheelEntries.Add(("Panther", "Pn", new Color(0.4f, 0.35f, 0.5f), "fast, quick claws"));
                 _wheelEntries.Add(("Rat", "Rt", new Color(0.6f, 0.6f, 0.6f), "tiny, fragile, sneaky"));
-                _wheel.Open("Shapeshift", _wheelEntries, (int)_adventurer.Form - 1);
+                _wheel.Open("Shapeshift", _wheelEntries, -1);
             }
             else
             {
                 AbilityConfig[] spells = _adventurer.Class.Spells;
+                _wheelSpells.Clear();
 
                 for (int i = 0; i < spells.Length; i++)
                 {
+                    if (!_adventurer.IsSpellInWheel(i))
+                        continue;
+
                     int index = _adventurer.SkillCount + i;
                     string detail = spells[i].IsCooldownBased ? $"{spells[i].Cooldown:0}s cd" : $"{_adventurer.GetCharges(index)}/{_adventurer.GetMaxCharges(index)}";
+                    _wheelSpells.Add(i);
                     _wheelEntries.Add((spells[i].DisplayName, spells[i].Glyph, spells[i].Color, detail));
                 }
 
-                _wheel.Open(skill.DisplayName, _wheelEntries, _adventurer.ReadiedSpell == AdventurerComponent.NoSpell ? -1 : _adventurer.ReadiedSpell);
+                _wheel.Open(skill.DisplayName, _wheelEntries, -1);
             }
 
             _context.Battle.Input.SetLookFrozen(true);
@@ -161,14 +167,13 @@ namespace Game.Scripts.Dungeon
             if (skill.Kind == AbilityKind.Shapeshift)
                 _adventurer.RpcShapeshift((ShapeshiftForm)(selected + 1));
             else
-                _adventurer.RpcReadySpell((byte)selected);
+                _adventurer.RpcReadySpell((byte)_wheelSpells[selected]);
         }
 
         private void OnSessionChanged(PlayerSessionComponent session)
         {
             _session = session;
             _shownState = (SessionState)255;
-            _lobby.Bind(session);
             _result.Bind(session);
         }
 
@@ -179,6 +184,7 @@ namespace Game.Scripts.Dungeon
             if (adventurer != null)
             {
                 _inventory.Bind(adventurer.Inventory, adventurer.Actions, adventurer.Stats, adventurer.Class, adventurer.Class.DisplayName, true);
+                _inventory.SetSearcher(adventurer);
                 _inventoryPreview.Bind(adventurer.Inventory, adventurer.Class);
             }
         }
@@ -190,10 +196,10 @@ namespace Game.Scripts.Dungeon
             switch (_session.State)
             {
                 case SessionState.Lobby:
-                    ShowLobby(true);
+                    ShowLoading();
                     break;
                 case SessionState.InDungeon:
-                    _lobby.Hide();
+                    _loading.Hide();
                     _result.Hide();
                     _hud.Show();
                     SetInventoryOpen(false);
@@ -202,23 +208,22 @@ namespace Game.Scripts.Dungeon
                     _result.Bind(_session);
                     _hud.Hide();
                     _inventory.Hide();
-                    _lobby.Hide();
+                    _loading.Hide();
                     _result.Show();
                     _context.Battle.Input.SetUiOpen(true);
                     break;
             }
         }
 
-        private void ShowLobby(bool bind)
+        /// The session waits for its kit and the adventurer spawn: the loading screen stays up until the body exists.
+        private void ShowLoading()
         {
             _hud.Hide();
             _result.Hide();
             _inventory.Hide();
-            _lobby.SetShown(!_context.IsSandbox);
+            _loading.Show();
+            _loading.SetStatus("Entering...", 1f);
             _context.Battle.Input.SetUiOpen(true);
-
-            if (bind)
-                _lobby.Bind(_session);
         }
 
         private void SetInventoryOpen(bool isOpen)

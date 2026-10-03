@@ -15,6 +15,7 @@ namespace Game.Scripts.Dungeon
         private const string SkillAKey = "dad.skillA";
         private const string SkillBKey = "dad.skillB";
         private const string PerksKey = "dad.perks";
+        private const string SpellsKey = "dad.spells";
 
         private static readonly byte[] s_buffer = new byte[(InventoryComponent.Capacity + InventoryComponent.EquipmentCapacity) * ItemStack.ByteSize + 2];
 
@@ -27,12 +28,14 @@ namespace Game.Scripts.Dungeon
         public static byte LoadSkillA() => (byte)PlayerPrefs.GetInt(SkillAKey, 0);
         public static byte LoadSkillB() => (byte)PlayerPrefs.GetInt(SkillBKey, 1);
         public static int LoadPerkMask() => PlayerPrefs.GetInt(PerksKey, 1);
+        public static int LoadSpellMask() => PlayerPrefs.GetInt(SpellsKey, ClassConfig.DefaultSpellMask);
 
-        public static void SaveBuild(int skillA, int skillB, int perkMask)
+        public static void SaveBuild(int skillA, int skillB, int perkMask, int spellMask)
         {
             PlayerPrefs.SetInt(SkillAKey, skillA);
             PlayerPrefs.SetInt(SkillBKey, skillB);
             PlayerPrefs.SetInt(PerksKey, perkMask);
+            PlayerPrefs.SetInt(SpellsKey, spellMask);
         }
 
         public static void SaveKit(InventoryComponent inventory) => Save(KitKey, inventory);
@@ -76,6 +79,7 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
+            // The exact payload size tells the item format apart, see InventoryComponent.Deserialize.
             byte[] items = new byte[length - 2];
             Array.Copy(data, 2, items, 0, items.Length);
             inventory.Deserialize(items, data[0], data[1]);

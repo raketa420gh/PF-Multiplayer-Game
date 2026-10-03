@@ -11,15 +11,14 @@ namespace Game.Scripts.Dungeon
         Finished
     }
 
-    /// Match clock and the Dark Swarm per floor. The circle closes in stages towards a random point of each floor.
+    /// Match state and the Dark Swarm. Every floor is a dungeon of its own: its clock starts when the first adventurer
+    /// arrives, and its circle closes in stages from the whole floor towards a random point.
     public sealed class MatchComponent : NetworkBehaviour
     {
         public const int FloorCount = 2;
 
         public DungeonConfig Config => _config;
         public float Elapsed => State == MatchState.Running ? Runner.SecondsSince(StartTick) : 0f;
-        public float TimeLeft => Mathf.Max(0f, _config.MatchDuration - Elapsed);
-        public bool IsTimeUp => State == MatchState.Running && Elapsed >= _config.MatchDuration;
         public bool IsRunning => State == MatchState.Running;
 
         [Networked]
@@ -32,10 +31,16 @@ namespace Game.Scripts.Dungeon
         public int Round { get; private set; }
 
         [Networked, Capacity(FloorCount)]
+        private NetworkArray<Vector3> _floorCenters => default;
+
+        [Networked, Capacity(FloorCount)]
         private NetworkArray<Vector3> _swarmCenters => default;
 
         [Networked, Capacity(FloorCount)]
         private NetworkArray<float> _floorRadii => default;
+
+        [Networked, Capacity(FloorCount)]
+        private NetworkArray<int> _floorStartTicks => default;
 
         [SerializeField]
         private DungeonConfig _config;
@@ -50,13 +55,22 @@ namespace Game.Scripts.Dungeon
         {
             for (int i = 0; i < FloorCount; i++)
             {
+                _floorCenters.Set(i, floorCenters[i]);
                 _swarmCenters.Set(i, finalCenters[i]);
                 _floorRadii.Set(i, floorRadii[i]);
+                _floorStartTicks.Set(i, 0);
             }
 
             StartTick = Runner.Tick;
             State = MatchState.Running;
             Round++;
+            BeginFloor(1);
+        }
+
+        /// Starts the clock of a floor; until then its swarm stays wide open.
+        public void BeginFloor(int floor)
+        {
+            _floorStartTicks.Set(Index(floor), Runner.Tick);
         }
 
         public void Finish()
@@ -69,16 +83,28 @@ namespace Game.Scripts.Dungeon
             State = MatchState.Waiting;
         }
 
+        public float GetElapsed(int floor)
+        {
+            int tick = _floorStartTicks[Index(floor)];
+
+            return State == MatchState.Running && tick > 0 ? Runner.SecondsSince(tick) : 0f;
+        }
+
+        public float GetTimeLeft(int floor)
+        {
+            return Mathf.Max(0f, _config.MatchDuration - GetElapsed(floor));
+        }
+
+        public bool IsTimeUp(int floor)
+        {
+            return GetElapsed(floor) >= _config.MatchDuration;
+        }
+
         /// Current safe radius for a floor; stages interpolate from the previous radius to the stage radius.
         public float GetSafeRadius(int floor)
         {
-            int index = Mathf.Clamp(floor - 1, 0, FloorCount - 1);
-            float radius = _floorRadii[index];
-
-            if (State != MatchState.Running)
-                return radius;
-
-            float elapsed = Elapsed;
+            float radius = _floorRadii[Index(floor)];
+            float elapsed = GetElapsed(floor);
             float previous = radius;
 
             foreach (SwarmStage stage in _config.SwarmStages)
@@ -95,9 +121,14 @@ namespace Game.Scripts.Dungeon
             return previous;
         }
 
+        /// The circle starts on the floor center, where it covers every room, and drifts to its final point as it shrinks.
         public Vector3 GetSwarmCenter(int floor)
         {
-            return _swarmCenters[Mathf.Clamp(floor - 1, 0, FloorCount - 1)];
+            int index = Index(floor);
+            float radius = _floorRadii[index];
+            float closed = radius > 0f ? 1f - GetSafeRadius(floor) / radius : 1f;
+
+            return Vector3.Lerp(_floorCenters[index], _swarmCenters[index], closed);
         }
 
         public float GetSwarmDamage(int floor, Vector3 position)
@@ -105,25 +136,23 @@ namespace Game.Scripts.Dungeon
             if (State != MatchState.Running)
                 return 0f;
 
-            if (TimeLeft < 60f)
+            if (GetTimeLeft(floor) < 60f)
                 return _config.SwarmDamagePerSecond * 2f;
 
-            Vector3 center = GetSwarmCenter(floor);
-            float radius = GetSafeRadius(floor);
-            Vector3 delta = position - center;
+            Vector3 delta = position - GetSwarmCenter(floor);
             delta.y = 0f;
 
-            if (delta.magnitude <= radius)
+            if (delta.magnitude <= GetSafeRadius(floor))
                 return 0f;
 
-            float ramp = 1f + Elapsed / _config.MatchDuration;
+            float ramp = 1f + GetElapsed(floor) / _config.MatchDuration;
 
             return _config.SwarmDamagePerSecond * ramp;
         }
 
-        public float GetSwarmTimeToNextStage()
+        public float GetSwarmTimeToNextStage(int floor)
         {
-            float elapsed = Elapsed;
+            float elapsed = GetElapsed(floor);
 
             foreach (SwarmStage stage in _config.SwarmStages)
             {
@@ -132,6 +161,11 @@ namespace Game.Scripts.Dungeon
             }
 
             return 0f;
+        }
+
+        private static int Index(int floor)
+        {
+            return Mathf.Clamp(floor - 1, 0, FloorCount - 1);
         }
     }
 }

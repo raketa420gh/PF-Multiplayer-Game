@@ -13,42 +13,23 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 new ClassDef
                 {
-                    Id = 0, Name = "Cleric", Description = "Holy healer in heavy armor. Bane of the undead.",
-                    Stats = new ClassStats(16, 13, 12, 12, 15, 22), Color = new Color(0.95f, 0.9f, 0.6f), Body = new Color(0.86f, 0.64f, 0.5f),
+                    Id = 0, Name = "Barbarian", Description = "Tough two-handed axe fighter. Shouts turn the tide, but he is slow and has only throwing axes at range.",
+                    Stats = new ClassStats(22, 21, 9, 13, 11, 10), Color = new Color(0.85f, 0.35f, 0.2f), Body = new Color(0.8f, 0.58f, 0.45f),
                     Skills = new[]
                     {
-                        Memory("Spell Memory", "Hold to open the spell wheel, release to ready a spell. Cast with RMB.", "SM", new Color(1f, 0.95f, 0.7f)),
-                        Skill("Divine Protection", "Absorb 40 damage for 6s.", AbilityKind.Shield, 40f, 6f, 45f, "DP", new Color(1f, 0.95f, 0.6f)),
-                        Area("Holy Purification", "100 divine damage to everything within 7.5m.", false, 1, 45f, 0.5f, 100f, 7.5f, DamageType.Magical, "HP", new Color(1f, 0.9f, 0.4f)),
-                        Projectile("Judgement", "25 divine damage and a slow.", false, 1, 28f, 1.25f, 25f, 34f, 0f, ProjectileKind.Holy, DamageType.Magical, 1, 0f, "Ju", new Color(1f, 0.85f, 0.5f), StatusEffectKind.Slow, 30f, 2f),
-                        Skill("Smite", "+10 physical power for 12s.", AbilityKind.Buff, 10f, 12f, 18f, "Sm", new Color(1f, 0.8f, 0.3f), StatusEffectKind.Power),
-                        Skill("Confession", "Heal 10 instantly.", AbilityKind.Heal, 10f, 0f, 12f, "Co", new Color(0.8f, 1f, 0.8f))
-                    },
-                    Spells = new[]
-                    {
-                        Spell("Bless", "+2 grip for 30s.", AbilityKind.Buff, 5, 0.75f, 2f, 30f, "Bl", new Color(1f, 1f, 0.7f), StatusEffectKind.Grip),
-                        Spell("Protection", "Absorb 20 damage for 8s.", AbilityKind.Shield, 5, 0.75f, 20f, 8f, "Pr", new Color(0.8f, 0.9f, 1f)),
-                        Spell("Lesser Heal", "Heal 20.", AbilityKind.Heal, 4, 1.25f, 20f, 0f, "LH", new Color(0.6f, 1f, 0.6f)),
-                        Projectile("Holy Strike", "20 divine damage.", true, 4, 1f, 2f, 20f, 30f, 0f, ProjectileKind.Holy, DamageType.Magical, 1, 0f, "HS", new Color(1f, 0.95f, 0.5f)),
-                        Spell("Holy Light", "Heal 35.", AbilityKind.Heal, 3, 1.75f, 35f, 0f, "HL", new Color(1f, 1f, 0.8f)),
-                        Spell("Sanctuary", "Heal 25 over 5s.", AbilityKind.Heal, 2, 2.25f, 25f, 5f, "Sa", new Color(0.9f, 1f, 0.9f)),
-                        Projectile("Bind", "Roots the target for a moment.", true, 4, 1f, 1f, 1f, 36f, 0f, ProjectileKind.Holy, DamageType.Magical, 1, 0f, "Bi", new Color(1f, 0.9f, 0.7f), StatusEffectKind.Slow, 95f, 0.75f),
-                        Spell("Divine Strike", "+5 physical power for 12s.", AbilityKind.Buff, 4, 0.75f, 5f, 12f, "DS", new Color(1f, 0.85f, 0.4f), StatusEffectKind.Power)
+                        Skill("Battle Roar", "Berserk fury: +10 rage (power, speed, but less armor) for 10s.", AbilityKind.Buff, 10f, 10f, 35f, "BR", new Color(1f, 0.4f, 0.2f), StatusEffectKind.Rage, 0.4f),
+                        Skill("Unyielding Shout", "Absorb 50 damage for 8s.", AbilityKind.Shield, 50f, 8f, 40f, "US", new Color(0.9f, 0.75f, 0.4f), StatusEffectKind.None, 0.4f)
                     },
                     Perks = new[]
                     {
-                        new PerkDef("Advanced Healer", "+4 magical power.", new StatModifier(StatType.MagicalPower, 4f)),
-                        new PerkDef("Holy Aura", "+15 armor and magic resistance.", new StatModifier(StatType.ArmorRating, 15f), new StatModifier(StatType.MagicResistance, 15f)),
-                        new PerkDef("Blunt Weapon Mastery", "+10 physical power.", new StatModifier(StatType.PhysicalPower, 10f)),
-                        new PerkDef("Perseverance", "+10 armor rating.", new StatModifier(StatType.ArmorRating, 10f)),
-                        new PerkDef("Kindness", "+5% max health.", new StatModifier(StatType.MaxHealth, 5f)),
-                        new PerkDef("Undead Slaying", "+10% physical damage.", new StatModifier(StatType.PhysicalDamageBonus, 0.1f)),
-                        new PerkDef("Requiem", "+2 resonance.", new StatModifier(StatType.Resonance, 2f)),
-                        new PerkDef("Protection from Evil", "+30 magic resistance.", new StatModifier(StatType.MagicResistance, 30f))
+                        new PerkDef("Thick Hide", "+20 armor rating and +10 magic resistance.", new StatModifier(StatType.ArmorRating, 20f), new StatModifier(StatType.MagicResistance, 10f)),
+                        new PerkDef("Giant's Constitution", "+20% max health.", new StatModifier(StatType.MaxHealth, 20f)),
+                        new PerkDef("Axe Mastery", "+8 physical power and +10% physical damage.", new StatModifier(StatType.PhysicalPower, 8f), new StatModifier(StatType.PhysicalDamageBonus, 0.1f)),
+                        new PerkDef("Bloodlust", "+12% action speed.", new StatModifier(StatType.ActionSpeed, 12f))
                     },
-                    Kit = new[] { ("Flanged Mace", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Spellbook", EquipSlot.Weapon2Main, 1, true), ("Kettle Hat", EquipSlot.Head, 1, true), ("Adventurer Tunic", EquipSlot.Chest, 1, true), ("Plate Boots", EquipSlot.Feet, 1, true), ("Bandage", EquipSlot.Utility1, 3, true) },
-                    Weapons = new[] { WeaponClass.Mace, WeaponClass.Staff, WeaponClass.Shield, WeaponClass.Torch, WeaponClass.Spellbook, WeaponClass.CrystalBall },
-                    Armor = new[] { ArmorType.Cloth, ArmorType.Leather, ArmorType.Chain, ArmorType.Plate }
+                    Kit = new[] { ("Battle Axe", EquipSlot.Weapon1Main, 1, true), ("Zweihander", EquipSlot.Weapon2Main, 1, true), ("Adventurer Tunic", EquipSlot.Chest, 1, true), ("Adventurer Boots", EquipSlot.Feet, 1, true), ("Francisca Axe", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 3, true) },
+                    Weapons = new[] { WeaponClass.Axe, WeaponClass.Sword, WeaponClass.Mace, WeaponClass.Spear, WeaponClass.Dagger, WeaponClass.Torch },
+                    Armor = new[] { ArmorType.Cloth, ArmorType.Leather, ArmorType.Chain }
                 }
             };
         }

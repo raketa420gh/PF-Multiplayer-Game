@@ -29,23 +29,71 @@ namespace Game.Scripts.Editor.Dungeon
         public const string BearClaws = "BearClaws";
         public const string PantherClaws = "PantherClaws";
         public const string RatBite = "RatBite";
+        public const string ShortSword = "ShortSword";
+        public const string Rapier = "Rapier";
+        public const string VikingSword = "VikingSword";
+        public const string Hatchet = "Hatchet";
+        public const string MorningStar = "MorningStar";
+        public const string CastillonDagger = "CastillonDagger";
+        public const string Stiletto = "Stiletto";
+        public const string FellingAxe = "FellingAxe";
+        public const string WarMaul = "WarMaul";
+        public const string Halberd = "Halberd";
 
-        /// Catalog order = combat catalog index. Battle prefab slots 1-4 map to the first four entries.
+        /// Catalog order = combat catalog index. Battle prefab slots 1-4 map to the first four entries; monsters refer to
+        /// their weapon by index, so new entries go to the end.
         public static readonly string[] CatalogOrder =
         {
             SwordShield, Greatsword, Bow, SwordShieldLeft, Fists, ArmingSword, Falchion, Longsword, BattleAxe, Spear, Mace, Dagger, Crossbow, Staff, Torch, MaceShield,
-            Spellbook, Lute, BearClaws, PantherClaws, RatBite
+            Spellbook, Lute, BearClaws, PantherClaws, RatBite,
+            ShortSword, Rapier, VikingSword, Hatchet, MorningStar, CastillonDagger, Stiletto, FellingAxe, WarMaul, Halberd
         };
 
-        /// Catalog entries that reuse another definition's animation clips (same prefix) with their own damage.
+        /// Catalog entries that play another entry's clips (its prefix) with a model, reach and damage of their own.
+        /// Their definitions keep the timings of the source, otherwise the shared clips would not match.
+        private static readonly (string name, string source, string displayName)[] s_variants =
+        {
+            (Spellbook, Fists, "Spellbook"), (Lute, Fists, "Lute"), (RatBite, Fists, "Rat Bite"),
+            (ShortSword, ArmingSword, "Short Sword"), (Rapier, ArmingSword, "Rapier"), (VikingSword, Falchion, "Viking Sword"),
+            (Hatchet, Falchion, "Hatchet"), (MorningStar, Mace, "Morning Star"), (CastillonDagger, Dagger, "Castillon Dagger"),
+            (Stiletto, Dagger, "Stiletto Dagger"), (FellingAxe, BattleAxe, "Felling Axe"), (WarMaul, BattleAxe, "War Maul"), (Halberd, Spear, "Halberd")
+        };
+
         public static string SharedPrefix(string name)
         {
-            return name switch
+            if (name == SwordShieldLeft)
+                return SwordShield;
+
+            foreach ((string variant, string source, string _) in s_variants)
             {
-                Spellbook or Lute or RatBite => Fists,
-                SwordShieldLeft => SwordShield,
-                _ => name
-            };
+                if (variant == name)
+                    return source;
+            }
+
+            return name;
+        }
+
+        /// Display name of the definition a variant entry is built from; null for entries with clips of their own.
+        public static string VariantName(string name)
+        {
+            foreach ((string variant, string _, string displayName) in s_variants)
+            {
+                if (variant == name)
+                    return displayName;
+            }
+
+            return null;
+        }
+
+        public static bool IsVariant(WeaponDefinition definition)
+        {
+            foreach ((string _, string _, string displayName) in s_variants)
+            {
+                if (displayName == definition.DisplayName)
+                    return true;
+            }
+
+            return false;
         }
 
         public static WeaponDefinition[] CreateAll()
@@ -71,8 +119,63 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateLute(),
                 CreateBearClaws(),
                 CreatePantherClaws(),
-                CreateRatBite()
+                CreateRatBite(),
+                OneHandedSword(ArmingSword, "Short Sword", 0.1f, 0.72f, 1.22f, 24, 0.4f, 0.2f, 0.5f),
+                OneHandedSword(ArmingSword, "Rapier", 0.12f, 1f, 1.5f, 25, 0.4f, 0.2f, 0.5f),
+                OneHandedSword(Falchion, "Viking Sword", 0.12f, 0.92f, 1.42f, 36, 0.65f, 0.17f, 0.4f),
+                OneHandedSword(Falchion, "Hatchet", 0.4f, 0.6f, 1.15f, 31, 0.65f, 0.17f, 0.4f),
+                CreateMorningStar(),
+                CreateDaggerVariant("Castillon Dagger", 0.5f, 1.12f, 18),
+                CreateDaggerVariant("Stiletto Dagger", 0.46f, 1.08f, 14),
+                CreateAxeVariant("Felling Axe", 0.62f, 0.98f, 1.6f, 37, 44, 0.3f, 0.4f),
+                CreateAxeVariant("War Maul", 0.82f, 1.15f, 1.75f, 47, 56, 0.4f, 0.55f),
+                CreateHalberd()
             };
+        }
+
+        private static WeaponDefinition CreateMorningStar()
+        {
+            WeaponDefinition definition = OneHandedSword(Mace, "Morning Star", 0.1f, 0.7f, 1.25f, 34, 0.55f, 0.18f, 0.5f);
+            definition.Attacks[2].Stagger = 0.35f;
+
+            return definition;
+        }
+
+        private static WeaponDefinition CreateDaggerVariant(string name, float bladeTip, float reach, int damage)
+        {
+            WeaponDefinition definition = OneHandedSword(Dagger, name, 0.06f, bladeTip, reach, damage, 0.3f, 0.12f, 0.3f);
+            definition.Attacks[2].Damage = damage;
+            definition.Attacks[2].Stagger = 0f;
+
+            return definition;
+        }
+
+        private static WeaponDefinition CreateAxeVariant(string name, float bladeBase, float bladeTip, float reach, int damage, int heavyDamage,
+            float stagger, float heavyStagger)
+        {
+            WeaponDefinition definition = CreateBattleAxe();
+            definition.DisplayName = name;
+            definition.BladeBase = bladeBase;
+            definition.BladeTip = bladeTip;
+            definition.Reach = reach;
+            definition.Attacks[0].Damage = damage;
+            definition.Attacks[0].Stagger = stagger;
+            definition.Attacks[1].Damage = heavyDamage;
+            definition.Attacks[1].Stagger = heavyStagger;
+
+            return definition;
+        }
+
+        private static WeaponDefinition CreateHalberd()
+        {
+            WeaponDefinition definition = CreateSpear();
+            definition.DisplayName = "Halberd";
+            definition.BladeBase = 1.4f;
+            definition.Attacks[0].Damage = 37;
+            definition.Attacks[1].Damage = 37;
+            definition.Attacks[2].Damage = 42;
+
+            return definition;
         }
 
         private static WeaponDefinition CreateSpellbook()

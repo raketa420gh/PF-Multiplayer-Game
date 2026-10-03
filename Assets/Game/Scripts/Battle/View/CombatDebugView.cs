@@ -27,7 +27,11 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private Color _arcColor = new(1f, 0.5f, 0.1f, 0.35f);
 
+        [SerializeField]
+        private Color _projectileColor = new(0.4f, 1f, 0.3f, 0.9f);
+
         private const int ArcSamples = 10;
+        private const int ProjectileSamples = 16;
 
         private static readonly Vector3[] s_corners =
         {
@@ -38,11 +42,9 @@ namespace Game.Scripts.Battle
         private static readonly int[] s_edges = { 0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7 };
 
         private Material _material;
-        private bool _isEnabled;
 
         private void Awake()
         {
-            _isEnabled = Debug.isDebugBuild;
             _material = new Material(Shader.Find("Hidden/Internal-Colored")) { hideFlags = HideFlags.HideAndDontSave };
             _material.SetInt("_ZTest", (int)CompareFunction.Always);
             _material.SetInt("_ZWrite", 0);
@@ -69,7 +71,7 @@ namespace Game.Scripts.Battle
         private void Update()
         {
             if (Input.GetKeyDown(_toggleKey))
-                _isEnabled = !_isEnabled;
+                BattleDebugSettings.Toggle();
         }
 
         /// The local player's own block box surrounds the first-person camera, so it is skipped.
@@ -128,6 +130,37 @@ namespace Game.Scripts.Battle
             Line(from - offset, to - offset);
         }
 
+        /// Flight path from the muzzle to the current position (or the impact point once landed, for one second).
+        private void DrawProjectiles(ProjectileComponent projectiles)
+        {
+            if (projectiles == null || projectiles.Object == null || !projectiles.Object.IsValid)
+                return;
+
+            NetworkRunner runner = projectiles.Runner;
+
+            for (int i = 0; i < ProjectileComponent.Capacity; i++)
+            {
+                ProjectileData data = projectiles.Projectiles[i];
+
+                if (data.FireTick <= 0 || (!data.IsFlying && runner.Tick - data.FinishTick > 1f / runner.DeltaTime))
+                    continue;
+
+                float end = data.IsFlying ? runner.SecondsSince(data.FireTick) : (data.FinishTick - data.FireTick) * runner.DeltaTime;
+                Vector3 previous = data.Origin;
+                GL.Color(_projectileColor);
+
+                for (int step = 1; step <= ProjectileSamples; step++)
+                {
+                    Vector3 point = data.GetPosition(end * step / ProjectileSamples);
+                    Line(previous, point);
+                    previous = point;
+                }
+
+                if (!data.IsFlying)
+                    DrawDisc(data.HitPoint, Quaternion.identity, Mathf.Max(data.Radius, 0.05f), _projectileColor);
+            }
+        }
+
         private void DrawBox(Vector3 center, Quaternion rotation, Vector3 extents, Color color)
         {
             GL.Color(color);
@@ -161,7 +194,7 @@ namespace Game.Scripts.Battle
 
         private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
         {
-            if (!_isEnabled || FighterComponent.All.Count == 0 || camera.cameraType != CameraType.Game ||
+            if (!BattleDebugSettings.IsEnabled || FighterComponent.All.Count == 0 || camera.cameraType != CameraType.Game ||
                 (camera.TryGetComponent(out UniversalAdditionalCameraData data) && data.renderType == CameraRenderType.Overlay))
                 return;
 
@@ -174,7 +207,10 @@ namespace Game.Scripts.Battle
             foreach (FighterComponent fighter in FighterComponent.All)
             {
                 if (fighter != null && fighter.Object != null && fighter.Object.IsValid)
+                {
                     Draw(fighter.Combat, fighter.Object.HasInputAuthority);
+                    DrawProjectiles(fighter.Combat.Projectiles);
+                }
             }
 
             GL.End();

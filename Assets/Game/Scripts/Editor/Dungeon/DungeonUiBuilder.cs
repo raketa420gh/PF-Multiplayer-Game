@@ -9,8 +9,8 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Builds the whole uGUI layer laid out like Dark and Darker: compass, HP bar with Q/E, belt, weapon row, minimap, inventory with 3D doll,
-    /// the tavern with its lobby, skills and stash pages.
+    /// Builds the uGUI layers laid out like Dark and Darker. Gameplay scenes: compass, HP bar with Q/E, belt, weapon row, minimap,
+    /// inventory with 3D doll, result and loading screens. Tavern scene: the lobby, skills and stash pages.
     internal static class DungeonUiBuilder
     {
         public const string PreviewLayer = "Preview";
@@ -19,7 +19,7 @@ namespace Game.Scripts.Editor.Dungeon
             "<b>Controls</b>\n" +
             "WASD move · Shift walk (quiet) · Space jump · Ctrl/C crouch (duck under swings)\n" +
             "LMB attack / draw · RMB block, or hold to cast a readied spell · 1 / 2 weapon sets · Tab inventory\n" +
-            "3 / 4 belt item in hand (press again for the next of three), LMB use, RMB put away · F interact (hold) · Q / E skills · G rest · H help\n" +
+            "3 / 4 belt item in hand (press again for the next of three), LMB use, RMB put away · F interact (hold; chests and corpses open at once) · Q / E skills · G rest · H help\n" +
             "Casters need a staff, spellbook or crystal ball in hand; bards need an instrument. Rest at a campfire to recover charges.";
 
         private static readonly Color s_panel = new(0.04f, 0.035f, 0.03f, 0.92f);
@@ -39,13 +39,75 @@ namespace Game.Scripts.Editor.Dungeon
             public ArmorPieceSetConfig PieceSet;
             public Texture2D[] FloorMaps;
             public string[] ModuleNames;
+            /// Name of the scene shown on its loading screen.
+            public string Title;
         }
 
+        /// UI of a gameplay scene (the dungeon or the test ground).
         public static GameObject Build(Inputs inputs)
+        {
+            GameObject canvasObject = BuildCanvas(inputs, out Canvas canvas);
+            Transform root = canvasObject.transform;
+            ItemView itemPrefab = BuildItemPrefab();
+            Image cellPrefab = BuildCellPrefab();
+
+            DungeonHudView hud = BuildHud(root, inputs);
+            CharacterPreviewView dungeonPreview;
+            InventoryView dungeonInventory = BuildInventory(root, canvas, inputs, itemPrefab, cellPrefab, "Inventory", true, 0, out dungeonPreview);
+            ResultView result = BuildResult(root);
+            HelpView help = BuildHelp(root);
+            SpellWheelView wheel = BuildWheel(root);
+            LoadingView loading = BuildLoading(root, inputs.Title);
+
+            DungeonUiRoot uiRoot = canvasObject.AddComponent<DungeonUiRoot>();
+            SerializedObject so = new SerializedObject(uiRoot);
+            BattleEditorUtility.Set(so, "_context", inputs.Context);
+            BattleEditorUtility.Set(so, "_loading", loading);
+            BattleEditorUtility.Set(so, "_hud", hud);
+            BattleEditorUtility.Set(so, "_inventory", dungeonInventory);
+            BattleEditorUtility.Set(so, "_result", result);
+            BattleEditorUtility.Set(so, "_help", help);
+            BattleEditorUtility.Set(so, "_wheel", wheel);
+            BattleEditorUtility.Set(so, "_inventoryPreview", dungeonPreview);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            hud.gameObject.SetActive(false);
+            dungeonInventory.gameObject.SetActive(false);
+            result.gameObject.SetActive(false);
+            help.gameObject.SetActive(false);
+            wheel.gameObject.SetActive(false);
+            BattleEditorUtility.SetLayerRecursively(canvasObject, LayerMask.NameToLayer("UI"));
+
+            return canvasObject;
+        }
+
+        /// UI of the tavern scene: the lobby pages under a loading screen that lifts when the session is ready.
+        public static GameObject BuildLobbyScene(Inputs inputs)
+        {
+            GameObject canvasObject = BuildCanvas(inputs, out Canvas canvas);
+            Transform root = canvasObject.transform;
+            LobbyView lobby = BuildLobby(root, canvas, inputs, BuildItemPrefab(), BuildCellPrefab());
+            HelpView help = BuildHelp(root);
+            LoadingView loading = BuildLoading(root, inputs.Title);
+
+            SerializedObject so = new SerializedObject(canvasObject.AddComponent<LobbyUiRoot>());
+            BattleEditorUtility.Set(so, "_context", inputs.Context);
+            BattleEditorUtility.Set(so, "_lobby", lobby);
+            BattleEditorUtility.Set(so, "_help", help);
+            BattleEditorUtility.Set(so, "_loading", loading);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            help.gameObject.SetActive(false);
+            BattleEditorUtility.SetLayerRecursively(canvasObject, LayerMask.NameToLayer("UI"));
+
+            return canvasObject;
+        }
+
+        private static GameObject BuildCanvas(Inputs inputs, out Canvas canvas)
         {
             BattleEditorUtility.EnsureLayer(PreviewLayer);
             GameObject canvasObject = new GameObject("[UI]");
-            Canvas canvas = canvasObject.AddComponent<Canvas>();
+            canvas = canvasObject.AddComponent<Canvas>();
             Camera uiCamera = BuildUiCamera(inputs.Camera);
             canvas.renderMode = RenderMode.ScreenSpaceCamera;
             canvas.worldCamera = uiCamera;
@@ -63,38 +125,49 @@ namespace Game.Scripts.Editor.Dungeon
 
             inputs.Camera.cullingMask &= ~(1 << LayerMask.NameToLayer(PreviewLayer));
 
-            Transform root = canvasObject.transform;
-            ItemView itemPrefab = BuildItemPrefab();
-            Image cellPrefab = BuildCellPrefab();
+            return canvasObject;
+        }
 
-            DungeonHudView hud = BuildHud(root, inputs);
-            CharacterPreviewView dungeonPreview;
-            InventoryView dungeonInventory = BuildInventory(root, canvas, inputs, itemPrefab, cellPrefab, "Inventory", true, 0, out dungeonPreview);
-            LobbyView lobby = BuildLobby(root, canvas, inputs, itemPrefab, cellPrefab);
-            ResultView result = BuildResult(root);
-            HelpView help = BuildHelp(root);
-            SpellWheelView wheel = BuildWheel(root);
+        /// Black cover with the destination name, a status line, a progress bar and a spinner; active from the first frame.
+        private static LoadingView BuildLoading(Transform root, string title)
+        {
+            Vector2 center = new Vector2(0.5f, 0.5f);
+            RectTransform panel = CreateRect("Loading", root, center, Vector2.zero, Vector2.zero);
+            Stretch(panel, 0f);
+            Image back = CreateImage("Back", panel, center, Vector2.zero, Vector2.zero, Color.black);
+            Stretch(back.rectTransform, 0f);
+            back.raycastTarget = true;
+            Image vignette = CreateImage("Vignette", panel, center, Vector2.zero, Vector2.zero, new Color(0.45f, 0.3f, 0.12f, 0.35f));
+            Stretch(vignette.rectTransform, 0f);
+            vignette.sprite = DungeonUiSpriteBuilder.Load("Glow");
 
-            DungeonUiRoot uiRoot = canvasObject.AddComponent<DungeonUiRoot>();
-            SerializedObject so = new SerializedObject(uiRoot);
-            BattleEditorUtility.Set(so, "_context", inputs.Context);
-            BattleEditorUtility.Set(so, "_lobby", lobby);
-            BattleEditorUtility.Set(so, "_hud", hud);
-            BattleEditorUtility.Set(so, "_inventory", dungeonInventory);
-            BattleEditorUtility.Set(so, "_result", result);
-            BattleEditorUtility.Set(so, "_help", help);
-            BattleEditorUtility.Set(so, "_wheel", wheel);
-            BattleEditorUtility.Set(so, "_inventoryPreview", dungeonPreview);
+            TMP_Text titleText = CreateText("Title", panel, center, new Vector2(0f, 60f), new Vector2(1400f, 80f), 58f, TextAlignmentOptions.Center);
+            titleText.color = s_gold;
+            titleText.fontStyle = FontStyles.Bold;
+            CreateImage("Rule", panel, center, new Vector2(0f, 8f), new Vector2(420f, 2f), s_frame);
+            TMP_Text statusText = CreateText("Status", panel, center, new Vector2(0f, -30f), new Vector2(1000f, 34f), 22f, TextAlignmentOptions.Center);
+            statusText.color = s_text;
+            CreateImage("BarBack", panel, center, new Vector2(0f, -74f), new Vector2(424f, 12f), s_frame);
+            CreateImage("BarInner", panel, center, new Vector2(0f, -74f), new Vector2(420f, 8f), new Color(0.05f, 0.04f, 0.03f));
+            Image fill = CreateImage("BarFill", panel, center, new Vector2(0f, -74f), new Vector2(420f, 8f), s_gold);
+            MakeFilled(fill);
+            Image spinner = CreateImage("Spinner", panel, new Vector2(1f, 0f), new Vector2(-70f, 70f), new Vector2(54f, 54f), s_gold);
+            spinner.rectTransform.pivot = center;
+            spinner.sprite = DungeonUiSpriteBuilder.Load("Diamond");
+            TMP_Text tip = CreateText("Tip", panel, new Vector2(0.5f, 0f), new Vector2(0f, 60f), new Vector2(1200f, 30f), 16f, TextAlignmentOptions.Center);
+            tip.text = "Containers open at once, but their loot has to be searched. Perception makes the search faster.";
+            tip.color = s_textDim;
+
+            LoadingView view = panel.gameObject.AddComponent<LoadingView>();
+            SerializedObject so = new SerializedObject(view);
+            BattleEditorUtility.Set(so, "_sceneTitle", title);
+            BattleEditorUtility.Set(so, "_titleText", titleText);
+            BattleEditorUtility.Set(so, "_statusText", statusText);
+            BattleEditorUtility.Set(so, "_progressFill", fill);
+            BattleEditorUtility.Set(so, "_spinner", spinner.rectTransform);
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            hud.gameObject.SetActive(false);
-            dungeonInventory.gameObject.SetActive(false);
-            result.gameObject.SetActive(false);
-            help.gameObject.SetActive(false);
-            wheel.gameObject.SetActive(false);
-            BattleEditorUtility.SetLayerRecursively(canvasObject, LayerMask.NameToLayer("UI"));
-
-            return canvasObject;
+            return view;
         }
 
         /// Overlay camera in the main camera's stack: the UI always draws above first-person weapons.
@@ -154,6 +227,19 @@ namespace Game.Scripts.Editor.Dungeon
             TMP_Text count = CreateText("Count", rect, new Vector2(1f, 0f), new Vector2(-3f, 2f), new Vector2(40f, 16f), 12f, TextAlignmentOptions.BottomRight);
             count.rectTransform.pivot = new Vector2(1f, 0f);
 
+            // Unsearched loot: an eye in a ring that fills while the item is being discovered.
+            RectTransform hidden = CreateRect("Hidden", rect, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            Stretch(hidden, 0f);
+            Image ringBack = CreateImage("RingBack", hidden, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(38f, 38f), new Color(0f, 0f, 0f, 0.55f));
+            ringBack.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+            Image searchFill = CreateImage("Ring", hidden, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(38f, 38f), new Color(0.85f, 0.72f, 0.45f, 0.9f));
+            MakeRadial(searchFill);
+            Image ringCore = CreateImage("RingCore", hidden, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(31f, 31f), new Color(0.09f, 0.08f, 0.07f));
+            ringCore.sprite = ringBack.sprite;
+            Image eye = CreateImage("Eye", hidden, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(26f, 26f), new Color(0.8f, 0.76f, 0.66f));
+            eye.sprite = DungeonUiSpriteBuilder.Load("Eye");
+            hidden.gameObject.SetActive(false);
+
             SerializedObject so = new SerializedObject(root.AddComponent<ItemView>());
             BattleEditorUtility.Set(so, "_background", background);
             BattleEditorUtility.Set(so, "_frame", frame);
@@ -161,6 +247,8 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_glyph", glyph);
             BattleEditorUtility.Set(so, "_count", count);
             BattleEditorUtility.Set(so, "_group", group);
+            BattleEditorUtility.Set(so, "_hiddenRoot", hidden.gameObject);
+            BattleEditorUtility.Set(so, "_searchFill", searchFill);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             BattleEditorUtility.EnsureFolder(DungeonPropBuilder.PrefabsFolder + "/UI");
@@ -516,7 +604,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             TMP_Text hints = CreateText("Hints", panel, new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(1400f, 24f), 13f, TextAlignmentOptions.Center);
             hints.rectTransform.pivot = new Vector2(0.5f, 1f);
-            hints.text = "[Drag] move   [R Click] equip / use / unequip   [Shift + L Click] quick transfer   [Ctrl + Drag] split stack   [Drag outside] drop";
+            hints.text = "[Drag] move   [R Click] equip / use / unequip   [Shift + L Click] quick transfer   [Ctrl + Drag] split stack   [Drag outside] drop   ·   eye = not searched yet";
             hints.color = new Color(0.8f, 0.75f, 0.65f);
 
             RectTransform tooltip = CreateRect("Tooltip", panel, new Vector2(0f, 1f), Vector2.zero, new Vector2(380f, 240f));
@@ -824,7 +912,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             (string title, string info, Texture picture, string scene)[] destinations =
             {
-                ("Forgotten Crypt: Normal", "Two floors · undead · escape through the portals", inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null, string.Empty),
+                (DungeonSceneBuilder.Title, "Two floors · undead · escape through the portals", inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null, SceneTravel.DungeonScene),
                 ("Training Grounds", "Test scene · weapon table, dummies, dev spawns", DungeonTextureBuilder.Load("Cobble", false), SceneTravel.SandboxScene)
             };
 
@@ -1049,6 +1137,9 @@ namespace Game.Scripts.Editor.Dungeon
             title.color = s_gold;
             TMP_Text centerText = CreateText("Center", panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(200f, 40f), 16f, TextAlignmentOptions.Center);
             RectTransform slotsRoot = CreateRect("Slots", panel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            Image cursor = CreateImage("Cursor", panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(14f, 14f), s_gold);
+            cursor.sprite = dim.sprite;
+            cursor.raycastTarget = false;
 
             RectTransform slot = CreateRect("Slot", panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(104f, 84f));
             Image slotBack = slot.gameObject.AddComponent<Image>();
@@ -1068,6 +1159,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_slotsRoot", slotsRoot);
             BattleEditorUtility.Set(so, "_titleText", title);
             BattleEditorUtility.Set(so, "_centerText", centerText);
+            BattleEditorUtility.Set(so, "_cursorMark", cursor.rectTransform);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;
@@ -1098,7 +1190,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static SandboxDevView BuildDevPanel(GameObject canvas, SandboxDirector director, string[] monsterNames)
         {
             // Same 1920x1080 frame as the centered inventory panel: x 1200, y -520 from its top-left corner.
-            RectTransform panel = CreateRect("DevPanel", canvas.transform, new Vector2(0.5f, 0.5f), new Vector2(240f, 20f), new Vector2(680f, 170f));
+            RectTransform panel = CreateRect("DevPanel", canvas.transform, new Vector2(0.5f, 0.5f), new Vector2(240f, 20f), new Vector2(680f, 224f));
             panel.pivot = new Vector2(0f, 1f);
             CreateImage("Back", panel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
             TMP_Text title = CreateText("Title", panel, new Vector2(0f, 1f), new Vector2(16f, -10f), new Vector2(400f, 28f), 18f, TextAlignmentOptions.MidlineLeft);
@@ -1119,6 +1211,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_clearButton", DevButton(panel, 1, 1, "Remove mobs"));
             BattleEditorUtility.Set(so, "_restockButton", DevButton(panel, 2, 1, "Restock table"));
             BattleEditorUtility.Set(so, "_lobbyButton", DevButton(panel, 3, 1, "To the lobby"));
+            BattleEditorUtility.Set(so, "_debugButton", DevButton(panel, 0, 2, "Hitboxes"));
             so.ApplyModifiedPropertiesWithoutUndo();
 
             BattleEditorUtility.SetLayerRecursively(panel.gameObject, LayerMask.NameToLayer("UI"));

@@ -91,6 +91,16 @@ namespace Game.Scripts.Editor.Battle
             GameObject bow = BattleWeaponPrefabBuilder.BuildBow();
             GameObject book = DungeonWeaponPrefabBuilder.BuildBook();
             GameObject lute = DungeonWeaponPrefabBuilder.BuildLute();
+            GameObject shortSword = BattleWeaponPrefabBuilder.BuildSword("ShortSword", 0.1f, 0.72f, 0.065f, 0.16f, 0.08f);
+            GameObject rapier = BattleWeaponPrefabBuilder.BuildSword("Rapier", 0.12f, 1f, 0.028f, 0.14f, 0.08f);
+            GameObject vikingSword = BattleWeaponPrefabBuilder.BuildSword("VikingSword", 0.12f, 0.92f, 0.08f, 0.13f, 0.09f);
+            GameObject hatchet = DungeonWeaponPrefabBuilder.BuildAxe("Hatchet", 0.62f, 0.2f);
+            GameObject morningStar = DungeonWeaponPrefabBuilder.BuildMorningStar();
+            GameObject castillon = BattleWeaponPrefabBuilder.BuildSword("CastillonDagger", 0.06f, 0.5f, 0.05f, 0.12f, 0.06f);
+            GameObject stiletto = BattleWeaponPrefabBuilder.BuildSword("Stiletto", 0.06f, 0.46f, 0.022f, 0.08f, 0.06f);
+            GameObject fellingAxe = DungeonWeaponPrefabBuilder.BuildAxe("FellingAxe", 1f, 0.24f);
+            GameObject maul = DungeonWeaponPrefabBuilder.BuildMaul();
+            GameObject halberd = DungeonWeaponPrefabBuilder.BuildHalberd();
             arrow = BattleWeaponPrefabBuilder.BuildArrow();
             magicOrb = DungeonWeaponPrefabBuilder.BuildMagicOrb();
 
@@ -117,7 +127,17 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.Lute] = new[] { (lute, WeaponSocket.LeftHand) },
                 [DungeonWeaponLibrary.BearClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.PantherClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
-                [DungeonWeaponLibrary.RatBite] = Array.Empty<(GameObject, WeaponSocket)>()
+                [DungeonWeaponLibrary.RatBite] = Array.Empty<(GameObject, WeaponSocket)>(),
+                [DungeonWeaponLibrary.ShortSword] = new[] { (shortSword, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Rapier] = new[] { (rapier, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.VikingSword] = new[] { (vikingSword, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Hatchet] = new[] { (hatchet, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.MorningStar] = new[] { (morningStar, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.CastillonDagger] = new[] { (castillon, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Stiletto] = new[] { (stiletto, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.FellingAxe] = new[] { (fellingAxe, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.WarMaul] = new[] { (maul, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Halberd] = new[] { (halberd, WeaponSocket.RightHand) }
             };
 
             string[] order = DungeonWeaponLibrary.CatalogOrder;
@@ -150,17 +170,11 @@ namespace Game.Scripts.Editor.Battle
         private static WeaponDefinition FindDefinition(WeaponDefinition[] definitions, string name)
         {
             string prefix = DungeonWeaponLibrary.SharedPrefix(name);
-            string displayName = name switch
-            {
-                DungeonWeaponLibrary.Spellbook => "Spellbook",
-                DungeonWeaponLibrary.Lute => "Lute",
-                DungeonWeaponLibrary.RatBite => "Rat Bite",
-                _ => null
-            };
+            string displayName = DungeonWeaponLibrary.VariantName(name);
 
             foreach (WeaponDefinition definition in definitions)
             {
-                if (definition.Prefix == prefix && (displayName == null ? definition.DisplayName != "Spellbook" && definition.DisplayName != "Lute" && definition.DisplayName != "Rat Bite" : definition.DisplayName == displayName))
+                if (definition.Prefix == prefix && (displayName == null ? !DungeonWeaponLibrary.IsVariant(definition) : definition.DisplayName == displayName))
                     return definition;
             }
 

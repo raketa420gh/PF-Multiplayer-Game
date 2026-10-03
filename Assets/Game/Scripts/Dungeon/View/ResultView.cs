@@ -20,7 +20,7 @@ namespace Game.Scripts.Dungeon
 
         private void Awake()
         {
-            _returnButton.onClick.AddListener(() => _session?.RpcReturnToLobby());
+            _returnButton.onClick.AddListener(Return);
         }
 
         public void Bind(PlayerSessionComponent session)
@@ -36,6 +36,17 @@ namespace Game.Scripts.Dungeon
             _detailsText.text = isExtracted
                 ? $"Loot value {session.LastRunValue}g\nKills {session.LastRunKills}\nExperience +{session.LastRunExperience}"
                 : $"Your body and everything on it stays in the dungeon.\nKills {session.LastRunKills}\nExperience +{session.LastRunExperience}";
+        }
+
+        private void Return()
+        {
+            DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.5f);
+
+            if (_session == null)
+                return;
+
+            _session.SaveLocal();
+            SceneTravel.Load(_session.Runner, SceneTravel.LobbyScene, SceneTravel.LobbyTitle);
         }
     }
 }

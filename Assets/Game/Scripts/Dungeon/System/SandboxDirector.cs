@@ -57,7 +57,7 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private ContainerComponent[] _containers;
 
-        [SerializeField, Tooltip("Class of every adventurer on the test ground (0 = Fighter, any weapon)")]
+        [SerializeField, Tooltip("Class of every adventurer on the test ground")]
         private byte _classId;
 
         [SerializeField]
@@ -155,7 +155,7 @@ namespace Game.Scripts.Dungeon
 
         public void ReturnToLobby()
         {
-            SceneTravel.Load(_runner, SceneTravel.LobbyScene);
+            SceneTravel.Load(_runner, SceneTravel.LobbyScene, SceneTravel.LobbyTitle);
         }
 
         private bool IsServer()

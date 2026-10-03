@@ -23,6 +23,9 @@ namespace Game.Scripts.Dungeon
         private TMP_Text _centerText;
 
         [SerializeField]
+        private RectTransform _cursorMark;
+
+        [SerializeField]
         private float _radius = 150f;
 
         [SerializeField]
@@ -39,6 +42,7 @@ namespace Game.Scripts.Dungeon
             Show();
             _titleText.text = title;
             _cursor = Vector2.zero;
+            _cursorMark.anchoredPosition = _cursor;
             _selected = current;
             _names.Clear();
 
@@ -77,6 +81,8 @@ namespace Game.Scripts.Dungeon
             if (_cursor.magnitude > _radius)
                 _cursor = _cursor.normalized * _radius;
 
+            _cursorMark.anchoredPosition = _cursor;
+
             if (_cursor.magnitude < _deadZone || _names.Count == 0)
                 return;
 
@@ -95,7 +101,7 @@ namespace Game.Scripts.Dungeon
             for (int i = 0; i < _backgrounds.Count; i++)
                 _backgrounds[i].color = i == _selected ? new Color(0.6f, 0.45f, 0.15f, 0.95f) : new Color(0.08f, 0.07f, 0.06f, 0.9f);
 
-            _centerText.text = _selected >= 0 && _selected < _names.Count ? _names[_selected] : "Release to cancel";
+            _centerText.text = _selected >= 0 && _selected < _names.Count ? _names[_selected] : "Move to choose";
         }
     }
 }

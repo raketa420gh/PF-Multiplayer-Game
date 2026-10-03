@@ -13,7 +13,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static GameObject Build(ItemDef def)
         {
             BattleEditorUtility.EnsureFolder(Folder);
-            GameObject root = new GameObject("Item_" + def.Name.Replace(" ", string.Empty));
+            GameObject root = new GameObject("Item_" + Sanitize(def.Name));
             Transform parent = root.transform;
 
             switch (def.Kind)
@@ -44,7 +44,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void BuildConsumable(ItemDef def, Transform parent)
         {
-            Material glass = Glass("Potion" + def.Name.Replace(" ", string.Empty), def.Color);
+            Material glass = Glass("Potion" + Sanitize(def.Name), def.Color);
             Material cork = BattleEditorUtility.GetMaterial("Cork", new Color(0.5f, 0.38f, 0.22f), 0f, 0.3f);
             Material cloth = BattleEditorUtility.GetMaterial("Linen", new Color(0.88f, 0.86f, 0.78f), 0f, 0.1f);
 
@@ -102,6 +102,8 @@ namespace Game.Scripts.Editor.Dungeon
         private static void BuildTreasure(ItemDef def, Transform parent)
         {
             Material gold = BattleEditorUtility.GetMaterial("GoldMetal", new Color(1f, 0.8f, 0.3f), 1f, 0.85f);
+            Material silver = BattleEditorUtility.GetMaterial("SilverMetal", new Color(0.85f, 0.86f, 0.9f), 1f, 0.85f);
+            Material metal = def.Name.Contains("Silver") ? silver : gold;
 
             if (def.Name.Contains("Coin"))
             {
@@ -135,11 +137,59 @@ namespace Game.Scripts.Editor.Dungeon
                 return;
             }
 
-            if (def.Name.Contains("Goblet"))
+            if (def.Name.Contains("Goblet") || def.Name.Contains("Chalice"))
             {
-                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Cup", parent, new Vector3(0f, 0.14f, 0f), Vector3.zero, new Vector3(0.09f, 0.05f, 0.09f), gold);
-                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Stem", parent, new Vector3(0f, 0.06f, 0f), Vector3.zero, new Vector3(0.025f, 0.05f, 0.025f), gold);
-                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Base", parent, new Vector3(0f, 0.01f, 0f), Vector3.zero, new Vector3(0.08f, 0.01f, 0.08f), gold);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Cup", parent, new Vector3(0f, 0.14f, 0f), Vector3.zero, new Vector3(0.09f, 0.05f, 0.09f), metal);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Stem", parent, new Vector3(0f, 0.06f, 0f), Vector3.zero, new Vector3(0.025f, 0.05f, 0.025f), metal);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Base", parent, new Vector3(0f, 0.01f, 0f), Vector3.zero, new Vector3(0.08f, 0.01f, 0.08f), metal);
+
+                return;
+            }
+
+            if (def.Name.Contains("Crown"))
+            {
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Band", parent, new Vector3(0f, 0.03f, 0f), Vector3.zero, new Vector3(0.2f, 0.03f, 0.2f), metal);
+
+                for (int i = 0; i < 6; i++)
+                {
+                    float angle = i * 60f * Mathf.Deg2Rad;
+                    Vector3 position = new Vector3(Mathf.Cos(angle) * 0.09f, 0.09f, Mathf.Sin(angle) * 0.09f);
+                    BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Point" + i, parent, position, new Vector3(0f, -i * 60f, 45f), new Vector3(0.035f, 0.035f, 0.012f), metal);
+                }
+
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Jewel", parent, new Vector3(0.1f, 0.035f, 0f), new Vector3(45f, 0f, 45f), Vector3.one * 0.03f, Glass("GemRuby", new Color(0.95f, 0.2f, 0.25f)));
+
+                return;
+            }
+
+            if (def.Name.Contains("Ingot"))
+            {
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Bar", parent, new Vector3(0f, 0.025f, 0f), Vector3.zero, new Vector3(0.1f, 0.05f, 0.22f), metal);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Top", parent, new Vector3(0f, 0.055f, 0f), Vector3.zero, new Vector3(0.07f, 0.012f, 0.19f), metal);
+
+                return;
+            }
+
+            if (def.Name.Contains("Ore"))
+            {
+                Material rock = BattleEditorUtility.GetMaterial("OreRock", new Color(0.32f, 0.3f, 0.28f), 0f, 0.2f);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Rock", parent, new Vector3(0f, 0.06f, 0f), new Vector3(20f, 35f, 10f), new Vector3(0.14f, 0.11f, 0.12f), rock);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Chip", parent, new Vector3(0.06f, 0.035f, 0.05f), new Vector3(-15f, 60f, 25f), new Vector3(0.07f, 0.06f, 0.06f), rock);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "VeinA", parent, new Vector3(-0.02f, 0.1f, 0.02f), new Vector3(20f, 35f, 10f), new Vector3(0.06f, 0.05f, 0.05f), metal);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "VeinB", parent, new Vector3(0.05f, 0.07f, -0.03f), new Vector3(40f, 10f, 30f), new Vector3(0.04f, 0.04f, 0.04f), metal);
+
+                return;
+            }
+
+            if (def.Name.Contains("Necklace"))
+            {
+                Material pearl = BattleEditorUtility.GetMaterial("Pearl", new Color(0.95f, 0.93f, 0.88f), 0.1f, 0.85f);
+
+                for (int i = 0; i < 12; i++)
+                {
+                    float angle = i * 30f * Mathf.Deg2Rad;
+                    BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Pearl" + i, parent, new Vector3(Mathf.Cos(angle) * 0.08f, 0.015f, Mathf.Sin(angle) * 0.1f), Vector3.zero, Vector3.one * 0.03f, pearl);
+                }
 
                 return;
             }
@@ -155,6 +205,11 @@ namespace Game.Scripts.Editor.Dungeon
 
             BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Scroll", parent, new Vector3(0f, 0.03f, 0f), new Vector3(90f, 0f, 0f), new Vector3(0.05f, 0.12f, 0.05f), BattleEditorUtility.GetMaterial("Parchment", new Color(0.85f, 0.75f, 0.5f), 0f, 0.15f));
             BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Ribbon", parent, new Vector3(0f, 0.03f, 0f), Vector3.zero, new Vector3(0.055f, 0.055f, 0.03f), BattleEditorUtility.GetMaterial("ClothRibbon", new Color(0.6f, 0.1f, 0.1f), 0f, 0.2f));
+        }
+
+        private static string Sanitize(string name)
+        {
+            return name.Replace(" ", string.Empty).Replace("'", string.Empty);
         }
 
         private static Material Glass(string name, Color color)

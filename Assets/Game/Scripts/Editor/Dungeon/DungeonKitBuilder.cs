@@ -36,13 +36,13 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static readonly Dictionary<string, Fire> s_fires = new()
         {
-            ["Candle_1"] = new Fire { Flame = 0.3f, Range = 3.5f, Intensity = 0.9f },
-            ["Candle_2"] = new Fire { Flame = 0.3f, Range = 3.5f, Intensity = 0.9f },
-            ["CandleStick_Triple"] = new Fire { Flame = 0.3f, Range = 5f, Intensity = 1.4f },
-            ["CandleStick_Stand"] = new Fire { Flame = 0.3f, Range = 10f, Intensity = 3.2f },
-            ["Chandelier"] = new Fire { Flame = 0.35f, Range = 19f, Intensity = 6.5f },
-            ["Torch_Metal"] = new Fire { Flame = 0.8f, Range = 16f, Intensity = 7f, Points = new[] { new Vector3(0f, 0.36f, 0.27f) } },
-            ["Lantern_Wall"] = new Fire { Flame = 0.4f, Range = 13f, Intensity = 5f, Points = new[] { new Vector3(0f, 0.38f, 1.05f) } }
+            ["Candle_1"] = new Fire { Flame = 0.3f, Range = 4f, Intensity = 1.3f },
+            ["Candle_2"] = new Fire { Flame = 0.3f, Range = 4f, Intensity = 1.3f },
+            ["CandleStick_Triple"] = new Fire { Flame = 0.3f, Range = 6f, Intensity = 2f },
+            ["CandleStick_Stand"] = new Fire { Flame = 0.3f, Range = 12f, Intensity = 4.5f },
+            ["Chandelier"] = new Fire { Flame = 0.35f, Range = 22f, Intensity = 9f },
+            ["Torch_Metal"] = new Fire { Flame = 0.8f, Range = 18f, Intensity = 10f, Points = new[] { new Vector3(0f, 0.36f, 0.27f) } },
+            ["Lantern_Wall"] = new Fire { Flame = 0.4f, Range = 15f, Intensity = 7f, Points = new[] { new Vector3(0f, 0.38f, 1.05f) } }
         };
 
         private static readonly Dictionary<string, Material> s_materials = new();

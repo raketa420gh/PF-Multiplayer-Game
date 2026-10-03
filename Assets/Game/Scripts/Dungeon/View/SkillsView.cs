@@ -56,7 +56,7 @@ namespace Game.Scripts.Dungeon
         private PlayerSessionComponent _session;
         private AdventurerStats _stats;
         private int _shownClass = -1;
-        private (byte, byte, int, int) _shownBuild;
+        private (byte, byte, int, int, int) _shownBuild;
 
         private void Awake()
         {
@@ -87,7 +87,7 @@ namespace Game.Scripts.Dungeon
                 BuildIcons(config);
             }
 
-            (byte, byte, int, int) build = (_session.SkillA, _session.SkillB, _session.PerkMask, _session.Level);
+            (byte, byte, int, int, int) build = (_session.SkillA, _session.SkillB, _session.PerkMask, _session.Level, _session.SpellMask);
 
             if (_shownBuild != build)
             {
@@ -115,7 +115,7 @@ namespace Game.Scripts.Dungeon
         {
             Fill(_perkIcons, _perkIconPrefab, _perksRoot, config.Perks.Length, OnPerkClicked);
             Fill(_skillIcons, _skillIconPrefab, _skillsRoot, config.Skills.Length, OnSkillClicked);
-            Fill(_spellIcons, _skillIconPrefab, _spellsRoot, config.Spells.Length, null);
+            Fill(_spellIcons, _skillIconPrefab, _spellsRoot, config.Spells.Length, OnSpellClicked);
 
             for (int i = 0; i < _perkIcons.Count; i++)
                 Show(_perkIcons[i], config, i);
@@ -189,6 +189,9 @@ namespace Game.Scripts.Dungeon
 
             for (int i = 0; i < _perkIcons.Count; i++)
                 _perkIcons[i].SetSelected((_session.PerkMask & (1 << i)) != 0);
+
+            for (int i = 0; i < _spellIcons.Count; i++)
+                _spellIcons[i].SetSelected((_session.SpellMask & (1 << i)) != 0);
         }
 
         private void RefreshStats()
@@ -292,6 +295,12 @@ namespace Game.Scripts.Dungeon
 
             DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.5f);
             _session?.RpcTogglePerk((byte)icon.Index);
+        }
+
+        private void OnSpellClicked(AbilityIconView icon, PointerEventData.InputButton button)
+        {
+            DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.5f);
+            _session?.RpcToggleSpell((byte)icon.Index);
         }
 
         private void OnSkillClicked(AbilityIconView icon, PointerEventData.InputButton button)

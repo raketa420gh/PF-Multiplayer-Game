@@ -60,6 +60,7 @@ namespace Game.Scripts.Dungeon
         private float _mending = 1f;
         private int _bonusCharges;
         private readonly float[] _flat = new float[(int)StatType.Count];
+        private readonly StatModifier[] _affixes = new StatModifier[ItemAffixes.MaxCount];
 
         public float GetDamageMultiplier(DamageType type)
         {
@@ -91,6 +92,11 @@ namespace Game.Scripts.Dungeon
 
                 foreach (StatModifier modifier in item.Modifiers)
                     Apply(modifier);
+
+                int affixCount = ItemAffixes.Roll(item, stack, _affixes);
+
+                for (int a = 0; a < affixCount; a++)
+                    Apply(_affixes[a]);
 
                 if (item is ArmorItemConfig armorItem)
                 {

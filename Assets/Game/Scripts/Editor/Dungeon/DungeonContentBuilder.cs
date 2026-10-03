@@ -57,21 +57,21 @@ namespace Game.Scripts.Editor.Dungeon
             Color rust = new Color(0.4f, 0.3f, 0.22f);
             Color rags = new Color(0.25f, 0.22f, 0.16f);
             BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = 5, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
-                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Helmet, rust), (ArmorVisual.Tunic, rags) } }, loadouts, arrow, orb, worldItem, pieceSet);
+                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Helmet, rust), (ArmorVisual.Tunic, rags) } }, loadouts, arrow, orb, database, pieceSet);
             BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = 2, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
-                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Hood, rags) } }, loadouts, arrow, orb, worldItem, pieceSet);
+                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Hood, rags) } }, loadouts, arrow, orb, database, pieceSet);
             BuildMonster(new MonsterDef { Name = "Zombie", DisplayName = "Zombie", Health = 168, Damage = 4.5f, MoveSpeed = 130f, ActionSpeed = 0.6f, Aggro = 8f, WeaponIndex = 4, Experience = 30, Loot = loot["Monster"], Body = DungeonPropBuilder.ZombieSkin, Scale = 1.05f, Voice = DungeonSound.Growl,
                 Controller = AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(BattleAnimationBuilder.ZombieControllerPath),
-                Attachments = new[] { (ArmorVisual.Tunic, new Color(0.5f, 0.52f, 0.4f)), (ArmorVisual.Pants, new Color(0.55f, 0.5f, 0.42f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
-            BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 210f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = 15, Experience = 150, Loot = loot["ChestOrnate"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
-                IsBoss = true, Lunge = 5f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.GreatHelm, new Color(0.85f, 0.7f, 0.3f)), (ArmorVisual.PlateChest, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Greaves, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Cloak, new Color(0.35f, 0.08f, 0.1f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
+                Attachments = new[] { (ArmorVisual.Tunic, new Color(0.5f, 0.52f, 0.4f)), (ArmorVisual.Pants, new Color(0.55f, 0.5f, 0.42f)) } }, loadouts, arrow, orb, database, pieceSet);
+            BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 210f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = 15, Experience = 150, Loot = loot["Boss"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
+                IsBoss = true, Lunge = 5f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.GreatHelm, new Color(0.85f, 0.7f, 0.3f)), (ArmorVisual.PlateChest, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Greaves, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Cloak, new Color(0.35f, 0.08f, 0.1f)) } }, loadouts, arrow, orb, database, pieceSet);
 
             BuildFigures();
             BuildSession(database, classes, config);
             BuildMatch(config);
-            BuildContainer("SmallOakChest", "Small Oak Chest", loot["ChestCommon"], 1.6f, false);
-            BuildContainer("LargeOakChest", "Large Oak Chest", loot["ChestLarge"], 2.2f, false);
-            BuildContainer("GoldenChest", "Golden Chest", loot["ChestOrnate"], 3f, true);
+            BuildContainer("SmallOakChest", "Small Oak Chest", loot["ChestCommon"], false);
+            BuildContainer("LargeOakChest", "Large Oak Chest", loot["ChestLarge"], false);
+            BuildContainer("GoldenChest", "Golden Chest", loot["ChestOrnate"], true);
             BuildCoffin(loot["Coffin"]);
             BuildBarrel(loot["Barrel"]);
             BuildCrate(loot["Barrel"]);
@@ -128,7 +128,8 @@ namespace Game.Scripts.Editor.Dungeon
                 SetModifiers(so, "_modifiers", def.Modifiers);
                 GameObject model = ResolveModel(def, weapons, armorPieces, mapping, outfitModels, out float zoom, out Vector3 euler);
                 BattleEditorUtility.Set(so, "_worldModel", def.Kind == ItemKind.Armor ? null : model);
-                BattleEditorUtility.Set(so, "_icon", model != null ? DungeonIconBuilder.Render(model, Sanitize(def.Name), zoom, euler) : null);
+                Color? tint = def.Kind == ItemKind.Armor && !outfitModels.ContainsKey(def.Visual) ? def.VisualColor : (Color?)null;
+                BattleEditorUtility.Set(so, "_icon", model != null ? DungeonIconBuilder.Render(model, Sanitize(def.Name), zoom, euler, 0f, tint) : null);
 
                 switch (def.Kind)
                 {
@@ -378,19 +379,34 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Leather Cap", 1f, 1, 1), ("Woolen Cap", 0.8f, 1, 1), ("Rogue Cowl", 0.5f, 1, 1), ("Wizard Hat", 0.5f, 1, 1), ("Kettle Hat", 0.6f, 1, 1),
                 ("Adventurer Tunic", 1f, 1, 1), ("Doublet", 0.8f, 1, 1), ("Frock", 0.5f, 1, 1), ("Heavy Gambeson", 0.4f, 1, 1), ("Leather Gloves", 0.8f, 1, 1),
                 ("Cloth Pants", 0.8f, 1, 1), ("Leather Leggings", 0.7f, 1, 1), ("Adventurer Boots", 0.8f, 1, 1), ("Adventurer Cloak", 0.6f, 1, 1),
-                ("Ruby", 0.5f, 1, 1), ("Emerald", 0.5f, 1, 1), ("Sapphire", 0.5f, 1, 1), ("Gold Goblet", 0.5f, 1, 1)
+                ("Ruby", 0.5f, 1, 1), ("Emerald", 0.5f, 1, 1), ("Sapphire", 0.5f, 1, 1), ("Gold Goblet", 0.5f, 1, 1),
+                ("Short Sword", 0.9f, 1, 1), ("Rapier", 0.5f, 1, 1), ("Viking Sword", 0.5f, 1, 1), ("Hatchet", 0.8f, 1, 1), ("Morning Star", 0.5f, 1, 1),
+                ("Castillon Dagger", 0.6f, 1, 1), ("Stiletto Dagger", 0.6f, 1, 1), ("Felling Axe", 0.5f, 1, 1), ("Halberd", 0.3f, 1, 1), ("Buckler", 0.6f, 1, 1),
+                ("Ranger Hood", 0.6f, 1, 1), ("Feathered Hat", 0.5f, 1, 1), ("Viking Helm", 0.5f, 1, 1), ("Chapel De Fer", 0.5f, 1, 1), ("Occultist Hood", 0.4f, 1, 1),
+                ("Padded Tunic", 0.8f, 1, 1), ("Wanderer Attire", 0.6f, 1, 1), ("Marauder Outfit", 0.5f, 1, 1), ("Mystic Vestments", 0.3f, 1, 1),
+                ("Rawhide Gloves", 0.7f, 1, 1), ("Riveted Gloves", 0.5f, 1, 1), ("Loose Trousers", 0.7f, 1, 1), ("Heavy Leather Leggings", 0.5f, 1, 1),
+                ("Lightfoot Boots", 0.5f, 1, 1), ("Laced Turnshoe", 0.6f, 1, 1), ("Vigilant Cloak", 0.4f, 1, 1),
+                ("Potion of Invisibility", 0.6f, 1, 1), ("Silver Chalice", 0.6f, 1, 1), ("Gold Ore", 0.8f, 1, 3), ("Silver Ingot", 0.3f, 1, 1)
             };
             (string name, float weight, int min, int max)[] ornate =
             {
                 ("Gold Coin Purse", 4f, 1, 2), ("Gold Coin Bag", 1f, 1, 1), ("Gold Coins", 3f, 10, 25), ("Diamond", 1.5f, 1, 2), ("Ruby", 2f, 1, 3), ("Emerald", 2f, 1, 3), ("Sapphire", 2f, 1, 3),
                 ("Gold Candlestick", 2f, 1, 1), ("Gold Goblet", 2f, 1, 1), ("Ancient Scroll", 1.5f, 1, 1), ("Gem Necklace", 1f, 1, 1), ("Gold Band", 1f, 1, 1), ("Gem Ring", 1f, 1, 1),
                 ("Templar Armor", 0.8f, 1, 1), ("Dark Plate Armor", 0.5f, 1, 1), ("Great Helm", 0.8f, 1, 1), ("Heavy Gauntlets", 0.8f, 1, 1), ("Plate Pants", 0.8f, 1, 1), ("Plate Boots", 0.8f, 1, 1),
-                ("Zweihander", 0.8f, 1, 1), ("Longsword", 1f, 1, 1), ("Battle Axe", 0.8f, 1, 1), ("Crossbow", 0.8f, 1, 1), ("Magic Staff", 0.8f, 1, 1), ("Surgical Kit", 1.5f, 1, 1)
+                ("Zweihander", 0.8f, 1, 1), ("Longsword", 1f, 1, 1), ("Battle Axe", 0.8f, 1, 1), ("Crossbow", 0.8f, 1, 1), ("Magic Staff", 0.8f, 1, 1), ("Surgical Kit", 1.5f, 1, 1),
+                ("War Maul", 0.8f, 1, 1), ("Halberd", 0.8f, 1, 1), ("Rapier", 0.8f, 1, 1), ("Viking Sword", 0.8f, 1, 1), ("Heater Shield", 0.8f, 1, 1),
+                ("Crusader Helm", 0.6f, 1, 1), ("Barbuta Helm", 0.6f, 1, 1), ("Fine Cuirass", 0.5f, 1, 1), ("Champion Armor", 0.5f, 1, 1), ("Ornate Jazerant", 0.8f, 1, 1),
+                ("Regal Gambeson", 0.8f, 1, 1), ("Oracle Robe", 0.6f, 1, 1), ("Light Gauntlets", 0.6f, 1, 1), ("Heavy Boots", 0.6f, 1, 1), ("Radiant Cloak", 0.6f, 1, 1),
+                ("Fox Pendant", 0.6f, 1, 1), ("Ox Pendant", 0.6f, 1, 1), ("Bear Pendant", 0.6f, 1, 1), ("Owl Pendant", 0.6f, 1, 1),
+                ("Ring of Courage", 0.6f, 1, 1), ("Ring of Vitality", 0.6f, 1, 1), ("Ring of Finesse", 0.6f, 1, 1), ("Ring of Wisdom", 0.6f, 1, 1),
+                ("Troll's Blood", 1f, 1, 1), ("Potion of Invisibility", 1f, 1, 2), ("Gold Crown", 0.5f, 1, 1), ("Gold Ingot", 1f, 1, 2), ("Pearl Necklace", 1f, 1, 1)
             };
             (string name, float weight, int min, int max)[] coffin =
             {
                 ("Gold Coins", 5f, 2, 10), ("Ruby", 1f, 1, 1), ("Sapphire", 1f, 1, 1), ("Gold Band", 0.8f, 1, 1), ("Gem Necklace", 0.6f, 1, 1), ("Ancient Scroll", 1f, 1, 1),
-                ("Rondel Dagger", 1f, 1, 1), ("Arming Sword", 0.8f, 1, 1), ("Adventurer Cloak", 0.8f, 1, 1), ("Bandage", 2f, 1, 2), ("Gold Goblet", 1f, 1, 1)
+                ("Rondel Dagger", 1f, 1, 1), ("Arming Sword", 0.8f, 1, 1), ("Adventurer Cloak", 0.8f, 1, 1), ("Bandage", 2f, 1, 2), ("Gold Goblet", 1f, 1, 1),
+                ("Silver Chalice", 1f, 1, 1), ("Pearl Necklace", 0.5f, 1, 1), ("Ring of Vitality", 0.4f, 1, 1), ("Bear Pendant", 0.3f, 1, 1),
+                ("Stiletto Dagger", 0.6f, 1, 1), ("Vigilant Cloak", 0.5f, 1, 1), ("Troll's Blood", 0.4f, 1, 1)
             };
             (string name, float weight, int min, int max)[] barrel =
             {
@@ -398,11 +414,14 @@ namespace Game.Scripts.Editor.Dungeon
             };
             (string name, float weight, int min, int max)[] bookshelf =
             {
-                ("Ancient Scroll", 4f, 1, 2), ("Potion of Protection", 2f, 1, 1), ("Potion of Healing", 2f, 1, 1), ("Gold Coins", 2f, 2, 8), ("Wizard Hat", 0.6f, 1, 1), ("Magic Staff", 0.5f, 1, 1), ("Sapphire", 1f, 1, 1)
+                ("Ancient Scroll", 4f, 1, 2), ("Potion of Protection", 2f, 1, 1), ("Potion of Healing", 2f, 1, 1), ("Gold Coins", 2f, 2, 8), ("Wizard Hat", 0.6f, 1, 1), ("Magic Staff", 0.5f, 1, 1), ("Sapphire", 1f, 1, 1),
+                ("Potion of Invisibility", 1.5f, 1, 1), ("Occultist Hood", 0.6f, 1, 1), ("Mystic Vestments", 0.5f, 1, 1), ("Oracle Robe", 0.4f, 1, 1), ("Owl Pendant", 0.3f, 1, 1), ("Ring of Wisdom", 0.3f, 1, 1)
             };
             (string name, float weight, int min, int max)[] monster =
             {
-                ("Gold Coins", 5f, 1, 6), ("Bandage", 2f, 1, 1), ("Ruby", 0.5f, 1, 1), ("Rondel Dagger", 0.5f, 1, 1), ("Potion of Healing", 1f, 1, 1)
+                ("Gold Coins", 5f, 1, 6), ("Bandage", 2f, 1, 1), ("Ruby", 0.5f, 1, 1), ("Rondel Dagger", 0.5f, 1, 1), ("Potion of Healing", 1f, 1, 1),
+                ("Short Sword", 0.4f, 1, 1), ("Hatchet", 0.4f, 1, 1), ("Leather Cap", 0.4f, 1, 1), ("Padded Tunic", 0.4f, 1, 1), ("Loose Trousers", 0.4f, 1, 1),
+                ("Rawhide Gloves", 0.4f, 1, 1), ("Gold Ore", 0.6f, 1, 2), ("Silver Chalice", 0.3f, 1, 1)
             };
 
             return new Dictionary<string, LootTableConfig>
@@ -413,7 +432,9 @@ namespace Game.Scripts.Editor.Dungeon
                 ["Coffin"] = BuildLootTable(database, "Coffin", coffin, 1, 3, new[] { 15f, 45f, 25f, 10f, 4f, 0.9f, 0.1f }, 0.15f),
                 ["Barrel"] = BuildLootTable(database, "Barrel", barrel, 1, 2, new[] { 30f, 55f, 12f, 3f, 0f, 0f, 0f }, 0.3f),
                 ["Bookshelf"] = BuildLootTable(database, "Bookshelf", bookshelf, 1, 3, new[] { 10f, 45f, 30f, 10f, 4f, 1f, 0f }, 0.2f),
-                ["Monster"] = BuildLootTable(database, "Monster", monster, 1, 1, new[] { 25f, 55f, 15f, 4f, 1f, 0f, 0f }, 0f)
+                // Corpses are searched like chests: a common monster carries a thing or two, the boss a golden chest's worth.
+                ["Monster"] = BuildLootTable(database, "Monster", monster, 1, 2, new[] { 25f, 55f, 15f, 4f, 1f, 0f, 0f }, 0.3f),
+                ["Boss"] = BuildLootTable(database, "Boss", ornate, 3, 4, new[] { 0f, 0f, 30f, 35f, 22f, 10f, 3f }, 0f)
             };
         }
 
@@ -762,7 +783,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.CreatePrimitive(type, isFixed ? "Fixed" : "Part", parent, position, euler, scale, material);
         }
 
-        private static void BuildMonster(MonsterDef def, BattleContentBuilder.Loadout[] loadouts, GameObject arrow, GameObject orb, GameObject worldItem,
+        private static void BuildMonster(MonsterDef def, BattleContentBuilder.Loadout[] loadouts, GameObject arrow, GameObject orb, ItemDatabase database,
             ArmorPieceSetConfig pieceSet)
         {
             MonsterConfig config = BattleEditorUtility.LoadOrCreate<MonsterConfig>($"{MonstersFolder}/{def.Name}.asset");
@@ -818,11 +839,24 @@ namespace Game.Scripts.Editor.Dungeon
                     hitbox.BoxExtents *= def.Scale;
             }
 
+            // The dead body is the loot container: its trigger covers the fallen figure and wakes up on death.
+            InventoryComponent loot = AddInventory(root, database, 6, 4, false, "Loot");
+            BoxCollider trigger = AddInteractCollider(root, new Vector3(0f, 0.4f, -0.3f) * def.Scale, new Vector3(1.6f, 0.8f, 3f) * def.Scale);
+            trigger.enabled = false;
+            ContainerComponent corpse = root.AddComponent<ContainerComponent>();
+            so = new SerializedObject(corpse);
+            BattleEditorUtility.Set(so, "_inventory", loot);
+            BattleEditorUtility.Set(so, "_displayName", def.DisplayName);
+            BattleEditorUtility.Set(so, "_openVerb", "Loot");
+            BattleEditorUtility.Set(so, "_body", parts.Health);
+            BattleEditorUtility.Set(so, "_trigger", trigger);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
             MonsterComponent monster = root.AddComponent<MonsterComponent>();
             so = new SerializedObject(monster);
             BattleEditorUtility.Set(so, "_config", config);
             BattleEditorUtility.Set(so, "_fighter", parts.Fighter);
-            BattleEditorUtility.Set(so, "_worldItemPrefab", worldItem.GetComponent<NetworkObject>());
+            BattleEditorUtility.Set(so, "_corpse", corpse);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             MonsterBrainComponent brain = root.AddComponent<MonsterBrainComponent>();
@@ -884,7 +918,7 @@ namespace Game.Scripts.Editor.Dungeon
             SerializedObject so = new SerializedObject(container);
             BattleEditorUtility.Set(so, "_inventory", inventory);
             BattleEditorUtility.Set(so, "_displayName", "Dead Adventurer");
-            BattleEditorUtility.Set(so, "_openTime", 1f);
+            BattleEditorUtility.Set(so, "_openVerb", "Loot");
             so.ApplyModifiedPropertiesWithoutUndo();
             AddInteractCollider(root, new Vector3(0f, 0.3f, -0.55f), new Vector3(1f, 0.6f, 2f));
 
@@ -977,7 +1011,7 @@ namespace Game.Scripts.Editor.Dungeon
             return BattleContentBuilder.SavePrefab(root, Prefab("Campfire"));
         }
 
-        private static void SetupContainer(GameObject root, string displayName, LootTableConfig table, float openTime, Transform lid, Vector3 lidOpen, bool removeWhenEmpty, int width, int height)
+        private static void SetupContainer(GameObject root, string displayName, LootTableConfig table, Transform lid, Vector3 lidOpen, bool removeWhenEmpty, int width, int height)
         {
             root.AddComponent<NetworkObject>();
             root.AddComponent<NetworkTransform>();
@@ -987,7 +1021,6 @@ namespace Game.Scripts.Editor.Dungeon
             SerializedObject so = new SerializedObject(container);
             BattleEditorUtility.Set(so, "_inventory", inventory);
             BattleEditorUtility.Set(so, "_displayName", displayName);
-            BattleEditorUtility.Set(so, "_openTime", openTime);
             BattleEditorUtility.Set(so, "_lootTable", table);
             BattleEditorUtility.Set(so, "_lid", lid);
             BattleEditorUtility.Set(so, "_lidOpenEuler", lidOpen);
@@ -996,11 +1029,11 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(root.AddComponent<InteractableSoundComponent>(), "_container", container);
         }
 
-        private static void BuildContainer(string name, string displayName, LootTableConfig table, float openTime, bool isGolden)
+        private static void BuildContainer(string name, string displayName, LootTableConfig table, bool isGolden)
         {
             float width = name.StartsWith("Large") || isGolden ? 1.5f : 1.1f;
             GameObject root = DungeonPropBuilder.Chest(name, width, isGolden ? DungeonPropBuilder.Gold : null, out Transform lid);
-            SetupContainer(root, displayName, table, openTime, lid, new Vector3(-110f, 0f, 0f), false, 6, 4);
+            SetupContainer(root, displayName, table, lid, new Vector3(-110f, 0f, 0f), false, 6, 4);
             AddInteractCollider(root, new Vector3(0f, 0.4f, 0f), new Vector3(width + 0.2f, 0.9f, 0.9f));
             BattleContentBuilder.SavePrefab(root, Prefab(name));
         }
@@ -1008,7 +1041,7 @@ namespace Game.Scripts.Editor.Dungeon
         private static void BuildCoffin(LootTableConfig table)
         {
             GameObject root = DungeonPropBuilder.Coffin(out Transform lid);
-            SetupContainer(root, "Coffin", table, 2f, lid, new Vector3(0f, 0f, 75f), false, 5, 3);
+            SetupContainer(root, "Coffin", table, lid, new Vector3(0f, 0f, 75f), false, 5, 3);
             AddInteractCollider(root, new Vector3(0f, 0.4f, 0f), new Vector3(1.1f, 0.9f, 2.4f));
             BattleContentBuilder.SavePrefab(root, Prefab("Coffin"));
         }
@@ -1016,7 +1049,7 @@ namespace Game.Scripts.Editor.Dungeon
         private static void BuildBarrel(LootTableConfig table)
         {
             GameObject root = DungeonPropBuilder.Barrel();
-            SetupContainer(root, "Barrel", table, 0.8f, null, Vector3.zero, false, 4, 2);
+            SetupContainer(root, "Barrel", table, null, Vector3.zero, false, 4, 2);
             AddInteractCollider(root, new Vector3(0f, 0.45f, 0f), new Vector3(0.9f, 1f, 0.9f));
             BattleContentBuilder.SavePrefab(root, Prefab("Barrel"));
         }
@@ -1024,7 +1057,7 @@ namespace Game.Scripts.Editor.Dungeon
         private static void BuildCrate(LootTableConfig table)
         {
             GameObject root = DungeonPropBuilder.Crate();
-            SetupContainer(root, "Crate", table, 0.8f, null, Vector3.zero, false, 4, 2);
+            SetupContainer(root, "Crate", table, null, Vector3.zero, false, 4, 2);
             AddInteractCollider(root, new Vector3(0f, 0.4f, 0f), new Vector3(1f, 0.9f, 1f));
             BattleContentBuilder.SavePrefab(root, Prefab("Crate"));
         }
@@ -1032,7 +1065,7 @@ namespace Game.Scripts.Editor.Dungeon
         private static void BuildBookshelf(LootTableConfig table)
         {
             GameObject root = DungeonPropBuilder.Bookshelf();
-            SetupContainer(root, "Bookshelf", table, 1.2f, null, Vector3.zero, false, 5, 2);
+            SetupContainer(root, "Bookshelf", table, null, Vector3.zero, false, 5, 2);
             AddInteractCollider(root, new Vector3(0f, 1.1f, 0.1f), new Vector3(1.7f, 2.2f, 0.7f));
             BattleContentBuilder.SavePrefab(root, Prefab("Bookshelf"));
         }

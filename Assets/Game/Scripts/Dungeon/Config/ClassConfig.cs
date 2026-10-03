@@ -99,6 +99,9 @@ namespace Game.Scripts.Dungeon
         public StartingItem[] StartingKit => _startingKit;
         public WeaponClass[] AllowedWeapons => _allowedWeapons;
         public ArmorType[] AllowedArmor => _allowedArmor;
+        public const int SpellWheelSize = 5;
+        public const int DefaultSpellMask = (1 << SpellWheelSize) - 1;
+
         public bool CanCastBareHanded => _castFocus == CastFocus.BareHands;
         public CastFocus Focus => _castFocus;
 

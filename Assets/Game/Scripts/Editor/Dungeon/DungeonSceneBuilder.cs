@@ -12,10 +12,12 @@ using UnityEngine.SceneManagement;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Assembles DungeonScene: dark lighting, Fusion bootstrap, context, director, the two floors and the UI.
+    /// Assembles DungeonScene: dark lighting, Fusion bootstrap, context, director, the two floors and the gameplay UI.
+    /// Players come here from LobbyScene and are dropped into the dungeon as soon as the session has their kit.
     internal static class DungeonSceneBuilder
     {
         public const string ScenePath = "Assets/Game/Scenes/DungeonScene.unity";
+        public const string Title = "Forgotten Crypt";
 
         public static void Build()
         {
@@ -26,7 +28,7 @@ namespace Game.Scripts.Editor.Dungeon
             EditorSceneManager.SaveScene(scene, ScenePath);
 
             SetupLighting();
-            BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/DungeonVolume.asset", 0.75f);
+            BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/DungeonVolume.asset", 1.1f);
             Camera camera = BuildCamera();
             GameObject system = new GameObject("[System]");
             NetworkEvents events = system.AddComponent<NetworkEvents>();
@@ -93,7 +95,8 @@ namespace Game.Scripts.Editor.Dungeon
                 PreviewRig = AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("PreviewRig")),
                 PieceSet = AssetDatabase.LoadAssetAtPath<ArmorPieceSetConfig>($"{DungeonContentBuilder.ConfigsFolder}/ArmorPieces.asset"),
                 FloorMaps = DungeonMapBuilder.FloorMaps,
-                ModuleNames = DungeonMapBuilder.ModuleNames
+                ModuleNames = DungeonMapBuilder.ModuleNames,
+                Title = Title
             });
             BuildSwarmWall(context);
             BuildAudio(system, context);
@@ -112,7 +115,7 @@ namespace Game.Scripts.Editor.Dungeon
                 .ToArray();
         }
 
-        private static void BuildAudio(GameObject system, DungeonContext context)
+        internal static void BuildAudio(GameObject system, DungeonContext context)
         {
             GameObject go = BattleEditorUtility.CreateChild("Audio", system.transform);
             AudioSource music = go.AddComponent<AudioSource>();
@@ -205,21 +208,21 @@ namespace Game.Scripts.Editor.Dungeon
             return component;
         }
 
-        private static void SetupLighting()
+        internal static void SetupLighting()
         {
             RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.07f, 0.065f, 0.075f);
+            RenderSettings.ambientLight = new Color(0.12f, 0.11f, 0.125f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.fogColor = new Color(0.01f, 0.008f, 0.006f);
-            RenderSettings.fogDensity = 0.02f;
+            RenderSettings.fogDensity = 0.014f;
             RenderSettings.skybox = null;
             RenderSettings.reflectionIntensity = 0.1f;
             Lightmapping.bakedGI = false;
             Lightmapping.realtimeGI = false;
         }
 
-        private static Camera BuildCamera()
+        internal static Camera BuildCamera()
         {
             GameObject go = new GameObject("[Camera]") { tag = "MainCamera" };
             go.transform.SetPositionAndRotation(new Vector3(0f, 2f, -4f), Quaternion.identity);
@@ -235,7 +238,7 @@ namespace Game.Scripts.Editor.Dungeon
             return camera;
         }
 
-        private static NetworkObject LoadNetworkObject(string name)
+        internal static NetworkObject LoadNetworkObject(string name)
         {
             return AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab(name)).GetComponent<NetworkObject>();
         }

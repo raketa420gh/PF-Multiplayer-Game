@@ -35,7 +35,9 @@ namespace Game.Scripts.Dungeon
         public const byte BusyPickUp = 5;
         public const int BeltGroupSize = 3;
         public const byte NoBelt = 255;
-        private const float HoldGrace = 6f;
+        public const byte NoSearch = 255;
+        private const float ContainerRange = 5f;
+        private const float CastPadding = 0.15f;
 
         public FighterComponent Fighter => _fighter;
         public InventoryComponent Inventory => _inventory;
@@ -91,11 +93,22 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public int PerkMask { get; private set; }
 
+        [Networked]
+        public int SpellMask { get; private set; }
+
         /// Equipment slot of the belt item held in hand instead of the weapon (keys 3 / 4), NoBelt when the weapon is out.
         [Networked]
         public byte BeltSlot { get; private set; } = NoBelt;
 
         public bool HasBeltItemInHand => BeltSlot != NoBelt;
+
+        /// Bag index of the item being discovered in the opened container, NoSearch when nothing is left to find.
+        [Networked]
+        public byte SearchIndex { get; private set; } = NoSearch;
+
+        public float SearchProgress => SearchIndex == NoSearch || _searchEndTick <= _searchStartTick
+            ? 0f
+            : Mathf.Clamp01((Runner.Tick - _searchStartTick) / (float)(_searchEndTick - _searchStartTick));
 
         /// Charge progress of the spell being held (0 when not charging).
         public float CastCharge => Pending == PendingAction.Ability && _isHoldingCast ? _fighter.Combat.BusyProgress : 0f;
@@ -191,6 +204,12 @@ namespace Game.Scripts.Dungeon
         [Networked]
         private NetworkBool _isAttuned { get; set; }
 
+        [Networked]
+        private int _searchStartTick { get; set; }
+
+        [Networked]
+        private int _searchEndTick { get; set; }
+
         private readonly List<AbilityConfig> _abilities = new();
         private readonly AbilityConfig[] _skills = new AbilityConfig[2];
         private int _skillCount;
@@ -272,6 +291,7 @@ namespace Game.Scripts.Dungeon
 
             SimulateRest();
             SimulateSwarm();
+            SimulateSearch();
         }
 
         public override void Render()
@@ -290,6 +310,7 @@ namespace Game.Scripts.Dungeon
             SkillA = session.SkillA;
             SkillB = session.SkillB;
             PerkMask = session.PerkMask;
+            SpellMask = session.SpellMask;
             Floor = 1;
             State = AdventurerState.Alive;
         }
@@ -352,6 +373,7 @@ namespace Game.Scripts.Dungeon
         public void CloseContainer()
         {
             OpenContainerId = default;
+            SearchIndex = NoSearch;
         }
 
         public void Extract()
@@ -403,34 +425,16 @@ namespace Game.Scripts.Dungeon
             CloseContainer();
         }
 
-        /// Spell wheel selection: readies a spell in the hand; it is cast with the secondary button while a focus is held.
+        /// Spell wheel selection: readies a spell; it is cast with the secondary button once a focus is taken in hand.
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcReadySpell(byte spellIndex)
         {
-            ReadiedSpell = spellIndex < _class.Spells.Length ? spellIndex : NoSpell;
-
-            if (ReadiedSpell == NoSpell || HasFocus || _class.Focus == CastFocus.BareHands)
-                return;
-
-            int other = _fighter.Combat.WeaponSlot == 0 ? 1 : 0;
-
-            if (HoldsFocusInSet(other))
-                _fighter.Combat.RequestSlot(other);
+            ReadiedSpell = spellIndex < _class.Spells.Length && IsSpellInWheel(spellIndex) ? spellIndex : NoSpell;
         }
 
-        private bool HoldsFocusInSet(int set)
+        public bool IsSpellInWheel(int spellIndex)
         {
-            WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(set == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main);
-            WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(set == 0 ? EquipSlot.Weapon1Off : EquipSlot.Weapon2Off);
-            WeaponClass[] focus = _class.Focus == CastFocus.Instrument ? new[] { WeaponClass.Instrument } : new[] { WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.CrystalBall };
-
-            foreach (WeaponClass weaponClass in focus)
-            {
-                if ((main != null && main.WeaponClass == weaponClass) || (off != null && off.WeaponClass == weaponClass))
-                    return true;
-            }
-
-            return false;
+            return (SpellMask & (1 << spellIndex)) != 0;
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
@@ -552,17 +556,10 @@ namespace Game.Scripts.Dungeon
 
             if (_isHoldingCast && Pending == PendingAction.Ability)
             {
-                if (!buttons.IsSet(PlayerInputButtons.Secondary) || buttons.WasPressed(previous, PlayerInputButtons.Interact))
-                {
-                    if (Runner.Tick >= _pendingCompleteTick)
-                        ReleaseHeldCast();
-                    else
-                        CancelPending();
-                }
-                else if (Runner.SecondsSince(_pendingCompleteTick) > HoldGrace)
-                {
+                if (Runner.Tick >= _pendingCompleteTick)
+                    FinishCast();
+                else if (!buttons.IsSet(PlayerInputButtons.Secondary) || buttons.WasPressed(previous, PlayerInputButtons.Interact))
                     CancelPending();
-                }
             }
             else
             {
@@ -646,6 +643,13 @@ namespace Game.Scripts.Dungeon
             if (target == null || !target.IsAvailable)
                 return;
 
+            if (target.HoldTime <= 0f)
+            {
+                target.Complete(this);
+
+                return;
+            }
+
             float duration = target.HoldTime / _stats.InteractionSpeed;
 
             if (!_fighter.Combat.StartBusy(duration, target.BusyKind))
@@ -673,7 +677,7 @@ namespace Game.Scripts.Dungeon
 
             float duration = Mathf.Max(0.1f, spell.CastTime / _stats.CastSpeed);
 
-            if (!_fighter.Combat.StartBusy(duration + HoldGrace, BusyCast))
+            if (!_fighter.Combat.StartBusy(duration + CastPadding, BusyCast))
                 return;
 
             Pending = PendingAction.Ability;
@@ -682,8 +686,8 @@ namespace Game.Scripts.Dungeon
             _isHoldingCast = true;
         }
 
-        /// The charged spell fires on release, as in Dark and Darker; releasing early costs nothing.
-        private void ReleaseHeldCast()
+        /// The spell takes effect when the cast completes; letting go of the button earlier cancels it for free.
+        private void FinishCast()
         {
             int index = _pendingIndex;
             Pending = PendingAction.None;
@@ -916,6 +920,9 @@ namespace Game.Scripts.Dungeon
                 case ConsumableEffect.Haste:
                     _effects.Add(StatusEffectKind.Haste, item.Magnitude, item.Duration);
                     break;
+                case ConsumableEffect.Invisibility:
+                    _effects.Add(StatusEffectKind.Invisible, 1f, item.Duration + tier * 2f);
+                    break;
             }
 
             Consume(slot, stack);
@@ -971,6 +978,43 @@ namespace Game.Scripts.Dungeon
             }
         }
 
+        /// Unsearched loot of the opened container is discovered one item at a time; Perception sets the pace.
+        private void SimulateSearch()
+        {
+            ContainerComponent container = OpenedContainer;
+
+            if (container != null && (container.transform.position - transform.position).sqrMagnitude > ContainerRange * ContainerRange)
+            {
+                CloseContainer();
+                container = null;
+            }
+
+            int index = container != null ? container.Inventory.FindHidden() : -1;
+
+            if (index < 0)
+            {
+                SearchIndex = NoSearch;
+
+                return;
+            }
+
+            if (SearchIndex != index)
+            {
+                float duration = DungeonFormulas.SearchTime(container.Inventory.Bag[index].RarityValue) / _stats.Perception;
+                SearchIndex = (byte)index;
+                _searchStartTick = Runner.Tick;
+                _searchEndTick = Runner.Tick + Mathf.CeilToInt(duration / Runner.DeltaTime);
+
+                return;
+            }
+
+            if (Runner.Tick < _searchEndTick)
+                return;
+
+            container.Inventory.Reveal(index);
+            SearchIndex = NoSearch;
+        }
+
         private void SimulateSwarm()
         {
             MatchComponent match = DungeonContext.Instance != null ? DungeonContext.Instance.Match : null;
@@ -985,7 +1029,7 @@ namespace Game.Scripts.Dungeon
             float damage = match.GetSwarmDamage(Floor, transform.position);
             IsInSwarm = damage > 0f;
 
-            if (match.IsTimeUp)
+            if (match.IsTimeUp(Floor))
             {
                 _fighter.Health.Kill();
 
@@ -1063,7 +1107,7 @@ namespace Game.Scripts.Dungeon
             if (container == null || container.Inventory != other)
                 return false;
 
-            return (other.transform.position - transform.position).sqrMagnitude < 25f;
+            return (other.transform.position - transform.position).sqrMagnitude < ContainerRange * ContainerRange;
         }
 
         void InventoryActionsComponent.IOwner.OnUseItem(InventoryComponent source, int bagIndex, EquipSlot slot)

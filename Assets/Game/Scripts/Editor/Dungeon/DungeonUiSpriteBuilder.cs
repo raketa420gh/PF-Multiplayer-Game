@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Procedural sprites of the tavern screens: worn panels, the doll arch, perk and skill frames, the rank shield.
+    /// Procedural sprites of the UI: worn panels, the doll arch, perk and skill frames, the rank shield, the eye of unsearched loot.
     internal static class DungeonUiSpriteBuilder
     {
         public const string Folder = "Assets/Game/Textures/UI";
@@ -22,6 +22,7 @@ namespace Game.Scripts.Editor.Dungeon
             Write("Shield", 128, 160, Shield);
             Write("Vignette", 256, 256, (p, half) => new Color(0f, 0f, 0f, DungeonTextureBuilder.Step(0.5f, 1.35f, (p / half).magnitude) * 0.92f));
             Write("Glow", 128, 64, (p, half) => new Color(1f, 0.8f, 0.45f, (1f - DungeonTextureBuilder.Step(0f, 1f, (p / half).magnitude)) * 0.55f));
+            Write("Eye", 64, 64, Eye);
 
             Debug.Log($"[{nameof(DungeonUiSpriteBuilder)}] Sprites built in {Folder}");
         }
@@ -91,6 +92,18 @@ namespace Game.Scripts.Editor.Dungeon
             float tone = Mathf.Lerp(Mathf.Lerp(0.12f, 0.6f, line), 1f, border);
 
             return new Color(tone, tone, tone, 1f - DungeonTextureBuilder.Step(60.5f, 62.5f, distance));
+        }
+
+        /// Almond outline with an iris and a hollow pupil: marks loot nobody has searched yet.
+        private static Color Eye(Vector2 p, Vector2 half)
+        {
+            float x = p.x / (half.x - 3f);
+            float lid = (1f - x * x) * half.y * 0.52f;
+            float outline = Mathf.Abs(x) < 1f ? 1f - DungeonTextureBuilder.Step(1.2f, 2.6f, Mathf.Abs(lid - Mathf.Abs(p.y))) : 0f;
+            float iris = 1f - DungeonTextureBuilder.Step(half.y * 0.3f, half.y * 0.3f + 1.5f, p.magnitude);
+            float pupil = 1f - DungeonTextureBuilder.Step(half.y * 0.1f, half.y * 0.1f + 1.5f, p.magnitude);
+
+            return new Color(1f, 1f, 1f, Mathf.Max(outline, iris * (1f - pupil)));
         }
 
         /// Golden heater shield: flat top, pointed bottom.

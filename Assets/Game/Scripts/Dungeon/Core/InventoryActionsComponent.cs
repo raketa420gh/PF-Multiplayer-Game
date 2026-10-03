@@ -39,7 +39,7 @@ namespace Game.Scripts.Dungeon
             ItemStack stack = from.Bag[fromIndex];
             ItemConfig config = from.GetConfig(stack);
 
-            if (config == null)
+            if (config == null || stack.IsHidden)
                 return;
 
             int occupied = to.FindBagIndexAt(x, y);
@@ -51,7 +51,10 @@ namespace Game.Scripts.Dungeon
             {
                 ItemStack other = to.Bag[occupied];
 
-                if (other.ItemId == stack.ItemId && config.MaxStack > 1 && other.Count < config.MaxStack)
+                if (other.IsHidden)
+                    return;
+
+                if (other.CanStackWith(stack) && config.MaxStack > 1 && other.Count < config.MaxStack)
                 {
                     int moved = Mathf.Min(config.MaxStack - other.Count, stack.Count);
                     to.RemoveAt(occupied);
@@ -82,7 +85,7 @@ namespace Game.Scripts.Dungeon
             ItemStack stack = from.Bag[fromIndex];
             ItemConfig config = from.GetConfig(stack);
 
-            if (config == null || count <= 0 || count >= stack.Count || !to.CanPlace(config, x, y))
+            if (config == null || stack.IsHidden || count <= 0 || count >= stack.Count || !to.CanPlace(config, x, y))
                 return;
 
             from.RemoveAt(fromIndex, count);
@@ -105,7 +108,7 @@ namespace Game.Scripts.Dungeon
             ItemStack stack = from.Bag[fromIndex];
             ItemConfig config = from.GetConfig(stack);
 
-            if (config == null || !config.CanEquip(slot) || _inventory.IsSlotBlocked(slot))
+            if (config == null || stack.IsHidden || !config.CanEquip(slot) || _inventory.IsSlotBlocked(slot))
                 return;
 
             if (_owner != null && !_owner.CanEquip(config, slot))
@@ -153,7 +156,7 @@ namespace Game.Scripts.Dungeon
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcDrop(NetworkBehaviourId source, int index)
         {
-            if (!TryResolve(source, out InventoryComponent from))
+            if (!TryResolve(source, out InventoryComponent from) || from.Bag[index].IsHidden)
                 return;
 
             ItemStack stack = from.RemoveAt(index);
@@ -177,7 +180,7 @@ namespace Game.Scripts.Dungeon
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcUse(NetworkBehaviourId source, int index)
         {
-            if (TryResolve(source, out InventoryComponent from))
+            if (TryResolve(source, out InventoryComponent from) && !from.Bag[index].IsHidden)
                 _owner?.OnUseItem(from, index, EquipSlot.Count);
         }
 
@@ -197,7 +200,7 @@ namespace Game.Scripts.Dungeon
             {
                 ItemStack stack = from.Bag[i];
 
-                if (!stack.IsEmpty && _inventory.TryAdd(stack))
+                if (!stack.IsEmpty && !stack.IsHidden && _inventory.TryAdd(stack))
                     from.RemoveAt(i);
             }
 

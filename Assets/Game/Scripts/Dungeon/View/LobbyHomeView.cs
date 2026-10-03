@@ -15,7 +15,7 @@ namespace Game.Scripts.Dungeon
             public string Title;
             public string Info;
             public Texture Picture;
-            [Tooltip("Scene to open; empty = descend into the dungeon of the current session")]
+            [Tooltip("Scene the Start button travels to")]
             public string Scene;
         }
 
@@ -84,7 +84,7 @@ namespace Game.Scripts.Dungeon
         private void Update()
         {
             bool hasSession = _session != null && _session.Object != null && _session.Object.IsValid;
-            _startButton.interactable = !string.IsNullOrEmpty(_destinations[_destination].Scene) || (hasSession && _session.HasLoadedKit);
+            _startButton.interactable = hasSession && _session.HasLoadedKit;
 
             if (!hasSession)
                 return;
@@ -150,12 +150,13 @@ namespace Game.Scripts.Dungeon
         private void StartRun()
         {
             Click();
-            string scene = _destinations[_destination].Scene;
 
-            if (string.IsNullOrEmpty(scene))
-                _session?.RpcEnterDungeon();
-            else
-                SceneTravel.Load(_session != null ? _session.Runner : null, scene);
+            if (_session == null)
+                return;
+
+            Destination destination = _destinations[_destination];
+            _session.SaveLocal();
+            SceneTravel.Load(_session.Runner, destination.Scene, destination.Title);
         }
 
         private void NextClass()

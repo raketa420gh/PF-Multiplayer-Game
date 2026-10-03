@@ -3,21 +3,19 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Chest, coffin, barrel, corpse: a networked inventory the adventurer opens by holding F.
+    /// Chest, coffin, barrel, corpse: a networked inventory that opens at once; its loot is then searched item by item.
     public sealed class ContainerComponent : InteractableComponent
     {
-        public override string Prompt => IsOpen ? "Search " + _displayName : "Open " + _displayName;
-        public override float HoldTime => IsOpen ? 0.2f : _openTime;
-        public override byte BusyKind => IsOpen ? AdventurerComponent.BusyInteract : AdventurerComponent.BusyOpen;
+        public override string Prompt => (IsOpen ? "Search" : _openVerb) + " " + _displayName;
+        public override float HoldTime => 0f;
+        /// A body can be looted only once it is dead.
+        public override bool IsAvailable => _body == null || _body.IsDead;
         public InventoryComponent Inventory => _inventory;
         public LootTableConfig LootTable => _lootTable;
         public string DisplayName => _displayName;
 
         [Networked]
         public NetworkBool IsOpen { get; private set; }
-
-        [Networked]
-        public NetworkBool IsLooted { get; private set; }
 
         [SerializeField]
         private InventoryComponent _inventory;
@@ -26,7 +24,7 @@ namespace Game.Scripts.Dungeon
         private string _displayName = "Chest";
 
         [SerializeField]
-        private float _openTime = 1.5f;
+        private string _openVerb = "Open";
 
         [SerializeField]
         private LootTableConfig _lootTable;
@@ -40,10 +38,19 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private bool _isRemovedWhenEmpty;
 
+        [SerializeField, Tooltip("Monster corpses: health of the body this container lies on")]
+        private HealthComponent _body;
+
+        [SerializeField, Tooltip("Interaction trigger switched on together with the availability")]
+        private Collider _trigger;
+
         private float _lidBlend;
 
         public override void Render()
         {
+            if (_trigger != null && _trigger.enabled != IsAvailable)
+                _trigger.enabled = IsAvailable;
+
             if (_lid == null)
                 return;
 
@@ -61,11 +68,8 @@ namespace Game.Scripts.Dungeon
 
         public void Fill(LootTableConfig table, int seed)
         {
-            if (table == null)
-                return;
-
-            table.Roll(_inventory, seed);
-            IsLooted = false;
+            if (table != null)
+                table.Roll(_inventory, seed);
         }
 
         public override void Complete(AdventurerComponent adventurer)
@@ -74,17 +78,11 @@ namespace Game.Scripts.Dungeon
             adventurer.OpenContainer(this);
         }
 
-        public void MarkLooted()
-        {
-            IsLooted = true;
-        }
-
         /// Empties and closes the container between matches.
         public void ResetContainer()
         {
             _inventory.Clear();
             IsOpen = false;
-            IsLooted = false;
         }
     }
 }

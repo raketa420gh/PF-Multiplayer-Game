@@ -36,6 +36,8 @@ namespace Game.Scripts.Dungeon
         public static float Edge(float a, float b) => Mathf.Sqrt(Mathf.Max(0f, a) * Mathf.Max(0f, b));
         public static float PowerBonus(float power) => Curve(power);
         public static int BonusCharges(float resonance) => Mathf.Clamp(Mathf.FloorToInt((resonance - 10f) / 10f), 0, 3);
+        /// Seconds to discover one unsearched item at neutral Perception: rarer loot takes longer to make out.
+        public static float SearchTime(ItemRarity rarity) => 0.5f + 0.25f * (int)rarity;
         public static float ArmorReduction(float armorRating) => Mathf.Min(Sample(s_armorReduction, armorRating), MaxDamageReduction);
         public static float MagicReduction(float magicResistance) => Mathf.Min(Sample(s_magicReduction, magicResistance), MaxDamageReduction);
 

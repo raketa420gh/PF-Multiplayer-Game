@@ -12,7 +12,8 @@ namespace Game.Scripts.Dungeon
         Extracted
     }
 
-    /// Per-player persistent object: lobby state, class, level, kit and stash. Lives for the whole connection.
+    /// Per-player object of a scene session: class, level, kit and stash. The tavern edits them, the dungeon takes the kit
+    /// in and hands the run result back; the owner's PlayerPrefs carry everything between the scenes.
     public sealed class PlayerSessionComponent : NetworkBehaviour, InventoryActionsComponent.IOwner
     {
         public const byte LoadKit = 0;
@@ -66,6 +67,9 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public int PerkMask { get; private set; } = 1;
 
+        [Networked]
+        public int SpellMask { get; private set; } = ClassConfig.DefaultSpellMask;
+
         [SerializeField]
         private InventoryComponent _kit;
 
@@ -107,7 +111,7 @@ namespace Game.Scripts.Dungeon
                 DungeonContext.Instance.SetLocalSession(this);
 
             RpcSetProfile(StashService.LoadLevel(), StashService.LoadExperience(), StashService.LoadClass(), StashService.LoadName());
-            RpcSetBuild(StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask());
+            RpcSetBuild(StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask(), StashService.LoadSpellMask());
             SendInventory(LoadKit, StashService.LoadKit());
             SendInventory(LoadStash, StashService.LoadStash());
         }
@@ -126,7 +130,15 @@ namespace Game.Scripts.Dungeon
                 OnStateChanged?.Invoke();
             }
 
-            if (!HasInputAuthority || State != SessionState.Lobby || !HasLoadedKit || DungeonContext.Instance == null || DungeonContext.Instance.IsSandbox)
+            // Inside the dungeon the kit is at stake: it is written back only when the run ends, emptied or extracted.
+            if (State != SessionState.InDungeon)
+                SaveLocal();
+        }
+
+        /// Stores the kit, stash, profile and build of the local player; they are what the next scene loads.
+        public void SaveLocal()
+        {
+            if (!HasInputAuthority || !HasLoadedKit || DungeonContext.Instance == null || DungeonContext.Instance.IsSandbox)
                 return;
 
             if (_savedKitVersion != _kit.Version)
@@ -142,7 +154,14 @@ namespace Game.Scripts.Dungeon
             }
 
             StashService.SaveProfile(Level, Experience, ClassId, DisplayName);
-            StashService.SaveBuild(SkillA, SkillB, PerkMask);
+            StashService.SaveBuild(SkillA, SkillB, PerkMask, SpellMask);
+        }
+
+        /// Nobody descends naked: an empty kit is replaced by the starting one.
+        public void EnsureKit()
+        {
+            if (_kit.CountItems() == 0 && _kit.GetEquipped(EquipSlot.Weapon1Main).IsEmpty)
+                GiveDefaultKit();
         }
 
         public void OnDied(AdventurerComponent adventurer)
@@ -193,6 +212,7 @@ namespace Game.Scripts.Dungeon
             SkillA = 0;
             SkillB = 1;
             PerkMask = 1;
+            SpellMask = ClassConfig.DefaultSpellMask;
             _stash.TakeAllFrom(_kit);
             GiveDefaultKit();
         }
@@ -240,12 +260,28 @@ namespace Game.Scripts.Dungeon
             PerkMask |= bit;
         }
 
+        /// Toggles a spell in the spell wheel; the wheel holds at most SpellWheelSize spells.
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        private void RpcSetBuild(byte skillA, byte skillB, int perkMask)
+        public void RpcToggleSpell(byte index)
+        {
+            if (State != SessionState.Lobby || index >= Class.Spells.Length)
+                return;
+
+            int bit = 1 << index;
+
+            if ((SpellMask & bit) == 0 && CountBits(SpellMask) >= ClassConfig.SpellWheelSize)
+                return;
+
+            SpellMask ^= bit;
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RpcSetBuild(byte skillA, byte skillB, int perkMask, int spellMask)
         {
             SkillA = skillA;
             SkillB = skillB;
             PerkMask = perkMask;
+            SpellMask = spellMask;
         }
 
         private static int CountBits(int value)
@@ -268,25 +304,6 @@ namespace Game.Scripts.Dungeon
                 return;
 
             GiveDefaultKit();
-        }
-
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        public void RpcEnterDungeon()
-        {
-            if (State != SessionState.Lobby || DungeonContext.Instance == null || DungeonContext.Instance.Director == null)
-                return;
-
-            if (_kit.CountItems() == 0 && _kit.GetEquipped(EquipSlot.Weapon1Main).IsEmpty)
-                GiveDefaultKit();
-
-            DungeonContext.Instance.Director.SpawnAdventurer(this);
-        }
-
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        public void RpcReturnToLobby()
-        {
-            if (State is SessionState.Dead or SessionState.Extracted)
-                State = SessionState.Lobby;
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]

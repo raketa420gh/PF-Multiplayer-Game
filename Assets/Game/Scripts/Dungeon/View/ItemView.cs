@@ -6,6 +6,7 @@ using UnityEngine.UI;
 namespace Game.Scripts.Dungeon
 {
     /// One item inside a grid or an equipment slot. Drag it onto grids and slots; right click for the quick action.
+    /// Unsearched loot shows an eye instead of the item and a ring that fills while it is being discovered.
     public sealed class ItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler,
         IPointerEnterHandler, IPointerExitHandler
     {
@@ -35,6 +36,13 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private CanvasGroup _group;
 
+        [SerializeField]
+        private GameObject _hiddenRoot;
+
+        [SerializeField]
+        private Image _searchFill;
+
+        private static readonly Color s_hiddenFrame = new(0.35f, 0.31f, 0.25f);
         private ItemStack _stack;
         private ItemConfig _config;
         private InventoryComponent _inventory;
@@ -64,19 +72,28 @@ namespace Game.Scripts.Dungeon
             if (!isSlot)
                 rect.anchoredPosition = new Vector2(stack.X * cellSize, -stack.Y * cellSize);
 
+            bool isHidden = stack.IsHidden;
             bool hasIcon = config.Icon != null;
-            _background.color = hasIcon ? new Color(0.09f, 0.08f, 0.07f, 0.95f) : config.IconColor * new Color(0.45f, 0.45f, 0.45f, 1f);
-            _frame.color = owner.Database.GetRarityColor(stack.RarityValue);
-            _icon.enabled = hasIcon;
+            _hiddenRoot.SetActive(isHidden);
+            _searchFill.fillAmount = 0f;
+            _background.color = hasIcon || isHidden ? new Color(0.09f, 0.08f, 0.07f, 0.95f) : config.IconColor * new Color(0.45f, 0.45f, 0.45f, 1f);
+            _frame.color = isHidden ? s_hiddenFrame : owner.Database.GetRarityColor(stack.RarityValue);
+            _icon.enabled = hasIcon && !isHidden;
             _icon.sprite = config.Icon;
-            _glyph.text = hasIcon ? string.Empty : config.IconGlyph;
+            _glyph.text = hasIcon || isHidden ? string.Empty : config.IconGlyph;
             _glyph.color = config.IconColor;
-            _count.text = stack.Count > 1 ? stack.Count.ToString() : string.Empty;
+            _count.text = stack.Count > 1 && !isHidden ? stack.Count.ToString() : string.Empty;
+            owner.RefreshTooltip(this);
+        }
+
+        public void SetSearchProgress(float progress)
+        {
+            _searchFill.fillAmount = progress;
         }
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (eventData.button != PointerEventData.InputButton.Left)
+            if (eventData.button != PointerEventData.InputButton.Left || _stack.IsHidden)
                 return;
 
             _isSplitting = Input.GetKey(KeyCode.LeftControl) && _stack.Count > 1;
@@ -104,7 +121,7 @@ namespace Game.Scripts.Dungeon
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (eventData.dragging)
+            if (eventData.dragging || _stack.IsHidden)
                 return;
 
             if (eventData.button == PointerEventData.InputButton.Right)

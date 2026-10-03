@@ -84,6 +84,16 @@ namespace Game.Scripts.Dungeon
             }
         }
 
+        /// Fills the ring of the unsearched item an adventurer is discovering right now.
+        public void SetSearch(int bagIndex, float progress)
+        {
+            foreach (ItemView view in _items)
+            {
+                if (view.gameObject.activeSelf && view.Stack.IsHidden)
+                    view.SetSearchProgress(view.BagIndex == bagIndex ? progress : 0f);
+            }
+        }
+
         public bool TryGetCell(Vector2 screenPosition, Camera camera, out int x, out int y)
         {
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_cellsRoot, screenPosition, camera, out Vector2 local);

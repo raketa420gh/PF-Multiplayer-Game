@@ -49,6 +49,62 @@ namespace Game.Scripts.Editor.Dungeon
             return Save(root);
         }
 
+        public static GameObject BuildMorningStar()
+        {
+            Material steel = BattleEditorUtility.GetMaterial("DarkSteel", new Color(0.25f, 0.25f, 0.28f), 0.8f, 0.5f);
+            Material wood = BattleEditorUtility.GetMaterial("DarkWood", new Color(0.22f, 0.14f, 0.08f));
+            GameObject root = new GameObject("MorningStar");
+            Transform parent = root.transform;
+
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Handle", parent, new Vector3(0f, 0f, 0.22f),
+                new Vector3(90f, 0f, 0f), new Vector3(0.035f, 0.3f, 0.035f), wood);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Head", parent, new Vector3(0f, 0f, 0.6f), Vector3.zero, Vector3.one * 0.13f, steel);
+
+            // Spikes are thin bars through the head, pointing every way.
+            foreach (Vector3 euler in new[] { Vector3.zero, new Vector3(90f, 0f, 0f), new Vector3(0f, 90f, 0f), new Vector3(45f, 45f, 0f), new Vector3(-45f, 45f, 0f), new Vector3(45f, -45f, 0f), new Vector3(-45f, -45f, 0f) })
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Spike", parent, new Vector3(0f, 0f, 0.6f), euler, new Vector3(0.022f, 0.022f, 0.24f), steel);
+
+            AddTrail(parent, 0.7f);
+
+            return Save(root);
+        }
+
+        public static GameObject BuildMaul()
+        {
+            Material steel = BattleEditorUtility.GetMaterial("DarkSteel", new Color(0.25f, 0.25f, 0.28f), 0.8f, 0.5f);
+            Material wood = BattleEditorUtility.GetMaterial("BowWood", new Color(0.4f, 0.26f, 0.13f));
+            GameObject root = new GameObject("WarMaul");
+            Transform parent = root.transform;
+
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Handle", parent, new Vector3(0f, 0f, 0.42f),
+                new Vector3(90f, 0f, 0f), new Vector3(0.04f, 0.66f, 0.04f), wood);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Head", parent, new Vector3(0f, 0f, 1f), Vector3.zero, new Vector3(0.16f, 0.36f, 0.18f), steel);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Band", parent, new Vector3(0f, 0f, 1f), Vector3.zero, new Vector3(0.18f, 0.08f, 0.2f), steel);
+            AddTrail(parent, 1.15f);
+
+            return Save(root);
+        }
+
+        public static GameObject BuildHalberd()
+        {
+            Material steel = BattleEditorUtility.GetMaterial("Steel", new Color(0.75f, 0.77f, 0.8f), 0.9f, 0.7f);
+            Material wood = BattleEditorUtility.GetMaterial("BowWood", new Color(0.4f, 0.26f, 0.13f));
+            GameObject root = new GameObject("Halberd");
+            Transform parent = root.transform;
+
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Shaft", parent, new Vector3(0f, 0f, 0.65f),
+                new Vector3(90f, 0f, 0f), new Vector3(0.03f, 1.15f, 0.03f), wood);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Spike", parent, new Vector3(0f, 0f, 1.88f),
+                new Vector3(0f, 0f, 45f), new Vector3(0.035f, 0.035f, 0.34f), steel);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Blade", parent, new Vector3(0f, 0.13f, 1.58f),
+                Vector3.zero, new Vector3(0.014f, 0.22f, 0.3f), steel);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Hook", parent, new Vector3(0f, -0.08f, 1.6f),
+                Vector3.zero, new Vector3(0.014f, 0.12f, 0.06f), steel);
+            AddTrail(parent, 2f);
+
+            return Save(root);
+        }
+
         public static GameObject BuildSpear()
         {
             Material steel = BattleEditorUtility.GetMaterial("Steel", new Color(0.75f, 0.77f, 0.8f), 0.9f, 0.7f);

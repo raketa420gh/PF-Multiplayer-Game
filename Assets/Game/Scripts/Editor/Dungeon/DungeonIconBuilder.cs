@@ -11,7 +11,8 @@ namespace Game.Scripts.Editor.Dungeon
         private const int Size = 128;
         private static readonly Vector3 s_stage = new(2000f, 2000f, 2000f);
 
-        public static Sprite Render(GameObject model, string name, float zoom = 1f, Vector3 euler = default, float lift = 0f)
+        /// The tint recolours every part not named "Fixed", the way ArmorDresser paints a worn composite piece.
+        public static Sprite Render(GameObject model, string name, float zoom = 1f, Vector3 euler = default, float lift = 0f, Color? tint = null)
         {
             BattleEditorUtilityShim.EnsureFolder(Folder);
             GameObject instance = Object.Instantiate(model, s_stage, Quaternion.Euler(euler));
@@ -33,6 +34,10 @@ namespace Game.Scripts.Editor.Dungeon
                     materials[i] = new Material(materials[i]);
                     materials[i].SetFloat("_Metallic", materials[i].GetFloat("_Metallic") * 0.35f);
                     materials[i].SetFloat("_Smoothness", Mathf.Min(materials[i].GetFloat("_Smoothness"), 0.6f));
+
+                    if (tint.HasValue && renderer.name != "Fixed")
+                        materials[i].SetColor("_BaseColor", tint.Value);
+
                     copies.Add(materials[i]);
                 }
 

@@ -155,7 +155,7 @@ namespace Game.Scripts.Dungeon
                 {
                     ItemStack other = _bag[i];
 
-                    if (other.ItemId != stack.ItemId || other.Count >= config.MaxStack)
+                    if (!other.CanStackWith(stack) || other.Count >= config.MaxStack)
                         continue;
 
                     int moved = Mathf.Min(config.MaxStack - other.Count, stack.Count);
@@ -226,6 +226,33 @@ namespace Game.Scripts.Dungeon
             Version++;
 
             return stack;
+        }
+
+        /// Bag index of the unsearched item closest to the top-left corner, -1 when everything is discovered.
+        public int FindHidden()
+        {
+            int found = -1;
+            int best = int.MaxValue;
+
+            for (int i = 0; i < Capacity; i++)
+            {
+                ItemStack stack = _bag[i];
+                int order = stack.Y * _width + stack.X;
+
+                if (stack.IsEmpty || !stack.IsHidden || order >= best)
+                    continue;
+
+                best = order;
+                found = i;
+            }
+
+            return found;
+        }
+
+        public void Reveal(int index)
+        {
+            _bag.Set(index, _bag[index].WithHidden(false));
+            Version++;
         }
 
         public void SetEquipment(EquipSlot slot, ItemStack stack)
@@ -407,19 +434,21 @@ namespace Game.Scripts.Dungeon
         {
             Clear();
             int offset = 0;
+            int count = bagCount + equipmentCount;
+            int size = count > 0 && buffer.Length < count * ItemStack.ByteSize ? ItemStack.LegacyByteSize : ItemStack.ByteSize;
 
-            for (int i = 0; i < bagCount; i++, offset += ItemStack.ByteSize)
+            for (int i = 0; i < bagCount; i++, offset += size)
             {
-                ItemStack stack = ItemStack.Read(buffer, offset);
+                ItemStack stack = ItemStack.Read(buffer, offset, size);
                 ItemConfig config = GetConfig(stack);
 
                 if (config != null && !TryPlaceAt(stack, stack.X, stack.Y))
                     TryAdd(stack);
             }
 
-            for (int i = 0; i < equipmentCount; i++, offset += ItemStack.ByteSize)
+            for (int i = 0; i < equipmentCount; i++, offset += size)
             {
-                ItemStack stack = ItemStack.Read(buffer, offset);
+                ItemStack stack = ItemStack.Read(buffer, offset, size);
                 EquipSlot slot = (EquipSlot)stack.X;
 
                 if (slot < EquipSlot.Count && CanEquip(stack, slot))

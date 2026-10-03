@@ -35,7 +35,8 @@ namespace Game.Scripts.Editor.Battle
         private static readonly string[] s_tableItems =
         {
             "Arming Sword", "Round Shield", "Falchion", "Zweihander", "Battle Axe", "Spear", "Flanged Mace", "Rondel Dagger", "Recurve Bow",
-            "Crossbow", "Torch", "Bandage", "Potion of Healing", "Potion of Protection", "Ale", "Throwing Knife", "Francisca Axe"
+            "Crossbow", "Torch", "Bandage", "Potion of Healing", "Potion of Protection", "Ale", "Throwing Knife", "Francisca Axe",
+            "Short Sword", "Rapier", "Viking Sword", "Hatchet", "Morning Star", "Stiletto Dagger", "Felling Axe", "War Maul", "Halberd", "Potion of Invisibility"
         };
 
         [MenuItem("Tools/Game/Battle/Build Scene")]
@@ -62,13 +63,13 @@ namespace Game.Scripts.Editor.Battle
                 PreviewRig = AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("PreviewRig")),
                 PieceSet = AssetDatabase.LoadAssetAtPath<ArmorPieceSetConfig>($"{DungeonContentBuilder.ConfigsFolder}/ArmorPieces.asset"),
                 FloorMaps = new Texture2D[0],
-                ModuleNames = new string[0]
+                ModuleNames = new string[0],
+                Title = "Training Grounds"
             });
 
             foreach (string name in s_dungeonOnlyHud)
                 canvas.transform.Find("HUD/" + name).gameObject.SetActive(false);
 
-            canvas.transform.Find("Lobby").gameObject.SetActive(false);
             DungeonUiBuilder.BuildDevPanel(canvas, director, s_monsterLabels);
             DungeonMapBuilder.BakeNavMesh(world.gameObject, NavMeshPath);
 
@@ -255,7 +256,7 @@ namespace Game.Scripts.Editor.Battle
         /// A row of tables in front of the spawn with one of every weapon plus belt items, each on its own point.
         private static void BuildTable(SerializedObject director, Transform world, Transform spawns, ItemDatabase database)
         {
-            const float step = 0.52f;
+            const float step = 0.42f;
             GameObject table = AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("Table"));
 
             for (int i = 0; i < 4; i++)

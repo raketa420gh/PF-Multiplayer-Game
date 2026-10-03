@@ -206,14 +206,14 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
-            float left = match.TimeLeft;
+            float left = match.GetTimeLeft(adventurer.Floor);
             _timerText.text = $"{Mathf.FloorToInt(left / 60f):00}:{Mathf.FloorToInt(left % 60f):00}";
             _timerText.color = left < 60f ? new Color(1f, 0.3f, 0.2f) : Color.white;
 
             Vector3 delta = adventurer.transform.position - match.GetSwarmCenter(adventurer.Floor);
             delta.y = 0f;
             float distance = delta.magnitude - match.GetSafeRadius(adventurer.Floor);
-            float next = match.GetSwarmTimeToNextStage();
+            float next = match.GetSwarmTimeToNextStage(adventurer.Floor);
 
             _swarmText.text = adventurer.IsInSwarm
                 ? $"<color=#f55>DARK SWARM  ·  safe zone {distance:0}m away</color>"
@@ -287,7 +287,11 @@ namespace Game.Scripts.Dungeon
             int skillCount = adventurer.SkillCount;
 
             for (int i = 0; i < _skills.Length; i++)
-                UpdateAbility(_skills[i], adventurer, i, i < skillCount);
+            {
+                // The spell wheel slot shows the readied spell instead of the wheel itself.
+                bool isWheel = i < skillCount && adventurer.Abilities[i].Kind == AbilityKind.SpellMemory && adventurer.ReadiedSpellConfig != null;
+                UpdateAbility(_skills[i], adventurer, isWheel ? skillCount + adventurer.ReadiedSpell : i, i < skillCount);
+            }
 
             for (int i = 0; i < _spells.Length; i++)
                 _spells[i].Root.SetActive(false);

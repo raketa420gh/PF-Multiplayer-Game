@@ -6,7 +6,8 @@ using UnityEngine;
 namespace Game.Scripts.Dungeon
 {
     /// Host-side orchestration: sessions on join, adventurer spawns, dungeon population, portals and match reset.
-    /// A floor is populated only when the first adventurer reaches it.
+    /// Players arrive from the tavern scene and enter as soon as their kit is loaded. A floor is populated and its
+    /// clock starts only when the first adventurer reaches it.
     public sealed class DungeonDirector : MonoBehaviour
     {
         [Serializable]
@@ -66,10 +67,10 @@ namespace Game.Scripts.Dungeon
         private readonly List<NetworkObject> _spawned = new();
         private readonly List<PlayerSessionComponent> _sessions = new();
         private readonly bool[] _populated = new bool[MatchComponent.FloorCount];
+        private readonly bool[] _escapeOpened = new bool[MatchComponent.FloorCount];
+        private readonly bool[] _descendOpened = new bool[MatchComponent.FloorCount];
         private NetworkRunner _runner;
         private MatchComponent _match;
-        private bool _portalsOpened;
-        private bool _descendOpened;
         private float _finishedAt = -1f;
         private int _seed;
 
@@ -77,12 +78,14 @@ namespace Game.Scripts.Dungeon
         {
             _networkEvents.PlayerJoined.AddListener(OnPlayerJoined);
             _networkEvents.PlayerLeft.AddListener(OnPlayerLeft);
+            _networkEvents.OnShutdown.AddListener(OnShutdown);
         }
 
         private void OnDisable()
         {
             _networkEvents.PlayerJoined.RemoveListener(OnPlayerJoined);
             _networkEvents.PlayerLeft.RemoveListener(OnPlayerLeft);
+            _networkEvents.OnShutdown.RemoveListener(OnShutdown);
         }
 
         private void Update()
@@ -90,30 +93,40 @@ namespace Game.Scripts.Dungeon
             if (_runner == null || !_runner.IsServer || _match == null)
                 return;
 
+            foreach (PlayerSessionComponent session in _sessions)
+            {
+                if (session.State == SessionState.Lobby && session.HasLoadedKit)
+                    SpawnAdventurer(session);
+            }
+
             if (_match.State == MatchState.Running)
                 UpdateRunning();
             else if (_match.State == MatchState.Finished && Time.time - _finishedAt > _resetDelay)
                 ResetDungeon();
         }
 
-        public void SpawnAdventurer(PlayerSessionComponent session)
+        private void SpawnAdventurer(PlayerSessionComponent session)
         {
-            if (_runner == null || !_runner.IsServer)
-                return;
-
             if (_match.State == MatchState.Finished)
                 ResetDungeon();
 
             if (!_populated[0])
             {
                 _seed = Environment.TickCount;
-                SetEscapePortals(false);
-                SetDescendPortals(false);
+
+                for (int i = 0; i < _floors.Length; i++)
+                {
+                    SetEscapePortals(i, false);
+                    SetDescendPortal(i, false);
+                }
+
                 Populate(0);
             }
 
             if (_match.State != MatchState.Running)
                 StartMatch();
+
+            session.EnsureKit();
 
             FloorLayout floor = _floors[0];
             Transform point = floor.PlayerSpawns[session.Object.InputAuthority.AsIndex % floor.PlayerSpawns.Length];
@@ -159,10 +172,17 @@ namespace Game.Scripts.Dungeon
             runner.Despawn(session);
         }
 
+        /// The host left: the run is over for everyone, back to the tavern with the kit the player came in with.
+        private void OnShutdown(NetworkRunner runner, ShutdownReason reason)
+        {
+            if (reason != ShutdownReason.Ok)
+                SceneTravel.Load(runner, SceneTravel.LobbyScene, SceneTravel.LobbyTitle);
+        }
+
         private void StartMatch()
         {
-            _portalsOpened = false;
-            _descendOpened = false;
+            Array.Clear(_escapeOpened, 0, _escapeOpened.Length);
+            Array.Clear(_descendOpened, 0, _descendOpened.Length);
             Vector3[] centers = new Vector3[MatchComponent.FloorCount];
             float[] radii = new float[MatchComponent.FloorCount];
             Vector3[] finals = new Vector3[MatchComponent.FloorCount];
@@ -182,28 +202,32 @@ namespace Game.Scripts.Dungeon
 
         private void UpdateRunning()
         {
-            float elapsed = _match.Elapsed;
-
-            if (!_descendOpened && elapsed >= _config.DescendPortalTime)
+            for (int i = 0; i < _floors.Length; i++)
             {
-                _descendOpened = true;
-                SetDescendPortals(true);
-            }
-
-            if (!_portalsOpened && elapsed >= _config.EscapePortalTime)
-            {
-                _portalsOpened = true;
-                SetEscapePortals(true);
-            }
-
-            for (int i = 1; i < _floors.Length; i++)
-            {
+                // A deeper floor is a new dungeon: fresh loot, monsters and a full swarm timer from the first arrival.
                 if (!_populated[i] && AnyAdventurerOnFloor(i + 1))
+                {
                     Populate(i);
+                    _match.BeginFloor(i + 1);
+                }
+
+                float elapsed = _match.GetElapsed(i + 1);
+
+                if (!_descendOpened[i] && elapsed >= _config.DescendPortalTime)
+                {
+                    _descendOpened[i] = true;
+                    SetDescendPortal(i, true);
+                }
+
+                if (!_escapeOpened[i] && elapsed >= _config.EscapePortalTime)
+                {
+                    _escapeOpened[i] = true;
+                    SetEscapePortals(i, true);
+                }
             }
 
-            // A run ends as soon as nobody is left inside, so the next descent gets a fresh dungeon and a full swarm timer.
-            if ((_match.IsTimeUp || elapsed > 5f) && !AnyAdventurerAlive())
+            // A run ends as soon as nobody is left inside, so the next arrival gets a fresh dungeon and a full swarm timer.
+            if (_match.Elapsed > 5f && !AnyAdventurerAlive())
             {
                 _match.Finish();
                 _finishedAt = Time.time;
@@ -267,36 +291,30 @@ namespace Game.Scripts.Dungeon
             }
         }
 
-        private void SetDescendPortals(bool isActive)
+        private void SetDescendPortal(int floorIndex, bool isActive)
         {
-            for (int i = 0; i < _floors.Length - 1; i++)
-            {
-                PortalComponent portal = _floors[i].DescendPortal;
+            PortalComponent portal = _floors[floorIndex].DescendPortal;
 
+            if (portal == null || floorIndex + 1 >= _floors.Length)
+                return;
+
+            if (isActive)
+                portal.Activate(_floors[floorIndex + 1].DescendDestination);
+            else
+                portal.Deactivate();
+        }
+
+        private void SetEscapePortals(int floorIndex, bool isActive)
+        {
+            foreach (PortalComponent portal in _floors[floorIndex].EscapePortals)
+            {
                 if (portal == null)
                     continue;
 
                 if (isActive)
-                    portal.Activate(_floors[i + 1].DescendDestination);
+                    portal.Activate(null);
                 else
                     portal.Deactivate();
-            }
-        }
-
-        private void SetEscapePortals(bool isActive)
-        {
-            foreach (FloorLayout floor in _floors)
-            {
-                foreach (PortalComponent portal in floor.EscapePortals)
-                {
-                    if (portal == null)
-                        continue;
-
-                    if (isActive)
-                        portal.Activate(null);
-                    else
-                        portal.Deactivate();
-                }
             }
         }
 

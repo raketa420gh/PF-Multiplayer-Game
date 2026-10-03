@@ -67,12 +67,15 @@ namespace Game.Scripts.Dungeon
         private InventoryComponent _primary;
         private InventoryComponent _other;
         private InventoryActionsComponent _actions;
+        private AdventurerComponent _searcher;
         private AdventurerStats _stats;
         private ClassConfig _class;
         private bool _allowWorldDrop;
         private ItemView _dragged;
+        private ItemView _tooltipItem;
         private readonly List<RaycastResult> _raycastResults = new();
         private readonly StringBuilder _builder = new();
+        private readonly StatModifier[] _affixes = new StatModifier[ItemAffixes.MaxCount];
 
         private void Awake()
         {
@@ -91,6 +94,13 @@ namespace Game.Scripts.Dungeon
                 SetOther(null, string.Empty);
 
             RefreshStats();
+
+            // The hovered item was taken away or its container closed.
+            if (_tooltipItem != null && !_tooltipItem.isActiveAndEnabled)
+                HideTooltip();
+
+            if (_other != null && _searcher != null && _searcher.Object != null && _searcher.Object.IsValid)
+                _otherGrid.SetSearch(_searcher.SearchIndex, _searcher.SearchProgress);
 
             if (_valueText != null)
                 _valueText.text = $"Gear value {_primary.TotalValue()}g";
@@ -113,6 +123,12 @@ namespace Game.Scripts.Dungeon
                 _primary.OnChanged += RefreshSlots;
 
             RefreshSlots();
+        }
+
+        /// The adventurer whose search of the other grid is shown on its unsearched items.
+        public void SetSearcher(AdventurerComponent searcher)
+        {
+            _searcher = searcher;
         }
 
         public void SetOther(InventoryComponent other, string title)
@@ -160,7 +176,7 @@ namespace Game.Scripts.Dungeon
             foreach (EquipSlotView view in _slots)
                 view.SetHighlight(false, false);
 
-            if (grid != null && grid.TryGetCell(eventData.position, _canvas.worldCamera, out int x, out int y))
+            if (grid != null && grid.Inventory != null && grid.TryGetCell(eventData.position, _canvas.worldCamera, out int x, out int y))
             {
                 x -= _dragged.GrabCell.x;
                 y -= _dragged.GrabCell.y;
@@ -276,6 +292,7 @@ namespace Game.Scripts.Dungeon
 
         public void ShowTooltip(ItemView item)
         {
+            _tooltipItem = item;
             _tooltip.gameObject.SetActive(true);
             _tooltipText.text = BuildTooltip(item.Config, item.Stack);
             _tooltip.position = item.transform.position;
@@ -283,7 +300,15 @@ namespace Game.Scripts.Dungeon
 
         public void HideTooltip()
         {
+            _tooltipItem = null;
             _tooltip.gameObject.SetActive(false);
+        }
+
+        /// A view was rebound to another stack: the tooltip follows if it is the hovered one.
+        public void RefreshTooltip(ItemView item)
+        {
+            if (_tooltipItem == item)
+                ShowTooltip(item);
         }
 
         private void TakeAll()
@@ -345,6 +370,10 @@ namespace Game.Scripts.Dungeon
         private string BuildTooltip(ItemConfig config, ItemStack stack)
         {
             _builder.Clear();
+
+            if (stack.IsHidden)
+                return "<b>Unknown item</b>\n<i><size=80%>Not searched yet. Keep the container open to discover it.</size></i>";
+
             Color color = _database.GetRarityColor(stack.RarityValue);
             _builder.AppendLine($"<color=#{ColorUtility.ToHtmlStringRGB(color)}><b>{config.DisplayName}</b></color>  <size=80%>{stack.RarityValue} {config.Kind}</size>");
             int tier = Mathf.Max(0, stack.Rarity - (int)ItemRarity.Common);
@@ -380,6 +409,7 @@ namespace Game.Scripts.Dungeon
                         ConsumableEffect.HealInstant => $"Heals {consumable.Magnitude + tier * 4f:0} after {consumable.UseTime:0.#}s",
                         ConsumableEffect.HealOverTime => $"Heals {consumable.Magnitude:0} over {Mathf.Max(1f, consumable.Duration - tier * 2.5f):0.#}s",
                         ConsumableEffect.Protection => $"Absorbs {consumable.Magnitude + tier * 5f:0} damage for {consumable.Duration:0}s",
+                        ConsumableEffect.Invisibility => $"Invisible for {consumable.Duration + tier * 2f:0}s",
                         _ => $"+{consumable.Magnitude:0} move speed for {consumable.Duration:0}s"
                     });
                     break;
@@ -392,7 +422,12 @@ namespace Game.Scripts.Dungeon
             }
 
             foreach (StatModifier modifier in config.Modifiers)
-                _builder.AppendLine($"<color=#8fd>{modifier.Stat} {modifier.Value:+0.#;-0.#}</color>");
+                _builder.AppendLine($"<color=#8fd>{ItemAffixes.Describe(modifier)}</color>");
+
+            int affixCount = ItemAffixes.Roll(config, stack, _affixes);
+
+            for (int i = 0; i < affixCount; i++)
+                _builder.AppendLine($"<color=#6cf>{ItemAffixes.Describe(_affixes[i])}</color>");
 
             if (!string.IsNullOrEmpty(config.Description))
                 _builder.AppendLine($"<i><size=80%>{config.Description}</size></i>");

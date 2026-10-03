@@ -45,6 +45,7 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _emptyChance;
 
+        /// Rolled loot lies unsearched: the adventurer who opens the container discovers it item by item.
         public void Roll(InventoryComponent inventory, int seed)
         {
             System.Random random = new System.Random(seed);
@@ -61,10 +62,19 @@ namespace Game.Scripts.Dungeon
                 if (entry == null || entry.Item == null)
                     continue;
 
-                int count = random.Next(entry.MinCount, entry.MaxCount + 1);
-                ItemRarity rarity = entry.Item.CanRollRarity ? RollRarity(random) : entry.Item.BaseRarity;
-                inventory.TryAdd(ItemStack.Create(entry.Item, count, rarity));
+                inventory.TryAdd(RollStack(entry, random).WithHidden(true));
             }
+        }
+
+        /// Weapons and armor get a seed for their random modifiers; stackable loot stays plain so it merges.
+        public ItemStack RollStack(LootEntry entry, System.Random random)
+        {
+            ItemConfig item = entry.Item;
+            int count = random.Next(entry.MinCount, entry.MaxCount + 1);
+            ItemRarity rarity = item.CanRollRarity ? RollRarity(random) : item.BaseRarity;
+            bool hasAffixes = item.CanRollRarity && item.Kind is ItemKind.Weapon or ItemKind.Armor;
+
+            return ItemStack.Create(item, count, rarity, hasAffixes ? random.Next(1, ushort.MaxValue + 1) : 0);
         }
 
         public ItemRarity RollRarity(System.Random random)

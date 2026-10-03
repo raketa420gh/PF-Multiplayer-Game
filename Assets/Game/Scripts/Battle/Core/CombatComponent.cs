@@ -532,7 +532,7 @@ namespace Game.Scripts.Battle
             Vector3 from = _body.UpperToWorld(bindFrom);
             Vector3 to = _body.UpperToWorld(bindTo);
 
-            if (_drawTraces)
+            if (_drawTraces || BattleDebugSettings.IsEnabled)
                 Debug.DrawLine(from, to, Color.red, 1f);
 
             Runner.RaycastAllSorted(from, to, Object.InputAuthority, s_hits, _hitMask,
