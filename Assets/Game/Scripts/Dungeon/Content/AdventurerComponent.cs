@@ -24,11 +24,12 @@ namespace Game.Scripts.Dungeon
     /// The player's body inside the dungeon: class, inventory, interaction, abilities, death and extraction on top of the fighter.
     public sealed class AdventurerComponent : NetworkBehaviour, InventoryActionsComponent.IOwner, DamageReceiverComponent.IDefense
     {
-        public const int AbilityCapacity = 8;
+        public const int AbilityCapacity = 16;
         public const float InteractRange = 2.6f;
         public const byte BusyCast = 0;
         public const byte BusyUse = 1;
         public const byte BusyInteract = 2;
+        private const float HoldGrace = 6f;
 
         public FighterComponent Fighter => _fighter;
         public InventoryComponent Inventory => _inventory;
@@ -69,6 +70,34 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public NetworkBool IsInSwarm { get; private set; }
 
+        [Networked]
+        public byte ReadiedSpell { get; private set; } = NoSpell;
+
+        [Networked]
+        public ShapeshiftForm Form { get; private set; }
+
+        [Networked]
+        public byte SkillA { get; private set; }
+
+        [Networked]
+        public byte SkillB { get; private set; } = 1;
+
+        [Networked]
+        public int PerkMask { get; private set; }
+
+        /// Charge progress of the spell being held (0 when not charging).
+        public float CastCharge => Pending == PendingAction.Ability && _isHoldingCast ? _fighter.Combat.BusyProgress : 0f;
+        public bool IsHoldingCast => Pending == PendingAction.Ability && _isHoldingCast;
+
+        public const byte NoSpell = 255;
+        public AbilityConfig ReadiedSpellConfig => _class != null && ReadiedSpell < _class.Spells.Length ? _class.Spells[ReadiedSpell] : null;
+        public bool HasFocus => _class.Focus switch
+        {
+            CastFocus.BareHands => true,
+            CastFocus.Instrument => HoldsWeaponClass(WeaponClass.Instrument),
+            _ => HoldsFocus()
+        };
+
         [SerializeField]
         private FighterComponent _fighter;
 
@@ -106,6 +135,12 @@ namespace Game.Scripts.Dungeon
         private WeaponConfig _fistsWeapon;
 
         [SerializeField]
+        private WeaponConfig[] _formWeapons;
+
+        [SerializeField]
+        private float[] _formScales = { 1f, 1.45f, 1f, 0.4f };
+
+        [SerializeField]
         private float _restHealInterval = 2f;
 
         [Networked, Capacity(AbilityCapacity)]
@@ -132,27 +167,32 @@ namespace Game.Scripts.Dungeon
         [Networked]
         private TickTimer _removeTimer { get; set; }
 
+        [Networked]
+        private NetworkBool _isHoldingCast { get; set; }
+
         private readonly List<AbilityConfig> _abilities = new();
+        private readonly AbilityConfig[] _skills = new AbilityConfig[2];
+        private int _skillCount;
         private readonly AdventurerStats _stats = new();
         private ClassConfig _class;
         private PlayerSessionComponent _session;
         private InteractableComponent _lookTarget;
         private float _swarmAccumulator;
         private int _appliedVersion = -1;
+        private ShapeshiftForm _appliedForm;
         private bool _wasAlive = true;
 
         public override void Spawned()
         {
             _class = FindClass(ClassId);
-            _abilities.Clear();
-            _abilities.AddRange(_class.Skills);
-            _abilities.AddRange(_class.Spells);
+            BuildAbilityList();
 
             _fighter.SetStats(_stats);
             _fighter.Receiver.SetDefense(this);
             _fighter.OnSimulateInput += OnSimulateInput;
             _actions.SetOwner(this);
             _fighter.Combat.Projectiles.OnReceiverHit += OnProjectileHit;
+            _fighter.Receiver.OnHitDealt += OnHitDealt;
             ResolveSession();
 
             if (HasStateAuthority)
@@ -171,6 +211,7 @@ namespace Game.Scripts.Dungeon
         {
             _fighter.OnSimulateInput -= OnSimulateInput;
             _fighter.Combat.Projectiles.OnReceiverHit -= OnProjectileHit;
+            _fighter.Receiver.OnHitDealt -= OnHitDealt;
 
             if (DungeonContext.Instance != null && DungeonContext.Instance.LocalAdventurer == this)
                 DungeonContext.Instance.SetLocalAdventurer(null);
@@ -181,8 +222,10 @@ namespace Game.Scripts.Dungeon
             if (_session == null)
                 ResolveSession();
 
-            if (_appliedVersion != _inventory.Version)
+            if (_appliedVersion != _inventory.Version || _appliedForm != Form)
                 RefreshStats(false);
+
+            _fighter.Combat.SetBlockSuppressed(ReadiedSpell != NoSpell && HasFocus && State == AdventurerState.Alive);
 
             if (!HasStateAuthority)
                 return;
@@ -215,9 +258,37 @@ namespace Game.Scripts.Dungeon
         {
             ClassId = classId;
             _session = session;
+            SkillA = session.SkillA;
+            SkillB = session.SkillB;
+            PerkMask = session.PerkMask;
             Floor = 1;
             State = AdventurerState.Alive;
         }
+
+        /// Two chosen skills first (Q, E), then every spell of the class.
+        private void BuildAbilityList()
+        {
+            _abilities.Clear();
+            _skills[0] = _class.Skills.Length > 0 ? _class.Skills[Mathf.Clamp(SkillA, 0, _class.Skills.Length - 1)] : null;
+            _skills[1] = _class.Skills.Length > 1 ? _class.Skills[Mathf.Clamp(SkillB, 0, _class.Skills.Length - 1)] : null;
+
+            foreach (AbilityConfig skill in _skills)
+            {
+                if (skill != null)
+                    _abilities.Add(skill);
+            }
+
+            _skillCount = _abilities.Count;
+            _abilities.AddRange(_class.Spells);
+        }
+
+        public AbilityConfig GetSkill(int slot)
+        {
+            return slot < _skills.Length ? _skills[slot] : null;
+        }
+
+        public int SkillCount => _skillCount;
+        public int PerkCount => ClassConfig.PerkCountForLevel(_session != null ? _session.Level : 1);
 
         public float GetCooldownLeft(int ability)
         {
@@ -290,6 +361,70 @@ namespace Game.Scripts.Dungeon
             CloseContainer();
         }
 
+        /// Spell wheel selection: readies a spell in the hand; it is cast with the secondary button while a focus is held.
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcReadySpell(byte spellIndex)
+        {
+            ReadiedSpell = spellIndex < _class.Spells.Length ? spellIndex : NoSpell;
+
+            if (ReadiedSpell == NoSpell || HasFocus || _class.Focus == CastFocus.BareHands)
+                return;
+
+            int other = _fighter.Combat.WeaponSlot == 0 ? 1 : 0;
+
+            if (HoldsFocusInSet(other))
+                _fighter.Combat.RequestSlot(other);
+        }
+
+        private bool HoldsFocusInSet(int set)
+        {
+            WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(set == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main);
+            WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(set == 0 ? EquipSlot.Weapon1Off : EquipSlot.Weapon2Off);
+            WeaponClass[] focus = _class.Focus == CastFocus.Instrument ? new[] { WeaponClass.Instrument } : new[] { WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.CrystalBall };
+
+            foreach (WeaponClass weaponClass in focus)
+            {
+                if ((main != null && main.WeaponClass == weaponClass) || (off != null && off.WeaponClass == weaponClass))
+                    return true;
+            }
+
+            return false;
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcShapeshift(ShapeshiftForm form)
+        {
+            if (State != AdventurerState.Alive || Pending != PendingAction.None)
+                return;
+
+            Form = Form == form ? ShapeshiftForm.None : form;
+            _fighter.Combat.CancelBusy();
+        }
+
+        /// Resting at a campfire brings every spell back to full charges.
+        public void RestoreCharges()
+        {
+            for (int i = 0; i < _abilities.Count; i++)
+            {
+                if (_abilities[i].IsSpell)
+                    _charges.Set(i, (byte)_abilities[i].Charges);
+            }
+        }
+
+        private bool HoldsFocus()
+        {
+            return HoldsWeaponClass(WeaponClass.Staff) || HoldsWeaponClass(WeaponClass.Spellbook) || HoldsWeaponClass(WeaponClass.CrystalBall);
+        }
+
+        private bool HoldsWeaponClass(WeaponClass weaponClass)
+        {
+            int slot = _fighter.Combat.WeaponSlot;
+            WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(slot == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main);
+            WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(slot == 0 ? EquipSlot.Weapon1Off : EquipSlot.Weapon2Off);
+
+            return (main != null && main.WeaponClass == weaponClass) || (off != null && off.WeaponClass == weaponClass);
+        }
+
         private void ResolveSession()
         {
             if (_session != null || Runner == null)
@@ -314,7 +449,8 @@ namespace Game.Scripts.Dungeon
         {
             _appliedVersion = _inventory.Version;
             int level = _session != null ? _session.Level : 1;
-            _stats.Recalculate(_class, _inventory, _effects, _fighter.Combat.WeaponSlot, ClassConfig.PerkCountForLevel(level));
+            _appliedForm = Form;
+            _stats.Recalculate(_class, _inventory, _effects, _fighter.Combat.WeaponSlot, ClassConfig.PerkCountForLevel(level), Form, PerkMask);
 
             if (!HasStateAuthority)
                 return;
@@ -332,6 +468,9 @@ namespace Game.Scripts.Dungeon
 
         private int ResolveWeaponIndex(EquipSlot mainSlot, EquipSlot offSlot)
         {
+            if (Form != ShapeshiftForm.None && _formWeapons != null && (int)Form - 1 < _formWeapons.Length)
+                return Mathf.Max(0, _fighter.Combat.FindCatalogIndex(_formWeapons[(int)Form - 1]));
+
             WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(mainSlot);
             WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(offSlot);
             CombatComponent combat = _fighter.Combat;
@@ -353,7 +492,25 @@ namespace Game.Scripts.Dungeon
                 return;
 
             CombatComponent combat = _fighter.Combat;
-            SimulatePending();
+
+            if (_isHoldingCast && Pending == PendingAction.Ability)
+            {
+                if (!buttons.IsSet(PlayerInputButtons.Secondary) || buttons.WasPressed(previous, PlayerInputButtons.Interact))
+                {
+                    if (Runner.Tick >= _pendingCompleteTick)
+                        ReleaseHeldCast();
+                    else
+                        CancelPending();
+                }
+                else if (Runner.SecondsSince(_pendingCompleteTick) > HoldGrace)
+                {
+                    CancelPending();
+                }
+            }
+            else
+            {
+                SimulatePending();
+            }
 
             if (Pending == PendingAction.Interact && !buttons.IsSet(PlayerInputButtons.Interact))
                 CancelPending();
@@ -369,17 +526,14 @@ namespace Game.Scripts.Dungeon
             if (buttons.WasPressed(previous, PlayerInputButtons.Interact))
                 TryInteract();
 
-            for (int i = 0; i < 2 && i < _class.Skills.Length; i++)
+            for (int i = 0; i < _skillCount; i++)
             {
-                if (buttons.WasPressed(previous, PlayerInputButtons.Skill1 + i))
+                if (buttons.WasPressed(previous, PlayerInputButtons.Skill1 + i) && _abilities[i].Kind is not (AbilityKind.SpellMemory or AbilityKind.Shapeshift))
                     TryUseAbility(i);
             }
 
-            for (int i = 0; i < 5 && i < _class.Spells.Length; i++)
-            {
-                if (buttons.WasPressed(previous, PlayerInputButtons.Spell1 + i))
-                    TryUseAbility(_class.Skills.Length + i);
-            }
+            if (ReadiedSpell != NoSpell && buttons.WasPressed(previous, PlayerInputButtons.Secondary) && Form == ShapeshiftForm.None)
+                TryCastReadiedSpell();
 
             for (int i = 0; i < 4; i++)
             {
@@ -405,6 +559,47 @@ namespace Game.Scripts.Dungeon
             _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(duration / Runner.DeltaTime);
         }
 
+        private void TryCastReadiedSpell()
+        {
+            AbilityConfig spell = ReadiedSpellConfig;
+
+            if (spell == null)
+                return;
+
+            if (!HasFocus || _fighter.Health.CurrentHealth <= spell.HealthCost)
+                return;
+
+            int index = _skillCount + ReadiedSpell;
+
+            if (!_cooldowns[index].ExpiredOrNotRunning(Runner) || (!spell.IsCooldownBased && _charges[index] == 0))
+                return;
+
+            float duration = Mathf.Max(0.1f, spell.CastTime / _stats.CastSpeed);
+
+            if (!_fighter.Combat.StartBusy(duration + HoldGrace, BusyCast))
+                return;
+
+            Pending = PendingAction.Ability;
+            _pendingIndex = (byte)index;
+            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(duration / Runner.DeltaTime);
+            _isHoldingCast = true;
+        }
+
+        /// The charged spell fires on release, as in Dark and Darker; releasing early costs nothing.
+        private void ReleaseHeldCast()
+        {
+            int index = _pendingIndex;
+            Pending = PendingAction.None;
+            _isHoldingCast = false;
+            _fighter.Combat.CancelBusy();
+            AbilityConfig ability = _abilities[index];
+
+            if (ability.HealthCost > 0)
+                _fighter.Health.TakeDamage(ability.HealthCost);
+
+            ApplyAbility(index);
+        }
+
         private void TryUseAbility(int index)
         {
             if (index >= _abilities.Count)
@@ -412,8 +607,11 @@ namespace Game.Scripts.Dungeon
 
             AbilityConfig ability = _abilities[index];
 
-            if (!_cooldowns[index].ExpiredOrNotRunning(Runner) || (ability.IsSpell && _charges[index] == 0))
+            if (!_cooldowns[index].ExpiredOrNotRunning(Runner) || (ability.IsSpell && !ability.IsCooldownBased && _charges[index] == 0))
                 return;
+
+            if (ability.HealthCost > 0)
+                _fighter.Health.TakeDamage(ability.HealthCost);
 
             float duration = Mathf.Max(0.05f, ability.CastTime / (ability.IsSpell ? _stats.CastSpeed : _stats.ActionSpeed));
 
@@ -453,6 +651,8 @@ namespace Game.Scripts.Dungeon
 
         private void CancelPending()
         {
+            _isHoldingCast = false;
+
             if (Pending == PendingAction.Interact && Runner.TryFindBehaviour(_pendingTarget, out NetworkBehaviour behaviour) && behaviour is InteractableComponent target)
                 target.Cancel(this);
 
@@ -492,9 +692,19 @@ namespace Game.Scripts.Dungeon
                 case AbilityKind.AreaDamage:
                     AreaDamage(ability, combat);
                     break;
+                case AbilityKind.Taunt:
+                    _effects.Add(StatusEffectKind.Taunt, ability.Magnitude, buffDuration);
+                    break;
+                case AbilityKind.Spawn:
+                    if (ability.SpawnPrefab != null)
+                        Runner.Spawn(ability.SpawnPrefab, transform.position + transform.forward * ability.Radius + Vector3.up * 0.2f, Quaternion.Euler(0f, transform.eulerAngles.y, 0f));
+                    break;
+                case AbilityKind.RestoreCharges:
+                    RestoreCharges();
+                    break;
             }
 
-            if (ability.IsSpell)
+            if (ability.IsSpell && !ability.IsCooldownBased)
                 _charges.Set(index, (byte)Mathf.Max(0, _charges[index] - 1));
 
             _cooldowns.Set(index, TickTimer.CreateFromSeconds(Runner, ability.Cooldown));
@@ -515,8 +725,8 @@ namespace Game.Scripts.Dungeon
             {
                 float spread = ability.ProjectileCount > 1 ? Mathf.Lerp(-ability.ProjectileSpread, ability.ProjectileSpread, i / (ability.ProjectileCount - 1f)) : 0f;
                 Vector3 direction = aim * Quaternion.Euler(0f, spread, 0f) * Vector3.forward;
-                combat.Projectiles.Fire(origin, direction * ability.ProjectileSpeed, ability.ProjectileGravity, damage, 0.1f,
-                    ability.DamageType, ability.ProjectileKind, ability.Radius, (byte)ability.Effect, ability.EffectMagnitude, ability.EffectDuration);
+                combat.Projectiles.Fire(origin, direction * ability.ProjectileSpeed, ability.ProjectileGravity, damage, ability.StaggerDuration,
+                    ability.DamageType, ability.ProjectileKind, ability.Radius, (byte)ability.Effect, ability.EffectMagnitude, ability.EffectDuration, ability.LifeSteal);
             }
         }
 
@@ -546,7 +756,7 @@ namespace Game.Scripts.Dungeon
                     Point = point,
                     Normal = (point - center).normalized,
                     AttackerPosition = center,
-                    StaggerDuration = 0.25f,
+                    StaggerDuration = Mathf.Max(0.25f, ability.StaggerDuration),
                     DamageType = ability.DamageType,
                     Attacker = _fighter.Receiver
                 });
@@ -555,10 +765,25 @@ namespace Game.Scripts.Dungeon
 
         private void OnProjectileHit(in ProjectileData data, DamageReceiverComponent receiver)
         {
+            if (data.LifeSteal > 0f)
+                _fighter.Health.Restore(Mathf.RoundToInt(data.Damage * data.LifeSteal));
+
             if (data.Effect == 0 || !receiver.TryGetComponent(out StatusEffectComponent effects))
                 return;
 
             effects.Add((StatusEffectKind)data.Effect, data.EffectMagnitude, data.EffectDuration);
+        }
+
+        /// Rupture-style buffs: every melee hit while active opens a bleed on the victim.
+        private void OnHitDealt(DamageReceiverComponent victim, HitResult result, int damage)
+        {
+            if (result != HitResult.Hit || !HasStateAuthority)
+                return;
+
+            float rupture = _effects.GetMagnitude(StatusEffectKind.Rupture);
+
+            if (rupture > 0f && victim.TryGetComponent(out StatusEffectComponent effects))
+                effects.Add(StatusEffectKind.Burn, rupture, 5f);
         }
 
         private void ApplyConsumable(EquipSlot slot)

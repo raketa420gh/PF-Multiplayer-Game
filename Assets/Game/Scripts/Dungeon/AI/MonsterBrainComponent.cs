@@ -59,6 +59,7 @@ namespace Game.Scripts.Dungeon
         private int _reactedAttackTick;
         private bool _isReactionBlock;
         private bool _wasAttackDown;
+        private bool _hasLunged;
         private int _corner;
 
         public override void Spawned()
@@ -165,6 +166,9 @@ namespace Game.Scripts.Dungeon
                 float distance = (fighter.transform.position - transform.position).sqrMagnitude;
                 float crouchPenalty = fighter.Move.CrouchAmount > 0.5f ? 0.25f : 1f;
 
+                if (adventurer.Effects.Has(StatusEffectKind.Taunt))
+                    distance *= 0.1f;
+
                 if (distance < bestDistance * crouchPenalty && CanSee(adventurer))
                 {
                     best = adventurer;
@@ -250,9 +254,26 @@ namespace Game.Scripts.Dungeon
         private void FightMelee(MonsterConfig config, CombatComponent combat, WeaponConfig weapon, float distance,
             ref PlayerInputData input, ref bool isAttackDown, ref bool isBlockDown, float time)
         {
+            float reach = weapon.Reach;
+
+            if (combat.State == CombatState.Attack)
+            {
+                if (combat.Phase == AttackPhase.Windup && config.LungeImpulse > 0f && !_hasLunged && distance > reach * 0.6f)
+                {
+                    _hasLunged = true;
+                    _fighter.Move.AddImpulse(transform.forward * config.LungeImpulse);
+                }
+
+                bool wantsCombo = combat.AttackIndex + 1 < _plannedChain && combat.IsComboWindowOpen && !combat.IsComboQueued;
+                isAttackDown = wantsCombo && !_wasAttackDown;
+                _nextAttackTime = time + Random.Range(config.AttackPauseMin, config.AttackPauseMax);
+
+                return;
+            }
+
+            _hasLunged = false;
             AimAt(_target.Fighter.Body.ChestPosition);
             UpdateStrafe(time);
-            float reach = weapon.Reach;
 
             if (distance > reach * 0.8f)
                 input.MoveDirection = new Vector2(_strafe * 0.2f, 1f);
@@ -268,16 +289,10 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
-            if (combat.State == CombatState.Attack)
-            {
-                bool wantsCombo = combat.AttackIndex + 1 < _plannedChain && combat.IsComboWindowOpen && !combat.IsComboQueued;
-                isAttackDown = wantsCombo && !_wasAttackDown;
-                _nextAttackTime = time + Random.Range(config.AttackPauseMin, config.AttackPauseMax);
-            }
-            else if (distance <= reach && time >= _nextAttackTime && !_wasAttackDown && combat.State == CombatState.Idle)
+            if (distance <= reach * (config.LungeImpulse > 0f ? 1.6f : 1f) && time >= _nextAttackTime && !_wasAttackDown && combat.State == CombatState.Idle)
             {
                 isAttackDown = true;
-                _plannedChain = Random.Range(1, weapon.Attacks.Length + 1);
+                _plannedChain = config.IsBoss ? weapon.Attacks.Length : Random.Range(1, weapon.Attacks.Length + 1);
             }
         }
 

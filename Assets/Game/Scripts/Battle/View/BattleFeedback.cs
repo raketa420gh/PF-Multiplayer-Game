@@ -87,7 +87,6 @@ namespace Game.Scripts.Battle
 
         public void PlayHit(HitEventData hit)
         {
-            bool isBlocked = hit.Result == HitResult.Blocked;
             ParticleSystem vfx = hit.Result == HitResult.Hit ? _hitVfx : _blockVfx;
 
             vfx.transform.SetPositionAndRotation(hit.Point,
@@ -95,7 +94,6 @@ namespace Game.Scripts.Battle
             vfx.Play();
 
             PlayClip(hit.Result == HitResult.Hit ? _hitClip : _blockClip, hit.Point);
-            ShowPopup(hit.Point, GetText(hit), isBlocked ? _blockColor : hit.Zone == HitZone.Head ? _headColor : _hitColor);
         }
 
         public void PlayWorldHit(Vector3 point, Vector3 normal)

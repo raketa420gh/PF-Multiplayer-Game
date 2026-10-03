@@ -28,6 +28,10 @@ MonoBehaviour:
   _skills:
   - {fileID: 11400000, guid: ca0db530326efe0488f86b4a6358ea19, type: 2}
   - {fileID: 11400000, guid: 7f73e9d176f5ca9458b487044d2e7c18, type: 2}
+  - {fileID: 11400000, guid: b8d6bc04e3d808949be7e45c8ce21e11, type: 2}
+  - {fileID: 11400000, guid: 76e636316431cc44989750e2022b777d, type: 2}
+  - {fileID: 11400000, guid: 109b15a0408cd1048a102373a63ef786, type: 2}
+  - {fileID: 11400000, guid: 3ddce03bb9a282b4d984fab4ed429841, type: 2}
   _spells: []
   _perks:
   - _name: Sharpshooter
@@ -50,6 +54,26 @@ MonoBehaviour:
     _modifiers:
     - Stat: 13
       Value: 5
+  - _name: Crossbow Mastery
+    _description: +10% action speed.
+    _modifiers:
+    - Stat: 13
+      Value: 10
+  - _name: Longshot Expert
+    _description: +10% physical damage.
+    _modifiers:
+    - Stat: 14
+      Value: 0.1
+  - _name: Point-Blank Expert
+    _description: +5 physical power.
+    _modifiers:
+    - Stat: 11
+      Value: 5
+  - _name: Crippling Shot
+    _description: +5% physical damage.
+    _modifiers:
+    - Stat: 14
+      Value: 0.05
   _startingKit:
   - _item: {fileID: 11400000, guid: 92083d22b83cac140a4a6180a33de264, type: 2}
     _slot: 9
@@ -81,3 +105,4 @@ MonoBehaviour:
     _isEquipped: 1
   _allowedWeapons: 050600040903
   _allowedArmor: 0001
+  _castFocus: 0

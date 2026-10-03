@@ -296,6 +296,7 @@ GameObject:
   - component: {fileID: 4588431343522794929}
   - component: {fileID: 7902133827775886865}
   - component: {fileID: 602293718209990157}
+  - component: {fileID: 6779917041148013290}
   m_Layer: 0
   m_Name: SmallOakChest
   m_TagString: Untagged
@@ -343,6 +344,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 7902133827775886865}
   - {fileID: 602293718209990157}
+  - {fileID: 6779917041148013290}
   - {fileID: 6288807771519530043}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &7902133827775886865
@@ -410,6 +412,23 @@ MonoBehaviour:
   _lid: {fileID: 192285441383020802}
   _lidOpenEuler: {x: -100, y: 0, z: 0}
   _isRemovedWhenEmpty: 0
+--- !u!114 &6779917041148013290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5517932736203375345}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31536fe55d512ed4da08994463ee7d88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.InteractableSoundComponent
+  _door: {fileID: 0}
+  _container: {fileID: 602293718209990157}
+  _portal: {fileID: 0}
+  _lever: {fileID: 0}
+  _loop: {fileID: 0}
 --- !u!1 &7878452333852774868
 GameObject:
   m_ObjectHideFlags: 0

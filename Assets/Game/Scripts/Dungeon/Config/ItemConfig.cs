@@ -66,7 +66,9 @@ namespace Game.Scripts.Dungeon
         Staff,
         Shield,
         Torch,
-        Spellbook
+        Spellbook,
+        CrystalBall,
+        Instrument
     }
 
     public enum StatType : byte
@@ -118,6 +120,8 @@ namespace Game.Scripts.Dungeon
         public string IconGlyph => _iconGlyph;
         public StatModifier[] Modifiers => _modifiers;
         public bool CanRollRarity => _canRollRarity;
+        public Sprite Icon => _icon;
+        public GameObject WorldModel => _worldModel;
 
         [SerializeField]
         private short _id;
@@ -154,6 +158,12 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private bool _canRollRarity;
+
+        [SerializeField]
+        private Sprite _icon;
+
+        [SerializeField]
+        private GameObject _worldModel;
 
         public virtual bool CanEquip(EquipSlot slot) => false;
     }

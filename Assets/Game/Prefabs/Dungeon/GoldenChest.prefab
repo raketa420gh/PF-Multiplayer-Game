@@ -300,6 +300,7 @@ GameObject:
   - component: {fileID: 8960580528060086001}
   - component: {fileID: 2287090055816186018}
   - component: {fileID: 7291810556749180792}
+  - component: {fileID: 3331273837079327336}
   m_Layer: 0
   m_Name: GoldenChest
   m_TagString: Untagged
@@ -347,6 +348,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 2287090055816186018}
   - {fileID: 7291810556749180792}
+  - {fileID: 3331273837079327336}
   - {fileID: 4335013556363306500}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2287090055816186018
@@ -414,6 +416,23 @@ MonoBehaviour:
   _lid: {fileID: 8299018259598336606}
   _lidOpenEuler: {x: -100, y: 0, z: 0}
   _isRemovedWhenEmpty: 0
+--- !u!114 &3331273837079327336
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6010453517440370183}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31536fe55d512ed4da08994463ee7d88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.InteractableSoundComponent
+  _door: {fileID: 0}
+  _container: {fileID: 7291810556749180792}
+  _portal: {fileID: 0}
+  _lever: {fileID: 0}
+  _loop: {fileID: 0}
 --- !u!1 &7136288954327089501
 GameObject:
   m_ObjectHideFlags: 0

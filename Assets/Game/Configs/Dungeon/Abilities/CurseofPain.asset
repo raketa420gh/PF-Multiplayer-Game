@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: CurseofPain
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Curse of Pain
-  _description: 15 damage over 8s.
+  _description: 15 damage over 8s. Costs 4 health.
   _kind: 2
   _isSpell: 1
-  _charges: 6
+  _charges: 99
   _cooldown: 1
   _castTime: 1
   _magnitude: 5
@@ -33,3 +33,7 @@ MonoBehaviour:
   _effectDuration: 8
   _color: {r: 0.7, g: 0.2, b: 0.5, a: 1}
   _glyph: CP
+  _healthCost: 4
+  _lifeSteal: 0
+  _spawnPrefab: {fileID: 0}
+  _staggerDuration: 0.1

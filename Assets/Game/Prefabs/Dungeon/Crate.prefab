@@ -61,6 +61,7 @@ GameObject:
   - component: {fileID: 4433519380152931034}
   - component: {fileID: 905090810275538953}
   - component: {fileID: 7980403841804918147}
+  - component: {fileID: 3098451522059396033}
   m_Layer: 0
   m_Name: Crate
   m_TagString: Untagged
@@ -107,6 +108,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 905090810275538953}
   - {fileID: 7980403841804918147}
+  - {fileID: 3098451522059396033}
   - {fileID: 7082424867882312513}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &905090810275538953
@@ -174,6 +176,23 @@ MonoBehaviour:
   _lid: {fileID: 0}
   _lidOpenEuler: {x: 0, y: 0, z: 0}
   _isRemovedWhenEmpty: 0
+--- !u!114 &3098451522059396033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1462354890807649356}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31536fe55d512ed4da08994463ee7d88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.InteractableSoundComponent
+  _door: {fileID: 0}
+  _container: {fileID: 7980403841804918147}
+  _portal: {fileID: 0}
+  _lever: {fileID: 0}
+  _loop: {fileID: 0}
 --- !u!1 &3676866834064078905
 GameObject:
   m_ObjectHideFlags: 0

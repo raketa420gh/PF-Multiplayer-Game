@@ -17,6 +17,7 @@ namespace Game.Scripts.Dungeon
             public PortalComponent[] EscapePortals;
             public PortalComponent DescendPortal;
             public Transform DescendDestination;
+            public Transform BossSpawn;
             public Vector3 Center;
             public float Radius = 30f;
         }
@@ -51,6 +52,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private MonsterKind[] _monsters;
+
+        [SerializeField]
+        private NetworkObject _bossPrefab;
 
         [SerializeField, Range(0f, 1f)]
         private float _monsterSpawnChance = 0.8f;
@@ -221,6 +225,13 @@ namespace Game.Scripts.Dungeon
 
                     container.ResetContainer();
                     container.Fill(container.LootTable, random.Next());
+                }
+
+                if (floor.BossSpawn != null && _bossPrefab != null)
+                {
+                    NetworkObject boss = _runner.Spawn(_bossPrefab, floor.BossSpawn.position, floor.BossSpawn.rotation, PlayerRef.None,
+                        (_, obj) => obj.GetComponent<MonsterComponent>().Setup((byte)(floorIndex + 1)));
+                    _spawned.Add(boss);
                 }
 
                 foreach (Transform point in floor.MonsterSpawns)

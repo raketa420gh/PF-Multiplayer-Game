@@ -34,8 +34,13 @@ namespace Game.Scripts.Editor.Battle
             BuildLocomotion(rig, controller);
             AnimatorStateMachine upper = controller.layers[1].stateMachine;
 
+            System.Collections.Generic.HashSet<string> built = new();
+
             foreach (WeaponDefinition weapon in weapons)
-                BuildWeapon(rig, upper, weapon);
+            {
+                if (built.Add(weapon.Prefix))
+                    BuildWeapon(rig, upper, weapon);
+            }
 
             AddKeyed(rig, upper, FighterAnimComponent.CastState, 2f, BattleAnimationLibrary.CastKeys());
             AddKeyed(rig, upper, FighterAnimComponent.UseState, 2f, BattleAnimationLibrary.UseKeys());

@@ -55,6 +55,7 @@ namespace Game.Scripts.Dungeon
         {
             float amount = adventurer.Fighter.Health.MaxHealth * _healPercent / 100f;
             adventurer.Effects.Add(StatusEffectKind.HealOverTime, amount, _healDuration);
+            adventurer.RestoreCharges();
         }
     }
 }

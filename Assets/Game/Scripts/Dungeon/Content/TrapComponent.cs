@@ -8,7 +8,8 @@ namespace Game.Scripts.Dungeon
     public enum TrapKind : byte
     {
         Spikes,
-        SwingingBlade
+        SwingingBlade,
+        Caltrops
     }
 
     /// Floor spikes trigger on contact with a cooldown; the blade swings on a cycle. Damage is applied by the host.
@@ -55,6 +56,18 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private Vector3 _swingEuler = new(0f, 0f, 70f);
 
+        [SerializeField]
+        private float _lifetime;
+
+        [SerializeField]
+        private float _slowMagnitude;
+
+        [SerializeField]
+        private float _slowDuration = 2f;
+
+        [Networked]
+        private TickTimer _lifetimeTimer { get; set; }
+
         [Networked]
         private TickTimer _cooldown { get; set; }
 
@@ -63,8 +76,13 @@ namespace Game.Scripts.Dungeon
 
         public override void Spawned()
         {
-            if (HasStateAuthority)
-                IsArmed = true;
+            if (!HasStateAuthority)
+                return;
+
+            IsArmed = true;
+
+            if (_lifetime > 0f)
+                _lifetimeTimer = TickTimer.CreateFromSeconds(Runner, _lifetime);
         }
 
         public override void Render()
@@ -90,9 +108,26 @@ namespace Game.Scripts.Dungeon
             if (!HasStateAuthority || !IsArmed)
                 return;
 
+            if (_lifetimeTimer.Expired(Runner))
+            {
+                Runner.Despawn(Object);
+
+                return;
+            }
+
             bool isActive;
 
-            if (_kind == TrapKind.SwingingBlade)
+            if (_kind == TrapKind.Caltrops)
+            {
+                isActive = true;
+
+                if (_cooldown.Expired(Runner) || !_cooldown.IsRunning)
+                {
+                    _hitThisCycle.Clear();
+                    _cooldown = TickTimer.CreateFromSeconds(Runner, _period);
+                }
+            }
+            else if (_kind == TrapKind.SwingingBlade)
             {
                 float phase = Mathf.Sin(Runner.SimulationTime * Mathf.PI * 2f / _period);
                 isActive = Mathf.Abs(phase) < 0.45f;
@@ -122,6 +157,9 @@ namespace Game.Scripts.Dungeon
 
                 if (receiver == null || !receiver.IsAlive || !_hitThisCycle.Add(receiver))
                     continue;
+
+                if (_slowMagnitude > 0f && receiver.TryGetComponent(out StatusEffectComponent effects))
+                    effects.Add(StatusEffectKind.Slow, _slowMagnitude, _slowDuration);
 
                 receiver.ApplyHit(new HitRequest
                 {

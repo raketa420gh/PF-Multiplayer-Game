@@ -276,6 +276,34 @@ namespace Game.Scripts.Dungeon
             }
         }
 
+        /// Repacks the bag: biggest items first, stacks merged, top-left fill.
+        public void Sort()
+        {
+            System.Collections.Generic.List<ItemStack> stacks = new();
+
+            for (int i = 0; i < Capacity; i++)
+            {
+                if (!_bag[i].IsEmpty)
+                    stacks.Add(_bag[i]);
+
+                _bag.Set(i, default);
+            }
+
+            stacks.Sort((a, b) =>
+            {
+                ItemConfig configA = GetConfig(a);
+                ItemConfig configB = GetConfig(b);
+                int area = configB.Width * configB.Height - configA.Width * configA.Height;
+
+                return area != 0 ? area : a.ItemId.CompareTo(b.ItemId);
+            });
+
+            foreach (ItemStack stack in stacks)
+                TryAdd(stack);
+
+            Version++;
+        }
+
         /// Removes one lockpick (or other utility) from the belt or bag. Returns false when none is carried.
         public bool TryConsumeUtility(UtilityKind kind)
         {

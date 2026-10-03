@@ -68,6 +68,10 @@ namespace Game.Scripts.Editor.Dungeon
         public float HitDuration;
         public Color Color = Color.white;
         public string Glyph = "*";
+        public int HealthCost;
+        public float LifeSteal;
+        public string SpawnPrefab;
+        public float Stagger;
     }
 
     internal sealed class PerkDef
@@ -98,6 +102,7 @@ namespace Game.Scripts.Editor.Dungeon
         public (string item, EquipSlot slot, int count, bool equipped)[] Kit;
         public WeaponClass[] Weapons;
         public ArmorType[] Armor;
+        public CastFocus Focus = CastFocus.Magic;
     }
 
     /// Items, classes, abilities and perks of the prototype, numbers taken from the Dark and Darker wiki.
@@ -128,6 +133,9 @@ namespace Game.Scripts.Editor.Dungeon
                 Weapon("Magic Staff", DungeonWeaponLibrary.Staff, WeaponClass.Staff, 1, 4, 20f, "St", new Color(0.5f, 0.7f, 1f), 50, "Caster focus. Also a decent club.", twoHanded: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 4f) }),
                 Weapon("Torch", DungeonWeaponLibrary.Torch, WeaponClass.Torch, 1, 3, 5f, "Tr", new Color(1f, 0.6f, 0.2f), 2, "Lights the way. Can be swung in a pinch.", light: 9f),
                 Weapon("Round Shield", null, WeaponClass.Shield, 2, 3, 13f, "Sh", s_wood, 30, "Blocks with a one-handed weapon in the main hand.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 20f) }),
+                Weapon("Spellbook", DungeonWeaponLibrary.Spellbook, WeaponClass.Spellbook, 2, 2, 10f, "Bk", new Color(0.55f, 0.35f, 0.75f), 40, "Magical focus. Hold it to cast readied spells; it can bash in a pinch.", twoHanded: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 2f) }),
+                Weapon("Crystal Ball", null, WeaponClass.CrystalBall, 2, 2, 15f, "Cb", new Color(0.6f, 0.85f, 1f), 45, "Off-hand magical focus. Cast with a one-handed weapon in the main hand.", offHand: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 5f) }),
+                Weapon("Lute", DungeonWeaponLibrary.Lute, WeaponClass.Instrument, 2, 3, 10f, "Lt", new Color(0.8f, 0.6f, 0.3f), 35, "Bard instrument. Songs are performed with it in hand.", twoHanded: true),
 
                 Armor("Woolen Cap", EquipSlot.Head, ArmorType.Cloth, 20f, 2f, ArmorVisual.Cap, new Color(0.35f, 0.3f, 0.25f), 2, 2, "Hd", 8),
                 Armor("Rogue Cowl", EquipSlot.Head, ArmorType.Cloth, 25f, 2f, ArmorVisual.Hood, new Color(0.2f, 0.2f, 0.22f), 2, 2, "Hd", 14, modifiers: new[] { new StatModifier(StatType.Agility, 1f) }),
@@ -237,302 +245,6 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 Name = name, Kind = ItemKind.Treasure, Width = width, Height = height, Stack = stack, Value = value, Glyph = glyph, Color = color,
                 RollsRarity = rolls, Description = "Sells for gold back in town."
-            };
-        }
-
-        public static ClassDef[] CreateClasses()
-        {
-            return new[]
-            {
-                new ClassDef
-                {
-                    Id = 0, Name = "Fighter", Description = "Versatile frontliner. Any weapon, any armor.",
-                    Stats = new ClassStats(15, 15, 15, 15, 15, 15, 15), Color = new Color(0.8f, 0.7f, 0.5f), Body = new Color(0.62f, 0.66f, 0.72f),
-                    Skills = new[]
-                    {
-                        Skill("Second Wind", "Recover 40% of max health over 12s.", AbilityKind.Heal, 50f, 12f, 60f, "Hp", new Color(0.3f, 1f, 0.4f)),
-                        Skill("Sprint", "+39 move speed for 6s.", AbilityKind.Buff, 39f, 6f, 28f, "Sp", new Color(1f, 0.9f, 0.3f), StatusEffectKind.Haste)
-                    },
-                    Perks = new[]
-                    {
-                        new PerkDef("Defense Mastery", "+15 armor rating.", new StatModifier(StatType.ArmorRating, 15f)),
-                        new PerkDef("Swift", "+10 move speed from lighter armor handling.", new StatModifier(StatType.MoveSpeed, 10f)),
-                        new PerkDef("Combo Attack", "+5% physical damage.", new StatModifier(StatType.PhysicalDamageBonus, 0.05f)),
-                        new PerkDef("Barricade", "+25 magic resistance.", new StatModifier(StatType.MagicResistance, 25f))
-                    },
-                    Kit = new[] { ("Arming Sword", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Torch", EquipSlot.Weapon2Main, 1, true), ("Adventurer Tunic", EquipSlot.Chest, 1, true), ("Leather Cap", EquipSlot.Head, 1, true), ("Adventurer Boots", EquipSlot.Feet, 1, true), ("Bandage", EquipSlot.Utility1, 3, true), ("Potion of Healing", EquipSlot.Utility2, 1, true) },
-                    Weapons = new[] { WeaponClass.Sword, WeaponClass.Axe, WeaponClass.Mace, WeaponClass.Spear, WeaponClass.Bow, WeaponClass.Crossbow, WeaponClass.Shield, WeaponClass.Torch, WeaponClass.Dagger },
-                    Armor = new[] { ArmorType.Cloth, ArmorType.Leather, ArmorType.Chain, ArmorType.Plate }
-                },
-                new ClassDef
-                {
-                    Id = 1, Name = "Barbarian", Description = "Huge health pool and two-handed brutality.",
-                    Stats = new ClassStats(20, 25, 13, 12, 18, 5, 12), Color = new Color(0.8f, 0.35f, 0.25f), Body = new Color(0.72f, 0.55f, 0.45f),
-                    Skills = new[]
-                    {
-                        Skill("Rage", "+10 strength and +7% move speed for 8s, armor lowered.", AbilityKind.Buff, 10f, 8f, 28f, "Rg", new Color(1f, 0.3f, 0.2f), StatusEffectKind.Rage),
-                        Skill("Reckless Attack", "+15 physical power for 8s.", AbilityKind.Buff, 15f, 8f, 24f, "At", new Color(1f, 0.5f, 0.2f), StatusEffectKind.Power)
-                    },
-                    Perks = new[]
-                    {
-                        new PerkDef("Two-Hander", "+5% physical damage.", new StatModifier(StatType.PhysicalDamageBonus, 0.05f)),
-                        new PerkDef("Iron Will", "+75 magic resistance.", new StatModifier(StatType.MagicResistance, 75f)),
-                        new PerkDef("Robust", "+10% max health.", new StatModifier(StatType.MaxHealth, 10f)),
-                        new PerkDef("Savage", "+10 physical power.", new StatModifier(StatType.PhysicalPower, 10f))
-                    },
-                    Kit = new[] { ("Battle Axe", EquipSlot.Weapon1Main, 1, true), ("Torch", EquipSlot.Weapon2Main, 1, true), ("Doublet", EquipSlot.Chest, 1, true), ("Leather Leggings", EquipSlot.Legs, 1, true), ("Adventurer Boots", EquipSlot.Feet, 1, true), ("Bandage", EquipSlot.Utility1, 3, true), ("Francisca Axe", EquipSlot.Utility2, 2, true) },
-                    Weapons = new[] { WeaponClass.Axe, WeaponClass.Sword, WeaponClass.Mace, WeaponClass.Shield, WeaponClass.Torch },
-                    Armor = new[] { ArmorType.Cloth, ArmorType.Leather, ArmorType.Plate }
-                },
-                new ClassDef
-                {
-                    Id = 2, Name = "Rogue", Description = "Fast, quiet, fragile. Hides in the dark and strikes first.",
-                    Stats = new ClassStats(9, 6, 25, 20, 10, 10, 25), Color = new Color(0.4f, 0.4f, 0.5f), Body = new Color(0.3f, 0.32f, 0.36f),
-                    Skills = new[]
-                    {
-                        Skill("Hide", "Become invisible for 8s. Monsters lose you.", AbilityKind.Invisibility, 1f, 8f, 32f, "Hi", new Color(0.6f, 0.6f, 0.9f)),
-                        Skill("Tumbling", "Backflip away from danger.", AbilityKind.Dash, 7f, 0f, 8f, "Tu", new Color(0.8f, 0.9f, 1f))
-                    },
-                    Perks = new[]
-                    {
-                        new PerkDef("Back Attack", "+10% physical damage.", new StatModifier(StatType.PhysicalDamageBonus, 0.1f)),
-                        new PerkDef("Dagger Mastery", "+5 physical power.", new StatModifier(StatType.PhysicalPower, 5f)),
-                        new PerkDef("Creep", "+10 move speed.", new StatModifier(StatType.MoveSpeed, 10f)),
-                        new PerkDef("Poisoned Weapon", "+5% physical damage.", new StatModifier(StatType.PhysicalDamageBonus, 0.05f))
-                    },
-                    Kit = new[] { ("Rondel Dagger", EquipSlot.Weapon1Main, 1, true), ("Torch", EquipSlot.Weapon2Main, 1, true), ("Rogue Cowl", EquipSlot.Head, 1, true), ("Doublet", EquipSlot.Chest, 1, true), ("Adventurer Boots", EquipSlot.Feet, 1, true), ("Throwing Knife", EquipSlot.Utility1, 2, true), ("Lockpick", EquipSlot.Utility2, 3, true), ("Bandage", EquipSlot.Utility3, 3, true) },
-                    Weapons = new[] { WeaponClass.Dagger, WeaponClass.Sword, WeaponClass.Torch, WeaponClass.Crossbow },
-                    Armor = new[] { ArmorType.Cloth, ArmorType.Leather }
-                },
-                new ClassDef
-                {
-                    Id = 3, Name = "Ranger", Description = "Bows and traps. Deadly at range, nimble up close.",
-                    Stats = new ClassStats(12, 10, 20, 18, 10, 12, 23), Color = new Color(0.35f, 0.65f, 0.35f), Body = new Color(0.4f, 0.5f, 0.35f),
-                    Skills = new[]
-                    {
-                        Skill("Quick Fire", "+50% action speed for 8s.", AbilityKind.Buff, 50f, 8f, 18f, "QF", new Color(0.6f, 1f, 0.5f), StatusEffectKind.ActionSpeed),
-                        Projectile("Multishot", "Fire five arrows in a cone.", false, 1, 22f, 0.3f, 20f, 30f, -9.81f, ProjectileKind.Arrow, DamageType.Physical, 5, 12f, "MS", new Color(0.8f, 0.9f, 0.5f))
-                    },
-                    Perks = new[]
-                    {
-                        new PerkDef("Sharpshooter", "+10% physical damage.", new StatModifier(StatType.PhysicalDamageBonus, 0.1f)),
-                        new PerkDef("Nimble Hands", "+15% action speed.", new StatModifier(StatType.ActionSpeed, 15f)),
-                        new PerkDef("Ranged Weapons Mastery", "+5 physical power.", new StatModifier(StatType.PhysicalPower, 5f)),
-                        new PerkDef("Windfletch", "+5% action speed.", new StatModifier(StatType.ActionSpeed, 5f))
-                    },
-                    Kit = new[] { ("Recurve Bow", EquipSlot.Weapon1Main, 1, true), ("Arming Sword", EquipSlot.Weapon2Main, 1, true), ("Leather Cap", EquipSlot.Head, 1, true), ("Doublet", EquipSlot.Chest, 1, true), ("Leather Leggings", EquipSlot.Legs, 1, true), ("Bandage", EquipSlot.Utility1, 3, true), ("Campfire Kit", EquipSlot.Utility2, 1, true) },
-                    Weapons = new[] { WeaponClass.Bow, WeaponClass.Crossbow, WeaponClass.Sword, WeaponClass.Spear, WeaponClass.Torch, WeaponClass.Dagger },
-                    Armor = new[] { ArmorType.Cloth, ArmorType.Leather }
-                },
-                new ClassDef
-                {
-                    Id = 4, Name = "Wizard", Description = "Glass cannon of arcane fire and frost.",
-                    Stats = new ClassStats(6, 7, 15, 17, 20, 25, 15), Color = new Color(0.45f, 0.5f, 0.95f), Body = new Color(0.35f, 0.35f, 0.55f),
-                    Skills = new[]
-                    {
-                        Skill("Arcane Shield", "Absorb 15 damage for 12s.", AbilityKind.Shield, 15f, 12f, 25f, "Sh", new Color(0.5f, 0.7f, 1f)),
-                        Skill("Arcane Surge", "+30% action speed for 12s.", AbilityKind.Buff, 30f, 12f, 18f, "Ar", new Color(0.7f, 0.5f, 1f), StatusEffectKind.ActionSpeed)
-                    },
-                    Spells = new[]
-                    {
-                        Projectile("Zap", "15 lightning + burn.", true, 5, 1f, 1.25f, 15f, 40f, 0f, ProjectileKind.Magic, DamageType.Magical, 1, 0f, "Zp", new Color(0.8f, 0.8f, 1f), StatusEffectKind.Burn, 3f, 3f),
-                        Projectile("Ice Bolt", "20 ice, slows the target.", true, 5, 1f, 1.25f, 20f, 28f, 0f, ProjectileKind.Ice, DamageType.Magical, 1, 0f, "Ic", new Color(0.6f, 0.9f, 1f), StatusEffectKind.Slow, 20f, 1.5f),
-                        Projectile("Magic Missile", "Three arcane darts.", true, 10, 1f, 1.25f, 10f, 30f, 0f, ProjectileKind.Magic, DamageType.Magical, 3, 5f, "MM", new Color(0.7f, 0.6f, 1f)),
-                        Projectile("Fireball", "30 fire with splash and burn.", true, 4, 1f, 2f, 30f, 20f, -2f, ProjectileKind.Fire, DamageType.Magical, 1, 0f, "Mc", new Color(1f, 0.5f, 0.1f), StatusEffectKind.Burn, 6f, 2f, 1.6f),
-                        Spell("Haste", "+15 move speed and action speed for 6s.", AbilityKind.Buff, 4, 0.75f, 15f, 6f, "Sp", new Color(1f, 0.9f, 0.4f), StatusEffectKind.Haste)
-                    },
-                    Perks = new[]
-                    {
-                        new PerkDef("Quick Chant", "+15% action speed.", new StatModifier(StatType.ActionSpeed, 15f)),
-                        new PerkDef("Mana Surge", "+10% magical damage.", new StatModifier(StatType.MagicalDamageBonus, 0.1f)),
-                        new PerkDef("Glass Cannon", "-10% health, +20 magical power.", new StatModifier(StatType.MaxHealth, -10f), new StatModifier(StatType.MagicalPower, 20f)),
-                        new PerkDef("Sage", "+3 knowledge.", new StatModifier(StatType.Knowledge, 3f))
-                    },
-                    Kit = new[] { ("Magic Staff", EquipSlot.Weapon1Main, 1, true), ("Rondel Dagger", EquipSlot.Weapon2Main, 1, true), ("Wizard Hat", EquipSlot.Head, 1, true), ("Frock", EquipSlot.Chest, 1, true), ("Cloth Pants", EquipSlot.Legs, 1, true), ("Potion of Protection", EquipSlot.Utility1, 1, true), ("Bandage", EquipSlot.Utility2, 3, true) },
-                    Weapons = new[] { WeaponClass.Staff, WeaponClass.Dagger, WeaponClass.Crossbow, WeaponClass.Torch },
-                    Armor = new[] { ArmorType.Cloth }
-                },
-                new ClassDef
-                {
-                    Id = 5, Name = "Cleric", Description = "Holy healer in heavy armor. Bane of the undead.",
-                    Stats = new ClassStats(11, 13, 12, 14, 23, 20, 12), Color = new Color(0.95f, 0.9f, 0.6f), Body = new Color(0.75f, 0.72f, 0.65f),
-                    Skills = new[]
-                    {
-                        Skill("Divine Protection", "Absorb 40 damage for 6s.", AbilityKind.Shield, 40f, 6f, 45f, "DP", new Color(1f, 0.95f, 0.6f)),
-                        Area("Holy Purification", "100 divine damage to undead within 7.5m.", false, 1, 45f, 0.5f, 100f, 7.5f, DamageType.Magical, "Ho", new Color(1f, 0.9f, 0.4f))
-                    },
-                    Spells = new[]
-                    {
-                        Spell("Lesser Heal", "Heal 20.", AbilityKind.Heal, 4, 1.25f, 20f, 0f, "+", new Color(0.6f, 1f, 0.6f)),
-                        Spell("Bless", "+2 strength for 30s.", AbilityKind.Buff, 5, 0.75f, 2f, 30f, "Ar", new Color(1f, 1f, 0.7f), StatusEffectKind.Strength),
-                        Spell("Protection", "Absorb 20 damage for 8s.", AbilityKind.Shield, 5, 0.75f, 20f, 8f, "Sh", new Color(0.8f, 0.9f, 1f)),
-                        Projectile("Holy Strike", "20 divine damage.", true, 4, 1f, 2f, 20f, 30f, 0f, ProjectileKind.Holy, DamageType.Magical, 1, 0f, "HS", new Color(1f, 0.95f, 0.5f)),
-                        Spell("Holy Light", "Heal 35.", AbilityKind.Heal, 3, 1.75f, 35f, 0f, "Ho", new Color(1f, 1f, 0.8f))
-                    },
-                    Perks = new[]
-                    {
-                        new PerkDef("Advanced Healer", "+4 magical power.", new StatModifier(StatType.MagicalPower, 4f)),
-                        new PerkDef("Holy Aura", "+15 armor and magic resistance.", new StatModifier(StatType.ArmorRating, 15f), new StatModifier(StatType.MagicResistance, 15f)),
-                        new PerkDef("Blunt Weapon Mastery", "+10 physical power.", new StatModifier(StatType.PhysicalPower, 10f)),
-                        new PerkDef("Perseverance", "+10 armor rating.", new StatModifier(StatType.ArmorRating, 10f))
-                    },
-                    Kit = new[] { ("Flanged Mace", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Torch", EquipSlot.Weapon2Main, 1, true), ("Kettle Hat", EquipSlot.Head, 1, true), ("Adventurer Tunic", EquipSlot.Chest, 1, true), ("Plate Boots", EquipSlot.Feet, 1, true), ("Bandage", EquipSlot.Utility1, 3, true) },
-                    Weapons = new[] { WeaponClass.Mace, WeaponClass.Staff, WeaponClass.Shield, WeaponClass.Torch },
-                    Armor = new[] { ArmorType.Cloth, ArmorType.Leather, ArmorType.Chain, ArmorType.Plate }
-                },
-                new ClassDef
-                {
-                    Id = 6, Name = "Warlock", Description = "Dark magic paid for in blood.",
-                    Stats = new ClassStats(11, 14, 14, 15, 22, 15, 14), Color = new Color(0.6f, 0.2f, 0.7f), Body = new Color(0.4f, 0.25f, 0.4f),
-                    Skills = new[]
-                    {
-                        Skill("Phantomize", "Fade from sight for 4s.", AbilityKind.Invisibility, 1f, 4f, 28f, "Ph", new Color(0.7f, 0.4f, 0.9f)),
-                        Skill("Blow of Corruption", "+12 physical power for 8s.", AbilityKind.Buff, 12f, 8f, 24f, "At", new Color(0.8f, 0.3f, 0.6f), StatusEffectKind.Power)
-                    },
-                    Spells = new[]
-                    {
-                        Projectile("Bolt of Darkness", "20 dark damage.", true, 10, 1f, 1f, 20f, 30f, 0f, ProjectileKind.Dark, DamageType.Magical, 1, 0f, "Mc", new Color(0.5f, 0.2f, 0.7f)),
-                        Projectile("Curse of Pain", "15 damage over 8s.", true, 6, 1f, 1f, 5f, 34f, 0f, ProjectileKind.Dark, DamageType.Magical, 1, 0f, "CP", new Color(0.7f, 0.2f, 0.5f), StatusEffectKind.Burn, 15f, 8f),
-                        Spell("Power of Sacrifice", "+10 physical power for 12s.", AbilityKind.Buff, 5, 1f, 10f, 12f, "PS", new Color(0.9f, 0.3f, 0.4f), StatusEffectKind.Power),
-                        Spell("Eldritch Shield", "Absorb 25 damage for 10s.", AbilityKind.Shield, 4, 0.75f, 25f, 10f, "Sh", new Color(0.6f, 0.3f, 0.8f)),
-                        Spell("Life Drain", "Regain 20 health over 5s.", AbilityKind.Heal, 5, 1.5f, 20f, 5f, "Hp", new Color(0.8f, 0.2f, 0.3f))
-                    },
-                    Perks = new[]
-                    {
-                        new PerkDef("Antimagic", "+60 magic resistance.", new StatModifier(StatType.MagicResistance, 60f)),
-                        new PerkDef("Dark Enhancement", "+20% magical damage.", new StatModifier(StatType.MagicalDamageBonus, 0.2f)),
-                        new PerkDef("Malice", "+3 will.", new StatModifier(StatType.Will, 3f)),
-                        new PerkDef("Shadow Touch", "+5% physical damage.", new StatModifier(StatType.PhysicalDamageBonus, 0.05f))
-                    },
-                    Kit = new[] { ("Falchion", EquipSlot.Weapon1Main, 1, true), ("Magic Staff", EquipSlot.Weapon2Main, 1, true), ("Frock", EquipSlot.Chest, 1, true), ("Cloth Pants", EquipSlot.Legs, 1, true), ("Adventurer Boots", EquipSlot.Feet, 1, true), ("Bandage", EquipSlot.Utility1, 3, true) },
-                    Weapons = new[] { WeaponClass.Sword, WeaponClass.Staff, WeaponClass.Dagger, WeaponClass.Shield, WeaponClass.Torch },
-                    Armor = new[] { ArmorType.Cloth, ArmorType.Leather }
-                },
-                new ClassDef
-                {
-                    Id = 7, Name = "Bard", Description = "Songs that bolster allies and shatter enemies.",
-                    Stats = new ClassStats(13, 13, 13, 20, 11, 20, 15), Color = new Color(0.9f, 0.6f, 0.8f), Body = new Color(0.6f, 0.45f, 0.5f),
-                    Skills = new[]
-                    {
-                        Area("Dissonance", "10 damage to all enemies within 6m.", false, 1, 24f, 0.4f, 10f, 6f, DamageType.Magical, "Di", new Color(1f, 0.7f, 0.9f)),
-                        Skill("Encore", "+2 strength for 60s.", AbilityKind.Buff, 2f, 60f, 40f, "En", new Color(1f, 0.85f, 0.6f), StatusEffectKind.Strength)
-                    },
-                    Spells = new[]
-                    {
-                        Spell("Beats of Alacrity", "+6 move speed for 20s.", AbilityKind.Buff, 4, 1f, 6f, 20f, "Be", new Color(1f, 0.9f, 0.5f), StatusEffectKind.Haste),
-                        Spell("Harmonic Shield", "Absorb 15 damage for 20s.", AbilityKind.Shield, 4, 1f, 15f, 20f, "Sh", new Color(0.8f, 0.8f, 1f)),
-                        Area("Piercing Shrill", "20 damage within 5m.", true, 4, 1f, 1f, 20f, 5f, DamageType.Physical, "Sh", new Color(1f, 0.6f, 0.7f)),
-                        Spell("Song of Shadow", "Invisible for 10s.", AbilityKind.Invisibility, 4, 1.5f, 1f, 10f, "Hi", new Color(0.6f, 0.5f, 0.8f))
-                    },
-                    Perks = new[]
-                    {
-                        new PerkDef("Rapier Mastery", "+3 physical power, +5% action speed.", new StatModifier(StatType.PhysicalPower, 3f), new StatModifier(StatType.ActionSpeed, 5f)),
-                        new PerkDef("Dancing Feet", "+10 move speed.", new StatModifier(StatType.MoveSpeed, 10f)),
-                        new PerkDef("Melodic Protection", "+20 armor rating.", new StatModifier(StatType.ArmorRating, 20f)),
-                        new PerkDef("Lore Mastery", "+5 resourcefulness.", new StatModifier(StatType.Resourcefulness, 5f))
-                    },
-                    Kit = new[] { ("Arming Sword", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Crossbow", EquipSlot.Weapon2Main, 1, true), ("Woolen Cap", EquipSlot.Head, 1, true), ("Doublet", EquipSlot.Chest, 1, true), ("Bandage", EquipSlot.Utility1, 3, true), ("Ale", EquipSlot.Utility2, 2, true) },
-                    Weapons = new[] { WeaponClass.Sword, WeaponClass.Dagger, WeaponClass.Crossbow, WeaponClass.Bow, WeaponClass.Shield, WeaponClass.Torch },
-                    Armor = new[] { ArmorType.Cloth, ArmorType.Leather }
-                },
-                new ClassDef
-                {
-                    Id = 8, Name = "Druid", Description = "Nature's wrath and nature's mercy.",
-                    Stats = new ClassStats(12, 13, 12, 12, 18, 20, 18), Color = new Color(0.5f, 0.8f, 0.4f), Body = new Color(0.45f, 0.55f, 0.4f),
-                    Skills = new[]
-                    {
-                        Skill("Wild Fury", "+15 physical power for 10s.", AbilityKind.Buff, 15f, 10f, 32f, "WF", new Color(0.7f, 1f, 0.5f), StatusEffectKind.Power),
-                        Skill("Rush", "Lunge forward.", AbilityKind.Dash, -7f, 0f, 24f, "Sp", new Color(0.6f, 0.9f, 0.5f))
-                    },
-                    Spells = new[]
-                    {
-                        Spell("Nature's Touch", "Heal 30 over 12s.", AbilityKind.Heal, 4, 0.75f, 30f, 12f, "NT", new Color(0.6f, 1f, 0.6f)),
-                        Spell("Barkskin", "Absorb 20 damage for 10s.", AbilityKind.Shield, 4, 0.75f, 20f, 10f, "Sh", new Color(0.6f, 0.45f, 0.3f)),
-                        Projectile("Dreamfire", "15 spirit damage with splash.", true, 4, 1f, 1f, 15f, 26f, 0f, ProjectileKind.Magic, DamageType.Magical, 1, 0f, "Df", new Color(0.5f, 1f, 0.7f), StatusEffectKind.None, 0f, 0f, 1f),
-                        Projectile("Entangling Vines", "Roots the target briefly.", true, 2, 1f, 1.25f, 5f, 24f, 0f, ProjectileKind.Magic, DamageType.Magical, 1, 0f, "Vn", new Color(0.4f, 0.7f, 0.3f), StatusEffectKind.Slow, 90f, 1.5f),
-                        Spell("Restore", "Heal 20 over 12s.", AbilityKind.Heal, 3, 1.5f, 20f, 12f, "+", new Color(0.7f, 1f, 0.7f))
-                    },
-                    Perks = new[]
-                    {
-                        new PerkDef("Enhanced Wildness", "+5 physical power, +20 armor.", new StatModifier(StatType.PhysicalPower, 5f), new StatModifier(StatType.ArmorRating, 20f)),
-                        new PerkDef("Thorn Coat", "+10 armor rating.", new StatModifier(StatType.ArmorRating, 10f)),
-                        new PerkDef("Natural Healing", "+2 vigor.", new StatModifier(StatType.Vigor, 2f)),
-                        new PerkDef("Sun and Moon", "+3 vigor, +5 magical power.", new StatModifier(StatType.Vigor, 3f), new StatModifier(StatType.MagicalPower, 5f))
-                    },
-                    Kit = new[] { ("Spear", EquipSlot.Weapon1Main, 1, true), ("Magic Staff", EquipSlot.Weapon2Main, 1, true), ("Adventurer Tunic", EquipSlot.Chest, 1, true), ("Leather Leggings", EquipSlot.Legs, 1, true), ("Bandage", EquipSlot.Utility1, 3, true), ("Campfire Kit", EquipSlot.Utility2, 1, true) },
-                    Weapons = new[] { WeaponClass.Staff, WeaponClass.Spear, WeaponClass.Mace, WeaponClass.Dagger, WeaponClass.Torch },
-                    Armor = new[] { ArmorType.Cloth, ArmorType.Leather }
-                },
-                new ClassDef
-                {
-                    Id = 9, Name = "Sorcerer", Description = "Elemental caster on cooldowns instead of charges.",
-                    Stats = new ClassStats(10, 10, 10, 18, 25, 20, 12), Color = new Color(0.3f, 0.8f, 0.9f), Body = new Color(0.3f, 0.45f, 0.55f),
-                    Skills = new[]
-                    {
-                        Skill("Sorcery Combat", "+25% action speed for 8s.", AbilityKind.Buff, 25f, 8f, 30f, "Ar", new Color(0.5f, 0.9f, 1f), StatusEffectKind.ActionSpeed),
-                        Skill("Mana Fold", "+10 move speed for 8s.", AbilityKind.Buff, 10f, 8f, 24f, "Sp", new Color(0.7f, 0.9f, 1f), StatusEffectKind.Haste)
-                    },
-                    Spells = new[]
-                    {
-                        Projectile("Fire Arrow", "10 fire. 12s cooldown.", true, 99, 12f, 0.75f, 10f, 35f, 0f, ProjectileKind.Fire, DamageType.Magical, 1, 0f, "Sp", new Color(1f, 0.5f, 0.2f), StatusEffectKind.Burn, 3f, 2f),
-                        Projectile("Water Bolt", "15 water, slows. 12s cooldown.", true, 99, 12f, 0.75f, 15f, 30f, 0f, ProjectileKind.Ice, DamageType.Magical, 1, 0f, "Wb", new Color(0.4f, 0.6f, 1f), StatusEffectKind.Slow, 20f, 1f),
-                        Projectile("Ice Spear", "30 ice. 15s cooldown.", true, 99, 15f, 0.75f, 30f, 34f, 0f, ProjectileKind.Ice, DamageType.Magical, 1, 0f, "Ic", new Color(0.7f, 0.9f, 1f)),
-                        Area("Eruption", "20 earth damage within 3m. 15s cooldown.", true, 99, 15f, 1f, 20f, 3f, DamageType.Magical, "Er", new Color(0.8f, 0.5f, 0.3f)),
-                        Spell("Stone Skin", "Absorb 30 damage for 12s. 20s cooldown.", AbilityKind.Shield, 99, 0.75f, 30f, 12f, "Sh", new Color(0.6f, 0.6f, 0.55f), cooldown: 20f)
-                    },
-                    Perks = new[]
-                    {
-                        new PerkDef("Apex of Sorcery", "+10 magical power.", new StatModifier(StatType.MagicalPower, 10f)),
-                        new PerkDef("Time Distortion", "+10% action speed.", new StatModifier(StatType.ActionSpeed, 10f)),
-                        new PerkDef("Mana Flow", "+10% magical damage.", new StatModifier(StatType.MagicalDamageBonus, 0.1f)),
-                        new PerkDef("Lightning Mastery", "+5% magical damage.", new StatModifier(StatType.MagicalDamageBonus, 0.05f))
-                    },
-                    Kit = new[] { ("Magic Staff", EquipSlot.Weapon1Main, 1, true), ("Falchion", EquipSlot.Weapon2Main, 1, true), ("Wizard Hat", EquipSlot.Head, 1, true), ("Frock", EquipSlot.Chest, 1, true), ("Cloth Pants", EquipSlot.Legs, 1, true), ("Bandage", EquipSlot.Utility1, 3, true) },
-                    Weapons = new[] { WeaponClass.Staff, WeaponClass.Sword, WeaponClass.Torch },
-                    Armor = new[] { ArmorType.Cloth }
-                }
-            };
-        }
-
-        private static AbilityDef Skill(string name, string description, AbilityKind kind, float magnitude, float duration, float cooldown, string glyph,
-            Color color, StatusEffectKind effect = StatusEffectKind.None)
-        {
-            return new AbilityDef
-            {
-                Name = name, Description = description, Kind = kind, Magnitude = magnitude, Duration = duration, Cooldown = cooldown, Glyph = glyph,
-                Color = color, Effect = effect, CastTime = 0.3f
-            };
-        }
-
-        private static AbilityDef Spell(string name, string description, AbilityKind kind, int charges, float castTime, float magnitude, float duration,
-            string glyph, Color color, StatusEffectKind effect = StatusEffectKind.None, float cooldown = 1f)
-        {
-            return new AbilityDef
-            {
-                Name = name, Description = description, Kind = kind, IsSpell = true, Charges = charges, CastTime = castTime, Magnitude = magnitude,
-                Duration = duration, Glyph = glyph, Color = color, Effect = effect, Cooldown = cooldown
-            };
-        }
-
-        private static AbilityDef Projectile(string name, string description, bool isSpell, int charges, float cooldown, float castTime, float damage,
-            float speed, float gravity, ProjectileKind kind, DamageType damageType, int count, float spread, string glyph, Color color,
-            StatusEffectKind hitEffect = StatusEffectKind.None, float hitMagnitude = 0f, float hitDuration = 0f, float radius = 0f)
-        {
-            return new AbilityDef
-            {
-                Name = name, Description = description, Kind = AbilityKind.Projectile, IsSpell = isSpell, Charges = charges, Cooldown = cooldown,
-                CastTime = castTime, Magnitude = damage, Speed = speed, Gravity = gravity, Projectile = kind, DamageType = damageType, Count = count,
-                Spread = spread, Glyph = glyph, Color = color, HitEffect = hitEffect, HitMagnitude = hitMagnitude, HitDuration = hitDuration, Radius = radius
-            };
-        }
-
-        private static AbilityDef Area(string name, string description, bool isSpell, int charges, float cooldown, float castTime, float damage, float radius,
-            DamageType damageType, string glyph, Color color)
-        {
-            return new AbilityDef
-            {
-                Name = name, Description = description, Kind = AbilityKind.AreaDamage, IsSpell = isSpell, Charges = charges, Cooldown = cooldown,
-                CastTime = castTime, Magnitude = damage, Radius = radius, DamageType = damageType, Glyph = glyph, Color = color
             };
         }
     }

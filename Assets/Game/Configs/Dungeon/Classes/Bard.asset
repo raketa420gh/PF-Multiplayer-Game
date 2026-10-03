@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
   _id: 7
   _displayName: Bard
-  _description: Songs that bolster allies and shatter enemies.
+  _description: Songs that bolster allies and shatter enemies. Needs an instrument
+    in hand.
   _baseStats:
     Strength: 13
     Vigor: 13
@@ -26,12 +27,18 @@ MonoBehaviour:
   _color: {r: 0.9, g: 0.6, b: 0.8, a: 1}
   _bodyColor: {r: 0.6, g: 0.45, b: 0.5, a: 1}
   _skills:
+  - {fileID: 11400000, guid: 4e3a1355f0e674949a80a44bd23f2c72, type: 2}
   - {fileID: 11400000, guid: 4cbd11d998ff2c64b8612b0bfac381ed, type: 2}
   - {fileID: 11400000, guid: c0aaaec1bcee02241a54cd0615b8007d, type: 2}
+  - {fileID: 11400000, guid: 3b2dc8afb87b7af4d9d0bedb1c380d03, type: 2}
   _spells:
+  - {fileID: 11400000, guid: 28f4011f471d4584aaafe29cdde2160b, type: 2}
   - {fileID: 11400000, guid: 0059fffc99a331243885fe535acb5adf, type: 2}
+  - {fileID: 11400000, guid: fcfe0664e8f750642ba588b00043b881, type: 2}
+  - {fileID: 11400000, guid: d4755dbb80b77b44dba673c20584491c, type: 2}
   - {fileID: 11400000, guid: b756819ffea860c4fa4b720c99656e65, type: 2}
   - {fileID: 11400000, guid: 944fc37b7cc26a541b7082563c0100dc, type: 2}
+  - {fileID: 11400000, guid: bbc64463588172a4bb8897e0fce18067, type: 2}
   - {fileID: 11400000, guid: 17d9b2aecc0958b448751c5912c40cf6, type: 2}
   _perks:
   - _name: Rapier Mastery
@@ -56,17 +63,39 @@ MonoBehaviour:
     _modifiers:
     - Stat: 6
       Value: 5
+  - _name: War Song
+    _description: +3 physical power.
+    _modifiers:
+    - Stat: 11
+      Value: 3
+  - _name: Story Teller
+    _description: +5 will, +3 knowledge.
+    _modifiers:
+    - Stat: 4
+      Value: 5
+    - Stat: 5
+      Value: 3
+  - _name: Superior Dexterity
+    _description: +10% action speed.
+    _modifiers:
+    - Stat: 13
+      Value: 10
+  - _name: Wanderer's Luck
+    _description: +3 resourcefulness.
+    _modifiers:
+    - Stat: 6
+      Value: 3
   _startingKit:
-  - _item: {fileID: 11400000, guid: 81485b83cb38163419e5794205a7c787, type: 2}
+  - _item: {fileID: 11400000, guid: fe1aaf98bae4e4a489e7616cae109f83, type: 2}
     _slot: 9
     _count: 1
     _isEquipped: 1
-  - _item: {fileID: 11400000, guid: c52b74ed91a0f4844a83fc48c5717b79, type: 2}
-    _slot: 10
+  - _item: {fileID: 11400000, guid: 81485b83cb38163419e5794205a7c787, type: 2}
+    _slot: 11
     _count: 1
     _isEquipped: 1
-  - _item: {fileID: 11400000, guid: dc24d3f2a48f2ba4d955f624c0660410, type: 2}
-    _slot: 11
+  - _item: {fileID: 11400000, guid: c52b74ed91a0f4844a83fc48c5717b79, type: 2}
+    _slot: 12
     _count: 1
     _isEquipped: 1
   - _item: {fileID: 11400000, guid: c3d0785f4e5f38b48bb1dd795edf30e9, type: 2}
@@ -85,5 +114,6 @@ MonoBehaviour:
     _slot: 14
     _count: 2
     _isEquipped: 1
-  _allowedWeapons: 000306050809
+  _allowedWeapons: 0003060508090c
   _allowedArmor: 0001
+  _castFocus: 1

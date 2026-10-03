@@ -132,7 +132,7 @@ namespace Game.Scripts.Battle
         private int _slotCount = 4;
 
         [SerializeField]
-        private float _equipTime = 0.5f;
+        private float _equipTime = 0.35f;
 
         [SerializeField]
         private float _deflectedMoveMultiplier = 0.5f;
@@ -191,6 +191,8 @@ namespace Game.Scripts.Battle
         private static readonly List<Tally> s_tallies = new(8);
         private readonly List<HitboxRoot> _hitRoots = new(8);
         private ICombatStats _stats;
+        private bool _isBlockHeld;
+        private bool _isBlockSuppressed;
         private int _renderedWorldHits;
         private bool _hasWorldHit;
         private LagCompensatedHit _worldHit;
@@ -222,6 +224,12 @@ namespace Game.Scripts.Battle
             _stats = stats;
         }
 
+        /// While a spell is readied the secondary button casts instead of blocking.
+        public void SetBlockSuppressed(bool isSuppressed)
+        {
+            _isBlockSuppressed = isSuppressed;
+        }
+
         public int GetWeaponIndex(int slot)
         {
             int index = _slotWeapons[Mathf.Clamp(slot, 0, MaxSlots - 1)];
@@ -242,6 +250,18 @@ namespace Game.Scripts.Battle
 
             if (slot == WeaponSlot && State != CombatState.Busy)
                 SetState(CombatState.Equip);
+        }
+
+        /// Switches sets as if the player pressed the slot key.
+        public void RequestSlot(int slot)
+        {
+            slot = Mathf.Clamp(slot, 0, _slotCount - 1);
+
+            if (slot == WeaponSlot || State != CombatState.Idle)
+                return;
+
+            _pendingSlot = (byte)slot;
+            SetState(CombatState.Equip);
         }
 
         public void SetInitialSlot(int slot)
@@ -286,9 +306,10 @@ namespace Game.Scripts.Battle
             WeaponConfig weapon = Weapon;
             bool isAttackHeld = buttons.IsSet(weapon.AttackButton);
             bool isAttackPressed = buttons.WasPressed(previous, weapon.AttackButton);
-            bool isBlockHeld = buttons.IsSet(weapon.BlockButton) && weapon.Block.CanBlock;
-            bool isBlockPressed = buttons.WasPressed(previous, weapon.BlockButton);
+            bool isBlockHeld = buttons.IsSet(weapon.BlockButton) && weapon.Block.CanBlock && !_isBlockSuppressed;
+            bool isBlockPressed = buttons.WasPressed(previous, weapon.BlockButton) && !_isBlockSuppressed;
             float time = StateTime;
+            _isBlockHeld = isBlockHeld;
 
             switch (State)
             {
@@ -384,6 +405,8 @@ namespace Game.Scripts.Battle
                 StartAttack((AttackIndex + 1) % weapon.Attacks.Length);
             else if (time >= attack.Duration)
                 SetState(CombatState.Idle);
+            else if (_isBlockHeld && weapon.Block.CanBlock && time >= attack.ActiveEnd + attack.RecoveryTime * 0.5f)
+                SetState(CombatState.BlockRaise);
         }
 
         private void StartAttack(int index)

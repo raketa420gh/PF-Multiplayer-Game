@@ -27,6 +27,7 @@ namespace Game.Scripts.Battle
         public float Radius;
         public float EffectMagnitude;
         public float EffectDuration;
+        public float LifeSteal;
         public short Damage;
         public byte Kind;
         public byte DamageType;
@@ -95,7 +96,7 @@ namespace Game.Scripts.Battle
 
         public void Fire(Vector3 origin, Vector3 velocity, float gravity, int damage, float staggerDuration,
             DamageType damageType = DamageType.Physical, ProjectileKind kind = ProjectileKind.Arrow,
-            float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f)
+            float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f, float lifeSteal = 0f)
         {
             _projectiles.Set(_fireCount % Capacity, new ProjectileData
             {
@@ -110,7 +111,8 @@ namespace Game.Scripts.Battle
                 Radius = radius,
                 Effect = effect,
                 EffectMagnitude = effectMagnitude,
-                EffectDuration = effectDuration
+                EffectDuration = effectDuration,
+                LifeSteal = lifeSteal
             });
             _fireCount++;
         }

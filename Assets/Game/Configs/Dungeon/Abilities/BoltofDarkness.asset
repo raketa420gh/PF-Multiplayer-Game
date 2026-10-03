@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: BoltofDarkness
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Bolt of Darkness
-  _description: 20 dark damage.
+  _description: 20 dark damage. Costs 4 health.
   _kind: 2
   _isSpell: 1
-  _charges: 10
+  _charges: 99
   _cooldown: 1
   _castTime: 1
   _magnitude: 20
@@ -32,4 +32,8 @@ MonoBehaviour:
   _effectMagnitude: 0
   _effectDuration: 0
   _color: {r: 0.5, g: 0.2, b: 0.7, a: 1}
-  _glyph: Mc
+  _glyph: BD
+  _healthCost: 4
+  _lifeSteal: 0
+  _spawnPrefab: {fileID: 0}
+  _staggerDuration: 0.1

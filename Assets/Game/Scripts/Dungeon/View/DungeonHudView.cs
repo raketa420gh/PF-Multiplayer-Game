@@ -65,6 +65,9 @@ namespace Game.Scripts.Dungeon
         private Image _castBar;
 
         [SerializeField]
+        private TMP_Text _castText;
+
+        [SerializeField]
         private GameObject _castRoot;
 
         [SerializeField]
@@ -82,6 +85,21 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private TMP_Text _killText;
 
+        [SerializeField]
+        private TMP_Text _readiedText;
+
+        [SerializeField]
+        private Image _bossFill;
+
+        [SerializeField]
+        private GameObject _bossRoot;
+
+        [SerializeField]
+        private TMP_Text _bossText;
+
+        [SerializeField]
+        private TMP_Text[] _weaponSlotLabels;
+
         private readonly StringBuilder _builder = new();
 
         private void Update()
@@ -98,6 +116,61 @@ namespace Game.Scripts.Dungeon
             UpdateAbilities(adventurer);
             UpdateBelt(adventurer);
             UpdateEffects(adventurer);
+            UpdateReadied(adventurer);
+            UpdateBoss(adventurer);
+        }
+
+        private void UpdateReadied(AdventurerComponent adventurer)
+        {
+            AbilityConfig spell = adventurer.ReadiedSpellConfig;
+
+            if (adventurer.Form != ShapeshiftForm.None)
+            {
+                _readiedText.text = $"<color=#9c6>{adventurer.Form} form</color>  <size=70%>press the form key again to return</size>";
+
+                return;
+            }
+
+            if (spell == null)
+            {
+                _readiedText.text = string.Empty;
+
+                return;
+            }
+
+            int index = adventurer.SkillCount + adventurer.ReadiedSpell;
+            string charges = spell.IsCooldownBased ? $"{Mathf.CeilToInt(adventurer.GetCooldownLeft(index))}s" : $"{adventurer.GetCharges(index)}/{spell.Charges}";
+            _readiedText.text = adventurer.HasFocus
+                ? $"<color=#{ColorUtility.ToHtmlStringRGB(spell.Color)}>{spell.DisplayName}</color>  [RMB] cast   {charges}"
+                : $"<color=#f66>{spell.DisplayName}: requires a {(adventurer.Class.Focus == CastFocus.Instrument ? "instrument" : "magical focus")} in hand</color>";
+        }
+
+        private void UpdateBoss(AdventurerComponent adventurer)
+        {
+            MonsterComponent boss = null;
+            float best = 22f * 22f;
+
+            foreach (MonsterComponent monster in MonsterComponent.All)
+            {
+                if (!monster.IsBoss || monster.Fighter.Health.IsDead || monster.Floor != adventurer.Floor)
+                    continue;
+
+                float distance = (monster.transform.position - adventurer.transform.position).sqrMagnitude;
+
+                if (distance < best)
+                {
+                    best = distance;
+                    boss = monster;
+                }
+            }
+
+            _bossRoot.SetActive(boss != null);
+
+            if (boss == null)
+                return;
+
+            _bossFill.fillAmount = boss.Fighter.Health.Progress;
+            _bossText.text = boss.Config.DisplayName;
         }
 
         private void UpdateHealth(AdventurerComponent adventurer)
@@ -116,7 +189,7 @@ namespace Game.Scripts.Dungeon
         private void UpdateMatch(AdventurerComponent adventurer)
         {
             MatchComponent match = _context.Match;
-            _floorText.text = adventurer.Floor == 1 ? "Crypts · Floor 1" : "Crypts · Floor 2";
+            _floorText.text = adventurer.Floor == 1 ? "The Crypts · Upper floor" : "The Crypts · Lower floor";
 
             if (match == null || !match.IsRunning)
             {
@@ -150,11 +223,32 @@ namespace Game.Scripts.Dungeon
                 CombatState.Busy => adventurer.Pending.ToString(),
                 _ => combat.State.ToString()
             };
-            _weaponText.text = $"[{combat.WeaponSlot + 1}] {combat.Weapon.DisplayName}  <size=70%>{state}</size>";
+            _weaponText.text = $"{combat.Weapon.DisplayName}  <size=70%>{state}</size>";
+
+            for (int i = 0; i < _weaponSlotLabels.Length; i++)
+                _weaponSlotLabels[i].color = i == combat.WeaponSlot ? new Color(1f, 0.85f, 0.4f) : new Color(0.55f, 0.5f, 0.42f);
 
             bool isCasting = combat.State == CombatState.Busy && adventurer.Pending is PendingAction.Ability or PendingAction.Consumable or PendingAction.Utility;
             _castRoot.SetActive(isCasting || combat.State == CombatState.Draw);
-            _castBar.fillAmount = combat.State == CombatState.Draw ? combat.DrawPower : combat.BusyProgress;
+
+            if (adventurer.IsHoldingCast)
+            {
+                AbilityConfig spell = adventurer.ReadiedSpellConfig;
+                float duration = spell != null ? spell.CastTime / adventurer.Stats.CastSpeed : 1f;
+                _castBar.fillAmount = Mathf.Clamp01(combat.StateTime / Mathf.Max(0.1f, duration));
+                _castText.text = spell != null ? spell.DisplayName : string.Empty;
+            }
+            else
+            {
+                _castBar.fillAmount = combat.State == CombatState.Draw ? combat.DrawPower : combat.BusyProgress;
+                _castText.text = adventurer.Pending switch
+                {
+                    PendingAction.Ability when adventurer.Pending == PendingAction.Ability => "Casting",
+                    PendingAction.Consumable => "Using item",
+                    PendingAction.Utility => "Using item",
+                    _ => string.Empty
+                };
+            }
         }
 
         private void UpdatePrompt(AdventurerComponent adventurer)
@@ -176,13 +270,13 @@ namespace Game.Scripts.Dungeon
 
         private void UpdateAbilities(AdventurerComponent adventurer)
         {
-            int skillCount = adventurer.Class.Skills.Length;
+            int skillCount = adventurer.SkillCount;
 
             for (int i = 0; i < _skills.Length; i++)
                 UpdateAbility(_skills[i], adventurer, i, i < skillCount);
 
             for (int i = 0; i < _spells.Length; i++)
-                UpdateAbility(_spells[i], adventurer, skillCount + i, i < adventurer.Class.Spells.Length);
+                _spells[i].Root.SetActive(false);
         }
 
         private static void UpdateAbility(AbilitySlot slot, AdventurerComponent adventurer, int index, bool isUsed)
@@ -197,7 +291,7 @@ namespace Game.Scripts.Dungeon
             slot.Glyph.text = ability.Glyph;
             slot.Glyph.color = ability.Color;
             slot.Cooldown.fillAmount = ability.Cooldown > 0f ? cooldown / ability.Cooldown : 0f;
-            slot.Charges.text = ability.IsSpell ? adventurer.GetCharges(index).ToString() : cooldown > 0f ? Mathf.CeilToInt(cooldown).ToString() : string.Empty;
+            slot.Charges.text = ability.IsSpell && !ability.IsCooldownBased ? adventurer.GetCharges(index).ToString() : cooldown > 0f ? Mathf.CeilToInt(cooldown).ToString() : string.Empty;
         }
 
         private void UpdateBelt(AdventurerComponent adventurer)

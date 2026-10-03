@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: PowerofSacrifice
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Power of Sacrifice
-  _description: +10 physical power for 12s.
+  _description: +10 physical power for 12s. Costs 4 health.
   _kind: 1
   _isSpell: 1
-  _charges: 5
+  _charges: 99
   _cooldown: 1
   _castTime: 1
   _magnitude: 10
@@ -33,3 +33,7 @@ MonoBehaviour:
   _effectDuration: 0
   _color: {r: 0.9, g: 0.3, b: 0.4, a: 1}
   _glyph: PS
+  _healthCost: 4
+  _lifeSteal: 0
+  _spawnPrefab: {fileID: 0}
+  _staggerDuration: 0

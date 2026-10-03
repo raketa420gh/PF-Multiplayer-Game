@@ -24,12 +24,29 @@ namespace Game.Scripts.Editor.Dungeon
         public const string Staff = "Staff";
         public const string Torch = "Torch";
         public const string MaceShield = "MaceShield";
+        public const string Spellbook = "Spellbook";
+        public const string Lute = "Lute";
+        public const string BearClaws = "BearClaws";
+        public const string PantherClaws = "PantherClaws";
+        public const string RatBite = "RatBite";
 
         /// Catalog order = combat catalog index. Battle prefab slots 1-4 map to the first four entries.
         public static readonly string[] CatalogOrder =
         {
-            SwordShield, Greatsword, Bow, SwordShieldLeft, Fists, ArmingSword, Falchion, Longsword, BattleAxe, Spear, Mace, Dagger, Crossbow, Staff, Torch, MaceShield
+            SwordShield, Greatsword, Bow, SwordShieldLeft, Fists, ArmingSword, Falchion, Longsword, BattleAxe, Spear, Mace, Dagger, Crossbow, Staff, Torch, MaceShield,
+            Spellbook, Lute, BearClaws, PantherClaws, RatBite
         };
+
+        /// Catalog entries that reuse another definition's animation clips (same prefix) with their own damage.
+        public static string SharedPrefix(string name)
+        {
+            return name switch
+            {
+                Spellbook or Lute or RatBite => Fists,
+                SwordShieldLeft => SwordShield,
+                _ => name
+            };
+        }
 
         public static WeaponDefinition[] CreateAll()
         {
@@ -49,8 +66,91 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateCrossbow(),
                 CreateStaff(),
                 CreateTorch(),
-                CreateMaceShield()
+                CreateMaceShield(),
+                CreateSpellbook(),
+                CreateLute(),
+                CreateBearClaws(),
+                CreatePantherClaws(),
+                CreateRatBite()
             };
+        }
+
+        private static WeaponDefinition CreateSpellbook()
+        {
+            WeaponDefinition definition = CreateFists();
+            definition.DisplayName = "Spellbook";
+            definition.Attacks[0].Damage = 18;
+            definition.Attacks[1].Damage = 18;
+
+            return definition;
+        }
+
+        private static WeaponDefinition CreateLute()
+        {
+            WeaponDefinition definition = CreateFists();
+            definition.DisplayName = "Lute";
+            definition.Attacks[0].Damage = 12;
+            definition.Attacks[1].Damage = 12;
+
+            return definition;
+        }
+
+        private static WeaponDefinition CreateRatBite()
+        {
+            WeaponDefinition definition = CreateFists();
+            definition.DisplayName = "Rat Bite";
+            definition.Attacks[0].Damage = 2;
+            definition.Attacks[1].Damage = 2;
+            definition.CanBlock = false;
+
+            return definition;
+        }
+
+        private static WeaponDefinition CreateBearClaws()
+        {
+            WeaponDefinition definition = CreateFists();
+            definition.Prefix = BearClaws;
+            definition.DisplayName = "Bear Claws";
+            definition.Reach = 1.5f;
+            definition.BladeTip = 0.35f;
+            definition.CanBlock = false;
+
+            foreach (AttackDefinition attack in definition.Attacks)
+            {
+                attack.Damage = 27;
+                attack.Windup = 0.5f;
+                attack.Active = 0.18f;
+                attack.Recovery = 0.55f;
+                attack.ComboStart = 0.6f;
+                attack.ComboEnd = 1.1f;
+                attack.Stagger = 0.3f;
+                attack.MoveMultiplier = 0.7f;
+            }
+
+            return definition;
+        }
+
+        private static WeaponDefinition CreatePantherClaws()
+        {
+            WeaponDefinition definition = CreateFists();
+            definition.Prefix = PantherClaws;
+            definition.DisplayName = "Panther Claws";
+            definition.Reach = 1.2f;
+            definition.BladeTip = 0.25f;
+            definition.CanBlock = false;
+
+            foreach (AttackDefinition attack in definition.Attacks)
+            {
+                attack.Damage = 23;
+                attack.Windup = 0.18f;
+                attack.Active = 0.1f;
+                attack.Recovery = 0.22f;
+                attack.ComboStart = 0.2f;
+                attack.ComboEnd = 0.48f;
+                attack.MoveMultiplier = 0.9f;
+            }
+
+            return definition;
         }
 
         public static WeaponDefinition Find(IEnumerable<WeaponDefinition> definitions, string prefix)

@@ -57,6 +57,15 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public NetworkBool HasLoadedKit { get; private set; }
 
+        [Networked]
+        public byte SkillA { get; private set; }
+
+        [Networked]
+        public byte SkillB { get; private set; } = 1;
+
+        [Networked]
+        public int PerkMask { get; private set; } = 1;
+
         [SerializeField]
         private InventoryComponent _kit;
 
@@ -98,6 +107,7 @@ namespace Game.Scripts.Dungeon
                 DungeonContext.Instance.SetLocalSession(this);
 
             RpcSetProfile(StashService.LoadLevel(), StashService.LoadExperience(), StashService.LoadClass(), StashService.LoadName());
+            RpcSetBuild(StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask());
             SendInventory(LoadKit, StashService.LoadKit());
             SendInventory(LoadStash, StashService.LoadStash());
         }
@@ -132,6 +142,7 @@ namespace Game.Scripts.Dungeon
             }
 
             StashService.SaveProfile(Level, Experience, ClassId, DisplayName);
+            StashService.SaveBuild(SkillA, SkillB, PerkMask);
         }
 
         public void OnDied(AdventurerComponent adventurer)
@@ -179,8 +190,75 @@ namespace Game.Scripts.Dungeon
                 return;
 
             ClassId = classId;
+            SkillA = 0;
+            SkillB = 1;
+            PerkMask = 1;
             _stash.TakeAllFrom(_kit);
             GiveDefaultKit();
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcSelectSkill(byte slot, byte index)
+        {
+            if (State != SessionState.Lobby || index >= Class.Skills.Length)
+                return;
+
+            if (slot == 0)
+            {
+                if (SkillB == index)
+                    SkillB = SkillA;
+
+                SkillA = index;
+            }
+            else
+            {
+                if (SkillA == index)
+                    SkillA = SkillB;
+
+                SkillB = index;
+            }
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcTogglePerk(byte index)
+        {
+            if (State != SessionState.Lobby || index >= Class.Perks.Length)
+                return;
+
+            int bit = 1 << index;
+
+            if ((PerkMask & bit) != 0)
+            {
+                PerkMask &= ~bit;
+
+                return;
+            }
+
+            if (CountBits(PerkMask) >= ClassConfig.PerkCountForLevel(Level))
+                return;
+
+            PerkMask |= bit;
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RpcSetBuild(byte skillA, byte skillB, int perkMask)
+        {
+            SkillA = skillA;
+            SkillB = skillB;
+            PerkMask = perkMask;
+        }
+
+        private static int CountBits(int value)
+        {
+            int count = 0;
+
+            while (value != 0)
+            {
+                count += value & 1;
+                value >>= 1;
+            }
+
+            return count;
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]

@@ -48,6 +48,7 @@ namespace Game.Scripts.Battle
         public int Damage => _damage;
         public float MoveMultiplier => _moveMultiplier;
         public float StaggerDuration => _staggerDuration;
+        public float RecoveryTime => _recoveryTime;
 
         [SerializeField]
         private float _windupTime = 0.3f;

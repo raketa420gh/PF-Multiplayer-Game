@@ -16,7 +16,11 @@ namespace Game.Scripts.Dungeon
         Burn,
         Invisible,
         Rage,
-        Strength
+        Strength,
+        Fortify,
+        Rupture,
+        Taunt,
+        ArmorPenetration
     }
 
     public struct StatusEffect : INetworkStruct

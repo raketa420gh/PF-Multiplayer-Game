@@ -20,12 +20,16 @@ namespace Game.Scripts.Dungeon
         private Renderer _renderer;
 
         [SerializeField]
+        private Transform _modelRoot;
+
+        [SerializeField]
         private float _lifetime = 300f;
 
         [Networked]
         private TickTimer _despawnTimer { get; set; }
 
         private short _shownItem = -1;
+        private GameObject _model;
 
         public override void Spawned()
         {
@@ -41,8 +45,30 @@ namespace Game.Scripts.Dungeon
             _shownItem = Stack.ItemId;
             ItemConfig config = Config;
 
-            if (config != null)
-                _renderer.material.SetColor("_BaseColor", config.IconColor);
+            if (_model != null)
+                Destroy(_model);
+
+            GameObject prefab = config != null ? config.WorldModel : null;
+            _renderer.enabled = prefab == null;
+
+            if (prefab == null)
+            {
+                if (config != null)
+                    _renderer.material.SetColor("_BaseColor", config.IconColor);
+
+                return;
+            }
+
+            _model = Instantiate(prefab, _modelRoot != null ? _modelRoot : transform, false);
+            bool isWeapon = config is WeaponItemConfig;
+            _model.transform.localPosition = isWeapon ? new Vector3(0f, 0.06f, 0f) : Vector3.zero;
+            _model.transform.localRotation = isWeapon ? Quaternion.Euler(0f, 0f, 90f) : Quaternion.identity;
+
+            foreach (Collider collider in _model.GetComponentsInChildren<Collider>())
+                Destroy(collider);
+
+            foreach (Light light in _model.GetComponentsInChildren<Light>())
+                Destroy(light);
         }
 
         public override void FixedUpdateNetwork()

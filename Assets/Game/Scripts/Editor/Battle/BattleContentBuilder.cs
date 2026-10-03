@@ -85,6 +85,8 @@ namespace Game.Scripts.Editor.Battle
             GameObject crossbow = DungeonWeaponPrefabBuilder.BuildCrossbow();
             GameObject shield = BattleWeaponPrefabBuilder.BuildShield();
             GameObject bow = BattleWeaponPrefabBuilder.BuildBow();
+            GameObject book = DungeonWeaponPrefabBuilder.BuildBook();
+            GameObject lute = DungeonWeaponPrefabBuilder.BuildLute();
             arrow = BattleWeaponPrefabBuilder.BuildArrow();
             magicOrb = DungeonWeaponPrefabBuilder.BuildMagicOrb();
 
@@ -106,7 +108,12 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.Crossbow] = new[] { (crossbow, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Staff] = new[] { (staff, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Torch] = new[] { (torch, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.MaceShield] = new[] { (mace, WeaponSocket.RightHand), (shield, WeaponSocket.LeftShield) }
+                [DungeonWeaponLibrary.MaceShield] = new[] { (mace, WeaponSocket.RightHand), (shield, WeaponSocket.LeftShield) },
+                [DungeonWeaponLibrary.Spellbook] = new[] { (book, WeaponSocket.LeftHand) },
+                [DungeonWeaponLibrary.Lute] = new[] { (lute, WeaponSocket.LeftHand) },
+                [DungeonWeaponLibrary.BearClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
+                [DungeonWeaponLibrary.PantherClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
+                [DungeonWeaponLibrary.RatBite] = Array.Empty<(GameObject, WeaponSocket)>()
             };
 
             string[] order = DungeonWeaponLibrary.CatalogOrder;
@@ -118,7 +125,7 @@ namespace Game.Scripts.Editor.Battle
                 {
                     string name = order[i];
                     bool isLeft = name == DungeonWeaponLibrary.SwordShieldLeft;
-                    WeaponDefinition definition = DungeonWeaponLibrary.Find(definitions, isLeft ? DungeonWeaponLibrary.SwordShield : name);
+                    WeaponDefinition definition = FindDefinition(definitions, name);
                     loadouts[i] = CreateWeapon(sampler, name, definition, isLeft ? HandSide.Left : HandSide.Right, attachments[name]);
                 }
             }
@@ -133,6 +140,27 @@ namespace Game.Scripts.Editor.Battle
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return loadouts;
+        }
+
+        /// Definitions are matched by display identity: entries sharing clips keep their own damage through a dedicated definition.
+        private static WeaponDefinition FindDefinition(WeaponDefinition[] definitions, string name)
+        {
+            string prefix = DungeonWeaponLibrary.SharedPrefix(name);
+            string displayName = name switch
+            {
+                DungeonWeaponLibrary.Spellbook => "Spellbook",
+                DungeonWeaponLibrary.Lute => "Lute",
+                DungeonWeaponLibrary.RatBite => "Rat Bite",
+                _ => null
+            };
+
+            foreach (WeaponDefinition definition in definitions)
+            {
+                if (definition.Prefix == prefix && (displayName == null ? definition.DisplayName != "Spellbook" && definition.DisplayName != "Lute" && definition.DisplayName != "Rat Bite" : definition.DisplayName == displayName))
+                    return definition;
+            }
+
+            return DungeonWeaponLibrary.Find(definitions, prefix);
         }
 
         private static Loadout CreateWeapon(TraceSampler sampler, string assetName, WeaponDefinition definition, HandSide mainHand,

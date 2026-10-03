@@ -3,6 +3,13 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
+    [System.Serializable]
+    public struct MonsterAttachment
+    {
+        public ArmorVisual Visual;
+        public Color Color;
+    }
+
     public enum MonsterTier : byte
     {
         Common,
@@ -33,6 +40,10 @@ namespace Game.Scripts.Dungeon
         public Material BodyMaterial => _bodyMaterial;
         public float Scale => _scale;
         public bool IsUndead => _isUndead;
+        public bool IsBoss => _isBoss;
+        public float LungeImpulse => _lungeImpulse;
+        public MonsterAttachment[] Attachments => _attachments;
+        public DungeonSound Voice => _voice;
 
         [SerializeField]
         private string _displayName = "Skeleton";
@@ -90,5 +101,17 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private bool _isUndead = true;
+
+        [SerializeField]
+        private bool _isBoss;
+
+        [SerializeField]
+        private float _lungeImpulse;
+
+        [SerializeField]
+        private MonsterAttachment[] _attachments = System.Array.Empty<MonsterAttachment>();
+
+        [SerializeField]
+        private DungeonSound _voice = DungeonSound.Rattle;
     }
 }

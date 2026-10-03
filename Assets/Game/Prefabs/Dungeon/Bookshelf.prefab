@@ -317,6 +317,7 @@ GameObject:
   - component: {fileID: 4097760902026628352}
   - component: {fileID: 4216048768874147324}
   - component: {fileID: 4701326647453143687}
+  - component: {fileID: 4274923579211087949}
   m_Layer: 0
   m_Name: Bookshelf
   m_TagString: Untagged
@@ -363,6 +364,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 4216048768874147324}
   - {fileID: 4701326647453143687}
+  - {fileID: 4274923579211087949}
   - {fileID: 818269920068369536}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4216048768874147324
@@ -430,3 +432,20 @@ MonoBehaviour:
   _lid: {fileID: 0}
   _lidOpenEuler: {x: 0, y: 0, z: 0}
   _isRemovedWhenEmpty: 0
+--- !u!114 &4274923579211087949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8499364846818659483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31536fe55d512ed4da08994463ee7d88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.InteractableSoundComponent
+  _door: {fileID: 0}
+  _container: {fileID: 4701326647453143687}
+  _portal: {fileID: 0}
+  _lever: {fileID: 0}
+  _loop: {fileID: 0}

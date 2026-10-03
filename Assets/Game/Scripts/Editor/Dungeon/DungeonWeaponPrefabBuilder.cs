@@ -72,19 +72,23 @@ namespace Game.Scripts.Editor.Dungeon
             Material wood = BattleEditorUtility.GetMaterial("DarkWood", new Color(0.22f, 0.14f, 0.08f));
             Material crystal = BattleEditorUtility.GetUnlitMaterial("Crystal", new Color(0.5f, 0.75f, 1f, 0.9f));
             GameObject root = new GameObject("Staff");
-            Transform parent = root.transform;
+            // Gripped a third of the way up and tilted away from the face so the crystal sits at the upper right of the view.
+            Transform parent = BattleEditorUtility.CreateChild("Grip", root.transform, Vector3.zero).transform;
+            parent.localRotation = Quaternion.Euler(-35f, 25f, 0f);
 
-            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Shaft", parent, new Vector3(0f, 0f, 0.5f),
-                new Vector3(90f, 0f, 0f), new Vector3(0.04f, 0.85f, 0.04f), wood);
-            BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Crystal", parent, new Vector3(0f, 0f, 1.4f), Vector3.zero, Vector3.one * 0.12f, crystal);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Shaft", parent, new Vector3(0f, 0f, 0.25f),
+                new Vector3(90f, 0f, 0f), new Vector3(0.04f, 0.75f, 0.04f), wood);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Ferrule", parent, new Vector3(0f, 0f, -0.48f),
+                new Vector3(90f, 0f, 0f), new Vector3(0.045f, 0.03f, 0.045f), BattleEditorUtility.GetMaterial("Steel", new Color(0.6f, 0.6f, 0.65f)));
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Crystal", parent, new Vector3(0f, 0f, 1.05f), Vector3.zero, Vector3.one * 0.11f, crystal);
 
-            Light light = BattleEditorUtility.CreateChild("Glow", parent, new Vector3(0f, 0f, 1.4f)).AddComponent<Light>();
+            Light light = BattleEditorUtility.CreateChild("Glow", parent, new Vector3(0f, 0f, 1.05f)).AddComponent<Light>();
             light.type = LightType.Point;
             light.color = new Color(0.5f, 0.75f, 1f);
             light.range = 3f;
             light.intensity = 1.2f;
             light.shadows = LightShadows.None;
-            AddTrail(parent, 1.35f);
+            AddTrail(root.transform, 1f);
 
             return Save(root);
         }
@@ -151,6 +155,42 @@ namespace Game.Scripts.Editor.Dungeon
             return Save(root);
         }
 
+        public static GameObject BuildBook()
+        {
+            Material leather = BattleEditorUtility.GetMaterial("BookLeather", new Color(0.35f, 0.12f, 0.4f), 0f, 0.4f);
+            Material pages = BattleEditorUtility.GetMaterial("BookPages", new Color(0.85f, 0.8f, 0.65f), 0f, 0.1f);
+            Material glow = BattleEditorUtility.GetUnlitMaterial("Crystal", new Color(0.5f, 0.75f, 1f, 0.9f));
+            GameObject root = new GameObject("Book");
+            Transform parent = root.transform;
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "CoverLeft", parent, new Vector3(-0.09f, 0.0f, 0.12f), new Vector3(0f, 0f, -25f), new Vector3(0.18f, 0.015f, 0.24f), leather);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "CoverRight", parent, new Vector3(0.09f, 0.0f, 0.12f), new Vector3(0f, 0f, 25f), new Vector3(0.18f, 0.015f, 0.24f), leather);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "PagesLeft", parent, new Vector3(-0.085f, 0.015f, 0.12f), new Vector3(0f, 0f, -25f), new Vector3(0.16f, 0.025f, 0.22f), pages);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "PagesRight", parent, new Vector3(0.085f, 0.015f, 0.12f), new Vector3(0f, 0f, 25f), new Vector3(0.16f, 0.025f, 0.22f), pages);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Rune", parent, new Vector3(0f, 0.05f, 0.12f), Vector3.zero, Vector3.one * 0.05f, glow);
+            root.AddComponent<WeaponVisual>();
+
+            return Save(root);
+        }
+
+        public static GameObject BuildLute()
+        {
+            Material wood = BattleEditorUtility.GetMaterial("LuteWood", new Color(0.55f, 0.35f, 0.18f), 0f, 0.5f);
+            Material dark = BattleEditorUtility.GetMaterial("DarkWood", new Color(0.22f, 0.14f, 0.08f));
+            Material steel = BattleEditorUtility.GetMaterial("Steel", new Color(0.75f, 0.77f, 0.8f), 0.9f, 0.7f);
+            GameObject root = new GameObject("Lute");
+            Transform parent = root.transform;
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Body", parent, new Vector3(0f, 0f, 0.1f), Vector3.zero, new Vector3(0.26f, 0.1f, 0.34f), wood);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Neck", parent, new Vector3(0f, 0.02f, 0.5f), Vector3.zero, new Vector3(0.05f, 0.03f, 0.5f), dark);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Head", parent, new Vector3(0f, 0.03f, 0.78f), new Vector3(-20f, 0f, 0f), new Vector3(0.07f, 0.03f, 0.1f), dark);
+
+            for (int i = 0; i < 4; i++)
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "String" + i, parent, new Vector3(-0.015f + i * 0.01f, 0.045f, 0.4f), Vector3.zero, new Vector3(0.002f, 0.002f, 0.7f), steel);
+
+            root.AddComponent<WeaponVisual>();
+
+            return Save(root);
+        }
+
         public static GameObject BuildMagicOrb()
         {
             Material glow = BattleEditorUtility.GetUnlitMaterial("MagicOrb", new Color(0.6f, 0.7f, 1f, 1f));
@@ -174,14 +214,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void AddTrail(Transform parent, float tip)
         {
-            TrailRenderer trail = BattleEditorUtility.CreateChild("Trail", parent, new Vector3(0f, 0f, tip - 0.05f)).AddComponent<TrailRenderer>();
-            trail.time = 0.18f;
-            trail.minVertexDistance = 0.02f;
-            trail.widthCurve = AnimationCurve.Linear(0f, 0.1f, 1f, 0f);
-            trail.sharedMaterial = BattleEditorUtility.GetUnlitMaterial("Trail", new Color(1f, 1f, 1f, 0.6f));
-            trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            trail.emitting = false;
-            BattleEditorUtility.Set(parent.gameObject.AddComponent<WeaponVisual>(), "_trail", trail);
+            parent.gameObject.AddComponent<WeaponVisual>();
         }
 
         private static GameObject Save(GameObject root)

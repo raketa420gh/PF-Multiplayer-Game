@@ -44,6 +44,7 @@ GameObject:
   - component: {fileID: 3546692198863566226}
   - component: {fileID: 6641349753145237414}
   - component: {fileID: 3683320210830622243}
+  - component: {fileID: 3852519646814905286}
   m_Layer: 0
   m_Name: Coffin
   m_TagString: Untagged
@@ -90,6 +91,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 6641349753145237414}
   - {fileID: 3683320210830622243}
+  - {fileID: 3852519646814905286}
   - {fileID: 8672160435483919338}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6641349753145237414
@@ -157,6 +159,23 @@ MonoBehaviour:
   _lid: {fileID: 9038330655831993844}
   _lidOpenEuler: {x: 0, y: 0, z: 75}
   _isRemovedWhenEmpty: 0
+--- !u!114 &3852519646814905286
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 615068615241384596}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31536fe55d512ed4da08994463ee7d88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.InteractableSoundComponent
+  _door: {fileID: 0}
+  _container: {fileID: 3683320210830622243}
+  _portal: {fileID: 0}
+  _lever: {fileID: 0}
+  _loop: {fileID: 0}
 --- !u!1 &1625555022672968310
 GameObject:
   m_ObjectHideFlags: 0

@@ -13,23 +13,27 @@ MonoBehaviour:
   m_Name: LifeDrain
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Life Drain
-  _description: Regain 20 health over 5s.
-  _kind: 0
+  _description: 25 dark damage, heals you for the damage dealt. Costs 5 health.
+  _kind: 2
   _isSpell: 1
-  _charges: 5
-  _cooldown: 1
+  _charges: 99
+  _cooldown: 1.5
   _castTime: 1.5
-  _magnitude: 20
-  _duration: 5
+  _magnitude: 25
+  _duration: 0
   _radius: 0
   _effect: 0
   _damageType: 1
-  _projectileSpeed: 26
+  _projectileSpeed: 34
   _projectileGravity: 0
   _projectileCount: 1
   _projectileSpread: 0
-  _projectileKind: 1
+  _projectileKind: 4
   _effectMagnitude: 0
   _effectDuration: 0
-  _color: {r: 0.8, g: 0.2, b: 0.3, a: 1}
-  _glyph: Hp
+  _color: {r: 0.9, g: 0.2, b: 0.3, a: 1}
+  _glyph: LD
+  _healthCost: 5
+  _lifeSteal: 1
+  _spawnPrefab: {fileID: 0}
+  _staggerDuration: 0.1

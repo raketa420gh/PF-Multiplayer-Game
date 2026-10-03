@@ -12,6 +12,9 @@ namespace Game.Scripts.Dungeon
         private const string ExperienceKey = "dad.xp";
         private const string ClassKey = "dad.class";
         private const string NameKey = "dad.name";
+        private const string SkillAKey = "dad.skillA";
+        private const string SkillBKey = "dad.skillB";
+        private const string PerksKey = "dad.perks";
 
         private static readonly byte[] s_buffer = new byte[(InventoryComponent.Capacity + InventoryComponent.EquipmentCapacity) * ItemStack.ByteSize + 2];
 
@@ -21,6 +24,16 @@ namespace Game.Scripts.Dungeon
         public static int LoadExperience() => PlayerPrefs.GetInt(ExperienceKey, 0);
         public static byte LoadClass() => (byte)PlayerPrefs.GetInt(ClassKey, 0);
         public static string LoadName() => PlayerPrefs.GetString(NameKey, string.Empty);
+        public static byte LoadSkillA() => (byte)PlayerPrefs.GetInt(SkillAKey, 0);
+        public static byte LoadSkillB() => (byte)PlayerPrefs.GetInt(SkillBKey, 1);
+        public static int LoadPerkMask() => PlayerPrefs.GetInt(PerksKey, 1);
+
+        public static void SaveBuild(int skillA, int skillB, int perkMask)
+        {
+            PlayerPrefs.SetInt(SkillAKey, skillA);
+            PlayerPrefs.SetInt(SkillBKey, skillB);
+            PlayerPrefs.SetInt(PerksKey, perkMask);
+        }
 
         public static void SaveKit(InventoryComponent inventory) => Save(KitKey, inventory);
         public static void SaveStash(InventoryComponent inventory) => Save(StashKey, inventory);

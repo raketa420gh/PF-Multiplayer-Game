@@ -10,16 +10,29 @@ namespace Game.Scripts.Editor.Dungeon
         {
             BattleAnimationBuilder.Build();
             BattleAudioBuilder.Build();
+            DungeonAudioBuilder.Build();
             DungeonTextureBuilder.Build();
             BattleContentBuilder.Build();
             DungeonContentBuilder.Build();
             DungeonSceneBuilder.Build();
         }
 
+        [MenuItem("Tools/Game/Dungeon/Build Audio")]
+        public static void BuildAudio()
+        {
+            DungeonAudioBuilder.Build();
+        }
+
         [MenuItem("Tools/Game/Dungeon/Build Textures")]
         public static void BuildTextures()
         {
             DungeonTextureBuilder.Build();
+        }
+
+        [MenuItem("Tools/Game/Dungeon/Build Battle Content")]
+        public static void BuildBattleContent()
+        {
+            BattleContentBuilder.Build();
         }
 
         [MenuItem("Tools/Game/Dungeon/Build Content")]

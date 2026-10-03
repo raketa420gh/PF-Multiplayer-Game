@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 668149564472516111}
   - component: {fileID: 1290667883425447845}
   - component: {fileID: 3352612009968151077}
+  - component: {fileID: 828155063982002191}
   m_Layer: 0
   m_Name: Barrel
   m_TagString: Untagged
@@ -58,6 +59,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 1290667883425447845}
   - {fileID: 3352612009968151077}
+  - {fileID: 828155063982002191}
   - {fileID: 1096978282563887629}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &1290667883425447845
@@ -125,6 +127,23 @@ MonoBehaviour:
   _lid: {fileID: 0}
   _lidOpenEuler: {x: 0, y: 0, z: 0}
   _isRemovedWhenEmpty: 0
+--- !u!114 &828155063982002191
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4998097886986605943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31536fe55d512ed4da08994463ee7d88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.InteractableSoundComponent
+  _door: {fileID: 0}
+  _container: {fileID: 3352612009968151077}
+  _portal: {fileID: 0}
+  _lever: {fileID: 0}
+  _loop: {fileID: 0}
 --- !u!1 &5133690177127922325
 GameObject:
   m_ObjectHideFlags: 0

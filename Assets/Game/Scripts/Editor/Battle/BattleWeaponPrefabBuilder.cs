@@ -26,15 +26,7 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Pommel", parent, new Vector3(0f, 0f, -gripBack - 0.02f),
                 Vector3.zero, Vector3.one * 0.055f, darkSteel);
 
-            TrailRenderer trail = BattleEditorUtility.CreateChild("Trail", parent, new Vector3(0f, 0f, bladeTip - 0.05f)).AddComponent<TrailRenderer>();
-            trail.time = 0.18f;
-            trail.minVertexDistance = 0.02f;
-            trail.widthCurve = AnimationCurve.Linear(0f, 0.1f, 1f, 0f);
-            trail.sharedMaterial = BattleEditorUtility.GetUnlitMaterial("Trail", new Color(1f, 1f, 1f, 0.6f));
-            trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            trail.emitting = false;
-
-            BattleEditorUtility.Set(root.AddComponent<WeaponVisual>(), "_trail", trail);
+            root.AddComponent<WeaponVisual>();
 
             return Save(root);
         }

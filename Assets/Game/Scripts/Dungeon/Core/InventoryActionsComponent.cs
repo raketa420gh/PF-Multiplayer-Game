@@ -74,6 +74,29 @@ namespace Game.Scripts.Dungeon
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcSplit(NetworkBehaviourId source, int fromIndex, NetworkBehaviourId target, int x, int y, int count)
+        {
+            if (!TryResolve(source, out InventoryComponent from) || !TryResolve(target, out InventoryComponent to))
+                return;
+
+            ItemStack stack = from.Bag[fromIndex];
+            ItemConfig config = from.GetConfig(stack);
+
+            if (config == null || count <= 0 || count >= stack.Count || !to.CanPlace(config, x, y))
+                return;
+
+            from.RemoveAt(fromIndex, count);
+            to.TryPlaceAt(stack.WithCount(count), x, y);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcSort(NetworkBehaviourId target)
+        {
+            if (TryResolve(target, out InventoryComponent inventory))
+                inventory.Sort();
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcEquip(NetworkBehaviourId source, int fromIndex, EquipSlot slot)
         {
             if (!TryResolve(source, out InventoryComponent from) || !_inventory.HasEquipment)

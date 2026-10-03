@@ -47,7 +47,8 @@ namespace Game.Scripts.Dungeon
             };
         }
 
-        public void Recalculate(ClassConfig config, InventoryComponent inventory, StatusEffectComponent effects, int activeWeaponSet, int perkCount)
+        public void Recalculate(ClassConfig config, InventoryComponent inventory, StatusEffectComponent effects, int activeWeaponSet, int perkCount,
+            ShapeshiftForm form = ShapeshiftForm.None, int perkMask = 0)
         {
             System.Array.Clear(_flat, 0, _flat.Length);
             _attributes = config.BaseStats;
@@ -80,8 +81,15 @@ namespace Game.Scripts.Dungeon
                 }
             }
 
-            for (int i = 0; i < Mathf.Min(perkCount, config.Perks.Length); i++)
+            int applied = 0;
+
+            for (int i = 0; i < config.Perks.Length && applied < perkCount; i++)
             {
+                if ((perkMask & (1 << i)) == 0)
+                    continue;
+
+                applied++;
+
                 foreach (StatModifier modifier in config.Perks[i].Modifiers)
                     Apply(modifier);
             }
@@ -97,7 +105,8 @@ namespace Game.Scripts.Dungeon
             _attributes = new ClassStats(Mathf.RoundToInt(strength), Mathf.RoundToInt(vigor), Mathf.RoundToInt(agility),
                 Mathf.RoundToInt(dexterity), Mathf.RoundToInt(will), Mathf.RoundToInt(knowledge), Mathf.RoundToInt(resourcefulness));
 
-            _maxHealth = Mathf.CeilToInt((DungeonFormulas.BaseHealth(strength, vigor) + DungeonFormulas.FlatHealthBonus) * (1f + _flat[(int)StatType.MaxHealth] / 100f));
+            float healthBonus = _flat[(int)StatType.MaxHealth] + Effect(effects, StatusEffectKind.Fortify) + FormHealthBonus(form);
+            _maxHealth = Mathf.CeilToInt((DungeonFormulas.BaseHealth(strength, vigor) + DungeonFormulas.FlatHealthBonus) * (1f + healthBonus / 100f));
             _armorRating = armor + _flat[(int)StatType.ArmorRating];
             _magicResistance = DungeonFormulas.MagicResistance(will) + magicResistance + _flat[(int)StatType.MagicResistance];
             _physicalReduction = DungeonFormulas.ArmorReduction(_armorRating) + Effect(effects, StatusEffectKind.Rage) * -0.01f;
@@ -106,7 +115,7 @@ namespace Game.Scripts.Dungeon
             _magicalPower = will + _flat[(int)StatType.MagicalPower];
 
             float haste = Effect(effects, StatusEffectKind.Haste) - Effect(effects, StatusEffectKind.Slow);
-            float rating = DungeonFormulas.BaseMoveSpeed + DungeonFormulas.MoveSpeedAdd(agility) + moveAdd + _flat[(int)StatType.MoveSpeed];
+            float rating = DungeonFormulas.BaseMoveSpeed + DungeonFormulas.MoveSpeedAdd(agility) + moveAdd + _flat[(int)StatType.MoveSpeed] + FormMoveAdd(form);
             rating *= 1f + (haste + Effect(effects, StatusEffectKind.Rage) * 0.7f) / 100f;
             _moveSpeedRating = Mathf.Min(rating, DungeonFormulas.MaxMoveSpeed);
             _moveSpeedMultiplier = Mathf.Max(0.3f, _moveSpeedRating / DungeonFormulas.BaseMoveSpeed);
@@ -127,6 +136,27 @@ namespace Game.Scripts.Dungeon
             };
 
             return Mathf.RoundToInt(damage * (1f - reduction));
+        }
+
+        private static float FormHealthBonus(ShapeshiftForm form)
+        {
+            return form switch
+            {
+                ShapeshiftForm.Bear => 50f,
+                ShapeshiftForm.Rat => -95f,
+                _ => 0f
+            };
+        }
+
+        private static float FormMoveAdd(ShapeshiftForm form)
+        {
+            return form switch
+            {
+                ShapeshiftForm.Bear => -60f,
+                ShapeshiftForm.Panther => 15f,
+                ShapeshiftForm.Rat => 30f,
+                _ => 0f
+            };
         }
 
         private static float Effect(StatusEffectComponent effects, StatusEffectKind kind)

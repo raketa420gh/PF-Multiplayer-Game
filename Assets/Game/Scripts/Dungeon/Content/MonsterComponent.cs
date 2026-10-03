@@ -32,10 +32,19 @@ namespace Game.Scripts.Dungeon
         private TickTimer _despawnTimer { get; set; }
 
         public float ActionSpeed => _config.ActionSpeed;
-        public float MoveSpeedMultiplier => _config.MoveSpeed / DungeonFormulas.BaseMoveSpeed;
+        /// Monsters plant their feet while swinging so players can read and dodge the attack, as in Dark and Darker.
+        public float MoveSpeedMultiplier => _fighter.Combat.State == CombatState.Attack ? AttackMoveMultiplier : _config.MoveSpeed / DungeonFormulas.BaseMoveSpeed;
+        public bool IsBoss => _config.IsBoss;
+        public static System.Collections.Generic.IReadOnlyList<MonsterComponent> All => s_all;
+
+        private static readonly System.Collections.Generic.List<MonsterComponent> s_all = new();
+
+        /// A lunging boss keeps momentum through the windup; everyone else stands still.
+        private float AttackMoveMultiplier => _config.LungeImpulse > 0f && _fighter.Combat.Phase == AttackPhase.Windup ? 1f : 0f;
 
         public override void Spawned()
         {
+            s_all.Add(this);
             _fighter.SetStats(this);
             _fighter.Receiver.SetDefense(this);
             _fighter.Receiver.SetTeam(_team);
@@ -46,6 +55,11 @@ namespace Game.Scripts.Dungeon
             _fighter.Health.SetMaxHealth(_config.MaxHealth, true);
             _fighter.Combat.SetSlotWeapon(0, _config.WeaponIndex);
             _fighter.Combat.SetInitialSlot(0);
+        }
+
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            s_all.Remove(this);
         }
 
         public override void FixedUpdateNetwork()

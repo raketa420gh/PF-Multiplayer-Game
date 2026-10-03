@@ -41,6 +41,7 @@ namespace Game.Scripts.Editor.Dungeon
             public PortalComponent DescendPortal;
             public Transform DescendDestination;
             public DoorComponent LockedDoor;
+            public Transform BossSpawn;
             public Vector3 Center;
         }
 
@@ -91,6 +92,9 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static System.Random s_random;
 
+        public static Texture2D[] FloorMaps { get; private set; }
+        public static string[] ModuleNames { get; private set; }
+
         public static void Build(DungeonDirector director)
         {
             s_random = new System.Random(2024);
@@ -103,6 +107,45 @@ namespace Game.Scripts.Editor.Dungeon
 
             BakeNavMesh(root.gameObject);
             WriteLayouts(director, first, second);
+            FloorMaps = new[] { DungeonMinimapBuilder.Render(root.Find("Floor1"), 0f, "Floor1"), DungeonMinimapBuilder.Render(root.Find("Floor2"), FloorDrop, "Floor2") };
+            ModuleNames = BuildModuleNames();
+        }
+
+        private static string[] BuildModuleNames()
+        {
+            string[] names = new string[Grid * Grid * 2];
+
+            for (int floor = 0; floor < 2; floor++)
+            {
+                Room[,] rooms = floor == 0 ? s_floor1 : s_floor2;
+
+                for (int z = 0; z < Grid; z++)
+                {
+                    for (int x = 0; x < Grid; x++)
+                        names[floor * 9 + z * 3 + x] = RoomName(rooms[z, x], floor);
+                }
+            }
+
+            return names;
+        }
+
+        private static string RoomName(Room room, int floor)
+        {
+            return room switch
+            {
+                Room.Spawn => "Pilgrim's Rest",
+                Room.Hall => "Entrance Hall",
+                Room.Crypt => floor == 0 ? "Old Tomb" : "Howling Crypt",
+                Room.Library => floor == 0 ? "Dark Magic Library" : "Forbidden Archive",
+                Room.Armory => "Barracks",
+                Room.Treasury => floor == 0 ? "Vault" : "Treasure Hoard",
+                Room.Shrine => "High Priest's Chapel",
+                Room.TrapCorridor => "Death Hall",
+                Room.Throne => floor == 0 ? "Great Hall" : "Ritual Room",
+                Room.BonePit => "Bone Pit",
+                Room.Arrival => "Descent",
+                _ => room.ToString()
+            };
         }
 
         private static Kit BuildKit()
@@ -381,12 +424,20 @@ namespace Game.Scripts.Editor.Dungeon
                     Place(kit.Banner, module, new Vector3(-3f, 3.6f, half - 0.4f), 180f);
                     Place(kit.Banner, module, new Vector3(3f, 3.6f, half - 0.4f), 180f);
                     Container(kit.LargeChest, module, result, new Vector3(0f, 0f, 5.5f), 180f);
-                    Monster(markers, result, module.position + new Vector3(-2f, 0f, 2f), 135f);
-                    Monster(markers, result, module.position + new Vector3(2f, 0f, -2f), -45f);
-                    Monster(markers, result, module.position + new Vector3(0f, 0f, -5f), 0f);
 
                     if (floorIndex == 2)
+                    {
+                        result.BossSpawn = Marker(markers, "Boss", module.position + new Vector3(0f, 0f, 3f), 180f);
+                        Monster(markers, result, module.position + new Vector3(-4f, 0f, 2f), 135f);
+                        Monster(markers, result, module.position + new Vector3(4f, 0f, 2f), -135f);
                         result.EscapePortals.Add(Place(kit.EscapePortal, module, new Vector3(-5f, 0f, 0f), 90f, false).GetComponent<PortalComponent>());
+                    }
+                    else
+                    {
+                        Monster(markers, result, module.position + new Vector3(-2f, 0f, 2f), 135f);
+                        Monster(markers, result, module.position + new Vector3(2f, 0f, -2f), -45f);
+                        Monster(markers, result, module.position + new Vector3(0f, 0f, -5f), 0f);
+                    }
                     break;
 
                 case Room.BonePit:
@@ -483,6 +534,7 @@ namespace Game.Scripts.Editor.Dungeon
             SetArray(property.FindPropertyRelative("EscapePortals"), result.EscapePortals);
             property.FindPropertyRelative("DescendPortal").objectReferenceValue = result.DescendPortal;
             property.FindPropertyRelative("DescendDestination").objectReferenceValue = result.DescendDestination;
+            property.FindPropertyRelative("BossSpawn").objectReferenceValue = result.BossSpawn;
             property.FindPropertyRelative("Center").vector3Value = result.Center;
             property.FindPropertyRelative("Radius").floatValue = Module * Grid * 0.75f;
         }

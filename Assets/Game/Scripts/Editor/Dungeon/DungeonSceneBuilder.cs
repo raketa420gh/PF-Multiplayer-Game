@@ -59,6 +59,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_adventurerPrefab", LoadNetworkObject("Adventurer"));
             BattleEditorUtility.Set(so, "_matchPrefab", LoadNetworkObject("Match"));
             BattleEditorUtility.Set(so, "_config", config);
+            BattleEditorUtility.Set(so, "_bossPrefab", LoadNetworkObject("SkeletonChampion"));
             SerializedProperty monsters = so.FindProperty("_monsters");
             (string name, float weight)[] kinds = { ("SkeletonSwordsman", 1f), ("SkeletonArcher", 0.6f), ("Zombie", 0.8f) };
             monsters.arraySize = kinds.Length;
@@ -81,13 +82,47 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
 
             DungeonMapBuilder.Build(director);
-            DungeonUiBuilder.Build(context, database, camera);
+            DungeonUiBuilder.Build(new DungeonUiBuilder.Inputs
+            {
+                Context = context,
+                Database = database,
+                Camera = camera,
+                PreviewRig = AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("PreviewRig")),
+                PieceSet = AssetDatabase.LoadAssetAtPath<ArmorPieceSetConfig>($"{DungeonContentBuilder.ConfigsFolder}/ArmorPieces.asset"),
+                FloorMaps = DungeonMapBuilder.FloorMaps,
+                ModuleNames = DungeonMapBuilder.ModuleNames
+            });
             BuildSwarmWall(context);
+            BuildAudio(system, context);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings();
             Debug.Log($"[{nameof(DungeonSceneBuilder)}] Scene built: {ScenePath}");
+        }
+
+        private static void BuildAudio(GameObject system, DungeonContext context)
+        {
+            GameObject go = BattleEditorUtility.CreateChild("Audio", system.transform);
+            AudioSource music = go.AddComponent<AudioSource>();
+            music.playOnAwake = false;
+            AudioSource ambient = go.AddComponent<AudioSource>();
+            ambient.playOnAwake = false;
+            DungeonAudioComponent audio = go.AddComponent<DungeonAudioComponent>();
+            string[] names = System.Enum.GetNames(typeof(DungeonSound));
+            AudioClip[] clips = new AudioClip[names.Length];
+
+            for (int i = 0; i < names.Length; i++)
+                clips[i] = AssetDatabase.LoadAssetAtPath<AudioClip>(DungeonAudioBuilder.Path(names[i]));
+
+            SerializedObject so = new SerializedObject(audio);
+            BattleEditorUtility.Set(so, "_context", context);
+            BattleEditorUtility.Set(so, "_clips", clips);
+            BattleEditorUtility.Set(so, "_menuMusic", AssetDatabase.LoadAssetAtPath<AudioClip>(DungeonAudioBuilder.Path("Menu")));
+            BattleEditorUtility.Set(so, "_ambient", AssetDatabase.LoadAssetAtPath<AudioClip>(DungeonAudioBuilder.Path("Ambient")));
+            BattleEditorUtility.Set(so, "_music", music);
+            BattleEditorUtility.Set(so, "_ambientSource", ambient);
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void BuildSwarmWall(DungeonContext context)
@@ -129,6 +164,7 @@ namespace Game.Scripts.Editor.Dungeon
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = Color.black;
             camera.farClipPlane = 120f;
+            camera.nearClipPlane = 0.04f;
             go.AddComponent<AudioListener>();
             UniversalAdditionalCameraData data = go.AddComponent<UniversalAdditionalCameraData>();
             data.renderPostProcessing = true;

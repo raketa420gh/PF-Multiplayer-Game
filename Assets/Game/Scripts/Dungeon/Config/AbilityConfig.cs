@@ -11,7 +11,20 @@ namespace Game.Scripts.Dungeon
         AreaDamage,
         Dash,
         Invisibility,
-        Shield
+        Shield,
+        SpellMemory,
+        Shapeshift,
+        Taunt,
+        Spawn,
+        RestoreCharges
+    }
+
+    public enum ShapeshiftForm : byte
+    {
+        None,
+        Bear,
+        Panther,
+        Rat
     }
 
     /// Skills and spells share one definition. Skills recharge by cooldown; spells carry a limited charge count.
@@ -39,6 +52,11 @@ namespace Game.Scripts.Dungeon
         public float EffectDuration => _effectDuration;
         public Color Color => _color;
         public string Glyph => _glyph;
+        public int HealthCost => _healthCost;
+        public float LifeSteal => _lifeSteal;
+        public Fusion.NetworkObject SpawnPrefab => _spawnPrefab;
+        public float StaggerDuration => _staggerDuration;
+        public bool IsCooldownBased => _charges >= 99;
 
         [SerializeField]
         private string _displayName;
@@ -102,5 +120,17 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private string _glyph = "*";
+
+        [SerializeField]
+        private int _healthCost;
+
+        [SerializeField]
+        private float _lifeSteal;
+
+        [SerializeField]
+        private Fusion.NetworkObject _spawnPrefab;
+
+        [SerializeField]
+        private float _staggerDuration;
     }
 }

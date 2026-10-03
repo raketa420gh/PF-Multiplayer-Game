@@ -3,6 +3,13 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
+    public enum CastFocus : byte
+    {
+        Magic,
+        Instrument,
+        BareHands
+    }
+
     [Serializable]
     public struct ClassStats
     {
@@ -94,6 +101,8 @@ namespace Game.Scripts.Dungeon
         public StartingItem[] StartingKit => _startingKit;
         public WeaponClass[] AllowedWeapons => _allowedWeapons;
         public ArmorType[] AllowedArmor => _allowedArmor;
+        public bool CanCastBareHanded => _castFocus == CastFocus.BareHands;
+        public CastFocus Focus => _castFocus;
 
         [SerializeField]
         private byte _id;
@@ -130,6 +139,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private ArmorType[] _allowedArmor = Array.Empty<ArmorType>();
+
+        [SerializeField]
+        private CastFocus _castFocus;
 
         public bool CanUseWeapon(WeaponClass weaponClass)
         {

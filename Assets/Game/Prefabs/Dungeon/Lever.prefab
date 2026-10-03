@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8505866264163427570}
   - component: {fileID: 894045962989898137}
   - component: {fileID: 2669299532449658543}
+  - component: {fileID: 3428296121214071081}
   m_Layer: 0
   m_Name: Lever
   m_TagString: Untagged
@@ -55,6 +56,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 2669299532449658543}
+  - {fileID: 3428296121214071081}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2669299532449658543
 MonoBehaviour:
@@ -75,6 +77,23 @@ MonoBehaviour:
   _door: {fileID: 0}
   _trap: {fileID: 0}
   _handle: {fileID: 3402254759189260912}
+--- !u!114 &3428296121214071081
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1382665879451629781}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31536fe55d512ed4da08994463ee7d88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.InteractableSoundComponent
+  _door: {fileID: 0}
+  _container: {fileID: 0}
+  _portal: {fileID: 0}
+  _lever: {fileID: 2669299532449658543}
+  _loop: {fileID: 0}
 --- !u!1 &2771165144399373362
 GameObject:
   m_ObjectHideFlags: 0

@@ -39,17 +39,28 @@ namespace Game.Scripts.Editor.Dungeon
 
             ItemDatabase database = BuildItems(weapons);
             DungeonConfig config = BattleEditorUtility.LoadOrCreate<DungeonConfig>(DungeonConfigPath);
+            BuildCaltrops();
+            BuildSmokePot();
             ClassConfig[] classes = BuildClasses(database);
             Dictionary<string, LootTableConfig> loot = BuildLootTables(database);
             GameObject worldItem = BuildWorldItem(database);
             GameObject campfire = BuildCampfire();
             GameObject corpse = BuildCorpse(database, classes);
-            GameObject[] armorPieces = BuildArmorPieces();
+            ArmorPieceSetConfig pieceSet = BuildArmorPieceSet();
+            BattleEditorUtility.EnsureLayer(DungeonUiBuilder.PreviewLayer);
+            BuildPreviewRig(pieceSet);
 
-            BuildAdventurer(loadouts, arrow, orb, database, classes, config, weapons, worldItem, corpse, campfire, armorPieces);
-            BuildMonster(loadouts, arrow, orb, "SkeletonSwordsman", "Skeleton Swordsman", 117, 1.5f, 285f, 1f, 10f, false, true, 5, 25, loot["Monster"], DungeonPropBuilder.Bone, 0.98f, worldItem);
-            BuildMonster(loadouts, arrow, orb, "SkeletonArcher", "Skeleton Archer", 70, 1f, 280f, 1f, 14f, true, false, 2, 25, loot["Monster"], DungeonPropBuilder.Bone, 0.98f, worldItem);
-            BuildMonster(loadouts, arrow, orb, "Zombie", "Zombie", 168, 4.5f, 160f, 0.85f, 8f, false, false, 4, 30, loot["Monster"], DungeonPropBuilder.ZombieSkin, 1.05f, worldItem);
+            BuildAdventurer(loadouts, arrow, orb, database, classes, config, weapons, worldItem, corpse, campfire, pieceSet);
+            Color rust = new Color(0.4f, 0.3f, 0.22f);
+            Color rags = new Color(0.25f, 0.22f, 0.16f);
+            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 285f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = 5, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
+                Attachments = new[] { (ArmorVisual.Helmet, rust), (ArmorVisual.Tunic, rags) } }, loadouts, arrow, orb, worldItem, pieceSet);
+            BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 280f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = 2, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
+                Attachments = new[] { (ArmorVisual.Hood, rags) } }, loadouts, arrow, orb, worldItem, pieceSet);
+            BuildMonster(new MonsterDef { Name = "Zombie", DisplayName = "Zombie", Health = 168, Damage = 4.5f, MoveSpeed = 160f, ActionSpeed = 0.6f, Aggro = 8f, WeaponIndex = 4, Experience = 30, Loot = loot["Monster"], Body = DungeonPropBuilder.ZombieSkin, Scale = 1.05f, Voice = DungeonSound.Growl,
+                Attachments = new[] { (ArmorVisual.Tunic, new Color(0.3f, 0.3f, 0.2f)), (ArmorVisual.Pants, new Color(0.22f, 0.2f, 0.15f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
+            BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 265f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = 15, Experience = 150, Loot = loot["ChestOrnate"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
+                IsBoss = true, Lunge = 7f, Attachments = new[] { (ArmorVisual.GreatHelm, new Color(0.85f, 0.7f, 0.3f)), (ArmorVisual.PlateChest, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Greaves, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Cloak, new Color(0.35f, 0.08f, 0.1f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
 
             BuildSession(database, classes, config);
             BuildMatch(config);
@@ -79,6 +90,8 @@ namespace Game.Scripts.Editor.Dungeon
         {
             List<ItemDef> defs = DungeonItemLibrary.CreateItems();
             ItemConfig[] configs = new ItemConfig[defs.Count];
+            GameObject[] armorPieces = BuildArmorPieces();
+            (ArmorVisual visual, int prefab, HumanBodyBones bone, bool mirrored)[] mapping = ArmorMapping();
 
             for (int i = 0; i < defs.Count; i++)
             {
@@ -106,6 +119,9 @@ namespace Game.Scripts.Editor.Dungeon
                 BattleEditorUtility.Set(so, "_iconGlyph", def.Glyph);
                 BattleEditorUtility.Set(so, "_canRollRarity", def.RollsRarity);
                 SetModifiers(so, "_modifiers", def.Modifiers);
+                GameObject model = ResolveModel(def, weapons, armorPieces, mapping, out float zoom, out Vector3 euler);
+                BattleEditorUtility.Set(so, "_worldModel", def.Kind == ItemKind.Armor ? null : model);
+                BattleEditorUtility.Set(so, "_icon", model != null ? DungeonIconBuilder.Render(model, Sanitize(def.Name), zoom, euler) : null);
 
                 switch (def.Kind)
                 {
@@ -151,6 +167,54 @@ namespace Game.Scripts.Editor.Dungeon
             return database;
         }
 
+        /// Picks the 3D representation of an item: weapon attachments, armor pieces or a dedicated small model.
+        private static GameObject ResolveModel(ItemDef def, Dictionary<string, WeaponConfig> weapons, GameObject[] armorPieces,
+            (ArmorVisual visual, int prefab, HumanBodyBones bone, bool mirrored)[] mapping, out float zoom, out Vector3 euler)
+        {
+            zoom = 1f;
+            euler = Vector3.zero;
+
+            switch (def.Kind)
+            {
+                case ItemKind.Weapon:
+                    euler = new Vector3(0f, 0f, 0f);
+                    string prefix = def.WeaponPrefix ?? (def.WeaponClass == WeaponClass.Shield ? DungeonWeaponLibrary.SwordShield : null);
+
+                    if (prefix == null || !weapons.TryGetValue(prefix, out WeaponConfig weapon))
+                        return null;
+
+                    foreach (WeaponAttachment attachment in weapon.Attachments)
+                    {
+                        bool isShield = attachment.Socket is WeaponSocket.LeftShield or WeaponSocket.RightShield;
+
+                        if (def.WeaponClass == WeaponClass.Shield == isShield)
+                        {
+                            euler = isShield ? new Vector3(90f, 0f, 0f) : new Vector3(0f, -90f, -45f);
+
+                            return attachment.Prefab;
+                        }
+                    }
+
+                    return null;
+                case ItemKind.Armor:
+                    foreach ((ArmorVisual visual, int prefab, HumanBodyBones bone, bool mirrored) entry in mapping)
+                    {
+                        if (entry.visual == def.Visual)
+                        {
+                            zoom = 1.1f;
+
+                            return armorPieces[entry.prefab];
+                        }
+                    }
+
+                    return null;
+                default:
+                    zoom = 1.05f;
+
+                    return DungeonItemModelBuilder.Build(def);
+            }
+        }
+
         private static void SetModifiers(SerializedObject so, string property, IList<StatModifier> modifiers)
         {
             SerializedProperty array = so.FindProperty(property);
@@ -193,6 +257,10 @@ namespace Game.Scripts.Editor.Dungeon
             if (def.Kind == AbilityKind.Projectile && def.HitEffect != StatusEffectKind.None)
                 BattleEditorUtility.Set(so, "_effect", def.HitEffect);
 
+            BattleEditorUtility.Set(so, "_healthCost", def.HealthCost);
+            BattleEditorUtility.Set(so, "_lifeSteal", def.LifeSteal);
+            BattleEditorUtility.Set(so, "_staggerDuration", def.Stagger);
+            BattleEditorUtility.Set(so, "_spawnPrefab", def.SpawnPrefab != null ? AssetDatabase.LoadAssetAtPath<GameObject>(Prefab(def.SpawnPrefab)).GetComponent<NetworkObject>() : null);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return config;
@@ -200,7 +268,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static ClassConfig[] BuildClasses(ItemDatabase database)
         {
-            ClassDef[] defs = DungeonItemLibrary.CreateClasses();
+            ClassDef[] defs = DungeonClassLibrary.CreateClasses();
             ClassConfig[] configs = new ClassConfig[defs.Length];
 
             for (int i = 0; i < defs.Length; i++)
@@ -271,6 +339,7 @@ namespace Game.Scripts.Editor.Dungeon
                 for (int w = 0; w < def.Weapons.Length; w++)
                     weapons.GetArrayElementAtIndex(w).intValue = (int)def.Weapons[w];
 
+                BattleEditorUtility.Set(so, "_castFocus", def.Focus);
                 SerializedProperty armor = so.FindProperty("_allowedArmor");
                 armor.arraySize = def.Armor.Length;
 
@@ -393,7 +462,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void BuildAdventurer(BattleContentBuilder.Loadout[] loadouts, GameObject arrow, GameObject orb, ItemDatabase database,
             ClassConfig[] classes, DungeonConfig config, Dictionary<string, WeaponConfig> weapons, GameObject worldItem, GameObject corpse, GameObject campfire,
-            GameObject[] armorPieces)
+            ArmorPieceSetConfig pieceSet)
         {
             BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(loadouts, arrow, orb, 2, "Adventurer");
             GameObject root = parts.Root;
@@ -419,11 +488,15 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_corpsePrefab", corpse.GetComponent<NetworkObject>());
             BattleEditorUtility.Set(so, "_campfirePrefab", campfire.GetComponent<NetworkObject>());
             BattleEditorUtility.Set(so, "_fistsWeapon", weapons[DungeonWeaponLibrary.Fists]);
+            BattleEditorUtility.Set(so, "_formWeapons", new[] { weapons[DungeonWeaponLibrary.BearClaws], weapons[DungeonWeaponLibrary.PantherClaws], weapons[DungeonWeaponLibrary.RatBite] });
             so.ApplyModifiedPropertiesWithoutUndo();
 
             Transform rightHand = parts.Animator.GetBoneTransform(HumanBodyBones.RightHand);
             Light torchLight = DungeonPropBuilder.PointLight(rightHand, new Vector3(0f, 0.35f, 0.1f), new Color(1f, 0.65f, 0.3f), 9f, 2.6f, false, true);
             torchLight.enabled = false;
+            Transform leftHand = parts.Animator.GetBoneTransform(HumanBodyBones.LeftHand);
+            Light handGlow = DungeonPropBuilder.PointLight(leftHand, new Vector3(0f, 0.05f, 0.08f), new Color(0.6f, 0.6f, 1f), 3f, 1.2f, false);
+            handGlow.enabled = false;
 
             AdventurerVisualComponent visual = root.AddComponent<AdventurerVisualComponent>();
             so = new SerializedObject(visual);
@@ -431,13 +504,45 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_animator", parts.Animator);
             BattleEditorUtility.Set(so, "_body", parts.Renderer);
             BattleEditorUtility.Set(so, "_torchLight", torchLight);
-            SerializedProperty pieces = so.FindProperty("_pieces");
+            BattleEditorUtility.Set(so, "_handGlow", handGlow);
+            BattleEditorUtility.Set(so, "_pieceSet", pieceSet);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            BattleEditorUtility.Set(root.AddComponent<FootstepComponent>(), "_fighter", parts.Fighter);
+            BattleEditorUtility.Set(root.AddComponent<AdventurerSoundComponent>(), "_adventurer", adventurer);
+            BattleContentBuilder.SavePrefab(root, Prefab("Adventurer"));
+        }
+
+        public static GameObject BuildPreviewRig(ArmorPieceSetConfig pieceSet)
+        {
+            GameObject root = new GameObject("PreviewRig");
+            int layer = LayerMask.NameToLayer(DungeonUiBuilder.PreviewLayer);
+            GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath), root.transform);
+            model.name = "Model";
+            Animator animator = model.GetComponent<Animator>();
+            animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<AnimatorController>(BattleEditorUtility.ControllerPath);
+            animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            SkinnedMeshRenderer renderer = model.GetComponentInChildren<SkinnedMeshRenderer>();
+            renderer.sharedMaterial = BattleEditorUtility.GetMaterial("FighterBody", new Color(0.62f, 0.66f, 0.72f));
+            renderer.updateWhenOffscreen = true;
+            BattlePoseRig.CreateSockets(animator);
+            BattleEditorUtility.SetLayerRecursively(root, layer);
+
+            return BattleContentBuilder.SavePrefab(root, Prefab("PreviewRig"));
+        }
+
+        private static ArmorPieceSetConfig BuildArmorPieceSet()
+        {
+            GameObject[] armorPieces = BuildArmorPieces();
+            ArmorPieceSetConfig config = BattleEditorUtility.LoadOrCreate<ArmorPieceSetConfig>($"{ConfigsFolder}/ArmorPieces.asset");
+            SerializedObject so = new SerializedObject(config);
+            SerializedProperty entries = so.FindProperty("_entries");
             (ArmorVisual visual, int prefab, HumanBodyBones bone, bool mirrored)[] mapping = ArmorMapping();
-            pieces.arraySize = mapping.Length;
+            entries.arraySize = mapping.Length;
 
             for (int i = 0; i < mapping.Length; i++)
             {
-                SerializedProperty element = pieces.GetArrayElementAtIndex(i);
+                SerializedProperty element = entries.GetArrayElementAtIndex(i);
                 element.FindPropertyRelative("Visual").intValue = (int)mapping[i].visual;
                 element.FindPropertyRelative("Prefab").objectReferenceValue = armorPieces[mapping[i].prefab];
                 element.FindPropertyRelative("Bone").intValue = (int)mapping[i].bone;
@@ -445,7 +550,30 @@ namespace Game.Scripts.Editor.Dungeon
             }
 
             so.ApplyModifiedPropertiesWithoutUndo();
-            BattleContentBuilder.SavePrefab(root, Prefab("Adventurer"));
+
+            return config;
+        }
+
+        private sealed class MonsterDef
+        {
+            public string Name;
+            public string DisplayName;
+            public int Health;
+            public float Damage;
+            public float MoveSpeed;
+            public float ActionSpeed;
+            public float Aggro;
+            public bool IsRanged;
+            public bool CanBlock;
+            public int WeaponIndex;
+            public int Experience;
+            public LootTableConfig Loot;
+            public Material Body;
+            public float Scale;
+            public bool IsBoss;
+            public float Lunge;
+            public DungeonSound Voice = DungeonSound.Rattle;
+            public (ArmorVisual, Color)[] Attachments = System.Array.Empty<(ArmorVisual, Color)>();
         }
 
         private static (ArmorVisual, int, HumanBodyBones, bool)[] ArmorMapping()
@@ -501,35 +629,50 @@ namespace Game.Scripts.Editor.Dungeon
             return prefab;
         }
 
-        private static void BuildMonster(BattleContentBuilder.Loadout[] loadouts, GameObject arrow, GameObject orb, string name, string displayName,
-            int health, float damage, float moveSpeed, float actionSpeed, float aggro, bool isRanged, bool canBlock, int weaponIndex, int experience,
-            LootTableConfig lootTable, Material body, float scale, GameObject worldItem)
+        private static void BuildMonster(MonsterDef def, BattleContentBuilder.Loadout[] loadouts, GameObject arrow, GameObject orb, GameObject worldItem,
+            ArmorPieceSetConfig pieceSet)
         {
-            MonsterConfig config = BattleEditorUtility.LoadOrCreate<MonsterConfig>($"{MonstersFolder}/{name}.asset");
+            MonsterConfig config = BattleEditorUtility.LoadOrCreate<MonsterConfig>($"{MonstersFolder}/{def.Name}.asset");
             SerializedObject so = new SerializedObject(config);
-            BattleEditorUtility.Set(so, "_displayName", displayName);
-            BattleEditorUtility.Set(so, "_maxHealth", health);
-            BattleEditorUtility.Set(so, "_damageMultiplier", damage);
-            BattleEditorUtility.Set(so, "_moveSpeed", moveSpeed);
-            BattleEditorUtility.Set(so, "_actionSpeed", actionSpeed);
-            BattleEditorUtility.Set(so, "_aggroRange", aggro);
-            BattleEditorUtility.Set(so, "_leashRange", 24f);
-            BattleEditorUtility.Set(so, "_armorReduction", -0.22f);
-            BattleEditorUtility.Set(so, "_magicReduction", -0.17f);
-            BattleEditorUtility.Set(so, "_weaponIndex", weaponIndex);
-            BattleEditorUtility.Set(so, "_experience", experience);
-            BattleEditorUtility.Set(so, "_lootTable", lootTable);
-            BattleEditorUtility.Set(so, "_isRanged", isRanged);
-            BattleEditorUtility.Set(so, "_canBlock", canBlock);
-            BattleEditorUtility.Set(so, "_bodyMaterial", body);
-            BattleEditorUtility.Set(so, "_scale", scale);
+            BattleEditorUtility.Set(so, "_displayName", def.DisplayName);
+            BattleEditorUtility.Set(so, "_maxHealth", def.Health);
+            BattleEditorUtility.Set(so, "_damageMultiplier", def.Damage);
+            BattleEditorUtility.Set(so, "_moveSpeed", def.MoveSpeed);
+            BattleEditorUtility.Set(so, "_actionSpeed", def.ActionSpeed);
+            BattleEditorUtility.Set(so, "_aggroRange", def.Aggro);
+            BattleEditorUtility.Set(so, "_leashRange", def.IsBoss ? 16f : 24f);
+            BattleEditorUtility.Set(so, "_armorReduction", def.IsBoss ? 0.1f : -0.22f);
+            BattleEditorUtility.Set(so, "_magicReduction", def.IsBoss ? 0.1f : -0.17f);
+            BattleEditorUtility.Set(so, "_weaponIndex", def.WeaponIndex);
+            BattleEditorUtility.Set(so, "_experience", def.Experience);
+            BattleEditorUtility.Set(so, "_lootTable", def.Loot);
+            BattleEditorUtility.Set(so, "_isRanged", def.IsRanged);
+            BattleEditorUtility.Set(so, "_canBlock", def.CanBlock);
+            BattleEditorUtility.Set(so, "_bodyMaterial", def.Body);
+            BattleEditorUtility.Set(so, "_scale", def.Scale);
+            BattleEditorUtility.Set(so, "_isBoss", def.IsBoss);
+            BattleEditorUtility.Set(so, "_lungeImpulse", def.Lunge);
+            BattleEditorUtility.Set(so, "_attackPause", def.IsBoss ? new Vector2(0.4f, 0.9f) : new Vector2(0.7f, 1.6f));
+            BattleEditorUtility.Set(so, "_voice", def.Voice);
+            SerializedProperty attachments = so.FindProperty("_attachments");
+            attachments.arraySize = def.Attachments.Length;
+
+            for (int i = 0; i < def.Attachments.Length; i++)
+            {
+                attachments.GetArrayElementAtIndex(i).FindPropertyRelative("Visual").intValue = (int)def.Attachments[i].Item1;
+                attachments.GetArrayElementAtIndex(i).FindPropertyRelative("Color").colorValue = def.Attachments[i].Item2;
+            }
+
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(loadouts, arrow, orb, 1, name);
+            BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(loadouts, arrow, orb, 1, def.Name);
             GameObject root = parts.Root;
             BattleEditorUtility.Set(parts.Fighter, "_respawnDelay", 0f);
-            parts.Renderer.sharedMaterial = body;
-            parts.Animator.transform.localScale = Vector3.one * scale;
+            parts.Renderer.sharedMaterial = def.Body;
+            parts.Animator.transform.localScale = Vector3.one * def.Scale;
+            root.GetComponent<CharacterController>().radius = 0.3f * def.Scale;
+            root.GetComponent<CharacterController>().height = 1.85f * def.Scale;
+            root.GetComponent<CharacterController>().center = new Vector3(0f, 0.925f * def.Scale, 0f);
 
             MonsterComponent monster = root.AddComponent<MonsterComponent>();
             so = new SerializedObject(monster);
@@ -546,7 +689,15 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_doorMask", (LayerMask)(1 << LayerMask.NameToLayer(InteractableLayer)));
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            BattleContentBuilder.SavePrefab(root, Prefab(name));
+            MonsterVisualComponent visual = root.AddComponent<MonsterVisualComponent>();
+            so = new SerializedObject(visual);
+            BattleEditorUtility.Set(so, "_monster", monster);
+            BattleEditorUtility.Set(so, "_animator", parts.Animator);
+            BattleEditorUtility.Set(so, "_pieceSet", pieceSet);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            BattleEditorUtility.Set(root.AddComponent<FootstepComponent>(), "_fighter", parts.Fighter);
+
+            BattleContentBuilder.SavePrefab(root, Prefab(def.Name));
         }
 
         private static GameObject BuildCorpse(ItemDatabase database, ClassConfig[] classes)
@@ -620,9 +771,11 @@ namespace Game.Scripts.Editor.Dungeon
             root.AddComponent<NetworkObject>();
             root.AddComponent<NetworkTransform>();
             WorldItemComponent item = root.AddComponent<WorldItemComponent>();
+            Transform modelRoot = BattleEditorUtility.CreateChild("ModelRoot", root.transform, new Vector3(0f, 0.02f, 0f)).transform;
             SerializedObject so = new SerializedObject(item);
             BattleEditorUtility.Set(so, "_database", database);
             BattleEditorUtility.Set(so, "_renderer", root.GetComponentInChildren<MeshRenderer>());
+            BattleEditorUtility.Set(so, "_modelRoot", modelRoot);
             so.ApplyModifiedPropertiesWithoutUndo();
             AddInteractCollider(root, new Vector3(0f, 0.2f, 0f), new Vector3(0.6f, 0.5f, 0.6f));
 
@@ -657,6 +810,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_lidOpenEuler", lidOpen);
             BattleEditorUtility.Set(so, "_isRemovedWhenEmpty", removeWhenEmpty);
             so.ApplyModifiedPropertiesWithoutUndo();
+            BattleEditorUtility.Set(root.AddComponent<InteractableSoundComponent>(), "_container", container);
         }
 
         private static void BuildContainer(string name, string displayName, LootTableConfig table, float openTime, bool isGolden)
@@ -715,6 +869,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_blocker", leaf.GetComponent<MeshCollider>());
             so.ApplyModifiedPropertiesWithoutUndo();
             AddInteractCollider(root, new Vector3(0f, 1.5f, 0f), new Vector3(2.2f, 3f, 0.6f));
+            BattleEditorUtility.Set(root.AddComponent<InteractableSoundComponent>(), "_door", door);
             BattleContentBuilder.SavePrefab(root, Prefab("Door"));
         }
 
@@ -732,6 +887,20 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_visual", root.transform.Find("Visual").gameObject);
             so.ApplyModifiedPropertiesWithoutUndo();
             AddInteractCollider(root, new Vector3(0f, 1.3f, 0f), new Vector3(2.2f, 2.6f, 2.2f));
+            AudioSource hum = root.AddComponent<AudioSource>();
+            hum.clip = AssetDatabase.LoadAssetAtPath<AudioClip>(DungeonAudioBuilder.Path("Portal"));
+            hum.loop = true;
+            hum.playOnAwake = false;
+            hum.spatialBlend = 1f;
+            hum.rolloffMode = AudioRolloffMode.Linear;
+            hum.minDistance = 2f;
+            hum.maxDistance = 18f;
+            hum.volume = 0.5f;
+            InteractableSoundComponent sound = root.AddComponent<InteractableSoundComponent>();
+            so = new SerializedObject(sound);
+            BattleEditorUtility.Set(so, "_portal", portal);
+            BattleEditorUtility.Set(so, "_loop", hum);
+            so.ApplyModifiedPropertiesWithoutUndo();
             BattleContentBuilder.SavePrefab(root, Prefab(name));
         }
 
@@ -763,7 +932,74 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_holdTime", 0.6f);
             so.ApplyModifiedPropertiesWithoutUndo();
             AddInteractCollider(root, new Vector3(0f, 0.8f, 0f), new Vector3(0.8f, 1.6f, 0.8f));
+            BattleEditorUtility.Set(root.AddComponent<InteractableSoundComponent>(), "_lever", lever);
             BattleContentBuilder.SavePrefab(root, Prefab("Lever"));
+        }
+
+        private static void BuildCaltrops()
+        {
+            Material steel = DungeonPropBuilder.RustyMetal;
+            GameObject root = new GameObject("Caltrops");
+            System.Random random = new System.Random(5);
+
+            for (int i = 0; i < 7; i++)
+            {
+                Vector3 position = new Vector3(((float)random.NextDouble() - 0.5f) * 1.6f, 0.08f, ((float)random.NextDouble() - 0.5f) * 1.6f);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Spike" + i, root.transform, position, new Vector3(45f, random.Next(0, 90), 45f), new Vector3(0.04f, 0.18f, 0.04f), steel);
+            }
+
+            root.AddComponent<NetworkObject>();
+            root.AddComponent<NetworkTransform>();
+            TrapComponent trap = root.AddComponent<TrapComponent>();
+            SerializedObject so = new SerializedObject(trap);
+            BattleEditorUtility.Set(so, "_kind", TrapKind.Caltrops);
+            BattleEditorUtility.Set(so, "_damage", 6);
+            BattleEditorUtility.Set(so, "_period", 1f);
+            BattleEditorUtility.Set(so, "_halfExtents", new Vector3(1f, 0.5f, 1f));
+            BattleEditorUtility.Set(so, "_center", new Vector3(0f, 0.4f, 0f));
+            BattleEditorUtility.Set(so, "_victimMask", (LayerMask)(1 << LayerMask.NameToLayer(BattleEditorUtility.CharacterLayer)));
+            BattleEditorUtility.Set(so, "_lifetime", 30f);
+            BattleEditorUtility.Set(so, "_slowMagnitude", 40f);
+            BattleEditorUtility.Set(so, "_slowDuration", 2f);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            BattleContentBuilder.SavePrefab(root, Prefab("Caltrops"));
+        }
+
+        private static void BuildSmokePot()
+        {
+            GameObject root = new GameObject("SmokePot");
+            ParticleSystem smoke = BattleEditorUtility.CreateChild("Smoke", root.transform).AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = smoke.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(2f, 4f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.2f, 0.6f);
+            main.startSize = new ParticleSystem.MinMaxCurve(1.5f, 2.5f);
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.35f, 0.35f, 0.38f, 0.7f), new Color(0.2f, 0.2f, 0.22f, 0.6f));
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 120;
+            ParticleSystem.EmissionModule emission = smoke.emission;
+            emission.rateOverTime = 30f;
+            ParticleSystem.ShapeModule shape = smoke.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 2.5f;
+            ParticleSystemRenderer renderer = smoke.GetComponent<ParticleSystemRenderer>();
+            Material material = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{DungeonTextureBuilder.Folder}/Flame.png"));
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 0f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_ZWrite", 0f);
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            AssetDatabase.CreateAsset(material, $"{DungeonPropBuilder.MaterialsFolder}/Smoke.mat");
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            root.AddComponent<NetworkObject>();
+            root.AddComponent<NetworkTransform>();
+            root.AddComponent<SmokeCloudComponent>();
+            BattleContentBuilder.SavePrefab(root, Prefab("SmokePot"));
         }
 
         private static void BuildSpikeTrap()

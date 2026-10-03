@@ -32,6 +32,15 @@ namespace Game.Scripts.Dungeon
         private Button _takeAllButton;
 
         [SerializeField]
+        private Button _sortButton;
+
+        [SerializeField]
+        private TMP_Text _valueText;
+
+        [SerializeField]
+        private Image _dragGhostIcon;
+
+        [SerializeField]
         private EquipSlotView[] _slots;
 
         [SerializeField]
@@ -68,6 +77,7 @@ namespace Game.Scripts.Dungeon
         private void Awake()
         {
             _takeAllButton.onClick.AddListener(TakeAll);
+            _sortButton.onClick.AddListener(Sort);
             _tooltip.gameObject.SetActive(false);
             _dragGhost.gameObject.SetActive(false);
         }
@@ -81,6 +91,9 @@ namespace Game.Scripts.Dungeon
                 SetOther(null, string.Empty);
 
             RefreshStats();
+
+            if (_valueText != null)
+                _valueText.text = $"Gear value {_primary.TotalValue()}g";
         }
 
         public void Bind(InventoryComponent primary, InventoryActionsComponent actions, AdventurerStats stats, ClassConfig config, string title, bool allowWorldDrop)
@@ -123,8 +136,10 @@ namespace Game.Scripts.Dungeon
             _dragged = item;
             _dragGhost.gameObject.SetActive(true);
             _dragGhost.sizeDelta = new Vector2(item.Config.Width * _bagGrid.CellSize, item.Config.Height * _bagGrid.CellSize);
-            _dragGhostText.text = item.Config.IconGlyph;
+            _dragGhostText.text = item.Config.Icon != null ? string.Empty : item.Config.IconGlyph;
             _dragGhostText.color = item.Config.IconColor;
+            _dragGhostIcon.enabled = item.Config.Icon != null;
+            _dragGhostIcon.sprite = item.Config.Icon;
             HideTooltip();
             Drag(eventData);
         }
@@ -180,6 +195,8 @@ namespace Game.Scripts.Dungeon
 
                 if (item.IsEquipped)
                     _actions.RpcUnequip(item.Slot, grid.Inventory.Id, x, y);
+                else if (item.IsSplitting)
+                    _actions.RpcSplit(item.Inventory.Id, item.BagIndex, grid.Inventory.Id, x, y, item.Stack.Count / 2);
                 else
                     _actions.RpcMove(item.Inventory.Id, item.BagIndex, grid.Inventory.Id, x, y);
 
@@ -271,8 +288,18 @@ namespace Game.Scripts.Dungeon
 
         private void TakeAll()
         {
+            DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.4f);
+
             if (_other != null && _actions != null)
                 _actions.RpcTakeAll(_other.Id);
+        }
+
+        private void Sort()
+        {
+            DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.4f);
+
+            if (_primary != null && _actions != null)
+                _actions.RpcSort(_primary.Id);
         }
 
         private void RefreshSlots()

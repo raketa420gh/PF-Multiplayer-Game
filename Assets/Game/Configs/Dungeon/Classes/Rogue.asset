@@ -27,6 +27,10 @@ MonoBehaviour:
   _bodyColor: {r: 0.3, g: 0.32, b: 0.36, a: 1}
   _skills:
   - {fileID: 11400000, guid: c689fd81d98b1154ca0c9efae6f27b6e, type: 2}
+  - {fileID: 11400000, guid: 93db76d743ecf3d47ab9ea1fb4de63c5, type: 2}
+  - {fileID: 11400000, guid: 6548812fc538ff64d9fe3fd7aa25543e, type: 2}
+  - {fileID: 11400000, guid: 273f7c42aca8ca541b07a455f57ea64e, type: 2}
+  - {fileID: 11400000, guid: 99a73d5055b330840890c98e7bdc5610, type: 2}
   - {fileID: 11400000, guid: f0e51cdde4e877d4eb7a7aebde4e01b6, type: 2}
   _spells: []
   _perks:
@@ -50,6 +54,26 @@ MonoBehaviour:
     _modifiers:
     - Stat: 14
       Value: 0.05
+  - _name: Thrust
+    _description: +15% physical damage with daggers.
+    _modifiers:
+    - Stat: 14
+      Value: 0.15
+  - _name: Double Jump
+    _description: +2 agility.
+    _modifiers:
+    - Stat: 2
+      Value: 2
+  - _name: Stealth
+    _description: +1 agility.
+    _modifiers:
+    - Stat: 2
+      Value: 1
+  - _name: Jokester
+    _description: +3 resourcefulness.
+    _modifiers:
+    - Stat: 6
+      Value: 3
   _startingKit:
   - _item: {fileID: 11400000, guid: ad21c4a24d0706b45bbe07e6b4b2a8f9, type: 2}
     _slot: 9
@@ -85,3 +109,4 @@ MonoBehaviour:
     _isEquipped: 1
   _allowedWeapons: 03000906
   _allowedArmor: 0001
+  _castFocus: 0

@@ -7,6 +7,7 @@ namespace Game.Scripts.Battle
     {
         public Vector2 LookRotation => _look;
         public bool IsUiOpen => _isUiOpen;
+        public bool IsLookFrozen => _isLookFrozen;
 
         [SerializeField]
         private NetworkEvents _networkEvents;
@@ -20,6 +21,7 @@ namespace Game.Scripts.Battle
         private NetworkButtons _buttons;
         private bool _resetButtons;
         private bool _isUiOpen;
+        private bool _isLookFrozen;
 
         private void OnEnable()
         {
@@ -44,8 +46,11 @@ namespace Game.Scripts.Battle
             if (Cursor.lockState != CursorLockMode.Locked)
                 return;
 
-            _look.y = Mathf.Repeat(_look.y + Input.GetAxisRaw("Mouse X") * _sensitivity, 360f);
-            _look.x = Mathf.Clamp(_look.x - Input.GetAxisRaw("Mouse Y") * _sensitivity, -MaxPitch, MaxPitch);
+            if (!_isLookFrozen)
+            {
+                _look.y = Mathf.Repeat(_look.y + Input.GetAxisRaw("Mouse X") * _sensitivity, 360f);
+                _look.x = Mathf.Clamp(_look.x - Input.GetAxisRaw("Mouse Y") * _sensitivity, -MaxPitch, MaxPitch);
+            }
 
             Accumulate(PlayerInputButtons.Primary, Input.GetMouseButton(0));
             Accumulate(PlayerInputButtons.Secondary, Input.GetMouseButton(1));
@@ -75,6 +80,12 @@ namespace Game.Scripts.Battle
         public void SetLook(Vector2 look)
         {
             _look = look;
+        }
+
+        /// A radial menu keeps the cursor locked but stops the camera from turning.
+        public void SetLookFrozen(bool isFrozen)
+        {
+            _isLookFrozen = isFrozen;
         }
 
         /// While a menu is open the cursor is free and no gameplay input is produced.

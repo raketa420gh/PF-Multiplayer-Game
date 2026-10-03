@@ -28,6 +28,10 @@ MonoBehaviour:
   _skills:
   - {fileID: 11400000, guid: 5ec6e29689df7344a862784782b7f320, type: 2}
   - {fileID: 11400000, guid: 921c80060abaf0c40a2f258ecefc5285, type: 2}
+  - {fileID: 11400000, guid: 24a06cf2ba623e144b5bb13ac44d6924, type: 2}
+  - {fileID: 11400000, guid: 5120cdc189ca4334ba53bd8331fab52f, type: 2}
+  - {fileID: 11400000, guid: f74a7d76405c82f41ad2cbdd0a024905, type: 2}
+  - {fileID: 11400000, guid: 71ed5700160e5b2438b24dd22b351394, type: 2}
   _spells: []
   _perks:
   - _name: Two-Hander
@@ -50,6 +54,26 @@ MonoBehaviour:
     _modifiers:
     - Stat: 11
       Value: 10
+  - _name: Executioner
+    _description: +10% physical damage.
+    _modifiers:
+    - Stat: 14
+      Value: 0.1
+  - _name: Berserker
+    _description: +10 physical power.
+    _modifiers:
+    - Stat: 11
+      Value: 10
+  - _name: Carnage
+    _description: +10 move speed.
+    _modifiers:
+    - Stat: 10
+      Value: 10
+  - _name: Smash
+    _description: +5% physical damage.
+    _modifiers:
+    - Stat: 14
+      Value: 0.05
   _startingKit:
   - _item: {fileID: 11400000, guid: c396e03d12b5a744c991cc25c0434fe8, type: 2}
     _slot: 9
@@ -81,3 +105,4 @@ MonoBehaviour:
     _isEquipped: 1
   _allowedWeapons: 0100020809
   _allowedArmor: 000103
+  _castFocus: 0

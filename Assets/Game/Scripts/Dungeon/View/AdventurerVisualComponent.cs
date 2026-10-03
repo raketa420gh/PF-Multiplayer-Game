@@ -7,15 +7,6 @@ namespace Game.Scripts.Dungeon
     /// Shows class colors, equipped armor pieces on the bones, a hand torch light and invisibility.
     public sealed class AdventurerVisualComponent : NetworkBehaviour
     {
-        [System.Serializable]
-        private sealed class ArmorPiece
-        {
-            public ArmorVisual Visual;
-            public GameObject Prefab;
-            public HumanBodyBones Bone;
-            public bool IsMirrored;
-        }
-
         [SerializeField]
         private AdventurerComponent _adventurer;
 
@@ -26,7 +17,7 @@ namespace Game.Scripts.Dungeon
         private SkinnedMeshRenderer _body;
 
         [SerializeField]
-        private ArmorPiece[] _pieces;
+        private ArmorPieceSetConfig _pieceSet;
 
         [SerializeField]
         private Light _torchLight;
@@ -34,73 +25,78 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _torchFlicker = 0.35f;
 
-        private readonly Dictionary<ArmorVisual, List<GameObject>> _instances = new();
+        [SerializeField]
+        private Light _handGlow;
+
+        [SerializeField]
+        private float[] _formScales = { 1f, 1.45f, 1f, 0.4f };
+
+        [SerializeField]
+        private Color[] _formTints = { Color.white, new(0.45f, 0.3f, 0.18f), new(0.12f, 0.1f, 0.12f), new(0.45f, 0.42f, 0.4f) };
+
         private readonly List<Renderer> _renderers = new();
+        private ArmorDresser _dresser;
         private int _shownVersion = -1;
         private float _flicker;
         private bool _wasInvisible;
+        private ShapeshiftForm _shownForm;
+        private Color _classColor;
 
         public override void Spawned()
         {
-            _body.material.SetColor("_BaseColor", _adventurer.Class.BodyColor);
+            _classColor = _adventurer.Class.BodyColor;
+            _body.material.SetColor("_BaseColor", _classColor);
+            _dresser = new ArmorDresser(_animator, _pieceSet, gameObject.layer);
             _renderers.AddRange(GetComponentsInChildren<Renderer>(true));
-
-            foreach (ArmorPiece piece in _pieces)
-            {
-                Transform bone = _animator.GetBoneTransform(piece.Bone);
-
-                if (bone == null || piece.Prefab == null)
-                    continue;
-
-                GameObject instance = Instantiate(piece.Prefab, bone, false);
-
-                if (piece.IsMirrored)
-                    instance.transform.localScale = new Vector3(-1f, 1f, 1f);
-
-                instance.SetActive(false);
-
-                if (!_instances.TryGetValue(piece.Visual, out List<GameObject> list))
-                    _instances[piece.Visual] = list = new List<GameObject>();
-
-                list.Add(instance);
-            }
         }
 
         public override void Render()
         {
             if (_shownVersion != _adventurer.Inventory.Version)
-                RefreshArmor();
+            {
+                _shownVersion = _adventurer.Inventory.Version;
+                _dresser.Apply(_adventurer.Inventory);
+            }
 
             UpdateTorch();
             UpdateInvisibility();
+            UpdateHandGlow();
+            UpdateForm();
         }
 
-        private void RefreshArmor()
+        private void UpdateHandGlow()
         {
-            InventoryComponent inventory = _adventurer.Inventory;
-            _shownVersion = inventory.Version;
+            if (_handGlow == null)
+                return;
 
-            foreach (List<GameObject> list in _instances.Values)
+            AbilityConfig spell = _adventurer.ReadiedSpellConfig;
+            bool isLit = spell != null && _adventurer.Fighter.Health.IsAlive && _adventurer.Form == ShapeshiftForm.None;
+
+            if (_handGlow.enabled != isLit)
+                _handGlow.enabled = isLit;
+
+            if (isLit)
             {
-                foreach (GameObject instance in list)
-                    instance.SetActive(false);
+                _handGlow.color = spell.Color;
+                _handGlow.intensity = 1.2f + Mathf.Sin(Time.time * 6f) * 0.3f;
             }
+        }
 
-            for (int i = 0; i < InventoryComponent.EquipmentCapacity; i++)
-            {
-                ArmorItemConfig armor = inventory.GetConfig(inventory.Equipment[i]) as ArmorItemConfig;
+        private void UpdateForm()
+        {
+            ShapeshiftForm form = _adventurer.Form;
 
-                if (armor == null || !_instances.TryGetValue(armor.Visual, out List<GameObject> list))
-                    continue;
+            if (form == _shownForm)
+                return;
 
-                foreach (GameObject instance in list)
-                {
-                    instance.SetActive(true);
+            _shownForm = form;
+            int index = Mathf.Clamp((int)form, 0, _formScales.Length - 1);
+            _animator.transform.localScale = Vector3.one * _formScales[index];
+            _body.material.SetColor("_BaseColor", form == ShapeshiftForm.None ? _classColor : _formTints[index]);
+            _dresser.Clear();
 
-                    foreach (Renderer renderer in instance.GetComponentsInChildren<Renderer>())
-                        renderer.material.SetColor("_BaseColor", armor.VisualColor);
-                }
-            }
+            if (form == ShapeshiftForm.None)
+                _dresser.Apply(_adventurer.Inventory);
         }
 
         private void UpdateTorch()

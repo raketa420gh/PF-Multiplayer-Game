@@ -28,6 +28,10 @@ MonoBehaviour:
   _skills:
   - {fileID: 11400000, guid: 06ab41a003485ca47b2a61fae64a4ea8, type: 2}
   - {fileID: 11400000, guid: 19f0729b9ebc52d4fab1013eb7d981c0, type: 2}
+  - {fileID: 11400000, guid: 14e75ede620ada94fb0d375f0d825f15, type: 2}
+  - {fileID: 11400000, guid: 218fdda62821158468a2d90101f2912e, type: 2}
+  - {fileID: 11400000, guid: c53a58cc56aa32b4e81da2369014b8fd, type: 2}
+  - {fileID: 11400000, guid: 025c8e32c38ff644385f17a91cc1979d, type: 2}
   _spells: []
   _perks:
   - _name: Defense Mastery
@@ -36,7 +40,7 @@ MonoBehaviour:
     - Stat: 8
       Value: 15
   - _name: Swift
-    _description: +10 move speed from lighter armor handling.
+    _description: +10 move speed.
     _modifiers:
     - Stat: 10
       Value: 10
@@ -50,6 +54,28 @@ MonoBehaviour:
     _modifiers:
     - Stat: 9
       Value: 25
+  - _name: Dual Wield
+    _description: +10% action speed.
+    _modifiers:
+    - Stat: 13
+      Value: 10
+  - _name: Slayer
+    _description: +5 physical power.
+    _modifiers:
+    - Stat: 11
+      Value: 5
+  - _name: Projectile Resistance
+    _description: +10 armor rating.
+    _modifiers:
+    - Stat: 8
+      Value: 10
+  - _name: Counterattack
+    _description: +5 move speed, +5% action speed.
+    _modifiers:
+    - Stat: 10
+      Value: 5
+    - Stat: 13
+      Value: 5
   _startingKit:
   - _item: {fileID: 11400000, guid: 81485b83cb38163419e5794205a7c787, type: 2}
     _slot: 9
@@ -85,3 +111,4 @@ MonoBehaviour:
     _isEquipped: 1
   _allowedWeapons: 000102040506080903
   _allowedArmor: 00010203
+  _castFocus: 0
