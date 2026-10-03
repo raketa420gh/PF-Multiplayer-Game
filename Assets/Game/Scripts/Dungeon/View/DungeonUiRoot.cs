@@ -39,7 +39,7 @@ namespace Game.Scripts.Dungeon
         private bool _isInventoryOpen;
         private int _wheelSkill = -1;
         private readonly System.Collections.Generic.List<int> _wheelSpells = new();
-        private readonly System.Collections.Generic.List<(string, string, Color, string)> _wheelEntries = new();
+        private readonly System.Collections.Generic.List<(string, Sprite, string, Color, string)> _wheelEntries = new();
         private Fusion.NetworkBehaviourId _openedContainer;
 
         private void OnEnable()
@@ -123,9 +123,9 @@ namespace Game.Scripts.Dungeon
 
             if (isForms)
             {
-                _wheelEntries.Add(("Bear", "Br", new Color(0.7f, 0.5f, 0.3f), "+50% HP, slow, heavy claws"));
-                _wheelEntries.Add(("Panther", "Pn", new Color(0.4f, 0.35f, 0.5f), "fast, quick claws"));
-                _wheelEntries.Add(("Rat", "Rt", new Color(0.6f, 0.6f, 0.6f), "tiny, fragile, sneaky"));
+                _wheelEntries.Add(("Bear", null, "Br", new Color(0.7f, 0.5f, 0.3f), "+50% HP, slow, heavy claws"));
+                _wheelEntries.Add(("Panther", null, "Pn", new Color(0.4f, 0.35f, 0.5f), "fast, quick claws"));
+                _wheelEntries.Add(("Rat", null, "Rt", new Color(0.6f, 0.6f, 0.6f), "tiny, fragile, sneaky"));
                 _wheel.Open("Shapeshift", _wheelEntries, -1);
             }
             else
@@ -141,7 +141,7 @@ namespace Game.Scripts.Dungeon
                     int index = _adventurer.SkillCount + i;
                     string detail = spells[i].IsCooldownBased ? $"{spells[i].Cooldown:0}s cd" : $"{_adventurer.GetCharges(index)}/{_adventurer.GetMaxCharges(index)}";
                     _wheelSpells.Add(i);
-                    _wheelEntries.Add((spells[i].DisplayName, spells[i].Glyph, spells[i].Color, detail));
+                    _wheelEntries.Add((spells[i].DisplayName, spells[i].Icon, spells[i].Glyph, spells[i].Color, detail));
                 }
 
                 _wheel.Open(skill.DisplayName, _wheelEntries, -1);
@@ -183,7 +183,7 @@ namespace Game.Scripts.Dungeon
 
             if (adventurer != null)
             {
-                _inventory.Bind(adventurer.Inventory, adventurer.Actions, adventurer.Stats, adventurer.Class, adventurer.Class.DisplayName, true);
+                _inventory.Bind(adventurer.Inventory, adventurer.Actions, adventurer.Stats, adventurer.Class.DisplayName, true);
                 _inventory.SetSearcher(adventurer);
                 _inventoryPreview.Bind(adventurer.Inventory, adventurer.Class);
             }

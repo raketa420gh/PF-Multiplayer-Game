@@ -14,6 +14,7 @@ namespace Game.Scripts.Dungeon
         private sealed class AbilitySlot
         {
             public GameObject Root;
+            public Image Icon;
             public TMP_Text Glyph;
             public TMP_Text Key;
             public TMP_Text Charges;
@@ -24,6 +25,7 @@ namespace Game.Scripts.Dungeon
         private sealed class BeltSlot
         {
             public GameObject Root;
+            public Image Icon;
             public TMP_Text Glyph;
             public TMP_Text Count;
             public Image Frame;
@@ -306,7 +308,9 @@ namespace Game.Scripts.Dungeon
 
             AbilityConfig ability = adventurer.Abilities[index];
             float cooldown = adventurer.GetCooldownLeft(index);
-            slot.Glyph.text = ability.Glyph;
+            slot.Icon.enabled = ability.Icon != null;
+            slot.Icon.sprite = ability.Icon;
+            slot.Glyph.text = ability.Icon != null ? string.Empty : ability.Glyph;
             slot.Glyph.color = ability.Color;
             slot.Cooldown.fillAmount = ability.Cooldown > 0f ? cooldown / adventurer.GetCooldownDuration(index) : 0f;
             slot.Charges.text = ability.IsSpell && !ability.IsCooldownBased ? adventurer.GetCharges(index).ToString() : cooldown > 0f ? Mathf.CeilToInt(cooldown).ToString() : string.Empty;
@@ -320,7 +324,10 @@ namespace Game.Scripts.Dungeon
             {
                 ItemStack stack = inventory.GetEquipped((EquipSlot)((int)EquipSlot.Utility1 + i));
                 ItemConfig config = inventory.GetConfig(stack);
-                _belt[i].Glyph.text = config != null ? config.IconGlyph : string.Empty;
+                Sprite icon = config != null ? config.Icon : null;
+                _belt[i].Icon.enabled = icon != null;
+                _belt[i].Icon.sprite = icon;
+                _belt[i].Glyph.text = config != null && icon == null ? config.IconGlyph : string.Empty;
                 _belt[i].Glyph.color = config != null ? config.IconColor : Color.white;
                 _belt[i].Count.text = config != null && stack.Count > 1 ? stack.Count.ToString() : string.Empty;
                 _belt[i].Frame.color = adventurer.BeltSlot == (int)EquipSlot.Utility1 + i ? _beltSelectedColor : _beltIdleColor;

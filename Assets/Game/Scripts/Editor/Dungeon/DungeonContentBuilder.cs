@@ -19,6 +19,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const string ClassesFolder = ConfigsFolder + "/Classes";
         public const string LootFolder = ConfigsFolder + "/Loot";
         public const string MonstersFolder = ConfigsFolder + "/Monsters";
+        public const string MerchantsFolder = ConfigsFolder + "/Merchants";
         public const string ArmorFolder = DungeonPropBuilder.PrefabsFolder + "/Armor";
         public const string DatabasePath = ConfigsFolder + "/ItemDatabase.asset";
         public const string DungeonConfigPath = ConfigsFolder + "/Dungeon.asset";
@@ -28,7 +29,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         public static void Build()
         {
-            foreach (string folder in new[] { ConfigsFolder, ItemsFolder, AbilitiesFolder, ClassesFolder, LootFolder, MonstersFolder, DungeonPropBuilder.PrefabsFolder, ArmorFolder })
+            foreach (string folder in new[] { ConfigsFolder, ItemsFolder, AbilitiesFolder, ClassesFolder, LootFolder, MonstersFolder, MerchantsFolder, DungeonPropBuilder.PrefabsFolder, ArmorFolder })
                 BattleEditorUtility.EnsureFolder(folder);
 
             BattleEditorUtility.EnsureLayer(InteractableLayer);
@@ -67,7 +68,7 @@ namespace Game.Scripts.Editor.Dungeon
                 IsBoss = true, Lunge = 5f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.GreatHelm, new Color(0.85f, 0.7f, 0.3f)), (ArmorVisual.PlateChest, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Greaves, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Cloak, new Color(0.35f, 0.08f, 0.1f)) } }, loadouts, arrow, orb, database, pieceSet);
 
             BuildFigures();
-            BuildSession(database, classes, config);
+            BuildSession(database, classes, config, BuildMerchants(database));
             BuildMatch(config);
             BuildContainer("SmallOakChest", "Small Oak Chest", loot["ChestCommon"], false);
             BuildContainer("LargeOakChest", "Large Oak Chest", loot["ChestLarge"], false);
@@ -269,6 +270,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_effectDuration", def.HitDuration);
             BattleEditorUtility.Set(so, "_color", def.Color);
             BattleEditorUtility.Set(so, "_glyph", def.Glyph);
+            BattleEditorUtility.Set(so, "_icon", DungeonAbilityIconBuilder.Build(Sanitize(def.Name), def.Icon ?? DungeonAbilityIconBuilder.SymbolFor(def.Kind), def.Color));
 
             if (def.Kind == AbilityKind.Projectile && def.HitEffect != StatusEffectKind.None)
                 BattleEditorUtility.Set(so, "_effect", def.HitEffect);
@@ -325,6 +327,8 @@ namespace Game.Scripts.Editor.Dungeon
                     SerializedProperty perk = perks.GetArrayElementAtIndex(p);
                     perk.FindPropertyRelative("_name").stringValue = def.Perks[p].Name;
                     perk.FindPropertyRelative("_description").stringValue = def.Perks[p].Description;
+                    string symbol = def.Perks[p].Icon ?? (def.Perks[p].Modifiers.Length > 0 ? DungeonAbilityIconBuilder.SymbolFor(def.Perks[p].Modifiers[0].Stat) : "Chevrons");
+                    perk.FindPropertyRelative("_icon").objectReferenceValue = DungeonAbilityIconBuilder.Build(Sanitize(def.Perks[p].Name), symbol, def.Perks[p].Color ?? def.Color);
                     SerializedProperty modifiers = perk.FindPropertyRelative("_modifiers");
                     modifiers.arraySize = def.Perks[p].Modifiers.Length;
 
@@ -953,7 +957,23 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void BuildSession(ItemDatabase database, ClassConfig[] classes, DungeonConfig config)
+        /// Tavern merchants. The quartermaster is a developer stall: every item of the game in common quality for one coin.
+        private static MerchantConfig[] BuildMerchants(ItemDatabase database)
+        {
+            MerchantConfig quartermaster = BattleEditorUtility.LoadOrCreate<MerchantConfig>($"{MerchantsFolder}/Quartermaster.asset");
+            SerializedObject so = new SerializedObject(quartermaster);
+            BattleEditorUtility.Set(so, "_displayName", "The Quartermaster");
+            BattleEditorUtility.Set(so, "_description", "Developer stall: every item there is, in common quality, a single coin apiece.");
+            BattleEditorUtility.Set(so, "_color", new Color(0.85f, 0.72f, 0.45f));
+            BattleEditorUtility.Set(so, "_wares", database.Items);
+            BattleEditorUtility.Set(so, "_rarity", ItemRarity.Common);
+            BattleEditorUtility.Set(so, "_price", 1);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            return new[] { quartermaster };
+        }
+
+        private static void BuildSession(ItemDatabase database, ClassConfig[] classes, DungeonConfig config, MerchantConfig[] merchants)
         {
             GameObject root = new GameObject("PlayerSession");
             root.AddComponent<NetworkObject>();
@@ -969,6 +989,8 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_actions", actions);
             BattleEditorUtility.Set(so, "_classes", classes);
             BattleEditorUtility.Set(so, "_config", config);
+            BattleEditorUtility.Set(so, "_merchants", merchants);
+            BattleEditorUtility.Set(so, "_currency", database.Find("Gold Coins"));
             so.ApplyModifiedPropertiesWithoutUndo();
 
             BattleContentBuilder.SavePrefab(root, Prefab("PlayerSession"));

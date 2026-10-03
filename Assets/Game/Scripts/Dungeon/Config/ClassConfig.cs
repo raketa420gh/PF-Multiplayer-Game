@@ -52,6 +52,7 @@ namespace Game.Scripts.Dungeon
         public string Name => _name;
         public string Description => _description;
         public StatModifier[] Modifiers => _modifiers;
+        public Sprite Icon => _icon;
 
         [SerializeField]
         private string _name;
@@ -61,6 +62,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private StatModifier[] _modifiers = Array.Empty<StatModifier>();
+
+        [SerializeField]
+        private Sprite _icon;
     }
 
     [Serializable]

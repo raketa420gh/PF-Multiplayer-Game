@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Tavern screen: the top tabs switch between the lobby, the perks and skills page and the stash with the kit.
+    /// Tavern screen: the top tabs switch between the lobby, the perks and skills page, the stash with the kit and the merchants.
     public sealed class LobbyView : DisplayableView
     {
         [SerializeField]
@@ -18,6 +18,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private CharacterPreviewView _inventoryPreview;
+
+        [SerializeField]
+        private MerchantsView _merchants;
 
         [SerializeField]
         private Button[] _tabs;
@@ -57,7 +60,7 @@ namespace Game.Scripts.Dungeon
             if (_shownClass != config.Id)
             {
                 _shownClass = config.Id;
-                _inventory.Bind(_session.Kit, _session.Actions, _previewStats, config, "Kit", false);
+                _inventory.Bind(_session.Kit, _session.Actions, _previewStats, $"{config.DisplayName} · Kit", false);
                 _inventoryPreview.Bind(_session.Kit, config);
             }
 
@@ -71,6 +74,7 @@ namespace Game.Scripts.Dungeon
             _shownClass = -1;
             _home.Bind(session);
             _skills.Bind(session, _previewStats);
+            _merchants.Bind(session);
 
             if (session != null)
                 _inventory.SetOther(session.Stash, "Stash");

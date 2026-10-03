@@ -68,6 +68,8 @@ namespace Game.Scripts.Editor.Dungeon
         public float HitDuration;
         public Color Color = Color.white;
         public string Glyph = "*";
+        /// Symbol of DungeonAbilityIconBuilder; null picks one by the ability kind.
+        public string Icon;
         public int HealthCost;
         public float LifeSteal;
         public string SpawnPrefab;
@@ -79,6 +81,10 @@ namespace Game.Scripts.Editor.Dungeon
         public string Name;
         public string Description;
         public StatModifier[] Modifiers;
+        /// Symbol of DungeonAbilityIconBuilder; null picks one by the first modifier.
+        public string Icon;
+        /// Icon colour; the class colour when not set.
+        public Color? Color;
 
         public PerkDef(string name, string description, params StatModifier[] modifiers)
         {

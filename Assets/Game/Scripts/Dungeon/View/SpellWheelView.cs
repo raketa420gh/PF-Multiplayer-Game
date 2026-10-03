@@ -37,7 +37,7 @@ namespace Game.Scripts.Dungeon
         private Vector2 _cursor;
         private int _selected = -1;
 
-        public void Open(string title, IReadOnlyList<(string name, string glyph, Color color, string detail)> entries, int current)
+        public void Open(string title, IReadOnlyList<(string name, Sprite icon, string glyph, Color color, string detail)> entries, int current)
         {
             Show();
             _titleText.text = title;
@@ -65,7 +65,10 @@ namespace Game.Scripts.Dungeon
                 _slots[i].anchoredPosition = new Vector2(Mathf.Sin(angle), Mathf.Cos(angle)) * _radius;
                 TMP_Text glyph = _slots[i].Find("Glyph").GetComponent<TMP_Text>();
                 TMP_Text name = _slots[i].Find("Name").GetComponent<TMP_Text>();
-                glyph.text = entries[i].glyph;
+                Image icon = _slots[i].Find("Icon").GetComponent<Image>();
+                icon.enabled = entries[i].icon != null;
+                icon.sprite = entries[i].icon;
+                glyph.text = entries[i].icon != null ? string.Empty : entries[i].glyph;
                 glyph.color = entries[i].color;
                 name.text = entries[i].name + (string.IsNullOrEmpty(entries[i].detail) ? string.Empty : $"\n<size=70%>{entries[i].detail}</size>");
                 _names.Add(entries[i].name);

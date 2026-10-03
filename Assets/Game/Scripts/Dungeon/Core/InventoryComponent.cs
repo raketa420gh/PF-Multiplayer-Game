@@ -173,24 +173,53 @@ namespace Game.Scripts.Dungeon
 
             int free = FindFreeIndex();
 
-            if (free < 0)
+            if (free < 0 || !TryFindCell(config, out int cellX, out int cellY))
                 return false;
 
-            for (int y = 0; y <= _height - config.Height; y++)
+            _bag.Set(free, stack.At(cellX, cellY));
+            Version++;
+
+            return true;
+        }
+
+        /// True when a new stack of the item fits somewhere in the bag.
+        public bool HasRoom(ItemConfig config)
+        {
+            return FindFreeIndex() >= 0 && TryFindCell(config, out _, out _);
+        }
+
+        /// Items of one kind lying in the bag, all stacks together.
+        public int CountOf(int itemId)
+        {
+            int count = 0;
+
+            for (int i = 0; i < Capacity; i++)
+                count += _bag[i].ItemId == itemId ? _bag[i].Count : 0;
+
+            return count;
+        }
+
+        /// Takes up to the given number of items out of the bag stacks; returns how many were taken.
+        public int Remove(int itemId, int count)
+        {
+            int left = count;
+
+            for (int i = 0; i < Capacity && left > 0; i++)
             {
-                for (int x = 0; x <= _width - config.Width; x++)
-                {
-                    if (!CanPlace(config, x, y))
-                        continue;
+                ItemStack stack = _bag[i];
 
-                    _bag.Set(free, stack.At(x, y));
-                    Version++;
+                if (stack.ItemId != itemId)
+                    continue;
 
-                    return true;
-                }
+                int taken = Mathf.Min(left, stack.Count);
+                left -= taken;
+                _bag.Set(i, stack.Count > taken ? stack.WithCount(stack.Count - taken) : default);
             }
 
-            return false;
+            if (left < count)
+                Version++;
+
+            return count - left;
         }
 
         public bool TryPlaceAt(ItemStack stack, int x, int y)
@@ -456,6 +485,23 @@ namespace Game.Scripts.Dungeon
             }
 
             Version++;
+        }
+
+        private bool TryFindCell(ItemConfig config, out int x, out int y)
+        {
+            for (y = 0; y <= _height - config.Height; y++)
+            {
+                for (x = 0; x <= _width - config.Width; x++)
+                {
+                    if (CanPlace(config, x, y))
+                        return true;
+                }
+            }
+
+            x = -1;
+            y = -1;
+
+            return false;
         }
 
         private int FindFreeIndex()

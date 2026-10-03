@@ -6,10 +6,13 @@ using UnityEngine;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Procedural sprites of the UI: worn panels, the doll arch, perk and skill frames, the rank shield, the eye of unsearched loot.
+    /// Procedural sprites of the UI: worn panels, the doll arch, perk and skill frames, the rank shield, the eye of unsearched loot,
+    /// the hexagram of the character sheet.
     internal static class DungeonUiSpriteBuilder
     {
         public const string Folder = "Assets/Game/Textures/UI";
+        /// Corner distance of the hexagram web as a share of the half size of its sprite.
+        public const float HexagramRadius = 0.84f;
 
         public static void Build()
         {
@@ -23,6 +26,8 @@ namespace Game.Scripts.Editor.Dungeon
             Write("Vignette", 256, 256, (p, half) => new Color(0f, 0f, 0f, DungeonTextureBuilder.Step(0.5f, 1.35f, (p / half).magnitude) * 0.92f));
             Write("Glow", 128, 64, (p, half) => new Color(1f, 0.8f, 0.45f, (1f - DungeonTextureBuilder.Step(0f, 1f, (p / half).magnitude)) * 0.55f));
             Write("Eye", 64, 64, Eye);
+            Write("Hexagram", 512, 512, Hexagram);
+            Write("Pill", 128, 56, Pill);
 
             Debug.Log($"[{nameof(DungeonUiSpriteBuilder)}] Sprites built in {Folder}");
         }
@@ -92,6 +97,49 @@ namespace Game.Scripts.Editor.Dungeon
             float tone = Mathf.Lerp(Mathf.Lerp(0.12f, 0.6f, line), 1f, border);
 
             return new Color(tone, tone, tone, 1f - DungeonTextureBuilder.Step(60.5f, 62.5f, distance));
+        }
+
+        /// Pointy-top hexagon web: the outer ring is the attribute threshold, the middle one the neutral value, spokes run to the corners.
+        private static Color Hexagram(Vector2 p, Vector2 half)
+        {
+            Vector2 q = p / (half.x * HexagramRadius);
+            float radius = Mathf.Max(Mathf.Abs(q.x), Mathf.Abs(q.x) * 0.5f + Mathf.Abs(q.y) * 0.8660254f) / 0.8660254f;
+            float pixel = 1f / (half.x * HexagramRadius);
+            float outer = 1f - DungeonTextureBuilder.Step(1.2f * pixel, 2.8f * pixel, Mathf.Abs(radius - 1f));
+            float neutral = (1f - DungeonTextureBuilder.Step(0.6f * pixel, 2f * pixel, Mathf.Abs(radius - 0.5f))) * 0.6f;
+            float quarters = (1f - DungeonTextureBuilder.Step(0.4f * pixel, 1.6f * pixel, Mathf.Min(Mathf.Abs(radius - 0.25f), Mathf.Abs(radius - 0.75f)))) * 0.22f;
+            float spokes = 0f;
+
+            for (int i = 0; i < 3; i++)
+            {
+                float angle = i * Mathf.PI / 3f;
+                float distance = Mathf.Abs(q.x * Mathf.Cos(angle) - q.y * Mathf.Sin(angle));
+                spokes = Mathf.Max(spokes, (1f - DungeonTextureBuilder.Step(0.4f * pixel, 1.6f * pixel, distance)) * 0.3f);
+            }
+
+            float inside = 1f - DungeonTextureBuilder.Step(1f, 1f + 2f * pixel, radius);
+            float line = Mathf.Max(outer, Mathf.Max(neutral, Mathf.Max(quarters, spokes)) * inside);
+            float glow = (1f - DungeonTextureBuilder.Step(1f, 1.14f, radius)) * (1f - inside) * 0.35f;
+            Color plate = new Color(0.07f, 0.06f, 0.05f, Mathf.Lerp(0.82f, 0.6f, radius) * inside);
+            Color color = Color.Lerp(plate, new Color(0.86f, 0.76f, 0.55f, 1f), line);
+            color.a = Mathf.Max(Mathf.Max(plate.a, line), glow);
+
+            if (inside <= 0f && line <= 0f)
+                color = new Color(0.85f, 0.65f, 0.3f, glow);
+
+            return color;
+        }
+
+        /// Rounded plate with a white border, tinted by the stat it holds.
+        private static Color Pill(Vector2 p, Vector2 half)
+        {
+            float radius = half.y - 2f;
+            Vector2 d = new Vector2(Mathf.Max(Mathf.Abs(p.x) - (half.x - 2f - radius), 0f), p.y);
+            float distance = d.magnitude - radius;
+            float border = DungeonTextureBuilder.Step(-5f, -3.5f, distance);
+            float tone = Mathf.Lerp(0.1f, 1f, border);
+
+            return new Color(tone, tone, tone, (1f - DungeonTextureBuilder.Step(-1f, 0.5f, distance)) * Mathf.Lerp(0.92f, 1f, border));
         }
 
         /// Almond outline with an iris and a hollow pupil: marks loot nobody has searched yet.

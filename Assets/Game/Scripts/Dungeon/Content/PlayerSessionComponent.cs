@@ -26,6 +26,10 @@ namespace Game.Scripts.Dungeon
         public InventoryActionsComponent Actions => _actions;
         public string DisplayName => Name.ToString();
         public ClassConfig Class => FindClass(ClassId);
+        public MerchantConfig[] Merchants => _merchants;
+        public ItemConfig Currency => _currency;
+        /// Coins the player can pay with: the stash and the kit bag together.
+        public int Coins => _stash.CountOf(_currency.Id) + _kit.CountOf(_currency.Id);
         public AdventurerComponent Adventurer => Runner != null && Runner.TryFindBehaviour(AdventurerId, out NetworkBehaviour b) ? b as AdventurerComponent : null;
 
         [Networked]
@@ -84,6 +88,15 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private DungeonConfig _config;
+
+        [SerializeField]
+        private MerchantConfig[] _merchants = Array.Empty<MerchantConfig>();
+
+        [SerializeField]
+        private ItemConfig _currency;
+
+        [SerializeField, Tooltip("Coins a player without a single one finds in the stash on entering a scene")]
+        private int _pityCoins = 10;
 
         private readonly byte[][][] _loadChunks = new byte[2][][];
         private readonly byte[] _loadBuffer = new byte[InventoryComponent.Capacity * ItemStack.ByteSize * 2];
@@ -275,6 +288,22 @@ namespace Game.Scripts.Dungeon
             SpellMask ^= bit;
         }
 
+        /// Buys one ware (a full stack of stackables) into the stash; coins leave the stash first, then the kit bag.
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcBuy(byte merchantIndex, short itemId)
+        {
+            if (State != SessionState.Lobby || merchantIndex >= _merchants.Length)
+                return;
+
+            MerchantConfig merchant = _merchants[merchantIndex];
+            ItemConfig item = _stash.Database.Get(itemId);
+
+            if (item == null || !merchant.Sells(item) || Coins < merchant.Price || !_stash.TryAdd(ItemStack.Create(item, item.MaxStack, merchant.Rarity)))
+                return;
+
+            _kit.Remove(_currency.Id, merchant.Price - _stash.Remove(_currency.Id, merchant.Price));
+        }
+
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         private void RpcSetBuild(byte skillA, byte skillB, int perkMask, int spellMask)
         {
@@ -418,6 +447,11 @@ namespace Game.Scripts.Dungeon
                     GiveDefaultKit();
                 else
                     HasLoadedKit = true;
+            }
+            else if (Coins == 0)
+            {
+                // The stash arrives after the kit: a broke player still gets a few coins for the merchants.
+                _stash.TryAdd(ItemStack.Create(_currency, _pityCoins, _currency.BaseRarity));
             }
         }
     }

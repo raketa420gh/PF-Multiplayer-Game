@@ -209,6 +209,7 @@ namespace Game.Scripts.Editor.Dungeon
             Kit("Barrel", AtWall(North, -11.8f, 0.8f), 20f);
             Crates(12f, 18.4f, 3);
             Kit("Bag", 15.2f, 0f, 18.3f, 120f);
+            Loot("SmallOakChest", 0f, 0f, 18.8f, 180f);
             Loot("Barrel", 16.5f, 0f, -16.5f, 0f);
             Loot("Crate", 16.5f, 0f, -15.2f, 40f);
 
@@ -282,6 +283,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             Loot("SmallOakChest", 18.2f, Upper, 18.2f, -135f);
             Loot("LargeOakChest", -18.2f, Upper, -18.2f, 45f);
+            Loot("SmallOakChest", -3.6f, Upper, 18.9f, 180f);
             Crates(18.3f, -17.6f, 2, Upper);
             Kit("Barrel", -18.3f, Upper, 17.8f);
             Kit("Bag", -17.3f, Upper, 18.6f, 70f);
@@ -376,6 +378,7 @@ namespace Game.Scripts.Editor.Dungeon
             Put("SkullPile", 18.5f, 0f, 7.5f);
             Kit("Bucket_Metal", 7f, 0f, 16f, 20f);
             Kit("Chain_Coil", 17f, 0f, 11f, 70f);
+            Loot("SmallOakChest", AtWall(East, 14.5f, 0.8f), -90f);
             Monster(12f, 0f, 10f, 180f);
             Monster(17f, 0f, 17f, -135f);
 
@@ -498,6 +501,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Shelf(AtWall(South, x, 0.55f, Upper), 0f, x == -10f || x == 6f);
 
             Loot("SmallOakChest", 18.2f, Upper, 17.6f, -90f);
+            Loot("LargeOakChest", -18.8f, Upper, -17.9f, 90f);
             Kit("BookStand", 17f, Upper, -17f, -45f);
             Kit("CandleStick_Stand", 17.6f, Upper, 15f);
             Monster(-4f, 0f, 3f, 90f);
@@ -529,6 +533,7 @@ namespace Game.Scripts.Editor.Dungeon
             Loot("Crate", -10.4f, 0f, -18.6f, 15f);
             Kit("Bag", -9.2f, 0f, 4.6f, 30f);
             Kit("Stool", -12f, 0f, 2f);
+            Loot("SmallOakChest", -13f, 0f, 5f, 180f);
             Monster(-13f, 0f, -3f, 90f);
 
             Put("Brazier", 14f, 0f, -17.5f);
@@ -681,6 +686,7 @@ namespace Game.Scripts.Editor.Dungeon
             _result.EscapePortals.Add(Put("EscapePortal", -15f, 0f, -15f, 45f, false).GetComponent<PortalComponent>());
             Kit("Vase_2", 9f, 0f, -18.6f);
             Kit("Vase_Rubble_Medium", 7.6f, 0f, -18.4f, 40f);
+            Loot("SmallOakChest", AtWall(East, -14.5f, 0.8f), -90f);
             Monster(-2f, 0f, -12f, 0f);
             Monster(6f, 0f, 0f, -90f);
 
@@ -724,6 +730,7 @@ namespace Game.Scripts.Editor.Dungeon
             Put("Pillar", -9f, 0f, 9f);
             Put("Pillar", 9f, 0f, -9f);
             Loot("Barrel", 18.4f, 0f, -5f, 0f);
+            Loot("SmallOakChest", AtWall(West, 7.3f, 0.8f), 90f);
         }
 
         /// A deep ossuary crossed by bridges without railings; stairs lead down to the dead.
@@ -847,6 +854,7 @@ namespace Game.Scripts.Editor.Dungeon
             Crates(-4f, 10f, 2);
             Loot("Crate", -13.4f, 0f, 7.6f, 20f);
             Loot("Barrel", -3f, 0f, 12f, 0f);
+            Loot("SmallOakChest", AtWall(East, 0f, 0.8f), -90f);
 
             // Kitchen under the south loft.
             Put("Brazier", -13f, 0f, -17.6f);
@@ -927,6 +935,7 @@ namespace Game.Scripts.Editor.Dungeon
             Put("FallenRanger", -5f, -depth, 15f, 40f);
             Put("SkullPile", 9.5f, -depth, 18f);
             Put("SkullPile", -7.5f, -depth, 17.5f, 70f);
+            Loot("LargeOakChest", 4.5f, -depth, 18.9f, 180f);
             Loot("LargeOakChest", 17.5f, 0f, bridge, -90f);
             Loot("SmallOakChest", 17.8f, 0f, 8f, -90f);
             _result.Levers.Add(Put("Lever", 18.9f, 0f, 16.5f, -90f, false).GetComponent<LeverComponent>());
@@ -1222,7 +1231,7 @@ namespace Game.Scripts.Editor.Dungeon
             Kit(Pick("Vase_2", "Vase_4"), cx + sx * 4.6f, 0f, cz + sz * 4.6f);
             Put("Cobweb", cx - sx * 5f, Height - 0.75f, cz + sz * 5f, sx * sz > 0 ? 45f : 135f);
 
-            if (index == 0)
+            if (index == 0 || index == 3)
                 Loot("SmallOakChest", cx + sx * 4.4f, 0f, cz - sz * 4.4f, sx > 0 ? -90f : 90f);
 
             if (index != 3)
@@ -1284,6 +1293,7 @@ namespace Game.Scripts.Editor.Dungeon
             }
 
             Loot("SmallOakChest", 18.2f, Upper, -18.2f, -45f);
+            Loot("LargeOakChest", -18.9f, Upper, -7.3f, 90f);
             Crates(-18.2f, -18f, 2, Upper);
         }
 

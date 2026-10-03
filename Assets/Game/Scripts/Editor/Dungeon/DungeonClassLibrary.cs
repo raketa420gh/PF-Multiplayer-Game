@@ -17,15 +17,15 @@ namespace Game.Scripts.Editor.Dungeon
                     Stats = new ClassStats(22, 21, 9, 13, 11, 10), Color = new Color(0.85f, 0.35f, 0.2f), Body = new Color(0.8f, 0.58f, 0.45f),
                     Skills = new[]
                     {
-                        Skill("Battle Roar", "Berserk fury: +10 rage (power, speed, but less armor) for 10s.", AbilityKind.Buff, 10f, 10f, 35f, "BR", new Color(1f, 0.4f, 0.2f), StatusEffectKind.Rage, 0.4f),
-                        Skill("Unyielding Shout", "Absorb 50 damage for 8s.", AbilityKind.Shield, 50f, 8f, 40f, "US", new Color(0.9f, 0.75f, 0.4f), StatusEffectKind.None, 0.4f)
+                        Skill("Battle Roar", "Berserk fury: +10 rage (power, speed, but less armor) for 10s.", AbilityKind.Buff, 10f, 10f, 35f, "BR", new Color(1f, 0.4f, 0.2f), StatusEffectKind.Rage, 0.4f, icon: "Maw"),
+                        Skill("Unyielding Shout", "Absorb 50 damage for 8s.", AbilityKind.Shield, 50f, 8f, 40f, "US", new Color(0.9f, 0.75f, 0.4f), StatusEffectKind.None, 0.4f, icon: "Shield")
                     },
                     Perks = new[]
                     {
-                        new PerkDef("Thick Hide", "+20 armor rating and +10 magic resistance.", new StatModifier(StatType.ArmorRating, 20f), new StatModifier(StatType.MagicResistance, 10f)),
-                        new PerkDef("Giant's Constitution", "+20% max health.", new StatModifier(StatType.MaxHealth, 20f)),
-                        new PerkDef("Axe Mastery", "+8 physical power and +10% physical damage.", new StatModifier(StatType.PhysicalPower, 8f), new StatModifier(StatType.PhysicalDamageBonus, 0.1f)),
-                        new PerkDef("Bloodlust", "+12% action speed.", new StatModifier(StatType.ActionSpeed, 12f))
+                        new PerkDef("Thick Hide", "+20 armor rating and +10 magic resistance.", new StatModifier(StatType.ArmorRating, 20f), new StatModifier(StatType.MagicResistance, 10f)) { Icon = "Armor", Color = new Color(0.75f, 0.62f, 0.45f) },
+                        new PerkDef("Giant's Constitution", "+20% max health.", new StatModifier(StatType.MaxHealth, 20f)) { Icon = "Heart", Color = new Color(0.9f, 0.27f, 0.27f) },
+                        new PerkDef("Axe Mastery", "+8 physical power and +10% physical damage.", new StatModifier(StatType.PhysicalPower, 8f), new StatModifier(StatType.PhysicalDamageBonus, 0.1f)) { Icon = "Axe", Color = new Color(0.78f, 0.8f, 0.86f) },
+                        new PerkDef("Bloodlust", "+12% action speed.", new StatModifier(StatType.ActionSpeed, 12f)) { Icon = "Blood", Color = new Color(0.86f, 0.14f, 0.17f) }
                     },
                     Kit = new[] { ("Battle Axe", EquipSlot.Weapon1Main, 1, true), ("Zweihander", EquipSlot.Weapon2Main, 1, true), ("Adventurer Tunic", EquipSlot.Chest, 1, true), ("Adventurer Boots", EquipSlot.Feet, 1, true), ("Francisca Axe", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 3, true) },
                     Weapons = new[] { WeaponClass.Axe, WeaponClass.Sword, WeaponClass.Mace, WeaponClass.Spear, WeaponClass.Dagger, WeaponClass.Torch },
@@ -54,12 +54,12 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         private static AbilityDef Skill(string name, string description, AbilityKind kind, float magnitude, float duration, float cooldown, string glyph,
-            Color color, StatusEffectKind effect = StatusEffectKind.None, float castTime = 0.3f, int healthCost = 0)
+            Color color, StatusEffectKind effect = StatusEffectKind.None, float castTime = 0.3f, int healthCost = 0, string icon = null)
         {
             return new AbilityDef
             {
                 Name = name, Description = description, Kind = kind, Magnitude = magnitude, Duration = duration, Cooldown = cooldown, Glyph = glyph,
-                Color = color, Effect = effect, CastTime = castTime, HealthCost = healthCost
+                Color = color, Effect = effect, CastTime = castTime, HealthCost = healthCost, Icon = icon
             };
         }
 

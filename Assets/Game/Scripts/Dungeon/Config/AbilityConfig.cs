@@ -52,6 +52,7 @@ namespace Game.Scripts.Dungeon
         public float EffectDuration => _effectDuration;
         public Color Color => _color;
         public string Glyph => _glyph;
+        public Sprite Icon => _icon;
         public int HealthCost => _healthCost;
         public float LifeSteal => _lifeSteal;
         public Fusion.NetworkObject SpawnPrefab => _spawnPrefab;
@@ -120,6 +121,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private string _glyph = "*";
+
+        [SerializeField]
+        private Sprite _icon;
 
         [SerializeField]
         private int _healthCost;

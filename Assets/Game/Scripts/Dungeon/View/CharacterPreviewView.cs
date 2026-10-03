@@ -1,12 +1,13 @@
 using Fusion;
 using Game.Scripts.Battle;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Renders a dressed copy of the character into a texture for the inventory and tavern screens.
-    public sealed class CharacterPreviewView : MonoBehaviour
+    /// Renders a dressed copy of the character into a texture for the inventory and tavern screens. Dragging the picture turns the character.
+    public sealed class CharacterPreviewView : MonoBehaviour, IDragHandler
     {
         [SerializeField]
         private GameObject _rigPrefab;
@@ -25,6 +26,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private float _turnSpeed = 0f;
+
+        [SerializeField, Tooltip("Degrees per dragged pixel")]
+        private float _dragSpeed = 0.45f;
 
         [SerializeField, Tooltip("Tavern backdrop: hands stay empty and the body stands in the relaxed idle")]
         private bool _isUnarmed;
@@ -156,6 +160,13 @@ namespace Game.Scripts.Dungeon
         {
             foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
                 child.gameObject.layer = layer;
+        }
+
+        void IDragHandler.OnDrag(PointerEventData eventData)
+        {
+            // The camera faces the character: the front follows the cursor when the turn goes against the drag.
+            if (_rig != null)
+                _rig.transform.Rotate(0f, -eventData.delta.x * _dragSpeed, 0f, Space.Self);
         }
     }
 }

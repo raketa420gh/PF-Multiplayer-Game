@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Game.Scripts.Battle;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -36,10 +34,7 @@ namespace Game.Scripts.Dungeon
         private AbilityIconView[] _skillSlots;
 
         [SerializeField]
-        private TMP_Text _statNamesText;
-
-        [SerializeField]
-        private TMP_Text _statValuesText;
+        private StatsView _stats;
 
         [SerializeField]
         private RectTransform _tooltip;
@@ -51,10 +46,7 @@ namespace Game.Scripts.Dungeon
         private readonly List<AbilityIconView> _perkIcons = new();
         private readonly List<AbilityIconView> _skillIcons = new();
         private readonly List<AbilityIconView> _spellIcons = new();
-        private readonly StringBuilder _names = new();
-        private readonly StringBuilder _values = new();
         private PlayerSessionComponent _session;
-        private AdventurerStats _stats;
         private int _shownClass = -1;
         private (byte, byte, int, int, int) _shownBuild;
 
@@ -94,14 +86,12 @@ namespace Game.Scripts.Dungeon
                 _shownBuild = build;
                 RefreshBuild(config);
             }
-
-            RefreshStats();
         }
 
         public void Bind(PlayerSessionComponent session, AdventurerStats stats)
         {
             _session = session;
-            _stats = stats;
+            _stats.Bind(stats);
             _shownClass = -1;
         }
 
@@ -194,90 +184,12 @@ namespace Game.Scripts.Dungeon
                 _spellIcons[i].SetSelected((_session.SpellMask & (1 << i)) != 0);
         }
 
-        private void RefreshStats()
-        {
-            ClassStats attributes = _stats.Attributes;
-            _names.Clear();
-            _values.Clear();
-
-            Number("Flesh", attributes.Flesh);
-            Number("Grip", attributes.Grip);
-            Number("Reflex", attributes.Reflex);
-            Number("Craft", attributes.Craft);
-            Number("Insight", attributes.Insight);
-            Number("Resonance", attributes.Resonance);
-            Number("Health", _stats.MaxHealth);
-            Gap();
-            Number("Physical Power", _stats.PhysicalPower);
-            Bonus("Physical Damage Bonus", _stats.GetDamageMultiplier(DamageType.Physical));
-            Number("Magical Power", _stats.MagicalPower);
-            Bonus("Magical Damage Bonus", _stats.GetDamageMultiplier(DamageType.Magical));
-            Row("Bonus Spell Charges", $"+{_stats.BonusCharges}", _stats.BonusCharges);
-            Gap();
-            Number("Armor Rating", _stats.ArmorRating);
-            Share("Physical Damage Reduction", _stats.PhysicalReduction);
-            Number("Magic Resistance", _stats.MagicResistance);
-            Share("Magical Damage Reduction", _stats.MagicalReduction);
-            Gap();
-            Row("Move Speed", $"{_stats.MoveSpeedRating:0} ({_stats.MoveSpeedMultiplier * 100f:0}%)", 0f);
-            Bonus("Action Speed", _stats.ActionSpeed);
-            Bonus("Handling Speed", _stats.HandlingSpeed);
-            Bonus("Spell Casting Speed", _stats.CastSpeed);
-            Bonus("Interaction Speed", _stats.InteractionSpeed);
-            Bonus("Cooldown Recovery", _stats.CooldownSpeed);
-            Gap();
-            Number("Poise", _stats.Poise);
-            Bonus("Stagger Recovery", _stats.StaggerRecovery);
-            Bonus("Guard", _stats.Guard);
-            Bonus("Impact", _stats.Impact);
-            Row("Load", $"{_stats.Load * 100f:0}%", 0f);
-            Gap();
-            Bonus("Weakpoint Damage", _stats.Weakpoint);
-            Bonus("Perception", _stats.Perception);
-            Bonus("Mending", _stats.Mending);
-            Share("Control Resistance", _stats.ControlResistance);
-            Number("Concentration", _stats.Concentration);
-
-            _statNamesText.text = _names.ToString();
-            _statValuesText.text = _values.ToString();
-        }
-
-        private void Number(string name, float value)
-        {
-            Row(name, value.ToString("0"), value);
-        }
-
-        private void Bonus(string name, float multiplier)
-        {
-            float percent = Mathf.Round((multiplier - 1f) * 100f);
-            Row(name, $"{percent:+0;-0;0}%", percent);
-        }
-
-        private void Share(string name, float fraction)
-        {
-            float percent = Mathf.Round(fraction * 100f);
-            Row(name, $"{percent:0}%", percent);
-        }
-
-        /// Positive values are highlighted, negative ones are red, zero stays plain.
-        private void Row(string name, string value, float sign)
-        {
-            _names.AppendLine(name);
-            _values.Append("<color=#").Append(sign > 0f ? "c8e632" : sign < 0f ? "e04a3a" : "f2ede0").Append('>').Append(value).AppendLine("</color>");
-        }
-
-        private void Gap()
-        {
-            _names.AppendLine();
-            _values.AppendLine();
-        }
-
         private static void Show(AbilityIconView icon, ClassConfig config, int perk)
         {
             PerkDefinition definition = config.Perks[perk];
             string[] words = definition.Name.Split(' ');
             string glyph = words.Length > 1 ? $"{words[0][0]}{words[1][0]}" : definition.Name.Substring(0, Mathf.Min(2, definition.Name.Length));
-            icon.Set(perk, glyph, config.Color, $"<b>{definition.Name}</b>\n{definition.Description}");
+            icon.Set(perk, definition.Icon, glyph, config.Color, $"<b>{definition.Name}</b>\n{definition.Description}");
         }
 
         private static void Show(AbilityIconView icon, AbilityConfig[] pool, int index)
@@ -285,7 +197,7 @@ namespace Game.Scripts.Dungeon
             AbilityConfig ability = pool[index];
             string detail = ability.IsSpell && !ability.IsCooldownBased ? $"{ability.Charges} charges · cast {ability.CastTime:0.##}s"
                 : ability.Cooldown > 0f ? $"Cooldown {ability.Cooldown:0}s" : string.Empty;
-            icon.Set(index, ability.Glyph, ability.Color, $"<b>{ability.DisplayName}</b>\n{ability.Description}\n<size=80%><color=#9a927f>{detail}</color></size>");
+            icon.Set(index, ability.Icon, ability.Glyph, ability.Color, $"<b>{ability.DisplayName}</b>\n{ability.Description}\n<size=80%><color=#9a927f>{detail}</color></size>");
         }
 
         private void OnPerkClicked(AbilityIconView icon, PointerEventData.InputButton button)

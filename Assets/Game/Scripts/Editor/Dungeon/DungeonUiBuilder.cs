@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace Game.Scripts.Editor.Dungeon
 {
     /// Builds the uGUI layers laid out like Dark and Darker. Gameplay scenes: compass, HP bar with Q/E, belt, weapon row, minimap,
-    /// inventory with 3D doll, result and loading screens. Tavern scene: the lobby, skills and stash pages.
+    /// inventory with 3D doll, result and loading screens. Tavern scene: the lobby, skills, stash and merchants pages.
     internal static class DungeonUiBuilder
     {
         public const string PreviewLayer = "Preview";
@@ -317,15 +317,15 @@ namespace Game.Scripts.Editor.Dungeon
             TMP_Text restKey = CreateText("RestKey", hud, bottom, new Vector2(-124f, 74f), new Vector2(30f, 20f), 12f, TextAlignmentOptions.Center);
             restKey.text = "G";
 
-            List<(GameObject, TMP_Text, TMP_Text, TMP_Text, Image)> skills = new();
+            List<(GameObject, Image, TMP_Text, TMP_Text, TMP_Text, Image)> skills = new();
             skills.Add(AbilitySlot(hud, bottom, new Vector2(-272f, 44f), "Q"));
             skills.Add(AbilitySlot(hud, bottom, new Vector2(272f, 44f), "E"));
-            List<(GameObject, TMP_Text, TMP_Text, TMP_Text, Image)> spells = new();
+            List<(GameObject, Image, TMP_Text, TMP_Text, TMP_Text, Image)> spells = new();
             TMP_Text readied = CreateText("Readied", hud, bottom, new Vector2(372f, 44f), new Vector2(360f, 44f), 15f, TextAlignmentOptions.MidlineLeft);
             readied.rectTransform.pivot = new Vector2(0f, 0.5f);
 
             // Two belt groups of three: key 3 cycles the left group, key 4 the right one.
-            List<(GameObject, TMP_Text, TMP_Text, Image)> belt = new();
+            List<(GameObject, Image, TMP_Text, TMP_Text, Image)> belt = new();
 
             for (int i = 0; i < 6; i++)
                 belt.Add(BeltSlot(hud, bottom, new Vector2((i < 3 ? -182f : 78f) + i % 3 * 52f, 104f), (3 + i / 3).ToString()));
@@ -442,9 +442,10 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 SerializedProperty element = beltProperty.GetArrayElementAtIndex(i);
                 element.FindPropertyRelative("Root").objectReferenceValue = belt[i].Item1;
-                element.FindPropertyRelative("Glyph").objectReferenceValue = belt[i].Item2;
-                element.FindPropertyRelative("Count").objectReferenceValue = belt[i].Item3;
-                element.FindPropertyRelative("Frame").objectReferenceValue = belt[i].Item4;
+                element.FindPropertyRelative("Icon").objectReferenceValue = belt[i].Item2;
+                element.FindPropertyRelative("Glyph").objectReferenceValue = belt[i].Item3;
+                element.FindPropertyRelative("Count").objectReferenceValue = belt[i].Item4;
+                element.FindPropertyRelative("Frame").objectReferenceValue = belt[i].Item5;
             }
 
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -469,7 +470,7 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void WriteAbilitySlots(SerializedObject so, string property, List<(GameObject, TMP_Text, TMP_Text, TMP_Text, Image)> slots)
+        private static void WriteAbilitySlots(SerializedObject so, string property, List<(GameObject, Image, TMP_Text, TMP_Text, TMP_Text, Image)> slots)
         {
             SerializedProperty array = so.FindProperty(property);
             array.arraySize = slots.Count;
@@ -478,18 +479,20 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 SerializedProperty element = array.GetArrayElementAtIndex(i);
                 element.FindPropertyRelative("Root").objectReferenceValue = slots[i].Item1;
-                element.FindPropertyRelative("Glyph").objectReferenceValue = slots[i].Item2;
-                element.FindPropertyRelative("Key").objectReferenceValue = slots[i].Item3;
-                element.FindPropertyRelative("Charges").objectReferenceValue = slots[i].Item4;
-                element.FindPropertyRelative("Cooldown").objectReferenceValue = slots[i].Item5;
+                element.FindPropertyRelative("Icon").objectReferenceValue = slots[i].Item2;
+                element.FindPropertyRelative("Glyph").objectReferenceValue = slots[i].Item3;
+                element.FindPropertyRelative("Key").objectReferenceValue = slots[i].Item4;
+                element.FindPropertyRelative("Charges").objectReferenceValue = slots[i].Item5;
+                element.FindPropertyRelative("Cooldown").objectReferenceValue = slots[i].Item6;
             }
         }
 
-        private static (GameObject, TMP_Text, TMP_Text, TMP_Text, Image) AbilitySlot(RectTransform parent, Vector2 anchor, Vector2 position, string key)
+        private static (GameObject, Image, TMP_Text, TMP_Text, TMP_Text, Image) AbilitySlot(RectTransform parent, Vector2 anchor, Vector2 position, string key)
         {
             RectTransform slot = CreateRect("Ability" + key, parent, anchor, position, new Vector2(56f, 56f));
             CreateImage("Back", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(56f, 56f), s_panelLight);
             CreateImage("Frame", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(60f, 60f), s_frame).transform.SetAsFirstSibling();
+            Image icon = CreateIcon(slot, 50f);
             TMP_Text glyph = CreateText("Glyph", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(56f, 56f), 22f, TextAlignmentOptions.Center);
             glyph.fontStyle = FontStyles.Bold;
             Image cooldown = CreateImage("Cooldown", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(56f, 56f), new Color(0f, 0f, 0f, 0.7f));
@@ -503,15 +506,16 @@ namespace Game.Scripts.Editor.Dungeon
             TMP_Text charges = CreateText("Charges", slot, new Vector2(1f, 0f), new Vector2(-4f, 2f), new Vector2(40f, 16f), 13f, TextAlignmentOptions.BottomRight);
             charges.rectTransform.pivot = new Vector2(1f, 0f);
 
-            return (slot.gameObject, glyph, keyText, charges, cooldown);
+            return (slot.gameObject, icon, glyph, keyText, charges, cooldown);
         }
 
-        private static (GameObject, TMP_Text, TMP_Text, Image) BeltSlot(RectTransform parent, Vector2 anchor, Vector2 position, string key)
+        private static (GameObject, Image, TMP_Text, TMP_Text, Image) BeltSlot(RectTransform parent, Vector2 anchor, Vector2 position, string key)
         {
             RectTransform slot = CreateRect("Belt" + key, parent, anchor, position, new Vector2(44f, 44f));
             CreateImage("Back", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(44f, 44f), s_panelLight);
             Image frame = CreateImage("Frame", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(48f, 48f), s_frame);
             frame.transform.SetAsFirstSibling();
+            Image icon = CreateIcon(slot, 40f);
             TMP_Text glyph = CreateText("Glyph", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(44f, 44f), 18f, TextAlignmentOptions.Center);
             glyph.fontStyle = FontStyles.Bold;
             TMP_Text keyText = CreateText("Key", slot, new Vector2(0f, 1f), new Vector2(3f, -1f), new Vector2(20f, 14f), 10f, TextAlignmentOptions.TopLeft);
@@ -521,7 +525,7 @@ namespace Game.Scripts.Editor.Dungeon
             TMP_Text count = CreateText("Count", slot, new Vector2(1f, 0f), new Vector2(-3f, 1f), new Vector2(30f, 14f), 11f, TextAlignmentOptions.BottomRight);
             count.rectTransform.pivot = new Vector2(1f, 0f);
 
-            return (slot.gameObject, glyph, count, frame);
+            return (slot.gameObject, icon, glyph, count, frame);
         }
 
         private static InventoryView BuildInventory(Transform root, Canvas canvas, Inputs inputs, ItemView itemPrefab, Image cellPrefab, string title, bool fullscreen,
@@ -543,13 +547,11 @@ namespace Game.Scripts.Editor.Dungeon
             RawImage previewImage = CreateRect("Preview", dollPanel, new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(352f, 472f)).gameObject.AddComponent<RawImage>();
             previewImage.rectTransform.pivot = new Vector2(0.5f, 1f);
             previewImage.color = Color.white;
-            previewImage.raycastTarget = false;
             preview = BuildPreview(previewImage, inputs, previewIndex, 352, 472, out _);
             TMP_Text titleText = CreateText("Title", dollPanel, new Vector2(0.5f, 1f), new Vector2(0f, -510f), new Vector2(400f, 30f), 24f, TextAlignmentOptions.Center);
             titleText.rectTransform.pivot = new Vector2(0.5f, 1f);
             titleText.color = s_gold;
-            TMP_Text stats = CreateText("Stats", dollPanel, new Vector2(0f, 1f), new Vector2(24f, -550f), new Vector2(420f, 420f), 15f, TextAlignmentOptions.TopLeft);
-            stats.rectTransform.pivot = new Vector2(0f, 1f);
+            StatsView stats = BuildStats(dollPanel, new Vector2(0f, -546f), 460f, 105f, true, panel, out RectTransform statsTooltip);
 
             // Center: equipment sunburst and backpack.
             RectTransform equipPanel = CreateRect("Equipment", panel, new Vector2(0f, 1f), new Vector2(530f, -40f), new Vector2(640f, 500f));
@@ -607,6 +609,7 @@ namespace Game.Scripts.Editor.Dungeon
             hints.text = "[Drag] move   [R Click] equip / use / unequip   [Shift + L Click] quick transfer   [Ctrl + Drag] split stack   [Drag outside] drop   ·   eye = not searched yet";
             hints.color = new Color(0.8f, 0.75f, 0.65f);
 
+            statsTooltip.SetAsLastSibling();
             RectTransform tooltip = CreateRect("Tooltip", panel, new Vector2(0f, 1f), Vector2.zero, new Vector2(380f, 240f));
             tooltip.pivot = new Vector2(0f, 1f);
             Image tooltipBack = CreateImage("Back", tooltip, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, new Color(0.03f, 0.03f, 0.03f, 0.96f));
@@ -636,7 +639,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_takeAllButton", takeAll);
             BattleEditorUtility.Set(so, "_sortButton", sort);
             BattleEditorUtility.Set(so, "_slots", slots);
-            BattleEditorUtility.Set(so, "_statsText", stats);
+            BattleEditorUtility.Set(so, "_statsView", stats);
             BattleEditorUtility.Set(so, "_titleText", titleText);
             BattleEditorUtility.Set(so, "_valueText", valueText);
             BattleEditorUtility.Set(so, "_tooltip", tooltip);
@@ -766,6 +769,7 @@ namespace Game.Scripts.Editor.Dungeon
             inventoryRect.anchorMin = inventoryRect.anchorMax = inventoryRect.pivot = new Vector2(0.5f, 1f);
             inventoryRect.anchoredPosition = new Vector2(0f, -60f);
             inventory.transform.Find("Hints").gameObject.SetActive(false);
+            MerchantsView merchants = BuildMerchants(panel);
 
             // Top bar: rank shield and the page tabs, each marked by a diamond tick on the rule.
             RectTransform bar = CreateRect("TopBar", panel, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 82f));
@@ -776,7 +780,7 @@ namespace Game.Scripts.Editor.Dungeon
             rule.anchorMin = Vector2.zero;
             rule.anchorMax = new Vector2(1f, 0f);
 
-            string[] names = { "Lobby", "Skills", "Stash" };
+            string[] names = { "Lobby", "Skills", "Stash", "Merchants" };
             Button[] tabs = new Button[names.Length];
 
             for (int i = 0; i < names.Length; i++)
@@ -806,7 +810,8 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_inventory", inventory);
             BattleEditorUtility.Set(so, "_inventoryPreview", preview);
             BattleEditorUtility.Set(so, "_tabs", tabs);
-            BattleEditorUtility.Set(so, "_pages", new DisplayableView[] { home, skills, inventory });
+            BattleEditorUtility.Set(so, "_merchants", merchants);
+            BattleEditorUtility.Set(so, "_pages", new DisplayableView[] { home, skills, inventory, merchants });
             BattleEditorUtility.Set(so, "_rankText", rank);
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -828,7 +833,6 @@ namespace Game.Scripts.Editor.Dungeon
 
             RawImage backdrop = CreateRect("Backdrop", page, center, Vector2.zero, Vector2.zero).gameObject.AddComponent<RawImage>();
             Stretch(backdrop.rectTransform, 0f);
-            backdrop.raycastTarget = false;
             AspectRatioFitter fitter = backdrop.gameObject.AddComponent<AspectRatioFitter>();
             fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
             fitter.aspectRatio = 16f / 9f;
@@ -1015,17 +1019,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             Image sheet = CreateImage("Stats", page, new Vector2(0f, 1f), new Vector2(20f, -96f), new Vector2(530f, 964f), Color.white);
             sheet.sprite = DungeonUiSpriteBuilder.Load("Panel");
-            TMP_Text statNames = CreateText("Names", sheet.rectTransform, center, Vector2.zero, Vector2.zero, 17f, TextAlignmentOptions.TopLeft);
-            TMP_Text statValues = CreateText("Values", sheet.rectTransform, center, Vector2.zero, Vector2.zero, 17f, TextAlignmentOptions.TopRight);
-
-            foreach (TMP_Text text in new[] { statNames, statValues })
-            {
-                Stretch(text.rectTransform, 0f);
-                text.rectTransform.offsetMin = new Vector2(38f, 20f);
-                text.rectTransform.offsetMax = new Vector2(-38f, -36f);
-                text.lineSpacing = 22f;
-                text.color = s_text;
-            }
+            StatsView stats = BuildStats(sheet.rectTransform, new Vector2(0f, -34f), 530f, 130f, false, page, out RectTransform statsTooltip);
 
             TMP_Text title = CreateText("Title", page, top, new Vector2(0f, -104f), new Vector2(620f, 34f), 23f, TextAlignmentOptions.Center);
             title.text = "Perks and Skills";
@@ -1036,7 +1030,6 @@ namespace Game.Scripts.Editor.Dungeon
             hint.color = s_textDim;
 
             RawImage doll = CreateRect("Doll", page, top, new Vector2(0f, -262f), new Vector2(520f, 700f)).gameObject.AddComponent<RawImage>();
-            doll.raycastTarget = false;
             CharacterPreviewView preview = BuildPreview(doll, inputs, 2, 520, 700, out Camera camera);
             camera.backgroundColor = s_lobbyBack;
             CreateImage("Arch", page, top, new Vector2(0f, -226f), new Vector2(576f, 740f), line).sprite = DungeonUiSpriteBuilder.Load("Arch");
@@ -1083,6 +1076,7 @@ namespace Game.Scripts.Editor.Dungeon
             CreateImage("Frame", tooltip, top, Vector2.zero, new Vector2(340f, 3f), s_frame);
             TMP_Text tooltipText = CreateText("Text", tooltip, center, Vector2.zero, Vector2.zero, 15f, TextAlignmentOptions.TopLeft);
             Stretch(tooltipText.rectTransform, 12f);
+            statsTooltip.SetAsLastSibling();
 
             SkillsView view = page.gameObject.AddComponent<SkillsView>();
             SerializedObject so = new SerializedObject(view);
@@ -1094,10 +1088,340 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_spellsRoot", spells);
             BattleEditorUtility.Set(so, "_perkSlots", perkSlots);
             BattleEditorUtility.Set(so, "_skillSlots", skillSlots);
-            BattleEditorUtility.Set(so, "_statNamesText", statNames);
-            BattleEditorUtility.Set(so, "_statValuesText", statValues);
+            BattleEditorUtility.Set(so, "_stats", stats);
             BattleEditorUtility.Set(so, "_tooltip", tooltip);
             BattleEditorUtility.Set(so, "_tooltipText", tooltipText);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            return view;
+        }
+
+        /// Character sheet: the hexagram with the attributes on its corners and the edge stats between them, derived stats in
+        /// two columns below. The tooltip opens beside the sheet (hence the width of the panel it sits on) and is created under
+        /// the given parent so the caller can keep it above the other panels.
+        private static StatsView BuildStats(Transform parent, Vector2 position, float width, float radius, bool isCompact, Transform tooltipParent,
+            out RectTransform tooltip)
+        {
+            Vector2 center = new Vector2(0.5f, 0.5f);
+            Vector2 top = new Vector2(0.5f, 1f);
+            float chartHeight = 2f * radius + 116f;
+            RectTransform root = CreateRect("StatSheet", parent, top, position, new Vector2(width, chartHeight));
+            RectTransform chartRoot = CreateRect("Hexagram", root, top, new Vector2(0f, -chartHeight * 0.5f), Vector2.zero);
+            chartRoot.pivot = center;
+            float webSize = 2f * radius / DungeonUiSpriteBuilder.HexagramRadius;
+            CreateImage("Web", chartRoot, center, Vector2.zero, new Vector2(webSize, webSize), Color.white).sprite = DungeonUiSpriteBuilder.Load("Hexagram");
+            HexChartGraphic chart = CreateRect("Chart", chartRoot, center, Vector2.zero, new Vector2(2f * radius, 2f * radius)).gameObject.AddComponent<HexChartGraphic>();
+            chart.raycastTarget = false;
+            Color[] colors = new Color[StatSheet.AttributeCount];
+
+            for (int i = 0; i < colors.Length; i++)
+                colors[i] = StatSheet.ColorOf((StatId)i);
+
+            SerializedObject chartObject = new SerializedObject(chart);
+            BattleEditorUtility.Set(chartObject, "_radius", radius);
+            BattleEditorUtility.Set(chartObject, "_colors", colors);
+            chartObject.ApplyModifiedPropertiesWithoutUndo();
+
+            List<StatLabelView> labels = new();
+            Vector2 badge = Vector2.one * (isCompact ? 50f : 58f);
+            Vector2 pill = isCompact ? new Vector2(54f, 23f) : new Vector2(62f, 26f);
+
+            // Edge stats first: the attribute badges on the corners are drawn over the web and the pills.
+            for (int i = 0; i < StatSheet.AttributeCount; i++)
+            {
+                float angle = (i + 0.5f) * Mathf.PI / 3f;
+                Vector2 direction = new Vector2(Mathf.Sin(angle), Mathf.Cos(angle));
+                labels.Add(StatNode(chartRoot, StatSheet.Edge(i), direction * radius * 0.866f, "Pill", pill, isCompact ? 12f : 13f, isCompact ? 11f : 12f));
+            }
+
+            for (int i = 0; i < StatSheet.AttributeCount; i++)
+            {
+                float angle = i * Mathf.PI / 3f;
+                Vector2 direction = new Vector2(Mathf.Sin(angle), Mathf.Cos(angle));
+                labels.Add(StatNode(chartRoot, (StatId)i, direction * radius, "Diamond", badge, isCompact ? 17f : 19f, isCompact ? 14f : 15f));
+            }
+
+            float y = -chartHeight - 4f;
+
+            if (isCompact)
+            {
+                StatId[] left = { StatId.Health, StatId.ArmorRating, StatId.PhysicalReduction, StatId.PhysicalDamage };
+                StatId[] right = { StatId.Poise, StatId.MagicResistance, StatId.MagicalReduction, StatId.ActionSpeed };
+
+                for (int i = 0; i < left.Length; i++)
+                {
+                    labels.Add(StatRow(root, left[i], new Vector2(-206f, y - i * 21f), 200f, 21f, 14f));
+                    labels.Add(StatRow(root, right[i], new Vector2(6f, y - i * 21f), 200f, 21f, 14f));
+                }
+            }
+            else
+            {
+                const float column = 214f;
+                const float rowHeight = 24f;
+                const float headerHeight = 28f;
+                float bottom = y;
+
+                // Own stats of the attributes: the first half of the ring on the left, the second on the right.
+                for (int i = 0; i < StatSheet.AttributeCount; i++)
+                {
+                    float x = i < 3 ? -column - 7f : 7f;
+
+                    if (i == 3)
+                        y = -chartHeight - 4f;
+
+                    StatHeader(root, StatSheet.Name((StatId)i), StatSheet.ColorOf((StatId)i), new Vector2(x, y), column);
+                    y -= headerHeight;
+
+                    foreach (StatId stat in StatSheet.OwnStats((StatId)i))
+                    {
+                        labels.Add(StatRow(root, stat, new Vector2(x, y), column, rowHeight, 15f));
+                        y -= rowHeight;
+                    }
+
+                    y -= 8f;
+                    bottom = Mathf.Min(bottom, y);
+                }
+
+                StatHeader(root, "Defense", StatSheet.ColorOf(StatId.ArmorRating), new Vector2(-column - 7f, bottom), column * 2f + 14f);
+                bottom -= headerHeight;
+                labels.Add(StatRow(root, StatId.ArmorRating, new Vector2(-column - 7f, bottom), column, rowHeight, 15f));
+                labels.Add(StatRow(root, StatId.PhysicalReduction, new Vector2(-column - 7f, bottom - rowHeight), column, rowHeight, 15f));
+                labels.Add(StatRow(root, StatId.MagicResistance, new Vector2(7f, bottom), column, rowHeight, 15f));
+                labels.Add(StatRow(root, StatId.MagicalReduction, new Vector2(7f, bottom - rowHeight), column, rowHeight, 15f));
+            }
+
+            tooltip = CreateRect("StatTooltip", tooltipParent, center, Vector2.zero, new Vector2(380f, 100f));
+            Image tooltipBack = tooltip.gameObject.AddComponent<Image>();
+            tooltipBack.color = new Color(0.03f, 0.03f, 0.03f, 0.97f);
+            tooltipBack.raycastTarget = false;
+            VerticalLayoutGroup layout = tooltip.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(14, 14, 12, 12);
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandHeight = false;
+            tooltip.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            CreateImage("Frame", tooltip, top, Vector2.zero, new Vector2(380f, 3f), s_frame).gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            TMP_Text tooltipText = CreateText("Text", tooltip, center, Vector2.zero, Vector2.zero, 15f, TextAlignmentOptions.TopLeft);
+            tooltipText.color = s_text;
+            tooltip.gameObject.SetActive(false);
+
+            StatsView view = root.gameObject.AddComponent<StatsView>();
+            SerializedObject so = new SerializedObject(view);
+            BattleEditorUtility.Set(so, "_labels", labels);
+            BattleEditorUtility.Set(so, "_chart", chart);
+            BattleEditorUtility.Set(so, "_tooltip", tooltip);
+            BattleEditorUtility.Set(so, "_tooltipText", tooltipText);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            return view;
+        }
+
+        /// Badge of the hexagram with the value inside and the name outside: above or below for the nodes next to the
+        /// vertical axis, at the side for the others.
+        private static StatLabelView StatNode(RectTransform parent, StatId stat, Vector2 position, string sprite, Vector2 size, float valueSize, float nameSize)
+        {
+            Vector2 center = new Vector2(0.5f, 0.5f);
+            bool isAttribute = StatSheet.IsAttribute(stat);
+            RectTransform node = CreateRect(stat.ToString(), parent, center, position, size);
+            Image frame = node.gameObject.AddComponent<Image>();
+            frame.sprite = DungeonUiSpriteBuilder.Load(sprite);
+            frame.color = StatSheet.ColorOf(stat);
+            TMP_Text value = CreateText("Value", node, center, Vector2.zero, size + new Vector2(16f, 0f), valueSize, TextAlignmentOptions.Center);
+            value.fontStyle = FontStyles.Bold;
+            Vector2 direction = position.normalized;
+            bool isAtSide = Mathf.Abs(direction.x) > 0.8f;
+            float side = Mathf.Abs(direction.x) < 0.1f ? 0f : Mathf.Sign(direction.x);
+            TMP_Text name = CreateText("Name", node, center, Vector2.zero, new Vector2(120f, nameSize + 6f), nameSize,
+                !isAtSide ? TextAlignmentOptions.Center : side > 0f ? TextAlignmentOptions.MidlineLeft : TextAlignmentOptions.MidlineRight);
+
+            if (isAtSide)
+            {
+                name.rectTransform.pivot = new Vector2(side > 0f ? 0f : 1f, 0.5f);
+                name.rectTransform.anchoredPosition = new Vector2(side * (size.x * 0.5f + 4f), 0f);
+            }
+            else
+            {
+                name.rectTransform.anchoredPosition = new Vector2(side * 10f, Mathf.Sign(direction.y) * (size.y * 0.5f + nameSize * 0.5f + 5f));
+            }
+
+            name.text = StatSheet.Name(stat);
+            name.color = isAttribute ? StatSheet.ColorOf(stat) : s_textDim;
+            name.fontStyle = isAttribute ? FontStyles.Bold : FontStyles.Normal;
+            name.raycastTarget = true;
+
+            return StatLabel(node.gameObject, stat, value);
+        }
+
+        /// Row of the stat list: a mark in the colour of the source attribute, the name and the value at the right edge.
+        private static StatLabelView StatRow(RectTransform parent, StatId stat, Vector2 position, float width, float height, float fontSize)
+        {
+            RectTransform row = CreateRect(stat.ToString(), parent, new Vector2(0.5f, 1f), position, new Vector2(width, height));
+            row.pivot = new Vector2(0f, 1f);
+            Image hit = row.gameObject.AddComponent<Image>();
+            hit.color = Color.clear;
+            Color mark = StatSheet.ColorOf(stat);
+            mark.a = 0.8f;
+            CreateImage("Mark", row, new Vector2(0f, 0.5f), new Vector2(1f, 0f), new Vector2(3f, height - 9f), mark);
+            TMP_Text name = CreateText("Name", row, new Vector2(0f, 0.5f), new Vector2(11f, 0f), new Vector2(width - 11f, height), fontSize, TextAlignmentOptions.MidlineLeft);
+            name.text = StatSheet.Name(stat);
+            name.color = new Color(0.8f, 0.77f, 0.7f);
+            TMP_Text value = CreateText("Value", row, new Vector2(1f, 0.5f), Vector2.zero, new Vector2(90f, height), fontSize, TextAlignmentOptions.MidlineRight);
+
+            return StatLabel(row.gameObject, stat, value);
+        }
+
+        private static void StatHeader(RectTransform parent, string title, Color color, Vector2 position, float width)
+        {
+            TMP_Text header = CreateText(title + "Header", parent, new Vector2(0.5f, 1f), position, new Vector2(width, 22f), 13f, TextAlignmentOptions.BottomLeft);
+            header.rectTransform.pivot = new Vector2(0f, 1f);
+            header.text = title.ToUpperInvariant();
+            header.color = color;
+            header.fontStyle = FontStyles.Bold;
+            header.characterSpacing = 6f;
+            color.a = 0.4f;
+            CreateImage("Rule", header.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, -2f), new Vector2(width, 1f), color);
+        }
+
+        private static StatLabelView StatLabel(GameObject target, StatId stat, TMP_Text value)
+        {
+            StatLabelView label = target.AddComponent<StatLabelView>();
+            SerializedObject so = new SerializedObject(label);
+            BattleEditorUtility.Set(so, "_stat", stat);
+            BattleEditorUtility.Set(so, "_valueText", value);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            return label;
+        }
+
+        /// "Merchants" page: who sells on the left, the counter with kind filters and a scrolling ware grid in the middle,
+        /// the purse and the details of the hovered ware on the right.
+        private static MerchantsView BuildMerchants(RectTransform lobby)
+        {
+            Vector2 center = new Vector2(0.5f, 0.5f);
+            Vector2 top = new Vector2(0.5f, 1f);
+            Sprite panelSprite = DungeonUiSpriteBuilder.Load("Panel");
+            RectTransform page = CreateRect("Merchants", lobby, center, Vector2.zero, Vector2.zero);
+            Stretch(page, 0f);
+
+            TMP_Text Title(Transform parent, string text, float y, float size)
+            {
+                TMP_Text title = CreateText("Title", parent, top, new Vector2(0f, y), new Vector2(460f, 36f), size, TextAlignmentOptions.Center);
+                title.text = text;
+                title.color = s_gold;
+
+                return title;
+            }
+
+            Image list = CreateImage("List", page, new Vector2(0f, 1f), new Vector2(20f, -96f), new Vector2(360f, 964f), Color.white);
+            list.sprite = panelSprite;
+            Title(list.rectTransform, "Merchants", -34f, 23f);
+            CreateImage("Rule", list.rectTransform, top, new Vector2(0f, -76f), new Vector2(290f, 2f), s_frame);
+            RectTransform merchantsRoot = CreateRect("Merchants", list.rectTransform, top, new Vector2(0f, -92f), new Vector2(296f, 800f));
+            VerticalLayoutGroup merchantsLayout = merchantsRoot.gameObject.AddComponent<VerticalLayoutGroup>();
+            merchantsLayout.spacing = 10f;
+            merchantsLayout.childControlHeight = false;
+            merchantsLayout.childForceExpandHeight = false;
+            Button merchantButton = CreateButton("MerchantButton", merchantsRoot, top, Vector2.zero, new Vector2(296f, 72f), string.Empty);
+            TMP_Text merchantLabel = merchantButton.GetComponentInChildren<TMP_Text>();
+            merchantLabel.fontSize = 19f;
+            merchantLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            merchantLabel.margin = new Vector4(16f, 0f, 8f, 0f);
+            merchantButton.gameObject.SetActive(false);
+
+            Image counter = CreateImage("Counter", page, top, new Vector2(-90f, -96f), new Vector2(940f, 964f), Color.white);
+            counter.sprite = panelSprite;
+            TMP_Text title = Title(counter.rectTransform, string.Empty, -30f, 26f);
+            title.fontStyle = FontStyles.Bold;
+            TMP_Text description = CreateText("Description", counter.rectTransform, top, new Vector2(0f, -68f), new Vector2(840f, 24f), 15f, TextAlignmentOptions.Center);
+            description.color = s_textDim;
+
+            string[] filters = { "All", "Weapons", "Armor", "Consumables", "Utility", "Treasure" };
+            Button[] filterButtons = new Button[filters.Length];
+
+            for (int i = 0; i < filters.Length; i++)
+            {
+                filterButtons[i] = CreateButton("Filter" + filters[i], counter.rectTransform, top, new Vector2((i - (filters.Length - 1) * 0.5f) * 140f, -104f), new Vector2(132f, 34f), filters[i]);
+                filterButtons[i].image.color = new Color(0.05f, 0.045f, 0.04f, 0.9f);
+            }
+
+            // Ten wares in a row; the wheel and a drag scroll the counter.
+            const float ware = 80f;
+            const float wareGap = 8f;
+            RectTransform viewport = CreateRect("Viewport", counter.rectTransform, top, new Vector2(0f, -154f), new Vector2(ware * 10f + wareGap * 9f, 774f));
+            Image viewportHit = viewport.gameObject.AddComponent<Image>();
+            viewportHit.color = Color.clear;
+            viewport.gameObject.AddComponent<RectMask2D>();
+            RectTransform waresRoot = CreateRect("Wares", viewport, top, Vector2.zero, Vector2.zero);
+            waresRoot.anchorMin = new Vector2(0f, 1f);
+            waresRoot.anchorMax = Vector2.one;
+            waresRoot.sizeDelta = Vector2.zero;
+            GridLayoutGroup grid = waresRoot.gameObject.AddComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(ware, ware);
+            grid.spacing = new Vector2(wareGap, wareGap);
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 10;
+            waresRoot.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            ScrollRect scroll = viewport.gameObject.AddComponent<ScrollRect>();
+            scroll.content = waresRoot;
+            scroll.viewport = viewport;
+            scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 40f;
+
+            RectTransform wareRect = CreateRect("Ware", page, center, Vector2.zero, new Vector2(ware, ware));
+            Image wareBack = wareRect.gameObject.AddComponent<Image>();
+            wareBack.color = new Color(0.09f, 0.08f, 0.07f, 0.95f);
+            Image wareFrame = CreateImage("Frame", wareRect, center, Vector2.zero, Vector2.zero, Color.white);
+            Stretch(wareFrame.rectTransform, 0f);
+            wareFrame.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            wareFrame.type = Image.Type.Sliced;
+            wareFrame.fillCenter = false;
+            Image wareIcon = CreateIcon(wareRect, ware - 12f);
+            TMP_Text wareGlyph = CreateText("Glyph", wareRect, center, Vector2.zero, new Vector2(ware, ware), 22f, TextAlignmentOptions.Center);
+            wareGlyph.fontStyle = FontStyles.Bold;
+            TMP_Text warePrice = CreateText("Price", wareRect, new Vector2(1f, 0f), new Vector2(-5f, 3f), new Vector2(60f, 16f), 13f, TextAlignmentOptions.BottomRight);
+            warePrice.color = new Color(1f, 0.85f, 0.4f);
+            warePrice.fontStyle = FontStyles.Bold;
+            MerchantWareView wareView = wareRect.gameObject.AddComponent<MerchantWareView>();
+            SerializedObject so = new SerializedObject(wareView);
+            BattleEditorUtility.Set(so, "_background", wareBack);
+            BattleEditorUtility.Set(so, "_frame", wareFrame);
+            BattleEditorUtility.Set(so, "_icon", wareIcon);
+            BattleEditorUtility.Set(so, "_glyph", wareGlyph);
+            BattleEditorUtility.Set(so, "_priceText", warePrice);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            wareRect.gameObject.SetActive(false);
+
+            Image purse = CreateImage("Purse", page, Vector2.one, new Vector2(-20f, -96f), new Vector2(520f, 964f), Color.white);
+            purse.sprite = panelSprite;
+            Title(purse.rectTransform, "Your Purse", -34f, 23f);
+            Image coinsIcon = CreateImage("CoinsIcon", purse.rectTransform, top, new Vector2(-84f, -84f), new Vector2(64f, 64f), Color.white);
+            coinsIcon.preserveAspect = true;
+            TMP_Text coins = CreateText("Coins", purse.rectTransform, top, new Vector2(54f, -98f), new Vector2(200f, 44f), 36f, TextAlignmentOptions.MidlineLeft);
+            TMP_Text note = CreateText("Note", purse.rectTransform, top, new Vector2(0f, -160f), new Vector2(420f, 44f), 14f, TextAlignmentOptions.Top);
+            note.text = "Purchases land in the stash. Coins are taken from the stash first, then from the kit bag.";
+            note.color = s_textDim;
+            CreateImage("Rule", purse.rectTransform, top, new Vector2(0f, -216f), new Vector2(420f, 2f), s_frame);
+            Image detailsIcon = CreateImage("DetailsIcon", purse.rectTransform, top, new Vector2(0f, -236f), new Vector2(150f, 150f), Color.white);
+            detailsIcon.preserveAspect = true;
+            TMP_Text details = CreateText("Details", purse.rectTransform, top, new Vector2(0f, -400f), new Vector2(420f, 420f), 16f, TextAlignmentOptions.TopLeft);
+            details.color = s_text;
+            TMP_Text status = CreateText("Status", purse.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 44f), new Vector2(440f, 50f), 17f, TextAlignmentOptions.Center);
+
+            MerchantsView view = page.gameObject.AddComponent<MerchantsView>();
+            so = new SerializedObject(view);
+            BattleEditorUtility.Set(so, "_merchantButtonPrefab", merchantButton);
+            BattleEditorUtility.Set(so, "_merchantsRoot", merchantsRoot);
+            BattleEditorUtility.Set(so, "_warePrefab", wareView);
+            BattleEditorUtility.Set(so, "_waresRoot", waresRoot);
+            BattleEditorUtility.Set(so, "_filterButtons", filterButtons);
+            BattleEditorUtility.Set(so, "_titleText", title);
+            BattleEditorUtility.Set(so, "_descriptionText", description);
+            BattleEditorUtility.Set(so, "_coinsText", coins);
+            BattleEditorUtility.Set(so, "_coinsIcon", coinsIcon);
+            BattleEditorUtility.Set(so, "_detailsIcon", detailsIcon);
+            BattleEditorUtility.Set(so, "_detailsText", details);
+            BattleEditorUtility.Set(so, "_statusText", status);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;
@@ -1112,14 +1436,19 @@ namespace Game.Scripts.Editor.Dungeon
             Image frame = CreateImage("Frame", rect, center, Vector2.zero, new Vector2(size, size), new Color(0.5f, 0.42f, 0.3f));
             frame.sprite = DungeonUiSpriteBuilder.Load(sprite);
             frame.raycastTarget = true;
+            // A diamond leaves less room inside its plate than a square of the same size.
+            Image icon = CreateIcon(rect, size * (sprite == "Diamond" ? 0.56f : 0.72f));
             TMP_Text glyph = CreateText("Glyph", rect, center, Vector2.zero, new Vector2(size, 36f), 25f, TextAlignmentOptions.Center);
             glyph.fontStyle = FontStyles.Bold;
-            TMP_Text badge = CreateText("Badge", rect, center, new Vector2(0f, -26f), new Vector2(size, 18f), 13f, TextAlignmentOptions.Center);
+            // The key of a skill hangs under its square; the level of a locked perk slot is written inside the empty diamond.
+            TMP_Text badge = CreateText("Badge", rect, center, new Vector2(0f, sprite == "Diamond" ? -26f : -size * 0.5f - 9f), new Vector2(size, 18f), 13f, TextAlignmentOptions.Center);
+            badge.fontStyle = FontStyles.Bold;
             badge.color = s_gold;
 
             AbilityIconView view = rect.gameObject.AddComponent<AbilityIconView>();
             SerializedObject so = new SerializedObject(view);
             BattleEditorUtility.Set(so, "_frame", frame);
+            BattleEditorUtility.Set(so, "_icon", icon);
             BattleEditorUtility.Set(so, "_glyph", glyph);
             BattleEditorUtility.Set(so, "_badge", badge);
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -1149,6 +1478,7 @@ namespace Game.Scripts.Editor.Dungeon
             TMP_Text glyph = CreateText("Glyph", slot, new Vector2(0.5f, 1f), new Vector2(0f, -4f), new Vector2(100f, 34f), 24f, TextAlignmentOptions.Center);
             glyph.rectTransform.pivot = new Vector2(0.5f, 1f);
             glyph.fontStyle = FontStyles.Bold;
+            CreateIcon(slot, 38f).rectTransform.anchoredPosition = new Vector2(0f, 20f);
             TMP_Text name = CreateText("Name", slot, new Vector2(0.5f, 0f), new Vector2(0f, 4f), new Vector2(100f, 44f), 12f, TextAlignmentOptions.Center);
             name.rectTransform.pivot = new Vector2(0.5f, 0f);
             slot.gameObject.SetActive(false);
@@ -1273,6 +1603,16 @@ namespace Game.Scripts.Editor.Dungeon
             image.raycastTarget = false;
 
             return image;
+        }
+
+        /// Centered sprite holder that stays hidden until a view gives it a sprite.
+        private static Image CreateIcon(Transform parent, float size)
+        {
+            Image icon = CreateImage("Icon", parent, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size, size), Color.white);
+            icon.preserveAspect = true;
+            icon.enabled = false;
+
+            return icon;
         }
 
         private static void MakeFilled(Image image)

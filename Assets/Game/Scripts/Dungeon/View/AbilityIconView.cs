@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Perk diamond or skill square: a glyph on a framed plate that reports clicks and hover to its page.
+    /// Perk diamond or skill square: an icon (or a glyph when there is none) on a framed plate that reports clicks and hover to its page.
     public sealed class AbilityIconView : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
         public event Action<AbilityIconView, PointerEventData.InputButton> OnClicked;
@@ -18,6 +18,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private Image _frame;
+
+        [SerializeField]
+        private Image _icon;
 
         [SerializeField]
         private TMP_Text _glyph;
@@ -34,17 +37,19 @@ namespace Game.Scripts.Dungeon
         private int _index = -1;
         private string _tooltip;
 
-        public void Set(int index, string glyph, Color color, string tooltip)
+        public void Set(int index, Sprite icon, string glyph, Color color, string tooltip)
         {
             _index = index;
             _tooltip = tooltip;
-            _glyph.text = glyph;
+            _icon.enabled = icon != null;
+            _icon.sprite = icon;
+            _glyph.text = icon != null ? string.Empty : glyph;
             _glyph.color = color;
         }
 
         public void Clear()
         {
-            Set(-1, string.Empty, Color.white, null);
+            Set(-1, null, string.Empty, Color.white, null);
         }
 
         public void SetSelected(bool isSelected)

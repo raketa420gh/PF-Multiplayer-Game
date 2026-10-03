@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -44,7 +43,7 @@ namespace Game.Scripts.Dungeon
         private EquipSlotView[] _slots;
 
         [SerializeField]
-        private TMP_Text _statsText;
+        private StatsView _statsView;
 
         [SerializeField]
         private TMP_Text _titleText;
@@ -68,14 +67,10 @@ namespace Game.Scripts.Dungeon
         private InventoryComponent _other;
         private InventoryActionsComponent _actions;
         private AdventurerComponent _searcher;
-        private AdventurerStats _stats;
-        private ClassConfig _class;
         private bool _allowWorldDrop;
         private ItemView _dragged;
         private ItemView _tooltipItem;
         private readonly List<RaycastResult> _raycastResults = new();
-        private readonly StringBuilder _builder = new();
-        private readonly StatModifier[] _affixes = new StatModifier[ItemAffixes.MaxCount];
 
         private void Awake()
         {
@@ -93,8 +88,6 @@ namespace Game.Scripts.Dungeon
             if (_other != null && (_other.Object == null || !_other.Object.IsValid))
                 SetOther(null, string.Empty);
 
-            RefreshStats();
-
             // The hovered item was taken away or its container closed.
             if (_tooltipItem != null && !_tooltipItem.isActiveAndEnabled)
                 HideTooltip();
@@ -106,16 +99,15 @@ namespace Game.Scripts.Dungeon
                 _valueText.text = $"Gear value {_primary.TotalValue()}g";
         }
 
-        public void Bind(InventoryComponent primary, InventoryActionsComponent actions, AdventurerStats stats, ClassConfig config, string title, bool allowWorldDrop)
+        public void Bind(InventoryComponent primary, InventoryActionsComponent actions, AdventurerStats stats, string title, bool allowWorldDrop)
         {
             if (_primary != null)
                 _primary.OnChanged -= RefreshSlots;
 
             _primary = primary;
             _actions = actions;
-            _stats = stats;
-            _class = config;
             _allowWorldDrop = allowWorldDrop;
+            _statsView.Bind(stats);
             _titleText.text = title;
             _bagGrid.Bind(this, primary);
 
@@ -294,7 +286,7 @@ namespace Game.Scripts.Dungeon
         {
             _tooltipItem = item;
             _tooltip.gameObject.SetActive(true);
-            _tooltipText.text = BuildTooltip(item.Config, item.Stack);
+            _tooltipText.text = ItemTooltip.Build(_database, item.Config, item.Stack);
             _tooltip.position = item.transform.position;
         }
 
@@ -334,107 +326,6 @@ namespace Game.Scripts.Dungeon
 
             foreach (EquipSlotView slot in _slots)
                 slot.Bind(this, _primary);
-        }
-
-        private void RefreshStats()
-        {
-            if (_stats == null || _class == null)
-            {
-                _statsText.text = string.Empty;
-
-                return;
-            }
-
-            ClassStats attributes = _stats.Attributes;
-            _builder.Clear();
-            _builder.AppendLine($"<b>{_class.DisplayName}</b>");
-            _builder.AppendLine($"Flesh {attributes.Flesh}    Grip {attributes.Grip}    Reflex {attributes.Reflex}");
-            _builder.AppendLine($"Craft {attributes.Craft}    Insight {attributes.Insight}    Resonance {attributes.Resonance}");
-            _builder.AppendLine();
-            _builder.AppendLine($"Health {_stats.MaxHealth}   Poise {_stats.Poise:0}   Stagger Recovery {Percent(_stats.StaggerRecovery)}");
-            _builder.AppendLine($"Physical Power {_stats.PhysicalPower:0} ({Percent(_stats.GetDamageMultiplier(Battle.DamageType.Physical))})   Guard {Percent(_stats.Guard)}   Load {_stats.Load * 100f:0}%");
-            _builder.AppendLine($"Action Speed {Percent(_stats.ActionSpeed)}   Interaction {Percent(_stats.InteractionSpeed)}   Weakpoint {Percent(_stats.Weakpoint)}");
-            _builder.AppendLine($"Cooldowns {Percent(_stats.CooldownSpeed)}   Control Resist {_stats.ControlResistance * 100f:0}%   Concentration {_stats.Concentration:0}");
-            _builder.AppendLine($"Magical Power {_stats.MagicalPower:0} ({Percent(_stats.GetDamageMultiplier(Battle.DamageType.Magical))})   Bonus Charges +{_stats.BonusCharges}");
-            _builder.AppendLine($"Impact {Percent(_stats.Impact)}   Move Speed {_stats.MoveSpeedRating:0}   Handling {Percent(_stats.HandlingSpeed)}");
-            _builder.AppendLine($"Perception {Percent(_stats.Perception)}   Cast Speed {Percent(_stats.CastSpeed)}   Mending {Percent(_stats.Mending)}");
-            _builder.AppendLine($"Armor {_stats.ArmorRating:0} (PDR {_stats.PhysicalReduction * 100f:0}%)   Magic Resist {_stats.MagicResistance:0} (MDR {_stats.MagicalReduction * 100f:0}%)");
-            _statsText.text = _builder.ToString();
-        }
-
-        private static string Percent(float multiplier)
-        {
-            return $"{(multiplier - 1f) * 100f:+0;-0;0}%";
-        }
-
-        private string BuildTooltip(ItemConfig config, ItemStack stack)
-        {
-            _builder.Clear();
-
-            if (stack.IsHidden)
-                return "<b>Unknown item</b>\n<i><size=80%>Not searched yet. Keep the container open to discover it.</size></i>";
-
-            Color color = _database.GetRarityColor(stack.RarityValue);
-            _builder.AppendLine($"<color=#{ColorUtility.ToHtmlStringRGB(color)}><b>{config.DisplayName}</b></color>  <size=80%>{stack.RarityValue} {config.Kind}</size>");
-            int tier = Mathf.Max(0, stack.Rarity - (int)ItemRarity.Common);
-
-            switch (config)
-            {
-                case WeaponItemConfig weapon:
-                    int damage = weapon.Weapon != null && weapon.Weapon.Attacks.Length > 0 ? weapon.Weapon.Attacks[0].Damage : weapon.Weapon != null ? weapon.Weapon.Ranged.MaxDamage : 0;
-                    _builder.AppendLine($"{(weapon.IsTwoHanded ? "Two-handed" : weapon.IsOffHand ? "Off-hand" : "One-handed")} {weapon.WeaponClass}");
-
-                    if (damage > 0)
-                        _builder.AppendLine($"Damage {damage + tier}  ({weapon.DamageType})");
-
-                    if (weapon.MoveSpeedPenalty > 0f)
-                        _builder.AppendLine($"Move Speed -{weapon.MoveSpeedPenalty:0}");
-
-                    if (weapon.LightRange > 0f)
-                        _builder.AppendLine("Light source");
-                    break;
-                case ArmorItemConfig armor:
-                    _builder.AppendLine($"{armor.ArmorType} {armor.Slot}");
-                    _builder.AppendLine($"Armor Rating {armor.ArmorRating + tier * 2f:0}");
-
-                    if (armor.MagicResistance != 0f)
-                        _builder.AppendLine($"Magic Resistance {armor.MagicResistance:+0;-0}");
-
-                    if (armor.MoveSpeedPenalty != 0f)
-                        _builder.AppendLine($"Move Speed {armor.MoveSpeedPenalty:+0;-0}");
-                    break;
-                case ConsumableItemConfig consumable:
-                    _builder.AppendLine(consumable.Effect switch
-                    {
-                        ConsumableEffect.HealInstant => $"Heals {consumable.Magnitude + tier * 4f:0} after {consumable.UseTime:0.#}s",
-                        ConsumableEffect.HealOverTime => $"Heals {consumable.Magnitude:0} over {Mathf.Max(1f, consumable.Duration - tier * 2.5f):0.#}s",
-                        ConsumableEffect.Protection => $"Absorbs {consumable.Magnitude + tier * 5f:0} damage for {consumable.Duration:0}s",
-                        ConsumableEffect.Invisibility => $"Invisible for {consumable.Duration + tier * 2f:0}s",
-                        _ => $"+{consumable.Magnitude:0} move speed for {consumable.Duration:0}s"
-                    });
-                    break;
-                case UtilityItemConfig utility:
-                    _builder.AppendLine(utility.UtilityKind.ToString());
-
-                    if (utility.Damage > 0)
-                        _builder.AppendLine($"Thrown damage {utility.Damage}");
-                    break;
-            }
-
-            foreach (StatModifier modifier in config.Modifiers)
-                _builder.AppendLine($"<color=#8fd>{ItemAffixes.Describe(modifier)}</color>");
-
-            int affixCount = ItemAffixes.Roll(config, stack, _affixes);
-
-            for (int i = 0; i < affixCount; i++)
-                _builder.AppendLine($"<color=#6cf>{ItemAffixes.Describe(_affixes[i])}</color>");
-
-            if (!string.IsNullOrEmpty(config.Description))
-                _builder.AppendLine($"<i><size=80%>{config.Description}</size></i>");
-
-            _builder.Append($"<size=80%>Value {config.Value}g   {config.Width}x{config.Height}</size>");
-
-            return _builder.ToString();
         }
 
         private EquipSlot FindEquipSlot(ItemConfig config)
