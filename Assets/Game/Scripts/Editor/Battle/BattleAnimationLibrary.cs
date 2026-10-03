@@ -366,53 +366,12 @@ namespace Game.Scripts.Editor.Battle
             };
         }
 
-        public static List<PoseKey> InteractKeys()
-        {
-            return new List<PoseKey>
-            {
-                new(0f, OneHanded(new(0.26f, 1.05f, 0.3f), new(0.2f, 0.4f, 0.9f))),
-                new(0.3f, OneHanded(new(0.2f, 1.12f, 0.62f), new(0.1f, -0.5f, 0.85f), pitch: 10f), Ease.Out),
-                new(1.7f, OneHanded(new(0.16f, 1.08f, 0.66f), new(0.1f, -0.5f, 0.85f), pitch: 12f)),
-                new(2f, OneHanded(new(0.26f, 1.05f, 0.3f), new(0.2f, 0.4f, 0.9f)))
-            };
-        }
-
-        public static BodyPose Idle(float time)
-        {
-            return Standing(0.03f + Mathf.Sin(time * Mathf.PI) * 0.004f);
-        }
-
         public static BodyPose Walk(float phase, Vector2 direction, float stride, float lift, float drop, float lean = 0f)
         {
             BodyPose pose = Standing(drop + Mathf.Cos(phase * Mathf.PI * 4f) * 0.012f);
             pose.HipsEuler = new Vector3(lean, 0f, 0f);
             Step(phase, direction, stride, lift, out pose.LeftFoot, out pose.LeftFootEuler);
             Step(Mathf.Repeat(phase + 0.5f, 1f), direction, stride, lift, out pose.RightFoot, out pose.RightFootEuler);
-
-            return pose;
-        }
-
-        public static BodyPose Air()
-        {
-            BodyPose pose = Standing(0f);
-            pose.LeftFoot = new Vector3(0f, 0.12f, 0.14f);
-            pose.RightFoot = new Vector3(0f, 0.22f, -0.1f);
-            pose.RightFootEuler = new Vector3(25f, 0f, 0f);
-
-            return pose;
-        }
-
-        public static BodyPose Death(float alpha)
-        {
-            float fall = Mathf.SmoothStep(0f, 1f, alpha);
-            BodyPose pose = Standing(0f);
-            pose.Hips = new Vector3(0f, -0.84f * fall, -0.45f * fall);
-            pose.HipsEuler = new Vector3(-82f * fall, 0f, 6f * fall);
-            pose.Spine = new Vector3(-6f * fall, 0f, 0f);
-            pose.LeftFoot = new Vector3(-0.08f * fall, 0f, 0.25f * fall);
-            pose.RightFoot = new Vector3(0.06f * fall, 0f, 0.1f * fall);
-            pose.LeftFootEuler = pose.RightFootEuler = new Vector3(-50f * fall, 0f, 0f);
-            pose.ArmDrop = Mathf.Lerp(70f, 25f, fall);
 
             return pose;
         }

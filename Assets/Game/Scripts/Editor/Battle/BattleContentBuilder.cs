@@ -40,7 +40,7 @@ namespace Game.Scripts.Editor.Battle
         {
             public GameObject Root;
             public Animator Animator;
-            public SkinnedMeshRenderer Renderer;
+            public CharacterModelComponent Model;
             public HealthComponent Health;
             public FighterMoveComponent Move;
             public FighterBodyComponent Body;
@@ -240,24 +240,14 @@ namespace Game.Scripts.Editor.Battle
             };
         }
 
+        /// The simulation body is authored data, not measured on the model: swapping the character must not move the
+        /// hitbox pivots or the eye. The character builder scales the model to this body instead.
         private static BodyConfig CreateBodyConfig()
         {
             BodyConfig config = BattleEditorUtility.LoadOrCreate<BodyConfig>($"{BattleEditorUtility.ConfigsFolder}/Body.asset");
-            GameObject model = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath));
-            Animator animator = model.GetComponent<Animator>();
-
-            Vector3[] pivots =
-            {
-                animator.GetBoneTransform(HumanBodyBones.Spine).position,
-                animator.GetBoneTransform(HumanBodyBones.Chest).position,
-                animator.GetBoneTransform(HumanBodyBones.UpperChest).position
-            };
-            Vector3 head = animator.GetBoneTransform(HumanBodyBones.Head).position;
-            Object.DestroyImmediate(model);
-
             SerializedObject so = new SerializedObject(config);
-            BattleEditorUtility.Set(so, "_spinePivots", pivots);
-            BattleEditorUtility.Set(so, "_eyePoint", new Vector3(0f, head.y + 0.125f, head.z + 0.14f));
+            BattleEditorUtility.Set(so, "_spinePivots", new[] { new Vector3(0f, 1.1f, -0.02f), new Vector3(0f, 1.225f, -0.03f), new Vector3(0f, 1.36f, -0.045f) });
+            BattleEditorUtility.Set(so, "_eyePoint", new Vector3(0f, 1.755f, 0.115f));
             BattleEditorUtility.Set(so, "_crouchDrop", BattleAnimationLibrary.CrouchDrop);
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -300,10 +290,6 @@ namespace Game.Scripts.Editor.Battle
             animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<AnimatorController>(BattleEditorUtility.ControllerPath);
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-
-            SkinnedMeshRenderer renderer = model.GetComponentInChildren<SkinnedMeshRenderer>();
-            renderer.sharedMaterial = BattleEditorUtility.GetMaterial("FighterBody", new Color(0.62f, 0.66f, 0.72f));
-            renderer.updateWhenOffscreen = true;
 
             Transform[] sockets = BattlePoseRig.CreateSockets(animator);
 
@@ -412,7 +398,7 @@ namespace Game.Scripts.Editor.Battle
             {
                 Root = root,
                 Animator = animator,
-                Renderer = renderer,
+                Model = model.GetComponent<CharacterModelComponent>(),
                 Health = health,
                 Move = move,
                 Body = body,
@@ -429,8 +415,12 @@ namespace Game.Scripts.Editor.Battle
         {
             GameObject root = (GameObject)PrefabUtility.InstantiatePrefab(fighterPrefab);
             root.name = "BotFighter";
-            root.GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterial =
-                BattleEditorUtility.GetMaterial("BotBody", new Color(0.75f, 0.35f, 0.3f));
+            CharacterModelComponent model = root.GetComponentInChildren<CharacterModelComponent>();
+            model.SetFemale(true);
+
+            for (OutfitPart part = OutfitPart.RangerBody; part <= OutfitPart.RangerBoots; part++)
+                model.Show(part, null, Color.white);
+
             BattleEditorUtility.Set(root.AddComponent<BotBrainComponent>(), "_fighter", root.GetComponent<FighterComponent>());
 
             SavePrefab(root, BotPath);
@@ -451,11 +441,13 @@ namespace Game.Scripts.Editor.Battle
             DamageReceiverComponent receiver = root.AddComponent<DamageReceiverComponent>();
             TrainingDummyComponent dummy = root.AddComponent<TrainingDummyComponent>();
 
+            // The mannequins of the animation packs are the dummies: the plain one stands in the T-pose, the shield one holds the block.
             Transform visual = BattleEditorUtility.CreateChild("Visual", parent).transform;
-            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Post", visual, new Vector3(0f, 0.5f, 0f), Vector3.zero, new Vector3(0.12f, 0.5f, 0.12f), wood, true);
-            BattleEditorUtility.CreatePrimitive(PrimitiveType.Capsule, "Torso", visual, new Vector3(0f, 1.25f, 0f), Vector3.zero, new Vector3(0.42f, 0.3f, 0.28f), straw);
-            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Arms", visual, new Vector3(0f, 1.42f, 0f), Vector3.zero, new Vector3(1.1f, 0.09f, 0.09f), wood);
-            BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Head", visual, new Vector3(0f, 1.72f, 0f), Vector3.zero, Vector3.one * 0.26f, straw);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Post", visual, new Vector3(0f, 0.5f, -0.16f), Vector3.zero, new Vector3(0.1f, 0.5f, 0.1f), wood, true);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Mount", visual, new Vector3(0f, 1f, -0.1f), Vector3.zero, new Vector3(0.08f, 0.08f, 0.16f), wood);
+            AnimationClip pose = hasShield ? AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                $"{BattleEditorUtility.AnimationsFolder}/{shieldLoadout.Config.AnimationPrefix}{FighterAnimComponent.BlockSuffix}.anim") : null;
+            BattleCharacterBuilder.CreateFigure(root.name, hasShield, pose, 10f, straw, null).transform.SetParent(visual, false);
 
             Transform hitboxes = BattleEditorUtility.CreateChild("Hitboxes", parent).transform;
             CreateSphereHitbox(hitboxes, hitboxRoot, "Head", HitZone.Head, new Vector3(0f, 1.72f, 0f), 0.14f, hitboxLayer);

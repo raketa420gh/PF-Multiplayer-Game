@@ -188,7 +188,12 @@ namespace Game.Scripts.Dungeon
         PlateBoots,
         Cloak,
         Skull,
-        Ribcage
+        Ribcage,
+        Robe,
+        Gambeson,
+        LeatherPants,
+        Shoes,
+        WizardHood
     }
 
     public enum ConsumableEffect : byte

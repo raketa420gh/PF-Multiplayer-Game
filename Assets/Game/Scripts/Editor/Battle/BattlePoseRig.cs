@@ -179,6 +179,23 @@ namespace Game.Scripts.Editor.Battle
             }
         }
 
+        /// Reads the legs of a clip: the feet relative to the bind stance with the hips' ground drift removed, and the hips height.
+        public BodyPose SampleLegs(AnimationClip clip, float time)
+        {
+            BattleEditorUtility.SampleClip(_animator, clip, time);
+            Vector3 drift = Vector3.ProjectOnPlane(_hips.position - _hipsPosition, Vector3.up);
+
+            return new BodyPose
+            {
+                Hips = Vector3.up * (_hips.position.y - _hipsPosition.y),
+                LeftFoot = _leftLeg.Foot.position - drift - _leftLeg.FootPosition,
+                RightFoot = _rightLeg.Foot.position - drift - _rightLeg.FootPosition,
+                LeftFootEuler = (_leftLeg.Foot.rotation * Quaternion.Inverse(_leftLeg.FootRotation)).eulerAngles,
+                RightFootEuler = (_rightLeg.Foot.rotation * Quaternion.Inverse(_rightLeg.FootRotation)).eulerAngles,
+                ArmDrop = 70f
+            };
+        }
+
         public HumanPose Capture()
         {
             _handler.GetHumanPose(ref _humanPose);

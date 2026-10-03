@@ -139,20 +139,20 @@ namespace Game.Scripts.Editor.Dungeon
 
                 Armor("Woolen Cap", EquipSlot.Head, ArmorType.Cloth, 20f, 2f, ArmorVisual.Cap, new Color(0.35f, 0.3f, 0.25f), 2, 2, "Hd", 8),
                 Armor("Rogue Cowl", EquipSlot.Head, ArmorType.Cloth, 25f, 2f, ArmorVisual.Hood, new Color(0.2f, 0.2f, 0.22f), 2, 2, "Hd", 14, modifiers: new[] { new StatModifier(StatType.Reflex, 1f) }),
-                Armor("Wizard Hat", EquipSlot.Head, ArmorType.Cloth, 20f, 2f, ArmorVisual.Hood, new Color(0.25f, 0.2f, 0.45f), 2, 2, "Hd", 14, modifiers: new[] { new StatModifier(StatType.Insight, 1f) }),
+                Armor("Wizard Hat", EquipSlot.Head, ArmorType.Cloth, 20f, 2f, ArmorVisual.WizardHood, new Color(0.25f, 0.2f, 0.45f), 2, 2, "Hd", 14, modifiers: new[] { new StatModifier(StatType.Insight, 1f) }),
                 Armor("Leather Cap", EquipSlot.Head, ArmorType.Leather, 31f, 3f, ArmorVisual.Cap, s_leather, 2, 2, "Hd", 15),
                 Armor("Kettle Hat", EquipSlot.Head, ArmorType.Plate, 30f, 3f, ArmorVisual.Helmet, s_plate, 2, 2, "Hd", 22),
                 Armor("Great Helm", EquipSlot.Head, ArmorType.Plate, 49f, 7f, ArmorVisual.GreatHelm, s_plate, 2, 2, "Hd", 40),
                 Armor("Adventurer Tunic", EquipSlot.Chest, ArmorType.Cloth, 33f, 3f, ArmorVisual.Tunic, new Color(0.45f, 0.4f, 0.3f), 2, 3, "Ch", 12),
-                Armor("Frock", EquipSlot.Chest, ArmorType.Cloth, 42f, 4f, ArmorVisual.Tunic, new Color(0.3f, 0.25f, 0.5f), 2, 3, "Ch", 25, magicResist: 25f),
+                Armor("Frock", EquipSlot.Chest, ArmorType.Cloth, 42f, 4f, ArmorVisual.Robe, new Color(0.3f, 0.25f, 0.5f), 2, 3, "Ch", 25, magicResist: 25f),
                 Armor("Doublet", EquipSlot.Chest, ArmorType.Leather, 44f, 4f, ArmorVisual.LeatherChest, new Color(0.4f, 0.25f, 0.15f), 2, 3, "Ch", 28, modifiers: new[] { new StatModifier(StatType.Craft, 1f) }),
-                Armor("Heavy Gambeson", EquipSlot.Chest, ArmorType.Leather, 85f, 8f, ArmorVisual.LeatherChest, new Color(0.5f, 0.42f, 0.3f), 2, 3, "Ch", 45),
+                Armor("Heavy Gambeson", EquipSlot.Chest, ArmorType.Leather, 85f, 8f, ArmorVisual.Gambeson, new Color(0.5f, 0.42f, 0.3f), 2, 3, "Ch", 45),
                 Armor("Templar Armor", EquipSlot.Chest, ArmorType.Plate, 81f, 9f, ArmorVisual.PlateChest, new Color(0.75f, 0.75f, 0.8f), 2, 3, "Ch", 70, magicResist: 20f),
                 Armor("Dark Plate Armor", EquipSlot.Chest, ArmorType.Plate, 101f, 14f, ArmorVisual.PlateChest, new Color(0.25f, 0.25f, 0.3f), 2, 3, "Ch", 110),
                 Armor("Leather Gloves", EquipSlot.Hands, ArmorType.Leather, 15f, 0f, ArmorVisual.Gloves, s_leather, 2, 2, "Gl", 10),
                 Armor("Heavy Gauntlets", EquipSlot.Hands, ArmorType.Plate, 31f, 1f, ArmorVisual.Gauntlets, s_plate, 2, 2, "Gl", 32, magicResist: -5f),
                 Armor("Cloth Pants", EquipSlot.Legs, ArmorType.Cloth, 30f, 3f, ArmorVisual.Pants, s_cloth, 2, 2, "Lg", 10),
-                Armor("Leather Leggings", EquipSlot.Legs, ArmorType.Leather, 43f, 4f, ArmorVisual.Pants, s_leather, 2, 2, "Lg", 20),
+                Armor("Leather Leggings", EquipSlot.Legs, ArmorType.Leather, 43f, 4f, ArmorVisual.LeatherPants, s_leather, 2, 2, "Lg", 20),
                 Armor("Plate Pants", EquipSlot.Legs, ArmorType.Plate, 75f, 8f, ArmorVisual.Greaves, s_plate, 2, 2, "Lg", 55),
                 Armor("Adventurer Boots", EquipSlot.Feet, ArmorType.Leather, 23f, -6f, ArmorVisual.Boots, s_leather, 2, 2, "Bt", 12),
                 Armor("Plate Boots", EquipSlot.Feet, ArmorType.Plate, 42f, -4f, ArmorVisual.PlateBoots, s_plate, 2, 2, "Bt", 38, magicResist: -5f),
@@ -181,7 +181,10 @@ namespace Game.Scripts.Editor.Dungeon
                 Treasure("Diamond", 1, 1, 3, 25, "Dm", new Color(0.9f, 0.95f, 1f), true),
                 Treasure("Gold Goblet", 1, 1, 1, 35, "Gb", s_gold),
                 Treasure("Gold Candlestick", 1, 1, 1, 50, "Cs", s_gold),
-                Treasure("Ancient Scroll", 1, 1, 3, 60, "Sc", new Color(0.85f, 0.75f, 0.5f), true)
+                Treasure("Ancient Scroll", 1, 1, 3, 60, "Sc", new Color(0.85f, 0.75f, 0.5f), true),
+
+                // Appended last: item ids are list positions and saved stashes refer to them.
+                Armor("Cloth Shoes", EquipSlot.Feet, ArmorType.Cloth, 12f, -4f, ArmorVisual.Shoes, s_cloth, 2, 2, "Bt", 8)
             };
 
             return items;

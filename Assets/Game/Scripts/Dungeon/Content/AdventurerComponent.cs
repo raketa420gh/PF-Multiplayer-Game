@@ -30,6 +30,9 @@ namespace Game.Scripts.Dungeon
         public const byte BusyCast = 0;
         public const byte BusyUse = 1;
         public const byte BusyInteract = 2;
+        public const byte BusyThrow = 3;
+        public const byte BusyOpen = 4;
+        public const byte BusyPickUp = 5;
         public const int BeltGroupSize = 3;
         public const byte NoBelt = 255;
         private const float HoldGrace = 6f;
@@ -645,7 +648,7 @@ namespace Game.Scripts.Dungeon
 
             float duration = target.HoldTime / _stats.InteractionSpeed;
 
-            if (!_fighter.Combat.StartBusy(duration, BusyInteract))
+            if (!_fighter.Combat.StartBusy(duration, target.BusyKind))
                 return;
 
             Pending = PendingAction.Interact;
@@ -1094,6 +1097,7 @@ namespace Game.Scripts.Dungeon
             ItemConfig item = _database.Get(equipped.ItemId);
             float useTime;
             PendingAction action;
+            byte kind = BusyUse;
 
             switch (item)
             {
@@ -1104,12 +1108,13 @@ namespace Game.Scripts.Dungeon
                 case UtilityItemConfig utility when utility.UtilityKind != UtilityKind.Lockpick:
                     useTime = utility.UseTime / _stats.HandlingSpeed;
                     action = PendingAction.Utility;
+                    kind = utility.UtilityKind == UtilityKind.ThrowingWeapon ? BusyThrow : BusyInteract;
                     break;
                 default:
                     return;
             }
 
-            if (!_fighter.Combat.StartBusy(useTime, BusyUse))
+            if (!_fighter.Combat.StartBusy(useTime, kind))
                 return;
 
             Pending = action;

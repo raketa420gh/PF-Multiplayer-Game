@@ -9,6 +9,8 @@ namespace Game.Scripts.Dungeon
         public virtual string Prompt => _prompt;
         public virtual float HoldTime => _holdTime;
         public virtual bool IsAvailable => true;
+        /// Which busy animation the adventurer plays while holding F.
+        public virtual byte BusyKind => AdventurerComponent.BusyInteract;
 
         [SerializeField]
         private string _prompt = "Interact";

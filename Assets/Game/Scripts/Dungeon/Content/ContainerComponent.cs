@@ -8,6 +8,7 @@ namespace Game.Scripts.Dungeon
     {
         public override string Prompt => IsOpen ? "Search " + _displayName : "Open " + _displayName;
         public override float HoldTime => IsOpen ? 0.2f : _openTime;
+        public override byte BusyKind => IsOpen ? AdventurerComponent.BusyInteract : AdventurerComponent.BusyOpen;
         public InventoryComponent Inventory => _inventory;
         public LootTableConfig LootTable => _lootTable;
         public string DisplayName => _displayName;

@@ -3,6 +3,8 @@ using System.IO;
 using Game.Scripts.Battle;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 using UnityEngine.UI;
 
 namespace Game.Scripts.Editor.Battle
@@ -67,6 +69,34 @@ namespace Game.Scripts.Editor.Battle
             Image image = rect.gameObject.AddComponent<Image>();
             image.color = color;
             image.raycastTarget = false;
+        }
+
+        /// Poses an animator with one moment of a clip outside play mode, humanoid retargeting included.
+        public static void SampleClip(Animator animator, AnimationClip clip, float time)
+        {
+            PlayableGraph graph = PlayableGraph.Create();
+            AnimationClipPlayable playable = AnimationClipPlayable.Create(graph, clip);
+            // Only imported clips carry foot IK goals; the generated ones would pull the feet to the origin.
+            playable.SetApplyFootIK(AssetDatabase.IsSubAsset(clip));
+            AnimationPlayableOutput.Create(graph, "Pose", animator).SetSourcePlayable(playable);
+            playable.SetTime(time);
+            graph.Evaluate(0f);
+            graph.Destroy();
+        }
+
+        /// Finds a clip of the imported animation libraries by its take name.
+        public static AnimationClip LoadLibraryClip(string name)
+        {
+            foreach (string path in new[] { BattleCharacterBuilder.AnimationsPath1, BattleCharacterBuilder.AnimationsPath2 })
+            {
+                foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
+                {
+                    if (asset is AnimationClip clip && clip.name == name)
+                        return clip;
+                }
+            }
+
+            throw new System.ArgumentException($"Animation library clip '{name}' not found");
         }
 
         public static void EnsureFolder(string path)

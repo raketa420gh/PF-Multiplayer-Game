@@ -14,7 +14,7 @@ namespace Game.Scripts.Editor.Dungeon
                 new ClassDef
                 {
                     Id = 0, Name = "Cleric", Description = "Holy healer in heavy armor. Bane of the undead.",
-                    Stats = new ClassStats(16, 13, 12, 12, 15, 22), Color = new Color(0.95f, 0.9f, 0.6f), Body = new Color(0.75f, 0.72f, 0.65f),
+                    Stats = new ClassStats(16, 13, 12, 12, 15, 22), Color = new Color(0.95f, 0.9f, 0.6f), Body = new Color(0.86f, 0.64f, 0.5f),
                     Skills = new[]
                     {
                         Memory("Spell Memory", "Hold to open the spell wheel, release to ready a spell. Cast with RMB.", "SM", new Color(1f, 0.95f, 0.7f)),

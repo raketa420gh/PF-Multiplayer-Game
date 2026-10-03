@@ -28,7 +28,7 @@ namespace Game.Scripts.Dungeon
 
         private GameObject _rig;
         private Animator _animator;
-        private SkinnedMeshRenderer _body;
+        private CharacterModelComponent _model;
         private Transform[] _sockets;
         private ArmorDresser _dresser;
         private InventoryComponent _inventory;
@@ -72,8 +72,8 @@ namespace Game.Scripts.Dungeon
             _class = config;
             _shownVersion = -1;
 
-            if (_body != null && config != null)
-                _body.material.SetColor("_BaseColor", config.BodyColor);
+            if (_model != null && config != null)
+                _model.SetBodyColor(config.BodyColor);
         }
 
         private void EnsureRig()
@@ -85,7 +85,7 @@ namespace Game.Scripts.Dungeon
             _rig.transform.localPosition = Vector3.zero;
             _rig.transform.localRotation = Quaternion.Euler(0f, -15f, 0f);
             _animator = _rig.GetComponentInChildren<Animator>();
-            _body = _rig.GetComponentInChildren<SkinnedMeshRenderer>();
+            _model = _rig.GetComponentInChildren<CharacterModelComponent>();
             _dresser = new ArmorDresser(_animator, _pieceSet, _rig.layer);
             _sockets = new Transform[4];
             _sockets[(int)WeaponSocket.RightHand] = FindSocket("RightHandSocket");
@@ -120,10 +120,13 @@ namespace Game.Scripts.Dungeon
             WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(EquipSlot.Weapon1Off);
             WeaponConfig config = main != null ? (off != null && off.WeaponClass == WeaponClass.Shield && main.WeaponWithShield != null ? main.WeaponWithShield : main.Weapon) : null;
 
+            // Unarmed, the whole body stands in the relaxed library idle instead of the fist guard.
+            if (_animator != null)
+                _animator.SetLayerWeight(1, config != null ? 1f : 0f);
+
             if (config == null)
             {
                 _weaponVisuals = System.Array.Empty<GameObject>();
-                PlayIdle("Fists");
 
                 return;
             }

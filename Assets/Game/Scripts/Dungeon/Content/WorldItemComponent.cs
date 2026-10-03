@@ -8,6 +8,7 @@ namespace Game.Scripts.Dungeon
     {
         public override string Prompt => "Take " + (Config != null ? Config.DisplayName : "item");
         public override float HoldTime => 0.35f;
+        public override byte BusyKind => AdventurerComponent.BusyPickUp;
         public ItemConfig Config => _database.Get(Stack.ItemId);
 
         [Networked]

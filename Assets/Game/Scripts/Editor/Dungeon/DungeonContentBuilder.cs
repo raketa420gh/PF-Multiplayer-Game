@@ -46,8 +46,8 @@ namespace Game.Scripts.Editor.Dungeon
             Dictionary<string, LootTableConfig> loot = BuildLootTables(database);
             GameObject worldItem = BuildWorldItem(database);
             GameObject campfire = BuildCampfire();
-            GameObject corpse = BuildCorpse(database, classes);
             ArmorPieceSetConfig pieceSet = BuildArmorPieceSet();
+            GameObject corpse = BuildCorpse(database, classes, pieceSet);
             BattleEditorUtility.EnsureLayer(DungeonUiBuilder.PreviewLayer);
             BuildPreviewRig(pieceSet);
 
@@ -59,10 +59,12 @@ namespace Game.Scripts.Editor.Dungeon
             BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = 2, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
                 Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Hood, rags) } }, loadouts, arrow, orb, worldItem, pieceSet);
             BuildMonster(new MonsterDef { Name = "Zombie", DisplayName = "Zombie", Health = 168, Damage = 4.5f, MoveSpeed = 130f, ActionSpeed = 0.6f, Aggro = 8f, WeaponIndex = 4, Experience = 30, Loot = loot["Monster"], Body = DungeonPropBuilder.ZombieSkin, Scale = 1.05f, Voice = DungeonSound.Growl,
-                Attachments = new[] { (ArmorVisual.Tunic, new Color(0.3f, 0.3f, 0.2f)), (ArmorVisual.Pants, new Color(0.22f, 0.2f, 0.15f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
+                Controller = AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(BattleAnimationBuilder.ZombieControllerPath),
+                Attachments = new[] { (ArmorVisual.Tunic, new Color(0.5f, 0.52f, 0.4f)), (ArmorVisual.Pants, new Color(0.55f, 0.5f, 0.42f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
             BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 210f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = 15, Experience = 150, Loot = loot["ChestOrnate"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
                 IsBoss = true, Lunge = 5f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.GreatHelm, new Color(0.85f, 0.7f, 0.3f)), (ArmorVisual.PlateChest, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Greaves, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Cloak, new Color(0.35f, 0.08f, 0.1f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
 
+            BuildFigures();
             BuildSession(database, classes, config);
             BuildMatch(config);
             BuildContainer("SmallOakChest", "Small Oak Chest", loot["ChestCommon"], 1.6f, false);
@@ -93,6 +95,7 @@ namespace Game.Scripts.Editor.Dungeon
             ItemConfig[] configs = new ItemConfig[defs.Count];
             GameObject[] armorPieces = BuildArmorPieces();
             (ArmorVisual visual, int prefab, HumanBodyBones bone, bool mirrored)[] mapping = ArmorMapping();
+            Dictionary<ArmorVisual, GameObject> outfitModels = BuildOutfitModels();
 
             for (int i = 0; i < defs.Count; i++)
             {
@@ -120,7 +123,7 @@ namespace Game.Scripts.Editor.Dungeon
                 BattleEditorUtility.Set(so, "_iconGlyph", def.Glyph);
                 BattleEditorUtility.Set(so, "_canRollRarity", def.RollsRarity);
                 SetModifiers(so, "_modifiers", def.Modifiers);
-                GameObject model = ResolveModel(def, weapons, armorPieces, mapping, out float zoom, out Vector3 euler);
+                GameObject model = ResolveModel(def, weapons, armorPieces, mapping, outfitModels, out float zoom, out Vector3 euler);
                 BattleEditorUtility.Set(so, "_worldModel", def.Kind == ItemKind.Armor ? null : model);
                 BattleEditorUtility.Set(so, "_icon", model != null ? DungeonIconBuilder.Render(model, Sanitize(def.Name), zoom, euler) : null);
 
@@ -143,7 +146,7 @@ namespace Game.Scripts.Editor.Dungeon
                         BattleEditorUtility.Set(so, "_magicResistance", def.MagicResist);
                         BattleEditorUtility.Set(so, "_moveSpeedPenalty", -def.MovePenalty);
                         BattleEditorUtility.Set(so, "_visual", def.Visual);
-                        BattleEditorUtility.Set(so, "_visualColor", def.VisualColor);
+                        BattleEditorUtility.Set(so, "_visualColor", outfitModels.ContainsKey(def.Visual) ? Color.white : def.VisualColor);
                         break;
                     case ItemKind.Consumable:
                         BattleEditorUtility.Set(so, "_effect", def.Effect);
@@ -170,7 +173,8 @@ namespace Game.Scripts.Editor.Dungeon
 
         /// Picks the 3D representation of an item: weapon attachments, armor pieces or a dedicated small model.
         private static GameObject ResolveModel(ItemDef def, Dictionary<string, WeaponConfig> weapons, GameObject[] armorPieces,
-            (ArmorVisual visual, int prefab, HumanBodyBones bone, bool mirrored)[] mapping, out float zoom, out Vector3 euler)
+            (ArmorVisual visual, int prefab, HumanBodyBones bone, bool mirrored)[] mapping, Dictionary<ArmorVisual, GameObject> outfitModels,
+            out float zoom, out Vector3 euler)
         {
             zoom = 1f;
             euler = Vector3.zero;
@@ -198,6 +202,13 @@ namespace Game.Scripts.Editor.Dungeon
 
                     return null;
                 case ItemKind.Armor:
+                    if (outfitModels.TryGetValue(def.Visual, out GameObject outfit))
+                    {
+                        zoom = 1.1f;
+
+                        return outfit;
+                    }
+
                     foreach ((ArmorVisual visual, int prefab, HumanBodyBones bone, bool mirrored) entry in mapping)
                     {
                         if (entry.visual == def.Visual)
@@ -502,7 +513,7 @@ namespace Game.Scripts.Editor.Dungeon
             so = new SerializedObject(visual);
             BattleEditorUtility.Set(so, "_adventurer", adventurer);
             BattleEditorUtility.Set(so, "_animator", parts.Animator);
-            BattleEditorUtility.Set(so, "_body", parts.Renderer);
+            BattleEditorUtility.Set(so, "_model", parts.Model);
             BattleEditorUtility.Set(so, "_torchLight", torchLight);
             BattleEditorUtility.Set(so, "_handGlow", handGlow);
             BattleEditorUtility.Set(so, "_pieceSet", pieceSet);
@@ -522,9 +533,6 @@ namespace Game.Scripts.Editor.Dungeon
             animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<AnimatorController>(BattleEditorUtility.ControllerPath);
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            SkinnedMeshRenderer renderer = model.GetComponentInChildren<SkinnedMeshRenderer>();
-            renderer.sharedMaterial = BattleEditorUtility.GetMaterial("FighterBody", new Color(0.62f, 0.66f, 0.72f));
-            renderer.updateWhenOffscreen = true;
             BattlePoseRig.CreateSockets(animator);
             BattleEditorUtility.SetLayerRecursively(root, layer);
 
@@ -549,9 +557,57 @@ namespace Game.Scripts.Editor.Dungeon
                 element.FindPropertyRelative("IsMirrored").boolValue = mapping[i].mirrored;
             }
 
+            SerializedProperty outfits = so.FindProperty("_outfits");
+            outfits.arraySize = 0;
+
+            foreach ((ArmorVisual visual, string material, OutfitPart[] parts) in OutfitMapping())
+            {
+                foreach (OutfitPart part in parts)
+                {
+                    SerializedProperty element = outfits.GetArrayElementAtIndex(outfits.arraySize++);
+                    element.FindPropertyRelative("Visual").intValue = (int)visual;
+                    element.FindPropertyRelative("Part").intValue = (int)part;
+                    element.FindPropertyRelative("Material").objectReferenceValue = BattleCharacterBuilder.LoadMaterial(material);
+                }
+            }
+
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return config;
+        }
+
+        /// Looks worn as skinned parts of the character model: the peasant and ranger outfits in both texture variants.
+        private static (ArmorVisual visual, string material, OutfitPart[] parts)[] OutfitMapping()
+        {
+            return new[]
+            {
+                (ArmorVisual.Hood, BattleCharacterBuilder.RangerMaterial, new[] { OutfitPart.RangerHood }),
+                (ArmorVisual.WizardHood, BattleCharacterBuilder.RangerAltMaterial, new[] { OutfitPart.RangerHood }),
+                (ArmorVisual.Tunic, BattleCharacterBuilder.PeasantMaterial, new[] { OutfitPart.PeasantBody, OutfitPart.PeasantArms }),
+                (ArmorVisual.Robe, BattleCharacterBuilder.PeasantAltMaterial, new[] { OutfitPart.PeasantBody, OutfitPart.PeasantArms }),
+                (ArmorVisual.LeatherChest, BattleCharacterBuilder.RangerMaterial, new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt1 }),
+                (ArmorVisual.Gambeson, BattleCharacterBuilder.RangerAltMaterial, new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt2, OutfitPart.RangerPauldron }),
+                (ArmorVisual.Gloves, BattleCharacterBuilder.RangerMaterial, new[] { OutfitPart.RangerBracers }),
+                (ArmorVisual.Pants, BattleCharacterBuilder.PeasantMaterial, new[] { OutfitPart.PeasantLegs }),
+                (ArmorVisual.LeatherPants, BattleCharacterBuilder.RangerMaterial, new[] { OutfitPart.RangerLegs }),
+                (ArmorVisual.Boots, BattleCharacterBuilder.RangerMaterial, new[] { OutfitPart.RangerBoots }),
+                (ArmorVisual.Shoes, BattleCharacterBuilder.PeasantAltMaterial, new[] { OutfitPart.PeasantFeet })
+            };
+        }
+
+        /// Static T-pose figures of every outfit look, used to render the item icons.
+        private static Dictionary<ArmorVisual, GameObject> BuildOutfitModels()
+        {
+            Dictionary<ArmorVisual, GameObject> models = new();
+
+            foreach ((ArmorVisual visual, string material, OutfitPart[] parts) in OutfitMapping())
+            {
+                GameObject root = BattleCharacterBuilder.CreateOutfitModel("Armor_" + visual, BattleCharacterBuilder.LoadMaterial(material), parts);
+                models[visual] = PrefabUtility.SaveAsPrefabAsset(root, $"{ArmorFolder}/{root.name}.prefab");
+                Object.DestroyImmediate(root);
+            }
+
+            return models;
         }
 
         private sealed class MonsterDef
@@ -573,6 +629,7 @@ namespace Game.Scripts.Editor.Dungeon
             public bool IsBoss;
             public float Lunge;
             public DungeonSound Voice = DungeonSound.Rattle;
+            public RuntimeAnimatorController Controller;
             public (ArmorVisual, Color)[] Attachments = System.Array.Empty<(ArmorVisual, Color)>();
         }
 
@@ -580,23 +637,24 @@ namespace Game.Scripts.Editor.Dungeon
         {
             return new[]
             {
-                (ArmorVisual.Hood, 0, HumanBodyBones.Head, false), (ArmorVisual.Cap, 1, HumanBodyBones.Head, false), (ArmorVisual.Helmet, 2, HumanBodyBones.Head, false),
-                (ArmorVisual.GreatHelm, 3, HumanBodyBones.Head, false), (ArmorVisual.Tunic, 4, HumanBodyBones.Spine, false), (ArmorVisual.LeatherChest, 5, HumanBodyBones.Spine, false),
-                (ArmorVisual.ChainChest, 16, HumanBodyBones.Spine, false), (ArmorVisual.PlateChest, 6, HumanBodyBones.Spine, false),
-                (ArmorVisual.Gloves, 7, HumanBodyBones.LeftHand, false), (ArmorVisual.Gloves, 7, HumanBodyBones.RightHand, true),
-                (ArmorVisual.Gauntlets, 8, HumanBodyBones.LeftHand, false), (ArmorVisual.Gauntlets, 8, HumanBodyBones.RightHand, true),
-                (ArmorVisual.Pants, 9, HumanBodyBones.LeftUpperLeg, false), (ArmorVisual.Pants, 9, HumanBodyBones.RightUpperLeg, true),
-                (ArmorVisual.Greaves, 10, HumanBodyBones.LeftLowerLeg, false), (ArmorVisual.Greaves, 10, HumanBodyBones.RightLowerLeg, true),
-                (ArmorVisual.Boots, 11, HumanBodyBones.LeftFoot, false), (ArmorVisual.Boots, 11, HumanBodyBones.RightFoot, true),
-                (ArmorVisual.PlateBoots, 12, HumanBodyBones.LeftFoot, false), (ArmorVisual.PlateBoots, 12, HumanBodyBones.RightFoot, true),
-                (ArmorVisual.Cloak, 13, HumanBodyBones.UpperChest, false),
-                (ArmorVisual.Skull, 14, HumanBodyBones.Head, false), (ArmorVisual.Ribcage, 15, HumanBodyBones.Spine, false)
+                (ArmorVisual.Cap, 0, HumanBodyBones.Head, false), (ArmorVisual.Helmet, 1, HumanBodyBones.Head, false),
+                (ArmorVisual.GreatHelm, 2, HumanBodyBones.Head, false), (ArmorVisual.PlateChest, 3, HumanBodyBones.Spine, false),
+                (ArmorVisual.Gauntlets, 4, HumanBodyBones.LeftHand, false), (ArmorVisual.Gauntlets, 4, HumanBodyBones.RightHand, true),
+                (ArmorVisual.Greaves, 5, HumanBodyBones.LeftLowerLeg, false), (ArmorVisual.Greaves, 5, HumanBodyBones.RightLowerLeg, true),
+                (ArmorVisual.PlateBoots, 6, HumanBodyBones.LeftFoot, false), (ArmorVisual.PlateBoots, 6, HumanBodyBones.RightFoot, true),
+                (ArmorVisual.Cloak, 7, HumanBodyBones.UpperChest, false),
+                (ArmorVisual.Skull, 8, HumanBodyBones.Head, false), (ArmorVisual.Ribcage, 9, HumanBodyBones.Spine, false),
+                (ArmorVisual.ChainChest, 10, HumanBodyBones.Spine, false)
             };
         }
 
-        /// Composite armor pieces parented to bones: index order matches ArmorMapping. Parts named "Fixed" keep their own colour.
+        /// Composite metal pieces parented to bones: index order matches ArmorMapping. Parts named "Fixed" keep their own colour.
+        /// Cloth and leather looks are skinned outfit parts, see OutfitMapping.
         private static GameObject[] BuildArmorPieces()
         {
+            foreach (string replaced in new[] { "Hood", "Tunic", "LeatherChest", "Gloves", "Pants", "Boots" })
+                AssetDatabase.DeleteAsset($"{ArmorFolder}/Armor_{replaced}.prefab");
+
             Material cloth = BattleEditorUtility.GetMaterial("ArmorCloth", new Color(0.5f, 0.45f, 0.4f), 0f, 0.2f);
             Material metal = BattleEditorUtility.GetMaterial("ArmorMetal", new Color(0.7f, 0.72f, 0.78f), 0.8f, 0.6f);
             Material leather = BattleEditorUtility.GetMaterial("ArmorLeather", new Color(0.45f, 0.3f, 0.18f), 0f, 0.35f);
@@ -608,12 +666,6 @@ namespace Game.Scripts.Editor.Dungeon
 
             return new[]
             {
-                Composite("Armor_Hood", root =>
-                {
-                    Part(root, sphere, new Vector3(0f, 0.09f, -0.01f), new Vector3(0.27f, 0.3f, 0.28f), cloth);
-                    Part(root, cylinder, new Vector3(0f, -0.03f, 0f), new Vector3(0.2f, 0.05f, 0.19f), cloth);
-                    Part(root, cylinder, new Vector3(0f, -0.09f, 0f), new Vector3(0.26f, 0.04f, 0.24f), cloth);
-                }),
                 Composite("Armor_Cap", root =>
                 {
                     Part(root, sphere, new Vector3(0f, 0.12f, 0f), new Vector3(0.25f, 0.19f, 0.26f), leather);
@@ -633,21 +685,6 @@ namespace Game.Scripts.Editor.Dungeon
                     Part(root, cube, new Vector3(0f, 0.1f, 0.14f), new Vector3(0.16f, 0.012f, 0.02f), dark, default, true);
                     Part(root, cube, new Vector3(0f, 0.06f, 0.14f), new Vector3(0.012f, 0.1f, 0.02f), dark, default, true);
                 }),
-                Composite("Armor_Tunic", root =>
-                {
-                    Part(root, cylinder, new Vector3(0f, 0.16f, 0f), new Vector3(0.4f, 0.2f, 0.3f), cloth);
-                    Part(root, cube, new Vector3(0f, -0.02f, 0f), new Vector3(0.42f, 0.05f, 0.32f), leather, default, true);
-                    Part(root, cylinder, new Vector3(0f, -0.1f, 0f), new Vector3(0.44f, 0.07f, 0.34f), cloth);
-                }),
-                Composite("Armor_LeatherChest", root =>
-                {
-                    Part(root, cylinder, new Vector3(0f, 0.16f, 0f), new Vector3(0.42f, 0.2f, 0.32f), leather);
-                    Part(root, cube, new Vector3(0.1f, 0.2f, 0.165f), new Vector3(0.04f, 0.3f, 0.01f), dark, default, true);
-                    Part(root, cube, new Vector3(-0.1f, 0.2f, 0.165f), new Vector3(0.04f, 0.3f, 0.01f), dark, default, true);
-                    Part(root, sphere, new Vector3(0.23f, 0.38f, -0.02f), new Vector3(0.16f, 0.1f, 0.18f), leather);
-                    Part(root, sphere, new Vector3(-0.23f, 0.38f, -0.02f), new Vector3(0.16f, 0.1f, 0.18f), leather);
-                    Part(root, cube, new Vector3(0f, -0.02f, 0f), new Vector3(0.44f, 0.05f, 0.34f), dark, default, true);
-                }),
                 Composite("Armor_PlateChest", root =>
                 {
                     Part(root, cylinder, new Vector3(0f, 0.16f, 0f), new Vector3(0.46f, 0.21f, 0.36f), metal);
@@ -658,27 +695,16 @@ namespace Game.Scripts.Editor.Dungeon
                     Part(root, cube, new Vector3(-0.12f, -0.08f, 0.1f), new Vector3(0.18f, 0.14f, 0.03f), metal, new Vector3(-10f, 0f, 0f));
                     Part(root, cube, new Vector3(0f, -0.02f, 0f), new Vector3(0.48f, 0.05f, 0.38f), leather, default, true);
                 }),
-                Composite("Armor_Gloves", root =>
-                {
-                    Part(root, sphere, new Vector3(-0.1f, 0f, 0.015f), new Vector3(0.25f, 0.08f, 0.15f), leather);
-                    Part(root, cylinder, new Vector3(0.02f, 0f, 0f), new Vector3(0.1f, 0.03f, 0.1f), leather, new Vector3(0f, 0f, 90f));
-                }),
                 Composite("Armor_Gauntlets", root =>
                 {
                     Part(root, cube, new Vector3(-0.1f, 0f, 0.015f), new Vector3(0.23f, 0.08f, 0.14f), metal);
                     Part(root, cylinder, new Vector3(0.03f, 0f, 0f), new Vector3(0.12f, 0.035f, 0.12f), metal, new Vector3(0f, 0f, 90f));
                     Part(root, cube, new Vector3(-0.09f, 0.045f, 0.015f), new Vector3(0.07f, 0.02f, 0.11f), metal);
                 }),
-                Composite("Armor_Pants", root => Part(root, PrimitiveType.Capsule, new Vector3(0f, -0.2f, 0f), new Vector3(0.21f, 0.24f, 0.22f), cloth)),
                 Composite("Armor_Greaves", root =>
                 {
                     Part(root, cylinder, new Vector3(0f, -0.2f, -0.03f), new Vector3(0.16f, 0.2f, 0.17f), metal);
                     Part(root, sphere, new Vector3(0f, 0f, 0.03f), new Vector3(0.13f, 0.1f, 0.13f), metal);
-                }),
-                Composite("Armor_Boots", root =>
-                {
-                    Part(root, cube, new Vector3(0f, -0.03f, 0.085f), new Vector3(0.13f, 0.1f, 0.31f), leather);
-                    Part(root, cylinder, new Vector3(0f, 0.06f, -0.02f), new Vector3(0.15f, 0.08f, 0.15f), leather);
                 }),
                 Composite("Armor_PlateBoots", root =>
                 {
@@ -772,8 +798,12 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(loadouts, arrow, orb, 1, def.Name);
             GameObject root = parts.Root;
             BattleEditorUtility.Set(parts.Fighter, "_respawnDelay", 0f);
-            parts.Renderer.sharedMaterial = def.Body;
+            parts.Model.SetBodyMaterial(def.Body);
             parts.Animator.transform.localScale = Vector3.one * def.Scale;
+
+            if (def.Controller != null)
+                parts.Animator.runtimeAnimatorController = def.Controller;
+
             root.GetComponent<CharacterController>().radius = 0.3f * def.Scale;
             root.GetComponent<CharacterController>().height = 1.85f * def.Scale;
             root.GetComponent<CharacterController>().center = new Vector3(0f, 0.925f * def.Scale, 0f);
@@ -811,7 +841,30 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.SavePrefab(root, Prefab(def.Name));
         }
 
-        private static GameObject BuildCorpse(ItemDatabase database, ClassConfig[] classes)
+        /// Decor made of the character packs: outfits on armour stands, stone statues and fallen adventurers.
+        private static void BuildFigures()
+        {
+            OutfitPart[] peasant = { OutfitPart.PeasantBody, OutfitPart.PeasantArms, OutfitPart.PeasantLegs, OutfitPart.PeasantFeet };
+            OutfitPart[] ranger =
+            {
+                OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBracers, OutfitPart.RangerBelt1, OutfitPart.RangerBelt2,
+                OutfitPart.RangerPauldron, OutfitPart.RangerHood, OutfitPart.RangerLegs, OutfitPart.RangerBoots
+            };
+            OutfitPart[] mage = { OutfitPart.PeasantBody, OutfitPart.PeasantArms, OutfitPart.PeasantLegs, OutfitPart.PeasantFeet, OutfitPart.RangerHood };
+            OutfitPart[] rags = { OutfitPart.PeasantBody, OutfitPart.PeasantLegs, OutfitPart.PeasantFeet };
+
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.ArmorStand("StandPeasantMale", false, "Idle_Loop", 0f, peasant), "StandPeasantMale");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.ArmorStand("StandPeasantFemale", true, "Idle_Talking_Loop", 1.2f, peasant), "StandPeasantFemale");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.ArmorStand("StandRangerMale", false, "Sword_Idle", 0f, ranger), "StandRangerMale");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.ArmorStand("StandRangerFemale", true, "Idle_FoldArms_Loop", 1f, ranger), "StandRangerFemale");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Statue("StatueGuardian", false, "Idle_Shield_Loop", 0f, ranger), "StatueGuardian");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Statue("StatueMage", true, "Spell_Simple_Idle_Loop", 0f, mage), "StatueMage");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Statue("StatuePilgrim", false, "Idle_Lantern_Loop", 0f, mage), "StatuePilgrim");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Fallen("FallenPeasant", false, rags), "FallenPeasant");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Fallen("FallenRanger", true, ranger), "FallenRanger");
+        }
+
+        private static GameObject BuildCorpse(ItemDatabase database, ClassConfig[] classes, ArmorPieceSetConfig pieceSet)
         {
             GameObject root = new GameObject("Corpse");
             root.AddComponent<NetworkObject>();
@@ -822,9 +875,6 @@ namespace Game.Scripts.Editor.Dungeon
             animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<AnimatorController>(BattleEditorUtility.ControllerPath);
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            SkinnedMeshRenderer renderer = model.GetComponentInChildren<SkinnedMeshRenderer>();
-            renderer.sharedMaterial = BattleEditorUtility.GetMaterial("FighterBody", new Color(0.62f, 0.66f, 0.72f));
-            renderer.updateWhenOffscreen = true;
 
             InventoryComponent inventory = AddInventory(root, database, 10, 4, true, "Inventory");
             ContainerComponent container = root.AddComponent<ContainerComponent>();
@@ -833,14 +883,15 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_displayName", "Dead Adventurer");
             BattleEditorUtility.Set(so, "_openTime", 1f);
             so.ApplyModifiedPropertiesWithoutUndo();
-            AddInteractCollider(root, new Vector3(0f, 0.3f, 0.6f), new Vector3(1f, 0.6f, 1.8f));
+            AddInteractCollider(root, new Vector3(0f, 0.3f, -0.55f), new Vector3(1f, 0.6f, 2f));
 
             CorpseComponent corpse = root.AddComponent<CorpseComponent>();
             so = new SerializedObject(corpse);
             BattleEditorUtility.Set(so, "_container", container);
             BattleEditorUtility.Set(so, "_inventory", inventory);
             BattleEditorUtility.Set(so, "_animator", animator);
-            BattleEditorUtility.Set(so, "_bodyRenderer", renderer);
+            BattleEditorUtility.Set(so, "_model", model.GetComponent<CharacterModelComponent>());
+            BattleEditorUtility.Set(so, "_pieceSet", pieceSet);
             BattleEditorUtility.Set(so, "_classes", classes);
             so.ApplyModifiedPropertiesWithoutUndo();
 

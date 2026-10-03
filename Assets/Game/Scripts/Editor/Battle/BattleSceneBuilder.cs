@@ -20,6 +20,16 @@ namespace Game.Scripts.Editor.Battle
         private static readonly string[] s_monsters = { "SkeletonSwordsman", "SkeletonArcher", "Zombie", "SkeletonChampion" };
         private static readonly string[] s_monsterLabels = { "Skeleton", "Archer", "Zombie", "Champion" };
         private static readonly string[] s_dungeonOnlyHud = { "Minimap", "TimerBack", "Timer", "Swarm", "ModuleBack", "Module", "Floor" };
+        /// Decor from the character packs: an armoury row of outfit stands by the spawn, statues and fallen bodies further out.
+        private static readonly (string prefab, Vector3 position, float yaw)[] s_figures =
+        {
+            ("StandPeasantMale", new Vector3(-10.5f, 0f, -12.5f), 60f), ("StandPeasantFemale", new Vector3(-10.5f, 0f, -10f), 90f),
+            ("StandRangerMale", new Vector3(10.5f, 0f, -12.5f), -60f), ("StandRangerFemale", new Vector3(10.5f, 0f, -10f), -90f),
+            ("StatueGuardian", new Vector3(-7f, 0f, 14f), 180f), ("StatueGuardian", new Vector3(7f, 0f, 14f), 180f),
+            ("StatueMage", new Vector3(-20f, 0f, 30f), 135f), ("StatuePilgrim", new Vector3(20f, 0f, 30f), -135f),
+            ("FallenPeasant", new Vector3(-12f, 0f, 8f), 70f), ("FallenRanger", new Vector3(13f, 0f, 12f), -40f)
+        };
+
         private static readonly string[] s_tableItems =
         {
             "Arming Sword", "Round Shield", "Falchion", "Zweihander", "Battle Axe", "Spear", "Flanged Mace", "Rondel Dagger", "Recurve Bow",
@@ -89,6 +99,12 @@ namespace Game.Scripts.Editor.Battle
 
             for (int i = 0; i < 3; i++)
                 Box("ArcheryTarget" + i, world, new Vector3(14f + i * 3f, 1.2f, 20f + i * 5f), new Vector3(1.2f, 1.2f, 0.3f), target);
+
+            foreach ((string prefab, Vector3 position, float yaw) in s_figures)
+            {
+                GameObject figure = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab(prefab)), world);
+                figure.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
+            }
 
             return world;
         }

@@ -1,4 +1,5 @@
 using System;
+using Game.Scripts.Battle;
 using UnityEngine;
 
 namespace Game.Scripts.Dungeon
@@ -12,13 +13,26 @@ namespace Game.Scripts.Dungeon
         public bool IsMirrored;
     }
 
-    /// Which primitive piece hangs on which bone for every armor look; shared by players, monsters and the preview.
+    [Serializable]
+    public struct ArmorOutfitEntry
+    {
+        public ArmorVisual Visual;
+        public OutfitPart Part;
+        public Material Material;
+    }
+
+    /// Every armor look: rigid pieces hung on bones and skinned outfit parts of the character model;
+    /// shared by players, monsters and the preview.
     [CreateAssetMenu(menuName = "Game/Dungeon/Armor Piece Set")]
     public sealed class ArmorPieceSetConfig : ScriptableObject
     {
         public ArmorPieceEntry[] Entries => _entries;
+        public ArmorOutfitEntry[] Outfits => _outfits;
 
         [SerializeField]
         private ArmorPieceEntry[] _entries = Array.Empty<ArmorPieceEntry>();
+
+        [SerializeField]
+        private ArmorOutfitEntry[] _outfits = Array.Empty<ArmorOutfitEntry>();
     }
 }

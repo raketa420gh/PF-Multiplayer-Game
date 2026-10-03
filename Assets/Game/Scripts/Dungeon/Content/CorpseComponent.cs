@@ -1,4 +1,5 @@
 using Fusion;
+using Game.Scripts.Battle;
 using UnityEngine;
 
 namespace Game.Scripts.Dungeon
@@ -24,7 +25,10 @@ namespace Game.Scripts.Dungeon
         private Animator _animator;
 
         [SerializeField]
-        private Renderer _bodyRenderer;
+        private CharacterModelComponent _model;
+
+        [SerializeField]
+        private ArmorPieceSetConfig _pieceSet;
 
         [SerializeField]
         private ClassConfig[] _classes;
@@ -32,16 +36,32 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private string _deathState = "Death";
 
+        private ArmorDresser _dresser;
+        private int _shownVersion = -1;
+
         public override void Spawned()
         {
+            _dresser = new ArmorDresser(_animator, _pieceSet, gameObject.layer);
+
             if (_animator != null)
             {
+                _animator.SetLayerWeight(1, 0f);
                 _animator.Play(_deathState, 0, 0.999f);
                 _animator.Update(0f);
                 _animator.speed = 0f;
             }
 
             ApplyClassColor();
+        }
+
+        /// The body keeps wearing whatever is still equipped on it.
+        public override void Render()
+        {
+            if (_shownVersion == _inventory.Version)
+                return;
+
+            _shownVersion = _inventory.Version;
+            _dresser.Apply(_inventory);
         }
 
         public void Setup(InventoryComponent source, ClassConfig config, string ownerName)
@@ -53,13 +73,13 @@ namespace Game.Scripts.Dungeon
 
         private void ApplyClassColor()
         {
-            if (_bodyRenderer == null)
+            if (_model == null)
                 return;
 
             foreach (ClassConfig config in _classes)
             {
                 if (config.Id == ClassId)
-                    _bodyRenderer.material.SetColor("_BaseColor", config.BodyColor);
+                    _model.SetBodyColor(config.BodyColor);
             }
         }
     }

@@ -84,6 +84,15 @@ namespace Game.Scripts.Editor.Dungeon
             public GameObject Lever;
             public GameObject SpikeTrap;
             public GameObject BladeTrap;
+            public GameObject StandPeasantMale;
+            public GameObject StandPeasantFemale;
+            public GameObject StandRangerMale;
+            public GameObject StandRangerFemale;
+            public GameObject StatueGuardian;
+            public GameObject StatueMage;
+            public GameObject StatuePilgrim;
+            public GameObject FallenPeasant;
+            public GameObject FallenRanger;
         }
 
         private static readonly Room[,] s_floor1 =
@@ -194,7 +203,16 @@ namespace Game.Scripts.Editor.Dungeon
                 Shrines = new[] { Load("ShrineHealth"), Load("ShrineProtection"), Load("ShrinePower"), Load("ShrineSpeed") },
                 Lever = Load("Lever"),
                 SpikeTrap = Load("SpikeTrap"),
-                BladeTrap = Load("BladeTrap")
+                BladeTrap = Load("BladeTrap"),
+                StandPeasantMale = Load("StandPeasantMale"),
+                StandPeasantFemale = Load("StandPeasantFemale"),
+                StandRangerMale = Load("StandRangerMale"),
+                StandRangerFemale = Load("StandRangerFemale"),
+                StatueGuardian = Load("StatueGuardian"),
+                StatueMage = Load("StatueMage"),
+                StatuePilgrim = Load("StatuePilgrim"),
+                FallenPeasant = Load("FallenPeasant"),
+                FallenRanger = Load("FallenRanger")
             };
 
             return kit;
@@ -329,6 +347,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Container(kit.Chest, module, result, Spread(5f, 0f, 4.5f), -90f);
                     Container(kit.Barrel, module, result, Spread(-5.5f, 0f, 5f), 0f);
                     Container(kit.Crate, module, result, Spread(-5.5f, 0f, 3.8f), 20f);
+                    Place(kit.StandPeasantMale, module, Spread(-2.5f, 0f, 5.8f), 180f);
+                    Place(kit.StandPeasantFemale, module, Spread(2.5f, 0f, 5.8f), 180f);
                     Pillars(kit, module, 4.5f);
                     break;
 
@@ -337,6 +357,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Place(kit.Brazier, module, Spread(0f, 0f, 3f), 0f);
                     Place(kit.Skulls, module, Spread(-5f, 0f, -5f), 30f);
                     Container(kit.Chest, module, result, Spread(5.5f, 0f, -3f), -90f);
+                    Place(kit.StatuePilgrim, module, Spread(6f, 0f, 2.5f), -90f);
+                    Place(kit.FallenPeasant, module, Spread(-2f, 0f, 3f), 70f);
                     Pillars(kit, module, 4.5f);
                     break;
 
@@ -348,6 +370,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Container(kit.Crate, module, result, Spread(5.5f, 0f, -4.4f), 40f);
                     Monster(markers, result, module.position + Spread(0f, 0f, 3f), 180f);
                     Monster(markers, result, module.position + Spread(2f, 0f, -3f), 0f);
+                    Place(kit.StatueGuardian, module, Spread(-6f, 0f, 2.5f), 90f);
+                    Place(kit.StatueGuardian, module, Spread(6f, 0f, -2.5f), -90f);
                     Pillars(kit, module, 5f);
                     break;
 
@@ -360,6 +384,7 @@ namespace Game.Scripts.Editor.Dungeon
 
                     Place(kit.Skulls, module, Spread(0f, 0f, 5.5f), 0f);
                     Place(kit.Brazier, module, Spread(0f, 0f, 0f), 0f);
+                    Place(kit.FallenRanger, module, Spread(1.5f, 0f, -5f), 40f);
                     Monster(markers, result, module.position + Spread(-1.5f, 0f, -2f), 0f);
                     Monster(markers, result, module.position + Spread(2f, 0f, 3f), 180f);
                     break;
@@ -374,6 +399,7 @@ namespace Game.Scripts.Editor.Dungeon
                     Place(kit.Table, module, Spread(0f, 0f, 0f), 90f);
                     Place(kit.Table, module, Spread(0f, 0f, -4f), 90f);
                     Container(kit.Chest, module, result, Spread(0f, 0f, 5.5f), 180f);
+                    Place(kit.StatueMage, module, Spread(-3f, 0f, -6f), 0f);
                     Monster(markers, result, module.position + Spread(3f, 0f, 2f), 180f);
                     break;
 
@@ -385,6 +411,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Container(kit.Barrel, module, result, Spread(5.5f, 0f, -4.4f), 0f);
                     Place(kit.Table, module, Spread(-4f, 0f, 1f), 90f);
                     Place(kit.Banner, module, Spread(0f, 3.6f, -half + 0.4f), 0f);
+                    Place(kit.StandRangerMale, module, Spread(-3f, 0f, 5.8f), 180f);
+                    Place(kit.StandRangerFemale, module, Spread(3f, 0f, 5.8f), 180f);
                     result.Levers.Add(Place(kit.Lever, module, Spread(6.3f, 0f, 3f), -90f, false).GetComponent<LeverComponent>());
                     Monster(markers, result, module.position + Spread(2f, 0f, 1f), 90f);
                     Monster(markers, result, module.position + Spread(-2f, 0f, -2f), 0f);
@@ -399,6 +427,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Place(kit.SpikeTrap, module, Spread(0f, 0f, 2f), 0f, false);
                     Place(kit.Banner, module, Spread(-3f, 3.6f, half - 0.4f), 180f);
                     Place(kit.Banner, module, Spread(3f, 3.6f, half - 0.4f), 180f);
+                    Place(kit.StatueGuardian, module, Spread(-2.6f, 0f, 5.8f), 180f);
+                    Place(kit.StatueGuardian, module, Spread(2.6f, 0f, 5.8f), 180f);
 
                     if (floorIndex == 1)
                         result.DescendPortal = Place(kit.DescendPortal, module, Spread(0f, 0f, -3f), 180f, false).GetComponent<PortalComponent>();
@@ -414,6 +444,7 @@ namespace Game.Scripts.Editor.Dungeon
                     Place(kit.Shrines[(x + z + floorIndex) % kit.Shrines.Length], module, Spread(0f, 0f, 5.5f), 180f, false);
                     Place(kit.Shrines[(x + z + floorIndex + 2) % kit.Shrines.Length], module, Spread(-5.8f, 0f, 0f), 90f, false);
                     Place(kit.Skulls, module, Spread(5f, 0f, 5f), 0f);
+                    Place(kit.StatuePilgrim, module, Spread(6f, 0f, 2f), -90f);
                     Container(kit.Chest, module, result, Spread(5.5f, 0f, -2f), -90f);
                     result.EscapePortals.Add(Place(kit.EscapePortal, module, Spread(2f, 0f, -4.5f), 0f, false).GetComponent<PortalComponent>());
                     Monster(markers, result, module.position + Spread(-2f, 0f, -3f), 0f);
@@ -426,6 +457,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Place(kit.SpikeTrap, module, Spread(0f, 0f, 0f), 0f, false);
                     Place(kit.Rubble, module, Spread(-4.5f, 0f, -4.5f), 0f);
                     Place(kit.Rubble, module, Spread(4.5f, 0f, 4.5f), 70f);
+                    Place(kit.FallenPeasant, module, Spread(1.2f, 0f, -2.2f), 200f);
+                    Place(kit.FallenRanger, module, Spread(-1.4f, 0f, 2.4f), 15f);
                     Container(kit.LargeChest, module, result, Spread(5.5f, 0f, -5.5f), -90f);
                     result.Levers.Add(Place(kit.Lever, module, Spread(-6.3f, 0f, 4f), 90f, false).GetComponent<LeverComponent>());
                     Monster(markers, result, module.position + Spread(-3f, 0f, 2f), 90f);
@@ -440,6 +473,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Place(kit.Banner, module, Spread(-3f, 3.6f, half - 0.4f), 180f);
                     Place(kit.Banner, module, Spread(3f, 3.6f, half - 0.4f), 180f);
                     Container(kit.LargeChest, module, result, Spread(0f, 0f, 5.5f), 180f);
+                    Place(kit.StatueGuardian, module, Spread(6f, 0f, 2.5f), -90f);
+                    Place(kit.StatueMage, module, Spread(6f, 0f, -2.5f), -90f);
 
                     if (floorIndex == 2)
                     {
@@ -461,6 +496,8 @@ namespace Game.Scripts.Editor.Dungeon
                         Place(kit.Skulls, module, Spread(-4f + i * 2f, 0f, (i % 2 == 0 ? -3f : 3f)), i * 40f);
 
                     Place(kit.Rubble, module, Spread(0f, 0f, 0f), 0f);
+                    Place(kit.FallenPeasant, module, Spread(-3f, 0f, -1.5f), 120f);
+                    Place(kit.FallenRanger, module, Spread(3.5f, 0f, 3.5f), -60f);
                     Container(kit.Coffin, module, result, Spread(5.5f, 0f, 0f), 0f);
                     Container(kit.Chest, module, result, Spread(-5.5f, 0f, -5f), 90f);
                     Monster(markers, result, module.position + Spread(-2f, 0f, 0f), 90f);

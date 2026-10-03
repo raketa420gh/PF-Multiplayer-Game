@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Fusion;
+using Game.Scripts.Battle;
 using UnityEngine;
 
 namespace Game.Scripts.Dungeon
@@ -14,7 +15,7 @@ namespace Game.Scripts.Dungeon
         private Animator _animator;
 
         [SerializeField]
-        private SkinnedMeshRenderer _body;
+        private CharacterModelComponent _model;
 
         [SerializeField]
         private ArmorPieceSetConfig _pieceSet;
@@ -48,7 +49,7 @@ namespace Game.Scripts.Dungeon
         public override void Spawned()
         {
             _classColor = _adventurer.Class.BodyColor;
-            _body.material.SetColor("_BaseColor", _classColor);
+            _model.SetBodyColor(_classColor);
             _dresser = new ArmorDresser(_animator, _pieceSet, gameObject.layer);
             _renderers.AddRange(GetComponentsInChildren<Renderer>(true));
             _handItemRoot = _animator.GetBoneTransform(HumanBodyBones.RightHand);
@@ -125,7 +126,7 @@ namespace Game.Scripts.Dungeon
             _shownForm = form;
             int index = Mathf.Clamp((int)form, 0, _formScales.Length - 1);
             _animator.transform.localScale = Vector3.one * _formScales[index];
-            _body.material.SetColor("_BaseColor", form == ShapeshiftForm.None ? _classColor : _formTints[index]);
+            _model.SetBodyColor(form == ShapeshiftForm.None ? _classColor : _formTints[index]);
             _dresser.Clear();
 
             if (form == ShapeshiftForm.None)

@@ -1,3 +1,4 @@
+using Game.Scripts.Battle;
 using Game.Scripts.Dungeon;
 using Game.Scripts.Editor.Battle;
 using UnityEditor;
@@ -606,6 +607,55 @@ namespace Game.Scripts.Editor.Dungeon
             MeshObject("Stone", root.transform, mesh, StoneWall, default, default, true, false);
 
             return root;
+        }
+
+        /// Wooden armour stand: a mannequin of the animation packs wearing outfit parts, frozen in a pose of the animation library.
+        public static GameObject ArmorStand(string name, bool isFemale, string clip, float time, params OutfitPart[] parts)
+        {
+            Mesh mesh = new DungeonMeshBuilder(0.6f).Cylinder(new Vector3(0f, 0.04f, 0f), 0.5f, 0.08f, 12, 0.44f).Save("StandBase");
+            GameObject root = new GameObject(name);
+            MeshObject("Base", root.transform, mesh, DarkWood, default, default, false, false);
+            Figure(root, name, isFemale, clip, time, 0.08f, BattleCharacterBuilder.LoadMaterial(BattleCharacterBuilder.WoodMaterial), null, parts);
+
+            return root;
+        }
+
+        /// Stone statue of an adventurer on a plinth.
+        public static GameObject Statue(string name, bool isFemale, string clip, float time, params OutfitPart[] parts)
+        {
+            Mesh mesh = new DungeonMeshBuilder(0.5f)
+                .Box(new Vector3(0f, 0.12f, 0f), new Vector3(1.1f, 0.24f, 1.1f))
+                .Box(new Vector3(0f, 0.3f, 0f), new Vector3(0.9f, 0.12f, 0.9f))
+                .Save("StatuePlinth");
+            GameObject root = new GameObject(name);
+            MeshObject("Plinth", root.transform, mesh, StoneWall, default, default, false, false);
+            Figure(root, name, isFemale, clip, time, 0.36f, null, StoneWall, parts);
+
+            return root;
+        }
+
+        /// Remains of an adventurer: a skeleton in what is left of its clothes, lying where the death animation ends.
+        public static GameObject Fallen(string name, bool isFemale, params OutfitPart[] parts)
+        {
+            AnimationClip death = BattleEditorUtility.LoadLibraryClip("Death01");
+            GameObject root = new GameObject(name);
+            GameObject figure = BattleCharacterBuilder.CreateFigure(name, isFemale, death, death.length, Bone, null, parts);
+            figure.transform.SetParent(root.transform, false);
+            figure.transform.localPosition = new Vector3(0f, 0f, 0.6f);
+
+            return root;
+        }
+
+        private static void Figure(GameObject root, string name, bool isFemale, string clip, float time, float height, Material body, Material surface,
+            OutfitPart[] parts)
+        {
+            GameObject figure = BattleCharacterBuilder.CreateFigure(name, isFemale, BattleEditorUtility.LoadLibraryClip(clip), time, body, surface, parts);
+            figure.transform.SetParent(root.transform, false);
+            figure.transform.localPosition = new Vector3(0f, height, 0f);
+            CapsuleCollider collider = root.AddComponent<CapsuleCollider>();
+            collider.center = new Vector3(0f, 1f, 0f);
+            collider.radius = 0.4f;
+            collider.height = 2f;
         }
 
         public static GameObject Altar(Material glow)

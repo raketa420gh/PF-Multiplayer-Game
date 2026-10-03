@@ -23,6 +23,13 @@ namespace Game.Scripts.Battle
         public const string CastState = "Cast";
         public const string UseState = "Use";
         public const string InteractState = "Interact";
+        public const string CastFirstPersonState = "CastFp";
+        public const string UseFirstPersonState = "UseFp";
+        public const string ThrowState = "Throw";
+        public const string OpenState = "Open";
+        public const string PickUpState = "PickUp";
+        public const string HitChestState = "HitChest";
+        public const string HitHeadState = "HitHead";
 
         [SerializeField]
         private FighterComponent _fighter;
@@ -54,8 +61,15 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private float _flinchDecay = 9f;
 
+        [SerializeField]
+        private float _hitReactionTime = 0.35f;
+
+        [SerializeField]
+        private float _hitReactionWeight = 0.7f;
+
         private const int BaseLayer = 0;
         private const int UpperLayer = 1;
+        private const int HitLayer = 2;
 
         private static readonly int s_moveX = Animator.StringToHash(MoveXParam);
         private static readonly int s_moveY = Animator.StringToHash(MoveYParam);
@@ -65,9 +79,18 @@ namespace Game.Scripts.Battle
         private static readonly int s_air = Animator.StringToHash(AirState);
         private static readonly int s_death = Animator.StringToHash(DeathState);
         private static readonly int s_actionSpeed = Animator.StringToHash(ActionSpeedParam);
-        private static readonly int s_cast = Animator.StringToHash(CastState);
-        private static readonly int s_use = Animator.StringToHash(UseState);
-        private static readonly int s_interact = Animator.StringToHash(InteractState);
+        private static readonly int s_hitChest = Animator.StringToHash(HitChestState);
+        private static readonly int s_hitHead = Animator.StringToHash(HitHeadState);
+
+        /// Indexed by CombatComponent.BusyKind.
+        private static readonly int[] s_busy =
+        {
+            Animator.StringToHash(CastState), Animator.StringToHash(UseState), Animator.StringToHash(InteractState),
+            Animator.StringToHash(ThrowState), Animator.StringToHash(OpenState), Animator.StringToHash(PickUpState)
+        };
+
+        /// Own-eyes variants of the busy states whose library motion stays outside the first-person view.
+        private static readonly int[] s_busyFirstPerson = { Animator.StringToHash(CastFirstPersonState), Animator.StringToHash(UseFirstPersonState) };
 
         private struct WeaponStates
         {
@@ -87,6 +110,7 @@ namespace Game.Scripts.Battle
         private float _airTime;
         private float _pitch;
         private float _flinch;
+        private float _hitTime;
         private float _upperWeight = 1f;
         private bool _isHeadHidden;
 
@@ -183,6 +207,9 @@ namespace Game.Scripts.Battle
             _upperWeight = Mathf.MoveTowards(_upperWeight, isAlive ? 1f : 0f, deltaTime * 5f);
             _animator.SetLayerWeight(UpperLayer, _upperWeight);
 
+            _hitTime = Mathf.Max(0f, _hitTime - deltaTime);
+            _animator.SetLayerWeight(HitLayer, Mathf.Clamp01(_hitTime / _fadeTime) * _hitReactionWeight * _upperWeight);
+
             CombatComponent combat = _fighter.Combat;
             WeaponConfig weapon = combat.Weapon;
             WeaponStates states = _weaponStates[combat.WeaponIndex];
@@ -224,7 +251,8 @@ namespace Game.Scripts.Battle
                     token = combat.StateTick;
                     break;
                 case CombatState.Busy:
-                    state = combat.BusyKind == 1 ? s_use : combat.BusyKind == 2 ? s_interact : s_cast;
+                    int kind = Mathf.Min(combat.BusyKind, s_busy.Length - 1);
+                    state = _isHeadHidden && kind < s_busyFirstPerson.Length ? s_busyFirstPerson[kind] : s_busy[kind];
                     token = combat.StateTick;
                     break;
                 default:
@@ -258,8 +286,12 @@ namespace Game.Scripts.Battle
 
         private void OnHitEvent(HitEventData hit)
         {
-            if (hit.Result != HitResult.Blocked)
-                _flinch = Mathf.Max(_flinch, _hitFlinch);
+            if (hit.Result == HitResult.Blocked)
+                return;
+
+            _flinch = Mathf.Max(_flinch, _hitFlinch);
+            _hitTime = _hitReactionTime;
+            _animator.Play(hit.Zone == HitZone.Head ? s_hitHead : s_hitChest, HitLayer, 0f);
         }
     }
 }

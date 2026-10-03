@@ -108,6 +108,94 @@ namespace Game.Scripts.Editor.Battle
             return sheetPath;
         }
 
+        /// Renders any prefab from the front, side and back into one sheet with its own lights; setup poses or dresses the instance.
+        public static string CaptureTurnaround(GameObject prefab, string name, System.Action<GameObject> setup = null, float distance = 3.4f, float height = 0.95f)
+        {
+            Vector3[] views = { new(0f, 0.25f, 1f), new(0.94f, 0.25f, 0.35f), new(0f, 0.25f, -1f) };
+
+            return CaptureFrames(prefab, name, views.Length, (_, i) => views[i], setup, distance, height);
+        }
+
+        /// Contact sheet of one clip sampled on the prefab's animator at evenly spaced moments.
+        public static string CaptureClip(GameObject prefab, AnimationClip clip, int frames, System.Action<GameObject> setup = null, float side = 0.6f)
+        {
+            return CaptureFrames(prefab, clip.name, frames, (instance, i) =>
+            {
+                BattleEditorUtility.SampleClip(instance.GetComponentInChildren<Animator>(), clip, clip.length * i / Mathf.Max(1, frames - 1));
+
+                return new Vector3(side, 0.25f, 0.8f);
+            }, setup, 3.8f, 0.95f);
+        }
+
+        private static string CaptureFrames(GameObject prefab, string name, int count, System.Func<GameObject, int, Vector3> pose,
+            System.Action<GameObject> setup, float distance, float height)
+        {
+            int width = Mathf.Min(640, 2400 / count);
+            Vector3 origin = new Vector3(0f, 300f, 0f);
+            GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            floor.transform.position = origin + Vector3.down * 0.05f;
+            floor.transform.localScale = new Vector3(6f, 0.1f, 6f);
+            GameObject cameraObject = new GameObject("PreviewCamera");
+            GameObject[] lights = { new GameObject("PreviewLight"), new GameObject("PreviewLight") };
+            Texture2D sheet = new Texture2D(width * count, 640, TextureFormat.RGB24, false);
+            bool asyncCompile = ShaderUtil.allowAsyncCompilation;
+            ShaderUtil.allowAsyncCompilation = false;
+
+            try
+            {
+                for (int i = 0; i < lights.Length; i++)
+                {
+                    Light light = lights[i].AddComponent<Light>();
+                    light.type = LightType.Directional;
+                    light.intensity = 0.9f;
+                    light.transform.rotation = Quaternion.Euler(40f, 30f + i * 180f, 0f);
+                }
+
+                Camera camera = cameraObject.AddComponent<Camera>();
+                camera.nearClipPlane = 0.05f;
+                camera.fieldOfView = 40f;
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = new Color(0.35f, 0.45f, 0.6f);
+
+                for (int i = 0; i < count; i++)
+                {
+                    // Skinning is evaluated once per editor frame, so every shot gets a fresh instance.
+                    GameObject instance = Object.Instantiate(prefab, origin, Quaternion.identity);
+                    setup?.Invoke(instance);
+                    camera.transform.position = origin + Vector3.up * height + pose(instance, i).normalized * distance;
+                    camera.transform.LookAt(origin + Vector3.up * height);
+                    RenderTexture texture = RenderTexture.GetTemporary(width, 640, 24);
+                    camera.targetTexture = texture;
+                    camera.Render();
+                    RenderTexture.active = texture;
+                    Texture2D frame = new Texture2D(width, 640, TextureFormat.RGB24, false);
+                    frame.ReadPixels(new Rect(0f, 0f, width, 640f), 0, 0);
+                    sheet.SetPixels(i * width, 0, width, 640, frame.GetPixels());
+                    RenderTexture.active = null;
+                    camera.targetTexture = null;
+                    RenderTexture.ReleaseTemporary(texture);
+                    Object.DestroyImmediate(frame);
+                    Object.DestroyImmediate(instance);
+                }
+
+                Directory.CreateDirectory(OutputFolder);
+                string path = $"{OutputFolder}/{name}.png";
+                File.WriteAllBytes(path, sheet.EncodeToPNG());
+
+                return path;
+            }
+            finally
+            {
+                ShaderUtil.allowAsyncCompilation = asyncCompile;
+                Object.DestroyImmediate(sheet);
+                Object.DestroyImmediate(floor);
+                Object.DestroyImmediate(cameraObject);
+
+                foreach (GameObject light in lights)
+                    Object.DestroyImmediate(light);
+            }
+        }
+
         private static void LookFrom(Camera camera, Vector3 position, Vector3 target)
         {
             camera.fieldOfView = 45f;

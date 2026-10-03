@@ -11,9 +11,14 @@ namespace Game.Scripts.Editor.Battle
     {
         public const float FrameRate = 60f;
 
+        public const string ZombieControllerPath = BattleEditorUtility.AnimationsFolder + "/Zombie.overrideController";
+
         private const int BodyMuscleCount = 55;
-        private const float WalkSpeed = 3.2f;
+        private const float FingerCurl = -0.8f;
+        private const float MaxStrideScale = 2f;
+        private const float SprintSpeed = 1.44f;
         private const string UpperLayerName = "Upper";
+        private const string HitLayerName = "Hit";
 
         private static readonly string[] s_rootCurves = { "RootT.x", "RootT.y", "RootT.z", "RootQ.x", "RootQ.y", "RootQ.z", "RootQ.w" };
 
@@ -42,9 +47,10 @@ namespace Game.Scripts.Editor.Battle
                     BuildWeapon(rig, upper, weapon);
             }
 
-            AddKeyed(rig, upper, FighterAnimComponent.CastState, 2f, BattleAnimationLibrary.CastKeys());
-            AddKeyed(rig, upper, FighterAnimComponent.UseState, 2f, BattleAnimationLibrary.UseKeys());
-            AddKeyed(rig, upper, FighterAnimComponent.InteractState, 2f, BattleAnimationLibrary.InteractKeys());
+            BuildActions(upper);
+            AddKeyed(rig, upper, FighterAnimComponent.CastFirstPersonState, 2f, BattleAnimationLibrary.CastKeys());
+            AddKeyed(rig, upper, FighterAnimComponent.UseFirstPersonState, 2f, BattleAnimationLibrary.UseKeys());
+            BuildHitReactions(controller.layers[2].stateMachine);
 
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
@@ -62,18 +68,22 @@ namespace Game.Scripts.Editor.Battle
             controller.AddParameter(FighterAnimComponent.MirrorParam, AnimatorControllerParameterType.Bool);
             controller.AddParameter(FighterAnimComponent.ActionSpeedParam, AnimatorControllerParameterType.Float);
             controller.AddLayer(UpperLayerName);
+            controller.AddLayer(HitLayerName);
 
             AnimatorControllerLayer[] layers = controller.layers;
             layers[1].defaultWeight = 1f;
-            layers[1].avatarMask = CreateUpperMask();
+            layers[1].avatarMask = CreateMask("UpperBody", AvatarMaskBodyPart.Body, AvatarMaskBodyPart.Head, AvatarMaskBodyPart.LeftArm,
+                AvatarMaskBodyPart.RightArm, AvatarMaskBodyPart.LeftFingers, AvatarMaskBodyPart.RightFingers);
+            layers[2].defaultWeight = 0f;
+            layers[2].avatarMask = CreateMask("Torso", AvatarMaskBodyPart.Body, AvatarMaskBodyPart.Head);
             controller.layers = layers;
 
             return controller;
         }
 
-        private static AvatarMask CreateUpperMask()
+        private static AvatarMask CreateMask(string name, params AvatarMaskBodyPart[] parts)
         {
-            string path = $"{BattleEditorUtility.AnimationsFolder}/UpperBody.mask";
+            string path = $"{BattleEditorUtility.AnimationsFolder}/{name}.mask";
             AvatarMask mask = AssetDatabase.LoadAssetAtPath<AvatarMask>(path);
 
             if (mask == null)
@@ -83,34 +93,37 @@ namespace Game.Scripts.Editor.Battle
             }
 
             for (AvatarMaskBodyPart part = 0; part < AvatarMaskBodyPart.LastBodyPart; part++)
-            {
-                bool isUpper = part is AvatarMaskBodyPart.Body or AvatarMaskBodyPart.Head or AvatarMaskBodyPart.LeftArm
-                    or AvatarMaskBodyPart.RightArm or AvatarMaskBodyPart.LeftFingers or AvatarMaskBodyPart.RightFingers;
-                mask.SetHumanoidBodyPartActive(part, isUpper);
-            }
+                mask.SetHumanoidBodyPartActive(part, Array.IndexOf(parts, part) >= 0);
 
             EditorUtility.SetDirty(mask);
 
             return mask;
         }
 
+        /// Legs follow the animation library where it has a matching clip; strafes stay procedural, backpedal is the forward clip reversed.
         private static void BuildLocomotion(BattlePoseRig rig, AnimatorController controller)
         {
             const float crouch = BattleAnimationLibrary.CrouchDrop;
 
-            AnimationClip idle = Record(rig, "Idle", 2f, true, BattleAnimationLibrary.Idle);
-            AnimationClip walkForward = RecordWalk(rig, "WalkForward", 0.46f, Vector2.up, 0.7f, 0.12f, 0.08f);
-            AnimationClip walkBack = RecordWalk(rig, "WalkBack", 0.5f, Vector2.down, 0.55f, 0.1f, 0.08f);
+            MovementConfig movement = BattleEditorUtility.LoadOrCreate<MovementConfig>($"{BattleEditorUtility.ConfigsFolder}/Movement.asset");
+            float runSpeed = movement.RunSpeed;
+            float walkSpeed = runSpeed * movement.WalkMultiplier;
+            float crouchSpeed = walkSpeed * movement.CrouchMultiplier;
+            float backpedal = movement.BackpedalMultiplier;
+
+            AnimationClip idle = RecordLegs(rig, "Idle", "Idle_Loop", 0.03f);
+            AnimationClip walkForward = RecordLegs(rig, "WalkForward", "Walk_Loop", 0.08f, walkSpeed);
+            AnimationClip walkBack = RecordLegs(rig, "WalkBack", "Walk_Loop", 0.08f, -walkSpeed * backpedal);
             AnimationClip walkLeft = RecordWalk(rig, "WalkLeft", 0.4f, Vector2.left, 0.34f, 0.1f, 0.06f);
             AnimationClip walkRight = RecordWalk(rig, "WalkRight", 0.4f, Vector2.right, 0.34f, 0.1f, 0.06f);
-            AnimationClip run = RecordWalk(rig, "Run", 0.38f, Vector2.up, 1f, 0.2f, 0.1f, 8f);
-            AnimationClip crouchIdle = Record(rig, "CrouchIdle", 2f, true, _ => BattleAnimationLibrary.Walk(0.25f, Vector2.zero, 0f, 0f, crouch));
-            AnimationClip crouchForward = RecordWalk(rig, "CrouchForward", 0.5f, Vector2.up, 0.42f, 0.08f, crouch);
-            AnimationClip crouchBack = RecordWalk(rig, "CrouchBack", 0.5f, Vector2.down, 0.3f, 0.08f, crouch);
+            AnimationClip run = RecordLegs(rig, "Run", "Jog_Fwd_Loop", 0.1f, runSpeed, 8f);
+            AnimationClip sprint = RecordLegs(rig, "Sprint", "Sprint_Loop", 0.1f, runSpeed * SprintSpeed, 8f);
+            AnimationClip crouchIdle = RecordLegs(rig, "CrouchIdle", "Crouch_Idle_Loop", crouch);
+            AnimationClip crouchForward = RecordLegs(rig, "CrouchForward", "Crouch_Fwd_Loop", crouch, crouchSpeed);
+            AnimationClip crouchBack = RecordLegs(rig, "CrouchBack", "Crouch_Fwd_Loop", crouch, -crouchSpeed * backpedal);
             AnimationClip crouchLeft = RecordWalk(rig, "CrouchLeft", 0.44f, Vector2.left, 0.26f, 0.08f, crouch);
             AnimationClip crouchRight = RecordWalk(rig, "CrouchRight", 0.44f, Vector2.right, 0.26f, 0.08f, crouch);
-            AnimationClip air = Record(rig, "Air", 0.5f, true, _ => BattleAnimationLibrary.Air());
-            AnimationClip death = Record(rig, "Death", 0.9f, false, time => BattleAnimationLibrary.Death(time / 0.8f));
+            AnimationClip air = RecordLegs(rig, "Air", "Jump_Loop", 0f);
 
             AnimatorState locomotion = controller.CreateBlendTreeInController(FighterAnimComponent.LocomotionState, out BlendTree root, 0);
             root.blendType = BlendTreeType.Simple1D;
@@ -124,6 +137,7 @@ namespace Game.Scripts.Editor.Battle
             stand.AddChild(walkLeft, new Vector2(-0.85f, 0f));
             stand.AddChild(walkRight, new Vector2(0.85f, 0f));
             stand.AddChild(run, new Vector2(0f, 2.5f));
+            stand.AddChild(sprint, new Vector2(0f, 2.5f * SprintSpeed));
 
             BlendTree crouched = CreateMoveTree(root, "Crouch", 1f);
             crouched.AddChild(crouchIdle, Vector2.zero);
@@ -135,7 +149,95 @@ namespace Game.Scripts.Editor.Battle
             AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
             stateMachine.defaultState = locomotion;
             stateMachine.AddState(FighterAnimComponent.AirState).motion = air;
-            stateMachine.AddState(FighterAnimComponent.DeathState).motion = death;
+            stateMachine.AddState(FighterAnimComponent.DeathState).motion = BattleEditorUtility.LoadLibraryClip("Death01");
+
+            BuildZombie(controller, idle, RecordLegs(rig, "ZombieIdle", "Zombie_Idle_Loop", 0.03f),
+                new[] { walkForward, run, sprint }, RecordLegs(rig, "ZombieWalk", "Zombie_Walk_Fwd_Loop", 0.08f));
+        }
+
+        /// Puts the legs of a library clip on the simulation body. The feet keep their place relative to the hips, while the
+        /// hips stay where the combat model has them (only the vertical bob is taken over): the upper body, the hitboxes and
+        /// the weapon traces are the same whatever the legs do. A non-zero speed retimes the cycle so the stride covers that
+        /// ground speed (negative = played backwards).
+        private static AnimationClip RecordLegs(BattlePoseRig rig, string name, string library, float drop, float speed = 0f, float lean = 0f)
+        {
+            const int samples = 24;
+            AnimationClip source = BattleEditorUtility.LoadLibraryClip(library);
+            float height = 0f;
+            float min = float.MaxValue;
+            float max = float.MinValue;
+
+            for (int i = 0; i < samples; i++)
+            {
+                BodyPose pose = rig.SampleLegs(source, source.length * i / samples);
+                height += pose.Hips.y / samples;
+                min = Mathf.Min(min, pose.LeftFoot.z);
+                max = Mathf.Max(max, pose.LeftFoot.z);
+            }
+
+            // Two steps per loop: the cycle is as long as its stride needs at the given speed.
+            float stride = (max - min) * 2f;
+            float duration = speed == 0f ? source.length : Mathf.Clamp(stride / Mathf.Abs(speed), source.length / MaxStrideScale, source.length);
+
+            return Record(rig, name, duration, source.isLooping, time =>
+            {
+                float phase = time / duration;
+                BodyPose pose = rig.SampleLegs(source, source.length * (speed < 0f ? 1f - phase : phase));
+                pose.Hips = new Vector3(0f, pose.Hips.y - height - drop, 0f);
+                pose.HipsEuler = new Vector3(lean, 0f, 0f);
+
+                return pose;
+            });
+        }
+
+        /// Busy actions as others see them come from the library as is: spells and levers with the off hand, throws with the main
+        /// hand. Casting and drinking happen beside the head, so the player's own view keeps the generated in-view poses.
+        private static void BuildActions(AnimatorStateMachine stateMachine)
+        {
+            AnimatorState cast = AddState(stateMachine, FighterAnimComponent.CastState, BattleEditorUtility.LoadLibraryClip("Spell_Simple_Enter"));
+            AnimatorState castLoop = AddState(stateMachine, FighterAnimComponent.CastState + "Loop", BattleEditorUtility.LoadLibraryClip("Spell_Simple_Idle_Loop"));
+            AnimatorStateTransition transition = cast.AddTransition(castLoop);
+            transition.hasExitTime = true;
+            transition.exitTime = 0.9f;
+            transition.duration = 0.1f;
+
+            AddState(stateMachine, FighterAnimComponent.InteractState, BattleEditorUtility.LoadLibraryClip("Interact_Loop"));
+            AddState(stateMachine, FighterAnimComponent.OpenState, BattleEditorUtility.LoadLibraryClip("Chest_Open"));
+            AddState(stateMachine, FighterAnimComponent.ThrowState, BattleEditorUtility.LoadLibraryClip("Throw"));
+            AddState(stateMachine, FighterAnimComponent.PickUpState, BattleEditorUtility.LoadLibraryClip("PickUp_Table"));
+
+            // The belt item sits in the right hand while the library drinks with the left: the state is flipped for good.
+            // Mirroring a looped clip starts it half a cycle later, which the offset takes back.
+            AnimatorState use = AddState(stateMachine, FighterAnimComponent.UseState, BattleEditorUtility.LoadLibraryClip("Consume_Loop"));
+            use.mirrorParameterActive = false;
+            use.mirror = true;
+            use.cycleOffset = 0.5f;
+        }
+
+        private static void BuildHitReactions(AnimatorStateMachine stateMachine)
+        {
+            stateMachine.AddState(FighterAnimComponent.HitChestState).motion = BattleEditorUtility.LoadLibraryClip("Hit_Chest");
+            stateMachine.AddState(FighterAnimComponent.HitHeadState).motion = BattleEditorUtility.LoadLibraryClip("Hit_Head");
+        }
+
+        /// Same state machine with shambling legs for the zombie.
+        private static void BuildZombie(AnimatorController controller, AnimationClip idle, AnimationClip zombieIdle, AnimationClip[] moves, AnimationClip zombieWalk)
+        {
+            AnimatorOverrideController zombie = AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(ZombieControllerPath);
+
+            if (zombie == null)
+            {
+                zombie = new AnimatorOverrideController();
+                AssetDatabase.CreateAsset(zombie, ZombieControllerPath);
+            }
+
+            zombie.runtimeAnimatorController = controller;
+            zombie[idle] = zombieIdle;
+
+            foreach (AnimationClip move in moves)
+                zombie[move] = zombieWalk;
+
+            EditorUtility.SetDirty(zombie);
         }
 
         private static BlendTree CreateMoveTree(BlendTree parent, string name, float threshold)
@@ -225,9 +327,10 @@ namespace Game.Scripts.Editor.Battle
 
             Quaternion previousRotation = Quaternion.identity;
 
+            // Keys sit on the simulation's 60 Hz grid, so the trace sampler and tick-aligned playback read authored poses, not blends.
             for (int frame = 0; frame <= frames; frame++)
             {
-                float time = duration * frame / frames;
+                float time = Mathf.Min(frame / FrameRate, duration);
                 rig.Apply(evaluate(isLoop && frame == frames ? 0f : time));
                 HumanPose pose = rig.Capture();
 
@@ -256,6 +359,13 @@ namespace Game.Scripts.Editor.Battle
 
             for (int i = 0; i < muscles.Length; i++)
                 SetCurve(clip, HumanTrait.MuscleName[i], muscles[i]);
+
+            // Hands that hold something close into a grip; the spread muscles stay neutral.
+            for (int i = BodyMuscleCount; i < HumanTrait.MuscleCount && evaluate(0f).HasHands; i++)
+            {
+                if (HumanTrait.MuscleName[i].Contains("Stretched"))
+                    SetCurve(clip, HumanTrait.MuscleName[i], AnimationCurve.Constant(0f, duration, FingerCurl));
+            }
 
             for (int i = 0; i < root.Length; i++)
                 SetCurve(clip, s_rootCurves[i], root[i]);
