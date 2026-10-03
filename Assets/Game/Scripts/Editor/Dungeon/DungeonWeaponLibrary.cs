@@ -166,7 +166,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static WeaponDefinition CreateFists()
         {
-            BodyPose idle = BattleAnimationLibrary.OneHanded(new(0.26f, 1.2f, 0.34f), new(0f, 0.6f, 0.8f));
+            BodyPose idle = BattleAnimationLibrary.OneHanded(new(0.2f, 1.3f, 0.3f), new(-0.3f, 0.3f, 0.9f));
 
             return new WeaponDefinition
             {
@@ -246,7 +246,7 @@ namespace Game.Scripts.Editor.Dungeon
             WeaponDefinition torch = OneHandedSword(Torch, "Torch", 0.1f, 0.6f, 1.15f, 9, 0.4f, 0.16f, 0.45f);
             torch.CanBlock = false;
             torch.Attacks = new[] { torch.Attacks[0], torch.Attacks[1] };
-            torch.Idle = BattleAnimationLibrary.OneHanded(new(0.3f, 1.4f, 0.4f), new(0.05f, 0.95f, 0.2f));
+            torch.Idle = BattleAnimationLibrary.OneHanded(new(0.26f, 1.28f, 0.38f), new(0.05f, 0.95f, 0.25f));
 
             return torch;
         }
@@ -273,7 +273,7 @@ namespace Game.Scripts.Editor.Dungeon
         private static WeaponDefinition OneHandedSword(string prefix, string name, float bladeBase, float bladeTip, float reach, int damage,
             float windup, float active, float recovery)
         {
-            BodyPose idle = BattleAnimationLibrary.OneHanded(new(0.24f, 1.4f, 0.36f), new(-0.2f, 0.78f, 0.58f));
+            BodyPose idle = BattleAnimationLibrary.OneHanded(new(0.22f, 1.2f, 0.38f), new(-0.15f, 0.75f, 0.64f));
 
             return new WeaponDefinition
             {

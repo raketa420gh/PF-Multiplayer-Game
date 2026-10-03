@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Glowing boundary of the Dark Swarm on the local adventurer's floor: a translucent ring that follows the safe radius.
+    /// Boundary of the Dark Swarm on the local adventurer's floor: a translucent ring that follows the safe radius.
     public sealed class SwarmWallView : MonoBehaviour
     {
         [SerializeField]
@@ -53,9 +53,6 @@ namespace Game.Scripts.Dungeon
 
             if (!Mathf.Approximately(_shownRadius, radius))
                 Rebuild(Mathf.Max(radius, 0.5f));
-
-            float pulse = 0.8f + Mathf.Sin(Time.time * 2f) * 0.2f;
-            _renderer.material.SetColor("_EmissionColor", new Color(0.55f, 0.1f, 0.35f) * pulse);
         }
 
         private void Rebuild(float radius)

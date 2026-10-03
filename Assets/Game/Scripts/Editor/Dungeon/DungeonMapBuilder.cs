@@ -11,9 +11,15 @@ namespace Game.Scripts.Editor.Dungeon
     /// Two 3x3 crypt floors built from modules: walls, doorways, props, lights, containers, portals, spawns and the NavMesh.
     internal static class DungeonMapBuilder
     {
-        public const float Module = 14f;
+        public const float Module = 40f;
         public const int Grid = 3;
         public const float FloorDrop = -26f;
+        public const float FloorRadius = Module * Grid * 0.75f;
+        // Room layouts are authored for this module size and spread to the real one by Spread().
+        private const float LayoutModule = 14f;
+        private const float WallHugDistance = 1.6f;
+        private const float DoorLaneHalfWidth = 3.2f;
+        private const float DoorLaneDepth = 4f;
 
         private enum Room
         {
@@ -99,7 +105,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static Texture2D[] FloorMaps { get; private set; }
         public static string[] ModuleNames { get; private set; }
 
-        public static void Build(DungeonDirector director)
+        public static Transform Build(DungeonDirector director)
         {
             s_random = new System.Random(2024);
             Kit kit = BuildKit();
@@ -113,6 +119,8 @@ namespace Game.Scripts.Editor.Dungeon
             WriteLayouts(director, first, second);
             FloorMaps = new[] { DungeonMinimapBuilder.Render(root.Find("Floor1"), 0f, "Floor1"), DungeonMinimapBuilder.Render(root.Find("Floor2"), FloorDrop, "Floor2") };
             ModuleNames = BuildModuleNames();
+
+            return root;
         }
 
         private static string[] BuildModuleNames()
@@ -305,160 +313,159 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void Decorate(Kit kit, Transform module, Transform markers, Room room, int x, int z, FloorResult result, int floorIndex)
         {
-            float half = Module * 0.5f;
-            Place(kit.Torch, module, new Vector3(-4.5f, 2.6f, half - 0.35f), 180f);
-            Place(kit.Torch, module, new Vector3(4.5f, 2.6f, -half + 0.35f), 0f);
+            float half = LayoutModule * 0.5f;
+            WallTorches(kit, module);
             Dress(kit, module, room);
 
             switch (room)
             {
                 case Room.Spawn:
                     for (int i = 0; i < 4; i++)
-                        result.PlayerSpawns.Add(Marker(markers, "Player", module.position + new Vector3(-3f + i * 2f, 0f, -3f), 0f));
+                        result.PlayerSpawns.Add(Marker(markers, "Player", module.position + Spread(-3f + i * 2f, 0f, -3f), 0f));
 
-                    Place(kit.Banner, module, new Vector3(-4f, 3.6f, half - 0.4f), 180f);
-                    Place(kit.Banner, module, new Vector3(4f, 3.6f, half - 0.4f), 180f);
-                    Place(kit.Table, module, new Vector3(0f, 0f, 3.5f), 0f);
-                    Container(kit.Chest, module, result, new Vector3(5f, 0f, 4.5f), -90f);
-                    Container(kit.Barrel, module, result, new Vector3(-5.5f, 0f, 5f), 0f);
-                    Container(kit.Crate, module, result, new Vector3(-5.5f, 0f, 3.8f), 20f);
+                    Place(kit.Banner, module, Spread(-4f, 3.6f, half - 0.4f), 180f);
+                    Place(kit.Banner, module, Spread(4f, 3.6f, half - 0.4f), 180f);
+                    Place(kit.Table, module, Spread(0f, 0f, 3.5f), 0f);
+                    Container(kit.Chest, module, result, Spread(5f, 0f, 4.5f), -90f);
+                    Container(kit.Barrel, module, result, Spread(-5.5f, 0f, 5f), 0f);
+                    Container(kit.Crate, module, result, Spread(-5.5f, 0f, 3.8f), 20f);
                     Pillars(kit, module, 4.5f);
                     break;
 
                 case Room.Arrival:
-                    result.DescendDestination = Marker(markers, "Arrival", module.position + new Vector3(0f, 0f, -2f), 0f);
-                    Place(kit.Brazier, module, new Vector3(0f, 0f, 3f), 0f);
-                    Place(kit.Skulls, module, new Vector3(-5f, 0f, -5f), 30f);
-                    Container(kit.Chest, module, result, new Vector3(5.5f, 0f, -3f), -90f);
+                    result.DescendDestination = Marker(markers, "Arrival", module.position + Spread(0f, 0f, -2f), 0f);
+                    Place(kit.Brazier, module, Spread(0f, 0f, 3f), 0f);
+                    Place(kit.Skulls, module, Spread(-5f, 0f, -5f), 30f);
+                    Container(kit.Chest, module, result, Spread(5.5f, 0f, -3f), -90f);
                     Pillars(kit, module, 4.5f);
                     break;
 
                 case Room.Hall:
-                    Place(kit.Brazier, module, new Vector3(-4f, 0f, 0f), 0f);
-                    Place(kit.Brazier, module, new Vector3(4f, 0f, 0f), 0f);
-                    Place(kit.Rubble, module, new Vector3(-5f, 0f, 5f), 0f);
-                    Container(kit.Barrel, module, result, new Vector3(5.5f, 0f, -5.5f), 0f);
-                    Container(kit.Crate, module, result, new Vector3(5.5f, 0f, -4.4f), 40f);
-                    Monster(markers, result, module.position + new Vector3(0f, 0f, 3f), 180f);
-                    Monster(markers, result, module.position + new Vector3(2f, 0f, -3f), 0f);
+                    Place(kit.Brazier, module, Spread(-4f, 0f, 0f), 0f);
+                    Place(kit.Brazier, module, Spread(4f, 0f, 0f), 0f);
+                    Place(kit.Rubble, module, Spread(-5f, 0f, 5f), 0f);
+                    Container(kit.Barrel, module, result, Spread(5.5f, 0f, -5.5f), 0f);
+                    Container(kit.Crate, module, result, Spread(5.5f, 0f, -4.4f), 40f);
+                    Monster(markers, result, module.position + Spread(0f, 0f, 3f), 180f);
+                    Monster(markers, result, module.position + Spread(2f, 0f, -3f), 0f);
                     Pillars(kit, module, 5f);
                     break;
 
                 case Room.Crypt:
                     for (int i = 0; i < 3; i++)
                     {
-                        Container(kit.Coffin, module, result, new Vector3(-4.5f, 0f, -4f + i * 4f), 90f);
-                        Place(kit.Sarcophagus, module, new Vector3(4.5f, 0f, -4f + i * 4f), 90f);
+                        Container(kit.Coffin, module, result, Spread(-4.5f, 0f, -4f + i * 4f), 90f);
+                        Place(kit.Sarcophagus, module, Spread(4.5f, 0f, -4f + i * 4f), 90f);
                     }
 
-                    Place(kit.Skulls, module, new Vector3(0f, 0f, 5.5f), 0f);
-                    Place(kit.Brazier, module, new Vector3(0f, 0f, 0f), 0f);
-                    Monster(markers, result, module.position + new Vector3(-1.5f, 0f, -2f), 0f);
-                    Monster(markers, result, module.position + new Vector3(2f, 0f, 3f), 180f);
+                    Place(kit.Skulls, module, Spread(0f, 0f, 5.5f), 0f);
+                    Place(kit.Brazier, module, Spread(0f, 0f, 0f), 0f);
+                    Monster(markers, result, module.position + Spread(-1.5f, 0f, -2f), 0f);
+                    Monster(markers, result, module.position + Spread(2f, 0f, 3f), 180f);
                     break;
 
                 case Room.Library:
                     for (int i = 0; i < 3; i++)
                     {
-                        Container(kit.Bookshelf, module, result, new Vector3(-6.4f, 0f, -4f + i * 4f), 90f);
-                        Container(kit.Bookshelf, module, result, new Vector3(6.4f, 0f, -4f + i * 4f), -90f);
+                        Container(kit.Bookshelf, module, result, Spread(-6.4f, 0f, -4f + i * 4f), 90f);
+                        Container(kit.Bookshelf, module, result, Spread(6.4f, 0f, -4f + i * 4f), -90f);
                     }
 
-                    Place(kit.Table, module, new Vector3(0f, 0f, 0f), 90f);
-                    Place(kit.Table, module, new Vector3(0f, 0f, -4f), 90f);
-                    Container(kit.Chest, module, result, new Vector3(0f, 0f, 5.5f), 180f);
-                    Monster(markers, result, module.position + new Vector3(3f, 0f, 2f), 180f);
+                    Place(kit.Table, module, Spread(0f, 0f, 0f), 90f);
+                    Place(kit.Table, module, Spread(0f, 0f, -4f), 90f);
+                    Container(kit.Chest, module, result, Spread(0f, 0f, 5.5f), 180f);
+                    Monster(markers, result, module.position + Spread(3f, 0f, 2f), 180f);
                     break;
 
                 case Room.Armory:
-                    Container(kit.LargeChest, module, result, new Vector3(0f, 0f, 5.5f), 180f);
-                    Container(kit.Crate, module, result, new Vector3(-5.5f, 0f, -5.5f), 0f);
-                    Container(kit.Crate, module, result, new Vector3(-4.5f, 0f, -5.5f), 15f);
-                    Container(kit.Barrel, module, result, new Vector3(5.5f, 0f, -5.5f), 0f);
-                    Container(kit.Barrel, module, result, new Vector3(5.5f, 0f, -4.4f), 0f);
-                    Place(kit.Table, module, new Vector3(-4f, 0f, 1f), 90f);
-                    Place(kit.Banner, module, new Vector3(0f, 3.6f, -half + 0.4f), 0f);
-                    result.Levers.Add(Place(kit.Lever, module, new Vector3(6.3f, 0f, 3f), -90f, false).GetComponent<LeverComponent>());
-                    Monster(markers, result, module.position + new Vector3(2f, 0f, 1f), 90f);
-                    Monster(markers, result, module.position + new Vector3(-2f, 0f, -2f), 0f);
+                    Container(kit.LargeChest, module, result, Spread(0f, 0f, 5.5f), 180f);
+                    Container(kit.Crate, module, result, Spread(-5.5f, 0f, -5.5f), 0f);
+                    Container(kit.Crate, module, result, Spread(-4.5f, 0f, -5.5f), 15f);
+                    Container(kit.Barrel, module, result, Spread(5.5f, 0f, -5.5f), 0f);
+                    Container(kit.Barrel, module, result, Spread(5.5f, 0f, -4.4f), 0f);
+                    Place(kit.Table, module, Spread(-4f, 0f, 1f), 90f);
+                    Place(kit.Banner, module, Spread(0f, 3.6f, -half + 0.4f), 0f);
+                    result.Levers.Add(Place(kit.Lever, module, Spread(6.3f, 0f, 3f), -90f, false).GetComponent<LeverComponent>());
+                    Monster(markers, result, module.position + Spread(2f, 0f, 1f), 90f);
+                    Monster(markers, result, module.position + Spread(-2f, 0f, -2f), 0f);
                     break;
 
                 case Room.Treasury:
-                    Container(kit.GoldenChest, module, result, new Vector3(0f, 0f, 5.2f), 180f);
-                    Container(kit.Chest, module, result, new Vector3(-5.5f, 0f, 5.2f), 90f);
-                    Container(kit.Chest, module, result, new Vector3(5.5f, 0f, 5.2f), -90f);
-                    Place(kit.Brazier, module, new Vector3(-3f, 0f, 3f), 0f);
-                    Place(kit.Brazier, module, new Vector3(3f, 0f, 3f), 0f);
-                    Place(kit.SpikeTrap, module, new Vector3(0f, 0f, 2f), 0f, false);
-                    Place(kit.Banner, module, new Vector3(-3f, 3.6f, half - 0.4f), 180f);
-                    Place(kit.Banner, module, new Vector3(3f, 3.6f, half - 0.4f), 180f);
+                    Container(kit.GoldenChest, module, result, Spread(0f, 0f, 5.2f), 180f);
+                    Container(kit.Chest, module, result, Spread(-5.5f, 0f, 5.2f), 90f);
+                    Container(kit.Chest, module, result, Spread(5.5f, 0f, 5.2f), -90f);
+                    Place(kit.Brazier, module, Spread(-3f, 0f, 3f), 0f);
+                    Place(kit.Brazier, module, Spread(3f, 0f, 3f), 0f);
+                    Place(kit.SpikeTrap, module, Spread(0f, 0f, 2f), 0f, false);
+                    Place(kit.Banner, module, Spread(-3f, 3.6f, half - 0.4f), 180f);
+                    Place(kit.Banner, module, Spread(3f, 3.6f, half - 0.4f), 180f);
 
                     if (floorIndex == 1)
-                        result.DescendPortal = Place(kit.DescendPortal, module, new Vector3(0f, 0f, -3f), 180f, false).GetComponent<PortalComponent>();
+                        result.DescendPortal = Place(kit.DescendPortal, module, Spread(0f, 0f, -3f), 180f, false).GetComponent<PortalComponent>();
                     else
-                        result.EscapePortals.Add(Place(kit.EscapePortal, module, new Vector3(0f, 0f, -3f), 180f, false).GetComponent<PortalComponent>());
+                        result.EscapePortals.Add(Place(kit.EscapePortal, module, Spread(0f, 0f, -3f), 180f, false).GetComponent<PortalComponent>());
 
-                    Monster(markers, result, module.position + new Vector3(-3f, 0f, -1f), 90f);
-                    Monster(markers, result, module.position + new Vector3(3f, 0f, -1f), -90f);
-                    Monster(markers, result, module.position + new Vector3(0f, 0f, 4f), 180f);
+                    Monster(markers, result, module.position + Spread(-3f, 0f, -1f), 90f);
+                    Monster(markers, result, module.position + Spread(3f, 0f, -1f), -90f);
+                    Monster(markers, result, module.position + Spread(0f, 0f, 4f), 180f);
                     break;
 
                 case Room.Shrine:
-                    Place(kit.Shrines[(x + z + floorIndex) % kit.Shrines.Length], module, new Vector3(0f, 0f, 5.5f), 180f, false);
-                    Place(kit.Shrines[(x + z + floorIndex + 2) % kit.Shrines.Length], module, new Vector3(-5.8f, 0f, 0f), 90f, false);
-                    Place(kit.Skulls, module, new Vector3(5f, 0f, 5f), 0f);
-                    Container(kit.Chest, module, result, new Vector3(5.5f, 0f, -2f), -90f);
-                    result.EscapePortals.Add(Place(kit.EscapePortal, module, new Vector3(2f, 0f, -4.5f), 0f, false).GetComponent<PortalComponent>());
-                    Monster(markers, result, module.position + new Vector3(-2f, 0f, -3f), 0f);
+                    Place(kit.Shrines[(x + z + floorIndex) % kit.Shrines.Length], module, Spread(0f, 0f, 5.5f), 180f, false);
+                    Place(kit.Shrines[(x + z + floorIndex + 2) % kit.Shrines.Length], module, Spread(-5.8f, 0f, 0f), 90f, false);
+                    Place(kit.Skulls, module, Spread(5f, 0f, 5f), 0f);
+                    Container(kit.Chest, module, result, Spread(5.5f, 0f, -2f), -90f);
+                    result.EscapePortals.Add(Place(kit.EscapePortal, module, Spread(2f, 0f, -4.5f), 0f, false).GetComponent<PortalComponent>());
+                    Monster(markers, result, module.position + Spread(-2f, 0f, -3f), 0f);
                     Pillars(kit, module, 4.5f);
                     break;
 
                 case Room.TrapCorridor:
-                    result.Traps.Add(Place(kit.BladeTrap, module, new Vector3(0f, 0f, -3.5f), 90f, false).GetComponent<TrapComponent>());
-                    result.Traps.Add(Place(kit.BladeTrap, module, new Vector3(0f, 0f, 3.5f), 90f, false).GetComponent<TrapComponent>());
-                    Place(kit.SpikeTrap, module, new Vector3(0f, 0f, 0f), 0f, false);
-                    Place(kit.Rubble, module, new Vector3(-4.5f, 0f, -4.5f), 0f);
-                    Place(kit.Rubble, module, new Vector3(4.5f, 0f, 4.5f), 70f);
-                    Container(kit.LargeChest, module, result, new Vector3(5.5f, 0f, -5.5f), -90f);
-                    result.Levers.Add(Place(kit.Lever, module, new Vector3(-6.3f, 0f, 4f), 90f, false).GetComponent<LeverComponent>());
-                    Monster(markers, result, module.position + new Vector3(-3f, 0f, 2f), 90f);
+                    result.Traps.Add(Place(kit.BladeTrap, module, Spread(0f, 0f, -3.5f), 90f, false).GetComponent<TrapComponent>());
+                    result.Traps.Add(Place(kit.BladeTrap, module, Spread(0f, 0f, 3.5f), 90f, false).GetComponent<TrapComponent>());
+                    Place(kit.SpikeTrap, module, Spread(0f, 0f, 0f), 0f, false);
+                    Place(kit.Rubble, module, Spread(-4.5f, 0f, -4.5f), 0f);
+                    Place(kit.Rubble, module, Spread(4.5f, 0f, 4.5f), 70f);
+                    Container(kit.LargeChest, module, result, Spread(5.5f, 0f, -5.5f), -90f);
+                    result.Levers.Add(Place(kit.Lever, module, Spread(-6.3f, 0f, 4f), 90f, false).GetComponent<LeverComponent>());
+                    Monster(markers, result, module.position + Spread(-3f, 0f, 2f), 90f);
                     break;
 
                 case Room.Throne:
-                    Place(kit.Brazier, module, new Vector3(-4f, 0f, 4f), 0f);
-                    Place(kit.Brazier, module, new Vector3(4f, 0f, 4f), 0f);
-                    Place(kit.Brazier, module, new Vector3(-4f, 0f, -4f), 0f);
-                    Place(kit.Brazier, module, new Vector3(4f, 0f, -4f), 0f);
-                    Place(kit.Table, module, new Vector3(0f, 0f, 0f), 0f);
-                    Place(kit.Banner, module, new Vector3(-3f, 3.6f, half - 0.4f), 180f);
-                    Place(kit.Banner, module, new Vector3(3f, 3.6f, half - 0.4f), 180f);
-                    Container(kit.LargeChest, module, result, new Vector3(0f, 0f, 5.5f), 180f);
+                    Place(kit.Brazier, module, Spread(-4f, 0f, 4f), 0f);
+                    Place(kit.Brazier, module, Spread(4f, 0f, 4f), 0f);
+                    Place(kit.Brazier, module, Spread(-4f, 0f, -4f), 0f);
+                    Place(kit.Brazier, module, Spread(4f, 0f, -4f), 0f);
+                    Place(kit.Table, module, Spread(0f, 0f, 0f), 0f);
+                    Place(kit.Banner, module, Spread(-3f, 3.6f, half - 0.4f), 180f);
+                    Place(kit.Banner, module, Spread(3f, 3.6f, half - 0.4f), 180f);
+                    Container(kit.LargeChest, module, result, Spread(0f, 0f, 5.5f), 180f);
 
                     if (floorIndex == 2)
                     {
-                        result.BossSpawn = Marker(markers, "Boss", module.position + new Vector3(0f, 0f, 3f), 180f);
-                        Monster(markers, result, module.position + new Vector3(-4f, 0f, 2f), 135f);
-                        Monster(markers, result, module.position + new Vector3(4f, 0f, 2f), -135f);
-                        result.EscapePortals.Add(Place(kit.EscapePortal, module, new Vector3(-5f, 0f, 0f), 90f, false).GetComponent<PortalComponent>());
+                        result.BossSpawn = Marker(markers, "Boss", module.position + Spread(0f, 0f, 3f), 180f);
+                        Monster(markers, result, module.position + Spread(-4f, 0f, 2f), 135f);
+                        Monster(markers, result, module.position + Spread(4f, 0f, 2f), -135f);
+                        result.EscapePortals.Add(Place(kit.EscapePortal, module, Spread(-5f, 0f, 0f), 90f, false).GetComponent<PortalComponent>());
                     }
                     else
                     {
-                        Monster(markers, result, module.position + new Vector3(-2f, 0f, 2f), 135f);
-                        Monster(markers, result, module.position + new Vector3(2f, 0f, -2f), -45f);
-                        Monster(markers, result, module.position + new Vector3(0f, 0f, -5f), 0f);
+                        Monster(markers, result, module.position + Spread(-2f, 0f, 2f), 135f);
+                        Monster(markers, result, module.position + Spread(2f, 0f, -2f), -45f);
+                        Monster(markers, result, module.position + Spread(0f, 0f, -5f), 0f);
                     }
                     break;
 
                 case Room.BonePit:
                     for (int i = 0; i < 5; i++)
-                        Place(kit.Skulls, module, new Vector3(-4f + i * 2f, 0f, (i % 2 == 0 ? -3f : 3f)), i * 40f);
+                        Place(kit.Skulls, module, Spread(-4f + i * 2f, 0f, (i % 2 == 0 ? -3f : 3f)), i * 40f);
 
-                    Place(kit.Rubble, module, new Vector3(0f, 0f, 0f), 0f);
-                    Container(kit.Coffin, module, result, new Vector3(5.5f, 0f, 0f), 0f);
-                    Container(kit.Chest, module, result, new Vector3(-5.5f, 0f, -5f), 90f);
-                    Monster(markers, result, module.position + new Vector3(-2f, 0f, 0f), 90f);
-                    Monster(markers, result, module.position + new Vector3(2f, 0f, 1f), -90f);
-                    Monster(markers, result, module.position + new Vector3(0f, 0f, -4f), 0f);
+                    Place(kit.Rubble, module, Spread(0f, 0f, 0f), 0f);
+                    Container(kit.Coffin, module, result, Spread(5.5f, 0f, 0f), 0f);
+                    Container(kit.Chest, module, result, Spread(-5.5f, 0f, -5f), 90f);
+                    Monster(markers, result, module.position + Spread(-2f, 0f, 0f), 90f);
+                    Monster(markers, result, module.position + Spread(2f, 0f, 1f), -90f);
+                    Monster(markers, result, module.position + Spread(0f, 0f, -4f), 0f);
                     break;
             }
         }
@@ -485,6 +492,10 @@ namespace Game.Scripts.Editor.Dungeon
             if (room is Room.Hall or Room.Throne or Room.Library or Room.Spawn or Room.Shrine)
                 Place(kit.Chandelier, module, new Vector3(0f, DungeonPropBuilder.WallHeight - 2f, 0f), 0f);
 
+            float quarter = Module * 0.25f;
+            Place(kit.Chandelier, module, new Vector3(-quarter, DungeonPropBuilder.WallHeight - 2f, -quarter), 0f);
+            Place(kit.Chandelier, module, new Vector3(quarter, DungeonPropBuilder.WallHeight - 2f, quarter), 0f);
+
             if (room is Room.Crypt or Room.BonePit or Room.Armory or Room.TrapCorridor or Room.Arrival)
             {
                 Place(kit.Chain, module, new Vector3(-2.5f, DungeonPropBuilder.WallHeight, 2f), 0f);
@@ -501,12 +512,50 @@ namespace Game.Scripts.Editor.Dungeon
             }
         }
 
+        /// Two torches on every wall, between the corners and the doorway, so the large rooms keep readable light.
+        private static void WallTorches(Kit kit, Transform module)
+        {
+            float wall = Module * 0.5f - 0.35f;
+            float offset = Module * 0.28f;
+
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Place(kit.Torch, module, new Vector3(-offset * side, 2.6f, wall * side), side > 0 ? 180f : 0f);
+                Place(kit.Torch, module, new Vector3(offset * side, 2.6f, wall * side), side > 0 ? 180f : 0f);
+                Place(kit.Torch, module, new Vector3(wall * side, 2.6f, -offset * side), side > 0 ? -90f : 90f);
+                Place(kit.Torch, module, new Vector3(wall * side, 2.6f, offset * side), side > 0 ? -90f : 90f);
+            }
+        }
+
         private static void Pillars(Kit kit, Transform module, float offset)
         {
-            Place(kit.Pillar, module, new Vector3(-offset, 0f, -offset), 0f);
-            Place(kit.Pillar, module, new Vector3(offset, 0f, -offset), 0f);
-            Place(kit.Pillar, module, new Vector3(-offset, 0f, offset), 0f);
-            Place(kit.Pillar, module, new Vector3(offset, 0f, offset), 0f);
+            Place(kit.Pillar, module, Spread(-offset, 0f, -offset), 0f);
+            Place(kit.Pillar, module, Spread(offset, 0f, -offset), 0f);
+            Place(kit.Pillar, module, Spread(-offset, 0f, offset), 0f);
+            Place(kit.Pillar, module, Spread(offset, 0f, offset), 0f);
+        }
+
+        /// Maps a layout point to the real module: wall-mounted props keep their distance to the wall, the rest scale with
+        /// the room; anything left in front of a doorway is moved aside along the wall.
+        private static Vector3 Spread(float x, float y, float z)
+        {
+            float half = Module * 0.5f;
+            Vector3 point = new Vector3(SpreadAxis(x), y, SpreadAxis(z));
+
+            if (Mathf.Abs(point.x) < DoorLaneHalfWidth && Mathf.Abs(point.z) > half - DoorLaneDepth)
+                point.x = point.x < 0f ? -DoorLaneHalfWidth : DoorLaneHalfWidth;
+
+            if (Mathf.Abs(point.z) < DoorLaneHalfWidth && Mathf.Abs(point.x) > half - DoorLaneDepth)
+                point.z = point.z < 0f ? -DoorLaneHalfWidth : DoorLaneHalfWidth;
+
+            return point;
+        }
+
+        private static float SpreadAxis(float value)
+        {
+            float toWall = LayoutModule * 0.5f - Mathf.Abs(value);
+
+            return toWall < WallHugDistance ? Mathf.Sign(value) * (Module * 0.5f - toWall) : value * Module / LayoutModule;
         }
 
         private static void Container(GameObject prefab, Transform module, FloorResult result, Vector3 position, float yaw)
@@ -583,7 +632,7 @@ namespace Game.Scripts.Editor.Dungeon
             property.FindPropertyRelative("DescendDestination").objectReferenceValue = result.DescendDestination;
             property.FindPropertyRelative("BossSpawn").objectReferenceValue = result.BossSpawn;
             property.FindPropertyRelative("Center").vector3Value = result.Center;
-            property.FindPropertyRelative("Radius").floatValue = Module * Grid * 0.75f;
+            property.FindPropertyRelative("Radius").floatValue = FloorRadius;
         }
 
         private static void SetArray<T>(SerializedProperty property, IList<T> values) where T : Object

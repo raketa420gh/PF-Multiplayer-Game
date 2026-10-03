@@ -196,6 +196,7 @@ namespace Game.Scripts.Editor.Dungeon
             BuildCompass(hud, inputs.Context);
 
             CreateImage("Crosshair", hud, center, Vector2.zero, new Vector2(4f, 4f), new Color(1f, 1f, 1f, 0.75f));
+            BattleEditorUtility.CreateSwingHint(hud, inputs.Context.Battle);
             Image ring = CreateImage("PromptRing", hud, center, Vector2.zero, new Vector2(60f, 60f), new Color(1f, 0.9f, 0.6f, 0.9f));
             MakeRadial(ring);
             TMP_Text prompt = CreateText("Prompt", hud, center, new Vector2(0f, -58f), new Vector2(700f, 30f), 20f, TextAlignmentOptions.Center);
@@ -292,6 +293,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(mso, "_floorModuleNames", inputs.ModuleNames);
             BattleEditorUtility.Set(mso, "_worldSize", DungeonMapBuilder.Module * DungeonMapBuilder.Grid);
             BattleEditorUtility.Set(mso, "_moduleSize", DungeonMapBuilder.Module);
+            BattleEditorUtility.Set(mso, "_windowSize", DungeonMapBuilder.Module * 1.3f);
             mso.ApplyModifiedPropertiesWithoutUndo();
 
             // Top corners.

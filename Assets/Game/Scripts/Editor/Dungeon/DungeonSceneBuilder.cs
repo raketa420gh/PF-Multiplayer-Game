@@ -39,6 +39,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleInputPolling input = system.AddComponent<BattleInputPolling>();
             BattleEditorUtility.Set(input, "_networkEvents", events);
             BattleContext battle = system.AddComponent<BattleContext>();
+            system.AddComponent<CombatDebugView>();
             BattleFeedback feedback = BuildFeedback(system.transform);
             so = new SerializedObject(battle);
             BattleEditorUtility.Set(so, "_camera", camera);
@@ -82,7 +83,11 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_director", director);
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            DungeonMapBuilder.Build(director);
+            Transform dungeon = DungeonMapBuilder.Build(director);
+            so = new SerializedObject(dungeon.gameObject.AddComponent<FloorVisibilityView>());
+            BattleEditorUtility.Set(so, "_context", context);
+            BattleEditorUtility.Set(so, "_floors", new[] { dungeon.Find("Floor1"), dungeon.Find("Floor2") });
+            so.ApplyModifiedPropertiesWithoutUndo();
             DungeonUiBuilder.Build(new DungeonUiBuilder.Inputs
             {
                 Context = context,
@@ -199,11 +204,11 @@ namespace Game.Scripts.Editor.Dungeon
         private static void SetupLighting()
         {
             RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.035f, 0.035f, 0.045f);
+            RenderSettings.ambientLight = new Color(0.07f, 0.065f, 0.075f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.fogColor = new Color(0.01f, 0.008f, 0.006f);
-            RenderSettings.fogDensity = 0.045f;
+            RenderSettings.fogDensity = 0.02f;
             RenderSettings.skybox = null;
             RenderSettings.reflectionIntensity = 0.1f;
             Lightmapping.bakedGI = false;

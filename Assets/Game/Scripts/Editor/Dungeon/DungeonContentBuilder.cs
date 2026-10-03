@@ -39,6 +39,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             ItemDatabase database = BuildItems(weapons);
             DungeonConfig config = BattleEditorUtility.LoadOrCreate<DungeonConfig>(DungeonConfigPath);
+            BuildSwarmStages(config);
             BuildCaltrops();
             BuildSmokePot();
             ClassConfig[] classes = BuildClasses(database);
@@ -53,14 +54,14 @@ namespace Game.Scripts.Editor.Dungeon
             BuildAdventurer(loadouts, arrow, orb, database, classes, config, weapons, worldItem, corpse, campfire, pieceSet);
             Color rust = new Color(0.4f, 0.3f, 0.22f);
             Color rags = new Color(0.25f, 0.22f, 0.16f);
-            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 285f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = 5, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
+            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = 5, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
                 Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Helmet, rust), (ArmorVisual.Tunic, rags) } }, loadouts, arrow, orb, worldItem, pieceSet);
-            BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 280f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = 2, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
+            BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = 2, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
                 Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Hood, rags) } }, loadouts, arrow, orb, worldItem, pieceSet);
-            BuildMonster(new MonsterDef { Name = "Zombie", DisplayName = "Zombie", Health = 168, Damage = 4.5f, MoveSpeed = 160f, ActionSpeed = 0.6f, Aggro = 8f, WeaponIndex = 4, Experience = 30, Loot = loot["Monster"], Body = DungeonPropBuilder.ZombieSkin, Scale = 1.05f, Voice = DungeonSound.Growl,
+            BuildMonster(new MonsterDef { Name = "Zombie", DisplayName = "Zombie", Health = 168, Damage = 4.5f, MoveSpeed = 130f, ActionSpeed = 0.6f, Aggro = 8f, WeaponIndex = 4, Experience = 30, Loot = loot["Monster"], Body = DungeonPropBuilder.ZombieSkin, Scale = 1.05f, Voice = DungeonSound.Growl,
                 Attachments = new[] { (ArmorVisual.Tunic, new Color(0.3f, 0.3f, 0.2f)), (ArmorVisual.Pants, new Color(0.22f, 0.2f, 0.15f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
-            BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 265f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = 15, Experience = 150, Loot = loot["ChestOrnate"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
-                IsBoss = true, Lunge = 7f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.GreatHelm, new Color(0.85f, 0.7f, 0.3f)), (ArmorVisual.PlateChest, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Greaves, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Cloak, new Color(0.35f, 0.08f, 0.1f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
+            BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 210f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = 15, Experience = 150, Loot = loot["ChestOrnate"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
+                IsBoss = true, Lunge = 5f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.GreatHelm, new Color(0.85f, 0.7f, 0.3f)), (ArmorVisual.PlateChest, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Greaves, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Cloak, new Color(0.35f, 0.08f, 0.1f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
 
             BuildSession(database, classes, config);
             BuildMatch(config);
@@ -492,10 +493,10 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
 
             Transform rightHand = parts.Animator.GetBoneTransform(HumanBodyBones.RightHand);
-            Light torchLight = DungeonPropBuilder.PointLight(rightHand, new Vector3(0f, 0.35f, 0.1f), new Color(1f, 0.65f, 0.3f), 9f, 2.6f, false, true);
+            Light torchLight = DungeonPropBuilder.PointLight(rightHand, new Vector3(0.14f, 0.08f, 0.5f), new Color(1f, 0.65f, 0.3f), 9f, 2.6f, false, true);
             torchLight.enabled = false;
             Transform leftHand = parts.Animator.GetBoneTransform(HumanBodyBones.LeftHand);
-            Light handGlow = DungeonPropBuilder.PointLight(leftHand, new Vector3(0f, 0.05f, 0.08f), new Color(0.6f, 0.6f, 1f), 3f, 1.2f, false);
+            Light handGlow = DungeonPropBuilder.PointLight(leftHand, new Vector3(-0.1f, 0f, 0.02f), new Color(0.6f, 0.6f, 1f), 3f, 1.2f, false);
             handGlow.enabled = false;
 
             AdventurerVisualComponent visual = root.AddComponent<AdventurerVisualComponent>();
@@ -644,46 +645,46 @@ namespace Game.Scripts.Editor.Dungeon
                     Part(root, cylinder, new Vector3(0f, 0.16f, 0f), new Vector3(0.42f, 0.2f, 0.32f), leather);
                     Part(root, cube, new Vector3(0.1f, 0.2f, 0.165f), new Vector3(0.04f, 0.3f, 0.01f), dark, default, true);
                     Part(root, cube, new Vector3(-0.1f, 0.2f, 0.165f), new Vector3(0.04f, 0.3f, 0.01f), dark, default, true);
-                    Part(root, sphere, new Vector3(0.24f, 0.3f, 0f), new Vector3(0.16f, 0.1f, 0.18f), leather);
-                    Part(root, sphere, new Vector3(-0.24f, 0.3f, 0f), new Vector3(0.16f, 0.1f, 0.18f), leather);
+                    Part(root, sphere, new Vector3(0.23f, 0.38f, -0.02f), new Vector3(0.16f, 0.1f, 0.18f), leather);
+                    Part(root, sphere, new Vector3(-0.23f, 0.38f, -0.02f), new Vector3(0.16f, 0.1f, 0.18f), leather);
                     Part(root, cube, new Vector3(0f, -0.02f, 0f), new Vector3(0.44f, 0.05f, 0.34f), dark, default, true);
                 }),
                 Composite("Armor_PlateChest", root =>
                 {
                     Part(root, cylinder, new Vector3(0f, 0.16f, 0f), new Vector3(0.46f, 0.21f, 0.36f), metal);
                     Part(root, cylinder, new Vector3(0f, 0.36f, 0f), new Vector3(0.3f, 0.02f, 0.26f), metal);
-                    Part(root, sphere, new Vector3(0.27f, 0.32f, 0f), new Vector3(0.2f, 0.12f, 0.22f), metal);
-                    Part(root, sphere, new Vector3(-0.27f, 0.32f, 0f), new Vector3(0.2f, 0.12f, 0.22f), metal);
+                    Part(root, sphere, new Vector3(0.25f, 0.39f, -0.02f), new Vector3(0.2f, 0.12f, 0.22f), metal);
+                    Part(root, sphere, new Vector3(-0.25f, 0.39f, -0.02f), new Vector3(0.2f, 0.12f, 0.22f), metal);
                     Part(root, cube, new Vector3(0.12f, -0.08f, 0.1f), new Vector3(0.18f, 0.14f, 0.03f), metal, new Vector3(-10f, 0f, 0f));
                     Part(root, cube, new Vector3(-0.12f, -0.08f, 0.1f), new Vector3(0.18f, 0.14f, 0.03f), metal, new Vector3(-10f, 0f, 0f));
                     Part(root, cube, new Vector3(0f, -0.02f, 0f), new Vector3(0.48f, 0.05f, 0.38f), leather, default, true);
                 }),
                 Composite("Armor_Gloves", root =>
                 {
-                    Part(root, sphere, new Vector3(0f, 0f, 0.05f), new Vector3(0.11f, 0.11f, 0.16f), leather);
-                    Part(root, cylinder, new Vector3(0f, 0f, -0.03f), new Vector3(0.13f, 0.03f, 0.13f), leather, new Vector3(90f, 0f, 0f));
+                    Part(root, sphere, new Vector3(-0.1f, 0f, 0.015f), new Vector3(0.25f, 0.08f, 0.15f), leather);
+                    Part(root, cylinder, new Vector3(0.02f, 0f, 0f), new Vector3(0.1f, 0.03f, 0.1f), leather, new Vector3(0f, 0f, 90f));
                 }),
                 Composite("Armor_Gauntlets", root =>
                 {
-                    Part(root, cube, new Vector3(0f, 0f, 0.05f), new Vector3(0.12f, 0.12f, 0.2f), metal);
-                    Part(root, cylinder, new Vector3(0f, 0f, -0.04f), new Vector3(0.15f, 0.035f, 0.15f), metal, new Vector3(90f, 0f, 0f));
-                    Part(root, cube, new Vector3(0f, 0.06f, 0.09f), new Vector3(0.1f, 0.02f, 0.06f), metal);
+                    Part(root, cube, new Vector3(-0.1f, 0f, 0.015f), new Vector3(0.23f, 0.08f, 0.14f), metal);
+                    Part(root, cylinder, new Vector3(0.03f, 0f, 0f), new Vector3(0.12f, 0.035f, 0.12f), metal, new Vector3(0f, 0f, 90f));
+                    Part(root, cube, new Vector3(-0.09f, 0.045f, 0.015f), new Vector3(0.07f, 0.02f, 0.11f), metal);
                 }),
-                Composite("Armor_Pants", root => Part(root, PrimitiveType.Capsule, new Vector3(0f, -0.2f, 0f), new Vector3(0.18f, 0.24f, 0.18f), cloth)),
+                Composite("Armor_Pants", root => Part(root, PrimitiveType.Capsule, new Vector3(0f, -0.2f, 0f), new Vector3(0.21f, 0.24f, 0.22f), cloth)),
                 Composite("Armor_Greaves", root =>
                 {
-                    Part(root, cylinder, new Vector3(0f, -0.2f, 0f), new Vector3(0.16f, 0.2f, 0.16f), metal);
+                    Part(root, cylinder, new Vector3(0f, -0.2f, -0.03f), new Vector3(0.16f, 0.2f, 0.17f), metal);
                     Part(root, sphere, new Vector3(0f, 0f, 0.03f), new Vector3(0.13f, 0.1f, 0.13f), metal);
                 }),
                 Composite("Armor_Boots", root =>
                 {
-                    Part(root, cube, new Vector3(0f, -0.03f, 0.06f), new Vector3(0.13f, 0.1f, 0.26f), leather);
+                    Part(root, cube, new Vector3(0f, -0.03f, 0.085f), new Vector3(0.13f, 0.1f, 0.31f), leather);
                     Part(root, cylinder, new Vector3(0f, 0.06f, -0.02f), new Vector3(0.15f, 0.08f, 0.15f), leather);
                 }),
                 Composite("Armor_PlateBoots", root =>
                 {
-                    Part(root, cube, new Vector3(0f, -0.02f, 0.06f), new Vector3(0.15f, 0.12f, 0.28f), metal);
-                    Part(root, cube, new Vector3(0f, -0.02f, 0.18f), new Vector3(0.13f, 0.1f, 0.06f), metal);
+                    Part(root, cube, new Vector3(0f, -0.02f, 0.08f), new Vector3(0.15f, 0.12f, 0.31f), metal);
+                    Part(root, cube, new Vector3(0f, -0.02f, 0.21f), new Vector3(0.13f, 0.1f, 0.06f), metal);
                     Part(root, cylinder, new Vector3(0f, 0.08f, -0.02f), new Vector3(0.17f, 0.09f, 0.17f), metal);
                 }),
                 Composite("Armor_Cloak", root =>
@@ -778,6 +779,13 @@ namespace Game.Scripts.Editor.Dungeon
             root.GetComponent<CharacterController>().height = 1.85f * def.Scale;
             root.GetComponent<CharacterController>().center = new Vector3(0f, 0.925f * def.Scale, 0f);
 
+            // Block boxes ride the scaled skeleton; Fusion hitboxes ignore transform scale, so their extents follow by hand.
+            foreach (ZoneHitbox hitbox in root.GetComponentsInChildren<ZoneHitbox>(true))
+            {
+                if (hitbox.Zone == HitZone.Block)
+                    hitbox.BoxExtents *= def.Scale;
+            }
+
             MonsterComponent monster = root.AddComponent<MonsterComponent>();
             so = new SerializedObject(monster);
             BattleEditorUtility.Set(so, "_config", config);
@@ -838,6 +846,24 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return BattleContentBuilder.SavePrefab(root, Prefab("Corpse"));
+        }
+
+        /// Swarm stages shrink to fixed shares of the floor radius, so they follow the map size.
+        private static void BuildSwarmStages(DungeonConfig config)
+        {
+            (float start, float share)[] stages = { (150f, 0.82f), (330f, 0.48f), (510f, 0.22f), (660f, 0f) };
+            SerializedObject so = new SerializedObject(config);
+            so.FindProperty("_swarmStages").arraySize = stages.Length;
+
+            for (int i = 0; i < stages.Length; i++)
+            {
+                string path = $"_swarmStages.Array.data[{i}].";
+                BattleEditorUtility.Set(so, path + "StartTime", stages[i].start);
+                BattleEditorUtility.Set(so, path + "Duration", 60f);
+                BattleEditorUtility.Set(so, path + "Radius", DungeonMapBuilder.FloorRadius * stages[i].share);
+            }
+
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void BuildSession(ItemDatabase database, ClassConfig[] classes, DungeonConfig config)

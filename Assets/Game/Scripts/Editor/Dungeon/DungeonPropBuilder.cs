@@ -28,7 +28,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static Material PortalBlue => Emissive("PortalBlue", new Color(0.2f, 0.5f, 1f), 4f);
         public static Material PortalRed => Emissive("PortalRed", new Color(1f, 0.25f, 0.15f), 4f);
         public static Material ShrineGlow => Emissive("ShrineGlow", new Color(0.9f, 0.8f, 0.4f), 2.5f);
-        public static Material SwarmWall => TransparentEmissive("SwarmWall", new Color(0.4f, 0.05f, 0.25f, 0.35f), 1.5f);
+        public static Material SwarmWall => TransparentUnlit("SwarmWall", new Color(0.12f, 0.02f, 0.1f, 0.45f));
 
         public static Material Textured(string name, string texture, float tiling, float smoothness, float metallic = 0f)
         {
@@ -68,6 +68,16 @@ namespace Game.Scripts.Editor.Dungeon
             material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
             EditorUtility.SetDirty(material);
+
+            return material;
+        }
+
+        /// Flat see-through tint: no lighting, emission or bloom.
+        public static Material TransparentUnlit(string name, Color color)
+        {
+            Emissive(name, color, 0f).shader = Shader.Find("Universal Render Pipeline/Unlit");
+            Material material = TransparentEmissive(name, color, 0f);
+            material.DisableKeyword("_EMISSION");
 
             return material;
         }
@@ -253,7 +263,7 @@ namespace Game.Scripts.Editor.Dungeon
                     Flame(root.transform, position + new Vector3(0f, 0.22f, 0f), 0.3f);
             }
 
-            PointLight(root.transform, new Vector3(0f, 0.4f, 0f), new Color(1f, 0.72f, 0.4f), 11f, 2.4f, true);
+            PointLight(root.transform, new Vector3(0f, 0.4f, 0f), new Color(1f, 0.72f, 0.4f), 18f, 6f, true);
 
             return root;
         }
@@ -533,7 +543,7 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject root = new GameObject("WallTorch");
             MeshObject("Bracket", root.transform, mesh, RustyMetal, default, default, false, false);
             Flame(root.transform, new Vector3(0f, 0.48f, 0.22f), 0.8f);
-            PointLight(root.transform, new Vector3(0f, 0.65f, 0.4f), new Color(1f, 0.62f, 0.28f), 9f, 2.8f, true);
+            PointLight(root.transform, new Vector3(0f, 0.65f, 0.4f), new Color(1f, 0.62f, 0.28f), 16f, 7f, true);
 
             return root;
         }

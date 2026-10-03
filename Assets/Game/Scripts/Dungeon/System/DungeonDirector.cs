@@ -6,6 +6,7 @@ using UnityEngine;
 namespace Game.Scripts.Dungeon
 {
     /// Host-side orchestration: sessions on join, adventurer spawns, dungeon population, portals and match reset.
+    /// A floor is populated only when the first adventurer reaches it.
     public sealed class DungeonDirector : MonoBehaviour
     {
         [Serializable]
@@ -64,9 +65,9 @@ namespace Game.Scripts.Dungeon
 
         private readonly List<NetworkObject> _spawned = new();
         private readonly List<PlayerSessionComponent> _sessions = new();
+        private readonly bool[] _populated = new bool[MatchComponent.FloorCount];
         private NetworkRunner _runner;
         private MatchComponent _match;
-        private bool _isPopulated;
         private bool _portalsOpened;
         private bool _descendOpened;
         private float _finishedAt = -1f;
@@ -103,8 +104,13 @@ namespace Game.Scripts.Dungeon
             if (_match.State == MatchState.Finished)
                 ResetDungeon();
 
-            if (!_isPopulated)
-                Populate();
+            if (!_populated[0])
+            {
+                _seed = Environment.TickCount;
+                SetEscapePortals(false);
+                SetDescendPortals(false);
+                Populate(0);
+            }
 
             if (_match.State != MatchState.Running)
                 StartMatch();
@@ -190,12 +196,29 @@ namespace Game.Scripts.Dungeon
                 SetEscapePortals(true);
             }
 
+            for (int i = 1; i < _floors.Length; i++)
+            {
+                if (!_populated[i] && AnyAdventurerOnFloor(i + 1))
+                    Populate(i);
+            }
+
             // A run ends as soon as nobody is left inside, so the next descent gets a fresh dungeon and a full swarm timer.
             if ((_match.IsTimeUp || elapsed > 5f) && !AnyAdventurerAlive())
             {
                 _match.Finish();
                 _finishedAt = Time.time;
             }
+        }
+
+        private bool AnyAdventurerOnFloor(int floor)
+        {
+            foreach (PlayerSessionComponent session in _sessions)
+            {
+                if (session != null && session.State == SessionState.InDungeon && session.Adventurer != null && session.Adventurer.Floor == floor)
+                    return true;
+            }
+
+            return false;
         }
 
         private bool AnyAdventurerAlive()
@@ -209,46 +232,39 @@ namespace Game.Scripts.Dungeon
             return false;
         }
 
-        private void Populate()
+        private void Populate(int floorIndex)
         {
-            _isPopulated = true;
-            _seed = Environment.TickCount;
-            System.Random random = new System.Random(_seed);
+            _populated[floorIndex] = true;
+            System.Random random = new System.Random(_seed + floorIndex);
+            FloorLayout floor = _floors[floorIndex];
+            byte level = (byte)(floorIndex + 1);
 
-            for (int floorIndex = 0; floorIndex < _floors.Length; floorIndex++)
+            foreach (ContainerComponent container in floor.Containers)
             {
-                FloorLayout floor = _floors[floorIndex];
+                if (container == null)
+                    continue;
 
-                foreach (ContainerComponent container in floor.Containers)
-                {
-                    if (container == null)
-                        continue;
-
-                    container.ResetContainer();
-                    container.Fill(container.LootTable, random.Next());
-                }
-
-                if (floor.BossSpawn != null && _bossPrefab != null)
-                {
-                    NetworkObject boss = _runner.Spawn(_bossPrefab, floor.BossSpawn.position, floor.BossSpawn.rotation, PlayerRef.None,
-                        (_, obj) => obj.GetComponent<MonsterComponent>().Setup((byte)(floorIndex + 1)));
-                    _spawned.Add(boss);
-                }
-
-                foreach (Transform point in floor.MonsterSpawns)
-                {
-                    if (random.NextDouble() > _monsterSpawnChance)
-                        continue;
-
-                    MonsterKind kind = Pick(_monsters, random, m => m.Weight);
-                    NetworkObject monster = _runner.Spawn(kind.Prefab, point.position, point.rotation, PlayerRef.None,
-                        (_, obj) => obj.GetComponent<MonsterComponent>().Setup((byte)(floorIndex + 1)));
-                    _spawned.Add(monster);
-                }
+                container.ResetContainer();
+                container.Fill(container.LootTable, random.Next());
             }
 
-            SetEscapePortals(false);
-            SetDescendPortals(false);
+            if (floor.BossSpawn != null && _bossPrefab != null)
+            {
+                NetworkObject boss = _runner.Spawn(_bossPrefab, floor.BossSpawn.position, floor.BossSpawn.rotation, PlayerRef.None,
+                    (_, obj) => obj.GetComponent<MonsterComponent>().Setup(level));
+                _spawned.Add(boss);
+            }
+
+            foreach (Transform point in floor.MonsterSpawns)
+            {
+                if (random.NextDouble() > _monsterSpawnChance)
+                    continue;
+
+                MonsterKind kind = Pick(_monsters, random, m => m.Weight);
+                NetworkObject monster = _runner.Spawn(kind.Prefab, point.position, point.rotation, PlayerRef.None,
+                    (_, obj) => obj.GetComponent<MonsterComponent>().Setup(level));
+                _spawned.Add(monster);
+            }
         }
 
         private void SetDescendPortals(bool isActive)
@@ -293,7 +309,7 @@ namespace Game.Scripts.Dungeon
             }
 
             _spawned.Clear();
-            _isPopulated = false;
+            Array.Clear(_populated, 0, _populated.Length);
             _match.ResetMatch();
         }
 

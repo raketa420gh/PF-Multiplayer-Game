@@ -28,7 +28,10 @@ namespace Game.Scripts.Dungeon
                     instance.transform.localScale = Vector3.Scale(instance.transform.localScale, new Vector3(-1f, 1f, 1f));
 
                 if (layer >= 0)
-                    instance.layer = layer;
+                {
+                    foreach (Transform child in instance.GetComponentsInChildren<Transform>(true))
+                        child.gameObject.layer = layer;
+                }
 
                 instance.SetActive(false);
 
