@@ -100,8 +100,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 0.6, z: 1.8}
-  m_Center: {x: 0, y: 0.3, z: 0.6}
+  m_Size: {x: 1, y: 0.6, z: 2}
+  m_Center: {x: 0, y: 0.3, z: -0.55}
 --- !u!1 &8540349736980193028
 GameObject:
   m_ObjectHideFlags: 0
@@ -248,7 +248,8 @@ MonoBehaviour:
   _container: {fileID: 3293972795842194185}
   _inventory: {fileID: 8247915780495214481}
   _animator: {fileID: 4171345021191611002}
-  _bodyRenderer: {fileID: 6652856471354058429}
+  _model: {fileID: 8545464641077851660}
+  _pieceSet: {fileID: 11400000, guid: 86e260649b1c8c44598887b65a2f3046, type: 2}
   _classes:
   - {fileID: 11400000, guid: 62026bb450e195e48baeef6e2c7f30ff, type: 2}
   _deathState: Death
@@ -264,10 +265,6 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 1222da195e24e9e469b05e175985e5e4, type: 2}
-    - target: {fileID: 6520170427433308957, guid: 3bbc54fe779ffb8409daab3c7932b2b6, type: 3}
-      propertyPath: m_UpdateWhenOffscreen
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 6667084050133516641, guid: 3bbc54fe779ffb8409daab3c7932b2b6, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -327,8 +324,14 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6667084050133516641, guid: 3bbc54fe779ffb8409daab3c7932b2b6, type: 3}
   m_PrefabInstance: {fileID: 445853902204368288}
   m_PrefabAsset: {fileID: 0}
---- !u!137 &6652856471354058429 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 6520170427433308957, guid: 3bbc54fe779ffb8409daab3c7932b2b6, type: 3}
+--- !u!114 &8545464641077851660 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8122359660306482092, guid: 3bbc54fe779ffb8409daab3c7932b2b6, type: 3}
   m_PrefabInstance: {fileID: 445853902204368288}
   m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0add6c4d516cd8d4db108b24f07ff0ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Battle.CharacterModelComponent
