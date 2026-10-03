@@ -43,6 +43,29 @@ Hit detection и сетевой authority должны учитывать ори
 **Consequences**
 Нужна отдельная animation/rig logic для upper-body pitch и crouch, а также согласованное first-/third-person представление.
 
+## DD-005 — Classes Are Redesigned From Scratch
+**Date:** 2026-10-03  
+**Status:** Accepted
+
+**Decision**
+Все классы, перенесённые из клона Dark and Darker, удалены, кроме Cleric (`Id = 0`). Новые классы придумываются с нуля.
+
+**Consequences**
+Механики удалённых классов (shapeshift, spawn-ловушки, smoke) остаются в коде и доступны новым классам.
+
+## DD-006 — Hexagram Attribute System
+**Date:** 2026-10-03  
+**Status:** Accepted
+
+**Context**
+Семь атрибутов Dark and Darker (STR/VIG/AGI/DEX/WILL/KNOW/RES) повторяли оригинал.
+
+**Decision**
+Шесть основ по кольцу: Плоть, Хватка, Реакция, Сноровка, Рассудок, Резонанс. Собственные характеристики основ считаются по одной общей кривой. Рёберные — от среднего геометрического двух соседей. Основа ≥ 30 открывает пассивку-порог. Подробности — `02_Gameplay/Attributes.md`.
+
+**Consequences**
+Атрибуты влияют на Poise, Guard, Impact, Weakpoint, Handling, Perception, Mending и заряды заклинаний. `DamageReceiverComponent.IDefense` заменён на `IHitModifier`, в `ICombatStats` добавлен `HandlingSpeed`.
+
 ## Template
 
 ### DD-XXX — `[Title]`

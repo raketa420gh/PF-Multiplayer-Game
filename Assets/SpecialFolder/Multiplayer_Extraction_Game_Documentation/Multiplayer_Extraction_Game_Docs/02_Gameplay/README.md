@@ -5,6 +5,7 @@
 - `Combat.md`
 - `Movement.md`
 - `Classes.md`
+- `Attributes.md`
 - `Inventory.md`
 - `Progression.md`
 - `Economy.md`
