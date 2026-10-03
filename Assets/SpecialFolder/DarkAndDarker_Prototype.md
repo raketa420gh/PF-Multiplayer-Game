@@ -9,8 +9,10 @@
 |---|---|
 | `Tools/Game/Dungeon/Build All` | Анимации (весь каталог оружия) → звуки → текстуры → battle‑контент (оружие, Fighter) → dungeon‑контент (предметы, классы, способности, монстры, лут, префабы) → сцена `DungeonScene` |
 | `Tools/Game/Dungeon/Build Textures` | Процедурные текстуры (альбедо + нормали) в `Assets/Game/Textures/Dungeon` |
-| `Tools/Game/Dungeon/Build Content` | Конфиги и сетевые префабы в `Assets/Game/Configs/Dungeon`, `Assets/Game/Prefabs/Dungeon` |
-| `Tools/Game/Dungeon/Build Scene` | `Assets/Game/Scenes/DungeonScene.unity`: два этажа 3×3, свет, NavMesh, UI |
+| `Tools/Game/Dungeon/Build Audio` | Синтезированные звуки и мелодия таверны в `Assets/Game/Audio/Dungeon` |
+| `Tools/Game/Dungeon/Build Battle Content` | Префабы оружия и Fighter (ветка `battle`) |
+| `Tools/Game/Dungeon/Build Content` | Конфиги, иконки, модели предметов, броня, монстры, босс и сетевые префабы в `Assets/Game/Configs/Dungeon`, `Assets/Game/Prefabs/Dungeon` |
+| `Tools/Game/Dungeon/Build Scene` | `Assets/Game/Scenes/DungeonScene.unity`: два этажа 3×3, свет, post‑processing volume, NavMesh, миникарта, UI |
 
 После добавления новых сетевых префабов Fusion может потребовать `Fusion.Editor.NetworkProjectConfigUtilities.RebuildPrefabTable()` (ошибка «guid failed to be translated into a prefab id»).
 
@@ -29,7 +31,7 @@
 
 ## Управление
 
-WASD — бег (спринта нет, как в DaD), Shift — тихий шаг (×0.4), Ctrl/C — присед (×0.65, уклонение корпусом), Space — прыжок, ЛКМ — атака / натяжение лука, ПКМ — блок, 1/2 — наборы оружия, Tab/I — инвентарь (drag&drop, ПКМ — быстрое действие, Shift+ЛКМ — перенос в сундук/сташ), F — взаимодействие (удержание), Q/E — навыки, Z/X/V/R/T — заклинания, 5–8 — пояс, G — отдых (1 HP / 2 с), H — помощь, Esc — курсор.
+WASD — бег (спринта нет, как в DaD), Shift — тихий шаг (×0.4), Ctrl/C — присед (×0.65, уклонение корпусом), Space — прыжок, ЛКМ — атака / натяжение лука, ПКМ — блок **или удержание каста выбранного заклинания** (отпустить — выстрел, F — отмена), 1–4 — наборы оружия, Tab/I — инвентарь (drag&drop, ПКМ — быстрое действие, Shift+ЛКМ — перенос в сундук/сташ, Ctrl+drag — разделить стак, кнопка Sort), F — взаимодействие (удержание), Q/E — два навыка, выбранных в таверне (Spell Memory / Shapeshift Memory — удерживать, чтобы открыть колесо), 5–8 — пояс, G — отдых (1 HP / 2 с), H — помощь, Esc — курсор.
 
 ## Механики DaD, которые реализованы
 
@@ -42,11 +44,17 @@ WASD — бег (спринта нет, как в DaD), Shift — тихий ш�
 - Навыки/заклинания 10 классов (лечение, баффы, щиты, невидимость, рывок, снаряды с эффектами горения/замедления, AoE), заряды у спеллов, кулдауны у навыков, перки по уровням 1/5/10/15, XP за монстров и экстракцию.
 - Монстры: Skeleton Swordsman (меч, блок), Skeleton Archer (лук, держит дистанцию), Zombie (медленный, бьёт лапами, живучий) — тот же боевой стек, что и игрок, NavMesh‑патфайндинг, агро по зрению, присед снижает дистанцию обнаружения, монстры открывают двери, возвращаются на пост, лут и XP за убийство.
 - Интерактивы: двери (замок, отмычка), сундуки/гробы/бочки/ящики/полки, рычаги, алтари (Health/Protection/Power/Speed, одноразовые), костёр (отдых + HoT), ловушки (шипы, маятниковые лезвия), порталы, предметы на полу (дроп из инвентаря).
-- Освещение: только локальные источники (факелы, жаровни, свечи, факел в руке, посох, порталы), чёрный ambient, экспоненциальный туман, Forward+.
+- Освещение: только локальные источники (факелы, жаровни, свечи, люстры, факел в руке, посох, порталы), почти чёрный ambient, экспоненциальный туман, Forward+, собственный volume (ACES, лёгкий bloom, виньетка, зерно; lens flare выключен).
+- **Каст через фокус‑предмет**: Wizard/Cleric/Warlock кастуют только с посохом, книгой заклинаний или хрустальным шаром в руках, Bard — с лютней, Sorcerer — голыми руками, Druid — всегда (формы). Spell Memory (удержать Q/E) открывает колесо, выбранное заклинание «готовится» (свечение руки), удержание ПКМ заряжает каст (розовая полоса), отпускание — выстрел. Заряды восстанавливает костёр и Meditation; Warlock платит HP; Sorcerer — на кулдаунах.
+- **Классовые особенности**: 2 навыка и перки (1/5/10/15 уровней) выбираются в таверне и сохраняются; Druid — Shapeshift Memory → Bear/Panther/Rat (секундный каст, свои «оружия»‑лапы, HP/скорость формы); Fighter Taunt, Rogue Caltrops/Smoke Pot, Ranger Multishot и т. д. (пулы навыков по wiki в `DungeonClassLibrary`).
+- **Монстры**: Skeleton Swordsman, Skeleton Archer, Zombie и босс Skeleton Champion (Ritual Room второго этажа, 525 HP, рывок, полные комбо, панель HP). Во время атаки монстр **стоит на месте** и не доворачивает прицел (замах читается, можно уклониться), действия замедлены (Action Speed 0.6–0.85). Скелеты одеты в череп‑маску, рёбра, ржавые шлемы и лохмотья.
+- **HUD как в DaD**: компас сверху, полоса HP с ячейками Q/E, пояс 5–8, ряд оружия 1–4, миникарта (пергамент, рендер этажа) с таймером и названием модуля, текст готового заклинания, панель босса, полоса каста. Окно персонажа: 3D‑превью одетой фигуры (в таверне и в инвентаре), ценность снаряжения.
+- **Звук**: шаги, двери, сундуки, зелья, бинты, порталы, тик роя, level up, клики, рычание/стук костей, каст, рычаг, смерть, экстракция, эмбиент подземелья, мелодия таверны — всё синтезировано `DungeonAudioBuilder`.
+- **Подземелье**: стены с цоколем, карнизом и пилястрами, арки над проёмами, паутина по углам, люстры, свечные наплывы на полу, цепи под потолком, баннеры, жаровни; процедурные меши с корректной обмоткой граней (нормали наружу).
 
 ## Не реализовано (по ТЗ или сознательно упрощено)
 
-Рынок/торговцы, квесты, боссы, мимики, мини‑игра отмычки (отмычка расходуется мгновенно), recoverable health, команды/Soul Heart/воскрешение, спектатор, High‑Roller, карта/компас.
+Рынок/торговцы, квесты, мимики, мини‑игра отмычки (отмычка расходуется мгновенно), мини‑игра нот Барда (песня = удержание ПКМ с лютней), recoverable health, команды/Soul Heart/воскрешение, спектатор, High‑Roller. Матч заканчивается, как только в подземелье никого не осталось — следующий вход генерирует новое заселение и полный таймер роя.
 
 ## Архитектура (`Assets/Game/Scripts/Dungeon`)
 
@@ -57,11 +65,13 @@ WASD — бег (спринта нет, как в DaD), Shift — тихий ш�
 | Content | `AdventurerComponent` (игрок: класс, инвентарь, взаимодействие, способности, смерть, экстракция, спуск), `PlayerSessionComponent` (лобби, кит, сташ, уровень), `MonsterComponent`, `CorpseComponent`, `ContainerComponent`, `DoorComponent`, `PortalComponent`, `ShrineComponent`, `CampfireComponent`, `LeverComponent`, `TrapComponent`, `WorldItemComponent` |
 | AI | `MonsterBrainComponent` (`FighterComponent.IInputSource` + NavMesh) |
 | System | `DungeonContext` (service locator), `DungeonDirector` (хост: сессии, спавн, заселение, порталы, сброс), `StashService` (PlayerPrefs) |
-| View | `DungeonUiRoot`, `LobbyView`, `DungeonHudView`, `InventoryView` + `ItemGridView` + `ItemView` + `EquipSlotView`, `ResultView`, `AdventurerVisualComponent` (броня на костях, факел, невидимость), `FlickerLightComponent` |
+| View | `DungeonUiRoot`, `LobbyView`, `DungeonHudView`, `CompassView`, `MinimapView`, `SpellWheelView`, `CharacterPreviewView`, `InventoryView` + `ItemGridView` + `ItemView` + `EquipSlotView`, `ResultView`, `AdventurerVisualComponent` + `ArmorDresser` (броня на костях, факел, невидимость), `MonsterVisualComponent`, `DungeonAudioComponent`, `FootstepComponent`, `FlickerLightComponent` |
 
 Изменения в боевой системе (`Battle`): каталог оружия в `CombatComponent` (слоты → индекс каталога, `SetSlotWeapon`), `ICombatStats` (множители урона, Action Speed, Move Speed), `DamageReceiverComponent.IDefense` (броня/резисты/щиты), `DamageType`, состояние `Busy` (каст/использование/взаимодействие), снаряды с видом/типом урона/AoE/эффектом, бег по умолчанию + тихий шаг, кнопки ввода для взаимодействия/навыков/спеллов/пояса.
 
-Редакторские билдеры (`Assets/Game/Scripts/Editor/Dungeon`): `DungeonWeaponLibrary` (позы/тайминги новых оружий), `DungeonWeaponPrefabBuilder`, `DungeonTextureBuilder`, `DungeonMeshBuilder` + `DungeonPropBuilder` (стены, арки, колонны, сундуки, гробы, бочки, полки, жаровни, факелы, баннеры, черепа, алтари, порталы, ловушки), `DungeonItemLibrary` (данные предметов/классов/способностей/перков), `DungeonContentBuilder`, `DungeonMapBuilder`, `DungeonUiBuilder`, `DungeonSceneBuilder`, `DungeonBuildMenu`.
+Редакторские билдеры (`Assets/Game/Scripts/Editor/Dungeon`): `DungeonWeaponLibrary` (позы/тайминги новых оружий, книга, лютня, лапы форм), `DungeonWeaponPrefabBuilder`, `DungeonTextureBuilder` (+ паутина), `DungeonMeshBuilder` + `DungeonPropBuilder` (стены с пилястрами, арки, колонны, сундуки, гробы, бочки, полки, жаровни, факелы, люстры, свечи, цепи, паутина, баннеры, черепа, алтари, порталы, ловушки), `DungeonItemLibrary` (предметы/способности), `DungeonClassLibrary` (классы, навыки, перки, киты), `DungeonItemModelBuilder` (модели предметов на полу), `DungeonIconBuilder` (иконки из моделей), `DungeonMinimapBuilder` (пергаментная карта этажа), `DungeonAudioBuilder`, `DungeonContentBuilder`, `DungeonMapBuilder`, `DungeonUiBuilder` (overlay‑камера UI, превью персонажа), `DungeonSceneBuilder`, `DungeonBuildMenu`.
+
+Отладка без ввода (из `execute_code` Unity MCP): `session.RpcSelectClass/RpcEnterDungeon`, `adventurer.RpcReadySpell/RpcShapeshift`, `FighterMoveComponent.Teleport`, `BattleInputPolling.SetLook`; скриншоты с UI — `ScreenCapture.CaptureScreenshot` (снимок камеры через MCP не включает overlay‑камеру UI). Монстры убивают стоящего игрока за 1–2 с, вне круга роя урон ≈8/с.
 
 ## Справочные данные с wiki (использованы в прототипе)
 
