@@ -18,7 +18,7 @@ namespace Game.Scripts.Editor.Dungeon
             "<b>Controls</b>\n" +
             "WASD move · Shift walk (quiet) · Space jump · Ctrl/C crouch (duck under swings)\n" +
             "LMB attack / draw · RMB block, or hold to cast a readied spell · 1 / 2 weapon sets · Tab inventory\n" +
-            "F interact (hold) · Q / E skills (hold a Memory skill for the spell / form wheel) · 5 6 7 8 belt · G rest · H help\n" +
+            "3 / 4 belt item in hand (press again for the next of three), LMB use, RMB put away · F interact (hold) · Q / E skills · G rest · H help\n" +
             "Casters need a staff, spellbook or crystal ball in hand; bards need an instrument. Rest at a campfire to recover charges.";
 
         private static readonly Color s_panel = new(0.04f, 0.035f, 0.03f, 0.92f);
@@ -232,10 +232,11 @@ namespace Game.Scripts.Editor.Dungeon
             TMP_Text readied = CreateText("Readied", hud, bottom, new Vector2(372f, 44f), new Vector2(360f, 44f), 15f, TextAlignmentOptions.MidlineLeft);
             readied.rectTransform.pivot = new Vector2(0f, 0.5f);
 
-            List<(GameObject, TMP_Text, TMP_Text)> belt = new();
+            // Two belt groups of three: key 3 cycles the left group, key 4 the right one.
+            List<(GameObject, TMP_Text, TMP_Text, Image)> belt = new();
 
-            for (int i = 0; i < 4; i++)
-                belt.Add(BeltSlot(hud, bottom, new Vector2(-78f + i * 52f, 104f), (5 + i).ToString()));
+            for (int i = 0; i < 6; i++)
+                belt.Add(BeltSlot(hud, bottom, new Vector2((i < 3 ? -182f : 78f) + i % 3 * 52f, 104f), (3 + i / 3).ToString()));
 
             TMP_Text effects = CreateText("Effects", hud, bottom, new Vector2(0f, 138f), new Vector2(700f, 24f), 13f, TextAlignmentOptions.Center);
             effects.color = new Color(0.8f, 0.95f, 1f);
@@ -351,6 +352,7 @@ namespace Game.Scripts.Editor.Dungeon
                 element.FindPropertyRelative("Root").objectReferenceValue = belt[i].Item1;
                 element.FindPropertyRelative("Glyph").objectReferenceValue = belt[i].Item2;
                 element.FindPropertyRelative("Count").objectReferenceValue = belt[i].Item3;
+                element.FindPropertyRelative("Frame").objectReferenceValue = belt[i].Item4;
             }
 
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -412,11 +414,12 @@ namespace Game.Scripts.Editor.Dungeon
             return (slot.gameObject, glyph, keyText, charges, cooldown);
         }
 
-        private static (GameObject, TMP_Text, TMP_Text) BeltSlot(RectTransform parent, Vector2 anchor, Vector2 position, string key)
+        private static (GameObject, TMP_Text, TMP_Text, Image) BeltSlot(RectTransform parent, Vector2 anchor, Vector2 position, string key)
         {
             RectTransform slot = CreateRect("Belt" + key, parent, anchor, position, new Vector2(44f, 44f));
             CreateImage("Back", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(44f, 44f), s_panelLight);
-            CreateImage("Frame", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(48f, 48f), s_frame).transform.SetAsFirstSibling();
+            Image frame = CreateImage("Frame", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(48f, 48f), s_frame);
+            frame.transform.SetAsFirstSibling();
             TMP_Text glyph = CreateText("Glyph", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(44f, 44f), 18f, TextAlignmentOptions.Center);
             glyph.fontStyle = FontStyles.Bold;
             TMP_Text keyText = CreateText("Key", slot, new Vector2(0f, 1f), new Vector2(3f, -1f), new Vector2(20f, 14f), 10f, TextAlignmentOptions.TopLeft);
@@ -426,7 +429,7 @@ namespace Game.Scripts.Editor.Dungeon
             TMP_Text count = CreateText("Count", slot, new Vector2(1f, 0f), new Vector2(-3f, 1f), new Vector2(30f, 14f), 11f, TextAlignmentOptions.BottomRight);
             count.rectTransform.pivot = new Vector2(1f, 0f);
 
-            return (slot.gameObject, glyph, count);
+            return (slot.gameObject, glyph, count, frame);
         }
 
         private static InventoryView BuildInventory(Transform root, Canvas canvas, Inputs inputs, ItemView itemPrefab, Image cellPrefab, string title, bool fullscreen,
@@ -475,10 +478,12 @@ namespace Game.Scripts.Editor.Dungeon
                 Slot(equipPanel, EquipSlot.Legs, "Legs", new Vector2(276f, -256f), 2, 2, itemPrefab),
                 Slot(equipPanel, EquipSlot.Ring2, "Ring", new Vector2(382f, -256f), 1, 1, itemPrefab),
                 Slot(equipPanel, EquipSlot.Feet, "Feet", new Vector2(276f, -352f), 2, 2, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility1, "5", new Vector2(120f, -352f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility2, "6", new Vector2(120f, -404f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility3, "7", new Vector2(476f, -352f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility4, "8", new Vector2(476f, -404f), 1, 1, itemPrefab)
+                Slot(equipPanel, EquipSlot.Utility1, "3", new Vector2(120f, -300f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility2, "3", new Vector2(120f, -352f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility3, "3", new Vector2(120f, -404f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility4, "4", new Vector2(476f, -300f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility5, "4", new Vector2(476f, -352f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility6, "4", new Vector2(476f, -404f), 1, 1, itemPrefab)
             };
 
             RectTransform bagPanel = CreateRect("BagPanel", panel, new Vector2(0f, 1f), new Vector2(530f, -560f), new Vector2(640f, 230f));
@@ -819,6 +824,47 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;
+        }
+
+        /// Test ground developer buttons, placed in the free corner under the container panel of the inventory.
+        public static SandboxDevView BuildDevPanel(GameObject canvas, SandboxDirector director, string[] monsterNames)
+        {
+            // Same 1920x1080 frame as the centered inventory panel: x 1200, y -520 from its top-left corner.
+            RectTransform panel = CreateRect("DevPanel", canvas.transform, new Vector2(0.5f, 0.5f), new Vector2(240f, 20f), new Vector2(680f, 170f));
+            panel.pivot = new Vector2(0f, 1f);
+            CreateImage("Back", panel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
+            TMP_Text title = CreateText("Title", panel, new Vector2(0f, 1f), new Vector2(16f, -10f), new Vector2(400f, 28f), 18f, TextAlignmentOptions.MidlineLeft);
+            title.rectTransform.pivot = new Vector2(0f, 1f);
+            title.text = "Developer (host)";
+            title.color = s_gold;
+
+            Button[] monsters = new Button[monsterNames.Length];
+
+            for (int i = 0; i < monsterNames.Length; i++)
+                monsters[i] = DevButton(panel, i, 0, "+ " + monsterNames[i]);
+
+            SandboxDevView view = panel.gameObject.AddComponent<SandboxDevView>();
+            SerializedObject so = new SerializedObject(view);
+            BattleEditorUtility.Set(so, "_director", director);
+            BattleEditorUtility.Set(so, "_monsterButtons", monsters);
+            BattleEditorUtility.Set(so, "_botButton", DevButton(panel, 0, 1, "+ Duel bot"));
+            BattleEditorUtility.Set(so, "_clearButton", DevButton(panel, 1, 1, "Remove mobs"));
+            BattleEditorUtility.Set(so, "_restockButton", DevButton(panel, 2, 1, "Restock table"));
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            BattleEditorUtility.SetLayerRecursively(panel.gameObject, LayerMask.NameToLayer("UI"));
+            panel.gameObject.SetActive(false);
+            BattleEditorUtility.Set(canvas.GetComponent<DungeonUiRoot>(), "_devPanel", view);
+
+            return view;
+        }
+
+        private static Button DevButton(RectTransform panel, int column, int row, string label)
+        {
+            Button button = CreateButton(label, panel, new Vector2(0f, 1f), new Vector2(16f + column * 164f, -50f - row * 54f), new Vector2(154f, 42f), label);
+            ((RectTransform)button.transform).pivot = new Vector2(0f, 1f);
+
+            return button;
         }
 
         private static HelpView BuildHelp(Transform root)

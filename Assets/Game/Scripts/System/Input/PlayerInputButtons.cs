@@ -24,10 +24,6 @@ namespace Game.Scripts
         Spell3 = 17,
         Spell4 = 18,
         Spell5 = 19,
-        Utility1 = 20,
-        Utility2 = 21,
-        Utility3 = 22,
-        Utility4 = 23,
         Rest = 24
     }
 }

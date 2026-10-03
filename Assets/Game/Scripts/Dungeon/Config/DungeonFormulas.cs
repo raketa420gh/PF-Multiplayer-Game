@@ -2,42 +2,22 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Piecewise-linear attribute curves taken from the Dark and Darker wiki.
+    /// Hexagram curves: every attribute runs through one shared curve, edge stats use the geometric mean of two neighbours.
     public static class DungeonFormulas
     {
         public const float BaseMoveSpeed = 300f;
         public const float MaxMoveSpeed = 330f;
-        public const float FlatHealthBonus = 25f;
+        public const float BaseHealth = 125f;
+        public const float BasePoise = 12f;
+        public const float BaseConcentration = 10f;
+        public const float BaseMagicResistance = 30f;
         public const float MaxDamageReduction = 0.65f;
+        public const int Threshold = 30;
 
-        private static readonly Vector2[] s_powerBonus =
+        /// 15 is neutral; 3% per point below 15 and up to 25, 2% up to 35, then 1%.
+        private static readonly Vector2[] s_attribute =
         {
-            new(0f, -0.8f), new(5f, -0.3f), new(7f, -0.2f), new(11f, -0.08f), new(15f, 0f), new(50f, 0.35f), new(60f, 0.4f), new(100f, 0.5f)
-        };
-
-        private static readonly Vector2[] s_moveSpeedAdd =
-        {
-            new(0f, -10f), new(10f, -5f), new(15f, 0f), new(75f, 36f), new(100f, 43.5f)
-        };
-
-        private static readonly Vector2[] s_actionSpeed =
-        {
-            new(0f, -0.38f), new(10f, -0.08f), new(13f, -0.02f), new(15f, 0f), new(33f, 0.225f), new(45f, 0.345f), new(49f, 0.375f), new(100f, 0.63f)
-        };
-
-        private static readonly Vector2[] s_interactionSpeed =
-        {
-            new(0f, -0.26f), new(7f, -0.12f), new(15f, 0f), new(20f, 0.28f), new(25f, 0.52f), new(30f, 0.72f), new(35f, 0.88f), new(40f, 1f), new(45f, 1.08f), new(100f, 1.52f)
-        };
-
-        private static readonly Vector2[] s_castSpeed =
-        {
-            new(0f, -0.6f), new(5f, -0.35f), new(10f, -0.15f), new(15f, 0f), new(25f, 0.21f), new(40f, 0.51f), new(100f, 1.11f)
-        };
-
-        private static readonly Vector2[] s_baseHealth =
-        {
-            new(0f, 70f), new(15f, 100f), new(21f, 110.5f), new(44f, 145f), new(48f, 150f), new(64f, 166f), new(100f, 184f)
+            new(0f, -0.45f), new(15f, 0f), new(25f, 0.3f), new(35f, 0.5f), new(100f, 1.15f)
         };
 
         private static readonly Vector2[] s_armorReduction =
@@ -46,32 +26,18 @@ namespace Game.Scripts.Dungeon
             new(200f, 0.321f), new(300f, 0.431f), new(400f, 0.516f), new(500f, 0.618f), new(600f, 0.65f)
         };
 
-        private static readonly Vector2[] s_magicResistance =
-        {
-            new(0f, -20f), new(5f, 0f), new(15f, 30f), new(33f, 102f), new(48f, 147f), new(58f, 167f), new(100f, 209f)
-        };
-
         private static readonly Vector2[] s_magicReduction =
         {
             new(-15f, -0.25f), new(8f, -0.02f), new(18f, 0.03f), new(33f, 0.09f), new(53f, 0.15f), new(85f, 0.23f), new(280f, 0.62f), new(430f, 0.65f)
         };
 
-        private static readonly Vector2[] s_buffDuration =
-        {
-            new(0f, -0.8f), new(15f, 0f), new(100f, 0.6f)
-        };
-
-        public static float PowerBonus(float power) => Sample(s_powerBonus, power);
-        public static float MoveSpeedAdd(float agility) => Sample(s_moveSpeedAdd, agility);
-        public static float ActionSpeed(float agility, float dexterity) => Sample(s_actionSpeed, agility * 0.25f + dexterity * 0.75f);
-        public static float InteractionSpeed(float dexterity, float resourcefulness) => Sample(s_interactionSpeed, dexterity * 0.25f + resourcefulness * 0.75f);
-        public static float CastSpeed(float knowledge) => Sample(s_castSpeed, knowledge);
-        public static float BaseHealth(float strength, float vigor) => Sample(s_baseHealth, strength * 0.25f + vigor * 0.75f);
+        public static float Curve(float value) => Sample(s_attribute, value);
+        public static float Scale(float value, float weight) => 1f + weight * Curve(value);
+        public static float Edge(float a, float b) => Mathf.Sqrt(Mathf.Max(0f, a) * Mathf.Max(0f, b));
+        public static float PowerBonus(float power) => Curve(power);
+        public static int BonusCharges(float resonance) => Mathf.Clamp(Mathf.FloorToInt((resonance - 10f) / 10f), 0, 3);
         public static float ArmorReduction(float armorRating) => Mathf.Min(Sample(s_armorReduction, armorRating), MaxDamageReduction);
-        public static float MagicResistance(float will) => Sample(s_magicResistance, will);
         public static float MagicReduction(float magicResistance) => Mathf.Min(Sample(s_magicReduction, magicResistance), MaxDamageReduction);
-        public static float BuffDuration(float will) => Sample(s_buffDuration, will);
-        public static int MemoryCapacity(float knowledge) => Mathf.Max(0, Mathf.RoundToInt(knowledge) - 6);
 
         public static float Sample(Vector2[] curve, float x)
         {

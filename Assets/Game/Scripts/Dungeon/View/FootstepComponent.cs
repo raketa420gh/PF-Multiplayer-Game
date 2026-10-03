@@ -40,8 +40,16 @@ namespace Game.Scripts.Dungeon
             _travelled = 0f;
             _toggle = !_toggle;
             float speed = delta.magnitude / Mathf.Max(Time.deltaTime, 0.001f);
-            float volume = Mathf.Clamp01(speed / 4.2f) * 0.6f + 0.15f;
-            DungeonAudioComponent.Play(_toggle ? DungeonSound.Footstep : DungeonSound.FootstepB, position, volume, Random.Range(0.92f, 1.08f));
+            float volume = (Mathf.Clamp01(speed / 4.2f) * 0.6f + 0.15f) * GetHearing();
+            DungeonAudioComponent.Play(_toggle ? DungeonSound.Footstep : DungeonSound.FootstepB, position, Mathf.Clamp01(volume), Random.Range(0.92f, 1.08f));
+        }
+
+        /// The local adventurer's Perception makes other people's steps louder or quieter; own steps stay as they are.
+        private float GetHearing()
+        {
+            AdventurerComponent listener = DungeonContext.Instance != null ? DungeonContext.Instance.LocalAdventurer : null;
+
+            return listener != null && listener.Fighter != _fighter ? listener.Stats.Perception : 1f;
         }
     }
 }

@@ -15,6 +15,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.Build();
             DungeonContentBuilder.Build();
             DungeonSceneBuilder.Build();
+            BattleSceneBuilder.Build();
         }
 
         [MenuItem("Tools/Game/Dungeon/Build Audio")]

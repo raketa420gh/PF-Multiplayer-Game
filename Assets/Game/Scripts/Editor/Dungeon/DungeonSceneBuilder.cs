@@ -26,7 +26,7 @@ namespace Game.Scripts.Editor.Dungeon
             EditorSceneManager.SaveScene(scene, ScenePath);
 
             SetupLighting();
-            BuildVolume();
+            BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/DungeonVolume.asset", 0.75f);
             Camera camera = BuildCamera();
             GameObject system = new GameObject("[System]");
             NetworkEvents events = system.AddComponent<NetworkEvents>();
@@ -49,10 +49,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             ItemDatabase database = AssetDatabase.LoadAssetAtPath<ItemDatabase>(DungeonContentBuilder.DatabasePath);
             DungeonConfig config = AssetDatabase.LoadAssetAtPath<DungeonConfig>(DungeonContentBuilder.DungeonConfigPath);
-            ClassConfig[] classes = AssetDatabase.FindAssets("t:ClassConfig", new[] { DungeonContentBuilder.ClassesFolder })
-                .Select(guid => AssetDatabase.LoadAssetAtPath<ClassConfig>(AssetDatabase.GUIDToAssetPath(guid)))
-                .OrderBy(c => c.Id)
-                .ToArray();
+            ClassConfig[] classes = LoadClasses();
 
             DungeonDirector director = system.AddComponent<DungeonDirector>();
             so = new SerializedObject(director);
@@ -107,6 +104,14 @@ namespace Game.Scripts.Editor.Dungeon
             Debug.Log($"[{nameof(DungeonSceneBuilder)}] Scene built: {ScenePath}");
         }
 
+        internal static ClassConfig[] LoadClasses()
+        {
+            return AssetDatabase.FindAssets("t:ClassConfig", new[] { DungeonContentBuilder.ClassesFolder })
+                .Select(guid => AssetDatabase.LoadAssetAtPath<ClassConfig>(AssetDatabase.GUIDToAssetPath(guid)))
+                .OrderBy(c => c.Id)
+                .ToArray();
+        }
+
         private static void BuildAudio(GameObject system, DungeonContext context)
         {
             GameObject go = BattleEditorUtility.CreateChild("Audio", system.transform);
@@ -149,9 +154,8 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         /// Explicit post-processing profile; the project default volume carries lens flares and test components.
-        private static void BuildVolume()
+        internal static void BuildVolume(string path, float exposure)
         {
-            const string path = "Assets/Game/Configs/Dungeon/DungeonVolume.asset";
             VolumeProfile profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
 
             if (profile == null)
@@ -173,7 +177,7 @@ namespace Game.Scripts.Editor.Dungeon
             vignette.intensity.value = 0.25f;
             vignette.smoothness.value = 0.45f;
             ColorAdjustments color = Add<ColorAdjustments>(profile);
-            color.postExposure.value = 0.75f;
+            color.postExposure.value = exposure;
             color.contrast.value = 10f;
             color.saturation.value = -6f;
             FilmGrain grain = Add<FilmGrain>(profile);

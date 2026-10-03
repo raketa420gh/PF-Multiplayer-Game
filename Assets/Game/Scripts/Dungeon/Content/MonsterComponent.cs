@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Game.Scripts.Dungeon
 {
     /// A dungeon monster on top of the fighter stack: config-driven stats, loot drop and experience reward.
-    public sealed class MonsterComponent : NetworkBehaviour, ICombatStats, DamageReceiverComponent.IDefense
+    public sealed class MonsterComponent : NetworkBehaviour, ICombatStats, DamageReceiverComponent.IHitModifier
     {
         public MonsterConfig Config => _config;
         public FighterComponent Fighter => _fighter;
@@ -32,6 +32,7 @@ namespace Game.Scripts.Dungeon
         private TickTimer _despawnTimer { get; set; }
 
         public float ActionSpeed => _config.ActionSpeed;
+        public float HandlingSpeed => 1f;
         /// Monsters plant their feet while swinging so players can read and dodge the attack, as in Dark and Darker.
         public float MoveSpeedMultiplier => _fighter.Combat.State == CombatState.Attack ? AttackMoveMultiplier : _config.MoveSpeed / DungeonFormulas.BaseMoveSpeed;
         public bool IsBoss => _config.IsBoss;
@@ -46,7 +47,7 @@ namespace Game.Scripts.Dungeon
         {
             s_all.Add(this);
             _fighter.SetStats(this);
-            _fighter.Receiver.SetDefense(this);
+            _fighter.Receiver.SetModifier(this);
             _fighter.Receiver.SetTeam(_team);
 
             if (!HasStateAuthority)
@@ -84,7 +85,14 @@ namespace Game.Scripts.Dungeon
             return _config.DamageMultiplier;
         }
 
-        int DamageReceiverComponent.IDefense.ModifyIncomingDamage(int damage, DamageType type, HitZone zone)
+        float DamageReceiverComponent.IHitModifier.WeakpointMultiplier => 1f;
+        float DamageReceiverComponent.IHitModifier.ImpactMultiplier => 1f;
+
+        float DamageReceiverComponent.IHitModifier.ModifyBlockMitigation(float mitigation) => mitigation;
+
+        float DamageReceiverComponent.IHitModifier.ModifyIncomingStagger(int damage, float staggerDuration) => staggerDuration;
+
+        int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, DamageType type, HitZone zone)
         {
             float reduction = type == DamageType.Physical ? _config.ArmorReduction : type == DamageType.Magical ? _config.MagicReduction : 0f;
 

@@ -77,7 +77,7 @@ namespace Game.Scripts.Dungeon
         {
             InventoryComponent inventory = _adventurer.Inventory;
 
-            for (EquipSlot slot = EquipSlot.Utility1; slot <= EquipSlot.Utility4; slot++)
+            for (EquipSlot slot = EquipSlot.Utility1; slot <= EquipSlot.Utility6; slot++)
             {
                 if (inventory.GetConfig(inventory.GetEquipped(slot)) is ConsumableItemConfig consumable && consumable.Effect == ConsumableEffect.HealInstant)
                     return true;

@@ -10,39 +10,37 @@ namespace Game.Scripts.Dungeon
         BareHands
     }
 
+    /// The six attributes of the hexagram, in ring order: each one neighbours the next and the last neighbours the first.
     [Serializable]
     public struct ClassStats
     {
-        public int Strength;
-        public int Vigor;
-        public int Agility;
-        public int Dexterity;
-        public int Will;
-        public int Knowledge;
-        public int Resourcefulness;
+        public int Flesh;
+        public int Grip;
+        public int Reflex;
+        public int Craft;
+        public int Insight;
+        public int Resonance;
 
-        public ClassStats(int strength, int vigor, int agility, int dexterity, int will, int knowledge, int resourcefulness)
+        public ClassStats(int flesh, int grip, int reflex, int craft, int insight, int resonance)
         {
-            Strength = strength;
-            Vigor = vigor;
-            Agility = agility;
-            Dexterity = dexterity;
-            Will = will;
-            Knowledge = knowledge;
-            Resourcefulness = resourcefulness;
+            Flesh = flesh;
+            Grip = grip;
+            Reflex = reflex;
+            Craft = craft;
+            Insight = insight;
+            Resonance = resonance;
         }
 
         public int Get(StatType stat)
         {
             return stat switch
             {
-                StatType.Strength => Strength,
-                StatType.Vigor => Vigor,
-                StatType.Agility => Agility,
-                StatType.Dexterity => Dexterity,
-                StatType.Will => Will,
-                StatType.Knowledge => Knowledge,
-                StatType.Resourcefulness => Resourcefulness,
+                StatType.Flesh => Flesh,
+                StatType.Grip => Grip,
+                StatType.Reflex => Reflex,
+                StatType.Craft => Craft,
+                StatType.Insight => Insight,
+                StatType.Resonance => Resonance,
                 _ => 0
             };
         }
@@ -114,7 +112,7 @@ namespace Game.Scripts.Dungeon
         private string _description;
 
         [SerializeField]
-        private ClassStats _baseStats = new(15, 15, 15, 15, 15, 15, 15);
+        private ClassStats _baseStats = new(15, 15, 15, 15, 15, 15);
 
         [SerializeField]
         private Color _color = Color.white;

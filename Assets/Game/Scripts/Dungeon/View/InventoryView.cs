@@ -323,20 +323,23 @@ namespace Game.Scripts.Dungeon
             ClassStats attributes = _stats.Attributes;
             _builder.Clear();
             _builder.AppendLine($"<b>{_class.DisplayName}</b>");
-            _builder.AppendLine($"Strength {attributes.Strength}    Vigor {attributes.Vigor}");
-            _builder.AppendLine($"Agility {attributes.Agility}    Dexterity {attributes.Dexterity}");
-            _builder.AppendLine($"Will {attributes.Will}    Knowledge {attributes.Knowledge}");
-            _builder.AppendLine($"Resourcefulness {attributes.Resourcefulness}");
+            _builder.AppendLine($"Flesh {attributes.Flesh}    Grip {attributes.Grip}    Reflex {attributes.Reflex}");
+            _builder.AppendLine($"Craft {attributes.Craft}    Insight {attributes.Insight}    Resonance {attributes.Resonance}");
             _builder.AppendLine();
-            _builder.AppendLine($"Health {_stats.MaxHealth}");
-            _builder.AppendLine($"Armor Rating {_stats.ArmorRating:0}  (PDR {_stats.PhysicalReduction * 100f:0}%)");
-            _builder.AppendLine($"Magic Resist {_stats.MagicResistance:0}  (MDR {_stats.MagicalReduction * 100f:0}%)");
-            _builder.AppendLine($"Move Speed {_stats.MoveSpeedRating:0}  ({_stats.MoveSpeedMultiplier * 100f:0}%)");
-            _builder.AppendLine($"Physical Power {_stats.PhysicalPower:0}  ({(_stats.GetDamageMultiplier(Battle.DamageType.Physical) - 1f) * 100f:+0;-0}%)");
-            _builder.AppendLine($"Magical Power {_stats.MagicalPower:0}  ({(_stats.GetDamageMultiplier(Battle.DamageType.Magical) - 1f) * 100f:+0;-0}%)");
-            _builder.AppendLine($"Action Speed {(_stats.ActionSpeed - 1f) * 100f:+0;-0}%   Cast Speed {(_stats.CastSpeed - 1f) * 100f:+0;-0}%");
-            _builder.AppendLine($"Interaction Speed {(_stats.InteractionSpeed - 1f) * 100f:+0;-0}%");
+            _builder.AppendLine($"Health {_stats.MaxHealth}   Poise {_stats.Poise:0}   Stagger Recovery {Percent(_stats.StaggerRecovery)}");
+            _builder.AppendLine($"Physical Power {_stats.PhysicalPower:0} ({Percent(_stats.GetDamageMultiplier(Battle.DamageType.Physical))})   Guard {Percent(_stats.Guard)}   Load {_stats.Load * 100f:0}%");
+            _builder.AppendLine($"Action Speed {Percent(_stats.ActionSpeed)}   Interaction {Percent(_stats.InteractionSpeed)}   Weakpoint {Percent(_stats.Weakpoint)}");
+            _builder.AppendLine($"Cooldowns {Percent(_stats.CooldownSpeed)}   Control Resist {_stats.ControlResistance * 100f:0}%   Concentration {_stats.Concentration:0}");
+            _builder.AppendLine($"Magical Power {_stats.MagicalPower:0} ({Percent(_stats.GetDamageMultiplier(Battle.DamageType.Magical))})   Bonus Charges +{_stats.BonusCharges}");
+            _builder.AppendLine($"Impact {Percent(_stats.Impact)}   Move Speed {_stats.MoveSpeedRating:0}   Handling {Percent(_stats.HandlingSpeed)}");
+            _builder.AppendLine($"Perception {Percent(_stats.Perception)}   Cast Speed {Percent(_stats.CastSpeed)}   Mending {Percent(_stats.Mending)}");
+            _builder.AppendLine($"Armor {_stats.ArmorRating:0} (PDR {_stats.PhysicalReduction * 100f:0}%)   Magic Resist {_stats.MagicResistance:0} (MDR {_stats.MagicalReduction * 100f:0}%)");
             _statsText.text = _builder.ToString();
+        }
+
+        private static string Percent(float multiplier)
+        {
+            return $"{(multiplier - 1f) * 100f:+0;-0;0}%";
         }
 
         private string BuildTooltip(ItemConfig config, ItemStack stack)

@@ -20,6 +20,8 @@ namespace Game.Scripts.Dungeon
         public AdventurerComponent LocalAdventurer => _localAdventurer;
         public MatchComponent Match => _match;
         public DungeonDirector Director => _director;
+        /// Test ground: no lobby, no persistence of the kit, stash or profile.
+        public bool IsSandbox => _isSandbox;
 
         [SerializeField]
         private BattleContext _battle;
@@ -35,6 +37,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private DungeonDirector _director;
+
+        [SerializeField]
+        private bool _isSandbox;
 
         private static DungeonContext s_instance;
         private PlayerSessionComponent _localSession;

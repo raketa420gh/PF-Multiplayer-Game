@@ -12,17 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d988ee4bac2acf74b80699d6e83c0b70, type: 3}
   m_Name: Cleric
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
-  _id: 5
+  _id: 0
   _displayName: Cleric
   _description: Holy healer in heavy armor. Bane of the undead.
   _baseStats:
-    Strength: 11
-    Vigor: 13
-    Agility: 12
-    Dexterity: 14
-    Will: 23
-    Knowledge: 20
-    Resourcefulness: 12
+    Flesh: 16
+    Grip: 13
+    Reflex: 12
+    Craft: 12
+    Insight: 15
+    Resonance: 22
   _color: {r: 0.95, g: 0.9, b: 0.6, a: 1}
   _bodyColor: {r: 0.75, g: 0.72, b: 0.65, a: 1}
   _skills:
@@ -45,44 +44,44 @@ MonoBehaviour:
   - _name: Advanced Healer
     _description: +4 magical power.
     _modifiers:
-    - Stat: 12
+    - Stat: 11
       Value: 4
   - _name: Holy Aura
     _description: +15 armor and magic resistance.
     _modifiers:
-    - Stat: 8
+    - Stat: 7
       Value: 15
-    - Stat: 9
+    - Stat: 8
       Value: 15
   - _name: Blunt Weapon Mastery
     _description: +10 physical power.
     _modifiers:
-    - Stat: 11
+    - Stat: 10
       Value: 10
   - _name: Perseverance
     _description: +10 armor rating.
     _modifiers:
-    - Stat: 8
+    - Stat: 7
       Value: 10
   - _name: Kindness
     _description: +5% max health.
     _modifiers:
-    - Stat: 7
+    - Stat: 6
       Value: 5
   - _name: Undead Slaying
     _description: +10% physical damage.
     _modifiers:
-    - Stat: 14
+    - Stat: 13
       Value: 0.1
   - _name: Requiem
-    _description: +2 will.
+    _description: +2 resonance.
     _modifiers:
-    - Stat: 4
+    - Stat: 5
       Value: 2
   - _name: Protection from Evil
     _description: +30 magic resistance.
     _modifiers:
-    - Stat: 9
+    - Stat: 8
       Value: 30
   _startingKit:
   - _item: {fileID: 11400000, guid: 4cef8ba6992e9ef49ae289de8a2e48cf, type: 2}

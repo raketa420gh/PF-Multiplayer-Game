@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Shows class colors, equipped armor pieces on the bones, a hand torch light and invisibility.
+    /// Shows class colors, equipped armor pieces on the bones, the belt item in hand, a hand torch light and invisibility.
     public sealed class AdventurerVisualComponent : NetworkBehaviour
     {
         [SerializeField]
@@ -41,6 +41,9 @@ namespace Game.Scripts.Dungeon
         private bool _wasInvisible;
         private ShapeshiftForm _shownForm;
         private Color _classColor;
+        private Transform _handItemRoot;
+        private GameObject _handItem;
+        private short _shownHandItem;
 
         public override void Spawned()
         {
@@ -48,6 +51,7 @@ namespace Game.Scripts.Dungeon
             _body.material.SetColor("_BaseColor", _classColor);
             _dresser = new ArmorDresser(_animator, _pieceSet, gameObject.layer);
             _renderers.AddRange(GetComponentsInChildren<Renderer>(true));
+            _handItemRoot = _animator.GetBoneTransform(HumanBodyBones.RightHand);
         }
 
         public override void Render()
@@ -62,6 +66,35 @@ namespace Game.Scripts.Dungeon
             UpdateInvisibility();
             UpdateHandGlow();
             UpdateForm();
+            UpdateHandItem();
+        }
+
+        private void UpdateHandItem()
+        {
+            InventoryComponent inventory = _adventurer.Inventory;
+            ItemStack stack = _adventurer.HasBeltItemInHand ? inventory.GetEquipped((EquipSlot)_adventurer.BeltSlot) : default;
+
+            if (stack.ItemId == _shownHandItem)
+                return;
+
+            _shownHandItem = stack.ItemId;
+
+            if (_handItem != null)
+                Destroy(_handItem);
+
+            ItemConfig config = inventory.GetConfig(stack);
+
+            if (config == null || config.WorldModel == null)
+                return;
+
+            _handItem = Instantiate(config.WorldModel, _handItemRoot, false);
+            _handItem.transform.localPosition = new Vector3(0f, -0.04f, 0.08f);
+
+            foreach (Collider collider in _handItem.GetComponentsInChildren<Collider>())
+                Destroy(collider);
+
+            foreach (Renderer renderer in _handItem.GetComponentsInChildren<Renderer>())
+                renderer.enabled = !_wasInvisible;
         }
 
         private void UpdateHandGlow()

@@ -126,7 +126,7 @@ namespace Game.Scripts.Dungeon
                 OnStateChanged?.Invoke();
             }
 
-            if (!HasInputAuthority || State != SessionState.Lobby || !HasLoadedKit)
+            if (!HasInputAuthority || State != SessionState.Lobby || !HasLoadedKit || DungeonContext.Instance == null || DungeonContext.Instance.IsSandbox)
                 return;
 
             if (_savedKitVersion != _kit.Version)
@@ -273,7 +273,7 @@ namespace Game.Scripts.Dungeon
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcEnterDungeon()
         {
-            if (State != SessionState.Lobby || DungeonContext.Instance == null)
+            if (State != SessionState.Lobby || DungeonContext.Instance == null || DungeonContext.Instance.Director == null)
                 return;
 
             if (_kit.CountItems() == 0 && _kit.GetEquipped(EquipSlot.Weapon1Main).IsEmpty)

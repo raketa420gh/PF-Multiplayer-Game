@@ -105,7 +105,7 @@ namespace Game.Scripts.Editor.Dungeon
         public CastFocus Focus = CastFocus.Magic;
     }
 
-    /// Items, classes, abilities and perks of the prototype, numbers taken from the Dark and Darker wiki.
+    /// Items, classes, abilities and perks of the prototype.
     internal static class DungeonItemLibrary
     {
         private static readonly Color s_steel = new(0.8f, 0.82f, 0.88f);
@@ -138,14 +138,14 @@ namespace Game.Scripts.Editor.Dungeon
                 Weapon("Lute", DungeonWeaponLibrary.Lute, WeaponClass.Instrument, 2, 3, 10f, "Lt", new Color(0.8f, 0.6f, 0.3f), 35, "Bard instrument. Songs are performed with it in hand.", twoHanded: true),
 
                 Armor("Woolen Cap", EquipSlot.Head, ArmorType.Cloth, 20f, 2f, ArmorVisual.Cap, new Color(0.35f, 0.3f, 0.25f), 2, 2, "Hd", 8),
-                Armor("Rogue Cowl", EquipSlot.Head, ArmorType.Cloth, 25f, 2f, ArmorVisual.Hood, new Color(0.2f, 0.2f, 0.22f), 2, 2, "Hd", 14, modifiers: new[] { new StatModifier(StatType.Agility, 1f) }),
-                Armor("Wizard Hat", EquipSlot.Head, ArmorType.Cloth, 20f, 2f, ArmorVisual.Hood, new Color(0.25f, 0.2f, 0.45f), 2, 2, "Hd", 14, modifiers: new[] { new StatModifier(StatType.Knowledge, 1f) }),
+                Armor("Rogue Cowl", EquipSlot.Head, ArmorType.Cloth, 25f, 2f, ArmorVisual.Hood, new Color(0.2f, 0.2f, 0.22f), 2, 2, "Hd", 14, modifiers: new[] { new StatModifier(StatType.Reflex, 1f) }),
+                Armor("Wizard Hat", EquipSlot.Head, ArmorType.Cloth, 20f, 2f, ArmorVisual.Hood, new Color(0.25f, 0.2f, 0.45f), 2, 2, "Hd", 14, modifiers: new[] { new StatModifier(StatType.Insight, 1f) }),
                 Armor("Leather Cap", EquipSlot.Head, ArmorType.Leather, 31f, 3f, ArmorVisual.Cap, s_leather, 2, 2, "Hd", 15),
                 Armor("Kettle Hat", EquipSlot.Head, ArmorType.Plate, 30f, 3f, ArmorVisual.Helmet, s_plate, 2, 2, "Hd", 22),
                 Armor("Great Helm", EquipSlot.Head, ArmorType.Plate, 49f, 7f, ArmorVisual.GreatHelm, s_plate, 2, 2, "Hd", 40),
                 Armor("Adventurer Tunic", EquipSlot.Chest, ArmorType.Cloth, 33f, 3f, ArmorVisual.Tunic, new Color(0.45f, 0.4f, 0.3f), 2, 3, "Ch", 12),
                 Armor("Frock", EquipSlot.Chest, ArmorType.Cloth, 42f, 4f, ArmorVisual.Tunic, new Color(0.3f, 0.25f, 0.5f), 2, 3, "Ch", 25, magicResist: 25f),
-                Armor("Doublet", EquipSlot.Chest, ArmorType.Leather, 44f, 4f, ArmorVisual.LeatherChest, new Color(0.4f, 0.25f, 0.15f), 2, 3, "Ch", 28, modifiers: new[] { new StatModifier(StatType.Dexterity, 1f) }),
+                Armor("Doublet", EquipSlot.Chest, ArmorType.Leather, 44f, 4f, ArmorVisual.LeatherChest, new Color(0.4f, 0.25f, 0.15f), 2, 3, "Ch", 28, modifiers: new[] { new StatModifier(StatType.Craft, 1f) }),
                 Armor("Heavy Gambeson", EquipSlot.Chest, ArmorType.Leather, 85f, 8f, ArmorVisual.LeatherChest, new Color(0.5f, 0.42f, 0.3f), 2, 3, "Ch", 45),
                 Armor("Templar Armor", EquipSlot.Chest, ArmorType.Plate, 81f, 9f, ArmorVisual.PlateChest, new Color(0.75f, 0.75f, 0.8f), 2, 3, "Ch", 70, magicResist: 20f),
                 Armor("Dark Plate Armor", EquipSlot.Chest, ArmorType.Plate, 101f, 14f, ArmorVisual.PlateChest, new Color(0.25f, 0.25f, 0.3f), 2, 3, "Ch", 110),
@@ -156,10 +156,10 @@ namespace Game.Scripts.Editor.Dungeon
                 Armor("Plate Pants", EquipSlot.Legs, ArmorType.Plate, 75f, 8f, ArmorVisual.Greaves, s_plate, 2, 2, "Lg", 55),
                 Armor("Adventurer Boots", EquipSlot.Feet, ArmorType.Leather, 23f, -6f, ArmorVisual.Boots, s_leather, 2, 2, "Bt", 12),
                 Armor("Plate Boots", EquipSlot.Feet, ArmorType.Plate, 42f, -4f, ArmorVisual.PlateBoots, s_plate, 2, 2, "Bt", 38, magicResist: -5f),
-                Armor("Adventurer Cloak", EquipSlot.Back, ArmorType.Cloth, 6f, 0f, ArmorVisual.Cloak, new Color(0.3f, 0.12f, 0.1f), 2, 3, "Ck", 15, modifiers: new[] { new StatModifier(StatType.Agility, 1f) }),
-                Jewelry("Gem Necklace", EquipSlot.Necklace, "Nk", 60, new StatModifier(StatType.Will, 2f)),
-                Jewelry("Gold Band", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Strength, 1f)),
-                Jewelry("Gem Ring", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Agility, 1f)),
+                Armor("Adventurer Cloak", EquipSlot.Back, ArmorType.Cloth, 6f, 0f, ArmorVisual.Cloak, new Color(0.3f, 0.12f, 0.1f), 2, 3, "Ck", 15, modifiers: new[] { new StatModifier(StatType.Reflex, 1f) }),
+                Jewelry("Gem Necklace", EquipSlot.Necklace, "Nk", 60, new StatModifier(StatType.Resonance, 2f)),
+                Jewelry("Gold Band", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Grip, 1f)),
+                Jewelry("Gem Ring", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Reflex, 1f)),
 
                 Consumable("Bandage", ConsumableEffect.HealInstant, 15f, 0f, 4f, 3, "+", new Color(0.9f, 0.9f, 0.85f), 5, "Wrap a wound. Heals after a few seconds."),
                 Consumable("Potion of Healing", ConsumableEffect.HealOverTime, 20f, 20f, 3f, 3, "Po", s_potion, 12, "Restores health over time."),

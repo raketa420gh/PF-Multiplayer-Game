@@ -23,13 +23,15 @@ namespace Game.Scripts.Dungeon
     }
 
     /// The player's body inside the dungeon: class, inventory, interaction, abilities, death and extraction on top of the fighter.
-    public sealed class AdventurerComponent : NetworkBehaviour, InventoryActionsComponent.IOwner, DamageReceiverComponent.IDefense
+    public sealed class AdventurerComponent : NetworkBehaviour, InventoryActionsComponent.IOwner, DamageReceiverComponent.IHitModifier
     {
         public const int AbilityCapacity = 16;
         public const float InteractRange = 2.6f;
         public const byte BusyCast = 0;
         public const byte BusyUse = 1;
         public const byte BusyInteract = 2;
+        public const int BeltGroupSize = 3;
+        public const byte NoBelt = 255;
         private const float HoldGrace = 6f;
 
         public FighterComponent Fighter => _fighter;
@@ -85,6 +87,12 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         public int PerkMask { get; private set; }
+
+        /// Equipment slot of the belt item held in hand instead of the weapon (keys 3 / 4), NoBelt when the weapon is out.
+        [Networked]
+        public byte BeltSlot { get; private set; } = NoBelt;
+
+        public bool HasBeltItemInHand => BeltSlot != NoBelt;
 
         /// Charge progress of the spell being held (0 when not charging).
         public float CastCharge => Pending == PendingAction.Ability && _isHoldingCast ? _fighter.Combat.BusyProgress : 0f;
@@ -171,6 +179,15 @@ namespace Game.Scripts.Dungeon
         [Networked]
         private NetworkBool _isHoldingCast { get; set; }
 
+        [Networked]
+        private TickTimer _fleshWard { get; set; }
+
+        [Networked]
+        private TickTimer _castWard { get; set; }
+
+        [Networked]
+        private NetworkBool _isAttuned { get; set; }
+
         private readonly List<AbilityConfig> _abilities = new();
         private readonly AbilityConfig[] _skills = new AbilityConfig[2];
         private int _skillCount;
@@ -180,7 +197,9 @@ namespace Game.Scripts.Dungeon
         private InteractableComponent _lookTarget;
         private float _swarmAccumulator;
         private int _appliedVersion = -1;
+        private int _appliedEffects;
         private ShapeshiftForm _appliedForm;
+        private byte _appliedBelt = NoBelt;
         private bool _wasAlive = true;
 
         public override void Spawned()
@@ -189,23 +208,25 @@ namespace Game.Scripts.Dungeon
             BuildAbilityList();
 
             _fighter.SetStats(_stats);
-            _fighter.Receiver.SetDefense(this);
+            _fighter.Receiver.SetModifier(this);
             _fighter.OnSimulateInput += OnSimulateInput;
             _actions.SetOwner(this);
             _fighter.Combat.Projectiles.OnReceiverHit += OnProjectileHit;
             _fighter.Receiver.OnHitDealt += OnHitDealt;
             ResolveSession();
 
-            if (HasStateAuthority)
-            {
-                for (int i = 0; i < _abilities.Count; i++)
-                    _charges.Set(i, (byte)_abilities[i].Charges);
-            }
-
             if (HasInputAuthority && DungeonContext.Instance != null)
                 DungeonContext.Instance.SetLocalAdventurer(this);
 
             RefreshStats(true);
+
+            if (HasStateAuthority)
+            {
+                for (int i = 0; i < _abilities.Count; i++)
+                    _charges.Set(i, (byte)GetMaxCharges(i));
+
+                _isAttuned = true;
+            }
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -223,10 +244,11 @@ namespace Game.Scripts.Dungeon
             if (_session == null)
                 ResolveSession();
 
-            if (_appliedVersion != _inventory.Version || _appliedForm != Form)
+            if (_appliedVersion != _inventory.Version || _appliedForm != Form || _appliedBelt != BeltSlot || _appliedEffects != _effects.GetSignature())
                 RefreshStats(false);
 
-            _fighter.Combat.SetBlockSuppressed(ReadiedSpell != NoSpell && HasFocus && State == AdventurerState.Alive);
+            _fighter.Combat.SetBlockSuppressed((ReadiedSpell != NoSpell && HasFocus && State == AdventurerState.Alive) || HasBeltItemInHand);
+            _fighter.Combat.SetAttackSuppressed(HasBeltItemInHand);
 
             if (!HasStateAuthority)
                 return;
@@ -242,13 +264,16 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
+            if (HasBeltItemInHand && _inventory.GetEquipped((EquipSlot)BeltSlot).IsEmpty)
+                BeltSlot = NoBelt;
+
             SimulateRest();
             SimulateSwarm();
         }
 
         public override void Render()
         {
-            if (_appliedVersion != _inventory.Version)
+            if (_appliedVersion != _inventory.Version || _appliedBelt != BeltSlot || _appliedEffects != _effects.GetSignature())
                 RefreshStats(false);
 
             if (HasInputAuthority)
@@ -299,6 +324,19 @@ namespace Game.Scripts.Dungeon
         public int GetCharges(int ability)
         {
             return _charges[ability];
+        }
+
+        /// Resonance adds charges to every charge-based spell.
+        public int GetMaxCharges(int ability)
+        {
+            AbilityConfig config = _abilities[ability];
+
+            return config.IsSpell && !config.IsCooldownBased ? config.Charges + _stats.BonusCharges : config.Charges;
+        }
+
+        public float GetCooldownDuration(int ability)
+        {
+            return _abilities[ability].Cooldown / _stats.CooldownSpeed;
         }
 
         public float InteractProgress => Pending == PendingAction.Interact ? _fighter.Combat.BusyProgress : 0f;
@@ -409,14 +447,16 @@ namespace Game.Scripts.Dungeon
             _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(duration / Runner.DeltaTime);
         }
 
-        /// Resting at a campfire brings every spell back to full charges.
+        /// Resting at a campfire brings every spell back to full charges and re-attunes the first free cast.
         public void RestoreCharges()
         {
             for (int i = 0; i < _abilities.Count; i++)
             {
                 if (_abilities[i].IsSpell)
-                    _charges.Set(i, (byte)_abilities[i].Charges);
+                    _charges.Set(i, (byte)GetMaxCharges(i));
             }
+
+            _isAttuned = true;
         }
 
         private bool HoldsFocus()
@@ -456,8 +496,10 @@ namespace Game.Scripts.Dungeon
         private void RefreshStats(bool fillHealth)
         {
             _appliedVersion = _inventory.Version;
+            _appliedEffects = _effects.GetSignature();
             int level = _session != null ? _session.Level : 1;
             _appliedForm = Form;
+            _appliedBelt = BeltSlot;
             _stats.Recalculate(_class, _inventory, _effects, _fighter.Combat.WeaponSlot, ClassConfig.PerkCountForLevel(level), Form, PerkMask);
 
             if (!HasStateAuthority)
@@ -470,14 +512,18 @@ namespace Game.Scripts.Dungeon
         private void ApplyWeaponSlots()
         {
             CombatComponent combat = _fighter.Combat;
-            combat.SetSlotWeapon(0, ResolveWeaponIndex(EquipSlot.Weapon1Main, EquipSlot.Weapon1Off));
-            combat.SetSlotWeapon(1, ResolveWeaponIndex(EquipSlot.Weapon2Main, EquipSlot.Weapon2Off));
+            combat.SetSlotWeapon(0, ResolveWeaponIndex(0, EquipSlot.Weapon1Main, EquipSlot.Weapon1Off));
+            combat.SetSlotWeapon(1, ResolveWeaponIndex(1, EquipSlot.Weapon2Main, EquipSlot.Weapon2Off));
         }
 
-        private int ResolveWeaponIndex(EquipSlot mainSlot, EquipSlot offSlot)
+        private int ResolveWeaponIndex(int set, EquipSlot mainSlot, EquipSlot offSlot)
         {
             if (Form != ShapeshiftForm.None && _formWeapons != null && (int)Form - 1 < _formWeapons.Length)
                 return Mathf.Max(0, _fighter.Combat.FindCatalogIndex(_formWeapons[(int)Form - 1]));
+
+            // A belt item in hand puts the active set away: empty hands, no swings or blocks.
+            if (HasBeltItemInHand && set == _fighter.Combat.WeaponSlot)
+                return Mathf.Max(0, _fighter.Combat.FindCatalogIndex(_fistsWeapon));
 
             WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(mainSlot);
             WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(offSlot);
@@ -534,19 +580,59 @@ namespace Game.Scripts.Dungeon
             if (buttons.WasPressed(previous, PlayerInputButtons.Interact))
                 TryInteract();
 
+            bool isBeltInHand = SimulateBelt(buttons, previous);
+
             for (int i = 0; i < _skillCount; i++)
             {
                 if (buttons.WasPressed(previous, PlayerInputButtons.Skill1 + i) && _abilities[i].Kind is not (AbilityKind.SpellMemory or AbilityKind.Shapeshift))
                     TryUseAbility(i);
             }
 
-            if (ReadiedSpell != NoSpell && buttons.WasPressed(previous, PlayerInputButtons.Secondary) && Form == ShapeshiftForm.None)
+            if (!isBeltInHand && ReadiedSpell != NoSpell && buttons.WasPressed(previous, PlayerInputButtons.Secondary) && Form == ShapeshiftForm.None)
                 TryCastReadiedSpell();
+        }
 
-            for (int i = 0; i < 4; i++)
+        /// 1 / 2 take a weapon set out, 3 / 4 cycle the three belt slots of their group; LMB uses the belt item, RMB puts it away.
+        private bool SimulateBelt(NetworkButtons buttons, NetworkButtons previous)
+        {
+            if (buttons.WasPressed(previous, PlayerInputButtons.Weapon1) || buttons.WasPressed(previous, PlayerInputButtons.Weapon2))
+                BeltSlot = NoBelt;
+
+            for (int group = 0; group < 2; group++)
             {
-                if (buttons.WasPressed(previous, PlayerInputButtons.Utility1 + i))
-                    OnUseItem(_inventory, -1, (EquipSlot)((int)EquipSlot.Utility1 + i));
+                if (buttons.WasPressed(previous, PlayerInputButtons.Weapon3 + group))
+                    SelectBelt(group);
+            }
+
+            if (!HasBeltItemInHand)
+                return false;
+
+            if (buttons.WasPressed(previous, PlayerInputButtons.Primary))
+                OnUseItem(_inventory, -1, (EquipSlot)BeltSlot);
+            else if (buttons.WasPressed(previous, PlayerInputButtons.Secondary))
+                BeltSlot = NoBelt;
+
+            return true;
+        }
+
+        private void SelectBelt(int group)
+        {
+            if (Form != ShapeshiftForm.None || _fighter.Combat.State is not (CombatState.Idle or CombatState.Equip or CombatState.BlockRaise or CombatState.Block))
+                return;
+
+            int first = (int)EquipSlot.Utility1 + group * BeltGroupSize;
+            int start = BeltSlot >= first && BeltSlot < first + BeltGroupSize ? BeltSlot - first + 1 : 0;
+
+            for (int i = 0; i < BeltGroupSize; i++)
+            {
+                int slot = first + (start + i) % BeltGroupSize;
+
+                if (_inventory.GetEquipped((EquipSlot)slot).IsEmpty)
+                    continue;
+
+                BeltSlot = (byte)slot;
+
+                return;
             }
         }
 
@@ -676,15 +762,15 @@ namespace Game.Scripts.Dungeon
         {
             AbilityConfig ability = _abilities[index];
             CombatComponent combat = _fighter.Combat;
-            float buffDuration = ability.Duration * _stats.BuffDurationMultiplier;
+            float buffDuration = ability.Duration;
 
             switch (ability.Kind)
             {
                 case AbilityKind.Heal:
                     if (ability.Duration > 0f)
-                        _effects.Add(StatusEffectKind.HealOverTime, ability.Magnitude * HealScale(), ability.Duration);
+                        _effects.Add(StatusEffectKind.HealOverTime, ability.Magnitude * HealScale() * _stats.Mending, ability.Duration);
                     else
-                        _fighter.Health.Restore(Mathf.RoundToInt(ability.Magnitude * HealScale()));
+                        _fighter.Health.Restore(Mathf.RoundToInt(ability.Magnitude * HealScale() * _stats.Mending));
                     break;
                 case AbilityKind.Buff:
                     _effects.Add(ability.Effect, ability.Magnitude, buffDuration);
@@ -717,9 +803,14 @@ namespace Game.Scripts.Dungeon
             }
 
             if (ability.IsSpell && !ability.IsCooldownBased)
-                _charges.Set(index, (byte)Mathf.Max(0, _charges[index] - 1));
+            {
+                if (_isAttuned && _stats.HasThreshold(StatType.Resonance))
+                    _isAttuned = false;
+                else
+                    _charges.Set(index, (byte)Mathf.Max(0, _charges[index] - 1));
+            }
 
-            _cooldowns.Set(index, TickTimer.CreateFromSeconds(Runner, ability.Cooldown));
+            _cooldowns.Set(index, TickTimer.CreateFromSeconds(Runner, GetCooldownDuration(index)));
         }
 
         private float HealScale()
@@ -811,10 +902,10 @@ namespace Game.Scripts.Dungeon
             switch (item.Effect)
             {
                 case ConsumableEffect.HealInstant:
-                    _fighter.Health.Restore(Mathf.RoundToInt(item.Magnitude + tier * 4f));
+                    _fighter.Health.Restore(Mathf.RoundToInt((item.Magnitude + tier * 4f) * _stats.Mending));
                     break;
                 case ConsumableEffect.HealOverTime:
-                    _effects.Add(StatusEffectKind.HealOverTime, item.Magnitude, Mathf.Max(1f, item.Duration - tier * 2.5f));
+                    _effects.Add(StatusEffectKind.HealOverTime, item.Magnitude * _stats.Mending, Mathf.Max(1f, item.Duration - tier * 2.5f));
                     break;
                 case ConsumableEffect.Protection:
                     _effects.Add(StatusEffectKind.Protection, item.Magnitude + tier * 5f, item.Duration);
@@ -868,12 +959,12 @@ namespace Game.Scripts.Dungeon
             }
 
             if (!_restTimer.IsRunning)
-                _restTimer = TickTimer.CreateFromSeconds(Runner, _restHealInterval);
+                _restTimer = TickTimer.CreateFromSeconds(Runner, _restHealInterval / _stats.Mending);
 
             if (_restTimer.Expired(Runner))
             {
                 _fighter.Health.Restore(1);
-                _restTimer = TickTimer.CreateFromSeconds(Runner, _restHealInterval);
+                _restTimer = TickTimer.CreateFromSeconds(Runner, _restHealInterval / _stats.Mending);
             }
         }
 
@@ -1007,11 +1098,11 @@ namespace Game.Scripts.Dungeon
             switch (item)
             {
                 case ConsumableItemConfig consumable:
-                    useTime = consumable.UseTime / _stats.InteractionSpeed;
+                    useTime = consumable.UseTime / _stats.HandlingSpeed;
                     action = PendingAction.Consumable;
                     break;
                 case UtilityItemConfig utility when utility.UtilityKind != UtilityKind.Lockpick:
-                    useTime = utility.UseTime / _stats.InteractionSpeed;
+                    useTime = utility.UseTime / _stats.HandlingSpeed;
                     action = PendingAction.Utility;
                     break;
                 default:
@@ -1028,7 +1119,7 @@ namespace Game.Scripts.Dungeon
 
         private EquipSlot FindFreeUtilitySlot()
         {
-            for (EquipSlot slot = EquipSlot.Utility1; slot <= EquipSlot.Utility4; slot++)
+            for (EquipSlot slot = EquipSlot.Utility1; slot <= EquipSlot.Utility6; slot++)
             {
                 if (_inventory.GetEquipped(slot).IsEmpty)
                     return slot;
@@ -1051,11 +1142,50 @@ namespace Game.Scripts.Dungeon
         {
         }
 
-        int DamageReceiverComponent.IDefense.ModifyIncomingDamage(int damage, DamageType type, HitZone zone)
+        float DamageReceiverComponent.IHitModifier.WeakpointMultiplier => _stats.Weakpoint;
+        float DamageReceiverComponent.IHitModifier.ImpactMultiplier => _stats.Impact;
+
+        int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, DamageType type, HitZone zone)
         {
             int reduced = _stats.ModifyIncomingDamage(damage, type, zone);
 
             return _effects.Absorb(reduced);
+        }
+
+        float DamageReceiverComponent.IHitModifier.ModifyBlockMitigation(float mitigation)
+        {
+            return _stats.HasThreshold(StatType.Grip) ? 1f : Mathf.Min(1f, mitigation * _stats.Guard);
+        }
+
+        /// Poise (plus Concentration while casting) swallows light hits; the 30-point thresholds of Flesh, Craft, Insight and Reflex hook in here.
+        float DamageReceiverComponent.IHitModifier.ModifyIncomingStagger(int damage, float staggerDuration)
+        {
+            bool isCasting = Pending == PendingAction.Ability;
+
+            if (staggerDuration <= 0f || damage < _stats.Poise + (isCasting ? _stats.Concentration : 0f))
+                return 0f;
+
+            if (Pending is PendingAction.Interact or PendingAction.Consumable or PendingAction.Utility && _stats.HasThreshold(StatType.Craft))
+                return 0f;
+
+            if (isCasting && _stats.HasThreshold(StatType.Insight) && _castWard.ExpiredOrNotRunning(Runner))
+            {
+                _castWard = TickTimer.CreateFromSeconds(Runner, 15f);
+
+                return 0f;
+            }
+
+            if (_stats.HasThreshold(StatType.Flesh) && _fleshWard.ExpiredOrNotRunning(Runner))
+            {
+                _fleshWard = TickTimer.CreateFromSeconds(Runner, 10f);
+
+                return 0f;
+            }
+
+            if (_stats.HasThreshold(StatType.Reflex))
+                _effects.Add(StatusEffectKind.ActionSpeed, 20f, 2f);
+
+            return staggerDuration / _stats.StaggerRecovery;
         }
     }
 }

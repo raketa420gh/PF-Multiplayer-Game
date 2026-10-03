@@ -16,7 +16,7 @@ namespace Game.Scripts.Dungeon
         Burn,
         Invisible,
         Rage,
-        Strength,
+        Grip,
         Fortify,
         Rupture,
         Taunt,
@@ -100,6 +100,22 @@ namespace Game.Scripts.Dungeon
         {
             for (int i = 0; i < Capacity; i++)
                 _effects.Set(i, default);
+        }
+
+        /// Changes when an effect starts, ends or changes magnitude; remaining time is ignored so stats are not rebuilt every tick.
+        public int GetSignature()
+        {
+            int hash = 17;
+
+            for (int i = 0; i < Capacity; i++)
+            {
+                StatusEffect effect = _effects[i];
+
+                if (effect.IsActive)
+                    hash = hash * 31 + ((int)effect.Kind ^ effect.Magnitude.GetHashCode());
+            }
+
+            return hash;
         }
 
         public bool Has(StatusEffectKind kind)

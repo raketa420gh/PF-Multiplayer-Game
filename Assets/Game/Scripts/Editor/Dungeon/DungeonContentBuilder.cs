@@ -283,13 +283,12 @@ namespace Game.Scripts.Editor.Dungeon
                 BattleEditorUtility.Set(so, "_color", def.Color);
                 BattleEditorUtility.Set(so, "_bodyColor", def.Body);
                 SerializedProperty stats = so.FindProperty("_baseStats");
-                stats.FindPropertyRelative("Strength").intValue = def.Stats.Strength;
-                stats.FindPropertyRelative("Vigor").intValue = def.Stats.Vigor;
-                stats.FindPropertyRelative("Agility").intValue = def.Stats.Agility;
-                stats.FindPropertyRelative("Dexterity").intValue = def.Stats.Dexterity;
-                stats.FindPropertyRelative("Will").intValue = def.Stats.Will;
-                stats.FindPropertyRelative("Knowledge").intValue = def.Stats.Knowledge;
-                stats.FindPropertyRelative("Resourcefulness").intValue = def.Stats.Resourcefulness;
+                stats.FindPropertyRelative("Flesh").intValue = def.Stats.Flesh;
+                stats.FindPropertyRelative("Grip").intValue = def.Stats.Grip;
+                stats.FindPropertyRelative("Reflex").intValue = def.Stats.Reflex;
+                stats.FindPropertyRelative("Craft").intValue = def.Stats.Craft;
+                stats.FindPropertyRelative("Insight").intValue = def.Stats.Insight;
+                stats.FindPropertyRelative("Resonance").intValue = def.Stats.Resonance;
 
                 List<AbilityConfig> skills = new();
                 List<AbilityConfig> spells = new();

@@ -30,10 +30,11 @@ namespace Game.Scripts.Dungeon
 
         private short _shownItem = -1;
         private GameObject _model;
+        private bool _isPermanent;
 
         public override void Spawned()
         {
-            if (HasStateAuthority)
+            if (HasStateAuthority && !_isPermanent)
                 _despawnTimer = TickTimer.CreateFromSeconds(Runner, _lifetime);
         }
 
@@ -77,9 +78,11 @@ namespace Game.Scripts.Dungeon
                 Runner.Despawn(Object);
         }
 
-        public void Setup(ItemStack stack)
+        /// Permanent items (the test ground table) never despawn on their own. Called before Spawned.
+        public void Setup(ItemStack stack, bool isPermanent = false)
         {
             Stack = stack.At(0, 0);
+            _isPermanent = isPermanent;
         }
 
         public override void Complete(AdventurerComponent adventurer)

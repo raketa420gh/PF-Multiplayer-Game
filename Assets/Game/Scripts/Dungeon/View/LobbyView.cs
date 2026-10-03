@@ -201,7 +201,7 @@ namespace Game.Scripts.Dungeon
             _builder.Clear();
             _builder.AppendLine($"<size=130%><b>{config.DisplayName}</b></size>");
             _builder.AppendLine(config.Description);
-            _builder.AppendLine($"STR {stats.Strength}  VIG {stats.Vigor}  AGI {stats.Agility}  DEX {stats.Dexterity}  WILL {stats.Will}  KNOW {stats.Knowledge}  RES {stats.Resourcefulness}");
+            _builder.AppendLine($"FLESH {stats.Flesh}  GRIP {stats.Grip}  REFLEX {stats.Reflex}  CRAFT {stats.Craft}  INSIGHT {stats.Insight}  RESONANCE {stats.Resonance}");
 
             if (config.Spells.Length > 0)
             {

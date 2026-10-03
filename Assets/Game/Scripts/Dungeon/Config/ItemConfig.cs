@@ -43,6 +43,8 @@ namespace Game.Scripts.Dungeon
         Utility2,
         Utility3,
         Utility4,
+        Utility5,
+        Utility6,
         Count
     }
 
@@ -73,13 +75,12 @@ namespace Game.Scripts.Dungeon
 
     public enum StatType : byte
     {
-        Strength,
-        Vigor,
-        Agility,
-        Dexterity,
-        Will,
-        Knowledge,
-        Resourcefulness,
+        Flesh,
+        Grip,
+        Reflex,
+        Craft,
+        Insight,
+        Resonance,
         MaxHealth,
         ArmorRating,
         MagicResistance,

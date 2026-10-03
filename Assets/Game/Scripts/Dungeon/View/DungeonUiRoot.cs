@@ -29,6 +29,10 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private CharacterPreviewView _inventoryPreview;
 
+        [Tooltip("Optional developer panel shown together with the inventory (test ground)")]
+        [SerializeField]
+        private DisplayableView _devPanel;
+
         private PlayerSessionComponent _session;
         private AdventurerComponent _adventurer;
         private SessionState _shownState = (SessionState)255;
@@ -130,7 +134,7 @@ namespace Game.Scripts.Dungeon
                 for (int i = 0; i < spells.Length; i++)
                 {
                     int index = _adventurer.SkillCount + i;
-                    string detail = spells[i].IsCooldownBased ? $"{spells[i].Cooldown:0}s cd" : $"{_adventurer.GetCharges(index)}/{spells[i].Charges}";
+                    string detail = spells[i].IsCooldownBased ? $"{spells[i].Cooldown:0}s cd" : $"{_adventurer.GetCharges(index)}/{_adventurer.GetMaxCharges(index)}";
                     _wheelEntries.Add((spells[i].DisplayName, spells[i].Glyph, spells[i].Color, detail));
                 }
 
@@ -222,6 +226,9 @@ namespace Game.Scripts.Dungeon
             _isInventoryOpen = isOpen;
             _inventory.SetShown(isOpen);
             _context.Battle.Input.SetUiOpen(isOpen);
+
+            if (_devPanel != null)
+                _devPanel.SetShown(isOpen);
 
             if (!isOpen && _adventurer != null && _adventurer.OpenedContainer != null)
                 _adventurer.RpcCloseContainer();

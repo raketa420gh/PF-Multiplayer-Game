@@ -23,7 +23,7 @@ namespace Game.Scripts.Dungeon
 
         public override bool CanEquip(EquipSlot slot)
         {
-            return slot is >= EquipSlot.Utility1 and <= EquipSlot.Utility4;
+            return slot is >= EquipSlot.Utility1 and <= EquipSlot.Utility6;
         }
     }
 }

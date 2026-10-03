@@ -26,6 +26,7 @@ namespace Game.Scripts.Dungeon
             public GameObject Root;
             public TMP_Text Glyph;
             public TMP_Text Count;
+            public Image Frame;
         }
 
         [SerializeField]
@@ -100,6 +101,12 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private TMP_Text[] _weaponSlotLabels;
 
+        [SerializeField]
+        private Color _beltSelectedColor = new(1f, 0.85f, 0.4f);
+
+        [SerializeField]
+        private Color _beltIdleColor = new(0.45f, 0.36f, 0.22f);
+
         private readonly StringBuilder _builder = new();
 
         private void Update()
@@ -139,7 +146,7 @@ namespace Game.Scripts.Dungeon
             }
 
             int index = adventurer.SkillCount + adventurer.ReadiedSpell;
-            string charges = spell.IsCooldownBased ? $"{Mathf.CeilToInt(adventurer.GetCooldownLeft(index))}s" : $"{adventurer.GetCharges(index)}/{spell.Charges}";
+            string charges = spell.IsCooldownBased ? $"{Mathf.CeilToInt(adventurer.GetCooldownLeft(index))}s" : $"{adventurer.GetCharges(index)}/{adventurer.GetMaxCharges(index)}";
             _readiedText.text = adventurer.HasFocus
                 ? $"<color=#{ColorUtility.ToHtmlStringRGB(spell.Color)}>{spell.DisplayName}</color>  [RMB] cast   {charges}"
                 : $"<color=#f66>{spell.DisplayName}: requires a {(adventurer.Class.Focus == CastFocus.Instrument ? "instrument" : "magical focus")} in hand</color>";
@@ -223,10 +230,16 @@ namespace Game.Scripts.Dungeon
                 CombatState.Busy => adventurer.Pending.ToString(),
                 _ => combat.State.ToString()
             };
-            _weaponText.text = $"{combat.Weapon.DisplayName}  <size=70%>{state}</size>";
+            InventoryComponent inventory = adventurer.Inventory;
+            ItemConfig held = adventurer.HasBeltItemInHand ? inventory.GetConfig(inventory.GetEquipped((EquipSlot)adventurer.BeltSlot)) : null;
+            _weaponText.text = held != null
+                ? $"{held.DisplayName}  <size=70%>{(state.Length > 0 ? state : "[LMB] use  [RMB] put away")}</size>"
+                : $"{combat.Weapon.DisplayName}  <size=70%>{state}</size>";
+
+            int activeSlot = adventurer.HasBeltItemInHand ? 2 + (adventurer.BeltSlot - (int)EquipSlot.Utility1) / AdventurerComponent.BeltGroupSize : combat.WeaponSlot;
 
             for (int i = 0; i < _weaponSlotLabels.Length; i++)
-                _weaponSlotLabels[i].color = i == combat.WeaponSlot ? new Color(1f, 0.85f, 0.4f) : new Color(0.55f, 0.5f, 0.42f);
+                _weaponSlotLabels[i].color = i == activeSlot ? new Color(1f, 0.85f, 0.4f) : new Color(0.55f, 0.5f, 0.42f);
 
             bool isCasting = combat.State == CombatState.Busy && adventurer.Pending is PendingAction.Ability or PendingAction.Consumable or PendingAction.Utility or PendingAction.Shapeshift;
             _castRoot.SetActive(isCasting || combat.State == CombatState.Draw);
@@ -291,7 +304,7 @@ namespace Game.Scripts.Dungeon
             float cooldown = adventurer.GetCooldownLeft(index);
             slot.Glyph.text = ability.Glyph;
             slot.Glyph.color = ability.Color;
-            slot.Cooldown.fillAmount = ability.Cooldown > 0f ? cooldown / ability.Cooldown : 0f;
+            slot.Cooldown.fillAmount = ability.Cooldown > 0f ? cooldown / adventurer.GetCooldownDuration(index) : 0f;
             slot.Charges.text = ability.IsSpell && !ability.IsCooldownBased ? adventurer.GetCharges(index).ToString() : cooldown > 0f ? Mathf.CeilToInt(cooldown).ToString() : string.Empty;
         }
 
@@ -306,6 +319,7 @@ namespace Game.Scripts.Dungeon
                 _belt[i].Glyph.text = config != null ? config.IconGlyph : string.Empty;
                 _belt[i].Glyph.color = config != null ? config.IconColor : Color.white;
                 _belt[i].Count.text = config != null && stack.Count > 1 ? stack.Count.ToString() : string.Empty;
+                _belt[i].Frame.color = adventurer.BeltSlot == (int)EquipSlot.Utility1 + i ? _beltSelectedColor : _beltIdleColor;
             }
         }
 
