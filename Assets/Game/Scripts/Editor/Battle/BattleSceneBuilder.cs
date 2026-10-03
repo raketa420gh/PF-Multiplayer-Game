@@ -16,17 +16,19 @@ namespace Game.Scripts.Editor.Battle
     internal static class BattleSceneBuilder
     {
         private const string PopupPath = BattleEditorUtility.PrefabsFolder + "/DamagePopup.prefab";
+        private const string NavMeshPath = "Assets/Game/Scenes/BattleScene/NavMesh.asset";
+        private const float RampartHeight = 3f;
 
         private static readonly string[] s_monsters = { "SkeletonSwordsman", "SkeletonArcher", "Zombie", "SkeletonChampion" };
         private static readonly string[] s_monsterLabels = { "Skeleton", "Archer", "Zombie", "Champion" };
         private static readonly string[] s_dungeonOnlyHud = { "Minimap", "TimerBack", "Timer", "Swarm", "ModuleBack", "Module", "Floor" };
-        /// Decor from the character packs: an armoury row of outfit stands by the spawn, statues and fallen bodies further out.
+        /// Decor from the character packs: an armoury row of outfit stands by the spawn, statues on the towers and fallen bodies further out.
         private static readonly (string prefab, Vector3 position, float yaw)[] s_figures =
         {
             ("StandPeasantMale", new Vector3(-10.5f, 0f, -12.5f), 60f), ("StandPeasantFemale", new Vector3(-10.5f, 0f, -10f), 90f),
             ("StandRangerMale", new Vector3(10.5f, 0f, -12.5f), -60f), ("StandRangerFemale", new Vector3(10.5f, 0f, -10f), -90f),
             ("StatueGuardian", new Vector3(-7f, 0f, 14f), 180f), ("StatueGuardian", new Vector3(7f, 0f, 14f), 180f),
-            ("StatueMage", new Vector3(-20f, 0f, 30f), 135f), ("StatuePilgrim", new Vector3(20f, 0f, 30f), -135f),
+            ("StatueMage", new Vector3(-20.5f, RampartHeight, 24.5f), 135f), ("StatuePilgrim", new Vector3(20.5f, RampartHeight, 30f), -135f),
             ("FallenPeasant", new Vector3(-12f, 0f, 8f), 70f), ("FallenRanger", new Vector3(13f, 0f, 12f), -40f)
         };
 
@@ -68,6 +70,7 @@ namespace Game.Scripts.Editor.Battle
 
             canvas.transform.Find("Lobby").gameObject.SetActive(false);
             DungeonUiBuilder.BuildDevPanel(canvas, director, s_monsterLabels);
+            DungeonMapBuilder.BakeNavMesh(world.gameObject, NavMeshPath);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, BattleEditorUtility.ScenePath);
@@ -98,16 +101,69 @@ namespace Game.Scripts.Editor.Battle
             Box("Pillar", world, new Vector3(4f, 1.5f, 12f), new Vector3(1f, 3f, 1f), stone);
             Box("Step", world, new Vector3(-14f, 0.15f, -6f), new Vector3(3f, 0.3f, 3f), stone);
 
-            for (int i = 0; i < 3; i++)
-                Box("ArcheryTarget" + i, world, new Vector3(14f + i * 3f, 1.2f, 20f + i * 5f), new Vector3(1.2f, 1.2f, 0.3f), target);
+            foreach (Vector3 position in new[] { new Vector3(-7f, 1.2f, 32f), new Vector3(-1f, 1.2f, 33f), new Vector3(4f, 1.2f, 32f), new Vector3(17.5f, RampartHeight + 1.2f, 31.5f) })
+                Box("ArcheryTarget", world, position, new Vector3(1.2f, 1.2f, 0.3f), target);
+
+            BuildRampart(world);
+            BuildDressing(world);
 
             foreach ((string prefab, Vector3 position, float yaw) in s_figures)
-            {
-                GameObject figure = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab(prefab)), world);
-                figure.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
-            }
+                DungeonMapBuilder.Place(AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab(prefab)), world, position, yaw);
 
             return world;
+        }
+
+        /// Vertical test course: two stone towers with stairs from different sides and a plank bridge with one open edge.
+        private static void BuildRampart(Transform world)
+        {
+            Material stone = DungeonPropBuilder.Cobble;
+            Material wood = DungeonPropBuilder.WoodPlanks;
+            const float height = RampartHeight;
+            float run = DungeonStructureBuilder.StairRun(height);
+            DungeonStructureBuilder.Block(world, "TowerWest", new Vector3(-17.5f, height * 0.5f, 27.5f), new Vector3(11f, height, 11f), stone);
+            DungeonStructureBuilder.Block(world, "TowerEast", new Vector3(17.5f, height * 0.5f, 27.5f), new Vector3(11f, height, 11f), stone);
+            DungeonStructureBuilder.Block(world, "Bridge", new Vector3(0f, height - 0.15f, 27.5f), new Vector3(24f, 0.3f, 2.4f), wood);
+            DungeonStructureBuilder.Stairs(world, new Vector3(-17.5f, 0f, 22f - run), 0f, 3f, height, stone);
+            DungeonStructureBuilder.Stairs(world, new Vector3(12f - run, 0f, 31f), 90f, 3f, height, stone);
+
+            foreach (float x in new[] { -4f, 4f })
+                DungeonStructureBuilder.Block(world, "BridgePost", new Vector3(x, (height - 0.3f) * 0.5f, 27.5f), new Vector3(0.4f, height - 0.3f, 0.4f), DungeonPropBuilder.DarkWood);
+
+            DungeonStructureBuilder.Rail(world, new Vector3(-23f, height, 22f), new Vector3(-19f, height, 22f));
+            DungeonStructureBuilder.Rail(world, new Vector3(-16f, height, 22f), new Vector3(-12f, height, 22f));
+            DungeonStructureBuilder.Rail(world, new Vector3(-12f, height, 22f), new Vector3(-12f, height, 26.3f));
+            DungeonStructureBuilder.Rail(world, new Vector3(-12f, height, 28.7f), new Vector3(-12f, height, 33f));
+            DungeonStructureBuilder.Rail(world, new Vector3(-12f, height, 28.7f), new Vector3(12f, height, 28.7f));
+            DungeonStructureBuilder.Rail(world, new Vector3(12f, height, 22f), new Vector3(23f, height, 22f));
+            DungeonStructureBuilder.Rail(world, new Vector3(12f, height, 22f), new Vector3(12f, height, 26.3f));
+        }
+
+        /// Props of the fantasy kit: a smithy and a camp by the spawn, market cover in the field, stores on the towers.
+        private static void BuildDressing(Transform world)
+        {
+            (string kit, Vector3 position, float yaw)[] props =
+            {
+                ("WeaponStand", new Vector3(-9.4f, 0f, -8.6f), 20f), ("WeaponStand", new Vector3(9.4f, 0f, -8.6f), -20f),
+                ("Anvil_Log", new Vector3(-20f, 0f, -19f), 30f), ("Whetstone", new Vector3(-17f, 0f, -22f), 10f), ("Workbench", new Vector3(-22.5f, 0f, -22.5f), 45f),
+                ("Bucket_Metal", new Vector3(-18.6f, 0f, -19.4f), 0f), ("Cauldron", new Vector3(-22.6f, 0f, -17f), 0f),
+                ("Bed_Twin1", new Vector3(21f, 0f, -23.1f), 0f), ("Bed_Twin2", new Vector3(18f, 0f, -23.1f), 0f), ("Nightstand_Shelf", new Vector3(19.5f, 0f, -24.1f), 0f),
+                ("Bench", new Vector3(17f, 0f, -17f), 30f), ("Barrel_Holder", new Vector3(23.4f, 0f, -17f), -90f), ("Bag", new Vector3(23.2f, 0f, -19.4f), 40f),
+                ("Stall_Empty", new Vector3(21f, 0f, 9f), -90f), ("FarmCrate_Apple", new Vector3(21.2f, 0.82f, 8.6f), -90f), ("FarmCrate_Carrot", new Vector3(21.2f, 0.82f, 9.5f), -80f),
+                ("Stall_Cart_Empty", new Vector3(20.5f, 0f, 14f), -100f), ("Barrel_Apples", new Vector3(22.8f, 0f, 11.4f), 0f),
+                ("Crate_Wooden", new Vector3(-4f, 0f, 6f), 10f), ("Crate_Wooden", new Vector3(-3f, 0f, 6.1f), -5f), ("Crate_Metal", new Vector3(-3.5f, 0.92f, 6f), 20f),
+                ("Barrel", new Vector3(2f, 0f, 17f), 0f), ("Barrel", new Vector3(2.9f, 0f, 17.4f), 0f), ("Barrel", new Vector3(13f, 0f, 16f), 0f),
+                ("Crate_Wooden", new Vector3(-13f, 0f, 14f), 30f), ("Vase_2", new Vector3(-12f, 0f, 15f), 0f), ("Bag", new Vector3(-14.2f, 0f, 14.6f), 70f),
+                ("Crate_Wooden", new Vector3(-21f, RampartHeight, 31f), 15f), ("Barrel", new Vector3(-22f, RampartHeight, 29.4f), 0f),
+                ("Crate_Wooden", new Vector3(21f, RampartHeight, 24f), -10f), ("Crate_Metal", new Vector3(22f, RampartHeight, 25.2f), 25f),
+                ("Dummy", new Vector3(-22.5f, 0f, 4f), 90f), ("Dummy", new Vector3(-22.5f, 0f, 8f), 90f), ("Peg_Rack", new Vector3(-24.48f, 1.8f, 6f), 90f),
+                ("Shield_Wooden", new Vector3(-24.48f, 1.9f, 2f), 90f), ("Shield_Wooden", new Vector3(-24.48f, 1.9f, 10f), 90f),
+                ("Banner_1_Cloth", new Vector3(0f, 2.9f, 34.44f), 180f), ("Banner_2_Cloth", new Vector3(-6f, 2.8f, 34.44f), 180f), ("Banner_2_Cloth", new Vector3(6f, 2.8f, 34.44f), 180f)
+            };
+
+            foreach ((string kit, Vector3 position, float yaw) in props)
+                DungeonMapBuilder.Place(DungeonKitBuilder.Load(kit), world, position, yaw);
+
+            DungeonMapBuilder.Place(AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("Brazier")), world, new Vector3(-21f, 0f, -21f), 0f);
         }
 
         private static void Box(string name, Transform parent, Vector3 position, Vector3 scale, Material material)
@@ -205,7 +261,7 @@ namespace Game.Scripts.Editor.Battle
             for (int i = 0; i < 4; i++)
             {
                 GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(table, world);
-                instance.transform.position = new Vector3((i - 1.5f) * 2.2f, 0f, -9f);
+                instance.transform.position = new Vector3((i - 1.5f) * 2.9f, 0f, -9f);
             }
 
             director.FindProperty("_table").arraySize = s_tableItems.Length;

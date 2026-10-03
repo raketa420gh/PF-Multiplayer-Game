@@ -136,6 +136,43 @@ namespace Game.Scripts.Editor.Dungeon
             return this;
         }
 
+        /// Convex profile of (z, y) points extruded along X around the origin: ramps and other sloped solids.
+        public DungeonMeshBuilder Prism(float width, params Vector2[] profile)
+        {
+            float half = width * 0.5f;
+            Vector2 middle = Vector2.zero;
+
+            foreach (Vector2 point in profile)
+                middle += point / profile.Length;
+
+            for (int i = 0; i < profile.Length; i++)
+            {
+                Vector2 a = profile[i];
+                Vector2 b = profile[(i + 1) % profile.Length];
+                Vector2 edge = b - a;
+                Vector2 outward = new Vector2(edge.y, -edge.x).normalized;
+
+                if (Vector2.Dot(outward, a - middle) < 0f)
+                    outward = -outward;
+
+                Vector3 normal = new Vector3(0f, outward.y, outward.x);
+                AddFacing(new Vector3(-half, a.y, a.x), new Vector3(half, a.y, a.x), new Vector3(half, b.y, b.x), normal);
+                AddFacing(new Vector3(-half, a.y, a.x), new Vector3(half, b.y, b.x), new Vector3(-half, b.y, b.x), normal);
+            }
+
+            for (int i = 1; i < profile.Length - 1; i++)
+            {
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    float x = half * side;
+                    AddFacing(new Vector3(x, profile[0].y, profile[0].x), new Vector3(x, profile[i].y, profile[i].x),
+                        new Vector3(x, profile[i + 1].y, profile[i + 1].x), Vector3.right * side);
+                }
+            }
+
+            return this;
+        }
+
         public Mesh Save(string name)
         {
             BattleEditorUtilityShim.EnsureFolder(Folder);
@@ -193,6 +230,15 @@ namespace Game.Scripts.Editor.Dungeon
                     _triangles.Add(centerIndex + 1 + i + 1);
                 }
             }
+        }
+
+        /// Triangle wound so that its visible side matches the normal.
+        private void AddFacing(Vector3 a, Vector3 b, Vector3 c, Vector3 normal)
+        {
+            if (Vector3.Dot(Vector3.Cross(b - a, c - a), normal) < 0f)
+                AddTriangle(a, c, b, normal);
+            else
+                AddTriangle(a, b, c, normal);
         }
 
         private void AddTriangle(Vector3 a, Vector3 b, Vector3 c, Vector3 normal)

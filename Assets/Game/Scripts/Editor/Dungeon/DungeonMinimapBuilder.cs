@@ -24,7 +24,8 @@ namespace Game.Scripts.Editor.Dungeon
 
             foreach (MeshRenderer renderer in floor.GetComponentsInChildren<MeshRenderer>())
             {
-                bool isCeiling = renderer.gameObject.name.StartsWith("Ceiling");
+                // Lintels would draw inner doorways as solid walls.
+                bool isCeiling = renderer.gameObject.name.StartsWith("Ceiling") || renderer.gameObject.name == "Lintel";
                 bool isWall = renderer.sharedMaterial == wallMaterial;
 
                 if (!isCeiling && !isWall)
@@ -50,9 +51,9 @@ namespace Game.Scripts.Editor.Dungeon
                 camera.clearFlags = CameraClearFlags.SolidColor;
                 camera.backgroundColor = new Color(0.08f, 0.06f, 0.04f, 1f);
                 camera.nearClipPlane = 0.1f;
-                camera.farClipPlane = 12f;
+                camera.farClipPlane = DungeonMapBuilder.TallHeight + DungeonMapBuilder.PitDepth + 3f;
                 camera.cullingMask = 1;
-                camera.transform.position = new Vector3(0f, floorY + DungeonPropBuilder.WallHeight + 4f, 0f);
+                camera.transform.position = new Vector3(0f, floorY + DungeonMapBuilder.TallHeight + 2f, 0f);
                 camera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
                 Light light = lightObject.AddComponent<Light>();

@@ -38,6 +38,12 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.Build();
         }
 
+        [MenuItem("Tools/Game/Dungeon/Build Kit")]
+        public static void BuildKit()
+        {
+            DungeonKitBuilder.Build();
+        }
+
         [MenuItem("Tools/Game/Dungeon/Build Content")]
         public static void BuildContent()
         {

@@ -3,6 +3,7 @@ using Fusion;
 using Game.Scripts.Battle;
 using Game.Scripts.Dungeon;
 using Game.Scripts.Editor.Battle;
+using Unity.AI.Navigation;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -31,6 +32,7 @@ namespace Game.Scripts.Editor.Dungeon
                 BattleEditorUtility.EnsureFolder(folder);
 
             BattleEditorUtility.EnsureLayer(InteractableLayer);
+            DungeonKitBuilder.Build();
             BattleContentBuilder.Loadout[] loadouts = BattleContentBuilder.BuildWeapons(out GameObject arrow, out GameObject orb);
             Dictionary<string, WeaponConfig> weapons = new();
 
@@ -74,7 +76,8 @@ namespace Game.Scripts.Editor.Dungeon
             BuildBarrel(loot["Barrel"]);
             BuildCrate(loot["Barrel"]);
             BuildBookshelf(loot["Bookshelf"]);
-            BuildDoor();
+            BuildDoor("Door", DungeonPropBuilder.DoorLeaf());
+            BuildDoor("CellDoor", DungeonPropBuilder.CellDoorLeaf());
             BuildPortal("EscapePortal", PortalKind.Escape, DungeonPropBuilder.PortalBlue, config.EscapePortalTime > 0f);
             BuildPortal("DescendPortal", PortalKind.Descend, DungeonPropBuilder.PortalRed, false);
             BuildShrine(ShrineKind.Health, 100f, 0f);
@@ -996,8 +999,8 @@ namespace Game.Scripts.Editor.Dungeon
         private static void BuildContainer(string name, string displayName, LootTableConfig table, float openTime, bool isGolden)
         {
             float width = name.StartsWith("Large") || isGolden ? 1.5f : 1.1f;
-            GameObject root = DungeonPropBuilder.Chest(name, width, 0.7f, 0.75f, isGolden ? DungeonPropBuilder.Gold : DungeonPropBuilder.DarkWood, out Transform lid);
-            SetupContainer(root, displayName, table, openTime, lid, new Vector3(-100f, 0f, 0f), false, 6, 4);
+            GameObject root = DungeonPropBuilder.Chest(name, width, isGolden ? DungeonPropBuilder.Gold : null, out Transform lid);
+            SetupContainer(root, displayName, table, openTime, lid, new Vector3(-110f, 0f, 0f), false, 6, 4);
             AddInteractCollider(root, new Vector3(0f, 0.4f, 0f), new Vector3(width + 0.2f, 0.9f, 0.9f));
             BattleContentBuilder.SavePrefab(root, Prefab(name));
         }
@@ -1034,12 +1037,13 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.SavePrefab(root, Prefab("Bookshelf"));
         }
 
-        private static void BuildDoor()
+        private static void BuildDoor(string name, GameObject leaf)
         {
-            GameObject root = new GameObject("Door");
+            GameObject root = new GameObject(name);
             root.AddComponent<NetworkObject>();
+            // A closed leaf would cut the NavMesh in two; monsters shove doors open on their way instead.
+            root.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
             GameObject hinge = BattleEditorUtility.CreateChild("Hinge", root.transform, new Vector3(-1.05f, 0f, 0f));
-            GameObject leaf = DungeonPropBuilder.DoorLeaf();
             leaf.transform.SetParent(hinge.transform, false);
             leaf.isStatic = false;
 
@@ -1050,7 +1054,7 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
             AddInteractCollider(root, new Vector3(0f, 1.5f, 0f), new Vector3(2.2f, 3f, 0.6f));
             BattleEditorUtility.Set(root.AddComponent<InteractableSoundComponent>(), "_door", door);
-            BattleContentBuilder.SavePrefab(root, Prefab("Door"));
+            BattleContentBuilder.SavePrefab(root, Prefab(name));
         }
 
         private static void BuildPortal(string name, PortalKind kind, Material material, bool singleUse)

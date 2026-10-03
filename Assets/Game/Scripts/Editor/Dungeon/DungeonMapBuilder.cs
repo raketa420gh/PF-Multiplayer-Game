@@ -8,123 +8,46 @@ using UnityEngine.AI;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Two 3x3 crypt floors built from modules: walls, doorways, props, lights, containers, portals, spawns and the NavMesh.
+    /// Two 3x3 floors built from modules: outer walls and doorways, rooms furnished by DungeonRoomBuilder, the NavMesh and the minimaps.
     internal static class DungeonMapBuilder
     {
         public const float Module = 40f;
         public const int Grid = 3;
         public const float FloorDrop = -26f;
         public const float FloorRadius = Module * Grid * 0.75f;
-        // Room layouts are authored for this module size and spread to the real one by Spread().
-        private const float LayoutModule = 14f;
-        private const float WallHugDistance = 1.6f;
-        private const float DoorLaneHalfWidth = 3.2f;
-        private const float DoorLaneDepth = 4f;
+        public const float TallHeight = DungeonPropBuilder.WallHeight * 2f;
+        public const float PitDepth = 4f;
+        public const string NavMeshPath = "Assets/Game/Scenes/DungeonScene/NavMesh.asset";
 
-        private enum Room
+        // Rows run south to north, columns west to east.
+        private static readonly DungeonRoom[,] s_floor1 =
         {
-            Spawn,
-            Hall,
-            Crypt,
-            Library,
-            Armory,
-            Treasury,
-            Shrine,
-            TrapCorridor,
-            Throne,
-            BonePit,
-            Arrival
-        }
-
-        private sealed class FloorResult
-        {
-            public readonly List<Transform> PlayerSpawns = new();
-            public readonly List<Transform> MonsterSpawns = new();
-            public readonly List<ContainerComponent> Containers = new();
-            public readonly List<PortalComponent> EscapePortals = new();
-            public readonly List<LeverComponent> Levers = new();
-            public readonly List<TrapComponent> Traps = new();
-            public PortalComponent DescendPortal;
-            public Transform DescendDestination;
-            public DoorComponent LockedDoor;
-            public Transform BossSpawn;
-            public Vector3 Center;
-        }
-
-        private sealed class Kit
-        {
-            public GameObject Wall;
-            public GameObject WallHalf;
-            public GameObject DoorFrame;
-            public GameObject Pillar;
-            public GameObject Floor;
-            public GameObject Ceiling;
-            public GameObject Brazier;
-            public GameObject Torch;
-            public GameObject Table;
-            public GameObject Banner;
-            public GameObject Skulls;
-            public GameObject Rubble;
-            public GameObject Sarcophagus;
-            public GameObject Cobweb;
-            public GameObject Chandelier;
-            public GameObject Candles;
-            public GameObject Chain;
-            public GameObject Door;
-            public GameObject Chest;
-            public GameObject LargeChest;
-            public GameObject GoldenChest;
-            public GameObject Coffin;
-            public GameObject Barrel;
-            public GameObject Crate;
-            public GameObject Bookshelf;
-            public GameObject EscapePortal;
-            public GameObject DescendPortal;
-            public GameObject[] Shrines;
-            public GameObject Lever;
-            public GameObject SpikeTrap;
-            public GameObject BladeTrap;
-            public GameObject StandPeasantMale;
-            public GameObject StandPeasantFemale;
-            public GameObject StandRangerMale;
-            public GameObject StandRangerFemale;
-            public GameObject StatueGuardian;
-            public GameObject StatueMage;
-            public GameObject StatuePilgrim;
-            public GameObject FallenPeasant;
-            public GameObject FallenRanger;
-        }
-
-        private static readonly Room[,] s_floor1 =
-        {
-            { Room.Armory, Room.Treasury, Room.Shrine },
-            { Room.Crypt, Room.Throne, Room.Library },
-            { Room.Spawn, Room.Hall, Room.Spawn }
+            { DungeonRoom.Armory, DungeonRoom.Treasury, DungeonRoom.Shrine },
+            { DungeonRoom.Prison, DungeonRoom.GreatHall, DungeonRoom.Library },
+            { DungeonRoom.Spawn, DungeonRoom.Hall, DungeonRoom.Spawn }
         };
 
-        private static readonly Room[,] s_floor2 =
+        private static readonly DungeonRoom[,] s_floor2 =
         {
-            { Room.Treasury, Room.Crypt, Room.Shrine },
-            { Room.TrapCorridor, Room.Throne, Room.Library },
-            { Room.Arrival, Room.BonePit, Room.Crypt }
+            { DungeonRoom.Arrival, DungeonRoom.BonePit, DungeonRoom.Cellar },
+            { DungeonRoom.TrapCorridor, DungeonRoom.Labyrinth, DungeonRoom.Crypt },
+            { DungeonRoom.Treasury, DungeonRoom.Throne, DungeonRoom.Shrine }
         };
-
-        private static System.Random s_random;
 
         public static Texture2D[] FloorMaps { get; private set; }
         public static string[] ModuleNames { get; private set; }
 
         public static Transform Build(DungeonDirector director)
         {
-            s_random = new System.Random(2024);
-            Kit kit = BuildKit();
+            System.Random random = new System.Random(2024);
+            BuildPieces();
             Transform root = new GameObject("[Dungeon]").transform;
             Transform spawns = new GameObject("[Spawns]").transform;
 
-            FloorResult first = BuildFloor(kit, root, spawns, "Floor1", s_floor1, 0f, 1);
-            FloorResult second = BuildFloor(kit, root, spawns, "Floor2", s_floor2, FloorDrop, 2);
+            DungeonFloorResult first = BuildFloor(root, spawns, "Floor1", s_floor1, 0f, 1, random);
+            DungeonFloorResult second = BuildFloor(root, spawns, "Floor2", s_floor2, FloorDrop, 2, random);
 
-            BakeNavMesh(root.gameObject);
+            BakeNavMesh(root.gameObject, NavMeshPath);
             WriteLayouts(director, first, second);
             FloorMaps = new[] { DungeonMinimapBuilder.Render(root.Find("Floor1"), 0f, "Floor1"), DungeonMinimapBuilder.Render(root.Find("Floor2"), FloorDrop, "Floor2") };
             ModuleNames = BuildModuleNames();
@@ -132,491 +55,12 @@ namespace Game.Scripts.Editor.Dungeon
             return root;
         }
 
-        private static string[] BuildModuleNames()
+        public static float CeilingHeight(DungeonRoom room)
         {
-            string[] names = new string[Grid * Grid * 2];
-
-            for (int floor = 0; floor < 2; floor++)
-            {
-                Room[,] rooms = floor == 0 ? s_floor1 : s_floor2;
-
-                for (int z = 0; z < Grid; z++)
-                {
-                    for (int x = 0; x < Grid; x++)
-                        names[floor * 9 + z * 3 + x] = RoomName(rooms[z, x], floor);
-                }
-            }
-
-            return names;
+            return IsTall(room) ? TallHeight : DungeonPropBuilder.WallHeight;
         }
 
-        private static string RoomName(Room room, int floor)
-        {
-            return room switch
-            {
-                Room.Spawn => "Pilgrim's Rest",
-                Room.Hall => "Entrance Hall",
-                Room.Crypt => floor == 0 ? "Old Tomb" : "Howling Crypt",
-                Room.Library => floor == 0 ? "Dark Magic Library" : "Forbidden Archive",
-                Room.Armory => "Barracks",
-                Room.Treasury => floor == 0 ? "Vault" : "Treasure Hoard",
-                Room.Shrine => "High Priest's Chapel",
-                Room.TrapCorridor => "Death Hall",
-                Room.Throne => floor == 0 ? "Great Hall" : "Ritual Room",
-                Room.BonePit => "Bone Pit",
-                Room.Arrival => "Descent",
-                _ => room.ToString()
-            };
-        }
-
-        private static Kit BuildKit()
-        {
-            Kit kit = new Kit
-            {
-                Wall = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Wall(Module, "Wall" + Module), "Wall"),
-                WallHalf = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Wall(Module * 0.5f, "WallHalf"), "WallHalf"),
-                DoorFrame = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.DoorFrame(Module), "DoorFrame"),
-                Pillar = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Pillar(), "Pillar"),
-                Floor = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Floor(Module), "FloorTile"),
-                Ceiling = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Ceiling(Module), "CeilingTile"),
-                Brazier = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Brazier(), "Brazier"),
-                Torch = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.WallTorch(), "WallTorch"),
-                Table = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Table(), "Table"),
-                Banner = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Banner(), "Banner"),
-                Skulls = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.SkullPile(), "SkullPile"),
-                Rubble = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Rubble(), "Rubble"),
-                Sarcophagus = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Sarcophagus(), "Sarcophagus"),
-                Cobweb = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Cobweb(), "Cobweb"),
-                Chandelier = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Chandelier(), "Chandelier"),
-                Candles = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.CandleCluster(), "CandleCluster"),
-                Chain = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Chain(), "Chain"),
-                Door = Load("Door"),
-                Chest = Load("SmallOakChest"),
-                LargeChest = Load("LargeOakChest"),
-                GoldenChest = Load("GoldenChest"),
-                Coffin = Load("Coffin"),
-                Barrel = Load("Barrel"),
-                Crate = Load("Crate"),
-                Bookshelf = Load("Bookshelf"),
-                EscapePortal = Load("EscapePortal"),
-                DescendPortal = Load("DescendPortal"),
-                Shrines = new[] { Load("ShrineHealth"), Load("ShrineProtection"), Load("ShrinePower"), Load("ShrineSpeed") },
-                Lever = Load("Lever"),
-                SpikeTrap = Load("SpikeTrap"),
-                BladeTrap = Load("BladeTrap"),
-                StandPeasantMale = Load("StandPeasantMale"),
-                StandPeasantFemale = Load("StandPeasantFemale"),
-                StandRangerMale = Load("StandRangerMale"),
-                StandRangerFemale = Load("StandRangerFemale"),
-                StatueGuardian = Load("StatueGuardian"),
-                StatueMage = Load("StatueMage"),
-                StatuePilgrim = Load("StatuePilgrim"),
-                FallenPeasant = Load("FallenPeasant"),
-                FallenRanger = Load("FallenRanger")
-            };
-
-            return kit;
-        }
-
-        private static GameObject Load(string name)
-        {
-            return AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab(name));
-        }
-
-        private static FloorResult BuildFloor(Kit kit, Transform root, Transform spawns, string name, Room[,] rooms, float y, int floorIndex)
-        {
-            FloorResult result = new FloorResult { Center = new Vector3(0f, y, 0f) };
-            Transform floor = new GameObject(name).transform;
-            floor.SetParent(root, false);
-            floor.localPosition = new Vector3(0f, y, 0f);
-            Transform markers = new GameObject(name).transform;
-            markers.SetParent(spawns, false);
-
-            for (int x = 0; x < Grid; x++)
-            {
-                for (int z = 0; z < Grid; z++)
-                {
-                    Vector3 center = ModuleCenter(x, z);
-                    Transform module = new GameObject($"Module_{x}_{z}_{rooms[z, x]}").transform;
-                    module.SetParent(floor, false);
-                    module.localPosition = center;
-                    Place(kit.Floor, module, Vector3.zero, 0f);
-                    Place(kit.Ceiling, module, new Vector3(0f, DungeonPropBuilder.WallHeight, 0f), 0f);
-                    Decorate(kit, module, markers, rooms[z, x], x, z, result, floorIndex);
-                }
-            }
-
-            BuildEdges(kit, floor, rooms, result);
-            LinkLevers(result);
-
-            return result;
-        }
-
-        private static void LinkLevers(FloorResult result)
-        {
-            if (result.Levers.Count == 0)
-                return;
-
-            TrapComponent blade = result.Traps.Find(trap => trap.Kind == TrapKind.SwingingBlade);
-            result.Levers[0].Setup(result.LockedDoor, blade);
-            EditorUtility.SetDirty(result.Levers[0]);
-        }
-
-        private static Vector3 ModuleCenter(int x, int z)
-        {
-            return new Vector3((x - 1) * Module, 0f, (z - 1) * Module);
-        }
-
-        private static void BuildEdges(Kit kit, Transform floor, Room[,] rooms, FloorResult result)
-        {
-            Transform edges = new GameObject("Edges").transform;
-            edges.SetParent(floor, false);
-            float half = Module * 0.5f;
-
-            for (int x = 0; x < Grid; x++)
-            {
-                for (int z = 0; z < Grid; z++)
-                {
-                    Vector3 center = ModuleCenter(x, z);
-
-                    if (z == 0)
-                        Place(kit.Wall, edges, center + new Vector3(0f, 0f, -half), 0f);
-
-                    if (x == 0)
-                        Place(kit.Wall, edges, center + new Vector3(-half, 0f, 0f), 90f);
-
-                    if (z == Grid - 1)
-                        Place(kit.Wall, edges, center + new Vector3(0f, 0f, half), 0f);
-                    else
-                        Opening(kit, edges, center + new Vector3(0f, 0f, half), 0f, rooms[z, x], rooms[z + 1, x], result);
-
-                    if (x == Grid - 1)
-                        Place(kit.Wall, edges, center + new Vector3(half, 0f, 0f), 90f);
-                    else
-                        Opening(kit, edges, center + new Vector3(half, 0f, 0f), 90f, rooms[z, x], rooms[z, x + 1], result);
-                }
-            }
-        }
-
-        private static void Opening(Kit kit, Transform parent, Vector3 position, float yaw, Room a, Room b, FloorResult result)
-        {
-            bool isBlocked = (a == Room.Armory && b == Room.Crypt) || (a == Room.Shrine && b == Room.Library) || (a == Room.TrapCorridor && b == Room.Treasury);
-
-            if (isBlocked)
-            {
-                Place(kit.Wall, parent, position, yaw);
-
-                return;
-            }
-
-            Place(kit.DoorFrame, parent, position, yaw);
-            Quaternion rotation = Quaternion.Euler(0f, yaw, 0f);
-            Place(kit.Torch, parent, position + rotation * new Vector3(-2.1f, 2.6f, -0.35f), yaw + 180f);
-            Place(kit.Torch, parent, position + rotation * new Vector3(2.1f, 2.6f, 0.35f), yaw);
-
-            bool hasDoor = a is Room.Crypt or Room.Library or Room.Treasury or Room.Armory || b is Room.Crypt or Room.Library or Room.Treasury or Room.Armory;
-
-            if (!hasDoor)
-                return;
-
-            DoorComponent door = Place(kit.Door, parent, position, yaw, false).GetComponent<DoorComponent>();
-            bool isTreasury = a == Room.Treasury || b == Room.Treasury;
-
-            if (!isTreasury || result.LockedDoor != null)
-                return;
-
-            BattleEditorUtility.Set(door, "_startsLocked", true);
-            result.LockedDoor = door;
-        }
-
-        private static void Decorate(Kit kit, Transform module, Transform markers, Room room, int x, int z, FloorResult result, int floorIndex)
-        {
-            float half = LayoutModule * 0.5f;
-            WallTorches(kit, module);
-            Dress(kit, module, room);
-
-            switch (room)
-            {
-                case Room.Spawn:
-                    for (int i = 0; i < 4; i++)
-                        result.PlayerSpawns.Add(Marker(markers, "Player", module.position + Spread(-3f + i * 2f, 0f, -3f), 0f));
-
-                    Place(kit.Banner, module, Spread(-4f, 3.6f, half - 0.4f), 180f);
-                    Place(kit.Banner, module, Spread(4f, 3.6f, half - 0.4f), 180f);
-                    Place(kit.Table, module, Spread(0f, 0f, 3.5f), 0f);
-                    Container(kit.Chest, module, result, Spread(5f, 0f, 4.5f), -90f);
-                    Container(kit.Barrel, module, result, Spread(-5.5f, 0f, 5f), 0f);
-                    Container(kit.Crate, module, result, Spread(-5.5f, 0f, 3.8f), 20f);
-                    Place(kit.StandPeasantMale, module, Spread(-2.5f, 0f, 5.8f), 180f);
-                    Place(kit.StandPeasantFemale, module, Spread(2.5f, 0f, 5.8f), 180f);
-                    Pillars(kit, module, 4.5f);
-                    break;
-
-                case Room.Arrival:
-                    result.DescendDestination = Marker(markers, "Arrival", module.position + Spread(0f, 0f, -2f), 0f);
-                    Place(kit.Brazier, module, Spread(0f, 0f, 3f), 0f);
-                    Place(kit.Skulls, module, Spread(-5f, 0f, -5f), 30f);
-                    Container(kit.Chest, module, result, Spread(5.5f, 0f, -3f), -90f);
-                    Place(kit.StatuePilgrim, module, Spread(6f, 0f, 2.5f), -90f);
-                    Place(kit.FallenPeasant, module, Spread(-2f, 0f, 3f), 70f);
-                    Pillars(kit, module, 4.5f);
-                    break;
-
-                case Room.Hall:
-                    Place(kit.Brazier, module, Spread(-4f, 0f, 0f), 0f);
-                    Place(kit.Brazier, module, Spread(4f, 0f, 0f), 0f);
-                    Place(kit.Rubble, module, Spread(-5f, 0f, 5f), 0f);
-                    Container(kit.Barrel, module, result, Spread(5.5f, 0f, -5.5f), 0f);
-                    Container(kit.Crate, module, result, Spread(5.5f, 0f, -4.4f), 40f);
-                    Monster(markers, result, module.position + Spread(0f, 0f, 3f), 180f);
-                    Monster(markers, result, module.position + Spread(2f, 0f, -3f), 0f);
-                    Place(kit.StatueGuardian, module, Spread(-6f, 0f, 2.5f), 90f);
-                    Place(kit.StatueGuardian, module, Spread(6f, 0f, -2.5f), -90f);
-                    Pillars(kit, module, 5f);
-                    break;
-
-                case Room.Crypt:
-                    for (int i = 0; i < 3; i++)
-                    {
-                        Container(kit.Coffin, module, result, Spread(-4.5f, 0f, -4f + i * 4f), 90f);
-                        Place(kit.Sarcophagus, module, Spread(4.5f, 0f, -4f + i * 4f), 90f);
-                    }
-
-                    Place(kit.Skulls, module, Spread(0f, 0f, 5.5f), 0f);
-                    Place(kit.Brazier, module, Spread(0f, 0f, 0f), 0f);
-                    Place(kit.FallenRanger, module, Spread(1.5f, 0f, -5f), 40f);
-                    Monster(markers, result, module.position + Spread(-1.5f, 0f, -2f), 0f);
-                    Monster(markers, result, module.position + Spread(2f, 0f, 3f), 180f);
-                    break;
-
-                case Room.Library:
-                    for (int i = 0; i < 3; i++)
-                    {
-                        Container(kit.Bookshelf, module, result, Spread(-6.4f, 0f, -4f + i * 4f), 90f);
-                        Container(kit.Bookshelf, module, result, Spread(6.4f, 0f, -4f + i * 4f), -90f);
-                    }
-
-                    Place(kit.Table, module, Spread(0f, 0f, 0f), 90f);
-                    Place(kit.Table, module, Spread(0f, 0f, -4f), 90f);
-                    Container(kit.Chest, module, result, Spread(0f, 0f, 5.5f), 180f);
-                    Place(kit.StatueMage, module, Spread(-3f, 0f, -6f), 0f);
-                    Monster(markers, result, module.position + Spread(3f, 0f, 2f), 180f);
-                    break;
-
-                case Room.Armory:
-                    Container(kit.LargeChest, module, result, Spread(0f, 0f, 5.5f), 180f);
-                    Container(kit.Crate, module, result, Spread(-5.5f, 0f, -5.5f), 0f);
-                    Container(kit.Crate, module, result, Spread(-4.5f, 0f, -5.5f), 15f);
-                    Container(kit.Barrel, module, result, Spread(5.5f, 0f, -5.5f), 0f);
-                    Container(kit.Barrel, module, result, Spread(5.5f, 0f, -4.4f), 0f);
-                    Place(kit.Table, module, Spread(-4f, 0f, 1f), 90f);
-                    Place(kit.Banner, module, Spread(0f, 3.6f, -half + 0.4f), 0f);
-                    Place(kit.StandRangerMale, module, Spread(-3f, 0f, 5.8f), 180f);
-                    Place(kit.StandRangerFemale, module, Spread(3f, 0f, 5.8f), 180f);
-                    result.Levers.Add(Place(kit.Lever, module, Spread(6.3f, 0f, 3f), -90f, false).GetComponent<LeverComponent>());
-                    Monster(markers, result, module.position + Spread(2f, 0f, 1f), 90f);
-                    Monster(markers, result, module.position + Spread(-2f, 0f, -2f), 0f);
-                    break;
-
-                case Room.Treasury:
-                    Container(kit.GoldenChest, module, result, Spread(0f, 0f, 5.2f), 180f);
-                    Container(kit.Chest, module, result, Spread(-5.5f, 0f, 5.2f), 90f);
-                    Container(kit.Chest, module, result, Spread(5.5f, 0f, 5.2f), -90f);
-                    Place(kit.Brazier, module, Spread(-3f, 0f, 3f), 0f);
-                    Place(kit.Brazier, module, Spread(3f, 0f, 3f), 0f);
-                    Place(kit.SpikeTrap, module, Spread(0f, 0f, 2f), 0f, false);
-                    Place(kit.Banner, module, Spread(-3f, 3.6f, half - 0.4f), 180f);
-                    Place(kit.Banner, module, Spread(3f, 3.6f, half - 0.4f), 180f);
-                    Place(kit.StatueGuardian, module, Spread(-2.6f, 0f, 5.8f), 180f);
-                    Place(kit.StatueGuardian, module, Spread(2.6f, 0f, 5.8f), 180f);
-
-                    if (floorIndex == 1)
-                        result.DescendPortal = Place(kit.DescendPortal, module, Spread(0f, 0f, -3f), 180f, false).GetComponent<PortalComponent>();
-                    else
-                        result.EscapePortals.Add(Place(kit.EscapePortal, module, Spread(0f, 0f, -3f), 180f, false).GetComponent<PortalComponent>());
-
-                    Monster(markers, result, module.position + Spread(-3f, 0f, -1f), 90f);
-                    Monster(markers, result, module.position + Spread(3f, 0f, -1f), -90f);
-                    Monster(markers, result, module.position + Spread(0f, 0f, 4f), 180f);
-                    break;
-
-                case Room.Shrine:
-                    Place(kit.Shrines[(x + z + floorIndex) % kit.Shrines.Length], module, Spread(0f, 0f, 5.5f), 180f, false);
-                    Place(kit.Shrines[(x + z + floorIndex + 2) % kit.Shrines.Length], module, Spread(-5.8f, 0f, 0f), 90f, false);
-                    Place(kit.Skulls, module, Spread(5f, 0f, 5f), 0f);
-                    Place(kit.StatuePilgrim, module, Spread(6f, 0f, 2f), -90f);
-                    Container(kit.Chest, module, result, Spread(5.5f, 0f, -2f), -90f);
-                    result.EscapePortals.Add(Place(kit.EscapePortal, module, Spread(2f, 0f, -4.5f), 0f, false).GetComponent<PortalComponent>());
-                    Monster(markers, result, module.position + Spread(-2f, 0f, -3f), 0f);
-                    Pillars(kit, module, 4.5f);
-                    break;
-
-                case Room.TrapCorridor:
-                    result.Traps.Add(Place(kit.BladeTrap, module, Spread(0f, 0f, -3.5f), 90f, false).GetComponent<TrapComponent>());
-                    result.Traps.Add(Place(kit.BladeTrap, module, Spread(0f, 0f, 3.5f), 90f, false).GetComponent<TrapComponent>());
-                    Place(kit.SpikeTrap, module, Spread(0f, 0f, 0f), 0f, false);
-                    Place(kit.Rubble, module, Spread(-4.5f, 0f, -4.5f), 0f);
-                    Place(kit.Rubble, module, Spread(4.5f, 0f, 4.5f), 70f);
-                    Place(kit.FallenPeasant, module, Spread(1.2f, 0f, -2.2f), 200f);
-                    Place(kit.FallenRanger, module, Spread(-1.4f, 0f, 2.4f), 15f);
-                    Container(kit.LargeChest, module, result, Spread(5.5f, 0f, -5.5f), -90f);
-                    result.Levers.Add(Place(kit.Lever, module, Spread(-6.3f, 0f, 4f), 90f, false).GetComponent<LeverComponent>());
-                    Monster(markers, result, module.position + Spread(-3f, 0f, 2f), 90f);
-                    break;
-
-                case Room.Throne:
-                    Place(kit.Brazier, module, Spread(-4f, 0f, 4f), 0f);
-                    Place(kit.Brazier, module, Spread(4f, 0f, 4f), 0f);
-                    Place(kit.Brazier, module, Spread(-4f, 0f, -4f), 0f);
-                    Place(kit.Brazier, module, Spread(4f, 0f, -4f), 0f);
-                    Place(kit.Table, module, Spread(0f, 0f, 0f), 0f);
-                    Place(kit.Banner, module, Spread(-3f, 3.6f, half - 0.4f), 180f);
-                    Place(kit.Banner, module, Spread(3f, 3.6f, half - 0.4f), 180f);
-                    Container(kit.LargeChest, module, result, Spread(0f, 0f, 5.5f), 180f);
-                    Place(kit.StatueGuardian, module, Spread(6f, 0f, 2.5f), -90f);
-                    Place(kit.StatueMage, module, Spread(6f, 0f, -2.5f), -90f);
-
-                    if (floorIndex == 2)
-                    {
-                        result.BossSpawn = Marker(markers, "Boss", module.position + Spread(0f, 0f, 3f), 180f);
-                        Monster(markers, result, module.position + Spread(-4f, 0f, 2f), 135f);
-                        Monster(markers, result, module.position + Spread(4f, 0f, 2f), -135f);
-                        result.EscapePortals.Add(Place(kit.EscapePortal, module, Spread(-5f, 0f, 0f), 90f, false).GetComponent<PortalComponent>());
-                    }
-                    else
-                    {
-                        Monster(markers, result, module.position + Spread(-2f, 0f, 2f), 135f);
-                        Monster(markers, result, module.position + Spread(2f, 0f, -2f), -45f);
-                        Monster(markers, result, module.position + Spread(0f, 0f, -5f), 0f);
-                    }
-                    break;
-
-                case Room.BonePit:
-                    for (int i = 0; i < 5; i++)
-                        Place(kit.Skulls, module, Spread(-4f + i * 2f, 0f, (i % 2 == 0 ? -3f : 3f)), i * 40f);
-
-                    Place(kit.Rubble, module, Spread(0f, 0f, 0f), 0f);
-                    Place(kit.FallenPeasant, module, Spread(-3f, 0f, -1.5f), 120f);
-                    Place(kit.FallenRanger, module, Spread(3.5f, 0f, 3.5f), -60f);
-                    Container(kit.Coffin, module, result, Spread(5.5f, 0f, 0f), 0f);
-                    Container(kit.Chest, module, result, Spread(-5.5f, 0f, -5f), 90f);
-                    Monster(markers, result, module.position + Spread(-2f, 0f, 0f), 90f);
-                    Monster(markers, result, module.position + Spread(2f, 0f, 1f), -90f);
-                    Monster(markers, result, module.position + Spread(0f, 0f, -4f), 0f);
-                    break;
-            }
-        }
-
-        /// Cobwebs in two corners, hanging chains or a chandelier, candle wax on the floor: the mood layer of every module.
-        private static void Dress(Kit kit, Transform module, Room room)
-        {
-            float half = Module * 0.5f;
-            float corner = half - 0.55f;
-            int first = s_random.Next(4);
-            int second = (first + 1 + s_random.Next(3)) % 4;
-
-            for (int i = 0; i < 4; i++)
-            {
-                if (i != first && i != second)
-                    continue;
-
-                float sx = i % 2 == 0 ? -1f : 1f;
-                float sz = i < 2 ? -1f : 1f;
-                float yaw = sx > 0f == sz > 0f ? 135f : 45f;
-                Place(kit.Cobweb, module, new Vector3(sx * corner, DungeonPropBuilder.WallHeight - 0.75f, sz * corner), sx > 0f ? yaw + 180f : yaw);
-            }
-
-            if (room is Room.Hall or Room.Throne or Room.Library or Room.Spawn or Room.Shrine)
-                Place(kit.Chandelier, module, new Vector3(0f, DungeonPropBuilder.WallHeight - 2f, 0f), 0f);
-
-            float quarter = Module * 0.25f;
-            Place(kit.Chandelier, module, new Vector3(-quarter, DungeonPropBuilder.WallHeight - 2f, -quarter), 0f);
-            Place(kit.Chandelier, module, new Vector3(quarter, DungeonPropBuilder.WallHeight - 2f, quarter), 0f);
-
-            if (room is Room.Crypt or Room.BonePit or Room.Armory or Room.TrapCorridor or Room.Arrival)
-            {
-                Place(kit.Chain, module, new Vector3(-2.5f, DungeonPropBuilder.WallHeight, 2f), 0f);
-                Place(kit.Chain, module, new Vector3(3f, DungeonPropBuilder.WallHeight, -1.5f), 30f);
-            }
-
-            int candles = room is Room.Crypt or Room.Shrine or Room.BonePit or Room.Throne ? 3 : 1;
-
-            for (int i = 0; i < candles; i++)
-            {
-                float x = ((float)s_random.NextDouble() - 0.5f) * (Module - 2.5f);
-                float z = (s_random.Next(2) == 0 ? -1f : 1f) * (half - 0.9f - (float)s_random.NextDouble() * 0.6f);
-                Place(kit.Candles, module, new Vector3(x, 0f, z), s_random.Next(360));
-            }
-        }
-
-        /// Two torches on every wall, between the corners and the doorway, so the large rooms keep readable light.
-        private static void WallTorches(Kit kit, Transform module)
-        {
-            float wall = Module * 0.5f - 0.35f;
-            float offset = Module * 0.28f;
-
-            for (int side = -1; side <= 1; side += 2)
-            {
-                Place(kit.Torch, module, new Vector3(-offset * side, 2.6f, wall * side), side > 0 ? 180f : 0f);
-                Place(kit.Torch, module, new Vector3(offset * side, 2.6f, wall * side), side > 0 ? 180f : 0f);
-                Place(kit.Torch, module, new Vector3(wall * side, 2.6f, -offset * side), side > 0 ? -90f : 90f);
-                Place(kit.Torch, module, new Vector3(wall * side, 2.6f, offset * side), side > 0 ? -90f : 90f);
-            }
-        }
-
-        private static void Pillars(Kit kit, Transform module, float offset)
-        {
-            Place(kit.Pillar, module, Spread(-offset, 0f, -offset), 0f);
-            Place(kit.Pillar, module, Spread(offset, 0f, -offset), 0f);
-            Place(kit.Pillar, module, Spread(-offset, 0f, offset), 0f);
-            Place(kit.Pillar, module, Spread(offset, 0f, offset), 0f);
-        }
-
-        /// Maps a layout point to the real module: wall-mounted props keep their distance to the wall, the rest scale with
-        /// the room; anything left in front of a doorway is moved aside along the wall.
-        private static Vector3 Spread(float x, float y, float z)
-        {
-            float half = Module * 0.5f;
-            Vector3 point = new Vector3(SpreadAxis(x), y, SpreadAxis(z));
-
-            if (Mathf.Abs(point.x) < DoorLaneHalfWidth && Mathf.Abs(point.z) > half - DoorLaneDepth)
-                point.x = point.x < 0f ? -DoorLaneHalfWidth : DoorLaneHalfWidth;
-
-            if (Mathf.Abs(point.z) < DoorLaneHalfWidth && Mathf.Abs(point.x) > half - DoorLaneDepth)
-                point.z = point.z < 0f ? -DoorLaneHalfWidth : DoorLaneHalfWidth;
-
-            return point;
-        }
-
-        private static float SpreadAxis(float value)
-        {
-            float toWall = LayoutModule * 0.5f - Mathf.Abs(value);
-
-            return toWall < WallHugDistance ? Mathf.Sign(value) * (Module * 0.5f - toWall) : value * Module / LayoutModule;
-        }
-
-        private static void Container(GameObject prefab, Transform module, FloorResult result, Vector3 position, float yaw)
-        {
-            GameObject instance = Place(prefab, module, position, yaw, false);
-            result.Containers.Add(instance.GetComponent<ContainerComponent>());
-        }
-
-        private static void Monster(Transform markers, FloorResult result, Vector3 position, float yaw)
-        {
-            result.MonsterSpawns.Add(Marker(markers, "Monster", position, yaw));
-        }
-
-        private static Transform Marker(Transform parent, string name, Vector3 position, float yaw)
-        {
-            Transform marker = new GameObject(name).transform;
-            marker.SetParent(parent, false);
-            marker.position = position;
-            marker.rotation = Quaternion.Euler(0f, yaw, 0f);
-
-            return marker;
-        }
-
-        private static GameObject Place(GameObject prefab, Transform parent, Vector3 localPosition, float yaw, bool isStatic = true)
+        internal static GameObject Place(GameObject prefab, Transform parent, Vector3 localPosition, float yaw, bool isStatic = true)
         {
             GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
             instance.transform.localPosition = localPosition;
@@ -631,25 +75,218 @@ namespace Game.Scripts.Editor.Dungeon
             return instance;
         }
 
-        private static void BakeNavMesh(GameObject root)
+        internal static void BakeNavMesh(GameObject root, string path)
         {
             NavMeshSurface surface = root.AddComponent<NavMeshSurface>();
             surface.collectObjects = CollectObjects.All;
             surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             surface.layerMask = 1;
-            NavMeshBuildSettings settings = surface.GetBuildSettings();
             surface.overrideVoxelSize = true;
             surface.voxelSize = 0.12f;
             surface.BuildNavMesh();
 
-            BattleEditorUtility.EnsureFolder("Assets/Game/Scenes/DungeonScene");
-            string path = "Assets/Game/Scenes/DungeonScene/NavMesh.asset";
+            BattleEditorUtility.EnsureFolder(path.Substring(0, path.LastIndexOf('/')));
             AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(surface.navMeshData, path);
             surface.navMeshData = AssetDatabase.LoadAssetAtPath<NavMeshData>(path);
         }
 
-        private static void WriteLayouts(DungeonDirector director, FloorResult first, FloorResult second)
+        private static bool IsTall(DungeonRoom room)
+        {
+            return room is DungeonRoom.Hall or DungeonRoom.GreatHall or DungeonRoom.Prison or DungeonRoom.Library or DungeonRoom.Cellar or DungeonRoom.Throne;
+        }
+
+        private static bool HasPit(DungeonRoom room)
+        {
+            return room is DungeonRoom.BonePit or DungeonRoom.TrapCorridor;
+        }
+
+        private static bool HasDoor(DungeonRoom room)
+        {
+            return room is DungeonRoom.Library or DungeonRoom.Armory or DungeonRoom.Prison or DungeonRoom.Treasury or DungeonRoom.Crypt or DungeonRoom.Cellar;
+        }
+
+        /// Walled-up doorways: the chapel is reached through the vault, the hoard through the throne room.
+        private static bool IsBlocked(DungeonRoom a, DungeonRoom b)
+        {
+            return (a == DungeonRoom.Shrine && b == DungeonRoom.Library) || (a == DungeonRoom.TrapCorridor && b == DungeonRoom.Treasury);
+        }
+
+        private static string[] BuildModuleNames()
+        {
+            string[] names = new string[Grid * Grid * 2];
+
+            for (int floor = 0; floor < 2; floor++)
+            {
+                DungeonRoom[,] rooms = floor == 0 ? s_floor1 : s_floor2;
+
+                for (int z = 0; z < Grid; z++)
+                {
+                    for (int x = 0; x < Grid; x++)
+                        names[floor * 9 + z * 3 + x] = RoomName(rooms[z, x], floor);
+                }
+            }
+
+            return names;
+        }
+
+        private static string RoomName(DungeonRoom room, int floor)
+        {
+            return room switch
+            {
+                DungeonRoom.Spawn => "Pilgrim's Rest",
+                DungeonRoom.Hall => "Entrance Hall",
+                DungeonRoom.GreatHall => "Feast Hall",
+                DungeonRoom.Prison => "Gaol",
+                DungeonRoom.Library => "Dark Magic Library",
+                DungeonRoom.Armory => "Barracks",
+                DungeonRoom.Treasury => floor == 0 ? "Vault" : "Treasure Hoard",
+                DungeonRoom.Shrine => floor == 0 ? "Pilgrims' Chapel" : "High Priest's Chapel",
+                DungeonRoom.Arrival => "Descent",
+                DungeonRoom.BonePit => "Bone Pit",
+                DungeonRoom.Cellar => "Wine Cellar",
+                DungeonRoom.TrapCorridor => "Death Hall",
+                DungeonRoom.Labyrinth => "Labyrinth",
+                DungeonRoom.Crypt => "Catacombs",
+                DungeonRoom.Throne => "Throne Room",
+                _ => room.ToString()
+            };
+        }
+
+        /// Shared pieces saved as prefabs: architecture and the props that rooms and other scenes place by name.
+        private static void BuildPieces()
+        {
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Wall(Module, "Wall" + Module), "Wall");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.DoorFrame(Module), "DoorFrame");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Pillar(), "Pillar");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Floor(Module), "FloorTile");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Ceiling(Module), "CeilingTile");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Brazier(), "Brazier");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.WallTorch(), "WallTorch");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Table(), "Table");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.SkullPile(), "SkullPile");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Rubble(), "Rubble");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Sarcophagus(), "Sarcophagus");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Cobweb(), "Cobweb");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Chandelier(), "Chandelier");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.CandleCluster(), "CandleCluster");
+            DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Chain(), "Chain");
+        }
+
+        private static GameObject Load(string name)
+        {
+            return AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab(name));
+        }
+
+        private static DungeonFloorResult BuildFloor(Transform root, Transform spawns, string name, DungeonRoom[,] rooms, float y, int floorIndex, System.Random random)
+        {
+            DungeonFloorResult result = new DungeonFloorResult { Center = new Vector3(0f, y, 0f) };
+            Transform floor = new GameObject(name).transform;
+            floor.SetParent(root, false);
+            floor.localPosition = new Vector3(0f, y, 0f);
+            Transform markers = new GameObject(name).transform;
+            markers.SetParent(spawns, false);
+
+            for (int x = 0; x < Grid; x++)
+            {
+                for (int z = 0; z < Grid; z++)
+                {
+                    DungeonRoom room = rooms[z, x];
+                    Transform module = new GameObject($"Module_{x}_{z}_{room}").transform;
+                    module.SetParent(floor, false);
+                    module.localPosition = ModuleCenter(x, z);
+
+                    if (!HasPit(room))
+                        Place(Load("FloorTile"), module, Vector3.zero, 0f);
+
+                    Place(Load("CeilingTile"), module, new Vector3(0f, CeilingHeight(room), 0f), 0f);
+                    bool[] open = { IsOpen(rooms, x, z, 0, 1), IsOpen(rooms, x, z, 1, 0), IsOpen(rooms, x, z, 0, -1), IsOpen(rooms, x, z, -1, 0) };
+                    new DungeonRoomBuilder(module, markers, result, room, floorIndex, open, random).Build();
+                }
+            }
+
+            BuildEdges(floor, rooms);
+            LinkLevers(result);
+
+            return result;
+        }
+
+        /// Whether the wall towards the neighbour has a doorway; the room builder gets these in WallSide order.
+        private static bool IsOpen(DungeonRoom[,] rooms, int x, int z, int dx, int dz)
+        {
+            int nx = x + dx;
+            int nz = z + dz;
+
+            if (nx < 0 || nz < 0 || nx >= Grid || nz >= Grid)
+                return false;
+
+            return dx + dz > 0 ? !IsBlocked(rooms[z, x], rooms[nz, nx]) : !IsBlocked(rooms[nz, nx], rooms[z, x]);
+        }
+
+        private static void LinkLevers(DungeonFloorResult result)
+        {
+            if (result.Levers.Count == 0)
+                return;
+
+            TrapComponent blade = result.Traps.Find(trap => trap.Kind == TrapKind.SwingingBlade);
+            result.Levers[0].Setup(result.LockedDoor, blade);
+            EditorUtility.SetDirty(result.Levers[0]);
+        }
+
+        private static Vector3 ModuleCenter(int x, int z)
+        {
+            return new Vector3((x - 1) * Module, 0f, (z - 1) * Module);
+        }
+
+        private static void BuildEdges(Transform floor, DungeonRoom[,] rooms)
+        {
+            Transform edges = new GameObject("Edges").transform;
+            edges.SetParent(floor, false);
+            float half = Module * 0.5f;
+
+            for (int x = 0; x < Grid; x++)
+            {
+                for (int z = 0; z < Grid; z++)
+                {
+                    Vector3 center = ModuleCenter(x, z);
+                    DungeonRoom room = rooms[z, x];
+
+                    if (z == 0)
+                        Edge(edges, center + new Vector3(0f, 0f, -half), 0f, room, null);
+
+                    if (x == 0)
+                        Edge(edges, center + new Vector3(-half, 0f, 0f), 90f, room, null);
+
+                    Edge(edges, center + new Vector3(0f, 0f, half), 0f, room, z == Grid - 1 ? null : rooms[z + 1, x]);
+                    Edge(edges, center + new Vector3(half, 0f, 0f), 90f, room, x == Grid - 1 ? null : rooms[z, x + 1]);
+                }
+            }
+        }
+
+        /// Wall between two modules (or the outer wall): solid or with a doorway, doubled in height next to a tall room.
+        private static void Edge(Transform parent, Vector3 position, float yaw, DungeonRoom a, DungeonRoom? b)
+        {
+            if (b == null || IsBlocked(a, b.Value))
+                Place(Load("Wall"), parent, position, yaw);
+            else
+                Opening(parent, position, yaw, a, b.Value);
+
+            if (IsTall(a) || (b != null && IsTall(b.Value)))
+                Place(Load("Wall"), parent, position + Vector3.up * DungeonPropBuilder.WallHeight, yaw);
+        }
+
+        private static void Opening(Transform parent, Vector3 position, float yaw, DungeonRoom a, DungeonRoom b)
+        {
+            Place(Load("DoorFrame"), parent, position, yaw);
+            Quaternion rotation = Quaternion.Euler(0f, yaw, 0f);
+            Place(Load("WallTorch"), parent, position + rotation * new Vector3(-2.1f, 2.6f, -0.32f), yaw + 180f);
+            Place(Load("WallTorch"), parent, position + rotation * new Vector3(2.1f, 2.6f, 0.32f), yaw);
+
+            if (HasDoor(a) || HasDoor(b))
+                Place(Load("Door"), parent, position, yaw, false);
+        }
+
+        private static void WriteLayouts(DungeonDirector director, DungeonFloorResult first, DungeonFloorResult second)
         {
             SerializedObject so = new SerializedObject(director);
             SerializedProperty floors = so.FindProperty("_floors");
@@ -659,7 +296,7 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void WriteFloor(SerializedProperty property, FloorResult result, int index)
+        private static void WriteFloor(SerializedProperty property, DungeonFloorResult result, int index)
         {
             SetArray(property.FindPropertyRelative("PlayerSpawns"), result.PlayerSpawns.Count > 0 ? result.PlayerSpawns : new List<Transform> { result.DescendDestination });
             SetArray(property.FindPropertyRelative("MonsterSpawns"), result.MonsterSpawns);

@@ -245,28 +245,10 @@ namespace Game.Scripts.Editor.Dungeon
             return root;
         }
 
+        /// Hangs from its pivot: put it on the ceiling.
         public static GameObject Chandelier()
         {
-            DungeonMeshBuilder builder = new DungeonMeshBuilder(1f)
-                .Cylinder(Vector3.zero, 0.7f, 0.08f, 12)
-                .Cylinder(new Vector3(0f, 0.9f, 0f), 0.025f, 1.8f, 6);
-            Mesh candle = new DungeonMeshBuilder(1f).Cylinder(new Vector3(0f, 0.1f, 0f), 0.03f, 0.2f, 6).Save("Candle");
-            GameObject root = new GameObject("Chandelier");
-            MeshObject("Wheel", root.transform, builder.Save("Chandelier"), DarkWood, default, default, false, false);
-
-            for (int i = 0; i < 6; i++)
-            {
-                float angle = i / 6f * Mathf.PI * 2f;
-                Vector3 position = new Vector3(Mathf.Cos(angle) * 0.55f, 0.04f, Mathf.Sin(angle) * 0.55f);
-                MeshObject("Candle", root.transform, candle, Bone, position, default, false, false);
-
-                if (i % 2 == 0)
-                    Flame(root.transform, position + new Vector3(0f, 0.22f, 0f), 0.3f);
-            }
-
-            PointLight(root.transform, new Vector3(0f, 0.4f, 0f), new Color(1f, 0.72f, 0.4f), 18f, 6f, true);
-
-            return root;
+            return Wrap("Chandelier", "Chandelier", 1f);
         }
 
         public static GameObject CandleCluster()
@@ -391,27 +373,26 @@ namespace Game.Scripts.Editor.Dungeon
             return leaf;
         }
 
-        public static GameObject Chest(string name, float width, float depth, float height, Material material, out Transform lid)
+        /// Chest of the props kit scaled to the width; the lid bone is closed here and opened by the container.
+        public static GameObject Chest(string name, float width, Material metal, out Transform lid)
         {
-            Mesh body = new DungeonMeshBuilder(0.6f).Box(new Vector3(0f, height * 0.35f, 0f), new Vector3(width, height * 0.7f, depth)).Save(name + "Body");
-            Mesh top = new DungeonMeshBuilder(0.6f)
-                .Box(new Vector3(0f, height * 0.15f, depth * 0.5f), new Vector3(width, height * 0.3f, depth))
-                .Box(new Vector3(0f, height * 0.3f, depth * 0.5f), new Vector3(width * 0.9f, 0.04f, depth * 0.8f))
-                .Save(name + "Lid");
-            Mesh band = new DungeonMeshBuilder(0.6f)
-                .Box(new Vector3(width * 0.3f, height * 0.35f, 0f), new Vector3(0.06f, height * 0.72f, depth + 0.02f))
-                .Box(new Vector3(-width * 0.3f, height * 0.35f, 0f), new Vector3(0.06f, height * 0.72f, depth + 0.02f))
-                .Box(new Vector3(0f, height * 0.5f, depth * 0.5f + 0.02f), new Vector3(0.14f, 0.16f, 0.04f))
-                .Save(name + "Bands");
-
+            const float modelWidth = 1.28f;
+            float scale = width / modelWidth;
             GameObject root = new GameObject(name);
-            MeshObject("Body", root.transform, body, material, default, default, true, false);
-            MeshObject("Bands", root.transform, band, RustyMetal, default, default, false, false);
-            GameObject lidObject = new GameObject("LidPivot");
-            lidObject.transform.SetParent(root.transform, false);
-            lidObject.transform.localPosition = new Vector3(0f, height * 0.7f, -depth * 0.5f);
-            MeshObject("Lid", lidObject.transform, top, material, default, default, false, false);
-            lid = lidObject.transform;
+            GameObject model = DungeonKitBuilder.Model("Chest_Wood", root.transform);
+            model.transform.localScale = Vector3.one * scale;
+            lid = model.transform.Find("Chest_Armature/Root/Chest_Bottom/Chest_Top");
+            lid.localRotation = Quaternion.identity;
+
+            if (metal != null)
+            {
+                foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>())
+                    renderer.sharedMaterials = System.Array.ConvertAll(renderer.sharedMaterials, material => material.name == "KitMetal" ? metal : material);
+            }
+
+            BoxCollider collider = root.AddComponent<BoxCollider>();
+            collider.center = new Vector3(0f, 0.36f, 0f) * scale;
+            collider.size = new Vector3(modelWidth, 0.72f, 0.76f) * scale;
 
             return root;
         }
@@ -433,89 +414,33 @@ namespace Game.Scripts.Editor.Dungeon
 
         public static GameObject Barrel()
         {
-            Mesh mesh = new DungeonMeshBuilder(0.6f).Cylinder(new Vector3(0f, 0.45f, 0f), 0.36f, 0.9f, 12, 0.32f).Save("Barrel");
-            Mesh bands = new DungeonMeshBuilder(0.6f)
-                .Cylinder(new Vector3(0f, 0.2f, 0f), 0.375f, 0.06f, 12)
-                .Cylinder(new Vector3(0f, 0.7f, 0f), 0.355f, 0.06f, 12)
-                .Save("BarrelBands");
-            GameObject root = new GameObject("Barrel");
-            MeshObject("Body", root.transform, mesh, WoodPlanks, default, default, true, false);
-            MeshObject("Bands", root.transform, bands, RustyMetal, default, default, false, false);
-
-            return root;
+            return Solid("Barrel", "Barrel");
         }
 
         public static GameObject Crate()
         {
-            Mesh mesh = new DungeonMeshBuilder(0.8f).Box(new Vector3(0f, 0.4f, 0f), new Vector3(0.8f, 0.8f, 0.8f)).Save("Crate");
-            Mesh frame = new DungeonMeshBuilder(0.8f)
-                .Box(new Vector3(0f, 0.4f, 0.41f), new Vector3(0.84f, 0.06f, 0.04f))
-                .Box(new Vector3(0f, 0.4f, -0.41f), new Vector3(0.84f, 0.06f, 0.04f))
-                .Box(new Vector3(0.41f, 0.4f, 0f), new Vector3(0.04f, 0.06f, 0.84f))
-                .Box(new Vector3(-0.41f, 0.4f, 0f), new Vector3(0.04f, 0.06f, 0.84f))
-                .Save("CrateFrame");
-            GameObject root = new GameObject("Crate");
-            MeshObject("Body", root.transform, mesh, WoodPlanks, default, default, true, false);
-            MeshObject("Frame", root.transform, frame, DarkWood, default, default, false, false);
-
-            return root;
+            return Solid("Crate", "Crate_Wooden");
         }
 
         public static GameObject Bookshelf()
         {
-            DungeonMeshBuilder builder = new DungeonMeshBuilder(0.6f)
-                .Box(new Vector3(0f, 1.1f, -0.2f), new Vector3(1.6f, 2.2f, 0.05f))
-                .Box(new Vector3(-0.78f, 1.1f, 0f), new Vector3(0.05f, 2.2f, 0.45f))
-                .Box(new Vector3(0.78f, 1.1f, 0f), new Vector3(0.05f, 2.2f, 0.45f));
+            GameObject root = Solid("Bookshelf", "Bookcase_2");
+            float[] shelves = { 0.76f, 1.16f, 1.54f, 1.92f };
 
-            for (int i = 0; i < 5; i++)
-                builder.Box(new Vector3(0f, 0.05f + i * 0.52f, 0f), new Vector3(1.55f, 0.05f, 0.45f));
-
-            Mesh mesh = builder.Save("Bookshelf");
-            DungeonMeshBuilder books = new DungeonMeshBuilder(0.6f);
-            System.Random random = new System.Random(7);
-
-            for (int shelf = 0; shelf < 4; shelf++)
+            for (int i = 0; i < shelves.Length; i++)
             {
-                float x = -0.7f;
-
-                while (x < 0.6f)
-                {
-                    float width = 0.05f + (float)random.NextDouble() * 0.08f;
-                    float height = 0.25f + (float)random.NextDouble() * 0.18f;
-
-                    if (random.NextDouble() > 0.15)
-                        books.Box(new Vector3(x + width * 0.5f, 0.08f + shelf * 0.52f + height * 0.5f, 0.02f), new Vector3(width, height, 0.3f));
-
-                    x += width + 0.01f;
-                }
+                DungeonKitBuilder.Model("BookGroup_Medium_" + (i % 3 + 1), root.transform).transform.localPosition = new Vector3(-0.12f, shelves[i], 0.03f);
+                DungeonKitBuilder.Model(i % 2 == 0 ? "Book_Stack_1" : "BookGroup_Small_2", root.transform).transform.localPosition = new Vector3(0.5f, shelves[i], 0.03f);
             }
-
-            GameObject root = new GameObject("Bookshelf");
-            MeshObject("Frame", root.transform, mesh, DarkWood, default, default, true, false);
-            MeshObject("Books", root.transform, books.Save("Books"), ClothRed, default, default, false, false);
 
             return root;
         }
 
         public static GameObject Table()
         {
-            DungeonMeshBuilder builder = new DungeonMeshBuilder(0.6f).Box(new Vector3(0f, 0.78f, 0f), new Vector3(2.2f, 0.08f, 0.9f));
-
-            for (int x = -1; x <= 1; x += 2)
-            {
-                for (int z = -1; z <= 1; z += 2)
-                    builder.Box(new Vector3(x * 0.95f, 0.37f, z * 0.35f), new Vector3(0.1f, 0.74f, 0.1f));
-            }
-
-            GameObject root = new GameObject("Table");
-            MeshObject("Table", root.transform, builder.Save("Table"), WoodPlanks, default, default, true, false);
-            Mesh candle = new DungeonMeshBuilder(1f).Cylinder(new Vector3(0f, 0.1f, 0f), 0.03f, 0.2f, 6).Save("Candle");
-            Transform candles = BattleEditorUtility.CreateChild("Candles", root.transform, new Vector3(0.6f, 0.82f, 0f)).transform;
-            MeshObject("Candle", candles, candle, Bone, default, default, false, false);
-            MeshObject("Candle", candles, candle, Bone, new Vector3(0.08f, -0.04f, 0.06f), default, false, false);
-            Flame(candles, new Vector3(0f, 0.21f, 0f), 0.35f);
-            PointLight(candles, new Vector3(0f, 0.35f, 0f), new Color(1f, 0.75f, 0.4f), 4f, 1.2f, true);
+            GameObject root = Solid("Table", "Table_Large");
+            GameObject candles = (GameObject)PrefabUtility.InstantiatePrefab(DungeonKitBuilder.Load("CandleStick_Triple"), root.transform);
+            candles.transform.localPosition = new Vector3(1f, 0.82f, 0.1f);
 
             return root;
         }
@@ -537,25 +462,37 @@ namespace Game.Scripts.Editor.Dungeon
 
         public static GameObject WallTorch()
         {
-            Mesh mesh = new DungeonMeshBuilder(0.8f)
-                .Box(new Vector3(0f, 0f, 0.1f), new Vector3(0.12f, 0.25f, 0.2f))
-                .Cylinder(new Vector3(0f, 0.2f, 0.22f), 0.03f, 0.5f, 6)
-                .Save("WallTorch");
-            GameObject root = new GameObject("WallTorch");
-            MeshObject("Bracket", root.transform, mesh, RustyMetal, default, default, false, false);
-            Flame(root.transform, new Vector3(0f, 0.48f, 0.22f), 0.8f);
-            PointLight(root.transform, new Vector3(0f, 0.65f, 0.4f), new Color(1f, 0.62f, 0.28f), 16f, 7f, true);
+            return Wrap("WallTorch", "Torch_Metal", 1f);
+        }
+
+        /// Barred leaf of a cell door; same hinge and size as the wooden one.
+        public static GameObject CellDoorLeaf()
+        {
+            Mesh mesh = DungeonStructureBuilder.BarsMesh(new DungeonMeshBuilder(1f), 0.03f, 2.04f, 2.9f).Save("CellDoorLeaf");
+            GameObject leaf = MeshObject("Leaf", null, mesh, RustyMetal, default, default, true, false);
+            leaf.GetComponent<MeshCollider>().convex = true;
+
+            return leaf;
+        }
+
+        /// Kit prefab (with its fire and collider) under a root of the project's own name.
+        private static GameObject Wrap(string name, string kit, float scale)
+        {
+            GameObject root = new GameObject(name);
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(DungeonKitBuilder.Load(kit), root.transform);
+            instance.transform.localScale = Vector3.one * scale;
 
             return root;
         }
 
-        public static GameObject Banner()
+        /// Kit model with a box collider, ready to receive container logic.
+        private static GameObject Solid(string name, string kit)
         {
-            Mesh mesh = new DungeonMeshBuilder(1f).DoubleQuad(new Vector3(0f, -0.9f, 0f), Vector3.forward, Vector3.right * 0.45f, Vector3.up * 0.9f).Save("Banner");
-            Mesh rod = new DungeonMeshBuilder(1f).Cylinder(Vector3.zero, 0.03f, 1.1f, 6).Save("BannerRod");
-            GameObject root = new GameObject("Banner");
-            MeshObject("Cloth", root.transform, mesh, ClothRed, default, default, false, false);
-            MeshObject("Rod", root.transform, rod, DarkWood, default, new Vector3(0f, 0f, 90f), false, false);
+            GameObject root = new GameObject(name);
+            Bounds bounds = DungeonKitBuilder.Bounds(DungeonKitBuilder.Model(kit, root.transform));
+            BoxCollider collider = root.AddComponent<BoxCollider>();
+            collider.center = bounds.center;
+            collider.size = bounds.size;
 
             return root;
         }
@@ -764,23 +701,6 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject root = new GameObject("WorldItem");
             MeshObject("Sack", root.transform, mesh, WoodPlanks, default, default, false, false);
             PointLight(root.transform, new Vector3(0f, 0.4f, 0f), new Color(1f, 0.9f, 0.6f), 1.5f, 0.6f, false);
-
-            return root;
-        }
-
-        public static GameObject Stairs(float width, float height, float depth, int steps)
-        {
-            DungeonMeshBuilder builder = new DungeonMeshBuilder(0.5f);
-
-            for (int i = 0; i < steps; i++)
-            {
-                float stepHeight = height / steps;
-                float stepDepth = depth / steps;
-                builder.Box(new Vector3(0f, stepHeight * (i + 0.5f), stepDepth * (i + 0.5f)), new Vector3(width, stepHeight, stepDepth));
-            }
-
-            GameObject root = new GameObject("Stairs");
-            MeshObject("Steps", root.transform, builder.Save($"Stairs{steps}"), StoneWall, default, default, true, true);
 
             return root;
         }

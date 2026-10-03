@@ -26,6 +26,11 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private CharacterController _collider;
 
+        [SerializeField]
+        private LayerMask _groundMask = 1;
+
+        private const float SnapDistance = 0.35f;
+
         public override void Spawned()
         {
             _controller.acceleration = _config.Acceleration;
@@ -56,6 +61,9 @@ namespace Game.Scripts.Battle
             // become a launch speed, so upward motion that was not a jump or an impulse is dropped.
             if (wasGrounded && riseSpeed <= 0f && _controller.Velocity.y > 0f)
                 _controller.Velocity = Vector3.Scale(_controller.Velocity, new Vector3(1f, 0f, 1f));
+
+            if (wasGrounded && riseSpeed <= 0f && !_controller.Grounded)
+                SnapToGround();
         }
 
         public void Teleport(Vector3 position, float yaw)
@@ -67,6 +75,19 @@ namespace Game.Scripts.Battle
         public void AddImpulse(Vector3 impulse)
         {
             _controller.Velocity += impulse;
+        }
+
+        /// Walking down stairs and ramps the capsule would leave the ground on every tick; this keeps the feet on it.
+        private void SnapToGround()
+        {
+            float radius = _collider.radius * 0.9f;
+            Vector3 origin = transform.position + Vector3.up * (_collider.radius + 0.05f);
+
+            if (!Runner.GetPhysicsScene().SphereCast(origin, radius, Vector3.down, out RaycastHit hit, SnapDistance, _groundMask, QueryTriggerInteraction.Ignore))
+                return;
+
+            _collider.Move(Vector3.down * hit.distance);
+            _controller.Grounded = true;
         }
 
         private float GetSpeed(Vector2 move, bool isWalk)

@@ -685,7 +685,7 @@ namespace Game.Scripts.Editor.Battle
         }
 
         /// URP mask (R metallic, G occlusion, A smoothness) from the pack's ORM (occlusion, roughness, metallic) or plain roughness map.
-        private static Texture2D CreateMask(string sourcePath, bool isOrm)
+        internal static Texture2D CreateMask(string sourcePath, bool isOrm)
         {
             string path = $"{TexturesFolder}/{Path.GetFileNameWithoutExtension(sourcePath)}_Mask.png";
             Texture2D mask = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
