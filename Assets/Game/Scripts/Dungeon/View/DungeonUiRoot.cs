@@ -214,7 +214,7 @@ namespace Game.Scripts.Dungeon
             _hud.Hide();
             _result.Hide();
             _inventory.Hide();
-            _lobby.Show();
+            _lobby.SetShown(!_context.IsSandbox);
             _context.Battle.Input.SetUiOpen(true);
 
             if (bind)

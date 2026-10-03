@@ -154,7 +154,12 @@ namespace Game.Scripts.Dungeon
         /// Perks unlock at levels 1, 5, 10, 15.
         public static int PerkCountForLevel(int level)
         {
-            return Mathf.Clamp(1 + (level - 1) / 5, 1, 4);
+            return Mathf.Clamp(1 + level / 5, 1, 4);
+        }
+
+        public static int PerkSlotLevel(int slot)
+        {
+            return Mathf.Max(1, slot * 5);
         }
     }
 }

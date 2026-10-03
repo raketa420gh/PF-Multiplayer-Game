@@ -66,6 +66,7 @@ namespace Game.Scripts.Editor.Battle
             foreach (string name in s_dungeonOnlyHud)
                 canvas.transform.Find("HUD/" + name).gameObject.SetActive(false);
 
+            canvas.transform.Find("Lobby").gameObject.SetActive(false);
             DungeonUiBuilder.BuildDevPanel(canvas, director, s_monsterLabels);
 
             EditorSceneManager.MarkSceneDirty(scene);

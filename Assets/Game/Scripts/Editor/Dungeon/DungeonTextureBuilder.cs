@@ -170,14 +170,14 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         /// GLSL-style smoothstep: 0 below edge0, 1 above edge1 (Mathf.SmoothStep interpolates instead).
-        private static float Step(float edge0, float edge1, float x)
+        public static float Step(float edge0, float edge1, float x)
         {
             float t = Mathf.Clamp01((x - edge0) / (edge1 - edge0));
 
             return t * t * (3f - 2f * t);
         }
 
-        private static float Noise(float u, float v, float scale, int octaves = 4, float persistence = 0.5f)
+        public static float Noise(float u, float v, float scale, int octaves = 4, float persistence = 0.5f)
         {
             float total = 0f;
             float amplitude = 1f;

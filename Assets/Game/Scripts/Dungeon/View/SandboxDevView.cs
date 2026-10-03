@@ -22,6 +22,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private Button _restockButton;
 
+        [SerializeField]
+        private Button _lobbyButton;
+
         private void Awake()
         {
             for (int i = 0; i < _monsterButtons.Length; i++)
@@ -33,6 +36,7 @@ namespace Game.Scripts.Dungeon
             _botButton.onClick.AddListener(_director.SpawnBot);
             _clearButton.onClick.AddListener(_director.ClearMobs);
             _restockButton.onClick.AddListener(_director.Restock);
+            _lobbyButton.onClick.AddListener(_director.ReturnToLobby);
         }
     }
 }

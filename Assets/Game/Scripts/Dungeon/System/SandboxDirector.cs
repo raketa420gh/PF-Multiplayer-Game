@@ -153,6 +153,11 @@ namespace Game.Scripts.Dungeon
             }
         }
 
+        public void ReturnToLobby()
+        {
+            SceneTravel.Load(_runner, SceneTravel.LobbyScene);
+        }
+
         private bool IsServer()
         {
             return _runner != null && _runner.IsServer;
