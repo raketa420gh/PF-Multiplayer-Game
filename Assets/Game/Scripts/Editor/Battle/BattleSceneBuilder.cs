@@ -97,6 +97,7 @@ namespace Game.Scripts.Editor.Battle
             BattleInputPolling input = system.AddComponent<BattleInputPolling>();
             BattleSpawner spawner = system.AddComponent<BattleSpawner>();
             BattleContext context = system.AddComponent<BattleContext>();
+            system.AddComponent<CombatDebugView>();
             BattleFeedback feedback = BuildFeedback(system.transform);
 
             BattleEditorUtility.Set(input, "_networkEvents", events);
@@ -259,6 +260,7 @@ namespace Game.Scripts.Editor.Battle
             Vector2 topRight = Vector2.one;
 
             CreateImage("Crosshair", root, center, Vector2.zero, new Vector2(6f, 6f), new Color(1f, 1f, 1f, 0.85f));
+            BattleEditorUtility.CreateSwingHint(root, context);
             Image combo = CreateImage("ComboIndicator", root, center, new Vector2(0f, -34f), new Vector2(46f, 8f), Color.white);
 
             CreateImage("HealthBack", root, bottomLeft, new Vector2(40f, 40f), new Vector2(360f, 30f), new Color(0f, 0f, 0f, 0.6f));

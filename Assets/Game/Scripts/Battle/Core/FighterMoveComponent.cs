@@ -47,8 +47,15 @@ namespace Game.Scripts.Battle
             if (isJump && CrouchAmount < 0.5f)
                 _controller.Jump();
 
+            bool wasGrounded = _controller.Grounded;
+            float riseSpeed = _controller.Velocity.y;
             _controller.maxSpeed = GetSpeed(move, isWalk) * speedMultiplier;
             _controller.Move(transform.rotation * new Vector3(move.x, 0f, move.y));
+
+            // The controller derives velocity from displacement: a step-up or a push out of another capsule would
+            // become a launch speed, so upward motion that was not a jump or an impulse is dropped.
+            if (wasGrounded && riseSpeed <= 0f && _controller.Velocity.y > 0f)
+                _controller.Velocity = Vector3.Scale(_controller.Velocity, new Vector3(1f, 0f, 1f));
         }
 
         public void Teleport(Vector3 position, float yaw)

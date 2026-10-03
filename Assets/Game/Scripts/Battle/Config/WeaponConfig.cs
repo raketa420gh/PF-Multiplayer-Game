@@ -89,6 +89,18 @@ namespace Game.Scripts.Battle
             return time >= _comboWindowStart && time <= _comboWindowEnd;
         }
 
+        /// Screen-plane travel of the blade tip during the active phase (x right, y up), scaled by its share of the full
+        /// motion: a short vector means the swing is mostly a thrust.
+        public Vector2 GetSwingDirection(bool mirror)
+        {
+            if (!EvaluateTrace(ActiveStart, mirror, out _, out Vector3 from) || !EvaluateTrace(ActiveEnd, mirror, out _, out Vector3 to))
+                return Vector2.zero;
+
+            Vector3 delta = to - from;
+
+            return delta.sqrMagnitude > 1e-6f ? new Vector2(delta.x, delta.y) / delta.magnitude : Vector2.zero;
+        }
+
         public bool EvaluateTrace(float time, bool mirror, out Vector3 basePoint, out Vector3 tipPoint)
         {
             int count = Mathf.Min(_traceBase.Length, _traceTip.Length);

@@ -92,17 +92,15 @@ namespace Game.Scripts.Editor.Battle
         public const float ArrowGravity = -9.81f;
         public const float CrouchDrop = 0.45f;
 
-        private static readonly Vector3 s_rightShoulder = new(0.25f, 1.505f, -0.067f);
-        private static readonly Vector3 s_leftShoulder = new(-0.25f, 1.505f, -0.067f);
         private static readonly Vector3 s_shieldRest = new(-0.24f, 1.3f, 0.28f);
         private static readonly Vector3 s_shieldRestNormal = new(-0.35f, 0f, 0.94f);
         private static readonly Vector3 s_shieldBack = new(-0.32f, 1.2f, 0.14f);
         private static readonly Vector3 s_shieldBackNormal = new(-0.7f, 0f, 0.7f);
-        private static readonly Vector3 s_offHandRest = new(-0.3f, 0.98f, 0.14f);
+        private static readonly Vector3 s_offHandRest = new(-0.24f, 0.84f, 0.1f);
 
         public static WeaponDefinition CreateSwordShield()
         {
-            BodyPose idle = SwordShield(new(0.24f, 1.46f, 0.36f), new(-0.25f, 0.75f, 0.6f), s_shieldRest, s_shieldRestNormal);
+            BodyPose idle = SwordShield(new(0.22f, 1.2f, 0.38f), new(-0.15f, 0.75f, 0.64f), s_shieldRest, s_shieldRestNormal);
             BodyPose block = SwordShield(new(0.3f, 1.32f, 0.22f), new(0.15f, 0.7f, 0.7f),
                 new(-0.06f, 1.47f, 0.34f), new(0.02f, 0.1f, 1f), 15f);
 
@@ -173,7 +171,7 @@ namespace Game.Scripts.Editor.Battle
                 DeflectDuration = 0.8f,
                 BladeBase = 0.18f,
                 BladeTip = 1.35f,
-                Idle = TwoHanded(new(0.18f, 1.4f, 0.36f), new(0.32f, 0.85f, 0.4f), yaw: 25f),
+                Idle = TwoHanded(new(0.14f, 1.2f, 0.36f), new(-0.08f, 0.78f, 0.62f), yaw: 12f),
                 Attacks = new[]
                 {
                     new AttackDefinition
@@ -325,8 +323,8 @@ namespace Game.Scripts.Editor.Battle
         internal static BodyPose OneHanded(Vector3 grip, Vector3 blade, float yaw = 0f, float pitch = 0f)
         {
             BodyPose pose = Upper(yaw, pitch);
-            pose.Main = new HandPose(grip, blade, grip - s_rightShoulder);
-            pose.Off = new HandPose(s_offHandRest, new Vector3(0.2f, -0.3f, 0.9f), new Vector3(-0.9f, 0f, 0.2f));
+            pose.Main = new HandPose(grip, blade);
+            pose.Off = new HandPose(s_offHandRest, new Vector3(0.2f, -0.15f, 1f), new Vector3(0.05f, -1f, 0.15f));
             pose.OffSocket = WeaponSocket.LeftHand;
 
             return pose;
@@ -338,8 +336,8 @@ namespace Game.Scripts.Editor.Battle
             BodyPose pose = Upper(0f, pitch);
             Vector3 right = new Vector3(spread, height, forward);
             Vector3 left = new Vector3(-spread, height, forward);
-            pose.Main = new HandPose(right, Vector3.forward, right - s_rightShoulder);
-            pose.Off = new HandPose(left, Vector3.forward, left - s_leftShoulder);
+            pose.Main = new HandPose(right, Vector3.up);
+            pose.Off = new HandPose(left, Vector3.up);
             pose.OffSocket = WeaponSocket.LeftHand;
 
             return pose;
@@ -454,7 +452,7 @@ namespace Game.Scripts.Editor.Battle
             float yaw = 0f, float pitch = 0f)
         {
             BodyPose pose = Upper(yaw, pitch);
-            pose.Main = new HandPose(grip, blade, grip - s_rightShoulder);
+            pose.Main = new HandPose(grip, blade);
             pose.Off = new HandPose(shield, shieldNormal, Vector3.up);
             pose.OffSocket = WeaponSocket.LeftShield;
 
@@ -465,8 +463,8 @@ namespace Game.Scripts.Editor.Battle
         {
             Vector3 offGrip = grip + blade.normalized * offHand;
             BodyPose pose = Upper(yaw, pitch);
-            pose.Main = new HandPose(grip, blade, grip - s_rightShoulder);
-            pose.Off = new HandPose(offGrip, blade, offGrip - s_leftShoulder);
+            pose.Main = new HandPose(grip, blade);
+            pose.Off = new HandPose(offGrip, blade);
             pose.OffSocket = WeaponSocket.LeftHand;
 
             return pose;
@@ -475,7 +473,7 @@ namespace Game.Scripts.Editor.Battle
         internal static BodyPose Bow(Vector3 bow, Vector3 stave, Vector3 arrowDirection, Vector3 drawHand, float yaw = 0f)
         {
             BodyPose pose = Upper(yaw, 0f);
-            pose.Main = new HandPose(drawHand, Vector3.up, drawHand - s_rightShoulder);
+            pose.Main = new HandPose(drawHand, Vector3.up);
             pose.Off = new HandPose(bow, stave, arrowDirection);
             pose.OffSocket = WeaponSocket.LeftHand;
 
@@ -495,7 +493,7 @@ namespace Game.Scripts.Editor.Battle
             {
                 Position = CatmullRom(before.Position, from.Position, to.Position, after.Position, alpha),
                 Forward = Vector3.Slerp(from.Forward, to.Forward, alpha),
-                Up = Vector3.Slerp(from.Up, to.Up, alpha)
+                Up = from.IsAutoRoll || to.IsAutoRoll ? Vector3.zero : Vector3.Slerp(from.Up, to.Up, alpha)
             };
         }
 

@@ -1,13 +1,16 @@
 using System.Collections;
 using System.IO;
+using Game.Scripts.Battle;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Game.Scripts.Editor.Battle
 {
     internal static class BattleEditorUtility
     {
-        public const string ModelPath = "Assets/SpecialFolder/character_rigged.fbx";
+        public const string ModelPath = PrefabsFolder + "/Character.prefab";
+        public const string ModelsFolder = "Assets/Game/Meshes/Battle";
         public const string AnimationsFolder = "Assets/Game/Animations/Battle";
         public const string ConfigsFolder = "Assets/Game/Configs/Battle";
         public const string PrefabsFolder = "Assets/Game/Prefabs/Battle";
@@ -17,6 +20,54 @@ namespace Game.Scripts.Editor.Battle
         public const string ControllerPath = AnimationsFolder + "/Fighter.controller";
         public const string HitboxLayer = "Hitbox";
         public const string CharacterLayer = "Character";
+
+        /// Crosshair arrow (points along +X, rotated by the view) and a thrust dot, centered on the screen.
+        public static SwingHintView CreateSwingHint(Transform canvas, BattleContext context)
+        {
+            RectTransform root = CreateUiRect("SwingHint", canvas, Vector2.zero);
+            HudPanelView arrow = CreateUiRect("Arrow", root, Vector2.zero).gameObject.AddComponent<HudPanelView>();
+            Color color = new(1f, 0.9f, 0.55f, 0.9f);
+            CreateUiBar(arrow.transform, new Vector2(9f, 0f), new Vector2(20f, 2f), 0f, color);
+            CreateUiBar(arrow.transform, new Vector2(29f, 0f), new Vector2(8f, 2f), 150f, color);
+            CreateUiBar(arrow.transform, new Vector2(29f, 0f), new Vector2(8f, 2f), -150f, color);
+            HudPanelView thrust = CreateUiRect("Thrust", root, Vector2.zero).gameObject.AddComponent<HudPanelView>();
+            CreateUiBar(thrust.transform, new Vector2(-6f, 0f), new Vector2(12f, 2f), 0f, color);
+            CreateUiBar(thrust.transform, new Vector2(0f, -6f), new Vector2(12f, 2f), 90f, color);
+
+            SwingHintView view = root.gameObject.AddComponent<SwingHintView>();
+            SerializedObject so = new SerializedObject(view);
+            Set(so, "_context", context);
+            Set(so, "_arrow", arrow);
+            Set(so, "_thrust", thrust);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            arrow.gameObject.SetActive(false);
+            thrust.gameObject.SetActive(false);
+
+            return view;
+        }
+
+        private static RectTransform CreateUiRect(string name, Transform parent, Vector2 position)
+        {
+            RectTransform rect = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = Vector2.zero;
+
+            return rect;
+        }
+
+        /// Bar starting at its pivot (left edge), so rotating it swings around the start point.
+        private static void CreateUiBar(Transform parent, Vector2 position, Vector2 size, float angle, Color color)
+        {
+            RectTransform rect = CreateUiRect("Bar", parent, position);
+            rect.pivot = new Vector2(0f, 0.5f);
+            rect.sizeDelta = size;
+            rect.localRotation = Quaternion.Euler(0f, 0f, angle);
+            Image image = rect.gameObject.AddComponent<Image>();
+            image.color = color;
+            image.raycastTarget = false;
+        }
 
         public static void EnsureFolder(string path)
         {

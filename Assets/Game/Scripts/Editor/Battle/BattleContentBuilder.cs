@@ -17,11 +17,14 @@ namespace Game.Scripts.Editor.Battle
         public const string DummyPath = BattleEditorUtility.PrefabsFolder + "/TrainingDummy.prefab";
         public const string ShieldDummyPath = BattleEditorUtility.PrefabsFolder + "/ShieldDummy.prefab";
 
+        /// Block hitbox riding on the animated weapon socket; Center/Rotation are the body-space block pose for static dummies.
         internal sealed class BlockBox
         {
+            public WeaponSocket Socket;
+            public Vector3 LocalCenter;
+            public Vector3 Extents;
             public Vector3 Center;
             public Quaternion Rotation;
-            public Vector3 Extents;
         }
 
         internal sealed class Loadout
@@ -232,7 +235,7 @@ namespace Game.Scripts.Editor.Battle
             {
                 Name = assetName,
                 Config = config,
-                Block = definition.CanBlock && definition.Prefix != DungeonWeaponLibrary.Fists ? sampler.SampleBlock(definition, isMirrored) : null
+                Block = definition.CanBlock && definition.Prefix != DungeonWeaponLibrary.Fists ? sampler.SampleBlock(definition, isMirrored, attachments) : null
             };
         }
 
@@ -327,9 +330,7 @@ namespace Game.Scripts.Editor.Battle
                 if (block == null)
                     continue;
 
-                blockHitboxes[i] = CreateBoxHitbox(hitboxes, hitboxRoot, "Block" + i, HitZone.Block, block.Center, block.Extents, hitboxLayer);
-                blockHitboxes[i].transform.localRotation = block.Rotation;
-                upper.Add(blockHitboxes[i].transform);
+                blockHitboxes[i] = CreateBoxHitbox(sockets[(int)block.Socket], hitboxRoot, "Block" + i, HitZone.Block, block.LocalCenter, block.Extents, hitboxLayer);
             }
 
             hitboxRoot.InitHitboxes();
@@ -470,7 +471,7 @@ namespace Game.Scripts.Editor.Battle
                 blockHitbox.transform.localRotation = block.Rotation;
 
                 GameObject shield = (GameObject)PrefabUtility.InstantiatePrefab(shieldPrefab, visual);
-                shield.transform.SetLocalPositionAndRotation(block.Center, block.Rotation);
+                shield.transform.SetLocalPositionAndRotation(block.Center - block.Rotation * block.LocalCenter, block.Rotation);
 
                 BattleEditorUtility.Set(so, "_blockWeapon", shieldLoadout.Config);
                 BattleEditorUtility.Set(so, "_blockHitbox", blockHitbox);
@@ -577,12 +578,22 @@ namespace Game.Scripts.Editor.Battle
                 }
             }
 
-            public BlockBox SampleBlock(WeaponDefinition weapon, bool isMirrored)
+            /// The box wraps the mesh of the attachment held in the block socket, so it matches the visible weapon exactly.
+            public BlockBox SampleBlock(WeaponDefinition weapon, bool isMirrored, (GameObject prefab, WeaponSocket socket)[] attachments)
             {
+                WeaponSocket socketId = isMirrored ? Mirror(weapon.BlockSocket) : weapon.BlockSocket;
+                Bounds bounds = new Bounds(weapon.BlockBoxCenter, weapon.BlockBoxExtents * 2f);
+
+                foreach ((GameObject prefab, WeaponSocket socket) attachment in attachments)
+                {
+                    if (attachment.socket == socketId && TryGetMeshBounds(attachment.prefab, out Bounds meshBounds))
+                        bounds = meshBounds;
+                }
+
                 Play(weapon.Prefix + FighterAnimComponent.BlockSuffix, 1f);
-                Transform socket = _sockets[(int)weapon.BlockSocket];
-                Vector3 center = socket.TransformPoint(weapon.BlockBoxCenter);
-                Quaternion rotation = socket.rotation;
+                Transform sampled = _sockets[(int)weapon.BlockSocket];
+                Vector3 center = sampled.TransformPoint(bounds.center);
+                Quaternion rotation = sampled.rotation;
 
                 if (isMirrored)
                 {
@@ -590,7 +601,57 @@ namespace Game.Scripts.Editor.Battle
                     rotation = new Quaternion(rotation.x, -rotation.y, -rotation.z, rotation.w);
                 }
 
-                return new BlockBox { Center = center, Rotation = rotation, Extents = weapon.BlockBoxExtents };
+                return new BlockBox
+                {
+                    Socket = socketId,
+                    LocalCenter = bounds.center,
+                    Extents = Vector3.Max(bounds.extents, Vector3.one * 0.02f),
+                    Center = center,
+                    Rotation = rotation
+                };
+            }
+
+            private static WeaponSocket Mirror(WeaponSocket socket)
+            {
+                return socket switch
+                {
+                    WeaponSocket.RightHand => WeaponSocket.LeftHand,
+                    WeaponSocket.LeftHand => WeaponSocket.RightHand,
+                    WeaponSocket.RightShield => WeaponSocket.LeftShield,
+                    _ => WeaponSocket.RightShield
+                };
+            }
+
+            /// Mesh bounds in the prefab root space, which is the socket space once attached.
+            private static bool TryGetMeshBounds(GameObject prefab, out Bounds bounds)
+            {
+                bounds = default;
+                bool hasBounds = false;
+                Matrix4x4 toRoot = prefab.transform.worldToLocalMatrix;
+
+                foreach (MeshFilter filter in prefab.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    if (filter.sharedMesh == null)
+                        continue;
+
+                    Bounds local = filter.sharedMesh.bounds;
+                    Matrix4x4 matrix = toRoot * filter.transform.localToWorldMatrix;
+
+                    for (int i = 0; i < 8; i++)
+                    {
+                        Vector3 corner = matrix.MultiplyPoint3x4(local.center + Vector3.Scale(local.extents,
+                            new Vector3((i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f, (i & 4) == 0 ? -1f : 1f)));
+
+                        if (!hasBounds)
+                            bounds = new Bounds(corner, Vector3.zero);
+                        else
+                            bounds.Encapsulate(corner);
+
+                        hasBounds = true;
+                    }
+                }
+
+                return hasBounds;
             }
 
             private void Play(string state, float normalizedTime)

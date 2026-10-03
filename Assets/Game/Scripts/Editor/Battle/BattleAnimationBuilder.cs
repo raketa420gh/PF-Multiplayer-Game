@@ -26,7 +26,7 @@ namespace Game.Scripts.Editor.Battle
         public static void Build(WeaponDefinition[] weapons)
         {
             BattleEditorUtility.EnsureFolder(BattleEditorUtility.AnimationsFolder);
-            SetupModel();
+            BattleCharacterBuilder.Build();
 
             using BattlePoseRig rig = new BattlePoseRig();
 
@@ -49,19 +49,6 @@ namespace Game.Scripts.Editor.Battle
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
             Debug.Log($"[{nameof(BattleAnimationBuilder)}] Animations built in {BattleEditorUtility.AnimationsFolder}");
-        }
-
-        public static void SetupModel()
-        {
-            ModelImporter importer = (ModelImporter)AssetImporter.GetAtPath(BattleEditorUtility.ModelPath);
-
-            if (importer.animationType == ModelImporterAnimationType.Human)
-                return;
-
-            importer.animationType = ModelImporterAnimationType.Human;
-            importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-            importer.importAnimation = false;
-            importer.SaveAndReimport();
         }
 
         private static AnimatorController CreateController()

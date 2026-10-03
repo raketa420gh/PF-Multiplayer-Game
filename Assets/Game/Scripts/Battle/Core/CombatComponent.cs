@@ -55,8 +55,9 @@ namespace Game.Scripts.Battle
         public float DrawPower => State == CombatState.Draw ? Weapon.Ranged.GetPower(StateTime) : 0f;
         public float BusyProgress => State == CombatState.Busy && _stateDuration > 0f ? Mathf.Clamp01(StateTime / _stateDuration) : 0f;
         public byte BusyKind => _busyKind;
-        public float TimeScale => State is CombatState.Attack or CombatState.BlockRaise or CombatState.Draw or CombatState.Reload ? ActionSpeed : 1f;
-        public float ActionSpeed => _stats?.ActionSpeed ?? 1f;
+        public float TimeScale => State is CombatState.Attack or CombatState.BlockRaise or CombatState.BlockImpact or CombatState.Draw or CombatState.Reload ? ActionSpeed : 1f;
+        public float ActionSpeed => (_stats?.ActionSpeed ?? 1f) * _baseActionSpeed;
+        public Hitbox[] BlockHitboxes => _blockHitboxes;
         public DamageReceiverComponent Receiver => _receiver;
         public ProjectileComponent Projectiles => _projectiles;
         public FighterBodyComponent Body => _body;
@@ -133,6 +134,9 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private float _equipTime = 0.35f;
+
+        [SerializeField, Tooltip("Global tempo of attacks and blocks: clips and timings play at this speed before stats")]
+        private float _baseActionSpeed = 0.75f;
 
         [SerializeField]
         private float _deflectedMoveMultiplier = 0.5f;
@@ -326,7 +330,7 @@ namespace Game.Scripts.Battle
                     break;
 
                 case CombatState.Attack:
-                    SimulateAttack(weapon, time, isAttackPressed);
+                    SimulateAttack(weapon, time, isAttackHeld);
                     break;
 
                 case CombatState.Deflected:
@@ -388,11 +392,12 @@ namespace Game.Scripts.Battle
             }
         }
 
-        private void SimulateAttack(WeaponConfig weapon, float time, bool isAttackPressed)
+        /// Holding the attack button keeps queueing the next swing, so the series loops until released.
+        private void SimulateAttack(WeaponConfig weapon, float time, bool isAttackHeld)
         {
             MeleeAttackConfig attack = weapon.Attacks[AttackIndex];
 
-            if (isAttackPressed && attack.IsComboWindow(time))
+            if (isAttackHeld && attack.IsComboWindow(time))
                 _comboQueued = true;
 
             if (HasStateAuthority)
