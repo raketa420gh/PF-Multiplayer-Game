@@ -27,6 +27,7 @@ namespace Game.Scripts.Editor.Dungeon
             Write("Gold", Gold, 0.3f);
             Write("Dirt", Dirt, 0.6f);
             WriteFlame();
+            WriteCobweb();
 
             AssetDatabase.Refresh();
             Debug.Log($"[{nameof(DungeonTextureBuilder)}] Textures built in {Folder}");
@@ -62,6 +63,49 @@ namespace Game.Scripts.Editor.Dungeon
             texture.SetPixels(pixels);
             texture.Apply();
             string path = $"{Folder}/Flame.png";
+            File.WriteAllBytes(path, texture.EncodeToPNG());
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.alphaIsTransparency = true;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.SaveAndReimport();
+            UnityEngine.Object.DestroyImmediate(texture);
+        }
+
+        /// Radial web with concentric strands, alpha outside the strands (RGBA, clamped).
+        private static void WriteCobweb()
+        {
+            const int size = 256;
+            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            Color[] pixels = new Color[size * size];
+            System.Random random = new System.Random(7);
+            float[] ringJitter = new float[12];
+
+            for (int i = 0; i < ringJitter.Length; i++)
+                ringJitter[i] = (float)random.NextDouble() * 0.03f;
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x + 0.5f) / size;
+                    float dy = (y + 0.5f) / size;
+                    float radius = Mathf.Sqrt(dx * dx + dy * dy);
+                    float angle = Mathf.Atan2(dy, dx);
+                    float spokes = Mathf.Abs(Mathf.Sin(angle * 9f));
+                    float spoke = Step(0.985f, 1f, 1f - spokes);
+                    int ring = Mathf.FloorToInt(radius * 11f);
+                    float ringPos = Mathf.Repeat(radius * 11f + (ring < ringJitter.Length ? ringJitter[ring] : 0f) + Mathf.Sin(angle * 9f) * 0.12f, 1f);
+                    float strand = Step(0.9f, 1f, 1f - Mathf.Abs(ringPos - 0.5f) * 2f);
+                    float fade = Mathf.Clamp01(1.15f - radius);
+                    float alpha = Mathf.Max(spoke, strand) * fade * (0.55f + 0.45f * Noise(dx, dy, 6f, 2));
+                    pixels[y * size + x] = new Color(0.85f, 0.85f, 0.8f, alpha);
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply();
+            string path = $"{Folder}/Cobweb.png";
             File.WriteAllBytes(path, texture.EncodeToPNG());
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -123,6 +167,14 @@ namespace Game.Scripts.Editor.Dungeon
             importer.wrapMode = TextureWrapMode.Repeat;
             importer.mipmapEnabled = true;
             importer.SaveAndReimport();
+        }
+
+        /// GLSL-style smoothstep: 0 below edge0, 1 above edge1 (Mathf.SmoothStep interpolates instead).
+        private static float Step(float edge0, float edge1, float x)
+        {
+            float t = Mathf.Clamp01((x - edge0) / (edge1 - edge0));
+
+            return t * t * (3f - 2f * t);
         }
 
         private static float Noise(float u, float v, float scale, int octaves = 4, float persistence = 0.5f)
@@ -273,13 +325,13 @@ namespace Game.Scripts.Editor.Dungeon
             Color metal = new Color(0.32f, 0.31f, 0.3f) * (0.8f + scratches * 0.3f);
             Color rustColor = new Color(0.45f, 0.22f, 0.1f);
 
-            return Color.Lerp(metal, rustColor, Mathf.SmoothStep(0.45f, 0.7f, rust));
+            return Color.Lerp(metal, rustColor, Step(0.45f, 0.7f, rust));
         }
 
         private static Color Bone(float u, float v, out float height)
         {
             float grain = TileNoise(u, v, 10f, 3);
-            float cracks = Mathf.SmoothStep(0.48f, 0.5f, Mathf.Abs(TileNoise(u + 0.2f, v, 4f, 2) - 0.5f));
+            float cracks = Step(0.008f, 0.018f, Mathf.Abs(TileNoise(u + 0.2f, v, 4f, 2) - 0.5f));
             height = 0.6f + grain * 0.2f - (1f - cracks) * 0.3f;
             Color bone = Color.Lerp(new Color(0.78f, 0.74f, 0.62f), new Color(0.6f, 0.55f, 0.42f), grain);
 
@@ -289,7 +341,7 @@ namespace Game.Scripts.Editor.Dungeon
         private static Color ZombieSkin(float u, float v, out float height)
         {
             float mottle = TileNoise(u, v, 7f, 4);
-            float veins = Mathf.SmoothStep(0.47f, 0.5f, Mathf.Abs(TileNoise(u, v + 0.4f, 3f, 2) - 0.5f));
+            float veins = Step(0.01f, 0.02f, Mathf.Abs(TileNoise(u, v + 0.4f, 3f, 2) - 0.5f));
             height = 0.5f + mottle * 0.3f;
             Color skin = Color.Lerp(new Color(0.42f, 0.5f, 0.36f), new Color(0.3f, 0.32f, 0.22f), mottle);
 
@@ -337,7 +389,7 @@ namespace Game.Scripts.Editor.Dungeon
         private static Color Dirt(float u, float v, out float height)
         {
             float lumps = TileNoise(u, v, 9f, 4);
-            float pebbles = Mathf.SmoothStep(0.6f, 0.75f, TileNoise(u + 0.5f, v + 0.1f, 25f, 2));
+            float pebbles = Step(0.6f, 0.75f, TileNoise(u + 0.5f, v + 0.1f, 25f, 2));
             height = lumps * 0.5f + pebbles * 0.4f;
 
             return Color.Lerp(new Color(0.22f, 0.17f, 0.12f), new Color(0.35f, 0.28f, 0.2f), lumps) * (1f + pebbles * 0.3f);

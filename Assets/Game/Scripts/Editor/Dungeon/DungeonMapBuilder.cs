@@ -60,6 +60,10 @@ namespace Game.Scripts.Editor.Dungeon
             public GameObject Skulls;
             public GameObject Rubble;
             public GameObject Sarcophagus;
+            public GameObject Cobweb;
+            public GameObject Chandelier;
+            public GameObject Candles;
+            public GameObject Chain;
             public GameObject Door;
             public GameObject Chest;
             public GameObject LargeChest;
@@ -165,6 +169,10 @@ namespace Game.Scripts.Editor.Dungeon
                 Skulls = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.SkullPile(), "SkullPile"),
                 Rubble = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Rubble(), "Rubble"),
                 Sarcophagus = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Sarcophagus(), "Sarcophagus"),
+                Cobweb = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Cobweb(), "Cobweb"),
+                Chandelier = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Chandelier(), "Chandelier"),
+                Candles = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.CandleCluster(), "CandleCluster"),
+                Chain = DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Chain(), "Chain"),
                 Door = Load("Door"),
                 Chest = Load("SmallOakChest"),
                 LargeChest = Load("LargeOakChest"),
@@ -300,6 +308,7 @@ namespace Game.Scripts.Editor.Dungeon
             float half = Module * 0.5f;
             Place(kit.Torch, module, new Vector3(-4.5f, 2.6f, half - 0.35f), 180f);
             Place(kit.Torch, module, new Vector3(4.5f, 2.6f, -half + 0.35f), 0f);
+            Dress(kit, module, room);
 
             switch (room)
             {
@@ -451,6 +460,44 @@ namespace Game.Scripts.Editor.Dungeon
                     Monster(markers, result, module.position + new Vector3(2f, 0f, 1f), -90f);
                     Monster(markers, result, module.position + new Vector3(0f, 0f, -4f), 0f);
                     break;
+            }
+        }
+
+        /// Cobwebs in two corners, hanging chains or a chandelier, candle wax on the floor: the mood layer of every module.
+        private static void Dress(Kit kit, Transform module, Room room)
+        {
+            float half = Module * 0.5f;
+            float corner = half - 0.55f;
+            int first = s_random.Next(4);
+            int second = (first + 1 + s_random.Next(3)) % 4;
+
+            for (int i = 0; i < 4; i++)
+            {
+                if (i != first && i != second)
+                    continue;
+
+                float sx = i % 2 == 0 ? -1f : 1f;
+                float sz = i < 2 ? -1f : 1f;
+                float yaw = sx > 0f == sz > 0f ? 135f : 45f;
+                Place(kit.Cobweb, module, new Vector3(sx * corner, DungeonPropBuilder.WallHeight - 0.75f, sz * corner), sx > 0f ? yaw + 180f : yaw);
+            }
+
+            if (room is Room.Hall or Room.Throne or Room.Library or Room.Spawn or Room.Shrine)
+                Place(kit.Chandelier, module, new Vector3(0f, DungeonPropBuilder.WallHeight - 2f, 0f), 0f);
+
+            if (room is Room.Crypt or Room.BonePit or Room.Armory or Room.TrapCorridor or Room.Arrival)
+            {
+                Place(kit.Chain, module, new Vector3(-2.5f, DungeonPropBuilder.WallHeight, 2f), 0f);
+                Place(kit.Chain, module, new Vector3(3f, DungeonPropBuilder.WallHeight, -1.5f), 30f);
+            }
+
+            int candles = room is Room.Crypt or Room.Shrine or Room.BonePit or Room.Throne ? 3 : 1;
+
+            for (int i = 0; i < candles; i++)
+            {
+                float x = ((float)s_random.NextDouble() - 0.5f) * (Module - 2.5f);
+                float z = (s_random.Next(2) == 0 ? -1f : 1f) * (half - 0.9f - (float)s_random.NextDouble() * 0.6f);
+                Place(kit.Candles, module, new Vector3(x, 0f, z), s_random.Next(360));
             }
         }
 

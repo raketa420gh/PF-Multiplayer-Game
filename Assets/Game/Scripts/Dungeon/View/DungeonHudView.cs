@@ -228,7 +228,7 @@ namespace Game.Scripts.Dungeon
             for (int i = 0; i < _weaponSlotLabels.Length; i++)
                 _weaponSlotLabels[i].color = i == combat.WeaponSlot ? new Color(1f, 0.85f, 0.4f) : new Color(0.55f, 0.5f, 0.42f);
 
-            bool isCasting = combat.State == CombatState.Busy && adventurer.Pending is PendingAction.Ability or PendingAction.Consumable or PendingAction.Utility;
+            bool isCasting = combat.State == CombatState.Busy && adventurer.Pending is PendingAction.Ability or PendingAction.Consumable or PendingAction.Utility or PendingAction.Shapeshift;
             _castRoot.SetActive(isCasting || combat.State == CombatState.Draw);
 
             if (adventurer.IsHoldingCast)
@@ -246,6 +246,7 @@ namespace Game.Scripts.Dungeon
                     PendingAction.Ability when adventurer.Pending == PendingAction.Ability => "Casting",
                     PendingAction.Consumable => "Using item",
                     PendingAction.Utility => "Using item",
+                    PendingAction.Shapeshift => "Shapeshifting",
                     _ => string.Empty
                 };
             }

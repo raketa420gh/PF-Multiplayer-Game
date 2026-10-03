@@ -93,12 +93,14 @@ namespace Game.Scripts.Editor.Dungeon
             _uvs.Add(new Vector2(width, height));
             _uvs.Add(new Vector2(width, 0f));
 
+            // Wind the triangles so the visible side always matches the requested normal.
+            bool flip = Vector3.Dot(Vector3.Cross(up, right), normal) < 0f;
             _triangles.Add(start);
-            _triangles.Add(start + 1);
-            _triangles.Add(start + 2);
+            _triangles.Add(start + (flip ? 2 : 1));
+            _triangles.Add(start + (flip ? 1 : 2));
             _triangles.Add(start);
-            _triangles.Add(start + 2);
-            _triangles.Add(start + 3);
+            _triangles.Add(start + (flip ? 3 : 2));
+            _triangles.Add(start + (flip ? 2 : 3));
 
             return this;
         }
@@ -121,7 +123,7 @@ namespace Game.Scripts.Editor.Dungeon
                 center + new Vector3(half.x, -half.y, half.z), center + new Vector3(-half.x, -half.y, half.z),
                 center + new Vector3(-half.x, half.y, half.z), center + new Vector3(half.x, half.y, half.z)
             };
-            Vector3 slopeNormal = Vector3.Cross(p[1] - p[0], p[4] - p[0]).normalized;
+            Vector3 slopeNormal = Vector3.Cross(p[4] - p[0], p[1] - p[0]).normalized;
             AddTriangle(p[0], p[4], p[1], slopeNormal);
             AddTriangle(p[1], p[4], p[5], slopeNormal);
             AddTriangle(p[3], p[2], p[5], Vector3.forward);

@@ -24,7 +24,7 @@ namespace Game.Scripts.Dungeon
         private Transform _stage;
 
         [SerializeField]
-        private float _turnSpeed = 20f;
+        private float _turnSpeed = 0f;
 
         private GameObject _rig;
         private Animator _animator;
@@ -83,7 +83,7 @@ namespace Game.Scripts.Dungeon
 
             _rig = Instantiate(_rigPrefab, _stage);
             _rig.transform.localPosition = Vector3.zero;
-            _rig.transform.localRotation = Quaternion.Euler(0f, -20f, 0f);
+            _rig.transform.localRotation = Quaternion.Euler(0f, -15f, 0f);
             _animator = _rig.GetComponentInChildren<Animator>();
             _body = _rig.GetComponentInChildren<SkinnedMeshRenderer>();
             _dresser = new ArmorDresser(_animator, _pieceSet, _rig.layer);

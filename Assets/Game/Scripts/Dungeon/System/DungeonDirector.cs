@@ -190,7 +190,8 @@ namespace Game.Scripts.Dungeon
                 SetEscapePortals(true);
             }
 
-            if (_match.IsTimeUp && !AnyAdventurerAlive())
+            // A run ends as soon as nobody is left inside, so the next descent gets a fresh dungeon and a full swarm timer.
+            if ((_match.IsTimeUp || elapsed > 5f) && !AnyAdventurerAlive())
             {
                 _match.Finish();
                 _finishedAt = Time.time;

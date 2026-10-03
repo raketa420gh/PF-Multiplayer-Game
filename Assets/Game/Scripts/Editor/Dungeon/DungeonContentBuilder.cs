@@ -54,13 +54,13 @@ namespace Game.Scripts.Editor.Dungeon
             Color rust = new Color(0.4f, 0.3f, 0.22f);
             Color rags = new Color(0.25f, 0.22f, 0.16f);
             BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 285f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = 5, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
-                Attachments = new[] { (ArmorVisual.Helmet, rust), (ArmorVisual.Tunic, rags) } }, loadouts, arrow, orb, worldItem, pieceSet);
+                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Helmet, rust), (ArmorVisual.Tunic, rags) } }, loadouts, arrow, orb, worldItem, pieceSet);
             BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 280f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = 2, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
-                Attachments = new[] { (ArmorVisual.Hood, rags) } }, loadouts, arrow, orb, worldItem, pieceSet);
+                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Hood, rags) } }, loadouts, arrow, orb, worldItem, pieceSet);
             BuildMonster(new MonsterDef { Name = "Zombie", DisplayName = "Zombie", Health = 168, Damage = 4.5f, MoveSpeed = 160f, ActionSpeed = 0.6f, Aggro = 8f, WeaponIndex = 4, Experience = 30, Loot = loot["Monster"], Body = DungeonPropBuilder.ZombieSkin, Scale = 1.05f, Voice = DungeonSound.Growl,
                 Attachments = new[] { (ArmorVisual.Tunic, new Color(0.3f, 0.3f, 0.2f)), (ArmorVisual.Pants, new Color(0.22f, 0.2f, 0.15f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
             BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 265f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = 15, Experience = 150, Loot = loot["ChestOrnate"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
-                IsBoss = true, Lunge = 7f, Attachments = new[] { (ArmorVisual.GreatHelm, new Color(0.85f, 0.7f, 0.3f)), (ArmorVisual.PlateChest, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Greaves, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Cloak, new Color(0.35f, 0.08f, 0.1f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
+                IsBoss = true, Lunge = 7f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.GreatHelm, new Color(0.85f, 0.7f, 0.3f)), (ArmorVisual.PlateChest, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Greaves, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Cloak, new Color(0.35f, 0.08f, 0.1f)) } }, loadouts, arrow, orb, worldItem, pieceSet);
 
             BuildSession(database, classes, config);
             BuildMatch(config);
@@ -582,51 +582,155 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 (ArmorVisual.Hood, 0, HumanBodyBones.Head, false), (ArmorVisual.Cap, 1, HumanBodyBones.Head, false), (ArmorVisual.Helmet, 2, HumanBodyBones.Head, false),
                 (ArmorVisual.GreatHelm, 3, HumanBodyBones.Head, false), (ArmorVisual.Tunic, 4, HumanBodyBones.Spine, false), (ArmorVisual.LeatherChest, 5, HumanBodyBones.Spine, false),
-                (ArmorVisual.ChainChest, 5, HumanBodyBones.Spine, false), (ArmorVisual.PlateChest, 6, HumanBodyBones.Spine, false),
+                (ArmorVisual.ChainChest, 16, HumanBodyBones.Spine, false), (ArmorVisual.PlateChest, 6, HumanBodyBones.Spine, false),
                 (ArmorVisual.Gloves, 7, HumanBodyBones.LeftHand, false), (ArmorVisual.Gloves, 7, HumanBodyBones.RightHand, true),
                 (ArmorVisual.Gauntlets, 8, HumanBodyBones.LeftHand, false), (ArmorVisual.Gauntlets, 8, HumanBodyBones.RightHand, true),
                 (ArmorVisual.Pants, 9, HumanBodyBones.LeftUpperLeg, false), (ArmorVisual.Pants, 9, HumanBodyBones.RightUpperLeg, true),
                 (ArmorVisual.Greaves, 10, HumanBodyBones.LeftLowerLeg, false), (ArmorVisual.Greaves, 10, HumanBodyBones.RightLowerLeg, true),
                 (ArmorVisual.Boots, 11, HumanBodyBones.LeftFoot, false), (ArmorVisual.Boots, 11, HumanBodyBones.RightFoot, true),
                 (ArmorVisual.PlateBoots, 12, HumanBodyBones.LeftFoot, false), (ArmorVisual.PlateBoots, 12, HumanBodyBones.RightFoot, true),
-                (ArmorVisual.Cloak, 13, HumanBodyBones.UpperChest, false)
+                (ArmorVisual.Cloak, 13, HumanBodyBones.UpperChest, false),
+                (ArmorVisual.Skull, 14, HumanBodyBones.Head, false), (ArmorVisual.Ribcage, 15, HumanBodyBones.Spine, false)
             };
         }
 
-        /// Primitive armor pieces parented to bones: index order matches ArmorMapping.
+        /// Composite armor pieces parented to bones: index order matches ArmorMapping. Parts named "Fixed" keep their own colour.
         private static GameObject[] BuildArmorPieces()
         {
             Material cloth = BattleEditorUtility.GetMaterial("ArmorCloth", new Color(0.5f, 0.45f, 0.4f), 0f, 0.2f);
             Material metal = BattleEditorUtility.GetMaterial("ArmorMetal", new Color(0.7f, 0.72f, 0.78f), 0.8f, 0.6f);
             Material leather = BattleEditorUtility.GetMaterial("ArmorLeather", new Color(0.45f, 0.3f, 0.18f), 0f, 0.35f);
+            Material dark = BattleEditorUtility.GetMaterial("ArmorDark", new Color(0.12f, 0.1f, 0.08f), 0.1f, 0.3f);
+            Material chain = DungeonPropBuilder.Textured("ChainMail", "RustyMetal", 3f, 0.5f, 0.7f);
+            const PrimitiveType sphere = PrimitiveType.Sphere;
+            const PrimitiveType cylinder = PrimitiveType.Cylinder;
+            const PrimitiveType cube = PrimitiveType.Cube;
 
             return new[]
             {
-                Piece("Armor_Hood", PrimitiveType.Sphere, new Vector3(0f, 0.08f, -0.02f), new Vector3(0.26f, 0.3f, 0.27f), cloth),
-                Piece("Armor_Cap", PrimitiveType.Sphere, new Vector3(0f, 0.11f, 0f), new Vector3(0.25f, 0.2f, 0.26f), leather),
-                Piece("Armor_Helmet", PrimitiveType.Sphere, new Vector3(0f, 0.1f, 0f), new Vector3(0.27f, 0.26f, 0.28f), metal),
-                Piece("Armor_GreatHelm", PrimitiveType.Cylinder, new Vector3(0f, 0.06f, 0f), new Vector3(0.28f, 0.16f, 0.28f), metal),
-                Piece("Armor_Tunic", PrimitiveType.Cube, new Vector3(0f, 0.16f, 0f), new Vector3(0.4f, 0.4f, 0.3f), cloth),
-                Piece("Armor_LeatherChest", PrimitiveType.Cube, new Vector3(0f, 0.16f, 0f), new Vector3(0.42f, 0.4f, 0.32f), leather),
-                Piece("Armor_PlateChest", PrimitiveType.Cube, new Vector3(0f, 0.16f, 0f), new Vector3(0.46f, 0.42f, 0.36f), metal),
-                Piece("Armor_Gloves", PrimitiveType.Sphere, new Vector3(0f, 0f, 0.05f), new Vector3(0.11f, 0.11f, 0.16f), leather),
-                Piece("Armor_Gauntlets", PrimitiveType.Cube, new Vector3(0f, 0f, 0.05f), new Vector3(0.12f, 0.12f, 0.2f), metal),
-                Piece("Armor_Pants", PrimitiveType.Capsule, new Vector3(0f, -0.2f, 0f), new Vector3(0.18f, 0.24f, 0.18f), cloth),
-                Piece("Armor_Greaves", PrimitiveType.Capsule, new Vector3(0f, -0.2f, 0f), new Vector3(0.16f, 0.22f, 0.16f), metal),
-                Piece("Armor_Boots", PrimitiveType.Cube, new Vector3(0f, -0.03f, 0.06f), new Vector3(0.13f, 0.1f, 0.26f), leather),
-                Piece("Armor_PlateBoots", PrimitiveType.Cube, new Vector3(0f, -0.02f, 0.06f), new Vector3(0.15f, 0.12f, 0.28f), metal),
-                Piece("Armor_Cloak", PrimitiveType.Cube, new Vector3(0f, -0.35f, -0.17f), new Vector3(0.44f, 0.9f, 0.03f), cloth)
+                Composite("Armor_Hood", root =>
+                {
+                    Part(root, sphere, new Vector3(0f, 0.09f, -0.01f), new Vector3(0.27f, 0.3f, 0.28f), cloth);
+                    Part(root, cylinder, new Vector3(0f, -0.03f, 0f), new Vector3(0.2f, 0.05f, 0.19f), cloth);
+                    Part(root, cylinder, new Vector3(0f, -0.09f, 0f), new Vector3(0.26f, 0.04f, 0.24f), cloth);
+                }),
+                Composite("Armor_Cap", root =>
+                {
+                    Part(root, sphere, new Vector3(0f, 0.12f, 0f), new Vector3(0.25f, 0.19f, 0.26f), leather);
+                    Part(root, cylinder, new Vector3(0f, 0.06f, 0.02f), new Vector3(0.3f, 0.008f, 0.31f), leather);
+                }),
+                Composite("Armor_Helmet", root =>
+                {
+                    Part(root, sphere, new Vector3(0f, 0.1f, 0f), new Vector3(0.27f, 0.27f, 0.28f), metal);
+                    Part(root, cylinder, new Vector3(0f, 0.03f, 0f), new Vector3(0.31f, 0.01f, 0.32f), metal);
+                    Part(root, cube, new Vector3(0f, 0.0f, 0.14f), new Vector3(0.03f, 0.14f, 0.02f), metal);
+                    Part(root, cylinder, new Vector3(0f, 0.25f, 0f), new Vector3(0.025f, 0.03f, 0.025f), metal);
+                }),
+                Composite("Armor_GreatHelm", root =>
+                {
+                    Part(root, cylinder, new Vector3(0f, 0.06f, 0f), new Vector3(0.28f, 0.14f, 0.28f), metal);
+                    Part(root, cylinder, new Vector3(0f, 0.2f, 0f), new Vector3(0.3f, 0.012f, 0.3f), metal);
+                    Part(root, cube, new Vector3(0f, 0.1f, 0.14f), new Vector3(0.16f, 0.012f, 0.02f), dark, default, true);
+                    Part(root, cube, new Vector3(0f, 0.06f, 0.14f), new Vector3(0.012f, 0.1f, 0.02f), dark, default, true);
+                }),
+                Composite("Armor_Tunic", root =>
+                {
+                    Part(root, cylinder, new Vector3(0f, 0.16f, 0f), new Vector3(0.4f, 0.2f, 0.3f), cloth);
+                    Part(root, cube, new Vector3(0f, -0.02f, 0f), new Vector3(0.42f, 0.05f, 0.32f), leather, default, true);
+                    Part(root, cylinder, new Vector3(0f, -0.1f, 0f), new Vector3(0.44f, 0.07f, 0.34f), cloth);
+                }),
+                Composite("Armor_LeatherChest", root =>
+                {
+                    Part(root, cylinder, new Vector3(0f, 0.16f, 0f), new Vector3(0.42f, 0.2f, 0.32f), leather);
+                    Part(root, cube, new Vector3(0.1f, 0.2f, 0.165f), new Vector3(0.04f, 0.3f, 0.01f), dark, default, true);
+                    Part(root, cube, new Vector3(-0.1f, 0.2f, 0.165f), new Vector3(0.04f, 0.3f, 0.01f), dark, default, true);
+                    Part(root, sphere, new Vector3(0.24f, 0.3f, 0f), new Vector3(0.16f, 0.1f, 0.18f), leather);
+                    Part(root, sphere, new Vector3(-0.24f, 0.3f, 0f), new Vector3(0.16f, 0.1f, 0.18f), leather);
+                    Part(root, cube, new Vector3(0f, -0.02f, 0f), new Vector3(0.44f, 0.05f, 0.34f), dark, default, true);
+                }),
+                Composite("Armor_PlateChest", root =>
+                {
+                    Part(root, cylinder, new Vector3(0f, 0.16f, 0f), new Vector3(0.46f, 0.21f, 0.36f), metal);
+                    Part(root, cylinder, new Vector3(0f, 0.36f, 0f), new Vector3(0.3f, 0.02f, 0.26f), metal);
+                    Part(root, sphere, new Vector3(0.27f, 0.32f, 0f), new Vector3(0.2f, 0.12f, 0.22f), metal);
+                    Part(root, sphere, new Vector3(-0.27f, 0.32f, 0f), new Vector3(0.2f, 0.12f, 0.22f), metal);
+                    Part(root, cube, new Vector3(0.12f, -0.08f, 0.1f), new Vector3(0.18f, 0.14f, 0.03f), metal, new Vector3(-10f, 0f, 0f));
+                    Part(root, cube, new Vector3(-0.12f, -0.08f, 0.1f), new Vector3(0.18f, 0.14f, 0.03f), metal, new Vector3(-10f, 0f, 0f));
+                    Part(root, cube, new Vector3(0f, -0.02f, 0f), new Vector3(0.48f, 0.05f, 0.38f), leather, default, true);
+                }),
+                Composite("Armor_Gloves", root =>
+                {
+                    Part(root, sphere, new Vector3(0f, 0f, 0.05f), new Vector3(0.11f, 0.11f, 0.16f), leather);
+                    Part(root, cylinder, new Vector3(0f, 0f, -0.03f), new Vector3(0.13f, 0.03f, 0.13f), leather, new Vector3(90f, 0f, 0f));
+                }),
+                Composite("Armor_Gauntlets", root =>
+                {
+                    Part(root, cube, new Vector3(0f, 0f, 0.05f), new Vector3(0.12f, 0.12f, 0.2f), metal);
+                    Part(root, cylinder, new Vector3(0f, 0f, -0.04f), new Vector3(0.15f, 0.035f, 0.15f), metal, new Vector3(90f, 0f, 0f));
+                    Part(root, cube, new Vector3(0f, 0.06f, 0.09f), new Vector3(0.1f, 0.02f, 0.06f), metal);
+                }),
+                Composite("Armor_Pants", root => Part(root, PrimitiveType.Capsule, new Vector3(0f, -0.2f, 0f), new Vector3(0.18f, 0.24f, 0.18f), cloth)),
+                Composite("Armor_Greaves", root =>
+                {
+                    Part(root, cylinder, new Vector3(0f, -0.2f, 0f), new Vector3(0.16f, 0.2f, 0.16f), metal);
+                    Part(root, sphere, new Vector3(0f, 0f, 0.03f), new Vector3(0.13f, 0.1f, 0.13f), metal);
+                }),
+                Composite("Armor_Boots", root =>
+                {
+                    Part(root, cube, new Vector3(0f, -0.03f, 0.06f), new Vector3(0.13f, 0.1f, 0.26f), leather);
+                    Part(root, cylinder, new Vector3(0f, 0.06f, -0.02f), new Vector3(0.15f, 0.08f, 0.15f), leather);
+                }),
+                Composite("Armor_PlateBoots", root =>
+                {
+                    Part(root, cube, new Vector3(0f, -0.02f, 0.06f), new Vector3(0.15f, 0.12f, 0.28f), metal);
+                    Part(root, cube, new Vector3(0f, -0.02f, 0.18f), new Vector3(0.13f, 0.1f, 0.06f), metal);
+                    Part(root, cylinder, new Vector3(0f, 0.08f, -0.02f), new Vector3(0.17f, 0.09f, 0.17f), metal);
+                }),
+                Composite("Armor_Cloak", root =>
+                {
+                    Part(root, cube, new Vector3(0f, -0.35f, -0.17f), new Vector3(0.44f, 0.9f, 0.03f), cloth);
+                    Part(root, cube, new Vector3(0f, 0.05f, -0.1f), new Vector3(0.5f, 0.08f, 0.2f), cloth);
+                }),
+                Composite("Armor_Skull", root =>
+                {
+                    Part(root, sphere, new Vector3(0.045f, 0.1f, 0.1f), new Vector3(0.06f, 0.05f, 0.04f), dark, default, true);
+                    Part(root, sphere, new Vector3(-0.045f, 0.1f, 0.1f), new Vector3(0.06f, 0.05f, 0.04f), dark, default, true);
+                    Part(root, cube, new Vector3(0f, 0.0f, 0.09f), new Vector3(0.1f, 0.03f, 0.05f), dark, default, true);
+                    Part(root, cube, new Vector3(0f, 0.045f, 0.1f), new Vector3(0.08f, 0.01f, 0.03f), dark, default, true);
+                }),
+                Composite("Armor_Ribcage", root =>
+                {
+                    for (int i = 0; i < 4; i++)
+                        Part(root, cube, new Vector3(0f, 0.28f - i * 0.055f, 0.14f), new Vector3(0.3f - i * 0.02f, 0.015f, 0.03f), dark, default, true);
+
+                    Part(root, cube, new Vector3(0f, 0.2f, 0.15f), new Vector3(0.03f, 0.3f, 0.02f), dark, default, true);
+                }),
+                Composite("Armor_ChainChest", root =>
+                {
+                    Part(root, cylinder, new Vector3(0f, 0.16f, 0f), new Vector3(0.42f, 0.21f, 0.32f), chain);
+                    Part(root, cylinder, new Vector3(0f, -0.1f, 0f), new Vector3(0.44f, 0.07f, 0.34f), chain);
+                    Part(root, cube, new Vector3(0f, -0.02f, 0f), new Vector3(0.44f, 0.05f, 0.34f), leather, default, true);
+                })
             };
         }
 
-        private static GameObject Piece(string name, PrimitiveType type, Vector3 position, Vector3 scale, Material material)
+        private static GameObject Composite(string name, System.Action<Transform> build)
         {
-            GameObject root = BattleEditorUtility.CreatePrimitive(type, name, null, position, Vector3.zero, scale, material);
-            root.GetComponent<Renderer>().lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+            GameObject root = new GameObject(name);
+            build(root.transform);
+
+            foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>())
+                renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, $"{ArmorFolder}/{name}.prefab");
             Object.DestroyImmediate(root);
 
             return prefab;
+        }
+
+        private static void Part(Transform parent, PrimitiveType type, Vector3 position, Vector3 scale, Material material, Vector3 euler = default, bool isFixed = false)
+        {
+            BattleEditorUtility.CreatePrimitive(type, isFixed ? "Fixed" : "Part", parent, position, euler, scale, material);
         }
 
         private static void BuildMonster(MonsterDef def, BattleContentBuilder.Loadout[] loadouts, GameObject arrow, GameObject orb, GameObject worldItem,

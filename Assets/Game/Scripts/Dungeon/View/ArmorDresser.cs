@@ -58,7 +58,10 @@ namespace Game.Scripts.Dungeon
                 instance.SetActive(true);
 
                 foreach (Renderer renderer in instance.GetComponentsInChildren<Renderer>())
-                    renderer.material.SetColor(s_baseColor, color);
+                {
+                    if (renderer.name != "Fixed")
+                        renderer.material.SetColor(s_baseColor, color);
+                }
             }
         }
 

@@ -18,7 +18,8 @@ namespace Game.Scripts.Dungeon
         Ability,
         Consumable,
         Interact,
-        Utility
+        Utility,
+        Shapeshift
     }
 
     /// The player's body inside the dungeon: class, inventory, interaction, abilities, death and extraction on top of the fighter.
@@ -397,8 +398,15 @@ namespace Game.Scripts.Dungeon
             if (State != AdventurerState.Alive || Pending != PendingAction.None)
                 return;
 
-            Form = Form == form ? ShapeshiftForm.None : form;
-            _fighter.Combat.CancelBusy();
+            // Druid forms take a second to change into, as in the original; the body is vulnerable meanwhile.
+            float duration = 1f / Mathf.Max(0.3f, _stats.ActionSpeed);
+
+            if (!_fighter.Combat.StartBusy(duration, BusyCast))
+                return;
+
+            Pending = PendingAction.Shapeshift;
+            _pendingIndex = (byte)form;
+            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(duration / Runner.DeltaTime);
         }
 
         /// Resting at a campfire brings every spell back to full charges.
@@ -645,6 +653,10 @@ namespace Game.Scripts.Dungeon
                     break;
                 case PendingAction.Utility:
                     ApplyUtility((EquipSlot)_pendingIndex);
+                    break;
+                case PendingAction.Shapeshift:
+                    Form = Form == (ShapeshiftForm)_pendingIndex ? ShapeshiftForm.None : (ShapeshiftForm)_pendingIndex;
+                    _fighter.Combat.CancelBusy();
                     break;
             }
         }

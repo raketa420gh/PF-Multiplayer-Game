@@ -26,6 +26,7 @@ namespace Game.Scripts.Editor.Dungeon
             EditorSceneManager.SaveScene(scene, ScenePath);
 
             SetupLighting();
+            BuildVolume();
             Camera camera = BuildCamera();
             GameObject system = new GameObject("[System]");
             NetworkEvents events = system.AddComponent<NetworkEvents>();
@@ -142,10 +143,63 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        /// Explicit post-processing profile; the project default volume carries lens flares and test components.
+        private static void BuildVolume()
+        {
+            const string path = "Assets/Game/Configs/Dungeon/DungeonVolume.asset";
+            VolumeProfile profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                AssetDatabase.CreateAsset(profile, path);
+            }
+
+            foreach (VolumeComponent component in profile.components)
+                Object.DestroyImmediate(component, true);
+
+            profile.components.Clear();
+            Add<Tonemapping>(profile).mode.value = TonemappingMode.ACES;
+            Bloom bloom = Add<Bloom>(profile);
+            bloom.threshold.value = 1.1f;
+            bloom.intensity.value = 0.3f;
+            bloom.scatter.value = 0.6f;
+            Vignette vignette = Add<Vignette>(profile);
+            vignette.intensity.value = 0.25f;
+            vignette.smoothness.value = 0.45f;
+            ColorAdjustments color = Add<ColorAdjustments>(profile);
+            color.postExposure.value = 0.75f;
+            color.contrast.value = 10f;
+            color.saturation.value = -6f;
+            FilmGrain grain = Add<FilmGrain>(profile);
+            grain.type.value = FilmGrainLookup.Thin1;
+            grain.intensity.value = 0.15f;
+            Add<ScreenSpaceLensFlare>(profile).intensity.value = 0f;
+            Add<MotionBlur>(profile).intensity.value = 0f;
+            Add<ChromaticAberration>(profile).intensity.value = 0f;
+            Add<DepthOfField>(profile).mode.value = DepthOfFieldMode.Off;
+            Add<PaniniProjection>(profile).distance.value = 0f;
+            Add<LensDistortion>(profile).intensity.value = 0f;
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+
+            Volume volume = new GameObject("[Volume]").AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = profile;
+        }
+
+        private static T Add<T>(VolumeProfile profile) where T : VolumeComponent
+        {
+            T component = profile.Add<T>(true);
+            AssetDatabase.AddObjectToAsset(component, profile);
+
+            return component;
+        }
+
         private static void SetupLighting()
         {
             RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.02f, 0.02f, 0.03f);
+            RenderSettings.ambientLight = new Color(0.035f, 0.035f, 0.045f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.fogColor = new Color(0.01f, 0.008f, 0.006f);

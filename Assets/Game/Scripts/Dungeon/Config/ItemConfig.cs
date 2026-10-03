@@ -185,7 +185,9 @@ namespace Game.Scripts.Dungeon
         Greaves,
         Boots,
         PlateBoots,
-        Cloak
+        Cloak,
+        Skull,
+        Ribcage
     }
 
     public enum ConsumableEffect : byte
