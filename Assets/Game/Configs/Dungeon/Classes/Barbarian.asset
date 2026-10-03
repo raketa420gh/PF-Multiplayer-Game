@@ -1,0 +1,84 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d988ee4bac2acf74b80699d6e83c0b70, type: 3}
+  m_Name: Barbarian
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
+  _id: 0
+  _displayName: Barbarian
+  _description: Tough two-handed axe fighter. Shouts turn the tide, but he is slow
+    and has only throwing axes at range.
+  _baseStats:
+    Flesh: 22
+    Grip: 21
+    Reflex: 9
+    Craft: 13
+    Insight: 11
+    Resonance: 10
+  _color: {r: 0.85, g: 0.35, b: 0.2, a: 1}
+  _bodyColor: {r: 0.8, g: 0.58, b: 0.45, a: 1}
+  _skills:
+  - {fileID: 11400000, guid: 3aa96a418db989047b3642b4a6febfce, type: 2}
+  - {fileID: 11400000, guid: 9f0d3c75b0c934c42a19a6de1154a8ec, type: 2}
+  _spells: []
+  _perks:
+  - _name: Thick Hide
+    _description: +20 armor rating and +10 magic resistance.
+    _modifiers:
+    - Stat: 7
+      Value: 20
+    - Stat: 8
+      Value: 10
+  - _name: Giant's Constitution
+    _description: +20% max health.
+    _modifiers:
+    - Stat: 6
+      Value: 20
+  - _name: Axe Mastery
+    _description: +8 physical power and +10% physical damage.
+    _modifiers:
+    - Stat: 10
+      Value: 8
+    - Stat: 13
+      Value: 0.1
+  - _name: Bloodlust
+    _description: +12% action speed.
+    _modifiers:
+    - Stat: 12
+      Value: 12
+  _startingKit:
+  - _item: {fileID: 11400000, guid: c396e03d12b5a744c991cc25c0434fe8, type: 2}
+    _slot: 9
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: acda98c0e0a4425419136694c0350c50, type: 2}
+    _slot: 11
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: b9cb163780bddbe4aaa69e94f9735eec, type: 2}
+    _slot: 1
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 37adef9c744db10419e3b6e086d7e458, type: 2}
+    _slot: 4
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 07fbfceffd4e11a44abb271d053a30a7, type: 2}
+    _slot: 13
+    _count: 2
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 1cf148bc8a302b84d87d1896014a5456, type: 2}
+    _slot: 14
+    _count: 3
+    _isEquipped: 1
+  _allowedWeapons: 010002040309
+  _allowedArmor: 000102
+  _castFocus: 0
