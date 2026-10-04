@@ -4,15 +4,11 @@ using UnityEngine;
 namespace Game.Scripts.Dungeon
 {
     /// Derived character numbers: class attributes + gear + perks + buffs run through the hexagram curves.
-    public sealed class AdventurerStats : ICombatStats
+    public sealed class AdventurerStats : ICombatStats, StatusEffectComponent.IResistance
     {
         public ClassStats Attributes => _attributes;
         public int MaxHealth => _maxHealth;
-        public float Poise => _poise;
-        public float StaggerRecovery => _staggerRecovery;
-        public float Impact => _impact;
-        public float Guard => _guard;
-        public float Load => _load;
+        public float Toughness => _toughness;
         public float ArmorRating => _armorRating;
         public float MagicResistance => _magicResistance;
         public float PhysicalReduction => _physicalReduction;
@@ -28,18 +24,13 @@ namespace Game.Scripts.Dungeon
         public float Perception => _perception;
         public float CooldownSpeed => _cooldownSpeed;
         public float ControlResistance => _controlResistance;
-        public float Concentration => _concentration;
         public float CastSpeed => _castSpeed;
         public float Mending => _mending;
         public int BonusCharges => _bonusCharges;
 
         private ClassStats _attributes;
         private int _maxHealth = 100;
-        private float _poise = DungeonFormulas.BasePoise;
-        private float _staggerRecovery = 1f;
-        private float _impact = 1f;
-        private float _guard = 1f;
-        private float _load = 1f;
+        private float _toughness = 1f;
         private float _armorRating;
         private float _magicResistance;
         private float _physicalReduction;
@@ -55,7 +46,6 @@ namespace Game.Scripts.Dungeon
         private float _perception = 1f;
         private float _cooldownSpeed = 1f;
         private float _controlResistance;
-        private float _concentration = DungeonFormulas.BaseConcentration;
         private float _castSpeed = 1f;
         private float _mending = 1f;
         private int _bonusCharges;
@@ -66,7 +56,7 @@ namespace Game.Scripts.Dungeon
         {
             return type switch
             {
-                DamageType.Physical => 1f + DungeonFormulas.PowerBonus(_physicalPower) + _flat[(int)StatType.PhysicalDamageBonus],
+                DamageType.Physical => 1f + DungeonFormulas.PowerBonus(_physicalPower) + _flat[(int)StatType.PhysicalDamageBonus] + (HasThreshold(StatType.Grip) ? 0.1f : 0f),
                 DamageType.Magical => 1f + DungeonFormulas.PowerBonus(_magicalPower) + _flat[(int)StatType.MagicalDamageBonus],
                 _ => 1f
             };
@@ -138,16 +128,12 @@ namespace Game.Scripts.Dungeon
             // Flesh
             float healthBonus = _flat[(int)StatType.MaxHealth] + Effect(effects, StatusEffectKind.Fortify) + FormHealthBonus(form);
             _maxHealth = Mathf.CeilToInt(DungeonFormulas.BaseHealth * DungeonFormulas.Scale(flesh, 1f) * (1f + healthBonus / 100f));
-            _poise = Mathf.Max(0f, DungeonFormulas.BasePoise * DungeonFormulas.Scale(flesh, 1.5f));
 
             // Grip
             _physicalPower = grip + _flat[(int)StatType.PhysicalPower] + Effect(effects, StatusEffectKind.Power);
-            _guard = Mathf.Max(0.3f, DungeonFormulas.Scale(grip, 1f));
-            _load = Mathf.Max(0f, 2f - DungeonFormulas.Scale(grip, 1f));
 
             // Reflex
             _actionSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(reflex, 0.5f) + _flat[(int)StatType.ActionSpeed] / 100f + Effect(effects, StatusEffectKind.ActionSpeed) / 100f);
-            _staggerRecovery = Mathf.Max(0.4f, DungeonFormulas.Scale(reflex, 0.8f));
 
             // Craft
             _interactionSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(craft, 1.5f));
@@ -156,22 +142,21 @@ namespace Game.Scripts.Dungeon
             // Insight
             _cooldownSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(insight, 0.6f));
             _controlResistance = Mathf.Clamp(DungeonFormulas.Curve(insight), -0.5f, 0.8f);
-            _concentration = Mathf.Max(0f, DungeonFormulas.BaseConcentration * DungeonFormulas.Scale(insight, 2f));
 
             // Resonance
             _magicalPower = resonance + _flat[(int)StatType.MagicalPower];
             _bonusCharges = DungeonFormulas.BonusCharges(resonance);
 
             // Edges: geometric mean of two neighbours on the ring.
-            _impact = Mathf.Max(0.3f, DungeonFormulas.Scale(DungeonFormulas.Edge(flesh, grip), 1f));
+            _toughness = Mathf.Max(0.3f, DungeonFormulas.Scale(DungeonFormulas.Edge(flesh, grip), 1f));
             _handlingSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(DungeonFormulas.Edge(reflex, craft), 1f));
             _perception = Mathf.Max(0.3f, DungeonFormulas.Scale(DungeonFormulas.Edge(craft, insight), 1f));
             _castSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(DungeonFormulas.Edge(insight, resonance), 0.8f));
             _mending = Mathf.Max(0.3f, DungeonFormulas.Scale(DungeonFormulas.Edge(resonance, flesh), 0.6f));
 
-            float haste = Effect(effects, StatusEffectKind.Haste) - Effect(effects, StatusEffectKind.Slow) * (1f - _controlResistance);
+            float haste = Effect(effects, StatusEffectKind.Haste) - Effect(effects, StatusEffectKind.Slow);
             float rating = DungeonFormulas.BaseMoveSpeed * DungeonFormulas.Scale(DungeonFormulas.Edge(grip, reflex), 0.2f)
-                + (moveAdd < 0f ? moveAdd * _load : moveAdd) + _flat[(int)StatType.MoveSpeed] + FormMoveAdd(form);
+                + moveAdd + _flat[(int)StatType.MoveSpeed] + FormMoveAdd(form);
             rating *= 1f + (haste + rage * 0.7f) / 100f;
             _moveSpeedRating = Mathf.Min(rating, DungeonFormulas.MaxMoveSpeed);
             _moveSpeedMultiplier = Mathf.Max(0.3f, _moveSpeedRating / DungeonFormulas.BaseMoveSpeed);
@@ -182,6 +167,17 @@ namespace Game.Scripts.Dungeon
             _magicalReduction = DungeonFormulas.MagicReduction(_magicResistance);
 
             float Attribute(StatType stat) => config.BaseStats.Get(stat) + _flat[(int)stat];
+        }
+
+        /// Stats only shorten debuffs: bleeding and burning by Toughness, slows by Control Resist (Insight 30 ignores them).
+        public float GetDurationScale(StatusEffectKind kind)
+        {
+            return kind switch
+            {
+                StatusEffectKind.Burn => 1f / _toughness,
+                StatusEffectKind.Slow => HasThreshold(StatType.Insight) ? 0f : 1f - _controlResistance,
+                _ => 1f
+            };
         }
 
         public bool HasThreshold(StatType attribute)

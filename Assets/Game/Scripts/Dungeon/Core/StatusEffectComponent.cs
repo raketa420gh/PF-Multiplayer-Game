@@ -36,6 +36,12 @@ namespace Game.Scripts.Dungeon
     /// Timed buffs and debuffs. Heal-over-time and burn tick every simulation step on the state authority.
     public sealed class StatusEffectComponent : NetworkBehaviour
     {
+        /// Scales the duration of an incoming effect; 0 makes the owner immune to it.
+        public interface IResistance
+        {
+            float GetDurationScale(StatusEffectKind kind);
+        }
+
         public const int Capacity = 8;
 
         public NetworkArray<StatusEffect> Effects => _effects;
@@ -46,6 +52,7 @@ namespace Game.Scripts.Dungeon
         [Networked, Capacity(Capacity)]
         private NetworkArray<StatusEffect> _effects => default;
 
+        private IResistance _resistance;
         private float _healAccumulator;
         private float _burnAccumulator;
 
@@ -71,8 +78,24 @@ namespace Game.Scripts.Dungeon
             Flush();
         }
 
+        public void SetResistance(IResistance resistance)
+        {
+            _resistance = resistance;
+        }
+
         public void Add(StatusEffectKind kind, float magnitude, float duration)
         {
+            float scale = _resistance?.GetDurationScale(kind) ?? 1f;
+
+            if (scale <= 0f)
+                return;
+
+            duration *= scale;
+
+            // Burn deals its magnitude over the whole duration: a shorter bleed is a weaker one.
+            if (kind == StatusEffectKind.Burn)
+                magnitude *= scale;
+
             int slot = -1;
 
             for (int i = 0; i < Capacity; i++)

@@ -15,25 +15,20 @@ namespace Game.Scripts.Dungeon
         Craft,
         Insight,
         Resonance,
-        Impact,
+        Toughness,
         MoveSpeed,
         Handling,
         Perception,
         CastSpeed,
         Mending,
         Health,
-        Poise,
         PhysicalPower,
         PhysicalDamage,
-        Guard,
-        Load,
         ActionSpeed,
-        StaggerRecovery,
         InteractionSpeed,
         Weakpoint,
         CooldownSpeed,
         ControlResistance,
-        Concentration,
         MagicalPower,
         MagicalDamage,
         BonusCharges,
@@ -57,39 +52,34 @@ namespace Game.Scripts.Dungeon
         private static readonly string[] s_names =
         {
             "Flesh", "Grip", "Reflex", "Craft", "Insight", "Resonance",
-            "Impact", "Move Speed", "Handling", "Perception", "Cast Speed", "Mending",
-            "Health", "Poise", "Physical Power", "Physical Damage", "Guard", "Load", "Action Speed", "Stagger Recovery",
-            "Interaction Speed", "Weakpoint", "Cooldown Recovery", "Control Resist", "Concentration", "Magical Power", "Magical Damage",
+            "Toughness", "Move Speed", "Handling", "Perception", "Cast Speed", "Mending",
+            "Health", "Physical Power", "Physical Damage", "Action Speed",
+            "Interaction Speed", "Weakpoint", "Cooldown Recovery", "Control Resist", "Magical Power", "Magical Damage",
             "Spell Charges", "Armor Rating", "Physical Reduction", "Magic Resistance", "Magical Reduction"
         };
 
         private static readonly string[] s_descriptions =
         {
-            "Body mass and toughness: how much punishment you take before going down or losing your footing.",
-            "Strength of the arms: how hard you hit, how firm the block is and how light the gear feels.",
-            "Speed of the nerves: how fast you swing, block and shake off a stagger.",
+            "Body mass: how much punishment you take before going down and how fast bleeding wears off.",
+            "Strength of the arms: how hard you hit.",
+            "Speed of the nerves: how fast you swing, block, draw and drink.",
             "Skill of the hands: opening, picking, searching and hitting where it hurts.",
-            "Clarity of the mind: skills come back sooner, control effects bite less, casting is harder to interrupt.",
+            "Clarity of the mind: skills come back sooner, slows wear off faster.",
             "Bond with magic: spell power, healing power and extra spell charges.",
-            "Multiplies the stagger your hits inflict.",
-            "Base 300, capped at 330. Armor and weapon penalties are subtracted after being scaled by Load.",
-            "Speed of swapping weapons, reloading, drinking potions, bandaging and using utility items.",
+            "Bleeding and burning on you wear off this much sooner and deal as much less damage.",
+            "Base 300, capped at 330. Armor and weapon penalties are subtracted as they are.",
+            "Speed of swapping weapons, reloading, bandaging and using utility items.",
             "How loud the footsteps of others are to you and how fast you discover items in containers and corpses.",
             "Speed of casting spells and spell-like skills.",
             "Multiplies incoming healing: spells, potions, bandages and the regeneration while resting.",
             "Damage you can take before dying.",
-            "A hit that deals less damage than your Poise does not stagger you.",
             "Raises physical damage along the shared attribute curve. Grip plus flat bonuses from gear and perks.",
             "Total multiplier of the physical damage you deal.",
-            "Multiplies how much damage your block absorbs, up to all of it.",
-            "Share of the armor and weapon move speed penalties you actually feel. Lower is better.",
-            "Speed of attacks, blocks and bow draws.",
-            "A stagger you receive lasts this much shorter.",
+            "Pace of attacks, blocks, bow draws and drinking potions, animations included.",
             "Speed of opening doors and chests, pulling levers and activating portals.",
             "Multiplies the damage of your hits to the head.",
             "Skill cooldowns run this much faster.",
-            "Weakens slows and roots applied to you.",
-            "Added to Poise while you are casting.",
+            "Slows applied to you wear off this much sooner.",
             "Raises magical damage along the shared attribute curve and half as much the healing you cast. Resonance plus flat bonuses.",
             "Total multiplier of the magical damage you deal.",
             "Extra charges of every spell that uses charges: +1 at 20, 30 and 40 Resonance.",
@@ -101,11 +91,11 @@ namespace Game.Scripts.Dungeon
 
         private static readonly string[] s_thresholds =
         {
-            "the first stagger every 10s is ignored",
-            "a block absorbs all of the damage",
+            "resting heals twice as fast",
+            "+10% physical damage",
             "+20% Action Speed for 2s after being staggered",
-            "taking damage does not interrupt interactions and item use",
-            "once every 15s a stagger does not interrupt a cast",
+            "locked doors open without a lockpick",
+            "slows do not affect you",
             "the first spell of a run and after a campfire rest costs no charge"
         };
 
@@ -123,22 +113,22 @@ namespace Game.Scripts.Dungeon
 
         private static readonly StatId[][] s_ownStats =
         {
-            new[] { StatId.Health, StatId.Poise },
-            new[] { StatId.PhysicalPower, StatId.PhysicalDamage, StatId.Guard, StatId.Load },
-            new[] { StatId.ActionSpeed, StatId.StaggerRecovery },
+            new[] { StatId.Health },
+            new[] { StatId.PhysicalPower, StatId.PhysicalDamage },
+            new[] { StatId.ActionSpeed },
             new[] { StatId.InteractionSpeed, StatId.Weakpoint },
-            new[] { StatId.CooldownSpeed, StatId.ControlResistance, StatId.Concentration },
+            new[] { StatId.CooldownSpeed, StatId.ControlResistance },
             new[] { StatId.MagicalPower, StatId.MagicalDamage, StatId.BonusCharges }
         };
 
         private static readonly StringBuilder s_builder = new();
 
         public static string Name(StatId stat) => s_names[(int)stat];
-        public static bool IsAttribute(StatId stat) => stat < StatId.Impact;
-        public static bool IsEdge(StatId stat) => stat >= StatId.Impact && stat < StatId.Health;
+        public static bool IsAttribute(StatId stat) => stat < StatId.Toughness;
+        public static bool IsEdge(StatId stat) => stat >= StatId.Toughness && stat < StatId.Health;
         public static StatId[] OwnStats(StatId attribute) => s_ownStats[(int)attribute];
         /// Edge stat between the attribute with this index and the next one on the ring.
-        public static StatId Edge(int attribute) => (StatId)((int)StatId.Impact + attribute);
+        public static StatId Edge(int attribute) => (StatId)((int)StatId.Toughness + attribute);
 
         /// Attributes have their own colour, an edge blends its two ends, a derived stat gets a shade of its source's colour
         /// that no sibling shares, the stats of the gear have colours of their own.
@@ -148,7 +138,7 @@ namespace Game.Scripts.Dungeon
                 return s_colors[(int)stat];
 
             if (IsEdge(stat))
-                return Color.Lerp(s_colors[stat - StatId.Impact], s_colors[(stat - StatId.Impact + 1) % AttributeCount], 0.5f);
+                return Color.Lerp(s_colors[stat - StatId.Toughness], s_colors[(stat - StatId.Toughness + 1) % AttributeCount], 0.5f);
 
             int source = Source(stat);
 
@@ -156,7 +146,7 @@ namespace Game.Scripts.Dungeon
                 return s_gearColors[stat - StatId.ArmorRating];
 
             StatId[] siblings = s_ownStats[source];
-            float spread = System.Array.IndexOf(siblings, stat) / (siblings.Length - 1f) - 0.5f;
+            float spread = siblings.Length > 1 ? System.Array.IndexOf(siblings, stat) / (siblings.Length - 1f) - 0.5f : 0f;
             Color.RGBToHSV(s_colors[source], out float hue, out float saturation, out float value);
 
             return Color.HSVToRGB(Mathf.Repeat(hue + spread * HueSpread, 1f), Mathf.Clamp01(saturation - spread * 0.3f), Mathf.Clamp01(value + spread * 0.12f));
@@ -193,7 +183,7 @@ namespace Game.Scripts.Dungeon
             }
             else if (IsEdge(stat))
             {
-                StatType first = (StatType)(stat - StatId.Impact);
+                StatType first = (StatType)(stat - StatId.Toughness);
                 StatType second = (StatType)(((int)first + 1) % AttributeCount);
                 int a = stats.Attributes.Get(first);
                 int b = stats.Attributes.Get(second);
@@ -245,7 +235,7 @@ namespace Game.Scripts.Dungeon
 
             switch (stat)
             {
-                case StatId.Impact: return Bonus(stats.Impact, out sign);
+                case StatId.Toughness: return Bonus(stats.Toughness, out sign);
                 case StatId.MoveSpeed:
                     sign = Mathf.Round(stats.MoveSpeedRating - DungeonFormulas.BaseMoveSpeed);
 
@@ -255,21 +245,13 @@ namespace Game.Scripts.Dungeon
                 case StatId.CastSpeed: return Bonus(stats.CastSpeed, out sign);
                 case StatId.Mending: return Bonus(stats.Mending, out sign);
                 case StatId.Health: return stats.MaxHealth.ToString();
-                case StatId.Poise: return stats.Poise.ToString("0");
                 case StatId.PhysicalPower: return stats.PhysicalPower.ToString("0");
                 case StatId.PhysicalDamage: return Bonus(stats.GetDamageMultiplier(DamageType.Physical), out sign);
-                case StatId.Guard: return Bonus(stats.Guard, out sign);
-                case StatId.Load:
-                    sign = Mathf.Round((1f - stats.Load) * 100f);
-
-                    return $"{stats.Load * 100f:0}%";
                 case StatId.ActionSpeed: return Bonus(stats.ActionSpeed, out sign);
-                case StatId.StaggerRecovery: return Bonus(stats.StaggerRecovery, out sign);
                 case StatId.InteractionSpeed: return Bonus(stats.InteractionSpeed, out sign);
                 case StatId.Weakpoint: return Bonus(stats.Weakpoint, out sign);
                 case StatId.CooldownSpeed: return Bonus(stats.CooldownSpeed, out sign);
                 case StatId.ControlResistance: return Share(stats.ControlResistance, out sign);
-                case StatId.Concentration: return stats.Concentration.ToString("0");
                 case StatId.MagicalPower: return stats.MagicalPower.ToString("0");
                 case StatId.MagicalDamage: return Bonus(stats.GetDamageMultiplier(DamageType.Magical), out sign);
                 case StatId.BonusCharges:

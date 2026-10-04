@@ -21,7 +21,7 @@
 ## VFX / Audio
 - Attack trail/impact: `[TBD]`
 - Shield impact VFX: `[TBD]`
-- Weapon hit audio: `[TBD]`
+- Weapon hit audio: синтезируется (`AudioSynth`), несколько вариантов на звук (`Name.wav`, `Name2.wav`…).
 - Block / partial block feedback: `[TBD]`
 
 ## Readability
@@ -31,3 +31,13 @@
 - направление текущего замаха;
 - состояние блока;
 - момент block impact/recovery.
+
+## Models and Materials
+- Меши оружия генерируются (`WeaponMesh`: loft / revolve / tube / plate; детали — `WeaponParts`), по одному mesh-ассету на оружие.
+- PBR-наборы текстур — `WeaponTextureBuilder`, материалы `Weapon*.mat` отдельно от общих `Steel`/`Leather`.
+
+## Swing Rules
+- В пике замаха оружие лежит на прицеле (`StrikePoint` на луче из глаз).
+- Лезвие повёрнуто кромкой по ходу удара; клинок отстаёт от руки на 15–45° в направлении замаха.
+- Рука в пике у нижней границы FP-обзора (y ≈ 1.42–1.46, z ≈ 0.48–0.54 в root space).
+

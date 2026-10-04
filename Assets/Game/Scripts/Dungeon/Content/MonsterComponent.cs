@@ -95,11 +95,8 @@ namespace Game.Scripts.Dungeon
         }
 
         float DamageReceiverComponent.IHitModifier.WeakpointMultiplier => 1f;
-        float DamageReceiverComponent.IHitModifier.ImpactMultiplier => 1f;
 
-        float DamageReceiverComponent.IHitModifier.ModifyBlockMitigation(float mitigation) => mitigation;
 
-        float DamageReceiverComponent.IHitModifier.ModifyIncomingStagger(int damage, float staggerDuration) => staggerDuration;
 
         int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, DamageType type, HitZone zone)
         {

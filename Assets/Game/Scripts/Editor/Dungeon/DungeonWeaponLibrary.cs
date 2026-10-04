@@ -65,6 +65,23 @@ namespace Game.Scripts.Editor.Dungeon
             (Stiletto, Dagger, "Stiletto Dagger"), (FellingAxe, BattleAxe, "Felling Axe"), (Halberd, Spear, "Halberd")
         };
 
+        /// Impact of the weapon's hits and Stability of its block, 1..10: a hit with more Impact than the Stability breaks the block.
+        private static readonly Dictionary<string, (int impact, int stability)> s_force = new()
+        {
+            ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 1), ["Lute"] = (1, 1), ["Rat Bite"] = (1, 1), ["Torch"] = (2, 1),
+            ["Rondel Dagger"] = (2, 1), ["Castillon Dagger"] = (2, 1), ["Stiletto Dagger"] = (2, 1), ["Rapier"] = (2, 2),
+            ["Short Sword"] = (3, 3), ["Arming Sword"] = (4, 3), ["Falchion"] = (4, 3), ["Hatchet"] = (4, 2), ["Viking Sword"] = (5, 3),
+            ["Flanged Mace"] = (6, 3), ["Morning Star"] = (6, 3), ["Longsword"] = (5, 5), ["Spear"] = (4, 4), ["Magic Staff"] = (4, 4),
+            ["Sword & Shield"] = (4, 7), ["Mace & Shield"] = (6, 7),
+            ["Greatsword"] = (7, 5), ["Battle Axe"] = (7, 4), ["Felling Axe"] = (8, 4), ["Halberd"] = (7, 4),
+            ["War Maul"] = (9, 5), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2), ["Bear Claws"] = (7, 4)
+        };
+
+        public static (int impact, int stability) Force(string displayName)
+        {
+            return s_force.TryGetValue(displayName, out (int, int) force) ? force : (3, 3);
+        }
+
         public static string SharedPrefix(string name)
         {
             if (name == SwordShieldLeft)

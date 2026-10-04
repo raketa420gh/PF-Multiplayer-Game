@@ -76,7 +76,7 @@ namespace Game.Scripts.Dungeon
         private void UpdateHandItem()
         {
             InventoryComponent inventory = _adventurer.Inventory;
-            ItemStack stack = _adventurer.HasBeltItemInHand ? inventory.GetEquipped((EquipSlot)_adventurer.BeltSlot) : default;
+            ItemStack stack = _adventurer.HasBeltItemInHand && !_adventurer.IsHandsOccupied ? inventory.GetEquipped((EquipSlot)_adventurer.BeltSlot) : default;
 
             if (stack.ItemId == _shownHandItem)
                 return;

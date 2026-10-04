@@ -66,6 +66,32 @@ Hit detection и сетевой authority должны учитывать ори
 **Consequences**
 Атрибуты влияют на Poise, Guard, Impact, Weakpoint, Handling, Perception, Mending и заряды заклинаний. `DamageReceiverComponent.IDefense` заменён на `IHitModifier`, в `ICombatStats` добавлен `HandlingSpeed`.
 
+## DD-007 — Swing Peak Lies on the Crosshair
+**Date:** 2026-10-04  
+**Status:** Accepted
+
+**Context**
+При прицельном ударе оружие в кадре не всегда находилось на прицеле, попадание не было гарантировано.
+
+**Decision**
+В пике каждого melee-замаха (любое оружие) `StrikePoint` оружия лежит на луче из глаз. Клип-вариант оружия обязан содержать strike point исходника, иначе у него собственный префикс клипов. Лезвие следует траектории удара, оружие и руки не трясутся (эталон — Dark and Darker).
+
+**Consequences**
+Пик проверяется при сборке (`CheckPeak` — ошибка выше 1 см, `CheckSwing`). Правила авторинга поз — в `BattleAnimationLibrary`.
+
+## DD-008 — Generated Content Pipeline
+**Date:** 2026-10-04  
+**Status:** Accepted
+
+**Context**
+Ассеты боя и данжа многочисленны и часто меняются; ручная правка не масштабируется.
+
+**Decision**
+Анимации, меши оружия, PBR-текстуры, звуки, иконки, конфиги, префабы и сцены генерируются editor-билдерами (`Tools/Game/Battle/Build All`, `Tools/Game/Dungeon/Build All`). Данные правятся в `*Library`-классах, ручные правки сгенерированных ассетов перезаписываются.
+
+**Consequences**
+Новые предметы добавляются в конец `DungeonItemLibrary.CreateItems` (id = позиция, сохранения ссылаются на них). Новое оружие — вариант в `DungeonWeaponLibrary.s_variants`.
+
 ## Template
 
 ### DD-XXX — `[Title]`

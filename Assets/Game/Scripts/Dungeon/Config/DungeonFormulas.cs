@@ -8,8 +8,6 @@ namespace Game.Scripts.Dungeon
         public const float BaseMoveSpeed = 300f;
         public const float MaxMoveSpeed = 330f;
         public const float BaseHealth = 125f;
-        public const float BasePoise = 12f;
-        public const float BaseConcentration = 10f;
         public const float BaseMagicResistance = 30f;
         public const float MaxDamageReduction = 0.65f;
         public const int Threshold = 30;

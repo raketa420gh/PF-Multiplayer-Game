@@ -936,6 +936,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_animationPrefix", "HeadRam");
             BattleEditorUtility.Set(so, "_deflectDuration", 1.2f);
             BattleEditorUtility.Set(so, "_reach", 6f);
+            BattleEditorUtility.Set(so, "_impact", 6);
             so.FindProperty("_attacks").arraySize = 1;
             BattleEditorUtility.Set(so, attack + "_windupTime", 0.7f);
             BattleEditorUtility.Set(so, attack + "_activeTime", 0.4f);

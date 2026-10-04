@@ -26,3 +26,14 @@ Assets/
 
 ## Prefab Conventions
 `[ ]`
+
+## Current Layout (prototype)
+```text
+Assets/Game/
+├── Animations, Audio, Configs, Materials, Meshes, Prefabs, Textures   # генерируются билдерами
+├── Scenes/            # LobbyScene, DungeonScene, BattleScene, SampleScene
+└── Scripts/
+    ├── Battle/ Dungeon/ Player/ GameObjects/ System/ Common/
+    └── Editor/{Battle,Dungeon}/   # билдеры контента, меню Tools/Game/*
+```
+

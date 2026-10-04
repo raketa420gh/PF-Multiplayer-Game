@@ -39,6 +39,7 @@ namespace Game.Scripts.Dungeon
         public const byte NoSearch = 255;
         private const float ContainerRange = 5f;
         private const float CastPadding = 0.15f;
+        private const float RootTurnLimit = 90f;
 
         public FighterComponent Fighter => _fighter;
         public InventoryComponent Inventory => _inventory;
@@ -107,7 +108,15 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public NetworkBool IsHolstered { get; private set; }
 
-        public bool HasWeaponInHand => !HasBeltItemInHand && !IsHolstered && Form == ShapeshiftForm.None;
+        public bool HasWeaponInHand => !HasBeltItemInHand && !IsHolstered && Form == ShapeshiftForm.None && !IsHandsOccupied;
+
+        /// Doors, shrines and bandages take both hands: whatever was held is put away until the action ends.
+        public bool IsHandsOccupied => Pending switch
+        {
+            PendingAction.Interact => Runner.TryFindBehaviour(_pendingTarget, out NetworkBehaviour behaviour) && behaviour is InteractableComponent { IsHandsOccupied: true },
+            PendingAction.Consumable => _fighter.Combat.BusyKind == BusyBandage,
+            _ => false
+        };
 
         /// Bag index of the item being discovered in the opened container, NoSearch when nothing is left to find.
         [Networked]
@@ -203,13 +212,16 @@ namespace Game.Scripts.Dungeon
         private NetworkBool _isHoldingCast { get; set; }
 
         [Networked]
-        private TickTimer _fleshWard { get; set; }
-
-        [Networked]
-        private TickTimer _castWard { get; set; }
+        private int _seenStaggerTick { get; set; }
 
         [Networked]
         private NetworkBool _isAttuned { get; set; }
+
+        [Networked]
+        private NetworkBool _isRooted { get; set; }
+
+        [Networked]
+        private float _rootYaw { get; set; }
 
         [Networked]
         private int _searchStartTick { get; set; }
@@ -239,6 +251,7 @@ namespace Game.Scripts.Dungeon
 
             _fighter.SetStats(_stats);
             _fighter.Receiver.SetModifier(this);
+            _effects.SetResistance(_stats);
             _fighter.OnSimulateInput += OnSimulateInput;
             _actions.SetOwner(this);
             _fighter.Combat.Projectiles.OnReceiverHit += OnProjectileHit;
@@ -569,6 +582,14 @@ namespace Game.Scripts.Dungeon
 
             CombatComponent combat = _fighter.Combat;
 
+            if (combat.State == CombatState.Stagger && combat.StateTick != _seenStaggerTick)
+            {
+                _seenStaggerTick = combat.StateTick;
+
+                if (_stats.HasThreshold(StatType.Reflex))
+                    _effects.Add(StatusEffectKind.ActionSpeed, 20f, 2f);
+            }
+
             if (_isHoldingCast && Pending == PendingAction.Ability)
             {
                 if (Runner.Tick >= _pendingCompleteTick)
@@ -581,7 +602,7 @@ namespace Game.Scripts.Dungeon
                 SimulatePending();
             }
 
-            if (Pending == PendingAction.Interact && !buttons.IsSet(PlayerInputButtons.Interact))
+            if (Pending == PendingAction.Interact && (_isRooted ? Mathf.Abs(Mathf.DeltaAngle(_rootYaw, _fighter.Look.y)) > RootTurnLimit : !buttons.IsSet(PlayerInputButtons.Interact)))
                 CancelPending();
 
             if (Pending != PendingAction.None && combat.State != CombatState.Busy)
@@ -590,6 +611,7 @@ namespace Game.Scripts.Dungeon
             // Resting is done on one knee: the body goes down as in a crouch.
             IsResting = Pending == PendingAction.None && buttons.IsSet(PlayerInputButtons.Rest) && combat.State == CombatState.Idle;
             _fighter.SetCrouchForced(IsResting);
+            _fighter.SetRooted(Pending == PendingAction.Interact && _isRooted);
 
             if (Pending != PendingAction.None)
                 return;
@@ -689,6 +711,8 @@ namespace Game.Scripts.Dungeon
             Pending = PendingAction.Interact;
             _pendingTarget = target.Id;
             _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(duration / Runner.DeltaTime);
+            _isRooted = target.IsRooting;
+            _rootYaw = _fighter.Look.y;
         }
 
         private void TryCastReadiedSpell()
@@ -1000,13 +1024,19 @@ namespace Game.Scripts.Dungeon
             }
 
             if (!_restTimer.IsRunning)
-                _restTimer = TickTimer.CreateFromSeconds(Runner, _restHealInterval / _stats.Mending);
+                _restTimer = TickTimer.CreateFromSeconds(Runner, RestHealInterval());
 
             if (_restTimer.Expired(Runner))
             {
                 _fighter.Health.Restore(1);
-                _restTimer = TickTimer.CreateFromSeconds(Runner, _restHealInterval / _stats.Mending);
+                _restTimer = TickTimer.CreateFromSeconds(Runner, RestHealInterval());
             }
+        }
+
+        /// Flesh 30 rests twice as fast.
+        private float RestHealInterval()
+        {
+            return _restHealInterval / _stats.Mending / (_stats.HasThreshold(StatType.Flesh) ? 2f : 1f);
         }
 
         /// Unsearched loot of the opened container is discovered one item at a time; Perception sets the pace.
@@ -1171,15 +1201,22 @@ namespace Game.Scripts.Dungeon
             ItemStack equipped = _inventory.GetEquipped(slot);
             ItemConfig item = _database.Get(equipped.ItemId);
             float useTime;
+            float animSpeed = 1f;
             PendingAction action;
             byte kind = BusyUse;
 
             switch (item)
             {
-                case ConsumableItemConfig consumable:
+                // Potions are drunk at Action Speed, bandages are wound at Handling Speed.
+                case ConsumableItemConfig consumable when consumable.Effect == ConsumableEffect.HealInstant:
                     useTime = consumable.UseTime / _stats.HandlingSpeed;
                     action = PendingAction.Consumable;
-                    kind = consumable.Effect == ConsumableEffect.HealInstant ? BusyBandage : BusyUse;
+                    kind = BusyBandage;
+                    break;
+                case ConsumableItemConfig consumable:
+                    animSpeed = _stats.ActionSpeed;
+                    useTime = consumable.UseTime / animSpeed;
+                    action = PendingAction.Consumable;
                     break;
                 case UtilityItemConfig utility when utility.UtilityKind != UtilityKind.Lockpick:
                     useTime = utility.UseTime / _stats.HandlingSpeed;
@@ -1190,7 +1227,7 @@ namespace Game.Scripts.Dungeon
                     return;
             }
 
-            if (!_fighter.Combat.StartBusy(useTime, kind))
+            if (!_fighter.Combat.StartBusy(useTime, kind, animSpeed))
                 return;
 
             Pending = action;
@@ -1224,49 +1261,12 @@ namespace Game.Scripts.Dungeon
         }
 
         float DamageReceiverComponent.IHitModifier.WeakpointMultiplier => _stats.Weakpoint;
-        float DamageReceiverComponent.IHitModifier.ImpactMultiplier => _stats.Impact;
 
         int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, DamageType type, HitZone zone)
         {
             int reduced = _stats.ModifyIncomingDamage(damage, type, zone);
 
             return _effects.Absorb(reduced);
-        }
-
-        float DamageReceiverComponent.IHitModifier.ModifyBlockMitigation(float mitigation)
-        {
-            return _stats.HasThreshold(StatType.Grip) ? 1f : Mathf.Min(1f, mitigation * _stats.Guard);
-        }
-
-        /// Poise (plus Concentration while casting) swallows light hits; the 30-point thresholds of Flesh, Craft, Insight and Reflex hook in here.
-        float DamageReceiverComponent.IHitModifier.ModifyIncomingStagger(int damage, float staggerDuration)
-        {
-            bool isCasting = Pending == PendingAction.Ability;
-
-            if (staggerDuration <= 0f || damage < _stats.Poise + (isCasting ? _stats.Concentration : 0f))
-                return 0f;
-
-            if (Pending is PendingAction.Interact or PendingAction.Consumable or PendingAction.Utility && _stats.HasThreshold(StatType.Craft))
-                return 0f;
-
-            if (isCasting && _stats.HasThreshold(StatType.Insight) && _castWard.ExpiredOrNotRunning(Runner))
-            {
-                _castWard = TickTimer.CreateFromSeconds(Runner, 15f);
-
-                return 0f;
-            }
-
-            if (_stats.HasThreshold(StatType.Flesh) && _fleshWard.ExpiredOrNotRunning(Runner))
-            {
-                _fleshWard = TickTimer.CreateFromSeconds(Runner, 10f);
-
-                return 0f;
-            }
-
-            if (_stats.HasThreshold(StatType.Reflex))
-                _effects.Add(StatusEffectKind.ActionSpeed, 20f, 2f);
-
-            return staggerDuration / _stats.StaggerRecovery;
         }
     }
 }

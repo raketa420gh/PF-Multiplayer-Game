@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.4 — 2026-10-04
+
+### Added
+- Dark and Darker-style prototype on top of the battle system (Fusion host): three scenes — `LobbyScene` → `DungeonScene` / `BattleScene` (test ground) with loading screen.
+- Lobby tabs: Home, Skills, Stash, Merchants (wares bought for coins, dev "Quartermaster" stall).
+- Stats view with hexagram chart and hover tooltips; item tooltip; generated ability/perk icons.
+- Hexagram attribute system, Barbarian class, item affixes rolled from item seed.
+- Loot search: loot is hidden until searched item by item (speed = Perception); monster corpses are containers.
+- Holster toggle: gear in weapon/shield/belt slots counts in stats only while in hands.
+- Generated weapon meshes with PBR textures, synthesized multi-take audio.
+
+### Changed
+- Swing peak of every melee attack lies on the screen crosshair (aimed hit always registers).
+- Melee swings rework: blade edge follows the cut trajectory, elbow path is planned per clip, no arm/weapon shake.
+- Round shields use disc block hitboxes.
+
+### Removed
+- Zombie monster; all classes from the original clone except Barbarian.
+
 ## v0.3 — 2026-10-02
 
 ### Added

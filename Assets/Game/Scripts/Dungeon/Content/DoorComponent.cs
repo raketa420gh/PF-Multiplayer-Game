@@ -6,7 +6,9 @@ namespace Game.Scripts.Dungeon
     public sealed class DoorComponent : InteractableComponent
     {
         public override string Prompt => IsOpen ? "Close door" : IsLocked ? "Locked door" : "Open door";
-        public override float HoldTime => 0.15f;
+        public override float HoldTime => IsOpen ? 0.15f : _openTime;
+        public override bool IsRooting => !IsOpen;
+        public override bool IsHandsOccupied => true;
 
         [Networked]
         public NetworkBool IsOpen { get; private set; }
@@ -22,6 +24,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private float _swingSpeed = 220f;
+
+        [SerializeField]
+        private float _openTime = 3f;
 
         [SerializeField]
         private Collider _blocker;
@@ -61,7 +66,7 @@ namespace Game.Scripts.Dungeon
         {
             if (IsLocked)
             {
-                if (!adventurer.Inventory.TryConsumeUtility(UtilityKind.Lockpick))
+                if (!adventurer.Stats.HasThreshold(StatType.Craft) && !adventurer.Inventory.TryConsumeUtility(UtilityKind.Lockpick))
                     return;
 
                 IsLocked = false;
