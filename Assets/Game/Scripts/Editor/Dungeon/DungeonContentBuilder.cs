@@ -838,6 +838,9 @@ namespace Game.Scripts.Editor.Dungeon
             root.GetComponent<CharacterController>().radius = 0.3f * def.Scale;
             root.GetComponent<CharacterController>().height = 1.85f * def.Scale;
             root.GetComponent<CharacterController>().center = new Vector3(0f, 0.925f * def.Scale, 0f);
+            parts.Move.Blocker.radius *= def.Scale;
+            parts.Move.Blocker.height *= def.Scale;
+            parts.Move.Blocker.center *= def.Scale;
 
             // Block boxes ride the scaled skeleton; Fusion hitboxes ignore transform scale, so their extents follow by hand.
             foreach (ZoneHitbox hitbox in root.GetComponentsInChildren<ZoneHitbox>(true))
@@ -865,6 +868,7 @@ namespace Game.Scripts.Editor.Dungeon
             Object.DestroyImmediate(parts.Animator.gameObject);
             parts.Animator = null;
             root.GetComponent<CharacterController>().radius = 0.25f;
+            parts.Move.Blocker.radius = 0.35f;
 
             ZoneHitbox skull = null;
 

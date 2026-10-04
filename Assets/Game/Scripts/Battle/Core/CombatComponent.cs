@@ -55,6 +55,7 @@ namespace Game.Scripts.Battle
         public bool IsComboQueued => _comboQueued;
         public float DrawPower => State == CombatState.Draw ? Weapon.Ranged.GetPower(StateTime) : 0f;
         public float BusyProgress => State == CombatState.Busy && _stateDuration > 0f ? Mathf.Clamp01(StateTime / _stateDuration) : 0f;
+        public float BusyTimeLeft => State == CombatState.Busy ? Mathf.Max(0f, _stateDuration - StateTime) : 0f;
         public byte BusyKind => _busyKind;
         public float TimeScale => State switch
         {

@@ -300,6 +300,7 @@ namespace Game.Scripts.Editor.Battle
             collider.center = new Vector3(0f, 0.925f, 0f);
             collider.stepOffset = 0.3f;
             collider.skinWidth = 0.03f;
+            CapsuleCollider blocker = BattleEditorUtility.CreateBlocker(root.transform, BattleEditorUtility.BlockerRadius, collider.height);
 
             root.AddComponent<NetworkObject>();
             NetworkCharacterController controller = root.AddComponent<NetworkCharacterController>();
@@ -360,6 +361,7 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_config", movement);
             BattleEditorUtility.Set(so, "_controller", controller);
             BattleEditorUtility.Set(so, "_collider", collider);
+            BattleEditorUtility.Set(so, "_blocker", blocker);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             so = new SerializedObject(body);
@@ -511,6 +513,7 @@ namespace Game.Scripts.Editor.Battle
 
             SetupReceiver(receiver, health, hitboxRoot, zones);
             BattleEditorUtility.Set(root.AddComponent<HitFeedbackComponent>(), "_receiver", receiver);
+            BattleEditorUtility.CreateBlocker(parent, 0.35f, 1.8f);
 
             return SavePrefab(root, hasShield ? ShieldDummyPath : DummyPath);
         }
@@ -595,13 +598,60 @@ namespace Game.Scripts.Editor.Battle
 
                 traceBase = new List<Vector3>(samples + 1);
                 traceTip = new List<Vector3>(samples + 1);
+                Vector3[] strike = new Vector3[samples + 1];
+                Quaternion[] rotations = new Quaternion[samples + 1];
 
                 for (int i = 0; i <= samples; i++)
                 {
                     Play(state, Mathf.Min(i / BattleAnimationBuilder.FrameRate, attack.Duration) / attack.Duration);
                     traceBase.Add(socket.TransformPoint(0f, 0f, weapon.BladeBase));
                     traceTip.Add(socket.TransformPoint(0f, 0f, weapon.BladeTip));
+                    strike[i] = socket.TransformPoint(0f, 0f, weapon.StrikePoint);
+                    rotations[i] = socket.rotation;
                 }
+
+                CheckSwing(state, attack, BattleAnimationLibrary.IsCut(weapon, attack) && !weapon.IsUnarmed, strike, rotations);
+            }
+
+            /// The weapon must not spin about its own axis between two frames, and while a cut is active and under way its
+            /// leading edge must face where the strike point travels.
+            private static void CheckSwing(string state, AttackDefinition attack, bool isCut, Vector3[] strike, Quaternion[] rotations)
+            {
+                const float maxRoll = 25f;
+                const float maxLean = 15f;
+                const float underWay = 0.4f;
+                float roll = 0f;
+                float lean = 0f;
+                float fastest = 0f;
+
+                for (int i = 1; i < strike.Length - 1; i++)
+                    fastest = Mathf.Max(fastest, IsActive(attack, i) ? (strike[i + 1] - strike[i - 1]).magnitude : 0f);
+
+                for (int i = 1; i < strike.Length - 1; i++)
+                {
+                    Vector3 blade = rotations[i] * Vector3.forward;
+                    (rotations[i + 1] * Quaternion.Inverse(rotations[i])).ToAngleAxis(out float angle, out Vector3 axis);
+                    roll = Mathf.Max(roll, Mathf.Abs(Mathf.DeltaAngle(0f, angle) * Vector3.Dot(axis, blade)));
+
+                    Vector3 travel = strike[i + 1] - strike[i - 1];
+                    Vector3 across = Vector3.ProjectOnPlane(travel, blade);
+
+                    if (isCut && IsActive(attack, i) && travel.magnitude > fastest * underWay && across.magnitude > travel.magnitude * 0.5f)
+                        lean = Mathf.Max(lean, Vector3.Angle(rotations[i] * Vector3.up, across));
+                }
+
+                if (roll > maxRoll)
+                    Debug.LogError($"[{nameof(BattleContentBuilder)}] {state}: the weapon spins {roll:0} degrees about its axis within a frame");
+
+                if (lean > maxLean)
+                    Debug.LogError($"[{nameof(BattleContentBuilder)}] {state}: the edge is {lean:0} degrees off the path of the cut");
+            }
+
+            private static bool IsActive(AttackDefinition attack, int sample)
+            {
+                float time = sample / BattleAnimationBuilder.FrameRate;
+
+                return time >= attack.Windup && time <= attack.Windup + attack.Active;
             }
 
             /// The box wraps the mesh of the attachment held in the block socket, so it matches the visible weapon exactly.

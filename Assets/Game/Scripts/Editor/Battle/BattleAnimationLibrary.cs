@@ -10,7 +10,9 @@ namespace Game.Scripts.Editor.Battle
         Linear,
         In,
         Out,
-        InOut
+        InOut,
+        /// Velocity runs through the key: the segment eases between the rates of its two keys.
+        Flow
     }
 
     internal struct PoseKey
@@ -18,12 +20,23 @@ namespace Game.Scripts.Editor.Battle
         public float Time;
         public BodyPose Pose;
         public Ease Ease;
+        /// Flow keys only: how fast the motion passes this key, in segments per second.
+        public float Rate;
+        /// Keys of a cut: on the way to this key the leading edge follows the travel of the point this far up the weapon.
+        public float Lead;
 
         public PoseKey(float time, BodyPose pose, Ease ease = Ease.InOut)
         {
             Time = time;
             Pose = pose;
             Ease = ease;
+            Rate = 0f;
+            Lead = 0f;
+        }
+
+        public static PoseKey Flow(float time, BodyPose pose, float rate)
+        {
+            return new PoseKey(time, pose, Ease.Flow) { Rate = rate };
         }
     }
 
@@ -54,6 +67,9 @@ namespace Game.Scripts.Editor.Battle
         public float BladeBase;
         public float BladeTip;
         public float Strike;
+        /// Bare hands and claws: the strike point sits in the hand, too close for its path to steer the roll frame by
+        /// frame. The knuckles still lead a punch, turning from key to key.
+        public bool IsUnarmed;
         public BodyPose Idle;
         public AttackDefinition[] Attacks = Array.Empty<AttackDefinition>();
 
@@ -100,7 +116,37 @@ namespace Game.Scripts.Editor.Battle
         /// pitch as one piece, so a swing keeps its place on the screen wherever the player looks.
         public static readonly Vector3 Eye = new(0f, 1.755f, 0.115f);
 
-        private static readonly Vector3 s_shieldRest = new(-0.24f, 1.3f, 0.28f);
+        // Swing dynamics as slopes of the segment eases (1 = the average speed of the segment). The raise starts briskly
+        // and settles into the windup, the strike accelerates through the peak and is still moving when the active phase
+        // ends; the weapon then runs out into a follow-through before it comes back.
+        private const float RaiseSlope = 1.2f;
+        private const float SettleSlope = 0.25f;
+        private const float StrikeSlope = 1.8f;
+        private const float EndSlope = 0.8f;
+        private const float FollowShare = 0.4f;
+        private const float MinFollow = 0.08f;
+        private const float MaxFollow = 0.26f;
+        private const float FollowSwing = 0.45f;
+        private const float FollowThrust = 0.08f;
+        /// The torso turns this much ahead of the arms: a swing starts from the body.
+        private const float SpineLead = 0.045f;
+        /// A strike whose point travels less than this share of its way across the blade is a thrust: there is no cut
+        /// for the edge to lead.
+        private const float ThrustShare = 0.5f;
+        /// Share of the way from the windup to the peak over which the edge takes to the path of the strike point: while
+        /// the weapon turns over at the windup, its path has no direction worth following.
+        private const float LeadIn = 0.3f;
+        private const int WindupKey = 1;
+        private const int PeakKey = 2;
+        private const int EndKey = 3;
+        private const int FollowKey = 4;
+        /// At the peak the grip is no further from the aim line than this share of the strike distance: the strike point
+        /// has to reach the crosshair, and the blade to cross it at an angle instead of lying flat across the view.
+        private const float MaxAimOffset = 0.75f;
+        /// A fist is held upright: its short blade does lie across the view.
+        private const float MaxFistOffset = 0.95f;
+
+        private static readonly Vector3 s_shieldRest =new(-0.24f, 1.3f, 0.28f);
         private static readonly Vector3 s_shieldRestNormal = new(-0.35f, 0f, 0.94f);
         private static readonly Vector3 s_shieldBack = new(-0.32f, 1.2f, 0.14f);
         private static readonly Vector3 s_shieldBackNormal = new(-0.7f, 0f, 0.7f);
@@ -128,25 +174,25 @@ namespace Game.Scripts.Editor.Battle
                     {
                         Windup = 0.4f, Active = 0.2f, Recovery = 0.5f, ComboStart = 0.5f, ComboEnd = 0.9f,
                         Damage = 22, MoveMultiplier = 0.7f,
-                        WindupPose = SwordShield(new(0.36f, 1.7f, 0.1f), new(0.5f, 0.7f, -0.5f), yaw: 20f),
-                        MidPose = SwordShield(new(0.17f, 1.6f, 0.48f), Vector3.forward),
-                        EndPose = SwordShield(new(0f, 1.44f, 0.46f), new(-0.46f, -0.39f, 0.79f), yaw: -18f)
+                        WindupPose = SwordShield(new(0.46f, 1.56f, 0.14f), new(0.85f, 0.45f, -0.25f), yaw: 25f),
+                        MidPose = SwordShield(new(0f, 1.44f, 0.52f), Vector3.forward),
+                        EndPose = SwordShield(new(-0.1f, 1.26f, 0.46f), new(-0.35f, -0.1f, 0.93f), yaw: -22f)
                     },
                     new AttackDefinition
                     {
                         Windup = 0.36f, Active = 0.2f, Recovery = 0.5f, ComboStart = 0.46f, ComboEnd = 0.86f,
                         Damage = 22, MoveMultiplier = 0.7f,
-                        WindupPose = SwordShield(new(0f, 1.54f, 0.3f), new(-0.85f, 0.2f, 0.25f), yaw: -15f),
-                        MidPose = SwordShield(new(0.12f, 1.6f, 0.5f), Vector3.forward),
-                        EndPose = SwordShield(new(0.38f, 1.56f, 0.32f), new(0.7f, 0.1f, 0.7f), yaw: 15f)
+                        WindupPose = SwordShield(new(-0.04f, 1.5f, 0.34f), new(-0.85f, 0.35f, 0.15f), yaw: -18f),
+                        MidPose = SwordShield(new(0.2f, 1.46f, 0.52f), Vector3.forward),
+                        EndPose = SwordShield(new(0.5f, 1.36f, 0.2f), new(0.45f, 0.05f, 0.89f), yaw: 18f)
                     },
                     new AttackDefinition
                     {
                         Windup = 0.45f, Active = 0.2f, Recovery = 0.6f, ComboStart = 0.55f, ComboEnd = 0.95f,
                         Damage = 30, MoveMultiplier = 0.6f, Stagger = 0.2f,
-                        WindupPose = SwordShield(new(0.22f, 1.88f, 0f), new(0.1f, 0.5f, -0.85f), pitch: -10f),
-                        MidPose = SwordShield(new(0.12f, 1.68f, 0.42f), Vector3.forward),
-                        EndPose = SwordShield(new(0.14f, 1.4f, 0.46f), new(-0.08f, -0.45f, 0.9f), pitch: 12f)
+                        WindupPose = SwordShield(new(0.2f, 1.9f, 0.02f), new(0.08f, 0.6f, -0.8f), pitch: -10f),
+                        MidPose = SwordShield(new(0.08f, 1.42f, 0.54f), Vector3.forward),
+                        EndPose = SwordShield(new(0.1f, 1.14f, 0.38f), new(-0.03f, -0.17f, 0.98f), pitch: 12f)
                     }
                 },
                 CanBlock = true,
@@ -186,25 +232,25 @@ namespace Game.Scripts.Editor.Battle
                     {
                         Windup = 0.6f, Active = 0.26f, Recovery = 0.7f, ComboStart = 0.75f, ComboEnd = 1.2f,
                         Damage = 38, MoveMultiplier = 0.5f, Stagger = 0.25f,
-                        WindupPose = TwoHanded(new(0.3f, 1.52f, 0.12f), new(0.85f, 0.2f, -0.5f), yaw: 35f),
-                        MidPose = TwoHanded(new(0.08f, 1.56f, 0.46f), Vector3.forward),
-                        EndPose = TwoHanded(new(-0.18f, 1.5f, 0.32f), new(-0.75f, 0.05f, 0.65f), yaw: -35f)
+                        WindupPose = TwoHanded(new(0.3f, 1.4f, 0.1f), new(0.8f, 0.4f, -0.45f), yaw: 35f),
+                        MidPose = TwoHanded(new(-0.12f, 1.42f, 0.48f), Vector3.forward),
+                        EndPose = TwoHanded(new(-0.3f, 1.22f, 0.22f), new(-0.42f, 0.08f, 0.9f), yaw: -35f)
                     },
                     new AttackDefinition
                     {
                         Windup = 0.55f, Active = 0.26f, Recovery = 0.7f, ComboStart = 0.7f, ComboEnd = 1.15f,
                         Damage = 38, MoveMultiplier = 0.5f, Stagger = 0.25f,
-                        WindupPose = TwoHanded(new(-0.18f, 1.52f, 0.2f), new(-0.85f, 0.2f, -0.45f), yaw: -30f),
-                        MidPose = TwoHanded(new(0.06f, 1.56f, 0.46f), Vector3.forward),
-                        EndPose = TwoHanded(new(0.32f, 1.5f, 0.24f), new(0.75f, 0.05f, 0.65f), yaw: 30f)
+                        WindupPose = TwoHanded(new(-0.2f, 1.4f, 0.18f), new(-0.8f, 0.4f, -0.4f), yaw: -30f),
+                        MidPose = TwoHanded(new(0.18f, 1.44f, 0.5f), Vector3.forward),
+                        EndPose = TwoHanded(new(0.42f, 1.3f, 0.12f), new(0.48f, -0.05f, 0.87f), yaw: 30f)
                     },
                     new AttackDefinition
                     {
                         Windup = 0.7f, Active = 0.26f, Recovery = 0.85f, ComboStart = 0.85f, ComboEnd = 1.3f,
                         Damage = 52, MoveMultiplier = 0.4f, Stagger = 0.4f,
-                        WindupPose = TwoHanded(new(0.06f, 1.86f, 0.04f), new(0f, 0.55f, -0.83f), pitch: -12f),
-                        MidPose = TwoHanded(new(0.05f, 1.66f, 0.4f), Vector3.forward),
-                        EndPose = TwoHanded(new(0.06f, 1.36f, 0.44f), new(0f, -0.45f, 0.9f), pitch: 12f)
+                        WindupPose = TwoHanded(new(0.08f, 1.9f, 0.12f), new(0f, 0.55f, -0.83f), pitch: -12f),
+                        MidPose = TwoHanded(new(0.06f, 1.4f, 0.5f), Vector3.forward),
+                        EndPose = TwoHanded(new(0.06f, 1.1f, 0.38f), new(0f, -0.17f, 0.98f), pitch: 12f)
                     }
                 },
                 CanBlock = true,
@@ -238,16 +284,123 @@ namespace Game.Scripts.Editor.Battle
             };
         }
 
+        /// Idle, windup, peak, end of the active phase, follow-through, idle. The motion never stops between the windup
+        /// and the follow-through, and the peak is a key of its own, so its pose is reached exactly.
         public static List<PoseKey> AttackKeys(WeaponDefinition weapon, AttackDefinition attack)
         {
+            List<PoseKey> keys = SwingKeys(weapon, attack);
+            LeadWithEdge(keys, weapon.StrikePoint, IsCut(weapon, attack), !weapon.IsUnarmed);
+
+            return keys;
+        }
+
+        /// A cut carries its strike point across the blade through the peak. A thrust runs it along the blade.
+        public static bool IsCut(WeaponDefinition weapon, AttackDefinition attack)
+        {
+            return Across(SwingKeys(weapon, attack), PeakTime(attack), weapon.StrikePoint, out _) >= ThrustShare;
+        }
+
+        private static List<PoseKey> SwingKeys(WeaponDefinition weapon, AttackDefinition attack)
+        {
+            BodyPose peak = Peak(weapon, attack);
+            float peakTime = PeakTime(attack);
+            float endTime = attack.Windup + attack.Active;
+            float followTime = endTime + Mathf.Clamp(attack.Recovery * FollowShare, MinFollow, MaxFollow);
+
             return new List<PoseKey>
             {
-                new(0f, weapon.Idle),
-                new(attack.Windup, attack.WindupPose, Ease.Out),
-                new(PeakTime(attack), Peak(weapon, attack), Ease.In),
-                new(attack.Windup + attack.Active, attack.EndPose, Ease.Linear),
-                new(attack.Duration, weapon.Idle)
+                PoseKey.Flow(0f, weapon.Idle, RaiseSlope / attack.Windup),
+                PoseKey.Flow(attack.Windup, attack.WindupPose, SettleSlope / attack.Windup),
+                PoseKey.Flow(peakTime, peak, StrikeSlope / (attack.Active * 0.5f)),
+                PoseKey.Flow(endTime, attack.EndPose, EndSlope / (endTime - peakTime)),
+                PoseKey.Flow(followTime, FollowThrough(peak, attack.EndPose), 0f),
+                PoseKey.Flow(attack.Duration, weapon.Idle, 0f)
             };
+        }
+
+        /// Turns the weapon about its own axis so that the leading edge faces where the strike point travels: the blade
+        /// cuts along its path instead of slapping with the flat. A cut does so all the way from the windup to the end of
+        /// the active phase, and its follow-through keeps the roll the cut ended with. A thrust has no path across the
+        /// blade to face: the weapon keeps the roll it rests with. Needs the edge of the rest pose; without it the arm
+        /// solve rolls the weapon.
+        private static void LeadWithEdge(List<PoseKey> keys, float strike, bool isCut, bool followsPath)
+        {
+            if (keys[0].Pose.Edge == Vector3.zero)
+                return;
+
+            const float step = 1f / BattleAnimationBuilder.FrameRate;
+            HandPose held = keys[0].Pose.Main;
+            held.Up = keys[0].Pose.Edge;
+
+            // The windup is already turned for the cut that sets off from it.
+            for (float time = keys[WindupKey].Time + step; isCut && time < keys[PeakKey].Time; time += step)
+            {
+                Locate(keys, time, out float alpha);
+
+                if (alpha < LeadIn || Across(keys, time, strike, out Vector3 normal) < ThrustShare)
+                    continue;
+
+                held = Hand(keys, time);
+                held.Up = Vector3.Cross(normal, held.Forward);
+                break;
+            }
+
+            for (int i = WindupKey; i <= FollowKey; i++)
+            {
+                PoseKey key = keys[i];
+                Vector3 blade = key.Pose.Main.Forward;
+
+                // Where the point runs along the blade, the weapon keeps the roll it had on the key before.
+                if (isCut && i > WindupKey && i < FollowKey && Across(keys, key.Time, strike, out Vector3 normal) >= ThrustShare)
+                    held = new HandPose(key.Pose.Main.Position, blade, Vector3.Cross(normal, blade));
+
+                key.Pose.Edge = Carry(held.Forward, held.Up, blade);
+                key.Pose.OffRoll = keys[0].Pose.OffRoll;
+                key.Lead = isCut && followsPath && (i == PeakKey || i == EndKey) ? strike : 0f;
+                keys[i] = key;
+            }
+        }
+
+        /// Share of the travel of the point 'strike' metres up the weapon that goes across the blade at the given moment.
+        /// The normal is that of the plane the blade sweeps there; its length is the share.
+        private static float Across(List<PoseKey> keys, float time, float strike, out Vector3 normal)
+        {
+            const float step = 0.5f / BattleAnimationBuilder.FrameRate;
+            HandPose before = Hand(keys, time - step);
+            HandPose after = Hand(keys, time + step);
+            Vector3 travel = after.Position + after.Forward * strike - before.Position - before.Forward * strike;
+            normal = Vector3.Cross(Hand(keys, time).Forward, travel.normalized);
+
+            return normal.magnitude;
+        }
+
+        private static HandPose Hand(List<PoseKey> keys, float time)
+        {
+            int next = Locate(keys, time, out float alpha);
+
+            return Interpolate(keys[Mathf.Max(next - 2, 0)].Pose.Main, keys[next - 1].Pose.Main, keys[next].Pose.Main,
+                keys[Mathf.Min(next + 1, keys.Count - 1)].Pose.Main, alpha, keys[next].Ease == Ease.Flow);
+        }
+
+        /// Where the weapon runs out after the active phase: the last part of the swing continued. A thrust barely
+        /// travels further, the arms are already stretched.
+        private static BodyPose FollowThrough(in BodyPose peak, in BodyPose end)
+        {
+            Vector3 travel = end.Main.Position - peak.Main.Position;
+            float share = Mathf.Lerp(FollowSwing, FollowThrust, Mathf.Abs(Vector3.Dot(travel.normalized, peak.Main.Forward)));
+            BodyPose pose = end;
+            pose.Spine = end.Spine + (end.Spine - peak.Spine) * share;
+            pose.Head = end.Head + (end.Head - peak.Head) * share;
+            pose.Main.Position = end.Main.Position + travel * share;
+            pose.Main.Forward = Exp(end.Main.Forward, -Log(end.Main.Forward, peak.Main.Forward) * share);
+
+            if (pose.Off.IsAutoRoll)
+            {
+                pose.Off.Position = pose.Main.Position + pose.Main.Forward * Vector3.Dot(end.Off.Position - end.Main.Position, end.Main.Forward);
+                pose.Off.Forward = pose.Main.Forward;
+            }
+
+            return pose;
         }
 
         public static List<PoseKey> BlockKeys(WeaponDefinition weapon)
@@ -275,7 +428,7 @@ namespace Game.Scripts.Editor.Battle
         {
             return new List<PoseKey>
             {
-                new(0f, Peak(weapon, weapon.Attacks[0])),
+                new(0f, AttackKeys(weapon, weapon.Attacks[0])[PeakKey].Pose),
                 new(0.12f, weapon.DeflectPose, Ease.Out),
                 new(weapon.DeflectDuration, weapon.Idle)
             };
@@ -314,16 +467,18 @@ namespace Game.Scripts.Editor.Battle
         public static BodyPose Peak(WeaponDefinition weapon, AttackDefinition attack)
         {
             BodyPose pose = attack.MidPose;
-            Vector3 grip = pose.Main.Position;
+            Vector2 offset = Vector2.ClampMagnitude(pose.Main.Position - Eye, weapon.StrikePoint * (weapon.IsUnarmed ? MaxFistOffset : MaxAimOffset));
+            Vector3 grip = new Vector3(Eye.x + offset.x, Eye.y + offset.y, pose.Main.Position.z);
             Vector3 blade = Aim(grip, weapon.StrikePoint).normalized;
 
             // An off hand without a roll of its own holds the same weapon and follows it.
             if (pose.Off.IsAutoRoll)
             {
-                pose.Off.Position = grip + blade * Vector3.Dot(pose.Off.Position - grip, pose.Main.Forward);
+                pose.Off.Position = grip + blade * Vector3.Dot(pose.Off.Position - pose.Main.Position, pose.Main.Forward);
                 pose.Off.Forward = blade;
             }
 
+            pose.Main.Position = grip;
             pose.Main.Forward = blade;
 
             return pose;
@@ -339,6 +494,60 @@ namespace Game.Scripts.Editor.Battle
 
         public static BodyPose Sample(List<PoseKey> keys, float time)
         {
+            int next = Locate(keys, time, out float alpha);
+            BodyPose before = keys[Mathf.Max(next - 2, 0)].Pose;
+            BodyPose after = keys[Mathf.Min(next + 1, keys.Count - 1)].Pose;
+            BodyPose a = keys[next - 1].Pose;
+            BodyPose b = keys[next].Pose;
+            bool isFlow = keys[next].Ease == Ease.Flow;
+
+            BodyPose pose = a;
+            pose.Spine = Vector3.Lerp(a.Spine, b.Spine, alpha);
+            pose.Head = Vector3.Lerp(a.Head, b.Head, alpha);
+            pose.Main = Interpolate(before.Main, a.Main, b.Main, after.Main, alpha, isFlow);
+            pose.Off = Interpolate(before.Off, a.Off, b.Off, after.Off, alpha, isFlow);
+            pose.Edge = Roll(a, b, pose.Main.Forward, alpha);
+            pose.OffRoll = Mathf.LerpAngle(a.OffRoll, b.OffRoll, alpha);
+
+            // A cut keeps its edge on the path of the strike point itself, not only on the keys.
+            if (keys[next].Lead > 0f)
+            {
+                float weight = Mathf.InverseLerp(ThrustShare * 0.5f, ThrustShare, Across(keys, time, keys[next].Lead, out Vector3 normal));
+
+                if (keys[next - 1].Lead == 0f)
+                    weight *= Mathf.InverseLerp(0f, LeadIn, alpha);
+
+                pose.Edge = Vector3.Slerp(pose.Edge, Vector3.Cross(normal, pose.Main.Forward).normalized, Mathf.SmoothStep(0f, 1f, weight));
+            }
+
+            if (!isFlow)
+                return pose;
+
+            // Both hands on one weapon keep their places on it: the off hand follows the main one along the shaft.
+            if (a.Off.IsAutoRoll && b.Off.IsAutoRoll)
+            {
+                float offset = Mathf.Lerp(Vector3.Dot(a.Off.Position - a.Main.Position, a.Main.Forward),
+                    Vector3.Dot(b.Off.Position - b.Main.Position, b.Main.Forward), alpha);
+                pose.Off.Position = pose.Main.Position + pose.Main.Forward * offset;
+                pose.Off.Forward = pose.Main.Forward;
+            }
+
+            // The torso is read a moment ahead of the arms. The lead grows from nothing, so the clip starts in its first key.
+            float lead = SpineLead * Mathf.SmoothStep(0f, 1f, time / keys[1].Time);
+            next = Locate(keys, Mathf.Min(time + lead, keys[keys.Count - 1].Time), out alpha);
+            before = keys[Mathf.Max(next - 2, 0)].Pose;
+            after = keys[Mathf.Min(next + 1, keys.Count - 1)].Pose;
+            a = keys[next - 1].Pose;
+            b = keys[next].Pose;
+            pose.Spine = CatmullRom(before.Spine, a.Spine, b.Spine, after.Spine, alpha);
+            pose.Head = CatmullRom(before.Head, a.Head, b.Head, after.Head, alpha);
+
+            return pose;
+        }
+
+        /// Index of the key the time runs towards and the eased progress of that segment.
+        private static int Locate(List<PoseKey> keys, float time, out float alpha)
+        {
             int next = 1;
 
             while (next < keys.Count - 1 && time > keys[next].Time)
@@ -346,20 +555,11 @@ namespace Game.Scripts.Editor.Battle
 
             PoseKey from = keys[next - 1];
             PoseKey to = keys[next];
-            float alpha = ApplyEase(Mathf.InverseLerp(from.Time, to.Time, time), to.Ease);
+            float span = to.Time - from.Time;
+            alpha = Mathf.InverseLerp(from.Time, to.Time, time);
+            alpha = to.Ease == Ease.Flow ? Hermite(alpha, from.Rate * span, to.Rate * span) : ApplyEase(alpha, to.Ease);
 
-            BodyPose before = keys[Mathf.Max(next - 2, 0)].Pose;
-            BodyPose after = keys[Mathf.Min(next + 1, keys.Count - 1)].Pose;
-            BodyPose a = from.Pose;
-            BodyPose b = to.Pose;
-
-            BodyPose pose = a;
-            pose.Spine = Vector3.Lerp(a.Spine, b.Spine, alpha);
-            pose.Head = Vector3.Lerp(a.Head, b.Head, alpha);
-            pose.Main = Interpolate(before.Main, a.Main, b.Main, after.Main, alpha);
-            pose.Off = Interpolate(before.Off, a.Off, b.Off, after.Off, alpha);
-
-            return pose;
+            return next;
         }
 
         /// One-handed weapon without a shield: the off hand rests by the hip.
@@ -407,6 +607,26 @@ namespace Game.Scripts.Editor.Battle
                 new(1.6f, OneHanded(new(0.06f, 1.55f, 0.2f), new(-0.3f, 0.95f, 0.1f), pitch: 8f)),
                 new(2f, OneHanded(new(0.26f, 1.05f, 0.3f), new(0.2f, 0.4f, 0.9f)))
             };
+        }
+
+        /// Bandaging as the player sees it: the off forearm is held up across the view and the main hand winds the
+        /// roll around it, one turn per cycle.
+        public static BodyPose Bandage(float phase)
+        {
+            Vector3 fist = new Vector3(0.1f, 1.61f, 0.52f);
+            Vector3 forearm = new Vector3(0.88f, 0.3f, 0.37f).normalized;
+            Vector3 side = Vector3.Cross(forearm, Vector3.up).normalized;
+            Vector3 over = Vector3.Cross(forearm, side);
+            float angle = phase * Mathf.PI * 2f;
+            Vector3 sway = Vector3.up * (Mathf.Sin(angle) * 0.012f);
+
+            BodyPose pose = Upper(-6f, 8f);
+            pose.Main = new HandPose(fist - forearm * 0.2f + (side * Mathf.Cos(angle) + over * Mathf.Sin(angle)) * 0.09f + sway, forearm);
+            // The roll of the held-up hand is given: the elbow search of a free roll would flip it as the hand sways.
+            pose.Off = new HandPose(fist + sway, new Vector3(-0.2f, 0.9f, 0.4f), forearm);
+            pose.OffSocket = WeaponSocket.LeftHand;
+
+            return pose;
         }
 
         public static BodyPose Walk(float phase, Vector2 direction, float stride, float lift, float drop, float lean = 0f)
@@ -489,14 +709,60 @@ namespace Game.Scripts.Editor.Battle
             return new BodyPose { Hips = new Vector3(0f, -0.03f, 0f), Spine = spine, Head = -spine * 0.8f, HasHands = true };
         }
 
-        private static HandPose Interpolate(in HandPose before, in HandPose from, in HandPose to, in HandPose after, float alpha)
+        private static HandPose Interpolate(in HandPose before, in HandPose from, in HandPose to, in HandPose after, float alpha, bool isFlow)
         {
             return new HandPose
             {
                 Position = CatmullRom(before.Position, from.Position, to.Position, after.Position, alpha),
-                Forward = Vector3.Slerp(from.Forward, to.Forward, alpha),
+                Forward = isFlow ? Arc(before.Forward, from.Forward, to.Forward, after.Forward, alpha) : Vector3.Slerp(from.Forward, to.Forward, alpha),
                 Up = from.IsAutoRoll || to.IsAutoRoll ? Vector3.zero : Vector3.Slerp(from.Up, to.Up, alpha)
             };
+        }
+
+        /// The edge between two keys that have one. Each key carries its edge along as the blade turns away from it,
+        /// without rolling the weapon; the two meet halfway. A swing that stays in one plane then gets no roll of its
+        /// own, however far the blade sweeps.
+        private static Vector3 Roll(in BodyPose from, in BodyPose to, Vector3 blade, float alpha)
+        {
+            if (from.Edge == Vector3.zero || to.Edge == Vector3.zero)
+                return Vector3.zero;
+
+            return Vector3.Slerp(Carry(from.Main.Forward, from.Edge, blade), Carry(to.Main.Forward, to.Edge, blade), alpha);
+        }
+
+        /// The edge of a weapon whose blade turns the short way to a new direction.
+        private static Vector3 Carry(Vector3 from, Vector3 edge, Vector3 blade)
+        {
+            return Vector3.ProjectOnPlane(Quaternion.FromToRotation(from, blade) * edge, blade).normalized;
+        }
+
+        /// Catmull-Rom for directions: a cubic Bezier on the unit sphere whose ends share their tangents with the
+        /// neighbouring segments, so the weapon turns without a kink when it passes a key.
+        private static Vector3 Arc(Vector3 before, Vector3 from, Vector3 to, Vector3 after, float t)
+        {
+            Vector3 leave = Exp(from, (Log(from, to) - Log(from, before)) / 6f);
+            Vector3 arrive = Exp(to, (Log(to, from) - Log(to, after)) / 6f);
+            Vector3 a = Vector3.Slerp(from, leave, t);
+            Vector3 b = Vector3.Slerp(leave, arrive, t);
+            Vector3 c = Vector3.Slerp(arrive, to, t);
+
+            return Vector3.Slerp(Vector3.Slerp(a, b, t), Vector3.Slerp(b, c, t), t).normalized;
+        }
+
+        /// Tangent at 'from' pointing along the great circle to 'to'; its length is the angle between them.
+        private static Vector3 Log(Vector3 from, Vector3 to)
+        {
+            float cos = Mathf.Clamp(Vector3.Dot(from, to), -1f, 1f);
+            Vector3 direction = to - from * cos;
+
+            return direction.sqrMagnitude < 1e-10f ? Vector3.zero : direction.normalized * Mathf.Acos(cos);
+        }
+
+        private static Vector3 Exp(Vector3 from, Vector3 tangent)
+        {
+            float angle = tangent.magnitude;
+
+            return angle < 1e-5f ? from : from * Mathf.Cos(angle) + tangent / angle * Mathf.Sin(angle);
         }
 
         private static Vector3 CatmullRom(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
@@ -506,6 +772,15 @@ namespace Game.Scripts.Editor.Battle
 
             return 0.5f * (2f * p1 + (p2 - p0) * t + (2f * p0 - 5f * p1 + 4f * p2 - p3) * t2 +
                            (3f * p1 - p0 - 3f * p2 + p3) * t3);
+        }
+
+        /// Cubic ease from 0 to 1 that leaves with one slope and arrives with another.
+        private static float Hermite(float t, float leave, float arrive)
+        {
+            float t2 = t * t;
+            float t3 = t2 * t;
+
+            return (t3 - 2f * t2 + t) * leave + 3f * t2 - 2f * t3 + (t3 - t2) * arrive;
         }
 
         private static float ApplyEase(float alpha, Ease ease)

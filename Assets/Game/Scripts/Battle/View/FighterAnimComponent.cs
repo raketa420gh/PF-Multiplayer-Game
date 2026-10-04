@@ -14,6 +14,9 @@ namespace Game.Scripts.Battle
         public const string ReleaseSuffix = "_Release";
         public const string LocomotionState = "Locomotion";
         public const string AirState = "Air";
+        public const string JumpState = "Jump";
+        public const string LandState = "Land";
+        public const string RestState = "Rest";
         public const string DeathState = "Death";
         public const string MoveXParam = "MoveX";
         public const string MoveYParam = "MoveY";
@@ -28,8 +31,12 @@ namespace Game.Scripts.Battle
         public const string ThrowState = "Throw";
         public const string OpenState = "Open";
         public const string PickUpState = "PickUp";
+        public const string BandageState = "Bandage";
+        public const string BandageFirstPersonState = "BandageFp";
+        public const string CastReleaseState = "CastRelease";
         public const string HitChestState = "HitChest";
         public const string HitHeadState = "HitHead";
+        public const string HitStaggerState = "HitStagger";
 
         [SerializeField]
         private FighterComponent _fighter;
@@ -67,9 +74,29 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private float _hitReactionWeight = 0.7f;
 
+        [SerializeField]
+        private float _staggerReactionTime = 0.6f;
+
+        [SerializeField, Tooltip("Upward speed that counts as a jump: the legs push off at once instead of waiting for the air delay")]
+        private float _jumpSpeed = 2f;
+
+        [SerializeField]
+        private float _landTime = 0.35f;
+
+        [SerializeField]
+        private float _landFadeTime = 0.2f;
+
+        [SerializeField]
+        private float _restFadeTime = 0.3f;
+
+        [SerializeField, Tooltip("The release gesture replaces the last moments of a cast for those who watch it")]
+        private float _castReleaseTime = 0.3f;
+
         private const int BaseLayer = 0;
         private const int UpperLayer = 1;
         private const int HitLayer = 2;
+        private const int CastKind = 0;
+        private const float RestSpeed = 0.3f;
 
         private static readonly int s_moveX = Animator.StringToHash(MoveXParam);
         private static readonly int s_moveY = Animator.StringToHash(MoveYParam);
@@ -77,20 +104,30 @@ namespace Game.Scripts.Battle
         private static readonly int s_mirror = Animator.StringToHash(MirrorParam);
         private static readonly int s_locomotion = Animator.StringToHash(LocomotionState);
         private static readonly int s_air = Animator.StringToHash(AirState);
+        private static readonly int s_jump = Animator.StringToHash(JumpState);
+        private static readonly int s_land = Animator.StringToHash(LandState);
+        private static readonly int s_rest = Animator.StringToHash(RestState);
         private static readonly int s_death = Animator.StringToHash(DeathState);
         private static readonly int s_actionSpeed = Animator.StringToHash(ActionSpeedParam);
         private static readonly int s_hitChest = Animator.StringToHash(HitChestState);
         private static readonly int s_hitHead = Animator.StringToHash(HitHeadState);
+        private static readonly int s_hitStagger = Animator.StringToHash(HitStaggerState);
+        private static readonly int s_castRelease = Animator.StringToHash(CastReleaseState);
 
         /// Indexed by CombatComponent.BusyKind.
         private static readonly int[] s_busy =
         {
             Animator.StringToHash(CastState), Animator.StringToHash(UseState), Animator.StringToHash(InteractState),
-            Animator.StringToHash(ThrowState), Animator.StringToHash(OpenState), Animator.StringToHash(PickUpState)
+            Animator.StringToHash(ThrowState), Animator.StringToHash(OpenState), Animator.StringToHash(PickUpState),
+            Animator.StringToHash(BandageState)
         };
 
-        /// Own-eyes variants of the busy states whose library motion stays outside the first-person view.
-        private static readonly int[] s_busyFirstPerson = { Animator.StringToHash(CastFirstPersonState), Animator.StringToHash(UseFirstPersonState) };
+        /// Own-eyes variants of the busy states whose library motion stays outside the first-person view; 0 = there is none.
+        private static readonly int[] s_busyFirstPerson =
+        {
+            Animator.StringToHash(CastFirstPersonState), Animator.StringToHash(UseFirstPersonState), 0, 0, 0, 0,
+            Animator.StringToHash(BandageFirstPersonState)
+        };
 
         private struct WeaponStates
         {
@@ -112,7 +149,9 @@ namespace Game.Scripts.Battle
         private float _flinch;
         private float _hitTime;
         private float _upperWeight = 1f;
+        private float _landLeft;
         private bool _isHeadHidden;
+        private bool _isKneeling;
 
         public override void Spawned()
         {
@@ -139,6 +178,12 @@ namespace Game.Scripts.Battle
             UpdateLocomotion(isAlive, deltaTime);
             UpdateUpperBody(isAlive, deltaTime);
             UpdatePitch();
+        }
+
+        /// While set, a fighter who stands still goes down on one knee.
+        public void SetKneeling(bool isKneeling)
+        {
+            _isKneeling = isKneeling;
         }
 
         private void LateUpdate()
@@ -192,14 +237,43 @@ namespace Game.Scripts.Battle
             _animator.SetFloat(s_crouch, crouch);
 
             _airTime = move.IsGrounded ? 0f : _airTime + deltaTime;
+            _landLeft -= deltaTime;
 
-            int state = !isAlive ? s_death : _airTime > _airDelay ? s_air : s_locomotion;
+            bool wasInAir = _baseState == s_air || _baseState == s_jump;
+            bool isRising = !move.IsGrounded && move.Velocity.y > _jumpSpeed;
+            float fadeTime = _fadeTime;
+            int state;
+
+            if (!isAlive)
+            {
+                state = s_death;
+            }
+            else if (_airTime > _airDelay || isRising)
+            {
+                // The push-off plays once on the way up; from the top of the jump, or when walking off a ledge, the legs hang.
+                state = move.Velocity.y > 0f && (isRising || _baseState == s_jump) ? s_jump : s_air;
+            }
+            else if (wasInAir)
+            {
+                state = s_land;
+                _landLeft = _landTime;
+            }
+            else if (_baseState == s_land && _landLeft > 0f)
+            {
+                state = s_land;
+            }
+            else
+            {
+                bool isStill = Mathf.Abs(velocity.x) + Mathf.Abs(velocity.z) < RestSpeed;
+                state = _isKneeling && isStill ? s_rest : s_locomotion;
+                fadeTime = _baseState == s_land ? _landFadeTime : state == s_rest || _baseState == s_rest ? _restFadeTime : _fadeTime;
+            }
 
             if (state == _baseState)
                 return;
 
             _baseState = state;
-            _animator.CrossFadeInFixedTime(state, _fadeTime, BaseLayer);
+            _animator.CrossFadeInFixedTime(state, fadeTime, BaseLayer, 0f);
         }
 
         private void UpdateUpperBody(bool isAlive, float deltaTime)
@@ -252,8 +326,14 @@ namespace Game.Scripts.Battle
                     break;
                 case CombatState.Busy:
                     int kind = Mathf.Min(combat.BusyKind, s_busy.Length - 1);
-                    state = _isHeadHidden && kind < s_busyFirstPerson.Length ? s_busyFirstPerson[kind] : s_busy[kind];
+                    state = _isHeadHidden && s_busyFirstPerson[kind] != 0 ? s_busyFirstPerson[kind] : s_busy[kind];
                     token = combat.StateTick;
+
+                    if (kind == CastKind && !_isHeadHidden && combat.BusyTimeLeft < _castReleaseTime)
+                    {
+                        state = s_castRelease;
+                        time = _castReleaseTime - combat.BusyTimeLeft;
+                    }
                     break;
                 default:
                     state = states.Idle;
@@ -268,7 +348,11 @@ namespace Game.Scripts.Battle
                 return;
 
             if (combat.State == CombatState.Stagger)
+            {
                 _flinch = _staggerFlinch;
+                _hitTime = _staggerReactionTime;
+                _animator.Play(s_hitStagger, HitLayer, 0f);
+            }
 
             _upperState = state;
             _upperToken = token;
@@ -290,6 +374,11 @@ namespace Game.Scripts.Battle
                 return;
 
             _flinch = Mathf.Max(_flinch, _hitFlinch);
+
+            // A hit that staggers is answered by the heavier recoil, whichever of the two is noticed first.
+            if (_fighter.Combat.State == CombatState.Stagger)
+                return;
+
             _hitTime = _hitReactionTime;
             _animator.Play(hit.Zone == HitZone.Head ? s_hitHead : s_hitChest, HitLayer, 0f);
         }

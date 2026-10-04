@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
@@ -53,6 +54,9 @@ namespace Game.Scripts.Battle
             float ModifyIncomingStagger(int damage, float staggerDuration);
         }
 
+        /// Everything that can be hit: fighters, monsters and dummies.
+        public static IReadOnlyList<DamageReceiverComponent> All => s_all;
+
         public event Action<HitEventData> OnHitEvent;
 
         /// State authority only: this receiver's owner landed a hit on another receiver.
@@ -83,6 +87,7 @@ namespace Game.Scripts.Battle
 
         private const int NoTeam = 0;
 
+        private static readonly List<DamageReceiverComponent> s_all = new();
         private IOwner _owner;
         private IHitModifier _modifier;
         private DamageReceiverComponent _lastAttacker;
@@ -91,7 +96,13 @@ namespace Game.Scripts.Battle
 
         public override void Spawned()
         {
+            s_all.Add(this);
             _renderedEvents = _eventCount;
+        }
+
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            s_all.Remove(this);
         }
 
         public override void Render()

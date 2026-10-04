@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Game.Scripts.Battle;
 using UnityEditor;
 using UnityEngine;
@@ -44,6 +45,10 @@ namespace Game.Scripts.Editor.Battle
         public HandPose Main;
         public HandPose Off;
         public WeaponSocket OffSocket;
+        /// Where the leading edge of the held weapon faces. Zero = the roll comes from the arm solve, like a free hand's.
+        public Vector3 Edge;
+        /// How far an off hand on the same weapon is turned about it from the main hand, in degrees: hands keep their grip.
+        public float OffRoll;
     }
 
     /// Poses a model instance with FK/IK in root space and converts the result to humanoid muscle curves.
@@ -63,6 +68,15 @@ namespace Game.Scripts.Editor.Battle
             public float Side;
         }
 
+        /// What a frame of a motion being planned knows about an elbow: the cost of every place on its swivel circle,
+        /// the axis of the circle and the direction the places are counted from.
+        private sealed class SwivelCircle
+        {
+            public float[] Costs;
+            public Vector3 Axis;
+            public Vector3 Zero;
+        }
+
         private struct Leg
         {
             public Transform Upper;
@@ -77,7 +91,17 @@ namespace Game.Scripts.Editor.Battle
         // where the forearm points; the wrist adds about +-30 deg of radial/ulnar deviation on top.
         private const float GripTilt = 15f * Mathf.Deg2Rad;
         private const float MaxWristDeviation = 30f * Mathf.Deg2Rad;
-        private const int SwivelSamples = 36;
+        // With the roll of the weapon given, the wrist also bends about the handle to bring the knuckles to the edge.
+        private const float MaxWristFlexion = 40f * Mathf.Deg2Rad;
+        private const float WristStiffness = 15f;
+        private const float ElbowRest = 1.5f;
+        private const int SwivelSamples = 72;
+        private const float SwivelStep = Mathf.PI * 2f / SwivelSamples;
+        /// What it costs an elbow of a planned motion to move along its swivel circle within a frame.
+        private const float SwivelInertia = 10f;
+        private const int SwivelSmoothing = 8;
+
+        private static readonly float[] s_swivelCosts = new float[SwivelSamples];
 
         private readonly GameObject _root;
         private readonly Animator _animator;
@@ -95,7 +119,11 @@ namespace Game.Scripts.Editor.Battle
         private readonly Arm _leftArm;
         private readonly Leg _rightLeg;
         private readonly Leg _leftLeg;
+        // The planned motion: where each elbow (right, left) is on its swivel circle on every frame, NaN = wherever is best.
+        private readonly float[][] _swivels = new float[2][];
         private HumanPose _humanPose;
+        private SwivelCircle[][] _circles;
+        private int _frame = -1;
 
         public BattlePoseRig()
         {
@@ -169,8 +197,10 @@ namespace Game.Scripts.Editor.Battle
 
             if (pose.HasHands)
             {
-                SolveArm(_rightArm, _sockets[(int)WeaponSocket.RightHand], pose.Main);
-                SolveArm(_leftArm, _sockets[(int)pose.OffSocket], pose.Off);
+                // An off hand on the axis of the weapon holds it too: its roll follows the edge.
+                SolveArm(_rightArm, _sockets[(int)WeaponSocket.RightHand], pose.Main, pose.Edge);
+                SolveArm(_leftArm, _sockets[(int)pose.OffSocket], pose.Off,
+                    IsShared(pose) ? Quaternion.AngleAxis(pose.OffRoll, pose.Main.Forward) * pose.Edge : Vector3.zero);
             }
             else
             {
@@ -194,6 +224,50 @@ namespace Game.Scripts.Editor.Battle
                 RightFootEuler = (_rightLeg.Foot.rotation * Quaternion.Inverse(_rightLeg.FootRotation)).eulerAngles,
                 ArmDrop = 70f
             };
+        }
+
+        /// Solves the elbows of a motion as a whole before its poses are applied frame by frame. A pose solved on its own
+        /// puts each elbow at the best place of its swivel circle, and the elbow jumps across when another place becomes
+        /// the better one; a planned elbow takes the path that is comfortable all the way. The first pose stays solved on
+        /// its own, as other clips lead into the motion there, and so does the last one of a loop.
+        public void Plan(IReadOnlyList<BodyPose> poses, bool isLoop)
+        {
+            _swivels[0] = null;
+            _swivels[1] = null;
+            _circles = new[] { new SwivelCircle[poses.Count], new SwivelCircle[poses.Count] };
+
+            for (_frame = 0; _frame < poses.Count; _frame++)
+                Apply(poses[_frame]);
+
+            SwivelCircle[][] circles = _circles;
+            _circles = null;
+            _frame = -1;
+
+            for (int side = 0; side < circles.Length; side++)
+                _swivels[side] = PlanSwivels(circles[side], isLoop);
+        }
+
+        /// Applies a pose of the planned motion.
+        public void Apply(in BodyPose pose, int frame)
+        {
+            _frame = frame;
+            Apply(pose);
+            _frame = -1;
+        }
+
+        /// Gives a pose the leading edge the arm solve finds for its main hand, and the roll it finds for an off hand
+        /// on the same weapon.
+        public void SolveEdge(ref BodyPose pose)
+        {
+            pose.Edge = Vector3.zero;
+            Apply(pose);
+            pose.Edge = _sockets[(int)WeaponSocket.RightHand].up;
+            pose.OffRoll = IsShared(pose) ? Vector3.SignedAngle(pose.Edge, _sockets[(int)pose.OffSocket].up, pose.Main.Forward) : 0f;
+        }
+
+        private static bool IsShared(in BodyPose pose)
+        {
+            return Vector3.Cross(pose.Off.Position - pose.Main.Position, pose.Main.Forward).sqrMagnitude < 1e-4f;
         }
 
         public HumanPose Capture()
@@ -260,22 +334,29 @@ namespace Game.Scripts.Editor.Battle
             leg.Foot.rotation = rotation * leg.FootRotation;
         }
 
-        private void SolveArm(in Arm arm, Transform socket, in HandPose pose)
+        private void SolveArm(in Arm arm, Transform socket, in HandPose pose, Vector3 edge)
         {
             Quaternion socketInverse = Quaternion.Inverse(socket.localRotation);
             Vector3 shoulderPosition = arm.Shoulder.position;
-            Quaternion assist = Quaternion.FromToRotation(arm.Upper.position - shoulderPosition, pose.Position - shoulderPosition);
-            arm.Shoulder.rotation = Quaternion.Slerp(Quaternion.identity, assist, ShoulderAssist) * arm.Shoulder.rotation;
+            Vector3 collar = arm.Upper.position - shoulderPosition;
+            Vector3 reach = pose.Position - shoulderPosition;
+            float turn = Vector3.Angle(collar, reach);
 
+            // A hand across the body, behind the shoulder, gives it no side to turn to: the assist fades out toward there.
+            arm.Shoulder.rotation = Quaternion.AngleAxis(turn * ShoulderAssist * Mathf.InverseLerp(180f, 120f, turn), Vector3.Cross(collar, reach)) *
+                                    arm.Shoulder.rotation;
+
+            // With an edge to face, the hand is given whole and only the elbow is searched; a free hand takes its roll from the forearm.
+            bool isFree = pose.IsAutoRoll && edge == Vector3.zero;
             Vector3 upperPosition = arm.Upper.position;
             Vector3 defaultHint = upperPosition + new Vector3(arm.Side * 0.2f, -0.5f, -0.3f);
-            Vector3 forearm = pose.IsAutoRoll ? pose.Position - upperPosition : pose.Up;
+            Vector3 forearm = isFree ? pose.Position - upperPosition : pose.IsAutoRoll ? edge : pose.Up;
             Quaternion handRotation = Quaternion.identity;
             Vector3 target = pose.Position;
             Vector3 hint = defaultHint;
 
             // Hand roll, wrist position and elbow swivel depend on each other; a few passes converge.
-            for (int i = 0; i < (pose.IsAutoRoll ? 3 : 1); i++)
+            for (int i = 0; i < (isFree ? 3 : 1); i++)
             {
                 handRotation = Quaternion.LookRotation(pose.Forward, forearm) * socketInverse;
                 target = pose.Position - handRotation * socket.localPosition;
@@ -283,7 +364,7 @@ namespace Game.Scripts.Editor.Battle
                 if (!pose.IsAutoRoll)
                     break;
 
-                hint = FindElbow(arm, upperPosition, target, defaultHint, pose.Forward);
+                hint = FindElbow(arm, upperPosition, target, defaultHint, pose.Forward, edge);
                 forearm = target - hint;
             }
 
@@ -292,8 +373,9 @@ namespace Game.Scripts.Editor.Battle
         }
 
         /// Picks the elbow on the IK swivel circle that keeps the forearm near perpendicular to the held weapon
-        /// (natural grip, wrist deviation within limits) while staying close to the relaxed down-and-out elbow.
-        private static Vector3 FindElbow(in Arm arm, Vector3 upper, Vector3 wrist, Vector3 defaultHint, Vector3 weaponAxis)
+        /// (natural grip, wrist deviation within limits) and behind the knuckles when the edge is given, while staying
+        /// close to the relaxed down-and-out elbow. In a planned motion the plan says where on the circle the elbow is.
+        private Vector3 FindElbow(in Arm arm, Vector3 upper, Vector3 wrist, Vector3 defaultHint, Vector3 weaponAxis, Vector3 edge)
         {
             float a = Vector3.Distance(upper, arm.Lower.position);
             float b = Vector3.Distance(arm.Lower.position, arm.Hand.position);
@@ -306,25 +388,149 @@ namespace Game.Scripts.Editor.Battle
             Vector3 center = upper + axis * along;
             Vector3 relaxed = Vector3.ProjectOnPlane(defaultHint - upper, axis).normalized;
             Vector3 side = Vector3.Cross(axis, relaxed);
-            Vector3 best = center + relaxed * radius;
-            float bestCost = float.MaxValue;
+            int best = 0;
 
             for (int i = 0; i < SwivelSamples; i++)
             {
-                float angle = i * Mathf.PI * 2f / SwivelSamples;
+                float angle = i * SwivelStep;
                 Vector3 elbow = center + (relaxed * Mathf.Cos(angle) + side * Mathf.Sin(angle)) * radius;
-                float tilt = Mathf.Asin(Mathf.Clamp(Vector3.Dot((wrist - elbow).normalized, weaponAxis), -1f, 1f));
+                Vector3 forearm = (wrist - elbow).normalized;
+                float tilt = Mathf.Asin(Mathf.Clamp(Vector3.Dot(forearm, weaponAxis), -1f, 1f));
                 float excess = Mathf.Max(0f, Mathf.Abs(tilt - GripTilt) - MaxWristDeviation);
-                float cost = excess * excess * 6f + (1f - Mathf.Cos(angle)) * 1.5f;
+                float cost = excess * excess * WristStiffness + (1f - Mathf.Cos(angle)) * ElbowRest;
 
-                if (cost < bestCost)
+                if (edge != Vector3.zero)
                 {
-                    bestCost = cost;
-                    best = elbow;
+                    float flexion = Vector3.Angle(Vector3.ProjectOnPlane(forearm, weaponAxis), edge) * Mathf.Deg2Rad;
+                    excess = Mathf.Max(0f, flexion - MaxWristFlexion);
+                    cost += excess * excess * WristStiffness;
+                }
+
+                s_swivelCosts[i] = cost;
+
+                if (cost < s_swivelCosts[best])
+                    best = i;
+            }
+
+            int index = arm.Side > 0f ? 0 : 1;
+            float swivel = _frame >= 0 && _circles == null && _swivels[index] != null ? _swivels[index][_frame] : float.NaN;
+
+            if (_frame >= 0 && _circles != null)
+                _circles[index][_frame] = new SwivelCircle { Costs = (float[])s_swivelCosts.Clone(), Axis = axis, Zero = relaxed };
+
+            // On its own the elbow goes to the lowest cost. That lies between the samples: a parabola through the best
+            // one and its neighbours finds it.
+            if (float.IsNaN(swivel))
+            {
+                float previous = s_swivelCosts[(best + SwivelSamples - 1) % SwivelSamples];
+                float next = s_swivelCosts[(best + 1) % SwivelSamples];
+                float curvature = previous - 2f * s_swivelCosts[best] + next;
+                swivel = (best + (curvature > 1e-6f ? Mathf.Clamp((previous - next) / (2f * curvature), -0.5f, 0.5f) : 0f)) * SwivelStep;
+            }
+
+            return center + (relaxed * Mathf.Cos(swivel) + side * Mathf.Sin(swivel)) * radius;
+        }
+
+        /// The path around the swivel circle that costs the least over the whole motion when moving along the circle
+        /// costs as well; frames without a circle have no elbow to place. The circle turns with the arm, so a move is
+        /// counted from where the elbow would be if the arm carried it along without twisting. Smoothed at the end, as
+        /// the path runs from sample to sample.
+        private static float[] PlanSwivels(SwivelCircle[] circles, bool isLoop)
+        {
+            int frames = circles.Length;
+            float[] total = new float[SwivelSamples];
+            float[] next = new float[SwivelSamples];
+            float[] carried = new float[frames];
+            int[][] from = new int[frames][];
+
+            if (circles[0] != null)
+            {
+                Array.Fill(total, float.MaxValue);
+                total[Lowest(circles[0].Costs)] = 0f;
+            }
+
+            for (int i = 1; i < frames; i++)
+            {
+                from[i] = new int[SwivelSamples];
+                float turn = 0f;
+
+                // How far the direction the places are counted from has turned about the arm since the frame before.
+                if (circles[i] != null && circles[i - 1] != null)
+                {
+                    Vector3 zero = Quaternion.FromToRotation(circles[i - 1].Axis, circles[i].Axis) * circles[i - 1].Zero;
+                    turn = Mathf.Atan2(Vector3.Dot(zero, Vector3.Cross(circles[i].Axis, circles[i].Zero)), Vector3.Dot(zero, circles[i].Zero));
+                }
+
+                carried[i] = carried[i - 1] + turn;
+
+                for (int s = 0; s < SwivelSamples; s++)
+                {
+                    next[s] = float.MaxValue;
+
+                    for (int p = 0; p < SwivelSamples; p++)
+                    {
+                        float cost = total[p] + (1f - Mathf.Cos((s - p) * SwivelStep - turn)) * SwivelInertia;
+
+                        if (cost >= next[s])
+                            continue;
+
+                        next[s] = cost;
+                        from[i][s] = p;
+                    }
+
+                    if (circles[i] != null)
+                        next[s] += circles[i].Costs[s];
+                }
+
+                (total, next) = (next, total);
+            }
+
+            float[] swivels = new float[frames];
+            int state = Lowest(isLoop && circles[frames - 1] != null ? circles[frames - 1].Costs : total);
+
+            for (int i = frames - 1; i >= 0; i--)
+            {
+                swivels[i] = state * SwivelStep - carried[i];
+                state = i > 0 ? from[i][state] : state;
+            }
+
+            for (int i = 1; i < frames; i++)
+                swivels[i] = swivels[i - 1] + Mathf.DeltaAngle(swivels[i - 1] * Mathf.Rad2Deg, swivels[i] * Mathf.Rad2Deg) * Mathf.Deg2Rad;
+
+            for (int pass = 0; pass < SwivelSmoothing; pass++)
+            {
+                float previous = swivels[0];
+
+                for (int i = 1; i < frames - 1; i++)
+                {
+                    float current = swivels[i];
+                    swivels[i] = (previous + current * 2f + swivels[i + 1]) * 0.25f;
+                    previous = current;
                 }
             }
 
-            return best;
+            for (int i = 0; i < frames; i++)
+                swivels[i] += carried[i];
+
+            swivels[0] = float.NaN;
+
+            if (isLoop)
+                swivels[frames - 1] = float.NaN;
+
+            return swivels;
+        }
+
+        private static int Lowest(float[] costs)
+        {
+            int lowest = 0;
+
+            for (int i = 1; i < costs.Length; i++)
+            {
+                if (costs[i] < costs[lowest])
+                    lowest = i;
+            }
+
+            return lowest;
         }
 
         private static void DropArm(in Arm arm, float angle)
@@ -372,8 +578,9 @@ namespace Game.Scripts.Editor.Battle
             Vector3 bendProjected = bend - chain * (Vector3.Dot(bend, chain) / chainSqr);
             Vector3 hintProjected = toHint - chain * (Vector3.Dot(toHint, chain) / chainSqr);
 
+            // Turned about the chain itself: the shortest turn between opposite directions would take the tip off the target.
             if (bendProjected.sqrMagnitude > 1e-6f && hintProjected.sqrMagnitude > 1e-6f)
-                upper.rotation = Quaternion.FromToRotation(bendProjected, hintProjected) * upper.rotation;
+                upper.rotation = Quaternion.AngleAxis(Vector3.SignedAngle(bendProjected, hintProjected, chain), chain) * upper.rotation;
         }
 
         private static float TriangleAngle(float opposite, float sideA, float sideB)

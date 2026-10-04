@@ -43,6 +43,7 @@ namespace Game.Scripts.Editor.Dungeon
         private const float MaceHead = 0.6f;
         private const float AxeHead = 0.9f;
         private const float SpearHead = 1.8f;
+        private const float StaffGrip = -0.33f;
 
         /// Catalog order = combat catalog index. Battle prefab slots 1-4 map to the first four entries; monsters refer to
         /// their weapon by index, so new entries go to the end.
@@ -312,7 +313,9 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static WeaponDefinition CreateFists()
         {
-            BodyPose idle = BattleAnimationLibrary.OneHanded(new(0.2f, 1.3f, 0.3f), new(-0.3f, 0.3f, 0.9f));
+            // A fist is a short blade that runs across it, from the palm to the thumb: held upright, it is carried forward
+            // by the forearm, knuckles first.
+            BodyPose idle = BattleAnimationLibrary.OneHanded(new(0.2f, 1.32f, 0.3f), new(-0.3f, 0.9f, 0.3f));
 
             return new WeaponDefinition
             {
@@ -323,6 +326,7 @@ namespace Game.Scripts.Editor.Dungeon
                 DeflectDuration = 0.4f,
                 BladeBase = 0f,
                 BladeTip = 0.12f,
+                IsUnarmed = true,
                 Idle = idle,
                 Attacks = new[]
                 {
@@ -330,17 +334,17 @@ namespace Game.Scripts.Editor.Dungeon
                     {
                         Windup = 0.22f, Active = 0.12f, Recovery = 0.3f, ComboStart = 0.3f, ComboEnd = 0.6f,
                         Damage = 8, MoveMultiplier = 0.8f,
-                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.3f, 1.4f, 0.1f), new(0f, 0.3f, 0.95f), yaw: 18f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(0.04f, 1.72f, 0.54f), Vector3.forward),
-                        EndPose = BattleAnimationLibrary.OneHanded(new(0f, 1.72f, 0.62f), new(-0.1f, 0f, 1f), yaw: -12f)
+                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.26f, 1.42f, 0.14f), new(-0.2f, 0.95f, 0.2f), yaw: 16f),
+                        MidPose = BattleAnimationLibrary.OneHanded(new(0f, 1.68f, 0.54f), Vector3.up),
+                        EndPose = BattleAnimationLibrary.OneHanded(new(-0.02f, 1.69f, 0.6f), new(-0.1f, 0.98f, 0.15f), yaw: -12f)
                     },
                     new AttackDefinition
                     {
                         Windup = 0.22f, Active = 0.12f, Recovery = 0.3f, ComboStart = 0.3f, ComboEnd = 0.6f,
                         Damage = 8, MoveMultiplier = 0.8f,
-                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.26f, 1.5f, 0.16f), new(0.3f, 0.3f, 0.9f), yaw: -14f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(0.03f, 1.7f, 0.54f), Vector3.forward),
-                        EndPose = BattleAnimationLibrary.OneHanded(new(-0.08f, 1.68f, 0.6f), new(-0.3f, 0f, 1f), yaw: 12f)
+                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.4f, 1.5f, 0.2f), new(0f, 1f, 0.1f), yaw: 22f),
+                        MidPose = BattleAnimationLibrary.OneHanded(new(0.04f, 1.68f, 0.54f), Vector3.up),
+                        EndPose = BattleAnimationLibrary.OneHanded(new(-0.14f, 1.62f, 0.42f), new(-0.2f, 0.95f, 0.2f), yaw: -20f)
                     }
                 },
                 CanBlock = true,
@@ -439,25 +443,25 @@ namespace Game.Scripts.Editor.Dungeon
                     {
                         Windup = windup, Active = active, Recovery = recovery, ComboStart = windup + active * 0.5f, ComboEnd = windup + active + recovery * 0.8f,
                         Damage = damage, MoveMultiplier = 0.7f,
-                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.36f, 1.7f, 0.1f), new(0.5f, 0.7f, -0.5f), yaw: 20f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(0.17f, 1.6f, 0.48f), Vector3.forward),
-                        EndPose = BattleAnimationLibrary.OneHanded(new(0f, 1.44f, 0.46f), new(-0.46f, -0.39f, 0.79f), yaw: -18f)
+                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.46f, 1.56f, 0.14f), new(0.85f, 0.45f, -0.25f), yaw: 25f),
+                        MidPose = BattleAnimationLibrary.OneHanded(new(-0.06f, 1.44f, 0.52f), Vector3.forward),
+                        EndPose = BattleAnimationLibrary.OneHanded(new(-0.2f, 1.24f, 0.34f), new(-0.4f, -0.1f, 0.92f), yaw: -22f)
                     },
                     new AttackDefinition
                     {
                         Windup = windup * 0.9f, Active = active, Recovery = recovery, ComboStart = windup * 0.9f + active * 0.5f, ComboEnd = windup * 0.9f + active + recovery * 0.8f,
                         Damage = damage, MoveMultiplier = 0.7f,
-                        WindupPose = BattleAnimationLibrary.OneHanded(new(0f, 1.54f, 0.3f), new(-0.85f, 0.2f, 0.25f), yaw: -15f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(0.12f, 1.6f, 0.5f), Vector3.forward),
-                        EndPose = BattleAnimationLibrary.OneHanded(new(0.38f, 1.56f, 0.32f), new(0.7f, 0.1f, 0.7f), yaw: 15f)
+                        WindupPose = BattleAnimationLibrary.OneHanded(new(-0.1f, 1.45f, 0.28f), new(-0.85f, 0.3f, -0.3f), yaw: -18f),
+                        MidPose = BattleAnimationLibrary.OneHanded(new(0.2f, 1.46f, 0.52f), Vector3.forward),
+                        EndPose = BattleAnimationLibrary.OneHanded(new(0.5f, 1.36f, 0.2f), new(0.45f, 0.05f, 0.89f), yaw: 18f)
                     },
                     new AttackDefinition
                     {
                         Windup = windup * 1.1f, Active = active, Recovery = recovery * 1.2f, ComboStart = windup * 1.1f + active * 0.5f, ComboEnd = windup * 1.1f + active + recovery,
                         Damage = Mathf.RoundToInt(damage * 1.1f), MoveMultiplier = 0.6f, Stagger = 0.2f,
-                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.22f, 1.88f, 0f), new(0.1f, 0.5f, -0.85f), pitch: -10f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(0.12f, 1.68f, 0.42f), Vector3.forward),
-                        EndPose = BattleAnimationLibrary.OneHanded(new(0.14f, 1.4f, 0.46f), new(-0.08f, -0.45f, 0.9f), pitch: 12f)
+                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.2f, 1.9f, 0.02f), new(0.08f, 0.6f, -0.8f), pitch: -10f),
+                        MidPose = BattleAnimationLibrary.OneHanded(new(0.08f, 1.42f, 0.54f), Vector3.forward),
+                        EndPose = BattleAnimationLibrary.OneHanded(new(0.1f, 1.14f, 0.38f), new(-0.03f, -0.17f, 0.98f), pitch: 12f)
                     }
                 },
                 CanBlock = true,
@@ -528,7 +532,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static WeaponDefinition CreateSpear()
         {
-            BodyPose idle = BattleAnimationLibrary.TwoHanded(new(0.26f, 1.2f, 0.2f), new(-0.08f, 0.15f, 0.98f), -0.55f, 20f);
+            BodyPose idle = BattleAnimationLibrary.TwoHanded(new(0.26f, 1.2f, 0.2f), new(-0.08f, 0.15f, 0.98f), -0.42f, 20f);
 
             return new WeaponDefinition
             {
@@ -554,10 +558,10 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockRecovery = 0.45f,
                 BlockAngle = 75f,
                 BlockMove = 0.55f,
-                Block = BattleAnimationLibrary.TwoHanded(new(0.35f, 1.4f, 0.4f), new(-0.95f, 0.25f, 0.1f), -0.6f, 8f),
-                BlockHit = BattleAnimationLibrary.TwoHanded(new(0.33f, 1.28f, 0.32f), new(-0.95f, 0.2f, -0.1f), -0.6f, 8f, -5f),
-                BlockLowered = BattleAnimationLibrary.TwoHanded(new(0.33f, 1.24f, 0.34f), new(-0.95f, 0.15f, 0f), -0.6f, 8f),
-                DeflectPose = BattleAnimationLibrary.TwoHanded(new(0.3f, 1.5f, 0.1f), new(-0.2f, 0.8f, 0.5f), -0.55f, 18f, -8f),
+                Block = BattleAnimationLibrary.TwoHanded(new(0.35f, 1.4f, 0.4f), new(-0.95f, 0.25f, 0.1f), 0.5f, 8f),
+                BlockHit = BattleAnimationLibrary.TwoHanded(new(0.33f, 1.28f, 0.32f), new(-0.95f, 0.2f, -0.1f), 0.5f, 8f, -5f),
+                BlockLowered = BattleAnimationLibrary.TwoHanded(new(0.33f, 1.24f, 0.34f), new(-0.95f, 0.15f, 0f), 0.5f, 8f),
+                DeflectPose = BattleAnimationLibrary.TwoHanded(new(0.3f, 1.5f, 0.1f), new(-0.2f, 0.8f, 0.5f), -0.3f, 18f, -8f),
                 BlockSocket = WeaponSocket.RightHand,
                 BlockBoxCenter = new Vector3(0f, 0f, 0.6f),
                 BlockBoxExtents = new Vector3(0.07f, 0.07f, 0.7f)
@@ -570,16 +574,17 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 Windup = windup, Active = active, Recovery = recovery, ComboStart = windup + active * 0.5f, ComboEnd = windup + active + recovery * 0.85f,
                 Damage = damage, MoveMultiplier = 0.6f, Stagger = stagger,
-                WindupPose = Lunge(new(0.34f, height, -0.25f), 28f),
-                MidPose = Lunge(new(0.2f, height + 0.05f, 0.45f), 5f),
-                EndPose = Lunge(new(0.12f, height + 0.08f, 0.75f), -8f)
+                WindupPose = Lunge(new(0.3f, height, 0.06f), 28f, -0.3f),
+                MidPose = Lunge(new(0.2f, height + 0.05f, 0.38f), 5f, -0.45f),
+                EndPose = Lunge(new(0.14f, height + 0.07f, 0.5f), -8f, -0.5f)
             };
         }
 
-        /// The shaft points at the crosshair all the way, so the head travels along the aim line.
-        private static BodyPose Lunge(Vector3 grip, float yaw)
+        /// The shaft points at the crosshair all the way, so the head travels along the aim line. It slides through the
+        /// rear hand, which cannot follow the leading one that far.
+        private static BodyPose Lunge(Vector3 grip, float yaw, float offHand)
         {
-            return BattleAnimationLibrary.TwoHanded(grip, BattleAnimationLibrary.Aim(grip, SpearHead), -0.5f, yaw);
+            return BattleAnimationLibrary.TwoHanded(grip, BattleAnimationLibrary.Aim(grip, SpearHead), offHand, yaw);
         }
 
         private static WeaponDefinition CreateStaff()
@@ -590,8 +595,18 @@ namespace Game.Scripts.Editor.Dungeon
             definition.BladeBase = 0.3f;
             definition.BladeTip = 1.3f;
             definition.Reach = 1.8f;
-            definition.Idle = BattleAnimationLibrary.TwoHanded(new(0.22f, 1.25f, 0.3f), new(0.1f, 0.95f, 0.25f), -0.5f, 15f);
+            definition.Idle = BattleAnimationLibrary.TwoHanded(new(0.2f, 1.3f, 0.3f), new(0.3f, 0.9f, 0.3f), StaffGrip, 15f);
             definition.Attacks = new[] { definition.Attacks[0], definition.Attacks[1] };
+
+            // A staff is swung with the hands as far apart as it is carried.
+            Spread(ref definition.DeflectPose);
+
+            foreach (AttackDefinition attack in definition.Attacks)
+            {
+                Spread(ref attack.WindupPose);
+                Spread(ref attack.MidPose);
+                Spread(ref attack.EndPose);
+            }
             definition.Attacks[0].Damage = 29;
             definition.Attacks[1].Damage = 32;
             definition.BlockMitigation = 0.6f;
@@ -599,6 +614,11 @@ namespace Game.Scripts.Editor.Dungeon
             definition.BlockBoxExtents = new Vector3(0.06f, 0.06f, 0.6f);
 
             return definition;
+        }
+
+        private static void Spread(ref BodyPose pose)
+        {
+            pose.Off.Position = pose.Main.Position + pose.Main.Forward * StaffGrip;
         }
 
         private static WeaponDefinition CreateCrossbow()

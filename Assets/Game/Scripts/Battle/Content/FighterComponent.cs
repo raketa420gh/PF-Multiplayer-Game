@@ -62,6 +62,9 @@ namespace Game.Scripts.Battle
         [Networked]
         private NetworkBool _isInputBlocked { get; set; }
 
+        [Networked]
+        private NetworkBool _isCrouchForced { get; set; }
+
         private static readonly List<FighterComponent> s_all = new();
         private IInputSource _inputSource;
         private ICombatStats _stats;
@@ -128,6 +131,10 @@ namespace Game.Scripts.Battle
             if (_wasAlive && !isAlive)
                 OnDied?.Invoke();
 
+            // A body on the floor is not in the way of the living.
+            if (_wasAlive != isAlive)
+                _move.SetBlocking(isAlive);
+
             _wasAlive = isAlive;
         }
 
@@ -146,6 +153,12 @@ namespace Game.Scripts.Battle
         public void SetInputBlocked(bool isBlocked)
         {
             _isInputBlocked = isBlocked;
+        }
+
+        /// Keeps the fighter crouched whatever the crouch button says. State authority only.
+        public void SetCrouchForced(bool isForced)
+        {
+            _isCrouchForced = isForced;
         }
 
         public void SetLook(Vector2 look)
@@ -188,7 +201,7 @@ namespace Game.Scripts.Battle
             float speed = _combat.MoveMultiplier * (_stats?.MoveSpeedMultiplier ?? 1f);
 
             _move.Simulate(input.MoveDirection, input.LookRotation, isWalk,
-                buttons.IsSet(PlayerInputButtons.Crouch), isJump, speed);
+                buttons.IsSet(PlayerInputButtons.Crouch) || _isCrouchForced, isJump, speed);
             _body.UpdateHitboxes();
             _combat.Simulate(buttons, _previousButtons);
         }

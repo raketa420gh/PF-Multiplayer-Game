@@ -89,10 +89,12 @@ namespace Game.Scripts.Editor.Battle
 
         private static readonly string[] s_phalanges = { "Proximal", "Intermediate", "Distal" };
 
-        /// Extra cuts of library takes: looped variants and the wind-up part of the throw (end is a share of the take).
-        private static readonly (string name, string take, float end, bool isLoop)[] s_cuts =
+        /// Extra cuts of library takes (start and end are shares of the take): looped variants, the wind-up part of the throw,
+        /// the take-off without its squat, the kneel between going down and getting up, the reload as hands wrapping a bandage.
+        private static readonly (string name, string take, float start, float end, bool isLoop)[] s_cuts =
         {
-            ("Consume_Loop", "Consume", 1f, true), ("Interact_Loop", "Interact", 1f, true), ("Throw", "OverhandThrow", 0.45f, false)
+            ("Consume_Loop", "Consume", 0f, 1f, true), ("Interact_Loop", "Interact", 0f, 1f, true), ("Throw", "OverhandThrow", 0f, 0.45f, false),
+            ("Jump_Rise", "Jump_Start", 0.08f, 1f, false), ("Kneel_Loop", "Fixing_Kneeling", 0.3f, 0.7f, true), ("Bandage_Loop", "Pistol_Reload", 0f, 1f, true)
         };
 
         [MenuItem("Tools/Game/Battle/Build Character")]
@@ -293,12 +295,12 @@ namespace Game.Scripts.Editor.Battle
             foreach (ModelImporterClipAnimation take in hasAnimations ? importer.defaultClipAnimations : Array.Empty<ModelImporterClipAnimation>())
             {
                 string name = take.takeName.Substring(take.takeName.IndexOf('|') + 1);
-                clips.Add(CreateClip(take, name, 1f, name.EndsWith("_Loop")));
+                clips.Add(CreateClip(take, name, 0f, 1f, name.EndsWith("_Loop")));
 
-                foreach ((string cut, string source, float end, bool isLoop) in s_cuts)
+                foreach ((string cut, string source, float start, float end, bool isLoop) in s_cuts)
                 {
                     if (source == name)
-                        clips.Add(CreateClip(take, cut, end, isLoop));
+                        clips.Add(CreateClip(take, cut, start, end, isLoop));
                 }
             }
 
@@ -320,13 +322,13 @@ namespace Game.Scripts.Editor.Battle
             importer.SaveAndReimport();
         }
 
-        private static ModelImporterClipAnimation CreateClip(ModelImporterClipAnimation take, string name, float end, bool isLoop)
+        private static ModelImporterClipAnimation CreateClip(ModelImporterClipAnimation take, string name, float start, float end, bool isLoop)
         {
             return new ModelImporterClipAnimation
             {
                 name = name,
                 takeName = take.takeName,
-                firstFrame = take.firstFrame,
+                firstFrame = Mathf.Lerp(take.firstFrame, take.lastFrame, start),
                 lastFrame = Mathf.Lerp(take.firstFrame, take.lastFrame, end),
                 loopTime = isLoop,
                 lockRootRotation = true,

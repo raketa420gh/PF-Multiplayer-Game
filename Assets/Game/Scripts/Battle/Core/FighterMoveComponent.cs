@@ -10,6 +10,7 @@ namespace Game.Scripts.Battle
         public MovementConfig Config => _config;
         public Vector3 Velocity => _controller.Velocity;
         public bool IsGrounded => _controller.Grounded;
+        public CapsuleCollider Blocker => _blocker;
 
         [Networked]
         public float Pitch { get; private set; }
@@ -26,6 +27,9 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private CharacterController _collider;
 
+        [SerializeField, Tooltip("Body-wide capsule on its own layer: it only stops the controllers of other characters, attacks never see it")]
+        private CapsuleCollider _blocker;
+
         [SerializeField]
         private LayerMask _groundMask = 1;
 
@@ -33,6 +37,9 @@ namespace Game.Scripts.Battle
 
         public override void Spawned()
         {
+            if (_blocker != null)
+                Physics.IgnoreCollision(_collider, _blocker);
+
             _controller.acceleration = _config.Acceleration;
             _controller.braking = _config.Braking;
             _controller.gravity = _config.Gravity;
@@ -70,6 +77,12 @@ namespace Game.Scripts.Battle
         {
             _controller.Velocity = Vector3.zero;
             _controller.Teleport(position, Quaternion.Euler(0f, yaw, 0f));
+        }
+
+        public void SetBlocking(bool isBlocking)
+        {
+            if (_blocker != null)
+                _blocker.enabled = isBlocking;
         }
 
         public void AddImpulse(Vector3 impulse)

@@ -15,6 +15,7 @@ namespace Game.Scripts.Editor.Battle
         private const float FingerCurl = -0.8f;
         private const float MaxStrideScale = 2f;
         private const float SprintSpeed = 1.44f;
+        private const float BandageCycle = 0.9f;
         private const string UpperLayerName = "Upper";
         private const string HitLayerName = "Hit";
 
@@ -46,8 +47,10 @@ namespace Game.Scripts.Editor.Battle
             }
 
             BuildActions(upper);
-            AddKeyed(rig, upper, FighterAnimComponent.CastFirstPersonState, 2f, BattleAnimationLibrary.CastKeys());
-            AddKeyed(rig, upper, FighterAnimComponent.UseFirstPersonState, 2f, BattleAnimationLibrary.UseKeys());
+            AddKeyed(rig, upper, FighterAnimComponent.CastFirstPersonState, 2f, SettleRoll(rig, BattleAnimationLibrary.CastKeys()));
+            AddKeyed(rig, upper, FighterAnimComponent.UseFirstPersonState, 2f, SettleRoll(rig, BattleAnimationLibrary.UseKeys()));
+            AddState(upper, FighterAnimComponent.BandageFirstPersonState, Record(rig, FighterAnimComponent.BandageFirstPersonState, BandageCycle, true,
+                time => BattleAnimationLibrary.Bandage(time / BandageCycle)));
             BuildHitReactions(controller.layers[2].stateMachine);
 
             EditorUtility.SetDirty(controller);
@@ -122,6 +125,9 @@ namespace Game.Scripts.Editor.Battle
             AnimationClip crouchLeft = RecordWalk(rig, "CrouchLeft", 0.44f, Vector2.left, 0.26f, 0.08f, crouch);
             AnimationClip crouchRight = RecordWalk(rig, "CrouchRight", 0.44f, Vector2.right, 0.26f, 0.08f, crouch);
             AnimationClip air = RecordLegs(rig, "Air", "Jump_Loop", 0f);
+            AnimationClip jump = RecordLegs(rig, "Jump", "Jump_Rise", 0f);
+            AnimationClip land = RecordLegs(rig, "Land", "Jump_Land", 0f, anchor: 1f);
+            AnimationClip rest = RecordLegs(rig, "Rest", "Kneel_Loop", crouch);
 
             AnimatorState locomotion = controller.CreateBlendTreeInController(FighterAnimComponent.LocomotionState, out BlendTree root, 0);
             root.blendType = BlendTreeType.Simple1D;
@@ -147,14 +153,19 @@ namespace Game.Scripts.Editor.Battle
             AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
             stateMachine.defaultState = locomotion;
             stateMachine.AddState(FighterAnimComponent.AirState).motion = air;
+            stateMachine.AddState(FighterAnimComponent.JumpState).motion = jump;
+            stateMachine.AddState(FighterAnimComponent.LandState).motion = land;
+            stateMachine.AddState(FighterAnimComponent.RestState).motion = rest;
             stateMachine.AddState(FighterAnimComponent.DeathState).motion = BattleEditorUtility.LoadLibraryClip("Death01");
         }
 
         /// Puts the legs of a library clip on the simulation body. The feet keep their place relative to the hips, while the
         /// hips stay where the combat model has them (only the vertical bob is taken over): the upper body, the hitboxes and
         /// the weapon traces are the same whatever the legs do. A non-zero speed retimes the cycle so the stride covers that
-        /// ground speed (negative = played backwards).
-        private static AnimationClip RecordLegs(BattlePoseRig rig, string name, string library, float drop, float speed = 0f, float lean = 0f)
+        /// ground speed (negative = played backwards). The bob is measured from the average height of the hips, or from
+        /// their height at the anchor moment (a share of the clip) for clips that start or end standing.
+        private static AnimationClip RecordLegs(BattlePoseRig rig, string name, string library, float drop, float speed = 0f, float lean = 0f,
+            float anchor = -1f)
         {
             const int samples = 24;
             AnimationClip source = BattleEditorUtility.LoadLibraryClip(library);
@@ -169,6 +180,9 @@ namespace Game.Scripts.Editor.Battle
                 min = Mathf.Min(min, pose.LeftFoot.z);
                 max = Mathf.Max(max, pose.LeftFoot.z);
             }
+
+            if (anchor >= 0f)
+                height = rig.SampleLegs(source, source.length * anchor).Hips.y;
 
             // Two steps per loop: the cycle is as long as its stride needs at the given speed.
             float stride = (max - min) * 2f;
@@ -196,6 +210,8 @@ namespace Game.Scripts.Editor.Battle
             transition.exitTime = 0.9f;
             transition.duration = 0.1f;
 
+            AddState(stateMachine, FighterAnimComponent.CastReleaseState, BattleEditorUtility.LoadLibraryClip("Spell_Simple_Shoot"));
+            AddState(stateMachine, FighterAnimComponent.BandageState, BattleEditorUtility.LoadLibraryClip("Bandage_Loop"));
             AddState(stateMachine, FighterAnimComponent.InteractState, BattleEditorUtility.LoadLibraryClip("Interact_Loop"));
             AddState(stateMachine, FighterAnimComponent.OpenState, BattleEditorUtility.LoadLibraryClip("Chest_Open"));
             AddState(stateMachine, FighterAnimComponent.ThrowState, BattleEditorUtility.LoadLibraryClip("Throw"));
@@ -213,6 +229,7 @@ namespace Game.Scripts.Editor.Battle
         {
             stateMachine.AddState(FighterAnimComponent.HitChestState).motion = BattleEditorUtility.LoadLibraryClip("Hit_Chest");
             stateMachine.AddState(FighterAnimComponent.HitHeadState).motion = BattleEditorUtility.LoadLibraryClip("Hit_Head");
+            stateMachine.AddState(FighterAnimComponent.HitStaggerState).motion = BattleEditorUtility.LoadLibraryClip("Idle_Shield_Break");
         }
 
         private static BlendTree CreateMoveTree(BlendTree parent, string name, float threshold)
@@ -229,6 +246,17 @@ namespace Game.Scripts.Editor.Battle
         private static void BuildWeapon(BattlePoseRig rig, AnimatorStateMachine stateMachine, WeaponDefinition weapon)
         {
             string prefix = weapon.Prefix;
+
+            // The authored poses take the roll the arm solve gives them, and between them the weapon turns from key to key:
+            // a roll solved anew on every frame flips over whenever the blade passes the line of the forearm.
+            SettleRoll(rig, ref weapon.Idle);
+            SettleRoll(rig, ref weapon.Block);
+            SettleRoll(rig, ref weapon.BlockHit);
+            SettleRoll(rig, ref weapon.BlockLowered);
+            SettleRoll(rig, ref weapon.DeflectPose);
+            SettleRoll(rig, ref weapon.DrawPose);
+            SettleRoll(rig, ref weapon.ReleasePose);
+
             AddState(stateMachine, prefix + FighterAnimComponent.IdleSuffix,
                 Record(rig, prefix + FighterAnimComponent.IdleSuffix, 1f, true, _ => weapon.Idle));
 
@@ -262,6 +290,24 @@ namespace Game.Scripts.Editor.Battle
                 AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.ReleaseSuffix, reloadTime,
                     BattleAnimationLibrary.ReleaseKeys(weapon, reloadTime));
             }
+        }
+
+        private static void SettleRoll(BattlePoseRig rig, ref BodyPose pose)
+        {
+            if (pose.HasHands)
+                rig.SolveEdge(ref pose);
+        }
+
+        private static List<PoseKey> SettleRoll(BattlePoseRig rig, List<PoseKey> keys)
+        {
+            for (int i = 0; i < keys.Count; i++)
+            {
+                PoseKey key = keys[i];
+                SettleRoll(rig, ref key.Pose);
+                keys[i] = key;
+            }
+
+            return keys;
         }
 
         private static void AddKeyed(BattlePoseRig rig, AnimatorStateMachine stateMachine, string name, float duration, List<PoseKey> keys)
@@ -301,12 +347,18 @@ namespace Game.Scripts.Editor.Battle
                 root[i] = new AnimationCurve();
 
             Quaternion previousRotation = Quaternion.identity;
+            BodyPose[] poses = new BodyPose[frames + 1];
 
             // Keys sit on the simulation's 60 Hz grid, so the trace sampler and tick-aligned playback read authored poses, not blends.
             for (int frame = 0; frame <= frames; frame++)
+                poses[frame] = evaluate(isLoop && frame == frames ? 0f : Mathf.Min(frame / FrameRate, duration));
+
+            rig.Plan(poses, isLoop);
+
+            for (int frame = 0; frame <= frames; frame++)
             {
                 float time = Mathf.Min(frame / FrameRate, duration);
-                rig.Apply(evaluate(isLoop && frame == frames ? 0f : time));
+                rig.Apply(poses[frame], frame);
                 HumanPose pose = rig.Capture();
 
                 Quaternion rotation = pose.bodyRotation;
@@ -336,7 +388,7 @@ namespace Game.Scripts.Editor.Battle
                 SetCurve(clip, HumanTrait.MuscleName[i], muscles[i]);
 
             // Hands that hold something close into a grip; the spread muscles stay neutral.
-            for (int i = BodyMuscleCount; i < HumanTrait.MuscleCount && evaluate(0f).HasHands; i++)
+            for (int i = BodyMuscleCount; i < HumanTrait.MuscleCount && poses[0].HasHands; i++)
             {
                 if (HumanTrait.MuscleName[i].Contains("Stretched"))
                     SetCurve(clip, HumanTrait.MuscleName[i], AnimationCurve.Constant(0f, duration, FingerCurl));

@@ -22,6 +22,8 @@ namespace Game.Scripts.Editor.Battle
         public const string ControllerPath = AnimationsFolder + "/Fighter.controller";
         public const string HitboxLayer = "Hitbox";
         public const string CharacterLayer = "Character";
+        public const string BlockerLayer = "BodyBlocker";
+        public const float BlockerRadius = 0.4f;
 
         /// Crosshair arrow (points along +X, rotated by the view) and a thrust dot, centered on the screen.
         public static SwingHintView CreateSwingHint(Transform canvas, BattleContext context)
@@ -214,6 +216,31 @@ namespace Game.Scripts.Editor.Battle
             }
 
             throw new System.InvalidOperationException("No free layer slot");
+        }
+
+        /// Layer of the body capsules: it collides with the character controllers and nothing else.
+        public static int EnsureBlockerLayer()
+        {
+            int layer = EnsureLayer(BlockerLayer);
+            int character = LayerMask.NameToLayer(CharacterLayer);
+
+            for (int i = 0; i < 32; i++)
+                Physics.IgnoreLayerCollision(layer, i, i != character);
+
+            return layer;
+        }
+
+        /// Capsule that keeps other characters at arm's length; no attack, sight or interaction mask includes its layer.
+        public static CapsuleCollider CreateBlocker(Transform parent, float radius, float height)
+        {
+            GameObject blocker = CreateChild("BodyBlocker", parent);
+            blocker.layer = EnsureBlockerLayer();
+            CapsuleCollider capsule = blocker.AddComponent<CapsuleCollider>();
+            capsule.radius = radius;
+            capsule.height = height;
+            capsule.center = new Vector3(0f, height * 0.5f, 0f);
+
+            return capsule;
         }
 
         public static void Set(Object target, string path, object value)
