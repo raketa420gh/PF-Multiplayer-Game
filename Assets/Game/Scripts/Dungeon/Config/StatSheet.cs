@@ -51,6 +51,8 @@ namespace Game.Scripts.Dungeon
         private const string Bad = "e04a3a";
         private const string Plain = "f2ede0";
         private const string Dim = "9a927f";
+        /// How far apart on the colour wheel the first and the last derived stat of one attribute stand.
+        private const float HueSpread = 0.09f;
 
         private static readonly string[] s_names =
         {
@@ -113,6 +115,12 @@ namespace Game.Scripts.Dungeon
             new(0.32f, 0.8f, 0.62f), new(0.38f, 0.62f, 0.96f), new(0.72f, 0.46f, 0.92f)
         };
 
+        /// Armor Rating, Physical Reduction, Magic Resistance, Magical Reduction.
+        private static readonly Color[] s_gearColors =
+        {
+            new(0.78f, 0.8f, 0.86f), new(0.86f, 0.7f, 0.5f), new(0.5f, 0.78f, 0.95f), new(0.72f, 0.62f, 0.96f)
+        };
+
         private static readonly StatId[][] s_ownStats =
         {
             new[] { StatId.Health, StatId.Poise },
@@ -132,7 +140,8 @@ namespace Game.Scripts.Dungeon
         /// Edge stat between the attribute with this index and the next one on the ring.
         public static StatId Edge(int attribute) => (StatId)((int)StatId.Impact + attribute);
 
-        /// Attributes have their own colour, an edge blends its two ends, a derived stat takes the colour of its source.
+        /// Attributes have their own colour, an edge blends its two ends, a derived stat gets a shade of its source's colour
+        /// that no sibling shares, the stats of the gear have colours of their own.
         public static Color ColorOf(StatId stat)
         {
             if (IsAttribute(stat))
@@ -143,7 +152,14 @@ namespace Game.Scripts.Dungeon
 
             int source = Source(stat);
 
-            return source >= 0 ? s_colors[source] : new Color(0.75f, 0.76f, 0.8f);
+            if (source < 0)
+                return s_gearColors[stat - StatId.ArmorRating];
+
+            StatId[] siblings = s_ownStats[source];
+            float spread = System.Array.IndexOf(siblings, stat) / (siblings.Length - 1f) - 0.5f;
+            Color.RGBToHSV(s_colors[source], out float hue, out float saturation, out float value);
+
+            return Color.HSVToRGB(Mathf.Repeat(hue + spread * HueSpread, 1f), Mathf.Clamp01(saturation - spread * 0.3f), Mathf.Clamp01(value + spread * 0.12f));
         }
 
         /// Rich text value: bonuses are green, penalties red, neutral numbers plain.

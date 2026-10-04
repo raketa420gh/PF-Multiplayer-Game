@@ -1025,8 +1025,8 @@ namespace Game.Scripts.Editor.Dungeon
             title.text = "Perks and Skills";
             title.color = s_gold;
             CreateImage("TitleRule", page, top, new Vector2(0f, -146f), new Vector2(620f, 2f), s_frame);
-            TMP_Text hint = CreateText("Hint", page, top, new Vector2(0f, -154f), new Vector2(620f, 22f), 13f, TextAlignmentOptions.Center);
-            hint.text = "Click a perk to equip or remove it  ·  LMB / RMB on a skill binds it to Q / E";
+            TMP_Text hint = CreateText("Hint", page, top, new Vector2(0f, -154f), new Vector2(760f, 22f), 13f, TextAlignmentOptions.Center);
+            hint.text = "Drag a perk or a skill onto a slot  ·  click a perk to equip or remove it  ·  LMB / RMB on a skill binds it to Q / E";
             hint.color = s_textDim;
 
             RawImage doll = CreateRect("Doll", page, top, new Vector2(0f, -262f), new Vector2(520f, 700f)).gameObject.AddComponent<RawImage>();
@@ -1096,8 +1096,8 @@ namespace Game.Scripts.Editor.Dungeon
             return view;
         }
 
-        /// Character sheet: the hexagram with the attributes on its corners and the edge stats between them, derived stats in
-        /// two columns below. The tooltip opens beside the sheet (hence the width of the panel it sits on) and is created under
+        /// Character sheet: the hexagram with the attributes on its corners and the edge stats between them, derived stats as
+        /// circles grouped by their attribute below. The tooltip opens beside the sheet (hence the width of the panel it sits on) and is created under
         /// the given parent so the caller can keep it above the other panels.
         private static StatsView BuildStats(Transform parent, Vector2 position, float width, float radius, bool isCompact, Transform tooltipParent,
             out RectTransform tooltip)
@@ -1124,14 +1124,14 @@ namespace Game.Scripts.Editor.Dungeon
 
             List<StatLabelView> labels = new();
             Vector2 badge = Vector2.one * (isCompact ? 50f : 58f);
-            Vector2 pill = isCompact ? new Vector2(54f, 23f) : new Vector2(62f, 26f);
+            Vector2 circle = Vector2.one * (isCompact ? 42f : 50f);
 
-            // Edge stats first: the attribute badges on the corners are drawn over the web and the pills.
+            // Edge stats first: the attribute badges on the corners are drawn over the web and the circles.
             for (int i = 0; i < StatSheet.AttributeCount; i++)
             {
                 float angle = (i + 0.5f) * Mathf.PI / 3f;
                 Vector2 direction = new Vector2(Mathf.Sin(angle), Mathf.Cos(angle));
-                labels.Add(StatNode(chartRoot, StatSheet.Edge(i), direction * radius * 0.866f, "Pill", pill, isCompact ? 12f : 13f, isCompact ? 11f : 12f));
+                labels.Add(StatNode(chartRoot, StatSheet.Edge(i), direction * radius * 0.866f, "Circle", circle, isCompact ? 11.5f : 13f, isCompact ? 11f : 12f));
             }
 
             for (int i = 0; i < StatSheet.AttributeCount; i++)
@@ -1141,53 +1141,63 @@ namespace Game.Scripts.Editor.Dungeon
                 labels.Add(StatNode(chartRoot, (StatId)i, direction * radius, "Diamond", badge, isCompact ? 17f : 19f, isCompact ? 14f : 15f));
             }
 
-            float y = -chartHeight - 4f;
+            float y = -chartHeight - 6f;
 
+            // Every derived stat is a circle in its own colour, like the edge stats on the web: none of them is a footnote.
             if (isCompact)
             {
-                StatId[] left = { StatId.Health, StatId.ArmorRating, StatId.PhysicalReduction, StatId.PhysicalDamage };
-                StatId[] right = { StatId.Poise, StatId.MagicResistance, StatId.MagicalReduction, StatId.ActionSpeed };
-
-                for (int i = 0; i < left.Length; i++)
+                StatId[] stats =
                 {
-                    labels.Add(StatRow(root, left[i], new Vector2(-206f, y - i * 21f), 200f, 21f, 14f));
-                    labels.Add(StatRow(root, right[i], new Vector2(6f, y - i * 21f), 200f, 21f, 14f));
-                }
+                    StatId.Health, StatId.Poise, StatId.ArmorRating, StatId.PhysicalReduction, StatId.MagicResistance, StatId.MagicalReduction,
+                    StatId.PhysicalDamage, StatId.ActionSpeed
+                };
+                float pitch = (width - 16f) / stats.Length;
+
+                for (int i = 0; i < stats.Length; i++)
+                    labels.Add(StatCircle(root, stats[i], new Vector2((i - (stats.Length - 1) * 0.5f) * pitch, y), 42f, 11.5f, 9.5f, pitch - 1f));
             }
             else
             {
-                const float column = 214f;
-                const float rowHeight = 24f;
-                const float headerHeight = 28f;
-                float bottom = y;
+                const float pitch = 80f;
+                const float gap = 16f;
+                const float headerHeight = 26f;
+                const float rowHeight = 116f;
+                (string title, Color color, StatId[] stats) Own(StatId attribute) => (StatSheet.Name(attribute), StatSheet.ColorOf(attribute), StatSheet.OwnStats(attribute));
 
-                // Own stats of the attributes: the first half of the ring on the left, the second on the right.
-                for (int i = 0; i < StatSheet.AttributeCount; i++)
+                // Own stats of the attributes in ring order, then what the gear gives.
+                (string title, Color color, StatId[] stats)[][] rows =
                 {
-                    float x = i < 3 ? -column - 7f : 7f;
-
-                    if (i == 3)
-                        y = -chartHeight - 4f;
-
-                    StatHeader(root, StatSheet.Name((StatId)i), StatSheet.ColorOf((StatId)i), new Vector2(x, y), column);
-                    y -= headerHeight;
-
-                    foreach (StatId stat in StatSheet.OwnStats((StatId)i))
+                    new[] { Own(StatId.Flesh), Own(StatId.Grip) },
+                    new[] { Own(StatId.Reflex), Own(StatId.Craft) },
+                    new[] { Own(StatId.Insight), Own(StatId.Resonance) },
+                    new[]
                     {
-                        labels.Add(StatRow(root, stat, new Vector2(x, y), column, rowHeight, 15f));
-                        y -= rowHeight;
+                        ("Defense", new Color(0.75f, 0.76f, 0.8f),
+                            new[] { StatId.ArmorRating, StatId.PhysicalReduction, StatId.MagicResistance, StatId.MagicalReduction })
+                    }
+                };
+
+                foreach ((string title, Color color, StatId[] stats)[] row in rows)
+                {
+                    float total = (row.Length - 1) * gap;
+
+                    foreach ((string title, Color color, StatId[] stats) group in row)
+                        total += group.stats.Length * pitch;
+
+                    float x = -total * 0.5f;
+
+                    foreach ((string title, Color color, StatId[] stats) group in row)
+                    {
+                        StatHeader(root, group.title, group.color, new Vector2(x + 8f, y), group.stats.Length * pitch - 16f);
+
+                        for (int i = 0; i < group.stats.Length; i++)
+                            labels.Add(StatCircle(root, group.stats[i], new Vector2(x + (i + 0.5f) * pitch, y - headerHeight), 54f, 13.5f, 11.5f, pitch - 2f));
+
+                        x += group.stats.Length * pitch + gap;
                     }
 
-                    y -= 8f;
-                    bottom = Mathf.Min(bottom, y);
+                    y -= rowHeight;
                 }
-
-                StatHeader(root, "Defense", StatSheet.ColorOf(StatId.ArmorRating), new Vector2(-column - 7f, bottom), column * 2f + 14f);
-                bottom -= headerHeight;
-                labels.Add(StatRow(root, StatId.ArmorRating, new Vector2(-column - 7f, bottom), column, rowHeight, 15f));
-                labels.Add(StatRow(root, StatId.PhysicalReduction, new Vector2(-column - 7f, bottom - rowHeight), column, rowHeight, 15f));
-                labels.Add(StatRow(root, StatId.MagicResistance, new Vector2(7f, bottom), column, rowHeight, 15f));
-                labels.Add(StatRow(root, StatId.MagicalReduction, new Vector2(7f, bottom - rowHeight), column, rowHeight, 15f));
             }
 
             tooltip = CreateRect("StatTooltip", tooltipParent, center, Vector2.zero, new Vector2(380f, 100f));
@@ -1252,22 +1262,24 @@ namespace Game.Scripts.Editor.Dungeon
             return StatLabel(node.gameObject, stat, value);
         }
 
-        /// Row of the stat list: a mark in the colour of the source attribute, the name and the value at the right edge.
-        private static StatLabelView StatRow(RectTransform parent, StatId stat, Vector2 position, float width, float height, float fontSize)
+        /// Round badge of a derived stat, placed by its top: the value inside in the stat's own colour ring, the name underneath.
+        private static StatLabelView StatCircle(RectTransform parent, StatId stat, Vector2 position, float diameter, float valueSize, float nameSize, float nameWidth)
         {
-            RectTransform row = CreateRect(stat.ToString(), parent, new Vector2(0.5f, 1f), position, new Vector2(width, height));
-            row.pivot = new Vector2(0f, 1f);
-            Image hit = row.gameObject.AddComponent<Image>();
-            hit.color = Color.clear;
-            Color mark = StatSheet.ColorOf(stat);
-            mark.a = 0.8f;
-            CreateImage("Mark", row, new Vector2(0f, 0.5f), new Vector2(1f, 0f), new Vector2(3f, height - 9f), mark);
-            TMP_Text name = CreateText("Name", row, new Vector2(0f, 0.5f), new Vector2(11f, 0f), new Vector2(width - 11f, height), fontSize, TextAlignmentOptions.MidlineLeft);
+            Vector2 center = new Vector2(0.5f, 0.5f);
+            RectTransform node = CreateRect(stat.ToString(), parent, new Vector2(0.5f, 1f), position, Vector2.one * diameter);
+            Image frame = node.gameObject.AddComponent<Image>();
+            frame.sprite = DungeonUiSpriteBuilder.Load("Circle");
+            frame.color = StatSheet.ColorOf(stat);
+            TMP_Text value = CreateText("Value", node, center, Vector2.zero, new Vector2(diameter + 14f, diameter), valueSize, TextAlignmentOptions.Center);
+            value.fontStyle = FontStyles.Bold;
+            TMP_Text name = CreateText("Name", node, new Vector2(0.5f, 0f), new Vector2(0f, -3f), new Vector2(nameWidth, nameSize * 2.5f), nameSize, TextAlignmentOptions.Top);
+            name.rectTransform.pivot = new Vector2(0.5f, 1f);
             name.text = StatSheet.Name(stat);
             name.color = new Color(0.8f, 0.77f, 0.7f);
-            TMP_Text value = CreateText("Value", row, new Vector2(1f, 0.5f), Vector2.zero, new Vector2(90f, height), fontSize, TextAlignmentOptions.MidlineRight);
+            name.lineSpacing = -12f;
+            name.raycastTarget = true;
 
-            return StatLabel(row.gameObject, stat, value);
+            return StatLabel(node.gameObject, stat, value);
         }
 
         private static void StatHeader(RectTransform parent, string title, Color color, Vector2 position, float width)

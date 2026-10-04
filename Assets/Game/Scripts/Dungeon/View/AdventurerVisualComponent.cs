@@ -45,9 +45,11 @@ namespace Game.Scripts.Dungeon
         private Transform _handItemRoot;
         private GameObject _handItem;
         private short _shownHandItem;
+        private FighterAnimComponent _anim;
 
         public override void Spawned()
         {
+            _anim = _adventurer.Fighter.GetComponent<FighterAnimComponent>();
             _classColor = _adventurer.Class.BodyColor;
             _model.SetBodyColor(_classColor);
             _dresser = new ArmorDresser(_animator, _pieceSet, gameObject.layer);
@@ -63,6 +65,7 @@ namespace Game.Scripts.Dungeon
                 _dresser.Apply(_adventurer.Inventory);
             }
 
+            _anim.SetKneeling(_adventurer.IsResting);
             UpdateTorch();
             UpdateInvisibility();
             UpdateHandGlow();

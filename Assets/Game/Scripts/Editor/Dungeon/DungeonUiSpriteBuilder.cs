@@ -6,8 +6,8 @@ using UnityEngine;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Procedural sprites of the UI: worn panels, the doll arch, perk and skill frames, the rank shield, the eye of unsearched loot,
-    /// the hexagram of the character sheet.
+    /// Procedural sprites of the UI: worn panels, the doll arch, perk, skill and stat frames, the rank shield, the eye of
+    /// unsearched loot, the hexagram of the character sheet.
     internal static class DungeonUiSpriteBuilder
     {
         public const string Folder = "Assets/Game/Textures/UI";
@@ -27,7 +27,7 @@ namespace Game.Scripts.Editor.Dungeon
             Write("Glow", 128, 64, (p, half) => new Color(1f, 0.8f, 0.45f, (1f - DungeonTextureBuilder.Step(0f, 1f, (p / half).magnitude)) * 0.55f));
             Write("Eye", 64, 64, Eye);
             Write("Hexagram", 512, 512, Hexagram);
-            Write("Pill", 128, 56, Pill);
+            Write("Circle", 128, 128, (p, _) => Frame(p.magnitude));
 
             Debug.Log($"[{nameof(DungeonUiSpriteBuilder)}] Sprites built in {Folder}");
         }
@@ -128,18 +128,6 @@ namespace Game.Scripts.Editor.Dungeon
                 color = new Color(0.85f, 0.65f, 0.3f, glow);
 
             return color;
-        }
-
-        /// Rounded plate with a white border, tinted by the stat it holds.
-        private static Color Pill(Vector2 p, Vector2 half)
-        {
-            float radius = half.y - 2f;
-            Vector2 d = new Vector2(Mathf.Max(Mathf.Abs(p.x) - (half.x - 2f - radius), 0f), p.y);
-            float distance = d.magnitude - radius;
-            float border = DungeonTextureBuilder.Step(-5f, -3.5f, distance);
-            float tone = Mathf.Lerp(0.1f, 1f, border);
-
-            return new Color(tone, tone, tone, (1f - DungeonTextureBuilder.Step(-1f, 0.5f, distance)) * Mathf.Lerp(0.92f, 1f, border));
         }
 
         /// Almond outline with an iris and a hollow pupil: marks loot nobody has searched yet.

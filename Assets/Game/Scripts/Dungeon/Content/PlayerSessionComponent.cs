@@ -309,7 +309,8 @@ namespace Game.Scripts.Dungeon
         {
             SkillA = skillA;
             SkillB = skillB;
-            PerkMask = perkMask;
+            // A build saved for another class may name perks this one does not have; they would take up perk slots unseen.
+            PerkMask = perkMask & ((1 << Class.Perks.Length) - 1);
             SpellMask = spellMask;
         }
 

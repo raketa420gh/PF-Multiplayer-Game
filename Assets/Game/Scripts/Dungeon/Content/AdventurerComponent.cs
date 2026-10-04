@@ -33,6 +33,7 @@ namespace Game.Scripts.Dungeon
         public const byte BusyThrow = 3;
         public const byte BusyOpen = 4;
         public const byte BusyPickUp = 5;
+        public const byte BusyBandage = 6;
         public const int BeltGroupSize = 3;
         public const byte NoBelt = 255;
         public const byte NoSearch = 255;
@@ -586,10 +587,12 @@ namespace Game.Scripts.Dungeon
             if (Pending != PendingAction.None && combat.State != CombatState.Busy)
                 CancelPending();
 
+            // Resting is done on one knee: the body goes down as in a crouch.
+            IsResting = Pending == PendingAction.None && buttons.IsSet(PlayerInputButtons.Rest) && combat.State == CombatState.Idle;
+            _fighter.SetCrouchForced(IsResting);
+
             if (Pending != PendingAction.None)
                 return;
-
-            IsResting = buttons.IsSet(PlayerInputButtons.Rest) && combat.State == CombatState.Idle;
 
             if (buttons.WasPressed(previous, PlayerInputButtons.Interact))
                 TryInteract();
@@ -1176,6 +1179,7 @@ namespace Game.Scripts.Dungeon
                 case ConsumableItemConfig consumable:
                     useTime = consumable.UseTime / _stats.HandlingSpeed;
                     action = PendingAction.Consumable;
+                    kind = consumable.Effect == ConsumableEffect.HealInstant ? BusyBandage : BusyUse;
                     break;
                 case UtilityItemConfig utility when utility.UtilityKind != UtilityKind.Lockpick:
                     useTime = utility.UseTime / _stats.HandlingSpeed;
