@@ -18,5 +18,6 @@ namespace Game.Scripts.Editor.Dungeon
         public DoorComponent LockedDoor;
         public Transform BossSpawn;
         public Vector3 Center;
+        public float Radius;
     }
 }

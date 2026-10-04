@@ -8,23 +8,35 @@ using UnityEngine.AI;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Two 3x3 floors built from modules: outer walls and doorways, rooms furnished by DungeonRoomBuilder, the NavMesh and the minimaps.
+    /// Two floors. The first is the crypt of Dark and Darker, carved after its map by DungeonLayoutBuilder. The second is a
+    /// 3x3 grid of modules: outer walls and doorways, rooms furnished by DungeonRoomBuilder. Then the NavMesh and the maps.
     internal static class DungeonMapBuilder
     {
         public const float Module = 40f;
         public const int Grid = 3;
+        public const string Crypt = "Crypt";
+        public const float CryptModule = 30f;
+        public const int CryptGrid = 5;
+        /// Side of the widest floor; the maps of all floors are drawn to this scale.
+        public const float WorldSize = CryptModule * CryptGrid;
         public const float FloorDrop = -26f;
         public const float FloorRadius = Module * Grid * 0.75f;
         public const float TallHeight = DungeonPropBuilder.WallHeight * 2f;
         public const float PitDepth = 4f;
+        public const float AgentRadius = 0.35f;
         public const string NavMeshPath = "Assets/Game/Scenes/DungeonScene/NavMesh.asset";
 
+        public static readonly float[] FloorSizes = { WorldSize, Module * Grid };
+        public static readonly int[] FloorGrids = { CryptGrid, Grid };
+
         // Rows run south to north, columns west to east.
-        private static readonly DungeonRoom[,] s_floor1 =
+        private static readonly string[] s_cryptNames =
         {
-            { DungeonRoom.Armory, DungeonRoom.Treasury, DungeonRoom.Shrine },
-            { DungeonRoom.Prison, DungeonRoom.GreatHall, DungeonRoom.Library },
-            { DungeonRoom.Spawn, DungeonRoom.Hall, DungeonRoom.Spawn }
+            "Sunken Tunnels", "Pilgrims' Chapel", "Guard Post", "Circle of Pillars", "Labyrinth",
+            "Hermit's Cell", "Stepped Pyramid", "Dark Stairway", "Summoning Hall", "Winding Passage",
+            "Altar Chambers", "Chapel of Thrones", "Sunken Halls", "Pillared Halls", "Crossroads Shrine",
+            "Sealed Vault", "Cave Passage", "Sacrificial Arena", "Sacrificial Arena", "Ossuary",
+            "Twin Halls", "Sunken Cave", "Sacrificial Arena", "Sacrificial Arena", "Gatehouse"
         };
 
         private static readonly DungeonRoom[,] s_floor2 =
@@ -44,12 +56,13 @@ namespace Game.Scripts.Editor.Dungeon
             Transform root = new GameObject("[Dungeon]").transform;
             Transform spawns = new GameObject("[Spawns]").transform;
 
-            DungeonFloorResult first = BuildFloor(root, spawns, "Floor1", s_floor1, 0f, 1, random);
+            DungeonLayoutBuilder crypt = new DungeonLayoutBuilder(Crypt, WorldSize, DungeonPropBuilder.WallHeight);
+            DungeonFloorResult first = BuildCrypt(root, spawns, crypt);
             DungeonFloorResult second = BuildFloor(root, spawns, "Floor2", s_floor2, FloorDrop, 2, random);
 
             BakeNavMesh(root.gameObject, NavMeshPath);
             WriteLayouts(director, first, second);
-            FloorMaps = new[] { DungeonMinimapBuilder.Render(root.Find("Floor1"), 0f, "Floor1"), DungeonMinimapBuilder.Render(root.Find("Floor2"), FloorDrop, "Floor2") };
+            FloorMaps = new[] { DungeonMinimapBuilder.Paint(crypt, "Floor1"), DungeonMinimapBuilder.Render(root.Find("Floor2"), FloorDrop, "Floor2") };
             ModuleNames = BuildModuleNames();
 
             return root;
@@ -83,17 +96,33 @@ namespace Game.Scripts.Editor.Dungeon
             surface.layerMask = 1;
             surface.overrideVoxelSize = true;
             surface.voxelSize = 0.12f;
-            surface.BuildNavMesh();
+
+            // Paths are walked by character controllers 0.3 wide: the stock agent would not fit through the doorways of the crypt.
+            NavMeshBuildSettings settings = surface.GetBuildSettings();
+            settings.agentRadius = AgentRadius;
+            List<NavMeshBuildMarkup> markups = new();
+            List<NavMeshBuildSource> sources = new();
+            Bounds bounds = new Bounds(root.transform.position, Vector3.zero);
+
+            foreach (NavMeshModifier modifier in root.GetComponentsInChildren<NavMeshModifier>())
+                markups.Add(new NavMeshBuildMarkup { root = modifier.transform, overrideArea = modifier.overrideArea, area = modifier.area, ignoreFromBuild = modifier.ignoreFromBuild });
+
+            foreach (Collider collider in root.GetComponentsInChildren<Collider>())
+                bounds.Encapsulate(collider.bounds);
+
+            UnityEngine.AI.NavMeshBuilder.CollectSources(null, surface.layerMask, surface.useGeometry, surface.defaultArea, markups, sources);
+            bounds.center -= root.transform.position;
+            NavMeshData data = UnityEngine.AI.NavMeshBuilder.BuildNavMeshData(settings, sources, bounds, root.transform.position, Quaternion.identity);
 
             BattleEditorUtility.EnsureFolder(path.Substring(0, path.LastIndexOf('/')));
             AssetDatabase.DeleteAsset(path);
-            AssetDatabase.CreateAsset(surface.navMeshData, path);
+            AssetDatabase.CreateAsset(data, path);
             surface.navMeshData = AssetDatabase.LoadAssetAtPath<NavMeshData>(path);
         }
 
         private static bool IsTall(DungeonRoom room)
         {
-            return room is DungeonRoom.Hall or DungeonRoom.GreatHall or DungeonRoom.Prison or DungeonRoom.Library or DungeonRoom.Cellar or DungeonRoom.Throne;
+            return room is DungeonRoom.Cellar or DungeonRoom.Throne;
         }
 
         private static bool HasPit(DungeonRoom room)
@@ -103,45 +132,31 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static bool HasDoor(DungeonRoom room)
         {
-            return room is DungeonRoom.Library or DungeonRoom.Armory or DungeonRoom.Prison or DungeonRoom.Treasury or DungeonRoom.Crypt or DungeonRoom.Cellar;
+            return room is DungeonRoom.Treasury or DungeonRoom.Crypt or DungeonRoom.Cellar;
         }
 
-        /// Walled-up doorways: the chapel is reached through the vault, the hoard through the throne room.
+        /// Walled-up doorway: the hoard is reached through the throne room.
         private static bool IsBlocked(DungeonRoom a, DungeonRoom b)
         {
-            return (a == DungeonRoom.Shrine && b == DungeonRoom.Library) || (a == DungeonRoom.TrapCorridor && b == DungeonRoom.Treasury);
+            return a == DungeonRoom.TrapCorridor && b == DungeonRoom.Treasury;
         }
 
         private static string[] BuildModuleNames()
         {
-            string[] names = new string[Grid * Grid * 2];
+            List<string> names = new List<string>(s_cryptNames);
 
-            for (int floor = 0; floor < 2; floor++)
-            {
-                DungeonRoom[,] rooms = floor == 0 ? s_floor1 : s_floor2;
+            foreach (DungeonRoom room in s_floor2)
+                names.Add(RoomName(room));
 
-                for (int z = 0; z < Grid; z++)
-                {
-                    for (int x = 0; x < Grid; x++)
-                        names[floor * 9 + z * 3 + x] = RoomName(rooms[z, x], floor);
-                }
-            }
-
-            return names;
+            return names.ToArray();
         }
 
-        private static string RoomName(DungeonRoom room, int floor)
+        private static string RoomName(DungeonRoom room)
         {
             return room switch
             {
-                DungeonRoom.Spawn => "Pilgrim's Rest",
-                DungeonRoom.Hall => "Entrance Hall",
-                DungeonRoom.GreatHall => "Feast Hall",
-                DungeonRoom.Prison => "Gaol",
-                DungeonRoom.Library => "Dark Magic Library",
-                DungeonRoom.Armory => "Barracks",
-                DungeonRoom.Treasury => floor == 0 ? "Vault" : "Treasure Hoard",
-                DungeonRoom.Shrine => floor == 0 ? "Pilgrims' Chapel" : "High Priest's Chapel",
+                DungeonRoom.Treasury => "Treasure Hoard",
+                DungeonRoom.Shrine => "High Priest's Chapel",
                 DungeonRoom.Arrival => "Descent",
                 DungeonRoom.BonePit => "Bone Pit",
                 DungeonRoom.Cellar => "Wine Cellar",
@@ -173,14 +188,26 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonPropBuilder.SavePrefab(DungeonPropBuilder.Chain(), "Chain");
         }
 
-        private static GameObject Load(string name)
+        internal static GameObject Load(string name)
         {
             return AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab(name));
         }
 
+        private static DungeonFloorResult BuildCrypt(Transform root, Transform spawns, DungeonLayoutBuilder crypt)
+        {
+            DungeonFloorResult result = new DungeonFloorResult { Center = Vector3.zero, Radius = WorldSize * 0.75f };
+            Transform floor = new GameObject("Floor1").transform;
+            floor.SetParent(root, false);
+            Transform markers = new GameObject("Floor1").transform;
+            markers.SetParent(spawns, false);
+            crypt.Build(floor, markers, result, Mathf.RoundToInt(crypt.Count / (float)CryptGrid));
+
+            return result;
+        }
+
         private static DungeonFloorResult BuildFloor(Transform root, Transform spawns, string name, DungeonRoom[,] rooms, float y, int floorIndex, System.Random random)
         {
-            DungeonFloorResult result = new DungeonFloorResult { Center = new Vector3(0f, y, 0f) };
+            DungeonFloorResult result = new DungeonFloorResult { Center = new Vector3(0f, y, 0f), Radius = FloorRadius };
             Transform floor = new GameObject(name).transform;
             floor.SetParent(root, false);
             floor.localPosition = new Vector3(0f, y, 0f);
@@ -200,8 +227,7 @@ namespace Game.Scripts.Editor.Dungeon
                         Place(Load("FloorTile"), module, Vector3.zero, 0f);
 
                     Place(Load("CeilingTile"), module, new Vector3(0f, CeilingHeight(room), 0f), 0f);
-                    bool[] open = { IsOpen(rooms, x, z, 0, 1), IsOpen(rooms, x, z, 1, 0), IsOpen(rooms, x, z, 0, -1), IsOpen(rooms, x, z, -1, 0) };
-                    new DungeonRoomBuilder(module, markers, result, room, floorIndex, open, random).Build();
+                    new DungeonRoomBuilder(module, markers, result, room, floorIndex, random).Build();
                 }
             }
 
@@ -209,18 +235,6 @@ namespace Game.Scripts.Editor.Dungeon
             LinkLevers(result);
 
             return result;
-        }
-
-        /// Whether the wall towards the neighbour has a doorway; the room builder gets these in WallSide order.
-        private static bool IsOpen(DungeonRoom[,] rooms, int x, int z, int dx, int dz)
-        {
-            int nx = x + dx;
-            int nz = z + dz;
-
-            if (nx < 0 || nz < 0 || nx >= Grid || nz >= Grid)
-                return false;
-
-            return dx + dz > 0 ? !IsBlocked(rooms[z, x], rooms[nz, nx]) : !IsBlocked(rooms[nz, nx], rooms[z, x]);
         }
 
         private static void LinkLevers(DungeonFloorResult result)
@@ -306,7 +320,7 @@ namespace Game.Scripts.Editor.Dungeon
             property.FindPropertyRelative("DescendDestination").objectReferenceValue = result.DescendDestination;
             property.FindPropertyRelative("BossSpawn").objectReferenceValue = result.BossSpawn;
             property.FindPropertyRelative("Center").vector3Value = result.Center;
-            property.FindPropertyRelative("Radius").floatValue = FloorRadius;
+            property.FindPropertyRelative("Radius").floatValue = result.Radius;
         }
 
         private static void SetArray<T>(SerializedProperty property, IList<T> values) where T : Object

@@ -25,13 +25,6 @@ namespace Game.Scripts.Editor.Dungeon
         private const WallSide West = WallSide.West;
 
         private static readonly WallSide[] s_sides = { North, East, South, West };
-        private static readonly float[] s_shelves = { 0.76f, 1.16f, 1.54f, 1.92f };
-        private static readonly string[] s_tableware =
-        {
-            "Mug", "Table_Plate", "Table_Fork", "Table_Knife", "Table_Spoon", "Bottle_1", "Chalice", "CandleStick", "Pot_1", "Carrot", "SmallBottle", "Mug",
-            "Table_Plate"
-        };
-        private static readonly string[] s_shelfItems = { "BookGroup_Small_1", "BookGroup_Small_2", "BookGroup_Small_3", "Book_Stack_1", "Book_Stack_2", "Potion_1", "Potion_4" };
         private static readonly Dictionary<string, GameObject> s_prefabs = new();
 
         private readonly Transform _module;
@@ -39,19 +32,17 @@ namespace Game.Scripts.Editor.Dungeon
         private readonly DungeonFloorResult _result;
         private readonly DungeonRoom _room;
         private readonly int _floor;
-        private readonly bool[] _open;
         private readonly System.Random _random;
         private readonly float _ceiling;
         private readonly float _run = DungeonStructureBuilder.StairRun(Upper);
 
-        public DungeonRoomBuilder(Transform module, Transform markers, DungeonFloorResult result, DungeonRoom room, int floor, bool[] open, System.Random random)
+        public DungeonRoomBuilder(Transform module, Transform markers, DungeonFloorResult result, DungeonRoom room, int floor, System.Random random)
         {
             _module = module;
             _markers = markers;
             _result = result;
             _room = room;
             _floor = floor;
-            _open = open;
             _random = random;
             _ceiling = DungeonMapBuilder.CeilingHeight(room);
         }
@@ -62,24 +53,6 @@ namespace Game.Scripts.Editor.Dungeon
 
             switch (_room)
             {
-                case DungeonRoom.Spawn:
-                    BuildSpawn();
-                    break;
-                case DungeonRoom.Hall:
-                    BuildHall();
-                    break;
-                case DungeonRoom.GreatHall:
-                    BuildGreatHall();
-                    break;
-                case DungeonRoom.Prison:
-                    BuildPrison();
-                    break;
-                case DungeonRoom.Library:
-                    BuildLibrary();
-                    break;
-                case DungeonRoom.Armory:
-                    BuildArmory();
-                    break;
                 case DungeonRoom.Treasury:
                     BuildTreasury();
                     break;
@@ -110,464 +83,6 @@ namespace Game.Scripts.Editor.Dungeon
             }
 
             Dress();
-        }
-
-        /// Camp of the pilgrims: a fire ring, a dormitory under the north wall, a mess corner and supplies.
-        private void BuildSpawn()
-        {
-            float s = IsOpen(West) ? 1f : -1f;
-            WallSide closed = s > 0f ? East : West;
-
-            for (int i = 0; i < 4; i++)
-                _result.PlayerSpawns.Add(Marker("Player", -4.5f + i * 3f, 0f, -7f, 0f));
-
-            Put("Brazier", 0f, 0f, 0f);
-            Kit("Bench", 0f, 0f, 3f);
-            Kit("Bench", 0f, 0f, -3f);
-            Kit("Bench", 3f, 0f, 0f, 90f);
-            Kit("Bench", -3f, 0f, 0f, 90f);
-
-            foreach (int x in new[] { -1, 1 })
-            {
-                foreach (int z in new[] { -1, 1 })
-                    Put("Pillar", x * 10f, 0f, z * 10f);
-            }
-
-            for (int i = 0; i < 6; i++)
-            {
-                float x = (i < 3 ? -15.5f : 6.5f) + i % 3 * 4.5f;
-                Kit(i % 2 == 0 ? "Bed_Twin1" : "Bed_Twin2", AtWall(North, x, 1.6f), 180f);
-                Kit("Nightstand_Shelf", AtWall(North, x + 1.7f, 0.55f), 180f);
-                Kit(Pick("Candle_2", "Mug", "Book_5", "Bottle_1"), AtWall(North, x + 1.7f, 0.55f, 1.2f), Range(0f, 360f));
-            }
-
-            Put("StandPeasantMale", -2.2f, 0f, 18.6f, 180f);
-            Put("StandPeasantFemale", 2.2f, 0f, 18.6f, 180f);
-            Banner(North, 0, 4.2f, 1.4f, true);
-            Mount("Peg_Rack", North, -1, 1.9f);
-            Mount("Shield_Wooden", North, 1, 2f);
-
-            Table(s * 11f, -9f, 90f, 4, Tableware(6));
-            Table(s * 11f, -14f, 90f, 4, Tableware(5));
-            Kit("Barrel_Holder", AtWall(closed, -3f, 0.75f), Facing(closed));
-            Kit("Barrel_Holder", AtWall(closed, -4.6f, 0.75f), Facing(closed));
-            Kit("Barrel_Apples", AtWall(closed, -6.2f, 0.8f));
-            Kit("Bag", AtWall(closed, 3.4f, 0.8f), 40f);
-            Kit("FarmCrate_Carrot", AtWall(closed, 4.6f, 0.8f), Facing(closed) + 15f);
-            Kit("FarmCrate_Apple", AtWall(closed, 5.8f, 0.8f), Facing(closed) - 10f);
-            Loot("SmallOakChest", AtWall(closed, 8.5f, 0.8f), Facing(closed));
-            Loot("Barrel", AtWall(closed, -16.2f, 0.8f), 0f);
-            Loot("Crate", AtWall(closed, -17.6f, 0.9f), 20f);
-            Kit("Stall_Cart_Empty", s * 13f, 0f, 9f, s > 0f ? 200f : -20f);
-            Kit("Bag", s * 11.2f, 0f, 10.4f, 80f);
-            Kit("WeaponStand", AtWall(South, s * 12f, 1f), 0f);
-            Mount("Sword_Bronze", South, s > 0f ? 4 : -4, 1.5f, 1f, 0.06f);
-            Mount("Axe_Bronze", South, s > 0f ? 2 : -2, 1.7f, 1f, 0.06f);
-            Crates(-s * 15f, -15f, 3);
-            Kit("Rope_2", -s * 13f, 0f, -16.5f, 30f);
-            Kit("Bucket_Wooden_1", 2.4f, 0f, 2.6f, 10f);
-        }
-
-        /// Entrance hall: a grand staircase to the gallery under the north wall, statues and pillars.
-        private void BuildHall()
-        {
-            Material stone = DungeonPropBuilder.Cobble;
-            const float edge = 16.5f;
-            const float landing = 13f;
-            Deck(-Inner, Inner, edge, Inner, Upper, stone);
-            Deck(-5f, 5f, landing, edge, Upper, stone);
-            Stairs(0f, 0f, landing - _run, 0f, 6f, Upper, stone);
-            Rail(-Inner, edge, -5f, edge, Upper);
-            Rail(-5f, edge, -5f, landing, Upper);
-            Rail(-5f, landing, -3f, landing, Upper);
-            Rail(3f, landing, 5f, landing, Upper);
-            Rail(5f, landing, 5f, edge, Upper);
-            Rail(5f, edge, Inner, edge, Upper);
-
-            foreach (float x in new[] { -18f, -11.5f, 11.5f, 18f })
-                Post(x, edge + 0.2f, Upper - Slab);
-
-            Post(-4.8f, landing + 0.2f, Upper - Slab);
-            Post(4.8f, landing + 0.2f, Upper - Slab);
-
-            foreach (float z in new[] { -12f, -4f, 4f })
-            {
-                TallPillar(-8.5f, z);
-                TallPillar(8.5f, z);
-            }
-
-            DungeonStructureBuilder.Carpet(_module, new Vector3(0f, 0f, -Inner), new Vector3(0f, 0f, landing - _run), 3f);
-            Put("StatueGuardian", -4.6f, 0f, 6.4f, 180f);
-            Put("StatueGuardian", 4.6f, 0f, 6.4f, 180f);
-            Put("Brazier", -5f, 0f, -8f);
-            Put("Brazier", 5f, 0f, -8f);
-            Put("Rubble", -15f, 0f, -15f);
-            Kit("Vase_Rubble_Medium", -13.4f, 0f, -14.2f, 50f);
-
-            // Stores under the gallery.
-            Kit("Barrel_Holder", AtWall(North, -14f, 0.75f), 180f);
-            Kit("Barrel", AtWall(North, -11.8f, 0.8f), 20f);
-            Crates(12f, 18.4f, 3);
-            Kit("Bag", 15.2f, 0f, 18.3f, 120f);
-            Loot("SmallOakChest", 0f, 0f, 18.8f, 180f);
-            Loot("Barrel", 16.5f, 0f, -16.5f, 0f);
-            Loot("Crate", 16.5f, 0f, -15.2f, 40f);
-
-            // Gallery.
-            Loot("LargeOakChest", -17.8f, Upper, 18.4f, 90f);
-            Loot("SmallOakChest", 17.8f, Upper, 18.4f, -90f);
-            Kit("Crate_Wooden", -14.6f, Upper, 18.8f, 12f);
-            Kit("Vase_2", 13.6f, Upper, 18.8f);
-            Kit("CandleStick_Stand", -7f, Upper, 18.8f);
-            Kit("CandleStick_Stand", 7f, Upper, 18.8f);
-            Banner(North, 0, 8.2f, 2f, true);
-
-            foreach (int bay in new[] { -4, -2, 2, 4 })
-                Banner(North, bay, 7.8f, 1.5f, bay % 4 == 0);
-
-            Monster(-12f, Upper, 18f, 180f);
-            Monster(12f, Upper, 18f, 180f);
-            Monster(0f, 0f, 2f, 180f);
-            Monster(3f, 0f, -6f, 0f);
-        }
-
-        /// Feast hall ringed by a wooden gallery: long tables below, archers' walk above.
-        private void BuildGreatHall()
-        {
-            Material wood = DungeonPropBuilder.WoodPlanks;
-            const float edge = 16.5f;
-            Deck(-Inner, Inner, edge, Inner, Upper, wood);
-            Deck(-Inner, Inner, -Inner, -edge, Upper, wood);
-            Deck(-Inner, -edge, -edge, edge, Upper, wood);
-            Deck(edge, Inner, -edge, edge, Upper, wood);
-            Stairs(-edge + _run, 0f, 9f, -90f, 2.6f, Upper, wood);
-            Stairs(edge - _run, 0f, -9f, 90f, 2.6f, Upper, wood);
-            Rail(-edge, edge, edge, edge, Upper);
-            Rail(-edge, -edge, edge, -edge, Upper);
-            Rail(-edge, -edge, -edge, 7.7f, Upper);
-            Rail(-edge, 10.3f, -edge, edge, Upper);
-            Rail(edge, -edge, edge, -10.3f, Upper);
-            Rail(edge, -7.7f, edge, edge, Upper);
-
-            foreach (float a in new[] { -16.3f, -5.5f, 5.5f, 16.3f })
-            {
-                Post(a, 16.3f, Upper - Slab);
-                Post(a, -16.3f, Upper - Slab);
-
-                if (Mathf.Abs(a) > 10f)
-                    continue;
-
-                Post(-16.3f, a, Upper - Slab);
-                Post(16.3f, a, Upper - Slab);
-            }
-
-            foreach (float x in new[] { -6f, 6f })
-            {
-                foreach (float z in new[] { -7.4f, -4.5f, 4.5f, 7.4f })
-                {
-                    Table(x, z, 90f, 0, Tableware(5));
-                    Kit("Bench", x - 1.05f, 0f, z, 90f);
-                    Kit("Bench", x + 1.05f, 0f, z, 90f);
-                }
-            }
-
-            DungeonStructureBuilder.Carpet(_module, new Vector3(0f, 0f, -16f), new Vector3(0f, 0f, 16f), 2.4f);
-            Put("StatueGuardian", -12.5f, 0f, -12.5f, 45f);
-            Put("StatueMage", 12.5f, 0f, 12.5f, -135f);
-            Put("Brazier", -12.5f, 0f, 13.5f);
-            Put("Brazier", 12.5f, 0f, -13.5f);
-            Kit("Barrel_Holder", 13f, 0f, -17.6f, 0f);
-            Kit("Barrel_Apples", 10.8f, 0f, -17.8f);
-            Kit("Cauldron", -13f, 0f, 17.6f);
-            Loot("Barrel", -10.8f, 0f, 17.8f, 0f);
-
-            Loot("SmallOakChest", 18.2f, Upper, 18.2f, -135f);
-            Loot("LargeOakChest", -18.2f, Upper, -18.2f, 45f);
-            Loot("SmallOakChest", -3.6f, Upper, 18.9f, 180f);
-            Crates(18.3f, -17.6f, 2, Upper);
-            Kit("Barrel", -18.3f, Upper, 17.8f);
-            Kit("Bag", -17.3f, Upper, 18.6f, 70f);
-
-            foreach (WallSide side in s_sides)
-            {
-                foreach (int bay in new[] { -4, -2, 2, 4 })
-                    Banner(side, bay, 7.8f, 1.5f, (bay + (int)side) % 4 == 0);
-            }
-
-            Monster(-18.1f, Upper, -6f, 90f);
-            Monster(18.1f, Upper, 6f, -90f);
-            Monster(-2f, 0f, 12f, 180f);
-            Monster(0f, 0f, -12f, 0f);
-            Monster(11f, 0f, 2f, -90f);
-        }
-
-        /// Two storeys of cells behind iron bars, the warden's office and a torture chamber across the yard.
-        private void BuildPrison()
-        {
-            Material stone = DungeonPropBuilder.Cobble;
-            const float front = -13f;
-            const float walk = -10.5f;
-            const float cell = 6.5f;
-            Deck(-Inner, walk, -Inner, Inner, Upper, stone);
-            Stairs(walk + _run, 0f, 16f, -90f, 2.4f, Upper, stone);
-            Stairs(walk + _run, 0f, -16f, -90f, 2.4f, Upper, stone);
-            Rail(walk, -Inner, walk, -17.2f, Upper);
-            Rail(walk, -14.8f, walk, 14.8f, Upper);
-            Rail(walk, 17.2f, walk, Inner, Upper);
-
-            for (int i = 0; i < 6; i++)
-            {
-                float z = -19.5f + cell * (i + 0.5f);
-
-                if (i > 0)
-                {
-                    Wall(-16.35f, z - cell * 0.5f, 0f, 6.7f, Upper + 3f);
-                    Post(walk - 0.2f, z - cell * 0.5f, Upper - Slab);
-                }
-
-                for (int level = 0; level < 2; level++)
-                {
-                    float y = level * Upper;
-                    float height = level == 0 ? Upper - Slab : 3f;
-                    Bars(front, y, z - 2.175f, 90f, 2.15f, height);
-                    Bars(front, y, z + 2.175f, 90f, 2.15f, height);
-
-                    // Some cells were broken out of long ago.
-                    if ((i + level * 3) % 5 != 2)
-                        Put("CellDoor", front, y, z, 90f, false);
-
-                    FurnishCell(i, level, y, z);
-                }
-            }
-
-            foreach (int bay in new[] { -4, -1, 1, 4 })
-            {
-                Put("WallTorch", AtWall(West, bay * Bay, 0.02f, 2.4f), Facing(West));
-                Put("WallTorch", AtWall(West, bay * Bay, 0.02f, Upper + 2.4f), Facing(West));
-            }
-
-            // The warden's office and the torture chamber flank the passage to the east door.
-            Doorway(5f, -12.85f, 90f, 13.7f, 0f, "Door");
-            Wall(12.35f, -6f, 0f, 14.9f);
-            Deck(4.75f, Inner, -Inner, -5.75f, Height + Slab, stone);
-            Doorway(5f, 12.85f, 90f, 13.7f, 0f, "CellDoor");
-            Wall(12.35f, 6f, 0f, 14.9f);
-            Deck(4.75f, Inner, 5.75f, Inner, Height + Slab, stone);
-
-            Table(12f, -13f, 0f, 3, "Key_Gold", "Scroll_1", "CandleStick_Triple", "Mug", "Book_7", "Scroll_2");
-            Bookcase(AtWall(South, 8.5f, 0.55f), 0f);
-            Loot("Bookshelf", AtWall(South, 10.2f, 0.55f), 0f);
-            Kit("Cabinet", AtWall(South, 14.5f, 0.5f), 0f);
-            Kit("Key_Metal", AtWall(South, 14.5f, 0.5f, 1.01f), 30f);
-            Loot("LargeOakChest", AtWall(East, -16.5f, 0.8f), -90f);
-            Kit("Bed_Twin1", AtWall(East, -9f, 1.6f), -90f);
-            Mount("Shield_Wooden", East, -4, 2f);
-            Kit("WeaponStand", 7f, 0f, -8f, 90f);
-            Monster(10f, 0f, -10f, -90f);
-
-            Put("Brazier", 12f, 0f, 13f);
-            Kit("Cauldron", 14.4f, 0f, 13f);
-
-            for (int i = 0; i < 3; i++)
-                Kit("Cage_Small", 8f + i * 4.5f, 0f, 18f, Range(-20f, 20f), 1.7f);
-
-            Table(15f, 8.5f, 0f, 0, "Table_Knife", "Bottle_1", "Rope_1", "Key_Metal", "Chalice");
-            Put("Chain", 9f, Height, 10f);
-            Put("Chain", 16.5f, Height, 15.5f, 40f);
-            Put("FallenRanger", 10f, 0f, 9f, 130f);
-            Put("SkullPile", 18.5f, 0f, 7.5f);
-            Kit("Bucket_Metal", 7f, 0f, 16f, 20f);
-            Kit("Chain_Coil", 17f, 0f, 11f, 70f);
-            Loot("SmallOakChest", AtWall(East, 14.5f, 0.8f), -90f);
-            Monster(12f, 0f, 10f, 180f);
-            Monster(17f, 0f, 17f, -135f);
-
-            // Yard between the cell block and the rooms.
-            Table(-2f, -8f, 90f, 4, Tableware(5));
-            Kit("WeaponStand", 1f, 0f, 10f, 90f);
-            Loot("Barrel", 3.9f, 0f, 4.6f, 0f);
-            Loot("Crate", 3.9f, 0f, -4.6f, 15f);
-            Put("Brazier", -6f, 0f, 0f);
-
-            foreach (float z in new[] { -4f, 8f })
-            {
-                Put("Chain", -3f, _ceiling, z);
-                Kit("Cage_Small", -3f, _ceiling - ChainLength - 1.45f, z, 20f + z * 5f, 1.8f);
-            }
-
-            Monster(-4f, 0f, 4f, 90f);
-            Monster(0f, 0f, -3f, 0f);
-            Monster(walk - 1.2f, Upper, 0f, 90f);
-        }
-
-        private void FurnishCell(int index, int level, float y, float z)
-        {
-            Kit(index % 2 == 0 ? "Bed_Twin1" : "Bed_Twin2", -18.3f, y, z + 2.2f, 90f, 0.85f);
-            Kit(Pick("Bucket_Wooden_1", "Bucket_Metal"), -19f, y, z - 2.6f, Range(0f, 360f));
-
-            if ((index + level) % 2 == 0)
-                Kit("Chain_Coil", -15.5f, y, z - 1.5f, Range(0f, 360f));
-            else
-                Kit("Stool", -16f, y, z - 2f, Range(0f, 360f));
-
-            switch ((index * 2 + level) % 6)
-            {
-                case 0:
-                    Put("FallenPeasant", -16.5f, y, z - 0.5f, 70f);
-                    break;
-                case 1:
-                    Loot("Crate", -18.8f, y, z - 0.8f, 10f);
-                    break;
-                case 2:
-                    Monster(-16.5f, y, z, 90f);
-                    break;
-                case 3:
-                    Put("SkullPile", -18.6f, y, z - 0.6f);
-                    Kit("Mug", -17f, y, z - 1f, 40f);
-                    break;
-                case 4:
-                    Loot("Barrel", -18.9f, y, z - 0.8f, 0f);
-                    break;
-                default:
-                    Monster(-16.5f, y, z, 90f);
-                    Put("Rubble", -18.2f, y, z - 1f, 30f);
-                    break;
-            }
-
-            if (level == 1 && index == 0)
-                Loot("LargeOakChest", -18.9f, y, z - 0.6f, 90f);
-            else if (level == 1 && index == 3)
-                Loot("SmallOakChest", -18.9f, y, z + 0.2f, 90f);
-        }
-
-        /// Stacks forming narrow aisles, a reading hall and an L-shaped gallery of shelves.
-        private void BuildLibrary()
-        {
-            Material wood = DungeonPropBuilder.WoodPlanks;
-            const float edge = 16f;
-            Deck(edge, Inner, -Inner, Inner, Upper, wood);
-            Deck(-Inner, edge, -Inner, -edge, Upper, wood);
-            Stairs(edge - _run, 0f, 12f, 90f, 2.4f, Upper, wood);
-            Rail(edge, -edge, edge, 10.8f, Upper);
-            Rail(edge, 13.2f, edge, Inner, Upper);
-            Rail(-Inner, -edge, edge, -edge, Upper);
-
-            foreach (float z in new[] { -10f, -4f, 2f, 8f, 17f })
-                Post(edge + 0.2f, z, Upper - Slab);
-
-            foreach (float x in new[] { -15f, -9f, -3f, 3f, 9f, 15.8f })
-                Post(x, -edge - 0.2f, Upper - Slab);
-
-            for (int row = 0; row < 4; row++)
-            {
-                float z = -13f + row * 4f;
-
-                for (int i = 0; i < 4; i++)
-                {
-                    float x = 5.75f + i * 1.5f;
-                    Shelf(new Vector3(x, 0f, z + 0.26f), 0f, (row + i) % 4 == 0);
-                    Shelf(new Vector3(x, 0f, z - 0.26f), 180f, (row * 3 + i) % 7 == 3);
-                }
-            }
-
-            foreach (float z in new[] { -11f, -7f, -3f })
-                Kit("CandleStick_Stand", 12.4f, 0f, z);
-
-            Table(-8f, 6f, 0f, 4, "Book_5", "Scroll_1", "CandleStick_Triple", "Book_Stack_1", "Potion_1", "Scroll_2");
-            Table(-8f, -6f, 0f, 4, "Book_7", "Book_Stack_2", "Candle_2", "Scroll_1", "SmallBottles_1");
-            Kit("BookStand", -3f, 0f, 11f, 160f);
-            Kit("BookStand", -14f, 0f, -2.5f, 70f);
-            Put("StatueMage", -14f, 0f, 14f, 135f);
-            Kit("CandleStick_Stand", -12.5f, 0f, 12.5f);
-            Scatter(-4f, 13f, 1.2f, "Scroll_1", "Book_5", "Scroll_2");
-
-            // Alchemist's nook under the south gallery.
-            Kit("Cauldron", -10f, 0f, -17.6f);
-            Kit("Workbench", AtWall(South, -14f, 0.85f), 0f);
-            Kit("Workbench_Drawers", AtWall(South, -14f, 0.85f), 0f);
-            Kit("Potion_2", AtWall(South, -13.6f, 0.8f, 0.89f), 20f);
-            Kit("Potion_4", AtWall(South, -14.6f, 0.7f, 0.89f), 80f);
-            Kit("SmallBottles_1", AtWall(South, -14.2f, 1.1f, 0.89f), 10f);
-            Mount("Shelf_Small_Bottles", South, -2, 1.5f);
-            Mount("Shelf_Arch", South, -5, 1.5f);
-            Kit("Vase_2", -6f, 0f, -18.6f);
-            Kit("Vase_4", -5f, 0f, -18.9f);
-            Loot("Barrel", -17.5f, 0f, -18.6f, 0f);
-
-            foreach (float z in new[] { -12f, -8f, -4f, 0f, 4f, 8f })
-                Shelf(AtWall(East, z, 0.55f, Upper), -90f, z == -4f || z == 8f);
-
-            foreach (float x in new[] { -14f, -10f, -6f, -2f, 2f, 6f, 10f })
-                Shelf(AtWall(South, x, 0.55f, Upper), 0f, x == -10f || x == 6f);
-
-            Loot("SmallOakChest", 18.2f, Upper, 17.6f, -90f);
-            Loot("LargeOakChest", -18.8f, Upper, -17.9f, 90f);
-            Kit("BookStand", 17f, Upper, -17f, -45f);
-            Kit("CandleStick_Stand", 17.6f, Upper, 15f);
-            Monster(-4f, 0f, 3f, 90f);
-            Monster(8f, 0f, -11f, 90f);
-            Monster(18f, Upper, -4f, 180f);
-            Monster(0f, Upper, -18f, 0f);
-        }
-
-        /// Barracks: a dormitory, a smithy and a training yard behind inner walls.
-        private void BuildArmory()
-        {
-            Doorway(-8f, -6.85f, 90f, 25.7f, -4.85f, "Door");
-            Wall(-13.85f, 6f, 0f, 12.2f);
-            Doorway(5.85f, -8f, 0f, 27.7f, 2.15f, null);
-
-            for (int i = 0; i < 6; i++)
-            {
-                float z = -17f + i * 4f;
-                Kit(i % 2 == 0 ? "Bed_Twin2" : "Bed_Twin1", AtWall(West, z, 1.6f), 90f);
-
-                if (i % 2 == 0)
-                    Kit("Nightstand_Shelf", AtWall(West, z + 2f, 0.55f), 90f);
-            }
-
-            Mount("Peg_Rack", West, -2, 1.9f);
-            Mount("Peg_Rack", West, 0, 1.9f);
-            Table(-11.5f, -9f, 90f, 4, Tableware(5));
-            Loot("Crate", -9.2f, 0f, -18.6f, 0f);
-            Loot("Crate", -10.4f, 0f, -18.6f, 15f);
-            Kit("Bag", -9.2f, 0f, 4.6f, 30f);
-            Kit("Stool", -12f, 0f, 2f);
-            Loot("SmallOakChest", -13f, 0f, 5f, 180f);
-            Monster(-13f, 0f, -3f, 90f);
-
-            Put("Brazier", 14f, 0f, -17.5f);
-            Kit("Anvil_Log", 11f, 0f, -15f, 30f);
-            Kit("Whetstone", 16.5f, 0f, -12.5f, -60f);
-            Kit("Workbench", AtWall(South, 2f, 0.85f), 0f);
-            Kit("Workbench_Drawers", AtWall(South, 2f, 0.85f), 0f);
-            Kit("Bucket_Metal", 12.6f, 0f, -16.4f);
-            Kit("Cauldron", 17.5f, 0f, -17.6f);
-            Kit("WeaponStand", -3f, 0f, -17.5f, 0f);
-            Kit("WeaponStand", -5.5f, 0f, -12f, 90f);
-            Kit("Crate_Metal", 6.5f, 0f, -18.6f, 5f);
-            Kit("Pickaxe_Bronze", AtWall(South, 4.2f, 0.4f, 0.5f), 0f);
-            Mount("Sword_Bronze", South, 2, 1.8f, 1f, 0.06f);
-            Mount("Axe_Bronze", South, 3, 1.9f, 1f, 0.06f);
-            Mount("Shield_Wooden", South, 4, 2f);
-            Mount("Shield_Wooden", East, -4, 2f);
-            Loot("Barrel", 18.6f, 0f, -9.6f, 0f);
-            Loot("Barrel", 17.4f, 0f, -9.4f, 0f);
-            Monster(8f, 0f, -13f, 0f);
-
-            foreach (float x in new[] { -14f, -10f, -6f, 6f, 10f })
-                Kit("Dummy", x, 0f, 13f, 180f);
-
-            Kit("WeaponStand", 14f, 0f, 13f, 90f);
-            Loot("LargeOakChest", 17.5f, 0f, 18.4f, 180f);
-            Put("StandRangerMale", -3.5f, 0f, 18.6f, 180f);
-            Put("StandRangerFemale", 3.5f, 0f, 18.6f, 180f);
-            Banner(North, -4, 4.2f, 1.3f, true);
-            Banner(North, 4, 4.2f, 1.3f, true);
-            Table(4f, 3f, 0f, 2, Tableware(4));
-            _result.Levers.Add(Put("Lever", 18.9f, 0f, 8f, -90f, false).GetComponent<LeverComponent>());
-            Monster(2f, 0f, 8f, 90f);
-            Monster(-3f, 0f, 14f, 0f);
         }
 
         /// Strongroom behind bars and a locked door, wrapped by a ring corridor with the portal.
@@ -617,10 +132,7 @@ namespace Game.Scripts.Editor.Dungeon
             Monster(0f, 0f, -4f, 180f);
 
             // Ring corridor.
-            if (_floor == 1)
-                _result.DescendPortal = Put("DescendPortal", -15f, 0f, 15f, 135f, false).GetComponent<PortalComponent>();
-            else
-                _result.EscapePortals.Add(Put("EscapePortal", -15f, 0f, 15f, 135f, false).GetComponent<PortalComponent>());
+            _result.EscapePortals.Add(Put("EscapePortal", -15f, 0f, 15f, 135f, false).GetComponent<PortalComponent>());
 
             Put("Pillar", 15f, 0f, 15f);
             Put("Pillar", 15f, 0f, -15f);
@@ -637,9 +149,7 @@ namespace Game.Scripts.Editor.Dungeon
             Banner(South, 2, 3.9f, 1.3f, true);
             Monster(15f, 0f, -8f, -90f);
             Monster(-15f, 0f, -8f, 90f);
-
-            if (_floor == 2)
-                Monster(8f, 0f, 15f, 180f);
+            Monster(8f, 0f, 15f, 180f);
         }
 
         /// Chapel: rows of benches down the nave and a raised sanctuary with the altar.
@@ -689,9 +199,7 @@ namespace Game.Scripts.Editor.Dungeon
             Loot("SmallOakChest", AtWall(East, -14.5f, 0.8f), -90f);
             Monster(-2f, 0f, -12f, 0f);
             Monster(6f, 0f, 0f, -90f);
-
-            if (_floor == 2)
-                Monster(14f, dais, 0f, -90f);
+            Monster(14f, dais, 0f, -90f);
         }
 
         /// Bottom of the collapsed shaft: the descent ends on a ledge of rubble above a miners' camp.
@@ -1305,8 +813,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Put("WallTorch", AtWall(side, -3f * Bay, 0.02f, 2.6f), Facing(side));
                 Put("WallTorch", AtWall(side, 3f * Bay, 0.02f, 2.6f), Facing(side));
 
-                // The cell block owns the west wall of the gaol and lights it itself.
-                if (_ceiling > Height && !(_room == DungeonRoom.Prison && side == West))
+                if (_ceiling > Height)
                     Kit("Lantern_Wall", AtWall(side, 0f, 0.02f, 6f), Facing(side));
             }
         }
@@ -1351,8 +858,8 @@ namespace Game.Scripts.Editor.Dungeon
                 WallSide side = s_sides[_random.Next(4)];
                 float along = Range(4f, Inner - 2f) * (_random.Next(2) == 0 ? -1f : 1f);
 
-                // Galleries, cells and pits own the foot of some walls.
-                if (_room is DungeonRoom.Prison or DungeonRoom.TrapCorridor or DungeonRoom.BonePit or DungeonRoom.Arrival)
+                // Pits and ledges own the foot of some walls.
+                if (_room is DungeonRoom.TrapCorridor or DungeonRoom.BonePit or DungeonRoom.Arrival)
                     continue;
 
                 Put("CandleCluster", AtWall(side, along, Range(0.6f, 1.1f)), Range(0f, 360f));
@@ -1368,14 +875,9 @@ namespace Game.Scripts.Editor.Dungeon
                 DungeonRoom.Crypt => new[] { new Vector2(0f, 6f), new Vector2(0f, -6f) },
                 DungeonRoom.TrapCorridor => new[] { new Vector2(0f, -17f), new Vector2(4f, 0.5f), new Vector2(15.5f, 12.5f) },
                 DungeonRoom.BonePit => new[] { new Vector2(0f, 0f), new Vector2(-16.5f, 0f), new Vector2(16.5f, 0f) },
-                DungeonRoom.Prison => new[] { new Vector2(-3f, 2f), new Vector2(-3f, -12f), new Vector2(-3f, 14f) },
-                DungeonRoom.Library => new[] { new Vector2(-8f, 8f), new Vector2(-8f, -6f), new Vector2(8f, 6f), new Vector2(8f, -3f), new Vector2(8f, -11f) },
-                DungeonRoom.Hall => new[] { new Vector2(0f, -8f), new Vector2(0f, 2f), new Vector2(-13f, -8f), new Vector2(13f, -8f) },
-                DungeonRoom.GreatHall => new[] { new Vector2(0f, -10f), new Vector2(0f, 10f), new Vector2(-10.5f, 0f), new Vector2(10.5f, 0f) },
                 DungeonRoom.Throne => new[] { new Vector2(0f, -12f), new Vector2(0f, -2f), new Vector2(-11f, -4f), new Vector2(11f, -4f), new Vector2(0f, 5f) },
                 DungeonRoom.Cellar => new[] { new Vector2(-8f, 6f), new Vector2(6.2f, -4f), new Vector2(6.2f, 10f) },
-                DungeonRoom.Armory => new[] { new Vector2(-14f, -7f), new Vector2(6f, -14f), new Vector2(4f, 9f) },
-                DungeonRoom.Spawn or DungeonRoom.Shrine => new[] { new Vector2(0f, 0f), new Vector2(-10f, -10f), new Vector2(10f, 10f) },
+                DungeonRoom.Shrine => new[] { new Vector2(0f, 0f), new Vector2(-10f, -10f), new Vector2(10f, 10f) },
                 _ => new[] { new Vector2(-10f, -10f), new Vector2(10f, 10f) }
             };
         }
@@ -1385,11 +887,6 @@ namespace Game.Scripts.Editor.Dungeon
             string[] names = { "ShrineHealth", "ShrineProtection", "ShrinePower", "ShrineSpeed" };
 
             return names[(_floor + offset) % names.Length];
-        }
-
-        private bool IsOpen(WallSide side)
-        {
-            return _open[(int)side];
         }
 
         /// Point at the given distance from the inner face of a wall; along runs east on north/south walls and north on east/west ones.
@@ -1451,42 +948,6 @@ namespace Game.Scripts.Editor.Dungeon
             }
         }
 
-        private string[] Tableware(int count)
-        {
-            string[] items = new string[count];
-
-            for (int i = 0; i < count; i++)
-                items[i] = i == count / 2 && _random.Next(3) == 0 ? "CandleStick_Triple" : s_tableware[_random.Next(s_tableware.Length)];
-
-            return items;
-        }
-
-        /// Bookcase standing on the point: a lootable one, or a decorative one with books on the shelves.
-        private void Shelf(Vector3 position, float yaw, bool isLoot)
-        {
-            if (isLoot)
-                Loot("Bookshelf", position, yaw);
-            else
-                Bookcase(position, yaw);
-        }
-
-        private void Bookcase(Vector3 position, float yaw)
-        {
-            Kit("Bookcase_2", position, yaw);
-            Quaternion rotation = Quaternion.Euler(0f, yaw, 0f);
-
-            foreach (float shelf in s_shelves)
-            {
-                if (_random.Next(5) == 0)
-                    continue;
-
-                Kit("BookGroup_Medium_" + _random.Next(1, 4), position + rotation * new Vector3(-0.12f, shelf, 0.03f), yaw);
-
-                if (_random.Next(2) == 0)
-                    Kit(s_shelfItems[_random.Next(s_shelfItems.Length)], position + rotation * new Vector3(0.5f, shelf, 0.03f), yaw);
-            }
-        }
-
         /// Pile of crates: rows of two on the floor, every third crate sits on top of its row.
         private void Crates(float x, float z, int count, float y = 0f)
         {
@@ -1496,12 +957,6 @@ namespace Game.Scripts.Editor.Dungeon
                 bool isTop = place == 2;
                 Kit(isTop ? "Crate_Metal" : "Crate_Wooden", x + (isTop ? 0.5f : place) * 0.98f, y + (isTop ? 0.9f : 0f), z + i / 3 * 1.05f, Range(-10f, 10f));
             }
-        }
-
-        private void Scatter(float x, float z, float radius, params string[] items)
-        {
-            foreach (string item in items)
-                Kit(item, x + Range(-radius, radius), 0f, z + Range(-radius, radius), Range(0f, 360f));
         }
 
         private void TallPillar(float x, float z)

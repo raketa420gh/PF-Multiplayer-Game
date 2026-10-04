@@ -13,7 +13,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static Texture2D Render(Transform floor, float floorY, string name)
         {
             BattleEditorUtilityShim.EnsureFolder(Folder);
-            float extent = DungeonMapBuilder.Module * DungeonMapBuilder.Grid * 0.5f;
+            float extent = DungeonMapBuilder.WorldSize * 0.5f;
             GameObject cameraObject = new GameObject("MinimapCamera");
             GameObject lightObject = new GameObject("MinimapLight");
             string path = $"{Folder}/{name}.png";
@@ -96,6 +96,11 @@ namespace Game.Scripts.Editor.Dungeon
                 Object.DestroyImmediate(lightObject);
             }
 
+            return Import(path);
+        }
+
+        private static Texture2D Import(string path)
+        {
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
             importer.textureType = TextureImporterType.Default;
@@ -104,6 +109,60 @@ namespace Game.Scripts.Editor.Dungeon
             importer.SaveAndReimport();
 
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
+        /// Map of a floor carved after a layout, drawn like the map it came from: rock outlined in ink and hatched along
+        /// its edges, pale floors, the sunken ones darker.
+        public static Texture2D Paint(DungeonLayoutBuilder layout, string name)
+        {
+            const int hatch = 7;
+            BattleEditorUtilityShim.EnsureFolder(Folder);
+            string path = $"{Folder}/{name}.png";
+            int count = layout.Count;
+            int[,] depth = new int[count, count];
+            Color floor = new Color(0.86f, 0.79f, 0.62f);
+            Color sunken = new Color(0.72f, 0.6f, 0.38f);
+            Color rock = new Color(0.77f, 0.7f, 0.54f);
+            Color ink = new Color(0.2f, 0.13f, 0.07f);
+            Color[] pixels = new Color[Size * Size];
+
+            // How deep in the rock a cell lies, in cells; two sweeps are enough for the few the hatching needs.
+            for (int pass = 0; pass < 2; pass++)
+            {
+                for (int i = 0; i < count * count; i++)
+                {
+                    int index = pass == 0 ? i : count * count - 1 - i;
+                    int x = index % count;
+                    int z = index / count;
+                    int step = pass == 0 ? -1 : 1;
+                    int near = Mathf.Min(layout.IsFloor(x + step, z) ? 0 : x + step < 0 || x + step >= count ? hatch : depth[x + step, z],
+                        layout.IsFloor(x, z + step) ? 0 : z + step < 0 || z + step >= count ? hatch : depth[x, z + step]);
+                    depth[x, z] = layout.IsFloor(x, z) ? 0 : pass == 0 ? near + 1 : Mathf.Min(depth[x, z], near + 1);
+                }
+            }
+
+            for (int y = 0; y < Size; y++)
+            {
+                for (int x = 0; x < Size; x++)
+                {
+                    int cx = x * count / Size;
+                    int cz = y * count / Size;
+                    int inside = depth[cx, cz];
+                    // Strokes lean one way or the other from patch to patch.
+                    bool isStroke = ((cx / 8 + cz / 8) % 2 == 0 ? x + y : x - y + Size) % 7 < 2;
+                    pixels[y * Size + x] = inside == 0 ? Color.Lerp(floor, sunken, Mathf.Clamp01(-layout.Height(cx, cz)))
+                        : inside <= 2 ? ink
+                        : inside <= hatch && isStroke ? Color.Lerp(rock, ink, 0.7f)
+                        : rock;
+                }
+            }
+
+            Texture2D image = new Texture2D(Size, Size, TextureFormat.RGBA32, false);
+            image.SetPixels(pixels);
+            File.WriteAllBytes(path, image.EncodeToPNG());
+            Object.DestroyImmediate(image);
+
+            return Import(path);
         }
 
         /// Ink-swapped walls become thick dark strokes; floors become flat parchment with faint seams.

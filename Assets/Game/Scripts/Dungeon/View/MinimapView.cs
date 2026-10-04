@@ -31,8 +31,12 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _windowSize = 22f;
 
+        [Tooltip("Side of every floor and the number of modules along it")]
         [SerializeField]
-        private float _moduleSize = 14f;
+        private float[] _floorSizes;
+
+        [SerializeField]
+        private int[] _floorGrids;
 
         private void Update()
         {
@@ -53,9 +57,15 @@ namespace Game.Scripts.Dungeon
             _map.uvRect = new Rect(u - window * 0.5f, v - window * 0.5f, window, window);
             _arrow.localRotation = Quaternion.Euler(0f, 0f, -adventurer.transform.eulerAngles.y);
 
-            int x = Mathf.Clamp(Mathf.FloorToInt((position.x + _worldSize * 0.5f) / _moduleSize), 0, 2);
-            int z = Mathf.Clamp(Mathf.FloorToInt((position.z + _worldSize * 0.5f) / _moduleSize), 0, 2);
-            int index = floor * 9 + z * 3 + x;
+            int grid = _floorGrids[floor];
+            float module = _floorSizes[floor] / grid;
+            int x = Mathf.Clamp(Mathf.FloorToInt(position.x / module + grid * 0.5f), 0, grid - 1);
+            int z = Mathf.Clamp(Mathf.FloorToInt(position.z / module + grid * 0.5f), 0, grid - 1);
+            int index = z * grid + x;
+
+            for (int i = 0; i < floor; i++)
+                index += _floorGrids[i] * _floorGrids[i];
+
             _moduleText.text = index < _floorModuleNames.Length ? _floorModuleNames[index] : string.Empty;
         }
     }

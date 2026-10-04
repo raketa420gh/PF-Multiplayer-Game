@@ -24,20 +24,24 @@ namespace Game.Scripts.Editor.Dungeon
             WeaponMesh mesh = new WeaponMesh();
             float head = handleLength - 0.12f;
             float h = headSize;
-            float butt = style == AxeStyle.Hatchet ? -0.13f : -0.23f;
+            // A long axe is held in both hands, the off hand at the butt. The haft of the double axe is a stout one.
+            float butt = style == AxeStyle.Hatchet ? -0.13f : -0.48f;
+            float g = style == AxeStyle.Battle ? 1.25f : 1f;
 
             // Oval haft with a knob at the butt, so the hand does not slip off.
-            mesh.Revolve(WeaponMaterials.Wood, new[]
+            mesh.Revolve(style == AxeStyle.Battle ? WeaponMaterials.DarkWood : WeaponMaterials.Wood, new[]
             {
-                new Vector2(butt, 0.014f), new Vector2(butt + 0.012f, 0.0215f), new Vector2(butt + 0.04f, 0.0185f), new Vector2(head - h * 0.4f, 0.017f),
-                new Vector2(head + h * 0.2f, 0.019f), new Vector2(head + h * 0.2f + 0.012f, 0.014f)
+                new Vector2(butt, 0.014f * g), new Vector2(butt + 0.012f, 0.0215f * g), new Vector2(butt + 0.04f, 0.0185f * g), new Vector2(head - h * 0.4f, 0.017f * g),
+                new Vector2(head + h * 0.2f, 0.019f * g), new Vector2(head + h * 0.2f + 0.012f, 0.014f * g)
             }, 10, 0.78f);
-            WeaponParts.Grip(mesh, WeaponMaterials.Leather, butt + 0.045f, 0.1f, 0.0195f, 0.03f, 0.8f);
+
+            if (style != AxeStyle.Battle)
+                WeaponParts.Grip(mesh, WeaponMaterials.Leather, butt + 0.045f, style == AxeStyle.Hatchet ? 0.1f : butt + 0.19f, 0.0195f, 0.03f, 0.8f);
 
             // The eye wraps the haft; the blade is a wedge drawn from it down to the cutting edge.
             mesh.Revolve(iron, new[]
             {
-                new Vector2(head - h * 0.2f, 0.021f), new Vector2(head - h * 0.17f, 0.025f), new Vector2(head + h * 0.17f, 0.025f), new Vector2(head + h * 0.2f, 0.021f)
+                new Vector2(head - h * 0.2f, 0.021f * g), new Vector2(head - h * 0.17f, 0.025f * g), new Vector2(head + h * 0.17f, 0.025f * g), new Vector2(head + h * 0.2f, 0.021f * g)
             }, 10, 0.8f);
 
             Vector2[] blade = style switch
@@ -47,19 +51,40 @@ namespace Game.Scripts.Editor.Dungeon
                     new(0.012f, head + h * 0.17f), new(h * 0.45f, head + h * 0.2f), new(h * 0.92f, head + h * 0.36f), new(h * 1.02f, head + h * 0.16f),
                     new(h * 1.04f, head - h * 0.04f), new(h * 1.0f, head - h * 0.24f), new(h * 0.9f, head - h * 0.42f), new(h * 0.45f, head - h * 0.22f), new(0.012f, head - h * 0.17f)
                 },
+                // A crescent on a narrow neck, the same above and below: the bit of a double axe.
+                AxeStyle.Battle => new Vector2[]
+                {
+                    new(0.012f, head + h * 0.15f), new(h * 0.2f, head + h * 0.15f), new(h * 0.42f, head + h * 0.27f), new(h * 0.6f, head + h * 0.6f),
+                    new(h * 0.7f, head + h * 0.34f), new(h * 0.745f, head + h * 0.115f), new(h * 0.745f, head - h * 0.115f), new(h * 0.7f, head - h * 0.34f),
+                    new(h * 0.6f, head - h * 0.6f), new(h * 0.42f, head - h * 0.27f), new(h * 0.2f, head - h * 0.15f), new(0.012f, head - h * 0.15f)
+                },
                 _ => new Vector2[]
                 {
                     new(0.012f, head + h * 0.17f), new(h * 0.35f, head + h * 0.2f), new(h * 0.8f, head + h * 0.44f), new(h * 0.93f, head + h * 0.22f),
                     new(h * 0.98f, head - h * 0.05f), new(h * 0.93f, head - h * 0.32f), new(h * 0.78f, head - h * 0.56f), new(h * 0.45f, head - h * 0.24f), new(0.012f, head - h * 0.17f)
                 }
             };
-            mesh.Plate(steel, blade, new[] { 0.017f, 0.009f, 0f, 0f, 0f, 0f, 0f, 0.009f, 0.017f }, new Vector2(h * 0.42f, head - h * 0.02f), 0.0095f);
+            float[] wedge = style == AxeStyle.Battle
+                ? new[] { 0.017f, 0.012f, 0.006f, 0f, 0f, 0f, 0f, 0f, 0f, 0.006f, 0.012f, 0.017f }
+                : new[] { 0.017f, 0.009f, 0f, 0f, 0f, 0f, 0f, 0.009f, 0.017f };
+            Vector2 middle = new Vector2(h * 0.42f, style == AxeStyle.Battle ? head : head - h * 0.02f);
+            mesh.Plate(steel, blade, wedge, middle, 0.0095f);
 
             switch (style)
             {
                 case AxeStyle.Battle:
-                    WeaponParts.Spike(mesh, iron, new Vector3(0f, -0.018f, head), new Vector3(0f, -0.13f, head), 0.016f, 4);
-                    Langets(mesh, iron, head - h * 0.2f - 0.14f, head - h * 0.2f, 0.0135f);
+                    // The second bit on the back of the eye, a finial on top, a pair of rings under the langets and an iron shoe on the butt.
+                    mesh.Matrix = Matrix4x4.Rotate(Quaternion.Euler(0f, 0f, 180f));
+                    mesh.Plate(steel, blade, wedge, middle, 0.0095f);
+                    mesh.Matrix = Matrix4x4.identity;
+                    WeaponParts.Spike(mesh, iron, new Vector3(0f, 0f, head + h * 0.2f + 0.008f), new Vector3(0f, 0f, head + h * 0.2f + 0.06f), 0.015f, 6);
+                    Langets(mesh, iron, head - h * 0.2f - 0.14f, head - h * 0.2f, 0.0135f * g);
+                    WeaponParts.Band(mesh, iron, head - h * 0.2f - 0.17f, 0.0225f * g, 0.009f, 0.003f, 0.8f);
+                    WeaponParts.Band(mesh, iron, head - h * 0.2f - 0.2f, 0.0225f * g, 0.009f, 0.003f, 0.8f);
+                    mesh.Revolve(iron, new[]
+                    {
+                        new Vector2(butt - 0.004f, 0.012f * g), new Vector2(butt + 0.006f, 0.023f * g), new Vector2(butt + 0.085f, 0.0215f * g), new Vector2(butt + 0.092f, 0.0185f * g)
+                    }, 10, 0.8f);
                     break;
                 case AxeStyle.Felling:
                     WeaponParts.Box(mesh, iron, head - h * 0.16f, head + h * 0.16f, new Vector2(0.02f, 0.022f), new Vector2(0.02f, 0.022f), new Vector2(0f, -0.036f), new Vector2(0f, -0.036f));

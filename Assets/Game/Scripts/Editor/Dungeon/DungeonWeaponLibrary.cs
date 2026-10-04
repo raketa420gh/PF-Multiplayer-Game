@@ -41,7 +41,10 @@ namespace Game.Scripts.Editor.Dungeon
         public const string Halberd = "Halberd";
 
         private const float MaceHead = 0.6f;
-        private const float AxeHead = 0.9f;
+        private const float AxeHead = 0.8f;
+        /// A long axe is held at the butt with the off hand, this far down the haft from the main hand.
+        private const float AxeGrip = -0.42f;
+        private const float Frame = 1f / BattleAnimationBuilder.FrameRate;
         private const float SpearHead = 1.8f;
         private const float StaffGrip = -0.33f;
 
@@ -150,7 +153,7 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateMorningStar(),
                 CreateDaggerVariant("Castillon Dagger", 0.5f, 1.12f, 18),
                 CreateDaggerVariant("Stiletto Dagger", 0.46f, 1.08f, 14),
-                CreateAxeVariant("Felling Axe", 0.62f, 0.98f, 1.6f, 37, 44, 0.3f, 0.4f),
+                CreateAxeVariant("Felling Axe", 0.68f, 0.94f, 1.6f, 37, 44, 0.3f, 0.4f),
                 CreateWarMaul(),
                 CreateHalberd()
             };
@@ -182,10 +185,15 @@ namespace Game.Scripts.Editor.Dungeon
             definition.BladeBase = bladeBase;
             definition.BladeTip = bladeTip;
             definition.Reach = reach;
-            definition.Attacks[0].Damage = damage;
-            definition.Attacks[0].Stagger = stagger;
-            definition.Attacks[1].Damage = heavyDamage;
-            definition.Attacks[1].Stagger = heavyStagger;
+
+            foreach (AttackDefinition attack in definition.Attacks)
+            {
+                attack.Damage = damage;
+                attack.Stagger = stagger;
+            }
+
+            definition.Attacks[2].Damage = heavyDamage;
+            definition.Attacks[2].Stagger = heavyStagger;
 
             return definition;
         }
@@ -199,18 +207,20 @@ namespace Game.Scripts.Editor.Dungeon
             return definition;
         }
 
-        /// Clips of its own: the swings of the zweihander at the pace of the battle axe.
+        /// Clips of its own: the swings of the zweihander at a heavier pace.
         private static WeaponDefinition CreateWarMaul()
         {
-            WeaponDefinition definition = CreateBattleAxe();
-            AttackDefinition[] swings = CreateZweihander().Attacks;
+            WeaponDefinition definition = CreateZweihander();
+            AttackDefinition[] swings = definition.Attacks;
             definition.Prefix = WarMaul;
             definition.DisplayName = "War Maul";
             definition.BladeBase = 0.82f;
             definition.BladeTip = 1.15f;
-            definition.Strike = 0f;
             definition.Reach = 1.75f;
-            definition.Attacks = swings;
+            definition.DeflectDuration = 0.9f;
+            definition.BlockMitigation = 0.7f;
+            definition.BlockBoxCenter = new Vector3(0f, 0f, 0.5f);
+            definition.BlockBoxExtents = new Vector3(0.08f, 0.08f, 0.45f);
             swings[0].Damage = 47;
             swings[0].Windup = 0.75f;
             swings[0].Stagger = 0.4f;
@@ -523,28 +533,79 @@ namespace Game.Scripts.Editor.Dungeon
             return definition;
         }
 
+        /// The double axe of Dark and Darker. It is carried upright by the right shoulder, bits across the view, and
+        /// swung in a series of three: a cut down from the right shoulder, a level cut back from the left and a chop
+        /// over the head. Each swing sets off from where the one before ends, and the off hand slides up the haft to
+        /// the main one as a cut runs out to the side.
         private static WeaponDefinition CreateBattleAxe()
         {
-            WeaponDefinition definition = BattleAnimationLibrary.CreateGreatsword();
-            definition.Prefix = BattleAxe;
-            definition.DisplayName = "Battle Axe";
-            definition.BladeBase = 0.75f;
-            definition.BladeTip = 1.15f;
-            definition.Strike = AxeHead;
-            definition.Reach = 1.75f;
-            definition.DeflectDuration = 0.9f;
-            definition.Attacks = new[] { definition.Attacks[0], definition.Attacks[2] };
-            definition.Attacks[0].Damage = 43;
-            definition.Attacks[0].Windup = 0.75f;
-            definition.Attacks[0].Stagger = 0.3f;
-            definition.Attacks[1].Damage = 50;
-            definition.Attacks[1].Windup = 0.85f;
-            definition.Attacks[1].Stagger = 0.45f;
-            definition.BlockMitigation = 0.7f;
-            definition.BlockBoxCenter = new Vector3(0f, 0f, 0.5f);
-            definition.BlockBoxExtents = new Vector3(0.08f, 0.08f, 0.45f);
+            BodyPose idle = Axe(new(0.1f, 1.46f, 0.5f), new(0.52f, 0.82f, 0.25f), 8f);
+            idle.Edge = Vector3.left;
 
-            return definition;
+            AttackDefinition cut = new AttackDefinition
+            {
+                Windup = 59 * Frame, Active = 12 * Frame, Recovery = 0.9f, Damage = 43, MoveMultiplier = 0.5f, Stagger = 0.3f,
+                WindupPose = Axe(new(0.4f, 1.83f, 0.235f), new(0.75f, 0.42f, -0.5f), 28f),
+                MidPose = Axe(new(-0.14f, 1.44f, 0.5f), Vector3.forward, -10f),
+                EndPose = Axe(new(-0.3f, 1.24f, 0.4f), new(-0.55f, 0f, 0.83f), -30f, 8f, -0.3f)
+            };
+            AttackDefinition back = new AttackDefinition
+            {
+                Windup = 71 * Frame, Active = 16 * Frame, Recovery = 0.9f, Damage = 43, MoveMultiplier = 0.5f, Stagger = 0.3f,
+                WindupPose = Axe(new(-0.34f, 1.3f, 0.14f), new(-0.95f, -0.2f, -0.2f), -45f, 6f),
+                MidPose = Axe(new(0.22f, 1.5f, 0.5f), Vector3.forward, 10f),
+                EndPose = Axe(new(0.55f, 1.48f, 0.22f), new(0.2f, 0.12f, 0.97f), 60f, 0f, -0.13f),
+                After = cut
+            };
+            AttackDefinition chop = new AttackDefinition
+            {
+                Windup = 81 * Frame, Active = 12 * Frame, Recovery = 1f, Damage = 50, MoveMultiplier = 0.4f, Stagger = 0.45f,
+                WindupPose = Axe(new(0.22f, 1.86f, 0.1f), new(0.25f, 0.5f, -0.83f), 12f, -12f),
+                MidPose = Axe(new(0.03f, 1.42f, 0.5f), Vector3.forward),
+                EndPose = Axe(new(0f, 1.12f, 0.38f), new(-0.05f, -0.3f, 0.95f), -4f, 14f),
+                After = back
+            };
+            AttackDefinition[] attacks = { cut, back, chop };
+
+            foreach (AttackDefinition attack in attacks)
+            {
+                attack.ComboStart = attack.Windup + attack.Active * 0.5f;
+                attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
+            }
+
+            return new WeaponDefinition
+            {
+                Prefix = BattleAxe,
+                DisplayName = "Battle Axe",
+                Kind = WeaponKind.TwoHanded,
+                Reach = 1.65f,
+                DeflectDuration = 0.9f,
+                BladeBase = 0.66f,
+                BladeTip = 0.94f,
+                Strike = AxeHead,
+                Idle = idle,
+                Attacks = attacks,
+                CanBlock = true,
+                BlockRaise = 0.25f,
+                BlockMitigation = 0.7f,
+                BlockImpact = 0.3f,
+                BlockRecovery = 0.45f,
+                BlockAngle = 80f,
+                BlockMove = 0.5f,
+                // The haft is held out across the view, the head up by the right shoulder.
+                Block = Axe(new(0.14f, 1.84f, 0.39f), new(0.84f, 0.5f, -0.2f), pitch: -4f),
+                BlockHit = Axe(new(0.13f, 1.76f, 0.32f), new(0.86f, 0.45f, -0.25f), pitch: -7f),
+                BlockLowered = Axe(new(0.13f, 1.7f, 0.34f), new(0.86f, 0.42f, -0.2f), pitch: -4f),
+                DeflectPose = Axe(new(0.24f, 1.62f, 0.22f), new(0.35f, 0.9f, 0.1f), 15f, -8f),
+                BlockSocket = WeaponSocket.RightHand,
+                BlockBoxCenter = new Vector3(0f, 0f, 0.25f),
+                BlockBoxExtents = new Vector3(0.08f, 0.08f, 0.7f)
+            };
+        }
+
+        private static BodyPose Axe(Vector3 grip, Vector3 blade, float yaw = 0f, float pitch = 0f, float offHand = AxeGrip)
+        {
+            return BattleAnimationLibrary.TwoHanded(grip, blade, offHand, yaw, pitch);
         }
 
         private static WeaponDefinition CreateSpear()

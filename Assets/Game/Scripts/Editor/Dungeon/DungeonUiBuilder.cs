@@ -387,8 +387,9 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(mso, "_moduleText", moduleText);
             BattleEditorUtility.Set(mso, "_floorMaps", inputs.FloorMaps);
             BattleEditorUtility.Set(mso, "_floorModuleNames", inputs.ModuleNames);
-            BattleEditorUtility.Set(mso, "_worldSize", DungeonMapBuilder.Module * DungeonMapBuilder.Grid);
-            BattleEditorUtility.Set(mso, "_moduleSize", DungeonMapBuilder.Module);
+            BattleEditorUtility.Set(mso, "_worldSize", DungeonMapBuilder.WorldSize);
+            BattleEditorUtility.Set(mso, "_floorSizes", DungeonMapBuilder.FloorSizes);
+            BattleEditorUtility.Set(mso, "_floorGrids", DungeonMapBuilder.FloorGrids);
             BattleEditorUtility.Set(mso, "_windowSize", DungeonMapBuilder.Module * 1.3f);
             mso.ApplyModifiedPropertiesWithoutUndo();
 
@@ -1574,12 +1575,12 @@ namespace Game.Scripts.Editor.Dungeon
             return button;
         }
 
-        /// Full floor map on M: parchment with the module grid and names, the player's arrow on top.
+        /// Full floor map on M: parchment with the names of the modules, the player's arrow on top.
         private static MapView BuildMap(Transform root, Inputs inputs)
         {
             const float size = 760f;
             Vector2 center = new(0.5f, 0.5f);
-            int grid = DungeonMapBuilder.Grid;
+            int grid = Mathf.Max(DungeonMapBuilder.FloorGrids);
             RectTransform panel = CreateRect("Map", root, center, Vector2.zero, new Vector2(size + 40f, size + 90f));
             CreateImage("Back", panel, center, Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
             TMP_Text title = CreateText("Title", panel, new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(size, 34f), 24f, TextAlignmentOptions.Center);
@@ -1593,17 +1594,10 @@ namespace Game.Scripts.Editor.Dungeon
 
             for (int i = 0; i < labels.Length; i++)
             {
-                Vector2 position = new Vector2((i % grid + 0.5f) / grid - 0.5f, (i / grid + 0.5f) / grid - 0.5f) * size;
-                labels[i] = CreateText("Module" + i, mapImage.transform, center, position, new Vector2(size / grid - 10f, 30f), 17f, TextAlignmentOptions.Center);
+                // The view lays the labels out over the modules of the floor it shows.
+                labels[i] = CreateText("Module" + i, mapImage.transform, center, Vector2.zero, new Vector2(size / grid - 8f, 40f), 14f, TextAlignmentOptions.Center);
                 labels[i].color = new Color(0.25f, 0.16f, 0.08f);
                 labels[i].fontStyle = FontStyles.Bold;
-            }
-
-            for (int i = 1; i < grid; i++)
-            {
-                float offset = ((float)i / grid - 0.5f) * size;
-                CreateImage("LineX" + i, mapImage.transform, center, new Vector2(offset, 0f), new Vector2(2f, size), new Color(0.3f, 0.2f, 0.1f, 0.35f));
-                CreateImage("LineZ" + i, mapImage.transform, center, new Vector2(0f, offset), new Vector2(size, 2f), new Color(0.3f, 0.2f, 0.1f, 0.35f));
             }
 
             Image arrow = CreateImage("Arrow", mapImage.transform, center, Vector2.zero, new Vector2(18f, 18f), new Color(0.95f, 0.75f, 0.2f));
@@ -1623,7 +1617,9 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_moduleLabels", labels);
             BattleEditorUtility.Set(so, "_floorMaps", inputs.FloorMaps);
             BattleEditorUtility.Set(so, "_floorModuleNames", inputs.ModuleNames);
-            BattleEditorUtility.Set(so, "_worldSize", DungeonMapBuilder.Module * DungeonMapBuilder.Grid);
+            BattleEditorUtility.Set(so, "_worldSize", DungeonMapBuilder.WorldSize);
+            BattleEditorUtility.Set(so, "_floorSizes", DungeonMapBuilder.FloorSizes);
+            BattleEditorUtility.Set(so, "_floorGrids", DungeonMapBuilder.FloorGrids);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;

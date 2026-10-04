@@ -9,6 +9,8 @@ namespace Game.Scripts.Editor.Dungeon
     {
         public const string Folder = "Assets/Game/Meshes/Dungeon";
 
+        public bool IsEmpty => _vertices.Count == 0;
+
         private readonly List<Vector3> _vertices = new();
         private readonly List<Vector3> _normals = new();
         private readonly List<Vector2> _uvs = new();
@@ -74,9 +76,11 @@ namespace Game.Scripts.Editor.Dungeon
             return this;
         }
 
-        public DungeonMeshBuilder Quad(Vector3 center, Vector3 normal, Vector3 right, Vector3 up)
+        /// The origin is where the texture starts, in metres: quads laid side by side share one pattern.
+        public DungeonMeshBuilder Quad(Vector3 center, Vector3 normal, Vector3 right, Vector3 up, Vector2 origin = default)
         {
             int start = _vertices.Count;
+            origin *= _uvScale;
             float width = right.magnitude * 2f * _uvScale;
             float height = up.magnitude * 2f * _uvScale;
 
@@ -88,10 +92,10 @@ namespace Game.Scripts.Editor.Dungeon
             for (int i = 0; i < 4; i++)
                 _normals.Add(normal);
 
-            _uvs.Add(new Vector2(0f, 0f));
-            _uvs.Add(new Vector2(0f, height));
-            _uvs.Add(new Vector2(width, height));
-            _uvs.Add(new Vector2(width, 0f));
+            _uvs.Add(origin);
+            _uvs.Add(origin + new Vector2(0f, height));
+            _uvs.Add(origin + new Vector2(width, height));
+            _uvs.Add(origin + new Vector2(width, 0f));
 
             // Wind the triangles so the visible side always matches the requested normal.
             bool flip = Vector3.Dot(Vector3.Cross(up, right), normal) < 0f;
@@ -101,6 +105,22 @@ namespace Game.Scripts.Editor.Dungeon
             _triangles.Add(start);
             _triangles.Add(start + (flip ? 3 : 2));
             _triangles.Add(start + (flip ? 2 : 3));
+
+            return this;
+        }
+
+        /// Bare triangle for collision meshes, clockwise seen from its front.
+        public DungeonMeshBuilder Triangle(Vector3 a, Vector3 b, Vector3 c)
+        {
+            Vector3 normal = Vector3.Cross(b - a, c - a).normalized;
+
+            foreach (Vector3 vertex in new[] { a, b, c })
+            {
+                _triangles.Add(_vertices.Count);
+                _vertices.Add(vertex);
+                _normals.Add(normal);
+                _uvs.Add(new Vector2(vertex.x, vertex.z) * _uvScale);
+            }
 
             return this;
         }
