@@ -55,7 +55,7 @@ namespace Game.Scripts.Battle
 
         Vector3 DamageReceiverComponent.IOwner.BlockDirection => transform.forward;
 
-        void DamageReceiverComponent.IOwner.OnHitReceived(HitResult result, float staggerDuration)
+        void DamageReceiverComponent.IOwner.OnHitReceived(HitResult result, float staggerDuration, int impact)
         {
             _restoreTimer = TickTimer.CreateFromSeconds(Runner, _restoreDelay);
 
@@ -63,7 +63,7 @@ namespace Game.Scripts.Battle
                 return;
 
             BlockConfig block = _blockWeapon.Block;
-            _blockLockout = TickTimer.CreateFromSeconds(Runner, block.ImpactDuration + block.RecoveryDuration);
+            _blockLockout = TickTimer.CreateFromSeconds(Runner, impact > block.Stability ? block.BreakDuration : block.ImpactDuration + block.RecoveryDuration);
         }
     }
 }

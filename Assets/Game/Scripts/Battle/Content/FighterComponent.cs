@@ -65,6 +65,9 @@ namespace Game.Scripts.Battle
         [Networked]
         private NetworkBool _isCrouchForced { get; set; }
 
+        [Networked]
+        private NetworkBool _isRooted { get; set; }
+
         private static readonly List<FighterComponent> s_all = new();
         private IInputSource _inputSource;
         private ICombatStats _stats;
@@ -161,6 +164,12 @@ namespace Game.Scripts.Battle
             _isCrouchForced = isForced;
         }
 
+        /// Keeps the fighter on the spot: only the camera turns. State authority only.
+        public void SetRooted(bool isRooted)
+        {
+            _isRooted = isRooted;
+        }
+
         public void SetLook(Vector2 look)
         {
             _look = look;
@@ -197,10 +206,10 @@ namespace Game.Scripts.Battle
         private void SimulateAlive(PlayerInputData input, NetworkButtons buttons)
         {
             bool isWalk = buttons.IsSet(PlayerInputButtons.Sprint);
-            bool isJump = buttons.WasPressed(_previousButtons, PlayerInputButtons.Jump);
+            bool isJump = !_isRooted && buttons.WasPressed(_previousButtons, PlayerInputButtons.Jump);
             float speed = _combat.MoveMultiplier * (_stats?.MoveSpeedMultiplier ?? 1f);
 
-            _move.Simulate(input.MoveDirection, input.LookRotation, isWalk,
+            _move.Simulate(_isRooted ? Vector2.zero : input.MoveDirection, input.LookRotation, isWalk,
                 buttons.IsSet(PlayerInputButtons.Crouch) || _isCrouchForced, isJump, speed);
             _body.UpdateHitboxes();
             _combat.Simulate(buttons, _previousButtons);

@@ -32,6 +32,7 @@ namespace Game.Scripts.Battle
         public byte Kind;
         public byte DamageType;
         public byte Effect;
+        public byte Impact;
         public NetworkBool IsHidden;
 
         public bool IsFlying => FireTick > 0 && FinishTick == 0;
@@ -96,7 +97,7 @@ namespace Game.Scripts.Battle
 
         public void Fire(Vector3 origin, Vector3 velocity, float gravity, int damage, float staggerDuration,
             DamageType damageType = DamageType.Physical, ProjectileKind kind = ProjectileKind.Arrow,
-            float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f, float lifeSteal = 0f)
+            float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f, float lifeSteal = 0f, int impact = 3)
         {
             _projectiles.Set(_fireCount % Capacity, new ProjectileData
             {
@@ -112,7 +113,8 @@ namespace Game.Scripts.Battle
                 Effect = effect,
                 EffectMagnitude = effectMagnitude,
                 EffectDuration = effectDuration,
-                LifeSteal = lifeSteal
+                LifeSteal = lifeSteal,
+                Impact = (byte)impact
             });
             _fireCount++;
         }
@@ -168,6 +170,7 @@ namespace Game.Scripts.Battle
                 Normal = hit.Normal,
                 AttackerPosition = from,
                 StaggerDuration = data.StaggerDuration,
+                Impact = data.Impact,
                 DamageType = (DamageType)data.DamageType,
                 Attacker = _ownReceiver
             });
@@ -201,6 +204,7 @@ namespace Game.Scripts.Battle
                     Normal = (hit.Point - point).normalized,
                     AttackerPosition = point,
                     StaggerDuration = data.StaggerDuration,
+                    Impact = data.Impact,
                     DamageType = (DamageType)data.DamageType,
                     Attacker = _ownReceiver
                 });

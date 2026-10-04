@@ -61,6 +61,7 @@ namespace Game.Scripts.Battle
         {
             CombatState.Attack or CombatState.BlockRaise or CombatState.BlockImpact or CombatState.Draw => ActionSpeed,
             CombatState.Equip or CombatState.Reload => _stats?.HandlingSpeed ?? 1f,
+            CombatState.Busy => _busySpeed,
             _ => 1f
         };
         public float ActionSpeed => (_stats?.ActionSpeed ?? 1f) * _baseActionSpeed;
@@ -171,6 +172,9 @@ namespace Game.Scripts.Battle
 
         [Networked]
         private byte _busyKind { get; set; }
+
+        [Networked]
+        private float _busySpeed { get; set; }
 
         [Networked]
         private int _worldHitCount { get; set; }
@@ -296,14 +300,15 @@ namespace Game.Scripts.Battle
             UpdateBlockHitboxes();
         }
 
-        /// Interrupts combat for a cast, a consumable or an interaction.
-        public bool StartBusy(float duration, byte kind)
+        /// Interrupts combat for a cast, a consumable or an interaction. Duration is in seconds, speed only sets the animation pace.
+        public bool StartBusy(float duration, byte kind, float speed = 1f)
         {
             if (State is CombatState.Attack or CombatState.Stagger or CombatState.Busy)
                 return false;
 
-            SetState(CombatState.Busy, duration);
+            SetState(CombatState.Busy, duration * speed);
             _busyKind = kind;
+            _busySpeed = speed;
             UpdateBlockHitboxes();
 
             return true;
@@ -453,7 +458,7 @@ namespace Game.Scripts.Battle
             Vector3 direction = _body.AimDirection;
             int damage = ScaleDamage(ranged.GetDamage(power), Weapon.DamageType);
             _projectiles.Fire(_body.EyePosition, direction * ranged.GetSpeed(power), ranged.Gravity, damage,
-                ranged.StaggerDuration, Weapon.DamageType, ProjectileKind.Arrow);
+                ranged.StaggerDuration, Weapon.DamageType, ProjectileKind.Arrow, impact: Weapon.Impact);
 
             SetState(CombatState.Reload, ranged.ReloadTime);
         }
@@ -641,6 +646,7 @@ namespace Game.Scripts.Battle
                     Normal = tally.Normal,
                     AttackerPosition = transform.position,
                     StaggerDuration = attack.StaggerDuration,
+                    Impact = weapon.Impact,
                     DamageType = weapon.DamageType,
                     Attacker = _receiver
                 });
@@ -664,11 +670,16 @@ namespace Game.Scripts.Battle
 
         Vector3 DamageReceiverComponent.IOwner.BlockDirection => transform.forward;
 
-        void DamageReceiverComponent.IOwner.OnHitReceived(HitResult result, float staggerDuration)
+        void DamageReceiverComponent.IOwner.OnHitReceived(HitResult result, float staggerDuration, int impact)
         {
-            if (result != HitResult.Hit)
+            BlockConfig block = Weapon.Block;
+
+            if (result != HitResult.Hit && impact > block.Stability)
             {
-                BlockConfig block = Weapon.Block;
+                SetState(CombatState.Stagger, block.BreakDuration);
+            }
+            else if (result != HitResult.Hit)
+            {
                 SetState(CombatState.BlockImpact, block.ImpactDuration + block.RecoveryDuration);
             }
             else if (staggerDuration > 0f)

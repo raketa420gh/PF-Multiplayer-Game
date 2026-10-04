@@ -195,6 +195,9 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_deflectDuration", definition.DeflectDuration);
             BattleEditorUtility.Set(so, "_reach", definition.Reach);
             BattleEditorUtility.Set(so, "_damageType", DamageType.Physical);
+            (int impact, int stability) = DungeonWeaponLibrary.Force(definition.DisplayName);
+            BattleEditorUtility.Set(so, "_impact", impact);
+            BattleEditorUtility.Set(so, "_block._stability", stability);
 
             so.FindProperty("_attachments").arraySize = attachments.Length;
 

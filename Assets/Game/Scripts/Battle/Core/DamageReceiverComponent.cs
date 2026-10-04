@@ -22,6 +22,7 @@ namespace Game.Scripts.Battle
         public Vector3 Normal;
         public Vector3 AttackerPosition;
         public float StaggerDuration;
+        public int Impact;
         public DamageType DamageType;
         public DamageReceiverComponent Attacker;
     }
@@ -41,17 +42,14 @@ namespace Game.Scripts.Battle
         {
             BlockConfig ActiveBlock { get; }
             Vector3 BlockDirection { get; }
-            void OnHitReceived(HitResult result, float staggerDuration);
+            void OnHitReceived(HitResult result, float staggerDuration, int impact);
         }
 
-        /// Optional second interface: outgoing hit bonuses and incoming armor, resistances, guard and poise of the receiver.
+        /// Optional second interface: outgoing hit bonuses and incoming armor and resistances of the receiver.
         public interface IHitModifier
         {
             float WeakpointMultiplier { get; }
-            float ImpactMultiplier { get; }
             int ModifyIncomingDamage(int damage, DamageType type, HitZone zone);
-            float ModifyBlockMitigation(float mitigation);
-            float ModifyIncomingStagger(int damage, float staggerDuration);
         }
 
         /// Everything that can be hit: fighters, monsters and dummies.
@@ -150,7 +148,7 @@ namespace Game.Scripts.Battle
             IHitModifier attacker = request.Attacker != null ? request.Attacker._modifier : null;
             float weakpoint = request.Zone == HitZone.Head ? attacker?.WeakpointMultiplier ?? 1f : 1f;
             float zoneMultiplier = result == HitResult.Blocked ? 1f : _zoneConfig.GetMultiplier(request.Zone) * weakpoint;
-            float mitigation = block != null ? (_modifier?.ModifyBlockMitigation(block.Mitigation) ?? block.Mitigation) * blockedShare : 0f;
+            float mitigation = block != null ? block.Mitigation * blockedShare : 0f;
             int damage = Mathf.RoundToInt(request.BaseDamage * zoneMultiplier * (1f - mitigation));
 
             if (_modifier != null && damage > 0)
@@ -171,8 +169,7 @@ namespace Game.Scripts.Battle
             });
             _eventCount++;
 
-            float stagger = request.StaggerDuration * (attacker?.ImpactMultiplier ?? 1f);
-            _owner?.OnHitReceived(result, _modifier?.ModifyIncomingStagger(damage, stagger) ?? stagger);
+            _owner?.OnHitReceived(result, request.StaggerDuration, request.Impact);
 
             if (request.Attacker != null)
                 request.Attacker.OnHitDealt?.Invoke(this, result, damage);

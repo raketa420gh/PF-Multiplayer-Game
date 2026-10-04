@@ -27,6 +27,8 @@ namespace Game.Scripts.Editor.Battle
         private const string MeshesFolder = BattleEditorUtility.ModelsFolder + "/Character";
         private const string TexturesFolder = "Assets/Game/Textures/Battle";
         private const string AvatarPath = BattleEditorUtility.ModelsFolder + "/CharacterAvatar.asset";
+        // Root bone of the animation libraries, their root motion node.
+        private const string MotionNode = "Armature/root";
         private const int MaskSize = 1024;
         // The combat body model (hitboxes, eye point, weapon poses) is authored for a head joint at this height.
         private const float HeadHeight = 1.63f;
@@ -304,21 +306,56 @@ namespace Game.Scripts.Editor.Battle
                 }
             }
 
-            bool isHuman = importer.animationType == ModelImporterAnimationType.Human && importer.clipAnimations.Length == clips.Count;
+            bool isHuman = importer.animationType == ModelImporterAnimationType.Human && importer.clipAnimations.Length == clips.Count
+                && importer.motionNodeName == MotionNode;
 
-            if (importer.isReadable && importer.bakeAxisConversion && (!hasAnimations || isHuman))
-                return;
-
-            importer.isReadable = true;
-            importer.bakeAxisConversion = true;
-
-            if (hasAnimations)
+            if (!importer.isReadable || !importer.bakeAxisConversion || hasAnimations && !isHuman)
             {
-                importer.animationType = ModelImporterAnimationType.Human;
-                importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-                importer.clipAnimations = clips.ToArray();
+                importer.isReadable = true;
+                importer.bakeAxisConversion = true;
+
+                if (hasAnimations)
+                {
+                    importer.animationType = ModelImporterAnimationType.Human;
+                    importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                    importer.motionNodeName = MotionNode;
+                    importer.clipAnimations = clips.ToArray();
+                }
+
+                importer.SaveAndReimport();
             }
 
+            if (hasAnimations)
+                SetRestPose(path);
+        }
+
+        /// Unity's automatic avatar turns the clavicles, upper arms and thumbs into its own T-pose. The character avatar takes
+        /// the rest pose as its T-pose, so the libraries must do the same, or every retargeted clip carries that turn.
+        private static void SetRestPose(string path)
+        {
+            ModelImporter importer = (ModelImporter)AssetImporter.GetAtPath(path);
+            HumanDescription description = importer.humanDescription;
+            SkeletonBone[] skeleton = description.skeleton;
+            Transform[] bones = AssetDatabase.LoadAssetAtPath<GameObject>(path).GetComponentsInChildren<Transform>();
+            bool isRest = true;
+
+            for (int i = 0; i < skeleton.Length; i++)
+            {
+                string name = skeleton[i].name;
+                Transform bone = Array.Find(bones, candidate => candidate.name == name);
+
+                if (bone == null || Quaternion.Angle(skeleton[i].rotation, bone.localRotation) < 0.1f)
+                    continue;
+
+                skeleton[i].rotation = bone.localRotation;
+                isRest = false;
+            }
+
+            if (isRest)
+                return;
+
+            description.skeleton = skeleton;
+            importer.humanDescription = description;
             importer.SaveAndReimport();
         }
 

@@ -138,6 +138,8 @@ namespace Game.Scripts.Battle
         public float Mitigation => _mitigation;
         public float ImpactDuration => _impactDuration;
         public float RecoveryDuration => _recoveryDuration;
+        public int Stability => _stability;
+        public float BreakDuration => _breakDuration;
         public float AngleTolerance => _angleTolerance;
         public float MoveMultiplier => _moveMultiplier;
 
@@ -155,6 +157,13 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private float _recoveryDuration = 0.35f;
+
+        /// A hit whose Impact is higher than this breaks the block: the defender reels for BreakDuration.
+        [SerializeField, Range(1, 10)]
+        private int _stability = 3;
+
+        [SerializeField]
+        private float _breakDuration = 0.8f;
 
         [SerializeField, Range(0f, 180f)]
         private float _angleTolerance = 100f;
@@ -232,6 +241,7 @@ namespace Game.Scripts.Battle
         public BlockConfig Block => _block;
         public RangedConfig Ranged => _ranged;
         public DamageType DamageType => _damageType;
+        public int Impact => _impact;
 
         public PlayerInputButtons AttackButton =>
             _mainHand == HandSide.Right ? PlayerInputButtons.Primary : PlayerInputButtons.Secondary;
@@ -271,5 +281,9 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private DamageType _damageType = DamageType.Physical;
+
+        /// How hard the weapon knocks a block, compared with BlockConfig.Stability of the defender.
+        [SerializeField, Range(1, 10)]
+        private int _impact = 3;
     }
 }
