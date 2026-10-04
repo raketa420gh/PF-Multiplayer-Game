@@ -16,6 +16,12 @@ namespace Game.Scripts.Editor.Battle
         private const float MaxStrideScale = 2f;
         private const float SprintSpeed = 1.44f;
         private const float BandageCycle = 0.9f;
+        private const float IdleDrop = 0.03f;
+        private const float FootworkStride = 0.5f;
+        private const float FootworkBob = 0.25f;
+        /// A cut whose grip ends less than this far to the side of where it was raised comes down from above.
+        private const float OverheadSide = 0.3f;
+        private const float LibraryFrame = 1f / 30f;
         private const string UpperLayerName = "Upper";
         private const string HitLayerName = "Hit";
 
@@ -43,7 +49,7 @@ namespace Game.Scripts.Editor.Battle
             foreach (WeaponDefinition weapon in weapons)
             {
                 if (built.Add(weapon.Prefix))
-                    BuildWeapon(rig, upper, weapon);
+                    BuildWeapon(rig, upper, controller.layers[0].stateMachine, weapon);
             }
 
             BuildActions(upper);
@@ -112,7 +118,7 @@ namespace Game.Scripts.Editor.Battle
             float crouchSpeed = walkSpeed * movement.CrouchMultiplier;
             float backpedal = movement.BackpedalMultiplier;
 
-            AnimationClip idle = RecordLegs(rig, "Idle", "Idle_Loop", 0.03f);
+            AnimationClip idle = RecordLegs(rig, "Idle", "Idle_Loop", IdleDrop);
             AnimationClip walkForward = RecordLegs(rig, "WalkForward", "Walk_Loop", 0.08f, walkSpeed);
             AnimationClip walkBack = RecordLegs(rig, "WalkBack", "Walk_Loop", 0.08f, -walkSpeed * backpedal);
             AnimationClip walkLeft = RecordWalk(rig, "WalkLeft", 0.4f, Vector2.left, 0.34f, 0.1f, 0.06f);
@@ -199,6 +205,55 @@ namespace Game.Scripts.Editor.Battle
             });
         }
 
+        /// The feet under the swing of a fighter who stands still, from the strike of the library that goes the same way.
+        /// Its stride is retimed to land at the peak and shortened to what the legs reach from hips that stay where the
+        /// combat model has them; of its crouch only a share is taken over.
+        private static AnimationClip RecordAttackLegs(BattlePoseRig rig, string name, WeaponDefinition weapon, int index)
+        {
+            const int samples = 24;
+            AttackDefinition attack = weapon.Attacks[index];
+            (string strike, string recovery, float blow) = Footwork(weapon, index);
+            AnimationClip first = BattleEditorUtility.LoadLibraryClip(strike);
+            AnimationClip second = recovery == null ? first : BattleEditorUtility.LoadLibraryClip(recovery);
+            float length = recovery == null ? first.length : first.length + second.length;
+            float peak = BattleAnimationLibrary.PeakTime(attack);
+            float height = float.MinValue;
+
+            BodyPose Legs(float time) => recovery == null || time < first.length ? rig.SampleLegs(first, time) : rig.SampleLegs(second, time - first.length);
+
+            for (int i = 0; i <= samples; i++)
+                height = Mathf.Max(height, Legs(length * i / samples).Hips.y);
+
+            return Record(rig, name, attack.Duration, false, time =>
+            {
+                BodyPose pose = Legs(time < peak ? blow * time / peak : Mathf.Lerp(blow, length, (time - peak) / (attack.Duration - peak)));
+                pose.Hips = new Vector3(0f, (pose.Hips.y - height) * FootworkBob - IdleDrop, 0f);
+                pose.LeftFoot *= FootworkStride;
+                pose.RightFoot *= FootworkStride;
+
+                return pose;
+            });
+        }
+
+        /// The strike of the library whose feet go with an attack, the take it recovers with when that is a clip of its
+        /// own, and the moment its feet are set for the blow.
+        private static (string strike, string recovery, float blow) Footwork(WeaponDefinition weapon, int index)
+        {
+            AttackDefinition attack = weapon.Attacks[index];
+            float side = attack.WindupPose.Main.Position.x - attack.EndPose.Main.Position.x;
+
+            if (weapon.IsUnarmed)
+                return index % 2 == 0 ? ("Punch_Jab", null, 5f * LibraryFrame) : ("Punch_Cross", null, 7f * LibraryFrame);
+
+            if (!BattleAnimationLibrary.IsCut(weapon, attack))
+                return ("Melee_Hook", "Melee_Hook_Rec", 8f * LibraryFrame);
+
+            if (Mathf.Abs(side) < OverheadSide)
+                return ("Sword_Attack", null, 14f * LibraryFrame);
+
+            return side > 0f ? ("Sword_Regular_A", "Sword_Regular_A_Rec", 8f * LibraryFrame) : ("Sword_Regular_B", "Sword_Regular_B_Rec", 8f * LibraryFrame);
+        }
+
         /// Busy actions as others see them come from the library as is: spells and levers with the off hand, throws with the main
         /// hand. Casting and drinking happen beside the head, so the player's own view keeps the generated in-view poses.
         private static void BuildActions(AnimatorStateMachine stateMachine)
@@ -243,7 +298,7 @@ namespace Game.Scripts.Editor.Battle
             return tree;
         }
 
-        private static void BuildWeapon(BattlePoseRig rig, AnimatorStateMachine stateMachine, WeaponDefinition weapon)
+        private static void BuildWeapon(BattlePoseRig rig, AnimatorStateMachine stateMachine, AnimatorStateMachine legs, WeaponDefinition weapon)
         {
             string prefix = weapon.Prefix;
 
@@ -265,6 +320,8 @@ namespace Game.Scripts.Editor.Battle
                 AttackDefinition attack = weapon.Attacks[i];
                 AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.AttackSuffix + i, attack.Duration,
                     BattleAnimationLibrary.AttackKeys(weapon, attack));
+                AddState(legs, prefix + FighterAnimComponent.AttackLegsSuffix + i,
+                    RecordAttackLegs(rig, prefix + FighterAnimComponent.AttackLegsSuffix + i, weapon, i));
             }
 
             if (weapon.CanBlock)

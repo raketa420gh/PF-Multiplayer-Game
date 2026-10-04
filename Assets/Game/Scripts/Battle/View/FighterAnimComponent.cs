@@ -7,6 +7,7 @@ namespace Game.Scripts.Battle
     {
         public const string IdleSuffix = "_Idle";
         public const string AttackSuffix = "_Attack";
+        public const string AttackLegsSuffix = "_AttackLegs";
         public const string BlockSuffix = "_Block";
         public const string BlockImpactSuffix = "_BlockImpact";
         public const string DeflectSuffix = "_Deflect";
@@ -138,10 +139,12 @@ namespace Game.Scripts.Battle
             public int Draw;
             public int Release;
             public int[] Attacks;
+            public int[] AttackLegs;
         }
 
         private WeaponStates[] _weaponStates;
         private int _baseState;
+        private int _baseToken;
         private int _upperState;
         private int _upperToken;
         private float _airTime;
@@ -209,9 +212,13 @@ namespace Game.Scripts.Battle
         {
             string prefix = weapon.AnimationPrefix;
             int[] attacks = new int[weapon.Attacks.Length];
+            int[] attackLegs = new int[attacks.Length];
 
             for (int i = 0; i < attacks.Length; i++)
+            {
                 attacks[i] = Animator.StringToHash(prefix + AttackSuffix + i);
+                attackLegs[i] = Animator.StringToHash(prefix + AttackLegsSuffix + i);
+            }
 
             return new WeaponStates
             {
@@ -221,7 +228,8 @@ namespace Game.Scripts.Battle
                 Deflect = Animator.StringToHash(prefix + DeflectSuffix),
                 Draw = Animator.StringToHash(prefix + DrawSuffix),
                 Release = Animator.StringToHash(prefix + ReleaseSuffix),
-                Attacks = attacks
+                Attacks = attacks,
+                AttackLegs = attackLegs
             };
         }
 
@@ -242,6 +250,8 @@ namespace Game.Scripts.Battle
             bool wasInAir = _baseState == s_air || _baseState == s_jump;
             bool isRising = !move.IsGrounded && move.Velocity.y > _jumpSpeed;
             float fadeTime = _fadeTime;
+            float time = 0f;
+            int token = 0;
             int state;
 
             if (!isAlive)
@@ -264,16 +274,26 @@ namespace Game.Scripts.Battle
             }
             else
             {
+                CombatComponent combat = _fighter.Combat;
                 bool isStill = Mathf.Abs(velocity.x) + Mathf.Abs(velocity.z) < RestSpeed;
                 state = _isKneeling && isStill ? s_rest : s_locomotion;
                 fadeTime = _baseState == s_land ? _landFadeTime : state == s_rest || _baseState == s_rest ? _restFadeTime : _fadeTime;
+
+                // One who strikes without walking steps into the swing.
+                if (isStill && combat.State == CombatState.Attack)
+                {
+                    state = _weaponStates[combat.WeaponIndex].AttackLegs[combat.AttackIndex];
+                    time = combat.StateTime;
+                    token = combat.StateTick;
+                }
             }
 
-            if (state == _baseState)
+            if (state == _baseState && token == _baseToken)
                 return;
 
             _baseState = state;
-            _animator.CrossFadeInFixedTime(state, fadeTime, BaseLayer, 0f);
+            _baseToken = token;
+            _animator.CrossFadeInFixedTime(state, fadeTime, BaseLayer, time);
         }
 
         private void UpdateUpperBody(bool isAlive, float deltaTime)
