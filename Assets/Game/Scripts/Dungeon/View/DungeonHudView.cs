@@ -238,7 +238,8 @@ namespace Game.Scripts.Dungeon
                 ? $"{held.DisplayName}  <size=70%>{(state.Length > 0 ? state : "[LMB] use  [RMB] put away")}</size>"
                 : $"{combat.Weapon.DisplayName}  <size=70%>{state}</size>";
 
-            int activeSlot = adventurer.HasBeltItemInHand ? 2 + (adventurer.BeltSlot - (int)EquipSlot.Utility1) / AdventurerComponent.BeltGroupSize : combat.WeaponSlot;
+            int activeSlot = adventurer.HasBeltItemInHand ? 2 + (adventurer.BeltSlot - (int)EquipSlot.Utility1) / AdventurerComponent.BeltGroupSize
+                : adventurer.IsHolstered ? -1 : combat.WeaponSlot;
 
             for (int i = 0; i < _weaponSlotLabels.Length; i++)
                 _weaponSlotLabels[i].color = i == activeSlot ? new Color(1f, 0.85f, 0.4f) : new Color(0.55f, 0.5f, 0.42f);

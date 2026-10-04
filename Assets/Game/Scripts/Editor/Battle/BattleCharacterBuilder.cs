@@ -23,6 +23,7 @@ namespace Game.Scripts.Editor.Battle
         private const string PacksFolder = "Assets/SpecialFolder/3D Models";
         private const string FemaleMannequinPath = PacksFolder + "/Universal Animation Library 2[Standard]/Female Mannequin/Unity/Mannequin_F.fbx";
         private const string OutfitsFolder = PacksFolder + "/Modular Character Outfits - Fantasy[Standard]";
+        public const string HeadMeshPath = MeshesFolder + "/Male_Head.asset";
         private const string MeshesFolder = BattleEditorUtility.ModelsFolder + "/Character";
         private const string TexturesFolder = "Assets/Game/Textures/Battle";
         private const string AvatarPath = BattleEditorUtility.ModelsFolder + "/CharacterAvatar.asset";

@@ -10,19 +10,20 @@ namespace Game.Scripts.Editor.Dungeon
     {
         public const string Folder = "Assets/Game/Textures/Dungeon";
         public const int Size = 512;
+        private const int EnvironmentSize = 1024;
+        private const int OcclusionRadius = 6;
 
         public static void Build()
         {
             Directory.CreateDirectory(Folder);
 
-            Write("StoneWall", StoneWall, 0.9f);
-            Write("StoneFloor", StoneFloor, 0.7f);
-            Write("Cobble", Cobble, 0.8f);
-            Write("WoodPlanks", WoodPlanks, 0.5f);
+            Write("StoneWall", StoneWall, 0.8f, EnvironmentSize, true);
+            Write("StoneFloor", StoneFloor, 0.8f, EnvironmentSize, true);
+            Write("Cobble", Cobble, 1f, EnvironmentSize, true);
+            Write("WoodPlanks", WoodPlanks, 0.6f, EnvironmentSize, true);
             Write("DarkWood", DarkWood, 0.4f);
             Write("RustyMetal", RustyMetal, 0.35f);
             Write("Bone", Bone, 0.5f);
-            Write("ZombieSkin", ZombieSkin, 0.45f);
             Write("ClothRed", ClothRed, 0.25f);
             Write("Gold", Gold, 0.3f);
             Write("Dirt", Dirt, 0.6f);
@@ -36,6 +37,12 @@ namespace Game.Scripts.Editor.Dungeon
         public static Texture2D Load(string name, bool isNormal)
         {
             return AssetDatabase.LoadAssetAtPath<Texture2D>($"{Folder}/{name}{(isNormal ? "_n" : string.Empty)}.png");
+        }
+
+        /// Cavity map of the environment textures; null for the ones that have none.
+        public static Texture2D LoadOcclusion(string name)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>($"{Folder}/{name}_o.png");
         }
 
         private delegate Color Sampler(float u, float v, out float height);
@@ -115,57 +122,114 @@ namespace Game.Scripts.Editor.Dungeon
             UnityEngine.Object.DestroyImmediate(texture);
         }
 
-        private static void Write(string name, Sampler sampler, float normalStrength)
+        private static void Write(string name, Sampler sampler, float normalStrength, int size = Size, bool hasOcclusion = false)
         {
-            Texture2D albedo = new Texture2D(Size, Size, TextureFormat.RGB24, false);
-            Texture2D normal = new Texture2D(Size, Size, TextureFormat.RGB24, false);
-            float[,] heights = new float[Size, Size];
-            Color[] pixels = new Color[Size * Size];
+            Texture2D albedo = new Texture2D(size, size, TextureFormat.RGB24, false);
+            Texture2D normal = new Texture2D(size, size, TextureFormat.RGB24, false);
+            float[,] heights = new float[size, size];
+            Color[] pixels = new Color[size * size];
 
-            for (int y = 0; y < Size; y++)
+            for (int y = 0; y < size; y++)
             {
-                for (int x = 0; x < Size; x++)
+                for (int x = 0; x < size; x++)
                 {
-                    pixels[y * Size + x] = sampler(x / (float)Size, y / (float)Size, out heights[x, y]);
+                    pixels[y * size + x] = sampler(x / (float)size, y / (float)size, out heights[x, y]);
                 }
             }
 
             albedo.SetPixels(pixels);
             albedo.Apply();
 
-            Color[] normals = new Color[Size * Size];
+            // The slope is per texel: a larger texture of the same surface needs a proportionally stronger gain.
+            float gain = normalStrength * 8f * size / Size;
+            Color[] normals = new Color[size * size];
 
-            for (int y = 0; y < Size; y++)
+            for (int y = 0; y < size; y++)
             {
-                for (int x = 0; x < Size; x++)
+                for (int x = 0; x < size; x++)
                 {
-                    float left = heights[(x + Size - 1) % Size, y];
-                    float right = heights[(x + 1) % Size, y];
-                    float down = heights[x, (y + Size - 1) % Size];
-                    float up = heights[x, (y + 1) % Size];
-                    Vector3 n = new Vector3((left - right) * normalStrength * 8f, (down - up) * normalStrength * 8f, 1f).normalized;
-                    normals[y * Size + x] = new Color(n.x * 0.5f + 0.5f, n.y * 0.5f + 0.5f, n.z * 0.5f + 0.5f);
+                    float left = heights[(x + size - 1) % size, y];
+                    float right = heights[(x + 1) % size, y];
+                    float down = heights[x, (y + size - 1) % size];
+                    float up = heights[x, (y + 1) % size];
+                    Vector3 n = new Vector3((left - right) * gain, (down - up) * gain, 1f).normalized;
+                    normals[y * size + x] = new Color(n.x * 0.5f + 0.5f, n.y * 0.5f + 0.5f, n.z * 0.5f + 0.5f);
                 }
             }
 
             normal.SetPixels(normals);
             normal.Apply();
 
-            Save(albedo, $"{Folder}/{name}.png", false);
-            Save(normal, $"{Folder}/{name}_n.png", true);
+            Save(albedo, $"{Folder}/{name}.png", TextureImporterType.Default, true);
+            Save(normal, $"{Folder}/{name}_n.png", TextureImporterType.NormalMap, false);
             UnityEngine.Object.DestroyImmediate(albedo);
             UnityEngine.Object.DestroyImmediate(normal);
+
+            if (hasOcclusion)
+                WriteOcclusion(name, heights, size);
         }
 
-        private static void Save(Texture2D texture, string path, bool isNormal)
+        /// Cavities are the texels that lie below their surroundings: joints, cracks and the gaps between stones.
+        private static void WriteOcclusion(string name, float[,] heights, int size)
+        {
+            float[,] rows = new float[size, size];
+            float[,] blurred = new float[size, size];
+            const int taps = OcclusionRadius * 2 + 1;
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float sum = 0f;
+
+                    for (int i = -OcclusionRadius; i <= OcclusionRadius; i++)
+                        sum += heights[(x + i + size) % size, y];
+
+                    rows[x, y] = sum / taps;
+                }
+            }
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float sum = 0f;
+
+                    for (int i = -OcclusionRadius; i <= OcclusionRadius; i++)
+                        sum += rows[x, (y + i + size) % size];
+
+                    blurred[x, y] = sum / taps;
+                }
+            }
+
+            Texture2D occlusion = new Texture2D(size, size, TextureFormat.RGB24, false);
+            Color[] pixels = new Color[size * size];
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float value = Mathf.Clamp01(1f - Mathf.Max(0f, blurred[x, y] - heights[x, y]) * 2.2f);
+                    pixels[y * size + x] = new Color(value, value, value);
+                }
+            }
+
+            occlusion.SetPixels(pixels);
+            occlusion.Apply();
+            Save(occlusion, $"{Folder}/{name}_o.png", TextureImporterType.Default, false);
+            UnityEngine.Object.DestroyImmediate(occlusion);
+        }
+
+        private static void Save(Texture2D texture, string path, TextureImporterType type, bool isColor)
         {
             File.WriteAllBytes(path, texture.EncodeToPNG());
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
-            importer.textureType = isNormal ? TextureImporterType.NormalMap : TextureImporterType.Default;
-            importer.sRGBTexture = !isNormal;
+            importer.textureType = type;
+            importer.sRGBTexture = isColor;
             importer.wrapMode = TextureWrapMode.Repeat;
             importer.mipmapEnabled = true;
+            importer.anisoLevel = 8;
             importer.SaveAndReimport();
         }
 
@@ -195,15 +259,71 @@ namespace Game.Scripts.Editor.Dungeon
             return total / max;
         }
 
-        /// Tileable noise using wrapped coordinates.
+        /// Tileable noise: the field and its copy shifted by one tile are cross-faded, so both borders meet.
         private static float TileNoise(float u, float v, float scale, int octaves = 4)
         {
-            float a = Noise(u, v, scale, octaves);
-            float b = Noise(u + 1f, v, scale, octaves);
-            float c = Noise(u, v + 1f, scale, octaves);
-            float d = Noise(u + 1f, v + 1f, scale, octaves);
+            return TileNoise(u, v, scale, scale, octaves);
+        }
+
+        private static float TileNoise(float u, float v, float scaleU, float scaleV, int octaves)
+        {
+            float a = Fractal((u + 1f) * scaleU, (v + 1f) * scaleV, octaves);
+            float b = Fractal(u * scaleU, (v + 1f) * scaleV, octaves);
+            float c = Fractal((u + 1f) * scaleU, v * scaleV, octaves);
+            float d = Fractal(u * scaleU, v * scaleV, octaves);
 
             return Mathf.Lerp(Mathf.Lerp(a, b, u), Mathf.Lerp(c, d, u), v);
+        }
+
+        private static float Fractal(float x, float y, int octaves)
+        {
+            float total = 0f;
+            float amplitude = 1f;
+            float max = 0f;
+
+            for (int i = 0; i < octaves; i++)
+            {
+                total += Mathf.PerlinNoise(x + i * 17.3f, y + i * 31.7f) * amplitude;
+                max += amplitude;
+                amplitude *= 0.5f;
+                x *= 2f;
+                y *= 2f;
+            }
+
+            return total / max;
+        }
+
+        private static int Wrap(int value, int count)
+        {
+            return (value % count + count) % count;
+        }
+
+        /// Courses of blocks with randomly shifted joints, as masons lay them. Returns the distance to the nearest joint
+        /// in tile units, so joints are equally wide in both directions.
+        private static float Blocks(float u, float v, int rows, int columns, float jitter, out int id)
+        {
+            float y = v * rows;
+            int row = Mathf.FloorToInt(y);
+            float fy = y - row;
+            row = Wrap(row, rows);
+            float x = u * columns + Hash(row, 91) * columns;
+            int column = Mathf.FloorToInt(x);
+
+            if (x < Joint(column, row, columns, jitter))
+                column--;
+            else if (x >= Joint(column + 1, row, columns, jitter))
+                column++;
+
+            float left = Joint(column, row, columns, jitter);
+            float right = Joint(column + 1, row, columns, jitter);
+            id = Wrap(column, columns) + row * 64;
+
+            return Mathf.Min(Mathf.Min(x - left, right - x) / columns, Mathf.Min(fy, 1f - fy) / rows);
+        }
+
+        private static float Joint(int column, int row, int columns, float jitter)
+        {
+            return column + (Hash(Wrap(column, columns), row) - 0.5f) * jitter;
         }
 
         private static float Hash(int x, int y)
@@ -214,97 +334,130 @@ namespace Game.Scripts.Editor.Dungeon
             return ((h ^ (h >> 16)) & 0xFFFF) / 65535f;
         }
 
+        /// Cross-fading flattens tileable noise; this stretches it back around the middle.
+        private static float Grain(float u, float v, float scale, float contrast)
+        {
+            return Mathf.Clamp01((TileNoise(u, v, scale, 4) - 0.5f) * contrast + 0.5f);
+        }
+
+        /// Dressed stone in courses, 16 x 8 blocks per tile: a quarter of a metre tall and half a metre long on a 4 m tile.
         private static Color StoneWall(float u, float v, out float height)
         {
-            const int rows = 8;
-            float row = v * rows;
-            int rowIndex = Mathf.FloorToInt(row);
-            float offset = rowIndex % 2 == 0 ? 0f : 0.5f;
-            const int columns = 4;
-            float column = u * columns + offset;
-            int columnIndex = Mathf.FloorToInt(column);
-            float fy = row - rowIndex;
-            float fx = column - columnIndex;
-            float mortar = 0.08f;
-            float edge = Mathf.Min(Mathf.Min(fx, 1f - fx) * columns / rows, Mathf.Min(fy, 1f - fy));
-            float brick = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((edge - mortar * 0.5f) / mortar));
-            float grain = TileNoise(u, v, 24f, 3);
-            float variation = Hash(columnIndex, rowIndex);
-            height = brick * (0.7f + grain * 0.3f) - 0.2f * (1f - brick);
-            Color stone = Color.Lerp(new Color(0.36f, 0.33f, 0.3f), new Color(0.5f, 0.46f, 0.4f), variation) * (0.75f + grain * 0.45f);
-            Color mortarColor = new Color(0.2f, 0.18f, 0.16f) * (0.8f + grain * 0.3f);
+            const float joint = 0.0016f;
+            float edge = Blocks(u, v, 16, 8, 0.5f, out int id);
+            float grain = Grain(u, v, 70f, 2.6f);
+            float patches = Grain(u + 0.21f, v + 0.63f, 14f, 2.2f);
+            float damp = TileNoise(u + 0.37f, v + 0.11f, 5f, 3);
+            float chip = Grain(u + 0.7f, v + 0.2f, 30f, 3f);
+            float pit = Step(0.79f, 0.86f, Grain(u + 0.4f, v + 0.5f, 110f, 2.4f));
+            float face = Step(joint, joint + 0.0025f + chip * chip * 0.01f, edge);
+            height = face * (0.6f + Hash(id, 5) * 0.2f + grain * 0.14f + patches * 0.08f - pit * 0.18f);
 
-            return Color.Lerp(mortarColor, stone, brick);
+            Color stone = Color.Lerp(new Color(0.5f, 0.49f, 0.47f), new Color(0.56f, 0.52f, 0.45f), Hash(id, 3));
+            stone *= (0.8f + Hash(id, 7) * 0.3f) * (0.74f + grain * 0.36f + patches * 0.16f) * (1f - pit * 0.35f);
+            stone = Color.Lerp(stone, stone * new Color(0.62f, 0.68f, 0.6f), Step(0.55f, 0.8f, damp));
+            stone *= Mathf.Lerp(0.72f, 1f, Step(joint, joint + 0.012f, edge));
+            Color mortar = new Color(0.3f, 0.28f, 0.25f) * (0.6f + grain * 0.7f);
+
+            return Color.Lerp(mortar, stone, face);
         }
 
+        /// Worn flagstones, 6 x 6 per tile: two thirds of a metre on a 4 m tile.
         private static Color StoneFloor(float u, float v, out float height)
         {
-            const int cells = 4;
-            float cx = u * cells;
-            float cy = v * cells;
-            int ix = Mathf.FloorToInt(cx);
-            int iy = Mathf.FloorToInt(cy);
-            float jitterX = (Hash(ix, iy) - 0.5f) * 0.25f;
-            float jitterY = (Hash(iy, ix + 7) - 0.5f) * 0.25f;
-            float fx = cx - ix - jitterX;
-            float fy = cy - iy - jitterY;
-            float edge = Mathf.Min(Mathf.Min(fx, 1f - fx), Mathf.Min(fy, 1f - fy));
-            float slab = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((edge - 0.03f) / 0.06f));
-            float grain = TileNoise(u, v, 18f, 4);
-            float dirt = TileNoise(u + 0.3f, v + 0.6f, 5f, 2);
-            height = slab * (0.6f + grain * 0.4f);
-            Color stone = Color.Lerp(new Color(0.42f, 0.4f, 0.37f), new Color(0.3f, 0.29f, 0.27f), dirt) * (0.75f + grain * 0.4f);
-            Color gap = new Color(0.14f, 0.12f, 0.1f);
+            const float joint = 0.0016f;
+            float edge = Blocks(u, v, 6, 6, 0.7f, out int id);
+            float grain = Grain(u, v, 64f, 2.6f);
+            float patches = Grain(u + 0.21f, v + 0.63f, 12f, 2.2f);
+            float wear = TileNoise(u + 0.3f, v + 0.6f, 6f, 3);
+            float chip = Grain(u + 0.1f, v + 0.8f, 26f, 3f);
+            float pit = Step(0.79f, 0.86f, Grain(u + 0.4f, v + 0.5f, 100f, 2.4f));
+            float face = Step(joint, joint + 0.003f + chip * chip * 0.012f, edge);
+            height = face * (0.7f + Hash(id, 5) * 0.1f + grain * 0.12f + patches * 0.08f - pit * 0.15f);
 
-            return Color.Lerp(gap, stone, slab) * Mathf.Lerp(1f, 0.6f, Hash(ix, iy) * 0.5f);
+            Color stone = Color.Lerp(new Color(0.5f, 0.49f, 0.47f), new Color(0.47f, 0.44f, 0.4f), Hash(id, 3));
+            stone *= (0.85f + Hash(id, 7) * 0.22f) * (0.76f + grain * 0.32f + patches * 0.16f) * (1f - pit * 0.3f);
+            stone = Color.Lerp(stone, stone * 0.74f, Step(0.5f, 0.8f, wear));
+            stone *= Mathf.Lerp(0.74f, 1f, Step(joint, joint + 0.016f, edge));
+            Color gap = new Color(0.17f, 0.15f, 0.12f) * (0.6f + grain * 0.7f);
+
+            return Color.Lerp(gap, stone, face);
         }
 
+        /// Rounded cobbles bedded in dirt, 16 x 16 per tile: a quarter of a metre on a 4 m tile.
         private static Color Cobble(float u, float v, out float height)
         {
-            float best = 1f;
+            const int cells = 16;
+            float nearest = 9f;
+            float second = 9f;
             float id = 0f;
-            const int cells = 10;
+            Vector2 point = new Vector2(u * cells, v * cells);
 
             for (int oy = -1; oy <= 1; oy++)
             {
                 for (int ox = -1; ox <= 1; ox++)
                 {
-                    int cx = Mathf.FloorToInt(u * cells) + ox;
-                    int cy = Mathf.FloorToInt(v * cells) + oy;
-                    int wx = (cx + cells) % cells;
-                    int wy = (cy + cells) % cells;
-                    Vector2 center = new Vector2(cx + Hash(wx, wy), cy + Hash(wy, wx + 3));
-                    float distance = Vector2.Distance(new Vector2(u * cells, v * cells), center);
+                    int cx = Mathf.FloorToInt(point.x) + ox;
+                    int cy = Mathf.FloorToInt(point.y) + oy;
+                    int wx = Wrap(cx, cells);
+                    int wy = Wrap(cy, cells);
+                    float distance = Vector2.Distance(point, new Vector2(cx + 0.2f + Hash(wx, wy) * 0.6f, cy + 0.2f + Hash(wy, wx + 3) * 0.6f));
 
-                    if (distance < best)
+                    if (distance < nearest)
                     {
-                        best = distance;
+                        second = nearest;
+                        nearest = distance;
                         id = Hash(wx + 11, wy + 5);
+                    }
+                    else if (distance < second)
+                    {
+                        second = distance;
                     }
                 }
             }
 
-            float stone = Mathf.Clamp01(1f - best * 1.6f);
-            float grain = TileNoise(u, v, 30f, 3);
-            height = stone * stone * (0.7f + grain * 0.3f);
-            Color color = Color.Lerp(new Color(0.33f, 0.31f, 0.29f), new Color(0.48f, 0.44f, 0.38f), id) * (0.6f + stone * 0.5f) * (0.8f + grain * 0.3f);
+            // A stone is its cell cut by a disc around the centre: the corners round off and dirt fills the wedges.
+            float inside = Mathf.Min((second - nearest) * 0.9f, 0.6f + id * 0.12f - nearest);
+            float grain = Grain(u, v, 80f, 2.6f);
+            float stone = Step(0.05f, 0.12f, inside);
+            float dome = Mathf.Sqrt(Mathf.Clamp01(inside * 2.2f));
+            height = stone * (0.25f + dome * 0.6f + grain * 0.12f);
 
-            return Color.Lerp(new Color(0.1f, 0.09f, 0.08f), color, Mathf.Clamp01(stone * 2f));
+            Color color = Color.Lerp(new Color(0.47f, 0.46f, 0.45f), new Color(0.54f, 0.5f, 0.44f), id);
+            color *= (0.72f + grain * 0.42f) * Mathf.Lerp(0.55f, 1.08f, dome);
+            Color dirt = new Color(0.21f, 0.18f, 0.14f) * (0.6f + grain * 0.7f);
+
+            return Color.Lerp(dirt, color, stone);
         }
 
+        /// Sawn boards, 12 across the tile (a third of a metre on a 4 m tile), butted every two metres and nailed at the ends.
         private static Color WoodPlanks(float u, float v, out float height)
         {
-            const int planks = 6;
-            float p = u * planks;
-            int index = Mathf.FloorToInt(p);
-            float fx = p - index;
-            float gap = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(Mathf.Min(fx, 1f - fx) / 0.04f));
-            float grain = Mathf.PerlinNoise(u * 8f + index * 3.1f, v * 40f + index * 7f);
-            float rings = Mathf.Abs(Mathf.Sin((v * 12f + grain * 2f + index) * Mathf.PI));
-            height = gap * (0.5f + rings * 0.3f + grain * 0.2f);
-            Color wood = Color.Lerp(new Color(0.42f, 0.28f, 0.15f), new Color(0.3f, 0.19f, 0.09f), rings) * (0.8f + grain * 0.3f) * (0.75f + Hash(index, 2) * 0.35f);
+            const int planks = 12;
+            const float width = 1f / planks;
+            float across = u * planks;
+            int index = Mathf.FloorToInt(across);
+            float fx = across - index;
+            index = Wrap(index, planks);
+            float along = Mathf.Repeat(v + Hash(index, 4), 1f);
+            float end = Mathf.Min(Mathf.Repeat(along, 0.5f), 0.5f - Mathf.Repeat(along, 0.5f));
+            float edge = Mathf.Min(Mathf.Min(fx, 1f - fx) * width, end);
+            float board = Step(0.0012f, 0.004f, edge);
+            float grain = TileNoise(fx, along, 6f, 2f, 4);
+            float fibre = TileNoise(fx, along, 40f, 3f, 2);
+            float rings = Mathf.Abs(Mathf.Sin((fx * 2.5f + grain * 5f) * Mathf.PI));
+            Vector2 toKnot = new Vector2((fx - 0.2f - Hash(index, 6) * 0.6f) * width, Mathf.Repeat(along - Hash(index, 8) + 0.5f, 1f) - 0.5f);
+            float knot = Hash(index, 10) < 0.6f ? 1f - Step(0.004f, 0.012f, toKnot.magnitude) : 0f;
+            Vector2 toNail = new Vector2((Mathf.Abs(fx - 0.5f) - 0.3f) * width, end - 0.012f);
+            float nail = 1f - Step(0.0018f, 0.003f, toNail.magnitude);
+            height = board * (0.55f + rings * 0.14f + fibre * 0.2f - knot * 0.1f) + nail * 0.15f;
 
-            return Color.Lerp(new Color(0.08f, 0.05f, 0.03f), wood, gap);
+            Color wood = Color.Lerp(new Color(0.52f, 0.38f, 0.23f), new Color(0.34f, 0.23f, 0.13f), rings * 0.55f + fibre * 0.45f);
+            wood *= (0.78f + Hash(index, 2) * 0.4f) * (1f - knot * 0.55f);
+            wood *= Mathf.Lerp(0.7f, 1f, Step(0.0012f, 0.012f, edge));
+            wood = Color.Lerp(wood, new Color(0.13f, 0.12f, 0.12f), nail);
+
+            return Color.Lerp(new Color(0.07f, 0.05f, 0.03f), wood, board);
         }
 
         private static Color DarkWood(float u, float v, out float height)
@@ -336,16 +489,6 @@ namespace Game.Scripts.Editor.Dungeon
             Color bone = Color.Lerp(new Color(0.78f, 0.74f, 0.62f), new Color(0.6f, 0.55f, 0.42f), grain);
 
             return Color.Lerp(new Color(0.3f, 0.25f, 0.18f), bone, cracks);
-        }
-
-        private static Color ZombieSkin(float u, float v, out float height)
-        {
-            float mottle = TileNoise(u, v, 7f, 4);
-            float veins = Step(0.01f, 0.02f, Mathf.Abs(TileNoise(u, v + 0.4f, 3f, 2) - 0.5f));
-            height = 0.5f + mottle * 0.3f;
-            Color skin = Color.Lerp(new Color(0.42f, 0.5f, 0.36f), new Color(0.3f, 0.32f, 0.22f), mottle);
-
-            return Color.Lerp(new Color(0.25f, 0.1f, 0.12f), skin, veins);
         }
 
         private static Color ClothRed(float u, float v, out float height)

@@ -32,6 +32,7 @@ namespace Game.Scripts.Editor.Dungeon
                         continue;
 
                     materials[i] = new Material(materials[i]);
+                    materials[i].DisableKeyword("_METALLICSPECGLOSSMAP");
                     materials[i].SetFloat("_Metallic", materials[i].GetFloat("_Metallic") * 0.35f);
                     materials[i].SetFloat("_Smoothness", Mathf.Min(materials[i].GetFloat("_Smoothness"), 0.6f));
 

@@ -53,6 +53,7 @@ namespace Game.Scripts.Editor.Battle
         public float DeflectDuration;
         public float BladeBase;
         public float BladeTip;
+        public float Strike;
         public BodyPose Idle;
         public AttackDefinition[] Attacks = Array.Empty<AttackDefinition>();
 
@@ -80,6 +81,9 @@ namespace Game.Scripts.Editor.Battle
         public float ArrowMaxSpeed;
         public int ArrowMinDamage;
         public int ArrowMaxDamage;
+
+        /// Distance from the grip to the part of the weapon that meets the crosshair at the peak of a swing.
+        public float StrikePoint => Strike > 0f ? Strike : Mathf.Lerp(BladeBase, BladeTip, 0.65f);
     }
 
     /// Hand-authored key poses (root space, character faces +Z) and timings shared by clips and weapon configs.
@@ -91,6 +95,10 @@ namespace Game.Scripts.Editor.Battle
         public const float ArrowMaxSpeed = 30f;
         public const float ArrowGravity = -9.81f;
         public const float CrouchDrop = 0.45f;
+
+        /// Eye of the simulation body. The crosshair is the ray from it along +Z: the upper body bends with the look
+        /// pitch as one piece, so a swing keeps its place on the screen wherever the player looks.
+        public static readonly Vector3 Eye = new(0f, 1.755f, 0.115f);
 
         private static readonly Vector3 s_shieldRest = new(-0.24f, 1.3f, 0.28f);
         private static readonly Vector3 s_shieldRestNormal = new(-0.35f, 0f, 0.94f);
@@ -121,24 +129,24 @@ namespace Game.Scripts.Editor.Battle
                         Windup = 0.4f, Active = 0.2f, Recovery = 0.5f, ComboStart = 0.5f, ComboEnd = 0.9f,
                         Damage = 22, MoveMultiplier = 0.7f,
                         WindupPose = SwordShield(new(0.36f, 1.7f, 0.1f), new(0.5f, 0.7f, -0.5f), yaw: 20f),
-                        MidPose = SwordShield(new(0.2f, 1.56f, 0.46f), new(0.18f, 0.46f, 0.87f)),
+                        MidPose = SwordShield(new(0.17f, 1.6f, 0.48f), Vector3.forward),
                         EndPose = SwordShield(new(0f, 1.44f, 0.46f), new(-0.46f, -0.39f, 0.79f), yaw: -18f)
                     },
                     new AttackDefinition
                     {
                         Windup = 0.36f, Active = 0.2f, Recovery = 0.5f, ComboStart = 0.46f, ComboEnd = 0.86f,
                         Damage = 22, MoveMultiplier = 0.7f,
-                        WindupPose = SwordShield(new(0f, 1.38f, 0.3f), new(-0.85f, 0.15f, 0.25f), yaw: -15f),
-                        MidPose = SwordShield(new(0.14f, 1.38f, 0.48f), new(0f, 0.1f, 1f)),
-                        EndPose = SwordShield(new(0.38f, 1.38f, 0.32f), new(0.7f, 0.05f, 0.7f), yaw: 15f)
+                        WindupPose = SwordShield(new(0f, 1.54f, 0.3f), new(-0.85f, 0.2f, 0.25f), yaw: -15f),
+                        MidPose = SwordShield(new(0.12f, 1.6f, 0.5f), Vector3.forward),
+                        EndPose = SwordShield(new(0.38f, 1.56f, 0.32f), new(0.7f, 0.1f, 0.7f), yaw: 15f)
                     },
                     new AttackDefinition
                     {
                         Windup = 0.45f, Active = 0.2f, Recovery = 0.6f, ComboStart = 0.55f, ComboEnd = 0.95f,
                         Damage = 30, MoveMultiplier = 0.6f, Stagger = 0.2f,
                         WindupPose = SwordShield(new(0.22f, 1.88f, 0f), new(0.1f, 0.5f, -0.85f), pitch: -10f),
-                        MidPose = SwordShield(new(0.2f, 1.78f, 0.38f), new(-0.05f, 0.6f, 0.8f)),
-                        EndPose = SwordShield(new(0.14f, 1.44f, 0.46f), new(-0.08f, -0.2f, 0.98f), pitch: 12f)
+                        MidPose = SwordShield(new(0.12f, 1.68f, 0.42f), Vector3.forward),
+                        EndPose = SwordShield(new(0.14f, 1.4f, 0.46f), new(-0.08f, -0.45f, 0.9f), pitch: 12f)
                     }
                 },
                 CanBlock = true,
@@ -178,25 +186,25 @@ namespace Game.Scripts.Editor.Battle
                     {
                         Windup = 0.6f, Active = 0.26f, Recovery = 0.7f, ComboStart = 0.75f, ComboEnd = 1.2f,
                         Damage = 38, MoveMultiplier = 0.5f, Stagger = 0.25f,
-                        WindupPose = TwoHanded(new(0.3f, 1.45f, 0.12f), new(0.85f, 0.2f, -0.5f), yaw: 35f),
-                        MidPose = TwoHanded(new(0.1f, 1.4f, 0.44f), new(-0.1f, 0.08f, 1f)),
-                        EndPose = TwoHanded(new(-0.18f, 1.4f, 0.32f), new(-0.75f, -0.05f, 0.65f), yaw: -35f)
+                        WindupPose = TwoHanded(new(0.3f, 1.52f, 0.12f), new(0.85f, 0.2f, -0.5f), yaw: 35f),
+                        MidPose = TwoHanded(new(0.08f, 1.56f, 0.46f), Vector3.forward),
+                        EndPose = TwoHanded(new(-0.18f, 1.5f, 0.32f), new(-0.75f, 0.05f, 0.65f), yaw: -35f)
                     },
                     new AttackDefinition
                     {
                         Windup = 0.55f, Active = 0.26f, Recovery = 0.7f, ComboStart = 0.7f, ComboEnd = 1.15f,
                         Damage = 38, MoveMultiplier = 0.5f, Stagger = 0.25f,
-                        WindupPose = TwoHanded(new(-0.18f, 1.45f, 0.2f), new(-0.85f, 0.2f, -0.45f), yaw: -30f),
-                        MidPose = TwoHanded(new(0.06f, 1.4f, 0.44f), new(0.1f, 0.08f, 1f)),
-                        EndPose = TwoHanded(new(0.32f, 1.4f, 0.24f), new(0.75f, -0.05f, 0.65f), yaw: 30f)
+                        WindupPose = TwoHanded(new(-0.18f, 1.52f, 0.2f), new(-0.85f, 0.2f, -0.45f), yaw: -30f),
+                        MidPose = TwoHanded(new(0.06f, 1.56f, 0.46f), Vector3.forward),
+                        EndPose = TwoHanded(new(0.32f, 1.5f, 0.24f), new(0.75f, 0.05f, 0.65f), yaw: 30f)
                     },
                     new AttackDefinition
                     {
                         Windup = 0.7f, Active = 0.26f, Recovery = 0.85f, ComboStart = 0.85f, ComboEnd = 1.3f,
                         Damage = 52, MoveMultiplier = 0.4f, Stagger = 0.4f,
                         WindupPose = TwoHanded(new(0.06f, 1.86f, 0.04f), new(0f, 0.55f, -0.83f), pitch: -12f),
-                        MidPose = TwoHanded(new(0.06f, 1.74f, 0.36f), new(0f, 0.6f, 0.8f)),
-                        EndPose = TwoHanded(new(0.06f, 1.4f, 0.42f), new(0f, -0.3f, 0.95f), pitch: 12f)
+                        MidPose = TwoHanded(new(0.05f, 1.66f, 0.4f), Vector3.forward),
+                        EndPose = TwoHanded(new(0.06f, 1.36f, 0.44f), new(0f, -0.45f, 0.9f), pitch: 12f)
                     }
                 },
                 CanBlock = true,
@@ -236,7 +244,7 @@ namespace Game.Scripts.Editor.Battle
             {
                 new(0f, weapon.Idle),
                 new(attack.Windup, attack.WindupPose, Ease.Out),
-                new(attack.Windup + attack.Active * 0.5f, attack.MidPose, Ease.In),
+                new(PeakTime(attack), Peak(weapon, attack), Ease.In),
                 new(attack.Windup + attack.Active, attack.EndPose, Ease.Linear),
                 new(attack.Duration, weapon.Idle)
             };
@@ -267,7 +275,7 @@ namespace Game.Scripts.Editor.Battle
         {
             return new List<PoseKey>
             {
-                new(0f, weapon.Attacks[0].MidPose),
+                new(0f, Peak(weapon, weapon.Attacks[0])),
                 new(0.12f, weapon.DeflectPose, Ease.Out),
                 new(weapon.DeflectDuration, weapon.Idle)
             };
@@ -292,6 +300,41 @@ namespace Game.Scripts.Editor.Battle
                 new(Mathf.Min(0.25f, reloadTime * 0.4f), weapon.ReleasePose),
                 new(reloadTime, weapon.Idle)
             };
+        }
+
+        /// Middle of the active phase, moved onto the 60 Hz grid: the peak pose is then a recorded frame and a baked trace
+        /// sample, not a blend of its neighbours.
+        public static float PeakTime(AttackDefinition attack)
+        {
+            return Mathf.Round((attack.Windup + attack.Active * 0.5f) * BattleAnimationBuilder.FrameRate) / BattleAnimationBuilder.FrameRate;
+        }
+
+        /// The pose at the middle of the active phase. Whatever the authored blade direction, the weapon is turned so that
+        /// its strike point lies on the crosshair: what the player aims at is what the swing hits.
+        public static BodyPose Peak(WeaponDefinition weapon, AttackDefinition attack)
+        {
+            BodyPose pose = attack.MidPose;
+            Vector3 grip = pose.Main.Position;
+            Vector3 blade = Aim(grip, weapon.StrikePoint).normalized;
+
+            // An off hand without a roll of its own holds the same weapon and follows it.
+            if (pose.Off.IsAutoRoll)
+            {
+                pose.Off.Position = grip + blade * Vector3.Dot(pose.Off.Position - grip, pose.Main.Forward);
+                pose.Off.Forward = blade;
+            }
+
+            pose.Main.Forward = blade;
+
+            return pose;
+        }
+
+        /// Direction from the grip that puts the point 'strike' metres up the weapon on the crosshair ray.
+        public static Vector3 Aim(Vector3 grip, float strike)
+        {
+            Vector2 offset = new Vector2(Eye.x - grip.x, Eye.y - grip.y);
+
+            return new Vector3(offset.x, offset.y, Mathf.Sqrt(Mathf.Max(strike * strike - offset.sqrMagnitude, 0f)));
         }
 
         public static BodyPose Sample(List<PoseKey> keys, float time)

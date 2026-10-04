@@ -33,24 +33,41 @@ namespace Game.Scripts.Battle
         private Color _blockColor = new(0.5f, 0.8f, 1f);
 
         [Header("Audio")]
-        [SerializeField]
+        [SerializeField, Tooltip("Template of the voices: its settings are copied to every voice of the pool")]
         private AudioSource _audioSource;
 
         [SerializeField]
-        private AudioClip _hitClip;
+        private AudioClip[] _hitClips;
 
         [SerializeField]
-        private AudioClip _blockClip;
+        private AudioClip[] _blockClips;
 
         [SerializeField]
-        private AudioClip _swingClip;
+        private AudioClip[] _worldClips;
 
         [SerializeField]
-        private AudioClip _shotClip;
+        private AudioClip[] _swingClips;
+
+        [SerializeField]
+        private AudioClip[] _shotClips;
+
+        [SerializeField]
+        private int _voiceCount = 8;
+
+        [SerializeField]
+        private float _pitchSpread = 0.06f;
+
+        [SerializeField, Tooltip("Swing pitch of the shortest and of the longest weapon")]
+        private Vector2 _swingPitch = new(1.25f, 0.8f);
+
+        [SerializeField, Tooltip("Weapon reach that maps onto the swing pitch range")]
+        private Vector2 _swingReach = new(1f, 2f);
 
         private TextMeshPro[] _popups;
         private float[] _popupTimes;
         private int _nextPopup;
+        private AudioSource[] _voices;
+        private int _nextVoice;
 
         private void Awake()
         {
@@ -61,6 +78,22 @@ namespace Game.Scripts.Battle
             {
                 _popups[i] = Instantiate(_popupPrefab, transform);
                 _popups[i].gameObject.SetActive(false);
+            }
+
+            _voices = new AudioSource[_voiceCount];
+
+            for (int i = 0; i < _voiceCount; i++)
+            {
+                AudioSource voice = new GameObject("Voice" + i).AddComponent<AudioSource>();
+                voice.transform.SetParent(transform, false);
+                voice.playOnAwake = false;
+                voice.volume = _audioSource.volume;
+                voice.spatialBlend = _audioSource.spatialBlend;
+                voice.rolloffMode = _audioSource.rolloffMode;
+                voice.minDistance = _audioSource.minDistance;
+                voice.maxDistance = _audioSource.maxDistance;
+                voice.dopplerLevel = 0f;
+                _voices[i] = voice;
             }
         }
 
@@ -93,24 +126,25 @@ namespace Game.Scripts.Battle
                 hit.Normal == Vector3.zero ? Quaternion.identity : Quaternion.LookRotation(hit.Normal));
             vfx.Play();
 
-            PlayClip(hit.Result == HitResult.Hit ? _hitClip : _blockClip, hit.Point);
+            PlayClip(hit.Result == HitResult.Hit ? _hitClips : _blockClips, hit.Point);
         }
 
         public void PlayWorldHit(Vector3 point, Vector3 normal)
         {
             _blockVfx.transform.SetPositionAndRotation(point, Quaternion.LookRotation(normal));
             _blockVfx.Play();
-            PlayClip(_blockClip, point);
+            PlayClip(_worldClips, point);
         }
 
-        public void PlaySwing(Vector3 position)
+        /// Long heavy weapons move more air: the longer the reach, the lower the swing sounds.
+        public void PlaySwing(Vector3 position, float reach)
         {
-            PlayClip(_swingClip, position);
+            PlayClip(_swingClips, position, Mathf.Lerp(_swingPitch.x, _swingPitch.y, Mathf.InverseLerp(_swingReach.x, _swingReach.y, reach)));
         }
 
         public void PlayShot(Vector3 position)
         {
-            PlayClip(_shotClip, position);
+            PlayClip(_shotClips, position);
         }
 
         private static string GetText(HitEventData hit)
@@ -135,13 +169,17 @@ namespace Game.Scripts.Battle
             popup.gameObject.SetActive(true);
         }
 
-        private void PlayClip(AudioClip clip, Vector3 position)
+        private void PlayClip(AudioClip[] clips, Vector3 position, float pitch = 1f)
         {
-            if (clip == null)
+            if (clips.Length == 0)
                 return;
 
-            _audioSource.transform.position = position;
-            _audioSource.PlayOneShot(clip);
+            AudioSource voice = _voices[_nextVoice];
+            _nextVoice = (_nextVoice + 1) % _voices.Length;
+            voice.transform.position = position;
+            voice.pitch = pitch * Random.Range(1f - _pitchSpread, 1f + _pitchSpread);
+            voice.clip = clips[Random.Range(0, clips.Length)];
+            voice.Play();
         }
     }
 }

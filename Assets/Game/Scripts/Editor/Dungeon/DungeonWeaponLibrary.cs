@@ -40,6 +40,10 @@ namespace Game.Scripts.Editor.Dungeon
         public const string WarMaul = "WarMaul";
         public const string Halberd = "Halberd";
 
+        private const float MaceHead = 0.6f;
+        private const float AxeHead = 0.9f;
+        private const float SpearHead = 1.8f;
+
         /// Catalog order = combat catalog index. Battle prefab slots 1-4 map to the first four entries; monsters refer to
         /// their weapon by index, so new entries go to the end.
         public static readonly string[] CatalogOrder =
@@ -50,13 +54,14 @@ namespace Game.Scripts.Editor.Dungeon
         };
 
         /// Catalog entries that play another entry's clips (its prefix) with a model, reach and damage of their own.
-        /// Their definitions keep the timings of the source, otherwise the shared clips would not match.
+        /// Their definitions keep the timings of the source, otherwise the shared clips would not match, and their blade
+        /// has to cover the strike point of the source, which is what the clips bring to the crosshair.
         private static readonly (string name, string source, string displayName)[] s_variants =
         {
             (Spellbook, Fists, "Spellbook"), (Lute, Fists, "Lute"), (RatBite, Fists, "Rat Bite"),
             (ShortSword, ArmingSword, "Short Sword"), (Rapier, ArmingSword, "Rapier"), (VikingSword, Falchion, "Viking Sword"),
-            (Hatchet, Falchion, "Hatchet"), (MorningStar, Mace, "Morning Star"), (CastillonDagger, Dagger, "Castillon Dagger"),
-            (Stiletto, Dagger, "Stiletto Dagger"), (FellingAxe, BattleAxe, "Felling Axe"), (WarMaul, BattleAxe, "War Maul"), (Halberd, Spear, "Halberd")
+            (MorningStar, Mace, "Morning Star"), (CastillonDagger, Dagger, "Castillon Dagger"),
+            (Stiletto, Dagger, "Stiletto Dagger"), (FellingAxe, BattleAxe, "Felling Axe"), (Halberd, Spear, "Halberd")
         };
 
         public static string SharedPrefix(string name)
@@ -101,7 +106,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new[]
             {
                 BattleAnimationLibrary.CreateSwordShield(),
-                BattleAnimationLibrary.CreateGreatsword(),
+                CreateZweihander(),
                 BattleAnimationLibrary.CreateBow(),
                 CreateFists(),
                 CreateArmingSword(),
@@ -123,12 +128,12 @@ namespace Game.Scripts.Editor.Dungeon
                 OneHandedSword(ArmingSword, "Short Sword", 0.1f, 0.72f, 1.22f, 24, 0.4f, 0.2f, 0.5f),
                 OneHandedSword(ArmingSword, "Rapier", 0.12f, 1f, 1.5f, 25, 0.4f, 0.2f, 0.5f),
                 OneHandedSword(Falchion, "Viking Sword", 0.12f, 0.92f, 1.42f, 36, 0.65f, 0.17f, 0.4f),
-                OneHandedSword(Falchion, "Hatchet", 0.4f, 0.6f, 1.15f, 31, 0.65f, 0.17f, 0.4f),
+                OneHandedSword(Hatchet, "Hatchet", 0.4f, 0.6f, 1.15f, 31, 0.65f, 0.17f, 0.4f),
                 CreateMorningStar(),
                 CreateDaggerVariant("Castillon Dagger", 0.5f, 1.12f, 18),
                 CreateDaggerVariant("Stiletto Dagger", 0.46f, 1.08f, 14),
                 CreateAxeVariant("Felling Axe", 0.62f, 0.98f, 1.6f, 37, 44, 0.3f, 0.4f),
-                CreateAxeVariant("War Maul", 0.82f, 1.15f, 1.75f, 47, 56, 0.4f, 0.55f),
+                CreateWarMaul(),
                 CreateHalberd()
             };
         }
@@ -136,6 +141,7 @@ namespace Game.Scripts.Editor.Dungeon
         private static WeaponDefinition CreateMorningStar()
         {
             WeaponDefinition definition = OneHandedSword(Mace, "Morning Star", 0.1f, 0.7f, 1.25f, 34, 0.55f, 0.18f, 0.5f);
+            definition.Strike = MaceHead;
             definition.Attacks[2].Stagger = 0.35f;
 
             return definition;
@@ -162,6 +168,43 @@ namespace Game.Scripts.Editor.Dungeon
             definition.Attacks[0].Stagger = stagger;
             definition.Attacks[1].Damage = heavyDamage;
             definition.Attacks[1].Stagger = heavyStagger;
+
+            return definition;
+        }
+
+        /// Both swings are horizontal: from the right, then back from the left.
+        private static WeaponDefinition CreateZweihander()
+        {
+            WeaponDefinition definition = BattleAnimationLibrary.CreateGreatsword();
+            definition.Attacks = new[] { definition.Attacks[0], definition.Attacks[1] };
+
+            return definition;
+        }
+
+        /// Clips of its own: the swings of the zweihander at the pace of the battle axe.
+        private static WeaponDefinition CreateWarMaul()
+        {
+            WeaponDefinition definition = CreateBattleAxe();
+            AttackDefinition[] swings = CreateZweihander().Attacks;
+            definition.Prefix = WarMaul;
+            definition.DisplayName = "War Maul";
+            definition.BladeBase = 0.82f;
+            definition.BladeTip = 1.15f;
+            definition.Strike = 0f;
+            definition.Reach = 1.75f;
+            definition.Attacks = swings;
+            swings[0].Damage = 47;
+            swings[0].Windup = 0.75f;
+            swings[0].Stagger = 0.4f;
+            swings[1].Damage = 56;
+            swings[1].Windup = 0.8f;
+            swings[1].Stagger = 0.55f;
+
+            foreach (AttackDefinition swing in swings)
+            {
+                swing.ComboStart = swing.Windup + swing.Active * 0.5f;
+                swing.ComboEnd = swing.Windup + swing.Active + swing.Recovery * 0.65f;
+            }
 
             return definition;
         }
@@ -287,17 +330,17 @@ namespace Game.Scripts.Editor.Dungeon
                     {
                         Windup = 0.22f, Active = 0.12f, Recovery = 0.3f, ComboStart = 0.3f, ComboEnd = 0.6f,
                         Damage = 8, MoveMultiplier = 0.8f,
-                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.3f, 1.3f, 0.1f), new(0f, 0.3f, 0.95f), yaw: 18f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(0.12f, 1.38f, 0.62f), new(0f, 0.1f, 1f)),
-                        EndPose = BattleAnimationLibrary.OneHanded(new(0.06f, 1.4f, 0.7f), new(0f, 0f, 1f), yaw: -12f)
+                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.3f, 1.4f, 0.1f), new(0f, 0.3f, 0.95f), yaw: 18f),
+                        MidPose = BattleAnimationLibrary.OneHanded(new(0.04f, 1.72f, 0.54f), Vector3.forward),
+                        EndPose = BattleAnimationLibrary.OneHanded(new(0f, 1.72f, 0.62f), new(-0.1f, 0f, 1f), yaw: -12f)
                     },
                     new AttackDefinition
                     {
                         Windup = 0.22f, Active = 0.12f, Recovery = 0.3f, ComboStart = 0.3f, ComboEnd = 0.6f,
                         Damage = 8, MoveMultiplier = 0.8f,
-                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.2f, 1.25f, 0.2f), new(0.3f, 0.3f, 0.9f), yaw: -14f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(-0.02f, 1.36f, 0.6f), new(-0.2f, 0.1f, 1f)),
-                        EndPose = BattleAnimationLibrary.OneHanded(new(-0.1f, 1.38f, 0.66f), new(-0.3f, 0f, 1f), yaw: 12f)
+                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.26f, 1.5f, 0.16f), new(0.3f, 0.3f, 0.9f), yaw: -14f),
+                        MidPose = BattleAnimationLibrary.OneHanded(new(0.03f, 1.7f, 0.54f), Vector3.forward),
+                        EndPose = BattleAnimationLibrary.OneHanded(new(-0.08f, 1.68f, 0.6f), new(-0.3f, 0f, 1f), yaw: 12f)
                     }
                 },
                 CanBlock = true,
@@ -330,6 +373,7 @@ namespace Game.Scripts.Editor.Dungeon
         private static WeaponDefinition CreateMace()
         {
             WeaponDefinition mace = OneHandedSword(Mace, "Flanged Mace", 0.1f, 0.7f, 1.25f, 31, 0.55f, 0.18f, 0.5f);
+            mace.Strike = MaceHead;
             mace.Attacks[2].Stagger = 0.3f;
 
             return mace;
@@ -360,6 +404,7 @@ namespace Game.Scripts.Editor.Dungeon
             definition.Prefix = MaceShield;
             definition.DisplayName = "Mace & Shield";
             definition.BladeTip = 0.7f;
+            definition.Strike = MaceHead;
             definition.Reach = 1.25f;
 
             foreach (AttackDefinition attack in definition.Attacks)
@@ -395,24 +440,24 @@ namespace Game.Scripts.Editor.Dungeon
                         Windup = windup, Active = active, Recovery = recovery, ComboStart = windup + active * 0.5f, ComboEnd = windup + active + recovery * 0.8f,
                         Damage = damage, MoveMultiplier = 0.7f,
                         WindupPose = BattleAnimationLibrary.OneHanded(new(0.36f, 1.7f, 0.1f), new(0.5f, 0.7f, -0.5f), yaw: 20f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(0.2f, 1.56f, 0.46f), new(0.18f, 0.46f, 0.87f)),
+                        MidPose = BattleAnimationLibrary.OneHanded(new(0.17f, 1.6f, 0.48f), Vector3.forward),
                         EndPose = BattleAnimationLibrary.OneHanded(new(0f, 1.44f, 0.46f), new(-0.46f, -0.39f, 0.79f), yaw: -18f)
                     },
                     new AttackDefinition
                     {
                         Windup = windup * 0.9f, Active = active, Recovery = recovery, ComboStart = windup * 0.9f + active * 0.5f, ComboEnd = windup * 0.9f + active + recovery * 0.8f,
                         Damage = damage, MoveMultiplier = 0.7f,
-                        WindupPose = BattleAnimationLibrary.OneHanded(new(0f, 1.38f, 0.3f), new(-0.85f, 0.15f, 0.25f), yaw: -15f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(0.14f, 1.38f, 0.48f), new(0f, 0.1f, 1f)),
-                        EndPose = BattleAnimationLibrary.OneHanded(new(0.38f, 1.38f, 0.32f), new(0.7f, 0.05f, 0.7f), yaw: 15f)
+                        WindupPose = BattleAnimationLibrary.OneHanded(new(0f, 1.54f, 0.3f), new(-0.85f, 0.2f, 0.25f), yaw: -15f),
+                        MidPose = BattleAnimationLibrary.OneHanded(new(0.12f, 1.6f, 0.5f), Vector3.forward),
+                        EndPose = BattleAnimationLibrary.OneHanded(new(0.38f, 1.56f, 0.32f), new(0.7f, 0.1f, 0.7f), yaw: 15f)
                     },
                     new AttackDefinition
                     {
                         Windup = windup * 1.1f, Active = active, Recovery = recovery * 1.2f, ComboStart = windup * 1.1f + active * 0.5f, ComboEnd = windup * 1.1f + active + recovery,
                         Damage = Mathf.RoundToInt(damage * 1.1f), MoveMultiplier = 0.6f, Stagger = 0.2f,
                         WindupPose = BattleAnimationLibrary.OneHanded(new(0.22f, 1.88f, 0f), new(0.1f, 0.5f, -0.85f), pitch: -10f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(0.2f, 1.78f, 0.38f), new(-0.05f, 0.6f, 0.8f)),
-                        EndPose = BattleAnimationLibrary.OneHanded(new(0.14f, 1.44f, 0.46f), new(-0.08f, -0.2f, 0.98f), pitch: 12f)
+                        MidPose = BattleAnimationLibrary.OneHanded(new(0.12f, 1.68f, 0.42f), Vector3.forward),
+                        EndPose = BattleAnimationLibrary.OneHanded(new(0.14f, 1.4f, 0.46f), new(-0.08f, -0.45f, 0.9f), pitch: 12f)
                     }
                 },
                 CanBlock = true,
@@ -464,6 +509,7 @@ namespace Game.Scripts.Editor.Dungeon
             definition.DisplayName = "Battle Axe";
             definition.BladeBase = 0.75f;
             definition.BladeTip = 1.15f;
+            definition.Strike = AxeHead;
             definition.Reach = 1.75f;
             definition.DeflectDuration = 0.9f;
             definition.Attacks = new[] { definition.Attacks[0], definition.Attacks[2] };
@@ -493,12 +539,13 @@ namespace Game.Scripts.Editor.Dungeon
                 DeflectDuration = 0.7f,
                 BladeBase = 1.5f,
                 BladeTip = 2.0f,
+                Strike = SpearHead,
                 Idle = idle,
                 Attacks = new[]
                 {
-                    Thrust(34, 0.7f, 0.18f, 0.5f, 1.3f),
-                    Thrust(34, 0.65f, 0.18f, 0.5f, 1.42f),
-                    Thrust(38, 0.8f, 0.2f, 0.6f, 1.2f, 0.25f)
+                    Thrust(34, 0.7f, 0.18f, 0.5f, 1.38f),
+                    Thrust(34, 0.65f, 0.18f, 0.5f, 1.48f),
+                    Thrust(38, 0.8f, 0.2f, 0.6f, 1.3f, 0.25f)
                 },
                 CanBlock = true,
                 BlockRaise = 0.25f,
@@ -523,10 +570,16 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 Windup = windup, Active = active, Recovery = recovery, ComboStart = windup + active * 0.5f, ComboEnd = windup + active + recovery * 0.85f,
                 Damage = damage, MoveMultiplier = 0.6f, Stagger = stagger,
-                WindupPose = BattleAnimationLibrary.TwoHanded(new(0.34f, height, -0.25f), new(-0.08f, -0.05f, 1f), -0.5f, 28f),
-                MidPose = BattleAnimationLibrary.TwoHanded(new(0.2f, height + 0.05f, 0.45f), new(-0.02f, -0.05f, 1f), -0.5f, 5f),
-                EndPose = BattleAnimationLibrary.TwoHanded(new(0.12f, height + 0.08f, 0.75f), new(0f, -0.08f, 1f), -0.5f, -8f)
+                WindupPose = Lunge(new(0.34f, height, -0.25f), 28f),
+                MidPose = Lunge(new(0.2f, height + 0.05f, 0.45f), 5f),
+                EndPose = Lunge(new(0.12f, height + 0.08f, 0.75f), -8f)
             };
+        }
+
+        /// The shaft points at the crosshair all the way, so the head travels along the aim line.
+        private static BodyPose Lunge(Vector3 grip, float yaw)
+        {
+            return BattleAnimationLibrary.TwoHanded(grip, BattleAnimationLibrary.Aim(grip, SpearHead), -0.5f, yaw);
         }
 
         private static WeaponDefinition CreateStaff()

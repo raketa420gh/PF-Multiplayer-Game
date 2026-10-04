@@ -18,6 +18,7 @@ namespace Game.Scripts.Editor.Dungeon
     {
         public const string ScenePath = "Assets/Game/Scenes/DungeonScene.unity";
         public const string Title = "Forgotten Crypt";
+        private const string ReflectionPath = DungeonTextureBuilder.Folder + "/Reflection.cubemap";
 
         public static void Build()
         {
@@ -28,7 +29,7 @@ namespace Game.Scripts.Editor.Dungeon
             EditorSceneManager.SaveScene(scene, ScenePath);
 
             SetupLighting();
-            BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/DungeonVolume.asset", 1.1f);
+            BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/DungeonVolume.asset", 0.6f);
             Camera camera = BuildCamera();
             GameObject system = new GameObject("[System]");
             NetworkEvents events = system.AddComponent<NetworkEvents>();
@@ -62,7 +63,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_config", config);
             BattleEditorUtility.Set(so, "_bossPrefab", LoadNetworkObject("SkeletonChampion"));
             SerializedProperty monsters = so.FindProperty("_monsters");
-            (string name, float weight)[] kinds = { ("SkeletonSwordsman", 1f), ("SkeletonArcher", 0.6f), ("Zombie", 0.8f) };
+            (string name, float weight)[] kinds = { ("SkeletonSwordsman", 1f), ("SkeletonArcher", 0.6f), ("FlyingHead", 0.8f) };
             monsters.arraySize = kinds.Length;
 
             for (int i = 0; i < kinds.Length; i++)
@@ -124,14 +125,19 @@ namespace Game.Scripts.Editor.Dungeon
             ambient.playOnAwake = false;
             DungeonAudioComponent audio = go.AddComponent<DungeonAudioComponent>();
             string[] names = System.Enum.GetNames(typeof(DungeonSound));
-            AudioClip[] clips = new AudioClip[names.Length];
-
-            for (int i = 0; i < names.Length; i++)
-                clips[i] = AssetDatabase.LoadAssetAtPath<AudioClip>(DungeonAudioBuilder.Path(names[i]));
 
             SerializedObject so = new SerializedObject(audio);
             BattleEditorUtility.Set(so, "_context", context);
-            BattleEditorUtility.Set(so, "_clips", clips);
+            so.FindProperty("_sounds").arraySize = names.Length;
+
+            for (int i = 0; i < names.Length; i++)
+                BattleEditorUtility.Set(so, $"_sounds.Array.data[{i}]._clips", DungeonAudioBuilder.Load(names[i]));
+
+            // Stone walls all around: every positioned sound gets the tail of a vaulted room.
+            AudioReverbZone reverb = go.AddComponent<AudioReverbZone>();
+            reverb.reverbPreset = AudioReverbPreset.StoneCorridor;
+            reverb.minDistance = 4000f;
+            reverb.maxDistance = 5000f;
             BattleEditorUtility.Set(so, "_menuMusic", AssetDatabase.LoadAssetAtPath<AudioClip>(DungeonAudioBuilder.Path("Menu")));
             BattleEditorUtility.Set(so, "_ambient", AssetDatabase.LoadAssetAtPath<AudioClip>(DungeonAudioBuilder.Path("Ambient")));
             BattleEditorUtility.Set(so, "_music", music);
@@ -171,18 +177,18 @@ namespace Game.Scripts.Editor.Dungeon
                 Object.DestroyImmediate(component, true);
 
             profile.components.Clear();
-            Add<Tonemapping>(profile).mode.value = TonemappingMode.ACES;
+            Add<Tonemapping>(profile).mode.value = TonemappingMode.Neutral;
             Bloom bloom = Add<Bloom>(profile);
             bloom.threshold.value = 1.1f;
             bloom.intensity.value = 0.3f;
             bloom.scatter.value = 0.6f;
             Vignette vignette = Add<Vignette>(profile);
-            vignette.intensity.value = 0.25f;
+            vignette.intensity.value = 0.18f;
             vignette.smoothness.value = 0.45f;
             ColorAdjustments color = Add<ColorAdjustments>(profile);
             color.postExposure.value = exposure;
-            color.contrast.value = 10f;
-            color.saturation.value = -6f;
+            color.contrast.value = 4f;
+            color.saturation.value = 0f;
             FilmGrain grain = Add<FilmGrain>(profile);
             grain.type.value = FilmGrainLookup.Thin1;
             grain.intensity.value = 0.15f;
@@ -210,16 +216,75 @@ namespace Game.Scripts.Editor.Dungeon
 
         internal static void SetupLighting()
         {
-            RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.12f, 0.11f, 0.125f);
+            RenderSettings.ambientMode = AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.4f, 0.4f, 0.46f);
+            RenderSettings.ambientEquatorColor = new Color(0.32f, 0.31f, 0.33f);
+            RenderSettings.ambientGroundColor = new Color(0.22f, 0.2f, 0.18f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogColor = new Color(0.01f, 0.008f, 0.006f);
-            RenderSettings.fogDensity = 0.014f;
+            RenderSettings.fogColor = new Color(0.035f, 0.035f, 0.045f);
+            RenderSettings.fogDensity = 0.008f;
             RenderSettings.skybox = null;
-            RenderSettings.reflectionIntensity = 0.1f;
+            RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
+            RenderSettings.customReflectionTexture = BuildReflection();
+            RenderSettings.reflectionIntensity = 1f;
             Lightmapping.bakedGI = false;
             Lightmapping.realtimeGI = false;
+
+            // Ambient light alone is flat and hides the relief of the normal maps: a cool shadowless fill from above
+            // shapes every surface the torches do not reach.
+            Light fill = new GameObject("[Fill Light]").AddComponent<Light>();
+            fill.type = LightType.Directional;
+            fill.color = new Color(0.72f, 0.8f, 1f);
+            fill.intensity = 0.45f;
+            fill.shadows = LightShadows.None;
+            fill.transform.rotation = Quaternion.Euler(52f, 35f, 0f);
+        }
+
+        /// There is no sky underground and metal would mirror blackness: a plain torch-lit gradient gives blades and plate
+        /// something to reflect.
+        private static Cubemap BuildReflection()
+        {
+            const int size = 32;
+            Color top = new Color(0.52f, 0.47f, 0.4f);
+            Color horizon = new Color(0.36f, 0.34f, 0.33f);
+            Color bottom = new Color(0.17f, 0.16f, 0.15f);
+            Cubemap cubemap = AssetDatabase.LoadAssetAtPath<Cubemap>(ReflectionPath);
+
+            if (cubemap == null)
+            {
+                cubemap = new Cubemap(size, TextureFormat.RGBA32, true);
+                AssetDatabase.CreateAsset(cubemap, ReflectionPath);
+            }
+
+            Color[] pixels = new Color[size * size];
+
+            for (int face = 0; face < 6; face++)
+            {
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float a = (x + 0.5f) / size * 2f - 1f;
+                        float b = (y + 0.5f) / size * 2f - 1f;
+                        float length = Mathf.Sqrt(1f + a * a + b * b);
+                        float up = (CubemapFace)face switch
+                        {
+                            CubemapFace.PositiveY => 1f / length,
+                            CubemapFace.NegativeY => -1f / length,
+                            _ => -b / length
+                        };
+                        pixels[y * size + x] = up > 0f ? Color.Lerp(horizon, top, up) : Color.Lerp(horizon, bottom, -up);
+                    }
+                }
+
+                cubemap.SetPixels(pixels, (CubemapFace)face);
+            }
+
+            cubemap.Apply(true);
+            EditorUtility.SetDirty(cubemap);
+
+            return cubemap;
         }
 
         internal static Camera BuildCamera()
@@ -249,8 +314,11 @@ namespace Game.Scripts.Editor.Dungeon
             BattleFeedback feedback = go.AddComponent<BattleFeedback>();
             AudioSource audio = go.AddComponent<AudioSource>();
             audio.playOnAwake = false;
-            audio.spatialBlend = 0f;
-            audio.volume = 0.6f;
+            audio.spatialBlend = 1f;
+            audio.rolloffMode = AudioRolloffMode.Linear;
+            audio.minDistance = 2f;
+            audio.maxDistance = 28f;
+            audio.volume = 0.7f;
 
             Material particle = BattleEditorUtility.GetUnlitMaterial("HitParticle", Color.white);
             TMPro.TextMeshPro popup = AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.PrefabsFolder + "/DamagePopup.prefab").GetComponent<TMPro.TextMeshPro>();
@@ -260,10 +328,11 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_blockVfx", BuildVfx(go.transform, "BlockVfx", particle, new Color(1f, 0.9f, 0.5f), Color.white, 24, 5f, 0.035f));
             BattleEditorUtility.Set(so, "_popupPrefab", popup);
             BattleEditorUtility.Set(so, "_audioSource", audio);
-            BattleEditorUtility.Set(so, "_hitClip", AssetDatabase.LoadAssetAtPath<AudioClip>(BattleAudioBuilder.HitPath));
-            BattleEditorUtility.Set(so, "_blockClip", AssetDatabase.LoadAssetAtPath<AudioClip>(BattleAudioBuilder.BlockPath));
-            BattleEditorUtility.Set(so, "_swingClip", AssetDatabase.LoadAssetAtPath<AudioClip>(BattleAudioBuilder.SwingPath));
-            BattleEditorUtility.Set(so, "_shotClip", AssetDatabase.LoadAssetAtPath<AudioClip>(BattleAudioBuilder.ShotPath));
+            BattleEditorUtility.Set(so, "_hitClips", BattleAudioBuilder.Load(BattleAudioBuilder.Hit));
+            BattleEditorUtility.Set(so, "_blockClips", BattleAudioBuilder.Load(BattleAudioBuilder.Block));
+            BattleEditorUtility.Set(so, "_worldClips", BattleAudioBuilder.Load(BattleAudioBuilder.Clank));
+            BattleEditorUtility.Set(so, "_swingClips", BattleAudioBuilder.Load(BattleAudioBuilder.Swing));
+            BattleEditorUtility.Set(so, "_shotClips", BattleAudioBuilder.Load(BattleAudioBuilder.Shot));
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return feedback;

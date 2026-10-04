@@ -19,8 +19,8 @@ namespace Game.Scripts.Editor.Battle
         private const string NavMeshPath = "Assets/Game/Scenes/BattleScene/NavMesh.asset";
         private const float RampartHeight = 3f;
 
-        private static readonly string[] s_monsters = { "SkeletonSwordsman", "SkeletonArcher", "Zombie", "SkeletonChampion" };
-        private static readonly string[] s_monsterLabels = { "Skeleton", "Archer", "Zombie", "Champion" };
+        private static readonly string[] s_monsters = { "SkeletonSwordsman", "SkeletonArcher", "FlyingHead", "SkeletonChampion" };
+        private static readonly string[] s_monsterLabels = { "Skeleton", "Archer", "Flying Head", "Champion" };
         private static readonly string[] s_dungeonOnlyHud = { "Minimap", "TimerBack", "Timer", "Swarm", "ModuleBack", "Module", "Floor" };
         /// Decor from the character packs: an armoury row of outfit stands by the spawn, statues on the towers and fallen bodies further out.
         private static readonly (string prefab, Vector3 position, float yaw)[] s_figures =
@@ -304,8 +304,11 @@ namespace Game.Scripts.Editor.Battle
             BattleFeedback feedback = go.AddComponent<BattleFeedback>();
             AudioSource audio = go.AddComponent<AudioSource>();
             audio.playOnAwake = false;
-            audio.spatialBlend = 0f;
-            audio.volume = 0.6f;
+            audio.spatialBlend = 1f;
+            audio.rolloffMode = AudioRolloffMode.Linear;
+            audio.minDistance = 2f;
+            audio.maxDistance = 28f;
+            audio.volume = 0.7f;
 
             Material particle = BattleEditorUtility.GetUnlitMaterial("HitParticle", Color.white);
 
@@ -314,10 +317,11 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_blockVfx", BuildVfx(go.transform, "BlockVfx", particle, new Color(1f, 0.9f, 0.5f), Color.white, 24, 5f, 0.035f));
             BattleEditorUtility.Set(so, "_popupPrefab", BuildPopup());
             BattleEditorUtility.Set(so, "_audioSource", audio);
-            BattleEditorUtility.Set(so, "_hitClip", AssetDatabase.LoadAssetAtPath<AudioClip>(BattleAudioBuilder.HitPath));
-            BattleEditorUtility.Set(so, "_blockClip", AssetDatabase.LoadAssetAtPath<AudioClip>(BattleAudioBuilder.BlockPath));
-            BattleEditorUtility.Set(so, "_swingClip", AssetDatabase.LoadAssetAtPath<AudioClip>(BattleAudioBuilder.SwingPath));
-            BattleEditorUtility.Set(so, "_shotClip", AssetDatabase.LoadAssetAtPath<AudioClip>(BattleAudioBuilder.ShotPath));
+            BattleEditorUtility.Set(so, "_hitClips", BattleAudioBuilder.Load(BattleAudioBuilder.Hit));
+            BattleEditorUtility.Set(so, "_blockClips", BattleAudioBuilder.Load(BattleAudioBuilder.Block));
+            BattleEditorUtility.Set(so, "_worldClips", BattleAudioBuilder.Load(BattleAudioBuilder.Clank));
+            BattleEditorUtility.Set(so, "_swingClips", BattleAudioBuilder.Load(BattleAudioBuilder.Swing));
+            BattleEditorUtility.Set(so, "_shotClips", BattleAudioBuilder.Load(BattleAudioBuilder.Shot));
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return feedback;

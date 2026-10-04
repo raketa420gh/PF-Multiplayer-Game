@@ -18,7 +18,7 @@ namespace Game.Scripts.Editor.Dungeon
         private const string HelpText =
             "<b>Controls</b>\n" +
             "WASD move · Shift walk (quiet) · Space jump · Ctrl/C crouch (duck under swings)\n" +
-            "LMB attack / draw · RMB block, or hold to cast a readied spell · 1 / 2 weapon sets · Tab inventory\n" +
+            "LMB attack / draw · RMB block, or hold to cast a readied spell · 1 / 2 weapon sets · X put the weapon away · Tab inventory\n" +
             "3 / 4 belt item in hand (press again for the next of three), LMB use, RMB put away · F interact (hold; chests and corpses open at once) · Q / E skills · G rest · H help\n" +
             "Casters need a staff, spellbook or crystal ball in hand; bards need an instrument. Rest at a campfire to recover charges.";
 

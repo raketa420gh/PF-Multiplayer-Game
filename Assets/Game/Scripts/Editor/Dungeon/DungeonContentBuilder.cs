@@ -61,9 +61,8 @@ namespace Game.Scripts.Editor.Dungeon
                 Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Helmet, rust), (ArmorVisual.Tunic, rags) } }, loadouts, arrow, orb, database, pieceSet);
             BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = 2, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
                 Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Hood, rags) } }, loadouts, arrow, orb, database, pieceSet);
-            BuildMonster(new MonsterDef { Name = "Zombie", DisplayName = "Zombie", Health = 168, Damage = 4.5f, MoveSpeed = 130f, ActionSpeed = 0.6f, Aggro = 8f, WeaponIndex = 4, Experience = 30, Loot = loot["Monster"], Body = DungeonPropBuilder.ZombieSkin, Scale = 1.05f, Voice = DungeonSound.Growl,
-                Controller = AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(BattleAnimationBuilder.ZombieControllerPath),
-                Attachments = new[] { (ArmorVisual.Tunic, new Color(0.5f, 0.52f, 0.4f)), (ArmorVisual.Pants, new Color(0.55f, 0.5f, 0.42f)) } }, loadouts, arrow, orb, database, pieceSet);
+            BuildFlyingHead(new MonsterDef { Name = "FlyingHead", DisplayName = "Flying Head", Health = 60, Damage = 1f, MoveSpeed = 230f, ActionSpeed = 1f, Aggro = 12f, Experience = 30, Loot = loot["Monster"], Scale = 1f,
+                Voice = DungeonSound.Screech, Charge = 900f }, arrow, orb, database);
             BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 210f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = 15, Experience = 150, Loot = loot["Boss"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
                 IsBoss = true, Lunge = 5f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.GreatHelm, new Color(0.85f, 0.7f, 0.3f)), (ArmorVisual.PlateChest, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Greaves, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Cloak, new Color(0.35f, 0.08f, 0.1f)) } }, loadouts, arrow, orb, database, pieceSet);
 
@@ -199,7 +198,7 @@ namespace Game.Scripts.Editor.Dungeon
 
                         if (def.WeaponClass == WeaponClass.Shield == isShield)
                         {
-                            euler = isShield ? new Vector3(90f, 0f, 0f) : new Vector3(0f, -90f, -45f);
+                            euler = isShield ? new Vector3(-90f, 0f, 0f) : new Vector3(0f, -90f, -45f);
 
                             return attachment.Prefab;
                         }
@@ -656,8 +655,8 @@ namespace Game.Scripts.Editor.Dungeon
             public float Scale;
             public bool IsBoss;
             public float Lunge;
+            public float Charge;
             public DungeonSound Voice = DungeonSound.Rattle;
-            public RuntimeAnimatorController Controller;
             public (ArmorVisual, Color)[] Attachments = System.Array.Empty<(ArmorVisual, Color)>();
         }
 
@@ -787,8 +786,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.CreatePrimitive(type, isFixed ? "Fixed" : "Part", parent, position, euler, scale, material);
         }
 
-        private static void BuildMonster(MonsterDef def, BattleContentBuilder.Loadout[] loadouts, GameObject arrow, GameObject orb, ItemDatabase database,
-            ArmorPieceSetConfig pieceSet)
+        private static MonsterConfig BuildMonsterConfig(MonsterDef def)
         {
             MonsterConfig config = BattleEditorUtility.LoadOrCreate<MonsterConfig>($"{MonstersFolder}/{def.Name}.asset");
             SerializedObject so = new SerializedObject(config);
@@ -810,6 +808,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_scale", def.Scale);
             BattleEditorUtility.Set(so, "_isBoss", def.IsBoss);
             BattleEditorUtility.Set(so, "_lungeImpulse", def.Lunge);
+            BattleEditorUtility.Set(so, "_chargeSpeed", def.Charge);
             BattleEditorUtility.Set(so, "_attackPause", def.IsBoss ? new Vector2(0.4f, 0.9f) : new Vector2(0.7f, 1.6f));
             BattleEditorUtility.Set(so, "_voice", def.Voice);
             SerializedProperty attachments = so.FindProperty("_attachments");
@@ -823,14 +822,18 @@ namespace Game.Scripts.Editor.Dungeon
 
             so.ApplyModifiedPropertiesWithoutUndo();
 
+            return config;
+        }
+
+        private static void BuildMonster(MonsterDef def, BattleContentBuilder.Loadout[] loadouts, GameObject arrow, GameObject orb, ItemDatabase database,
+            ArmorPieceSetConfig pieceSet)
+        {
+            MonsterConfig config = BuildMonsterConfig(def);
             BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(loadouts, arrow, orb, 1, def.Name);
             GameObject root = parts.Root;
             BattleEditorUtility.Set(parts.Fighter, "_respawnDelay", 0f);
             parts.Model.SetBodyMaterial(def.Body);
             parts.Animator.transform.localScale = Vector3.one * def.Scale;
-
-            if (def.Controller != null)
-                parts.Animator.runtimeAnimatorController = def.Controller;
 
             root.GetComponent<CharacterController>().radius = 0.3f * def.Scale;
             root.GetComponent<CharacterController>().height = 1.85f * def.Scale;
@@ -843,12 +846,120 @@ namespace Game.Scripts.Editor.Dungeon
                     hitbox.BoxExtents *= def.Scale;
             }
 
-            // The dead body is the loot container: its trigger covers the fallen figure and wakes up on death.
+            AddMonsterLogic(parts, def, config, database, pieceSet, new Vector3(0f, 0.4f, -0.3f) * def.Scale, new Vector3(1.6f, 0.8f, 3f) * def.Scale);
+            BattleEditorUtility.Set(root.AddComponent<FootstepComponent>(), "_fighter", parts.Fighter);
+            BattleContentBuilder.SavePrefab(root, Prefab(def.Name));
+        }
+
+        /// A head without a body: the fighter stack keeps its simulation, the humanoid model and its views go away.
+        private static void BuildFlyingHead(MonsterDef def, GameObject arrow, GameObject orb, ItemDatabase database)
+        {
+            const float height = 1.55f;
+            const float scale = 1.7f;
+            MonsterConfig config = BuildMonsterConfig(def);
+            BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(new[] { BuildRam(height) }, arrow, orb, 1, def.Name);
+            GameObject root = parts.Root;
+            BattleEditorUtility.Set(parts.Fighter, "_respawnDelay", 0f);
+            Object.DestroyImmediate(root.GetComponent<FighterAnimComponent>());
+            Object.DestroyImmediate(root.GetComponent<WeaponViewComponent>());
+            Object.DestroyImmediate(parts.Animator.gameObject);
+            parts.Animator = null;
+            root.GetComponent<CharacterController>().radius = 0.25f;
+
+            ZoneHitbox skull = null;
+
+            foreach (ZoneHitbox hitbox in root.GetComponentsInChildren<ZoneHitbox>(true))
+            {
+                if (hitbox.Zone == HitZone.Head)
+                    skull = hitbox;
+                else
+                    Object.DestroyImmediate(hitbox.gameObject);
+            }
+
+            skull.transform.localPosition = new Vector3(0f, height, 0f);
+            skull.SphereRadius = 0.16f * scale;
+            BattleEditorUtility.Set(skull, "_zone", HitZone.Torso);
+            parts.HitboxRoot.InitHitboxes();
+            SerializedObject so = new SerializedObject(parts.Body);
+            BattleEditorUtility.Set(so, "_upperHitboxes", new[] { skull.transform });
+            BattleEditorUtility.Set(so, "_lowerHitboxes", new Transform[0]);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            Transform head = BattleEditorUtility.CreateChild("Head", root.transform, new Vector3(0f, height, 0f)).transform;
+            Transform model = BattleEditorUtility.CreateChild("Model", head).transform;
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(BattleCharacterBuilder.HeadMeshPath);
+            Vector3 center = mesh.bounds.center + Vector3.up * mesh.bounds.extents.y * 0.25f;
+            model.localScale = Vector3.one * scale;
+            model.localPosition = -center * scale;
+            DungeonPropBuilder.MeshObject("Skull", model, mesh, DungeonPropBuilder.Bone, default, default, false, false)
+                .GetComponent<MeshRenderer>().sharedMaterials = new[] { DungeonPropBuilder.Bone, DungeonPropBuilder.Bone };
+
+            Material dark = BattleEditorUtility.GetMaterial("ArmorDark", new Color(0.12f, 0.1f, 0.08f), 0.1f, 0.3f);
+            Material eye = DungeonPropBuilder.Emissive("HeadEye", new Color(0.45f, 1f, 0.6f), 6f);
+            Vector3 face = new Vector3(0f, mesh.bounds.center.y + mesh.bounds.extents.y * 0.3f, mesh.bounds.max.z);
+
+            foreach (float side in new[] { -1f, 1f })
+            {
+                Vector3 socket = face + new Vector3(side * 0.034f, 0.012f, -0.022f);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Socket", model, socket, Vector3.zero, new Vector3(0.046f, 0.04f, 0.03f), dark);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Eye", model, socket + Vector3.forward * 0.01f, Vector3.zero, Vector3.one * 0.02f, eye);
+            }
+
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Nose", model, face + new Vector3(0f, -0.03f, -0.012f), Vector3.zero, new Vector3(0.018f, 0.026f, 0.02f), dark);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Mouth", model, face + new Vector3(0f, -0.075f, -0.024f), Vector3.zero, new Vector3(0.07f, 0.03f, 0.04f), dark);
+            BattleEditorUtility.SetLayerRecursively(head.gameObject, root.layer);
+            Light glow = DungeonPropBuilder.PointLight(head, new Vector3(0f, -0.05f, 0.6f), new Color(0.45f, 1f, 0.6f), 3.5f, 0.5f, false);
+
+            FlyingHeadVisualComponent visual = root.AddComponent<FlyingHeadVisualComponent>();
+            so = new SerializedObject(visual);
+            BattleEditorUtility.Set(so, "_monster", AddMonsterLogic(parts, def, config, database, null, new Vector3(0f, 0.3f, 0f), new Vector3(0.9f, 0.6f, 0.9f)));
+            BattleEditorUtility.Set(so, "_head", head);
+            BattleEditorUtility.Set(so, "_glow", glow);
+            BattleEditorUtility.Set(so, "_hoverHeight", height);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            BattleContentBuilder.SavePrefab(root, Prefab(def.Name));
+        }
+
+        /// The ram is not a swing of an animated weapon: its trace is a short ray ahead of the head, authored here.
+        private static BattleContentBuilder.Loadout BuildRam(float height)
+        {
+            const string attack = "_attacks.Array.data[0].";
+            Vector3 from = new Vector3(0f, height, 0.1f);
+            Vector3 to = new Vector3(0f, height, 0.8f);
+            WeaponConfig config = BattleEditorUtility.LoadOrCreate<WeaponConfig>($"{ConfigsFolder}/HeadRam.asset");
+            SerializedObject so = new SerializedObject(config);
+            BattleEditorUtility.Set(so, "_displayName", "Ram");
+            BattleEditorUtility.Set(so, "_animationPrefix", "HeadRam");
+            BattleEditorUtility.Set(so, "_deflectDuration", 1.2f);
+            BattleEditorUtility.Set(so, "_reach", 6f);
+            so.FindProperty("_attacks").arraySize = 1;
+            BattleEditorUtility.Set(so, attack + "_windupTime", 0.7f);
+            BattleEditorUtility.Set(so, attack + "_activeTime", 0.4f);
+            BattleEditorUtility.Set(so, attack + "_recoveryTime", 0.8f);
+            BattleEditorUtility.Set(so, attack + "_comboWindowStart", 10f);
+            BattleEditorUtility.Set(so, attack + "_comboWindowEnd", 10f);
+            BattleEditorUtility.Set(so, attack + "_damage", 24);
+            BattleEditorUtility.Set(so, attack + "_moveMultiplier", 1f);
+            BattleEditorUtility.Set(so, attack + "_staggerDuration", 0.3f);
+            BattleEditorUtility.Set(so, attack + "_traceSampleRate", BattleAnimationBuilder.FrameRate);
+            BattleEditorUtility.Set(so, attack + "_traceBase", new[] { from, from });
+            BattleEditorUtility.Set(so, attack + "_traceTip", new[] { to, to });
+            BattleEditorUtility.Set(so, "_block._canBlock", false);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            return new BattleContentBuilder.Loadout { Name = "HeadRam", Config = config };
+        }
+
+        /// The dead body is the loot container: its trigger covers what is left on the floor and wakes up on death.
+        private static MonsterComponent AddMonsterLogic(BattleContentBuilder.FighterParts parts, MonsterDef def, MonsterConfig config, ItemDatabase database,
+            ArmorPieceSetConfig pieceSet, Vector3 triggerCenter, Vector3 triggerSize)
+        {
+            GameObject root = parts.Root;
             InventoryComponent loot = AddInventory(root, database, 6, 4, false, "Loot");
-            BoxCollider trigger = AddInteractCollider(root, new Vector3(0f, 0.4f, -0.3f) * def.Scale, new Vector3(1.6f, 0.8f, 3f) * def.Scale);
+            BoxCollider trigger = AddInteractCollider(root, triggerCenter, triggerSize);
             trigger.enabled = false;
             ContainerComponent corpse = root.AddComponent<ContainerComponent>();
-            so = new SerializedObject(corpse);
+            SerializedObject so = new SerializedObject(corpse);
             BattleEditorUtility.Set(so, "_inventory", loot);
             BattleEditorUtility.Set(so, "_displayName", def.DisplayName);
             BattleEditorUtility.Set(so, "_openVerb", "Loot");
@@ -877,9 +988,8 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_animator", parts.Animator);
             BattleEditorUtility.Set(so, "_pieceSet", pieceSet);
             so.ApplyModifiedPropertiesWithoutUndo();
-            BattleEditorUtility.Set(root.AddComponent<FootstepComponent>(), "_fighter", parts.Fighter);
 
-            BattleContentBuilder.SavePrefab(root, Prefab(def.Name));
+            return monster;
         }
 
         /// Decor made of the character packs: outfits on armour stands, stone statues and fallen adventurers.

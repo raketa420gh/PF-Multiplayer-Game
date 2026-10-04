@@ -127,6 +127,74 @@ namespace Game.Scripts.Editor.Battle
             }, setup, 3.8f, 0.95f);
         }
 
+        /// Stands props side by side with their +Z up and renders each into its own cell, turned by the given euler.
+        public static string CaptureProps(string name, GameObject[] prefabs, Vector3 euler, int cellWidth = 220, int cellHeight = 880)
+        {
+            Vector3 origin = new Vector3(0f, 400f, 0f);
+            GameObject cameraObject = new GameObject("PreviewCamera");
+            GameObject[] lights = { new GameObject("PreviewLight"), new GameObject("PreviewLight") };
+            Texture2D sheet = new Texture2D(cellWidth * prefabs.Length, cellHeight, TextureFormat.RGB24, false);
+            bool asyncCompile = ShaderUtil.allowAsyncCompilation;
+            ShaderUtil.allowAsyncCompilation = false;
+
+            try
+            {
+                for (int i = 0; i < lights.Length; i++)
+                {
+                    Light light = lights[i].AddComponent<Light>();
+                    light.type = LightType.Directional;
+                    light.intensity = i == 0 ? 1.4f : 0.6f;
+                    light.transform.rotation = Quaternion.Euler(35f, 150f + i * 150f, 0f);
+                }
+
+                Camera camera = cameraObject.AddComponent<Camera>();
+                camera.orthographic = true;
+                camera.nearClipPlane = 0.05f;
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = new Color(0.3f, 0.33f, 0.38f);
+
+                for (int i = 0; i < prefabs.Length; i++)
+                {
+                    GameObject instance = Object.Instantiate(prefabs[i], origin, Quaternion.Euler(euler) * Quaternion.Euler(-90f, 0f, 0f));
+                    Bounds bounds = new Bounds(origin, Vector3.zero);
+
+                    foreach (MeshRenderer renderer in instance.GetComponentsInChildren<MeshRenderer>())
+                        bounds.Encapsulate(renderer.bounds);
+
+                    camera.orthographicSize = Mathf.Max(bounds.extents.y, bounds.extents.x * cellHeight / cellWidth) * 1.06f;
+                    camera.transform.position = bounds.center + Vector3.back * 5f;
+                    camera.transform.rotation = Quaternion.identity;
+                    RenderTexture texture = RenderTexture.GetTemporary(cellWidth, cellHeight, 24);
+                    camera.targetTexture = texture;
+                    camera.Render();
+                    RenderTexture.active = texture;
+                    Texture2D frame = new Texture2D(cellWidth, cellHeight, TextureFormat.RGB24, false);
+                    frame.ReadPixels(new Rect(0f, 0f, cellWidth, cellHeight), 0, 0);
+                    sheet.SetPixels(i * cellWidth, 0, cellWidth, cellHeight, frame.GetPixels());
+                    RenderTexture.active = null;
+                    camera.targetTexture = null;
+                    RenderTexture.ReleaseTemporary(texture);
+                    Object.DestroyImmediate(frame);
+                    Object.DestroyImmediate(instance);
+                }
+
+                Directory.CreateDirectory(OutputFolder);
+                string path = $"{OutputFolder}/{name}.png";
+                File.WriteAllBytes(path, sheet.EncodeToPNG());
+
+                return path;
+            }
+            finally
+            {
+                ShaderUtil.allowAsyncCompilation = asyncCompile;
+                Object.DestroyImmediate(sheet);
+                Object.DestroyImmediate(cameraObject);
+
+                foreach (GameObject light in lights)
+                    Object.DestroyImmediate(light);
+            }
+        }
+
         private static string CaptureFrames(GameObject prefab, string name, int count, System.Func<GameObject, int, Vector3> pose,
             System.Action<GameObject> setup, float distance, float height)
         {

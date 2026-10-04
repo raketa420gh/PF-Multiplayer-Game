@@ -76,12 +76,12 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.EnsureFolder(BattleEditorUtility.MaterialsFolder);
             BattleEditorUtility.EnsureLayer(BattleEditorUtility.HitboxLayer);
 
-            GameObject sword = BattleWeaponPrefabBuilder.BuildSword("Sword", 0.12f, 0.9f, 0.06f, 0.2f, 0.08f);
-            GameObject falchion = BattleWeaponPrefabBuilder.BuildSword("Falchion", 0.12f, 0.95f, 0.085f, 0.16f, 0.08f);
-            GameObject longsword = BattleWeaponPrefabBuilder.BuildSword("Longsword", 0.18f, 1.05f, 0.06f, 0.26f, 0.18f);
-            GameObject greatsword = BattleWeaponPrefabBuilder.BuildSword("Greatsword", 0.18f, 1.35f, 0.07f, 0.32f, 0.22f);
-            GameObject dagger = BattleWeaponPrefabBuilder.BuildSword("Dagger", 0.06f, 0.42f, 0.04f, 0.1f, 0.06f);
-            GameObject axe = DungeonWeaponPrefabBuilder.BuildAxe("BattleAxe", 1.15f, 0.32f);
+            GameObject sword = BattleWeaponPrefabBuilder.BuildSword("Sword", 0.12f, 0.9f, 0.052f, 0.2f, 0.08f, SwordStyle.Arming);
+            GameObject falchion = BattleWeaponPrefabBuilder.BuildSword("Falchion", 0.12f, 0.95f, 0.062f, 0.16f, 0.08f, SwordStyle.Falchion);
+            GameObject longsword = BattleWeaponPrefabBuilder.BuildSword("Longsword", 0.18f, 1.05f, 0.05f, 0.26f, 0.18f, SwordStyle.Longsword);
+            GameObject greatsword = BattleWeaponPrefabBuilder.BuildSword("Greatsword", 0.18f, 1.35f, 0.056f, 0.34f, 0.22f, SwordStyle.Greatsword);
+            GameObject dagger = BattleWeaponPrefabBuilder.BuildSword("Dagger", 0.06f, 0.42f, 0.03f, 0.075f, 0.06f, SwordStyle.Rondel);
+            GameObject axe = DungeonWeaponPrefabBuilder.BuildAxe("BattleAxe", 1.15f, 0.32f, AxeStyle.Battle);
             GameObject mace = DungeonWeaponPrefabBuilder.BuildMace();
             GameObject spear = DungeonWeaponPrefabBuilder.BuildSpear();
             GameObject staff = DungeonWeaponPrefabBuilder.BuildStaff();
@@ -91,14 +91,14 @@ namespace Game.Scripts.Editor.Battle
             GameObject bow = BattleWeaponPrefabBuilder.BuildBow();
             GameObject book = DungeonWeaponPrefabBuilder.BuildBook();
             GameObject lute = DungeonWeaponPrefabBuilder.BuildLute();
-            GameObject shortSword = BattleWeaponPrefabBuilder.BuildSword("ShortSword", 0.1f, 0.72f, 0.065f, 0.16f, 0.08f);
-            GameObject rapier = BattleWeaponPrefabBuilder.BuildSword("Rapier", 0.12f, 1f, 0.028f, 0.14f, 0.08f);
-            GameObject vikingSword = BattleWeaponPrefabBuilder.BuildSword("VikingSword", 0.12f, 0.92f, 0.08f, 0.13f, 0.09f);
-            GameObject hatchet = DungeonWeaponPrefabBuilder.BuildAxe("Hatchet", 0.62f, 0.2f);
+            GameObject shortSword = BattleWeaponPrefabBuilder.BuildSword("ShortSword", 0.1f, 0.72f, 0.056f, 0.16f, 0.08f, SwordStyle.Short);
+            GameObject rapier = BattleWeaponPrefabBuilder.BuildSword("Rapier", 0.12f, 1f, 0.022f, 0.14f, 0.08f, SwordStyle.Rapier);
+            GameObject vikingSword = BattleWeaponPrefabBuilder.BuildSword("VikingSword", 0.12f, 0.92f, 0.058f, 0.11f, 0.09f, SwordStyle.Viking);
+            GameObject hatchet = DungeonWeaponPrefabBuilder.BuildAxe("Hatchet", 0.62f, 0.2f, AxeStyle.Hatchet);
             GameObject morningStar = DungeonWeaponPrefabBuilder.BuildMorningStar();
-            GameObject castillon = BattleWeaponPrefabBuilder.BuildSword("CastillonDagger", 0.06f, 0.5f, 0.05f, 0.12f, 0.06f);
-            GameObject stiletto = BattleWeaponPrefabBuilder.BuildSword("Stiletto", 0.06f, 0.46f, 0.022f, 0.08f, 0.06f);
-            GameObject fellingAxe = DungeonWeaponPrefabBuilder.BuildAxe("FellingAxe", 1f, 0.24f);
+            GameObject castillon = BattleWeaponPrefabBuilder.BuildSword("CastillonDagger", 0.06f, 0.5f, 0.046f, 0.1f, 0.06f, SwordStyle.Castillon);
+            GameObject stiletto = BattleWeaponPrefabBuilder.BuildSword("Stiletto", 0.06f, 0.46f, 0.014f, 0.07f, 0.06f, SwordStyle.Stiletto);
+            GameObject fellingAxe = DungeonWeaponPrefabBuilder.BuildAxe("FellingAxe", 1f, 0.24f, AxeStyle.Felling);
             GameObject maul = DungeonWeaponPrefabBuilder.BuildMaul();
             GameObject halberd = DungeonWeaponPrefabBuilder.BuildHalberd();
             arrow = BattleWeaponPrefabBuilder.BuildArrow();
@@ -211,6 +211,7 @@ namespace Game.Scripts.Editor.Battle
                 AttackDefinition attack = definition.Attacks[i];
                 string path = $"_attacks.Array.data[{i}].";
                 sampler.SampleTrace(definition, i, out List<Vector3> traceBase, out List<Vector3> traceTip);
+                CheckPeak(assetName, i, attack, traceBase, traceTip);
 
                 BattleEditorUtility.Set(so, path + "_windupTime", attack.Windup);
                 BattleEditorUtility.Set(so, path + "_activeTime", attack.Active);
@@ -254,6 +255,22 @@ namespace Game.Scripts.Editor.Battle
             };
         }
 
+        /// The baked blade must cross the crosshair ray at the peak of the swing, or aimed hits would not register.
+        private static void CheckPeak(string weapon, int index, AttackDefinition attack, List<Vector3> traceBase, List<Vector3> traceTip)
+        {
+            const float tolerance = 0.01f;
+            int sample = Mathf.RoundToInt(BattleAnimationLibrary.PeakTime(attack) * BattleAnimationBuilder.FrameRate);
+            Vector2 eye = BattleAnimationLibrary.Eye;
+            Vector2 start = traceBase[sample];
+            Vector2 end = traceTip[sample];
+            Vector2 blade = end - start;
+            float along = Mathf.Clamp01(Vector2.Dot(eye - start, blade) / Mathf.Max(blade.sqrMagnitude, 1e-6f));
+            float miss = Vector2.Distance(eye, start + blade * along);
+
+            if (miss > tolerance)
+                Debug.LogError($"[{nameof(BattleContentBuilder)}] {weapon} attack {index}: the peak misses the crosshair by {miss:0.000} m");
+        }
+
         /// The simulation body is authored data, not measured on the model: swapping the character must not move the
         /// hitbox pivots or the eye. The character builder scales the model to this body instead.
         private static BodyConfig CreateBodyConfig()
@@ -261,7 +278,7 @@ namespace Game.Scripts.Editor.Battle
             BodyConfig config = BattleEditorUtility.LoadOrCreate<BodyConfig>($"{BattleEditorUtility.ConfigsFolder}/Body.asset");
             SerializedObject so = new SerializedObject(config);
             BattleEditorUtility.Set(so, "_spinePivots", new[] { new Vector3(0f, 1.1f, -0.02f), new Vector3(0f, 1.225f, -0.03f), new Vector3(0f, 1.36f, -0.045f) });
-            BattleEditorUtility.Set(so, "_eyePoint", new Vector3(0f, 1.755f, 0.115f));
+            BattleEditorUtility.Set(so, "_eyePoint", BattleAnimationLibrary.Eye);
             BattleEditorUtility.Set(so, "_crouchDrop", BattleAnimationLibrary.CrouchDrop);
             so.ApplyModifiedPropertiesWithoutUndo();
 

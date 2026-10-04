@@ -134,7 +134,7 @@ namespace Game.Scripts.Editor.Dungeon
                     DungeonPropBuilder.Flame(root.transform, points[i] + Vector3.up * 0.02f, fire.Flame);
             }
 
-            DungeonPropBuilder.PointLight(root.transform, center + Vector3.up * 0.25f, new Color(1f, 0.68f, 0.35f), fire.Range, fire.Intensity, true);
+            DungeonPropBuilder.PointLight(root.transform, center + Vector3.up * 0.25f, new Color(1f, 0.76f, 0.5f), fire.Range, fire.Intensity, true);
         }
 
         /// Wick points: the highest vertex of every separate candle of the wax submeshes.

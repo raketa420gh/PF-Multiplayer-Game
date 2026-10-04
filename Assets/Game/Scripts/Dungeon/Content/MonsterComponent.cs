@@ -44,8 +44,13 @@ namespace Game.Scripts.Dungeon
 
         private static readonly System.Collections.Generic.List<MonsterComponent> s_all = new();
 
-        /// A lunging boss keeps momentum through the windup; everyone else stands still.
-        private float AttackMoveMultiplier => _config.LungeImpulse > 0f && _fighter.Combat.Phase == AttackPhase.Windup ? 1f : 0f;
+        /// A lunging boss keeps momentum through the windup, a charger rams through the active phase; everyone else stands still.
+        private float AttackMoveMultiplier => _fighter.Combat.Phase switch
+        {
+            AttackPhase.Windup when _config.LungeImpulse > 0f => 1f,
+            AttackPhase.Active when _config.IsCharger => _config.ChargeSpeed / DungeonFormulas.BaseMoveSpeed,
+            _ => 0f
+        };
 
         public override void Spawned()
         {

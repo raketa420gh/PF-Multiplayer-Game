@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Dresses a monster with the attachments listed in its config (rusty helmets, rags, a crown for the boss).
+    /// Dresses a monster with the attachments listed in its config (rusty helmets, rags, a crown for the boss) and gives it a voice.
     public sealed class MonsterVisualComponent : NetworkBehaviour
     {
         [SerializeField]
@@ -21,10 +21,13 @@ namespace Game.Scripts.Dungeon
 
         public override void Spawned()
         {
-            ArmorDresser dresser = new ArmorDresser(_animator, _pieceSet, gameObject.layer);
+            if (_animator != null)
+            {
+                ArmorDresser dresser = new ArmorDresser(_animator, _pieceSet, gameObject.layer);
 
-            foreach (MonsterAttachment attachment in _monster.Config.Attachments)
-                dresser.Show(attachment.Visual, attachment.Color);
+                foreach (MonsterAttachment attachment in _monster.Config.Attachments)
+                    dresser.Show(attachment.Visual, attachment.Color);
+            }
 
             _nextIdleVoice = Time.time + Random.Range(4f, 12f);
         }
@@ -49,7 +52,8 @@ namespace Game.Scripts.Dungeon
 
             _wasAlive = isAlive;
 
-            if (isAlive && Time.time >= _nextIdleVoice)
+            // The voice of a charger announces its ram, so it stays silent otherwise.
+            if (isAlive && !_monster.Config.IsCharger && Time.time >= _nextIdleVoice)
             {
                 _nextIdleVoice = Time.time + Random.Range(6f, 16f);
                 DungeonAudioComponent.Play(_monster.Config.Voice, position, 0.35f, Random.Range(0.8f, 1f));

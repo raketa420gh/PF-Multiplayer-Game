@@ -20,7 +20,18 @@ namespace Game.Scripts.Dungeon
         Cast,
         Lever,
         Death,
-        Extract
+        Extract,
+        Screech
+    }
+
+    /// Takes of one sound; a random one is played each time.
+    [System.Serializable]
+    public sealed class DungeonSoundTakes
+    {
+        public AudioClip[] Clips => _clips;
+
+        [SerializeField]
+        private AudioClip[] _clips;
     }
 
     /// One-shot sounds at world positions plus the tavern theme / dungeon ambience.
@@ -31,8 +42,8 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private DungeonContext _context;
 
-        [SerializeField]
-        private AudioClip[] _clips;
+        [SerializeField, Tooltip("Indexed by DungeonSound")]
+        private DungeonSoundTakes[] _sounds;
 
         [SerializeField]
         private AudioClip _menuMusic;
@@ -77,9 +88,11 @@ namespace Game.Scripts.Dungeon
             _music.clip = _menuMusic;
             _music.loop = true;
             _music.volume = 0.35f;
+            _music.reverbZoneMix = 0f;
             _ambientSource.clip = _ambient;
             _ambientSource.loop = true;
             _ambientSource.volume = 0.45f;
+            _ambientSource.reverbZoneMix = 0f;
             _music.Play();
         }
 
@@ -134,6 +147,7 @@ namespace Game.Scripts.Dungeon
             _next = (_next + 1) % _sources.Length;
             source.transform.position = position;
             source.spatialBlend = 1f;
+            source.reverbZoneMix = 1f;
             source.pitch = pitch;
             source.volume = _volume * volume;
             source.clip = clip;
@@ -150,6 +164,7 @@ namespace Game.Scripts.Dungeon
             AudioSource source = _sources[_next];
             _next = (_next + 1) % _sources.Length;
             source.spatialBlend = 0f;
+            source.reverbZoneMix = 0f;
             source.pitch = 1f;
             source.volume = _volume * volume;
             source.clip = clip;
@@ -160,7 +175,12 @@ namespace Game.Scripts.Dungeon
         {
             int index = (int)sound;
 
-            return index < _clips.Length ? _clips[index] : null;
+            if (index >= _sounds.Length || _sounds[index].Clips.Length == 0)
+                return null;
+
+            AudioClip[] clips = _sounds[index].Clips;
+
+            return clips[Random.Range(0, clips.Length)];
         }
     }
 }

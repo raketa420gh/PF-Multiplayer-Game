@@ -42,6 +42,8 @@ namespace Game.Scripts.Dungeon
         public bool IsUndead => _isUndead;
         public bool IsBoss => _isBoss;
         public float LungeImpulse => _lungeImpulse;
+        public float ChargeSpeed => _chargeSpeed;
+        public bool IsCharger => _chargeSpeed > 0f;
         public MonsterAttachment[] Attachments => _attachments;
         public DungeonSound Voice => _voice;
 
@@ -107,6 +109,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private float _lungeImpulse;
+
+        [SerializeField, Tooltip("Move speed rating of the ram through the active phase of the attack; 0 = fights on the spot")]
+        private float _chargeSpeed;
 
         [SerializeField]
         private MonsterAttachment[] _attachments = System.Array.Empty<MonsterAttachment>();

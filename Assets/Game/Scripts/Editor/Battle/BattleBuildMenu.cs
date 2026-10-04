@@ -9,6 +9,7 @@ namespace Game.Scripts.Editor.Battle
         {
             BattleAnimationBuilder.Build();
             BattleAudioBuilder.Build();
+            WeaponTextureBuilder.Build();
             BattleContentBuilder.Build();
             BattleSceneBuilder.Build();
         }

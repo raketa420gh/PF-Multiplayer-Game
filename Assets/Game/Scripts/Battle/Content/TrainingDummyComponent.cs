@@ -42,7 +42,8 @@ namespace Game.Scripts.Battle
             if (_restoreTimer.Expired(Runner))
             {
                 _restoreTimer = TickTimer.None;
-                _health.Restore(_health.MaxHealth);
+                // Restore() does not raise the dead, and a dummy beaten down to zero has to stand up again too.
+                _health.SetMaxHealth(_health.MaxHealth, true);
             }
 
             // The root assigns hitbox indices when it starts; until then activation changes must wait.

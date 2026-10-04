@@ -262,10 +262,12 @@ namespace Game.Scripts.Battle
         /// Assigns which catalog weapon a weapon slot holds. State authority only.
         public void SetSlotWeapon(int slot, int catalogIndex)
         {
-            _slotWeapons.Set(slot, (byte)Mathf.Clamp(catalogIndex, 0, _loadout.Length - 1));
+            byte index = (byte)Mathf.Clamp(catalogIndex, 0, _loadout.Length - 1);
+            bool isChanged = !_slotsInitialized || _slotWeapons[slot] != index;
+            _slotWeapons.Set(slot, index);
             _slotsInitialized = true;
 
-            if (slot == WeaponSlot && State != CombatState.Busy)
+            if (isChanged && slot == WeaponSlot && State != CombatState.Busy)
                 SetState(CombatState.Equip);
         }
 

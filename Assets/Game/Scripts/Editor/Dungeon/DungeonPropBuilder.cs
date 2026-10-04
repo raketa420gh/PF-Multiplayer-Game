@@ -14,15 +14,14 @@ namespace Game.Scripts.Editor.Dungeon
         public const float WallHeight = 4.5f;
         public const float WallThickness = 0.6f;
 
-        public static Material StoneWall => Textured("StoneWall", "StoneWall", 0.25f, 0.15f);
-        public static Material StoneFloor => Textured("StoneFloor", "StoneFloor", 0.25f, 0.2f);
-        public static Material Cobble => Textured("Cobble", "Cobble", 0.33f, 0.1f);
+        public static Material StoneWall => Textured("StoneWall", "StoneWall", 0.5f, 0.15f);
+        public static Material StoneFloor => Textured("StoneFloor", "StoneFloor", 0.5f, 0.25f);
+        public static Material Cobble => Textured("Cobble", "Cobble", 0.5f, 0.15f);
         public static Material Dirt => Textured("Dirt", "Dirt", 0.3f, 0.05f);
         public static Material WoodPlanks => Textured("WoodPlanks", "WoodPlanks", 0.5f, 0.25f);
         public static Material DarkWood => Textured("DarkWood", "DarkWood", 0.5f, 0.3f);
         public static Material RustyMetal => Textured("RustyMetal", "RustyMetal", 0.6f, 0.4f, 0.6f);
         public static Material Bone => Textured("Bone", "Bone", 0.8f, 0.35f);
-        public static Material ZombieSkin => Textured("ZombieSkin", "ZombieSkin", 0.9f, 0.3f);
         public static Material ClothRed => Textured("ClothRed", "ClothRed", 1f, 0.1f);
         public static Material Gold => Textured("Gold", "Gold", 0.8f, 0.75f, 0.8f);
         public static Material Fire => FireMaterial();
@@ -47,6 +46,15 @@ namespace Game.Scripts.Editor.Dungeon
             material.SetTexture("_BumpMap", DungeonTextureBuilder.Load(texture, true));
             material.SetFloat("_BumpScale", 1f);
             material.EnableKeyword("_NORMALMAP");
+            Texture2D occlusion = DungeonTextureBuilder.LoadOcclusion(texture);
+            material.SetTexture("_OcclusionMap", occlusion);
+            material.SetFloat("_OcclusionStrength", 1f);
+
+            if (occlusion != null)
+                material.EnableKeyword("_OCCLUSIONMAP");
+            else
+                material.DisableKeyword("_OCCLUSIONMAP");
+
             material.SetColor("_BaseColor", Color.white);
             material.SetFloat("_Smoothness", smoothness);
             material.SetFloat("_Metallic", metallic);

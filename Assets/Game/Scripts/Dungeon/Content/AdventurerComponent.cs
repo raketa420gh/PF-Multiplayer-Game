@@ -102,6 +102,12 @@ namespace Game.Scripts.Dungeon
 
         public bool HasBeltItemInHand => BeltSlot != NoBelt;
 
+        /// The weapon set is put away (X): bare hands until a set is taken out again.
+        [Networked]
+        public NetworkBool IsHolstered { get; private set; }
+
+        public bool HasWeaponInHand => !HasBeltItemInHand && !IsHolstered && Form == ShapeshiftForm.None;
+
         /// Bag index of the item being discovered in the opened container, NoSearch when nothing is left to find.
         [Networked]
         public byte SearchIndex { get; private set; } = NoSearch;
@@ -222,6 +228,7 @@ namespace Game.Scripts.Dungeon
         private int _appliedEffects;
         private ShapeshiftForm _appliedForm;
         private byte _appliedBelt = NoBelt;
+        private int _appliedWeaponSet = -1;
         private bool _wasAlive = true;
 
         public override void Spawned()
@@ -266,7 +273,7 @@ namespace Game.Scripts.Dungeon
             if (_session == null)
                 ResolveSession();
 
-            if (_appliedVersion != _inventory.Version || _appliedForm != Form || _appliedBelt != BeltSlot || _appliedEffects != _effects.GetSignature())
+            if (_appliedVersion != _inventory.Version || _appliedForm != Form || _appliedBelt != BeltSlot || _appliedWeaponSet != HeldWeaponSet || _appliedEffects != _effects.GetSignature())
                 RefreshStats(false);
 
             _fighter.Combat.SetBlockSuppressed((ReadiedSpell != NoSpell && HasFocus && State == AdventurerState.Alive) || HasBeltItemInHand);
@@ -296,7 +303,7 @@ namespace Game.Scripts.Dungeon
 
         public override void Render()
         {
-            if (_appliedVersion != _inventory.Version || _appliedBelt != BeltSlot || _appliedEffects != _effects.GetSignature())
+            if (_appliedVersion != _inventory.Version || _appliedBelt != BeltSlot || _appliedWeaponSet != HeldWeaponSet || _appliedEffects != _effects.GetSignature())
                 RefreshStats(false);
 
             if (HasInputAuthority)
@@ -473,6 +480,9 @@ namespace Game.Scripts.Dungeon
 
         private bool HoldsWeaponClass(WeaponClass weaponClass)
         {
+            if (!HasWeaponInHand)
+                return false;
+
             int slot = _fighter.Combat.WeaponSlot;
             WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(slot == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main);
             WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(slot == 0 ? EquipSlot.Weapon1Off : EquipSlot.Weapon2Off);
@@ -507,7 +517,8 @@ namespace Game.Scripts.Dungeon
             int level = _session != null ? _session.Level : 1;
             _appliedForm = Form;
             _appliedBelt = BeltSlot;
-            _stats.Recalculate(_class, _inventory, _effects, _fighter.Combat.WeaponSlot, ClassConfig.PerkCountForLevel(level), Form, PerkMask);
+            _appliedWeaponSet = HeldWeaponSet;
+            _stats.Recalculate(_class, _inventory, _effects, _appliedWeaponSet, ClassConfig.PerkCountForLevel(level), Form, PerkMask, HasBeltItemInHand ? BeltSlot : -1);
 
             if (!HasStateAuthority)
                 return;
@@ -515,6 +526,9 @@ namespace Game.Scripts.Dungeon
             _fighter.Health.SetMaxHealth(_stats.MaxHealth, fillHealth);
             ApplyWeaponSlots();
         }
+
+        /// Weapon set whose stats count: none while the hands hold a belt item, nothing or claws.
+        private int HeldWeaponSet => HasWeaponInHand ? _fighter.Combat.WeaponSlot : -1;
 
         private void ApplyWeaponSlots()
         {
@@ -528,8 +542,8 @@ namespace Game.Scripts.Dungeon
             if (Form != ShapeshiftForm.None && _formWeapons != null && (int)Form - 1 < _formWeapons.Length)
                 return Mathf.Max(0, _fighter.Combat.FindCatalogIndex(_formWeapons[(int)Form - 1]));
 
-            // A belt item in hand puts the active set away: empty hands, no swings or blocks.
-            if (HasBeltItemInHand && set == _fighter.Combat.WeaponSlot)
+            // A belt item in hand or the holster key puts the active set away: empty hands.
+            if (!HasWeaponInHand && set == _fighter.Combat.WeaponSlot)
                 return Mathf.Max(0, _fighter.Combat.FindCatalogIndex(_fistsWeapon));
 
             WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(mainSlot);
@@ -592,11 +606,20 @@ namespace Game.Scripts.Dungeon
                 TryCastReadiedSpell();
         }
 
-        /// 1 / 2 take a weapon set out, 3 / 4 cycle the three belt slots of their group; LMB uses the belt item, RMB puts it away.
+        /// 1 / 2 take a weapon set out, X puts it away, 3 / 4 cycle the three belt slots of their group; LMB uses the belt item, RMB puts it away.
         private bool SimulateBelt(NetworkButtons buttons, NetworkButtons previous)
         {
             if (buttons.WasPressed(previous, PlayerInputButtons.Weapon1) || buttons.WasPressed(previous, PlayerInputButtons.Weapon2))
+            {
                 BeltSlot = NoBelt;
+                IsHolstered = false;
+            }
+
+            if (buttons.WasPressed(previous, PlayerInputButtons.Holster) && CanChangeHands())
+            {
+                IsHolstered = HasBeltItemInHand || !IsHolstered;
+                BeltSlot = NoBelt;
+            }
 
             for (int group = 0; group < 2; group++)
             {
@@ -615,9 +638,14 @@ namespace Game.Scripts.Dungeon
             return true;
         }
 
+        private bool CanChangeHands()
+        {
+            return Form == ShapeshiftForm.None && _fighter.Combat.State is CombatState.Idle or CombatState.Equip or CombatState.BlockRaise or CombatState.Block;
+        }
+
         private void SelectBelt(int group)
         {
-            if (Form != ShapeshiftForm.None || _fighter.Combat.State is not (CombatState.Idle or CombatState.Equip or CombatState.BlockRaise or CombatState.Block))
+            if (!CanChangeHands())
                 return;
 
             int first = (int)EquipSlot.Utility1 + group * BeltGroupSize;

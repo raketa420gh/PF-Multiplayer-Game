@@ -56,7 +56,7 @@ namespace Game.Scripts.Battle
             }
 
             if (isActivePhase && !_wasActivePhase && BattleContext.Instance != null)
-                BattleContext.Instance.Feedback.PlaySwing(transform.position + Vector3.up * 1.4f);
+                BattleContext.Instance.Feedback.PlaySwing(transform.position + Vector3.up * 1.4f, weapon.Reach);
 
             _wasActivePhase = isActivePhase;
         }

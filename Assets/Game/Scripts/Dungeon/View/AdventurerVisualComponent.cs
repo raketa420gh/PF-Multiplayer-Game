@@ -143,7 +143,7 @@ namespace Game.Scripts.Dungeon
             WeaponItemConfig main = inventory.GetEquippedConfig<WeaponItemConfig>(slot == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main);
             WeaponItemConfig off = inventory.GetEquippedConfig<WeaponItemConfig>(slot == 0 ? EquipSlot.Weapon1Off : EquipSlot.Weapon2Off);
             float range = Mathf.Max(main != null ? main.LightRange : 0f, off != null ? off.LightRange : 0f);
-            bool isLit = range > 0f && _adventurer.Fighter.Health.IsAlive;
+            bool isLit = range > 0f && _adventurer.HasWeaponInHand && _adventurer.Fighter.Health.IsAlive;
 
             if (_torchLight.enabled != isLit)
                 _torchLight.enabled = isLit;

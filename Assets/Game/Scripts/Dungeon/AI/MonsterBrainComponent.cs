@@ -32,7 +32,7 @@ namespace Game.Scripts.Dungeon
         private float _loseSightTime = 6f;
 
         [SerializeField]
-        private Vector2 _rangedDistance = new(6f, 11f);
+        private float _attackRange = 11f;
 
         [SerializeField]
         private LayerMask _sightMask = 1;
@@ -60,6 +60,8 @@ namespace Game.Scripts.Dungeon
         private bool _isReactionBlock;
         private bool _wasAttackDown;
         private bool _hasLunged;
+        private bool _isApproaching;
+        private Vector3 _chargePoint;
         private int _corner;
 
         public override void Spawned()
@@ -146,8 +148,10 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
-            float fightRange = config.IsRanged ? _rangedDistance.y + 2f : _fighter.Combat.Weapon.Reach + 1.2f;
-            _mode = distance <= fightRange && canSee ? Mode.Fight : Mode.Chase;
+            float fightRange = config.IsRanged ? _attackRange + 2f : _fighter.Combat.Weapon.Reach + 1.2f;
+            // A charger is committed to its ram: it must not start chasing mid-attack.
+            bool isCommitted = config.IsCharger && _fighter.Combat.State == CombatState.Attack;
+            _mode = isCommitted || (distance <= fightRange && canSee) ? Mode.Fight : Mode.Chase;
         }
 
         private AdventurerComponent FindTarget(float range)
@@ -243,6 +247,8 @@ namespace Game.Scripts.Dungeon
 
             if (weapon.IsRanged)
                 FightRanged(weapon.Ranged, distance, ref input, ref isAttackDown, time);
+            else if (config.IsCharger)
+                FightCharge(config, combat, weapon, distance, ref input, ref isAttackDown, time);
             else
                 FightMelee(config, combat, weapon, distance, ref input, ref isAttackDown, ref isBlockDown, time);
 
@@ -296,6 +302,50 @@ namespace Game.Scripts.Dungeon
             }
         }
 
+        /// Flying heads screech through the windup, then ram the spot where the target stood when the screech began.
+        private void FightCharge(MonsterConfig config, CombatComponent combat, WeaponConfig weapon, float distance,
+            ref PlayerInputData input, ref bool isAttackDown, float time)
+        {
+            if (combat.State == CombatState.Attack)
+            {
+                Vector3 toPoint = Flat(_chargePoint - transform.position);
+
+                if (combat.Phase == AttackPhase.Windup)
+                    AimAt(_chargePoint);
+                else if (combat.Phase == AttackPhase.Active && Vector3.Dot(toPoint, transform.forward) > -0.5f)
+                    Ram(config, ref input);
+
+                _nextAttackTime = time + Random.Range(config.AttackPauseMin, config.AttackPauseMax);
+
+                return;
+            }
+
+            _hasLunged = false;
+            AimAt(_target.Fighter.Body.ChestPosition);
+            UpdateStrafe(time);
+
+            float range = weapon.Reach;
+            float forward = distance > range * 0.9f ? 1f : distance < range * 0.45f ? -0.7f : 0f;
+            input.MoveDirection = new Vector2(_strafe * 0.6f, forward);
+
+            if (distance <= range && time >= _nextAttackTime && !_wasAttackDown && combat.State == CombatState.Idle)
+            {
+                isAttackDown = true;
+                _chargePoint = _target.Fighter.Body.ChestPosition;
+            }
+        }
+
+        private void Ram(MonsterConfig config, ref PlayerInputData input)
+        {
+            input.MoveDirection = Vector2.up;
+
+            if (_hasLunged)
+                return;
+
+            _hasLunged = true;
+            _fighter.Move.AddImpulse(transform.forward * (_fighter.Move.Config.RunSpeed * config.ChargeSpeed / DungeonFormulas.BaseMoveSpeed));
+        }
+
         private bool ShouldBlock(CombatComponent combat, float distance)
         {
             CombatComponent targetCombat = _target.Fighter.Combat;
@@ -321,10 +371,19 @@ namespace Game.Scripts.Dungeon
             Vector3 aimPoint = _target.Fighter.Body.ChestPosition;
             aimPoint.y += 0.5f * -ranged.Gravity * flightTime * flightTime;
             AimAt(aimPoint);
-            UpdateStrafe(time);
 
-            float forward = distance < _rangedDistance.x ? -1f : distance > _rangedDistance.y ? 1f : 0f;
-            input.MoveDirection = new Vector2(_strafe * 0.5f, forward);
+            // Archers plant their feet to aim and only turn; they walk again once the target is out of range.
+            if (distance > _attackRange)
+                _isApproaching = true;
+            else if (distance < _attackRange - 2f)
+                _isApproaching = false;
+
+            if (_isApproaching)
+            {
+                input.MoveDirection = Vector2.up;
+
+                return;
+            }
 
             if (combat.State == CombatState.Draw)
             {

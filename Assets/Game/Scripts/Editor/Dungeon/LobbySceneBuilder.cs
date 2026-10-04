@@ -26,7 +26,7 @@ namespace Game.Scripts.Editor.Dungeon
             EditorSceneManager.SaveScene(scene, ScenePath);
 
             DungeonSceneBuilder.SetupLighting();
-            DungeonSceneBuilder.BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/LobbyVolume.asset", 1.1f);
+            DungeonSceneBuilder.BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/LobbyVolume.asset", 0.6f);
             Camera camera = DungeonSceneBuilder.BuildCamera();
             GameObject system = new GameObject("[System]");
             NetworkEvents events = system.AddComponent<NetworkEvents>();

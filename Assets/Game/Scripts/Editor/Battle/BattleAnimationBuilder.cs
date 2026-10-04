@@ -11,8 +11,6 @@ namespace Game.Scripts.Editor.Battle
     {
         public const float FrameRate = 60f;
 
-        public const string ZombieControllerPath = BattleEditorUtility.AnimationsFolder + "/Zombie.overrideController";
-
         private const int BodyMuscleCount = 55;
         private const float FingerCurl = -0.8f;
         private const float MaxStrideScale = 2f;
@@ -150,9 +148,6 @@ namespace Game.Scripts.Editor.Battle
             stateMachine.defaultState = locomotion;
             stateMachine.AddState(FighterAnimComponent.AirState).motion = air;
             stateMachine.AddState(FighterAnimComponent.DeathState).motion = BattleEditorUtility.LoadLibraryClip("Death01");
-
-            BuildZombie(controller, idle, RecordLegs(rig, "ZombieIdle", "Zombie_Idle_Loop", 0.03f),
-                new[] { walkForward, run, sprint }, RecordLegs(rig, "ZombieWalk", "Zombie_Walk_Fwd_Loop", 0.08f));
         }
 
         /// Puts the legs of a library clip on the simulation body. The feet keep their place relative to the hips, while the
@@ -218,26 +213,6 @@ namespace Game.Scripts.Editor.Battle
         {
             stateMachine.AddState(FighterAnimComponent.HitChestState).motion = BattleEditorUtility.LoadLibraryClip("Hit_Chest");
             stateMachine.AddState(FighterAnimComponent.HitHeadState).motion = BattleEditorUtility.LoadLibraryClip("Hit_Head");
-        }
-
-        /// Same state machine with shambling legs for the zombie.
-        private static void BuildZombie(AnimatorController controller, AnimationClip idle, AnimationClip zombieIdle, AnimationClip[] moves, AnimationClip zombieWalk)
-        {
-            AnimatorOverrideController zombie = AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(ZombieControllerPath);
-
-            if (zombie == null)
-            {
-                zombie = new AnimatorOverrideController();
-                AssetDatabase.CreateAsset(zombie, ZombieControllerPath);
-            }
-
-            zombie.runtimeAnimatorController = controller;
-            zombie[idle] = zombieIdle;
-
-            foreach (AnimationClip move in moves)
-                zombie[move] = zombieWalk;
-
-            EditorUtility.SetDirty(zombie);
         }
 
         private static BlendTree CreateMoveTree(BlendTree parent, string name, float threshold)

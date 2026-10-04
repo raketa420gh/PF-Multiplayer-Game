@@ -72,8 +72,9 @@ namespace Game.Scripts.Dungeon
             };
         }
 
+        /// activeWeaponSet is -1 when the weapons are put away, heldBeltSlot is -1 when no belt item is in hand.
         public void Recalculate(ClassConfig config, InventoryComponent inventory, StatusEffectComponent effects, int activeWeaponSet, int perkCount,
-            ShapeshiftForm form = ShapeshiftForm.None, int perkMask = 0)
+            ShapeshiftForm form = ShapeshiftForm.None, int perkMask = 0, int heldBeltSlot = -1)
         {
             System.Array.Clear(_flat, 0, _flat.Length);
             float armor = 0f;
@@ -85,7 +86,7 @@ namespace Game.Scripts.Dungeon
                 ItemStack stack = inventory.Equipment[i];
                 ItemConfig item = inventory.GetConfig(stack);
 
-                if (item == null)
+                if (item == null || !IsInUse((EquipSlot)i, activeWeaponSet, heldBeltSlot))
                     continue;
 
                 int tier = Mathf.Max(0, stack.Rarity - (int)ItemRarity.Common);
@@ -104,7 +105,7 @@ namespace Game.Scripts.Dungeon
                     magicResistance += armorItem.MagicResistance;
                     moveAdd += armorItem.MoveSpeedPenalty;
                 }
-                else if (item is WeaponItemConfig weaponItem && IsActiveWeapon((EquipSlot)i, activeWeaponSet))
+                else if (item is WeaponItemConfig weaponItem)
                 {
                     moveAdd -= weaponItem.MoveSpeedPenalty;
                 }
@@ -226,11 +227,16 @@ namespace Game.Scripts.Dungeon
             return effects != null ? effects.GetMagnitude(kind) : 0f;
         }
 
-        private static bool IsActiveWeapon(EquipSlot slot, int activeWeaponSet)
+        /// Weapons, shields and belt items only count while they are in the hands; everything else is worn.
+        private static bool IsInUse(EquipSlot slot, int activeWeaponSet, int heldBeltSlot)
         {
-            return activeWeaponSet == 0
-                ? slot is EquipSlot.Weapon1Main or EquipSlot.Weapon1Off
-                : slot is EquipSlot.Weapon2Main or EquipSlot.Weapon2Off;
+            return slot switch
+            {
+                EquipSlot.Weapon1Main or EquipSlot.Weapon1Off => activeWeaponSet == 0,
+                EquipSlot.Weapon2Main or EquipSlot.Weapon2Off => activeWeaponSet == 1,
+                >= EquipSlot.Utility1 and <= EquipSlot.Utility6 => (int)slot == heldBeltSlot,
+                _ => true
+            };
         }
 
         private void Apply(in StatModifier modifier)

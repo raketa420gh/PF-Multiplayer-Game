@@ -12,6 +12,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleAudioBuilder.Build();
             DungeonAudioBuilder.Build();
             DungeonTextureBuilder.Build();
+            WeaponTextureBuilder.Build();
             DungeonUiSpriteBuilder.Build();
             BattleContentBuilder.Build();
             DungeonContentBuilder.Build();
@@ -23,6 +24,7 @@ namespace Game.Scripts.Editor.Dungeon
         [MenuItem("Tools/Game/Dungeon/Build Audio")]
         public static void BuildAudio()
         {
+            BattleAudioBuilder.Build();
             DungeonAudioBuilder.Build();
         }
 
@@ -30,6 +32,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static void BuildTextures()
         {
             DungeonTextureBuilder.Build();
+            WeaponTextureBuilder.Build();
             DungeonUiSpriteBuilder.Build();
         }
 
