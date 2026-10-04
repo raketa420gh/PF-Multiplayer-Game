@@ -7,6 +7,16 @@ namespace Game.Scripts.Battle
     /// hands, seen from an orbit camera or through the fighter's own eyes. No network session is involved.
     public sealed class AnimationTestView : MonoBehaviour
     {
+        public const int BaseLayer = 0;
+        public const int UpperLayer = 1;
+        public const float PanelWidth = 250f;
+        public const float Margin = 8f;
+        public const float GuiHeight = 1080f;
+
+        public int Layer => _layer;
+        public bool IsPaused => _isPaused;
+        public bool IsCurrent => IsPlaying(_layer, out _);
+
         [SerializeField]
         private Animator _animator;
 
@@ -29,13 +39,8 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private float _repeatPause = 0.4f;
 
-        private const int BaseLayer = 0;
-        private const int UpperLayer = 1;
         private const int HitLayer = 2;
         private const float Frame = 1f / 60f;
-        private const float GuiHeight = 1080f;
-        private const float PanelWidth = 250f;
-        private const float Margin = 8f;
         private const float OrbitFieldOfView = 45f;
         private const float FirstPersonFieldOfView = 75f;
         private const float OrbitHeight = 1.1f;
@@ -81,6 +86,7 @@ namespace Game.Scripts.Battle
         private bool _isRepeating = true;
         private bool _hasFootwork = true;
         private bool _isFirstPerson;
+        private bool _isEditing;
 
         private void Awake()
         {
@@ -101,7 +107,7 @@ namespace Game.Scripts.Battle
             _animator.SetFloat(FighterAnimComponent.MoveYParam, _moveY);
             _animator.SetFloat(FighterAnimComponent.CrouchParam, _crouch);
             _animator.SetFloat(FighterAnimComponent.ActionSpeedParam, 1f);
-            _animator.SetBool(FighterAnimComponent.MirrorParam, _weapons[_weaponIndex].IsMirrored);
+            _animator.SetBool(FighterAnimComponent.MirrorParam, _weapons[_weaponIndex].IsMirrored && !_isEditing);
             _animator.SetLayerWeight(UpperLayer, _current[BaseLayer] == FighterAnimComponent.DeathState ? 0f : 1f);
             _animator.SetLayerWeight(HitLayer, IsPlaying(HitLayer, out AnimatorStateInfo hit) && hit.normalizedTime < 1f ? _hitWeight : 0f);
 
@@ -186,6 +192,53 @@ namespace Game.Scripts.Battle
             GUILayout.EndArea();
         }
 
+        /// Edits are made on the clip as authored, so the animation editor turns mirroring off while it is open.
+        public void SetEditing(bool isEditing) => _isEditing = isEditing;
+
+        public void SetPaused(bool isPaused) => _isPaused = isPaused;
+
+        public void Seek(float normalizedTime)
+        {
+            _isPaused = true;
+            Play(_layer, _current[_layer], normalizedTime);
+        }
+
+        /// The clip with the largest weight, so a blend tree reports the take that shapes the pose.
+        public AnimationClip GetClip(int layer)
+        {
+            AnimationClip clip = null;
+            float weight = 0f;
+
+            foreach (AnimatorClipInfo info in _animator.GetCurrentAnimatorClipInfo(layer))
+            {
+                if (info.weight > weight)
+                    (clip, weight) = (info.clip, info.weight);
+            }
+
+            return clip;
+        }
+
+        /// The state info reports an infinite length while the animator is paused, the clip does not.
+        public float GetLength(int layer)
+        {
+            AnimationClip clip = GetClip(layer);
+
+            return clip != null ? clip.length : 1f;
+        }
+
+        public float GetTime(int layer)
+        {
+            AnimatorStateInfo info = _animator.GetCurrentAnimatorStateInfo(layer);
+
+            return (info.loop ? Mathf.Repeat(info.normalizedTime, 1f) : Mathf.Clamp01(info.normalizedTime)) * GetLength(layer);
+        }
+
+        /// Point in GUI units (1080 high, y down) between the side panels.
+        public bool IsOverViewport(Vector2 point)
+        {
+            return point.x > (PanelWidth + Margin) * 2f && point.x < Screen.width * GuiHeight / Screen.height - PanelWidth - Margin;
+        }
+
         private void SelectWeapon(int index)
         {
             foreach (GameObject attachment in _attachments)
@@ -254,21 +307,6 @@ namespace Game.Scripts.Battle
             return _current[layer].Length > 0 && info.IsName(_current[layer]);
         }
 
-        /// The state info reports an infinite length while the animator is paused, the clip does not.
-        private float GetLength(int layer)
-        {
-            AnimatorClipInfo[] clips = _animator.GetCurrentAnimatorClipInfo(layer);
-
-            return clips.Length > 0 ? clips[0].clip.length : 1f;
-        }
-
-        private float GetTime(int layer)
-        {
-            AnimatorStateInfo info = _animator.GetCurrentAnimatorStateInfo(layer);
-
-            return (info.loop ? Mathf.Repeat(info.normalizedTime, 1f) : Mathf.Clamp01(info.normalizedTime)) * GetLength(layer);
-        }
-
         private AttackPhase GetPhase(float time)
         {
             if (_attack == null)
@@ -279,10 +317,7 @@ namespace Game.Scripts.Battle
 
         private void UpdateOrbit()
         {
-            float x = Input.mousePosition.x * GuiHeight / Screen.height;
-            bool isOverView = x > (PanelWidth + Margin) * 2f && x < Screen.width * GuiHeight / Screen.height - PanelWidth - Margin;
-
-            if (isOverView)
+            if (IsOverViewport(Input.mousePosition * GuiHeight / Screen.height))
                 _distance = Mathf.Clamp(_distance - Input.mouseScrollDelta.y * 0.3f, 1f, 8f);
 
             if (!Input.GetMouseButton(1))
@@ -349,13 +384,7 @@ namespace Game.Scripts.Battle
             GUILayout.Label("RMB drag: orbit, wheel: zoom");
         }
 
-        private void Seek(float normalizedTime)
-        {
-            _isPaused = true;
-            Play(_layer, _current[_layer], normalizedTime);
-        }
-
-        private static bool Button(string text, bool isSelected)
+        public static bool Button(string text, bool isSelected)
         {
             GUI.color = isSelected ? Color.yellow : Color.white;
             bool isPressed = GUILayout.Button(text);
@@ -364,7 +393,7 @@ namespace Game.Scripts.Battle
             return isPressed;
         }
 
-        private static float Slider(string label, float value, float min, float max)
+        public static float Slider(string label, float value, float min, float max)
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label($"{label} {value:F2}", GUILayout.Width(100f));

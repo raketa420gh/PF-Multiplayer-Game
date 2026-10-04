@@ -46,7 +46,9 @@ namespace Game.Scripts.Editor.Battle
             animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<AnimatorController>(BattleEditorUtility.ControllerPath);
             animator.applyRootMotion = false;
 
-            SerializedObject so = new SerializedObject(new GameObject("[System]").AddComponent<AnimationTestView>());
+            GameObject system = new GameObject("[System]");
+            AnimationTestView test = system.AddComponent<AnimationTestView>();
+            SerializedObject so = new SerializedObject(test);
             BattleEditorUtility.Set(so, "_animator", animator);
             BattleEditorUtility.Set(so, "_camera", camera.GetComponent<Camera>());
             BattleEditorUtility.Set(so, "_body", AssetDatabase.LoadAssetAtPath<BodyConfig>($"{BattleEditorUtility.ConfigsFolder}/Body.asset"));
@@ -55,6 +57,13 @@ namespace Game.Scripts.Editor.Battle
                 .Select(guid => AssetDatabase.LoadAssetAtPath<WeaponConfig>(AssetDatabase.GUIDToAssetPath(guid)))
                 .ToArray());
             so.ApplyModifiedPropertiesWithoutUndo();
+
+            SerializedObject editor = new SerializedObject(system.AddComponent<AnimationEditorView>());
+            BattleEditorUtility.Set(editor, "_test", test);
+            BattleEditorUtility.Set(editor, "_animator", animator);
+            BattleEditorUtility.Set(editor, "_camera", camera.GetComponent<Camera>());
+            BattleEditorUtility.Set(editor, "_config", BattleEditorUtility.LoadOrCreate<AnimationEditConfig>(AnimationEditBaker.ConfigPath));
+            editor.ApplyModifiedPropertiesWithoutUndo();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log($"[{nameof(BattleAnimationTestSceneBuilder)}] Scene built: {ScenePath}");

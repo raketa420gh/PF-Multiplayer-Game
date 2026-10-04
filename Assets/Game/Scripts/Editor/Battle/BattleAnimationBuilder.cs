@@ -58,10 +58,26 @@ namespace Game.Scripts.Editor.Battle
             AddState(upper, FighterAnimComponent.BandageFirstPersonState, Record(rig, FighterAnimComponent.BandageFirstPersonState, BandageCycle, true,
                 time => BattleAnimationLibrary.Bandage(time / BandageCycle)));
             BuildHitReactions(controller.layers[2].stateMachine);
+            BakeEdits();
 
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
             Debug.Log($"[{nameof(BattleAnimationBuilder)}] Animations built in {BattleEditorUtility.AnimationsFolder}");
+        }
+
+        /// Hand edits made in the animation test scene go back onto the freshly generated clips.
+        private static void BakeEdits()
+        {
+            AnimationEditConfig edits = AssetDatabase.LoadAssetAtPath<AnimationEditConfig>(AnimationEditBaker.ConfigPath);
+
+            if (edits == null || edits.Clips.Count == 0)
+                return;
+
+            GameObject model = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath));
+            Animator animator = model.GetComponent<Animator>();
+            BattlePoseRig.CreateSockets(animator);
+            AnimationEditBaker.BakeAll(edits, animator);
+            UnityEngine.Object.DestroyImmediate(model);
         }
 
         private static AnimatorController CreateController()
