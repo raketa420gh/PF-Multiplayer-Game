@@ -23,6 +23,8 @@ namespace Game.Scripts.Battle
         private bool _isUiOpen;
         private bool _isLookFrozen;
 
+        private bool IsMoving => Cursor.lockState == CursorLockMode.Locked || _isUiOpen;
+
         private void OnEnable()
         {
             _networkEvents.OnInput.AddListener(OnInput);
@@ -43,6 +45,17 @@ namespace Game.Scripts.Battle
                 _resetButtons = false;
             }
 
+            if (!IsMoving)
+                return;
+
+            // An open menu frees the cursor but keeps walking, jumping and swapping what is in the hands.
+            Accumulate(PlayerInputButtons.Jump, Input.GetKey(KeyCode.Space));
+            Accumulate(PlayerInputButtons.Weapon1, Input.GetKey(KeyCode.Alpha1));
+            Accumulate(PlayerInputButtons.Weapon2, Input.GetKey(KeyCode.Alpha2));
+            Accumulate(PlayerInputButtons.Weapon3, Input.GetKey(KeyCode.Alpha3));
+            Accumulate(PlayerInputButtons.Weapon4, Input.GetKey(KeyCode.Alpha4));
+            Accumulate(PlayerInputButtons.Holster, Input.GetKey(KeyCode.X));
+
             if (Cursor.lockState != CursorLockMode.Locked)
                 return;
 
@@ -56,17 +69,11 @@ namespace Game.Scripts.Battle
             Accumulate(PlayerInputButtons.Secondary, Input.GetMouseButton(1));
             Accumulate(PlayerInputButtons.Sprint, Input.GetKey(KeyCode.LeftShift));
             Accumulate(PlayerInputButtons.Crouch, Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.C));
-            Accumulate(PlayerInputButtons.Jump, Input.GetKey(KeyCode.Space));
-            Accumulate(PlayerInputButtons.Weapon1, Input.GetKey(KeyCode.Alpha1));
-            Accumulate(PlayerInputButtons.Weapon2, Input.GetKey(KeyCode.Alpha2));
-            Accumulate(PlayerInputButtons.Weapon3, Input.GetKey(KeyCode.Alpha3));
-            Accumulate(PlayerInputButtons.Weapon4, Input.GetKey(KeyCode.Alpha4));
             Accumulate(PlayerInputButtons.BotMode, Input.GetKey(KeyCode.B));
             Accumulate(PlayerInputButtons.Interact, Input.GetKey(KeyCode.F));
             Accumulate(PlayerInputButtons.Skill1, Input.GetKey(KeyCode.Q));
             Accumulate(PlayerInputButtons.Skill2, Input.GetKey(KeyCode.E));
             Accumulate(PlayerInputButtons.Spell1, Input.GetKey(KeyCode.Z));
-            Accumulate(PlayerInputButtons.Holster, Input.GetKey(KeyCode.X));
             Accumulate(PlayerInputButtons.Spell3, Input.GetKey(KeyCode.V));
             Accumulate(PlayerInputButtons.Spell4, Input.GetKey(KeyCode.R));
             Accumulate(PlayerInputButtons.Spell5, Input.GetKey(KeyCode.T));
@@ -122,7 +129,7 @@ namespace Game.Scripts.Battle
 
         private void OnInput(NetworkRunner runner, NetworkInput input)
         {
-            Vector2 move = Cursor.lockState == CursorLockMode.Locked
+            Vector2 move = IsMoving
                 ? new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"))
                 : Vector2.zero;
 

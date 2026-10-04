@@ -19,7 +19,7 @@ namespace Game.Scripts.Editor.Dungeon
             "<b>Controls</b>\n" +
             "WASD move · Shift walk (quiet) · Space jump · Ctrl/C crouch (duck under swings)\n" +
             "LMB attack / draw · RMB block, or hold to cast a readied spell · 1 / 2 weapon sets · X put the weapon away · Tab inventory\n" +
-            "3 / 4 belt item in hand (press again for the next of three), LMB use, RMB put away · F interact (hold; chests and corpses open at once) · Q / E skills · G rest · H help\n" +
+            "3 / 4 belt item in hand (press again for the next of three), LMB use, RMB put away · F interact (hold; chests and corpses open at once) · Q / E skills · G rest · M map · H help\n" +
             "Casters need a staff, spellbook or crystal ball in hand; bards need an instrument. Rest at a campfire to recover charges.";
 
         private static readonly Color s_panel = new(0.04f, 0.035f, 0.03f, 0.92f);
@@ -57,6 +57,7 @@ namespace Game.Scripts.Editor.Dungeon
             ResultView result = BuildResult(root);
             HelpView help = BuildHelp(root);
             SpellWheelView wheel = BuildWheel(root);
+            MapView map = BuildMap(root, inputs);
             LoadingView loading = BuildLoading(root, inputs.Title);
 
             DungeonUiRoot uiRoot = canvasObject.AddComponent<DungeonUiRoot>();
@@ -68,6 +69,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_result", result);
             BattleEditorUtility.Set(so, "_help", help);
             BattleEditorUtility.Set(so, "_wheel", wheel);
+            BattleEditorUtility.Set(so, "_map", map);
             BattleEditorUtility.Set(so, "_inventoryPreview", dungeonPreview);
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -76,6 +78,7 @@ namespace Game.Scripts.Editor.Dungeon
             result.gameObject.SetActive(false);
             help.gameObject.SetActive(false);
             wheel.gameObject.SetActive(false);
+            map.gameObject.SetActive(false);
             BattleEditorUtility.SetLayerRecursively(canvasObject, LayerMask.NameToLayer("UI"));
 
             return canvasObject;
@@ -1148,7 +1151,7 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 StatId[] stats =
                 {
-                    StatId.Health, StatId.Poise, StatId.ArmorRating, StatId.PhysicalReduction, StatId.MagicResistance, StatId.MagicalReduction,
+                    StatId.Health, StatId.MoveSpeed, StatId.ArmorRating, StatId.PhysicalReduction, StatId.MagicResistance, StatId.MagicalReduction,
                     StatId.PhysicalDamage, StatId.ActionSpeed
                 };
                 float pitch = (width - 16f) / stats.Length;
@@ -1569,6 +1572,61 @@ namespace Game.Scripts.Editor.Dungeon
             ((RectTransform)button.transform).pivot = new Vector2(0f, 1f);
 
             return button;
+        }
+
+        /// Full floor map on M: parchment with the module grid and names, the player's arrow on top.
+        private static MapView BuildMap(Transform root, Inputs inputs)
+        {
+            const float size = 760f;
+            Vector2 center = new(0.5f, 0.5f);
+            int grid = DungeonMapBuilder.Grid;
+            RectTransform panel = CreateRect("Map", root, center, Vector2.zero, new Vector2(size + 40f, size + 90f));
+            CreateImage("Back", panel, center, Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
+            TMP_Text title = CreateText("Title", panel, new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(size, 34f), 24f, TextAlignmentOptions.Center);
+            title.rectTransform.pivot = new Vector2(0.5f, 1f);
+            title.color = s_gold;
+            CreateImage("Frame", panel, center, new Vector2(0f, -15f), new Vector2(size + 8f, size + 8f), s_frame);
+            RawImage mapImage = CreateRect("Floor", panel, center, new Vector2(0f, -15f), new Vector2(size, size)).gameObject.AddComponent<RawImage>();
+            mapImage.color = new Color(0.9f, 0.85f, 0.7f);
+            mapImage.raycastTarget = false;
+            TMP_Text[] labels = new TMP_Text[grid * grid];
+
+            for (int i = 0; i < labels.Length; i++)
+            {
+                Vector2 position = new Vector2((i % grid + 0.5f) / grid - 0.5f, (i / grid + 0.5f) / grid - 0.5f) * size;
+                labels[i] = CreateText("Module" + i, mapImage.transform, center, position, new Vector2(size / grid - 10f, 30f), 17f, TextAlignmentOptions.Center);
+                labels[i].color = new Color(0.25f, 0.16f, 0.08f);
+                labels[i].fontStyle = FontStyles.Bold;
+            }
+
+            for (int i = 1; i < grid; i++)
+            {
+                float offset = ((float)i / grid - 0.5f) * size;
+                CreateImage("LineX" + i, mapImage.transform, center, new Vector2(offset, 0f), new Vector2(2f, size), new Color(0.3f, 0.2f, 0.1f, 0.35f));
+                CreateImage("LineZ" + i, mapImage.transform, center, new Vector2(0f, offset), new Vector2(size, 2f), new Color(0.3f, 0.2f, 0.1f, 0.35f));
+            }
+
+            Image arrow = CreateImage("Arrow", mapImage.transform, center, Vector2.zero, new Vector2(18f, 18f), new Color(0.95f, 0.75f, 0.2f));
+            arrow.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+            CreateImage("Tip", arrow.transform, center, new Vector2(0f, 12f), new Vector2(5f, 12f), new Color(0.95f, 0.75f, 0.2f));
+            TMP_Text hint = CreateText("Hint", panel, new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(size, 20f), 13f, TextAlignmentOptions.Center);
+            hint.rectTransform.pivot = new Vector2(0.5f, 0f);
+            hint.color = s_textDim;
+            hint.text = "M / Esc close";
+
+            MapView view = panel.gameObject.AddComponent<MapView>();
+            SerializedObject so = new SerializedObject(view);
+            BattleEditorUtility.Set(so, "_context", inputs.Context);
+            BattleEditorUtility.Set(so, "_map", mapImage);
+            BattleEditorUtility.Set(so, "_arrow", arrow.rectTransform);
+            BattleEditorUtility.Set(so, "_title", title);
+            BattleEditorUtility.Set(so, "_moduleLabels", labels);
+            BattleEditorUtility.Set(so, "_floorMaps", inputs.FloorMaps);
+            BattleEditorUtility.Set(so, "_floorModuleNames", inputs.ModuleNames);
+            BattleEditorUtility.Set(so, "_worldSize", DungeonMapBuilder.Module * DungeonMapBuilder.Grid);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            return view;
         }
 
         private static HelpView BuildHelp(Transform root)

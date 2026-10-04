@@ -27,6 +27,9 @@ namespace Game.Scripts.Dungeon
         private SpellWheelView _wheel;
 
         [SerializeField]
+        private MapView _map;
+
+        [SerializeField]
         private CharacterPreviewView _inventoryPreview;
 
         [Tooltip("Optional developer panel shown together with the inventory (test ground)")]
@@ -76,8 +79,13 @@ namespace Game.Scripts.Dungeon
             if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.I))
                 SetInventoryOpen(!_isInventoryOpen);
 
+            if (Input.GetKeyDown(KeyCode.M) && _map.HasFloors)
+                _map.SetShown(!_map.IsShown);
+
             if (Input.GetKeyDown(KeyCode.Escape) && _isInventoryOpen)
                 SetInventoryOpen(false);
+            else if (Input.GetKeyDown(KeyCode.Escape))
+                _map.Hide();
 
             UpdateContainer();
             UpdateWheel();
@@ -208,6 +216,7 @@ namespace Game.Scripts.Dungeon
                     _result.Bind(_session);
                     _hud.Hide();
                     _inventory.Hide();
+                    _map.Hide();
                     _loading.Hide();
                     _result.Show();
                     _context.Battle.Input.SetUiOpen(true);
@@ -221,6 +230,7 @@ namespace Game.Scripts.Dungeon
             _hud.Hide();
             _result.Hide();
             _inventory.Hide();
+            _map.Hide();
             _loading.Show();
             _loading.SetStatus("Entering...", 1f);
             _context.Battle.Input.SetUiOpen(true);
@@ -231,6 +241,9 @@ namespace Game.Scripts.Dungeon
             _isInventoryOpen = isOpen;
             _inventory.SetShown(isOpen);
             _context.Battle.Input.SetUiOpen(isOpen);
+
+            if (isOpen)
+                _map.Hide();
 
             if (_devPanel != null)
                 _devPanel.SetShown(isOpen);
