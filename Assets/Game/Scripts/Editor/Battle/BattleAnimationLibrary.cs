@@ -56,6 +56,8 @@ namespace Game.Scripts.Editor.Battle
         /// The swing of the series this one is chained to. Its clip then sets off from where that swing ends its active
         /// phase instead of the idle pose: the weapon goes on from the cut into the next windup.
         public AttackDefinition After;
+        /// The off hand strikes. The swing is authored as the main hand's, and its states play mirrored.
+        public bool IsOffHand;
 
         public float Duration => Windup + Active + Recovery;
     }
@@ -114,6 +116,10 @@ namespace Game.Scripts.Editor.Battle
         public const float ArrowMaxSpeed = 30f;
         public const float ArrowGravity = -9.81f;
         public const float CrouchDrop = 0.45f;
+        /// Length of the drinking clip, which is how long a potion takes at the base Action Speed.
+        public const float DrinkTime = 129f / BattleAnimationBuilder.FrameRate;
+        /// A belt item is no handle to close the fist on: the fingers lie around it.
+        private const float HeldOpen = 0.55f;
 
         /// Eye of the simulation body. The crosshair is the ray from it along +Z: the upper body bends with the look
         /// pitch as one piece, so a swing keeps its place on the screen wherever the player looks.
@@ -515,6 +521,8 @@ namespace Game.Scripts.Editor.Battle
             pose.Off = Interpolate(before.Off, a.Off, b.Off, after.Off, alpha, isFlow);
             pose.Edge = Roll(a, b, pose.Main.Forward, alpha);
             pose.OffRoll = Mathf.LerpAngle(a.OffRoll, b.OffRoll, alpha);
+            pose.MainOpen = Mathf.Lerp(a.MainOpen, b.MainOpen, alpha);
+            pose.OffOpen = Mathf.Lerp(a.OffOpen, b.OffOpen, alpha);
 
             // A cut keeps its edge on the path of the strike point itself, not only on the keys.
             if (keys[next].Lead > 0f)
@@ -605,15 +613,72 @@ namespace Game.Scripts.Editor.Battle
             };
         }
 
+        /// A belt item waits upright in the main hand, low on the right of the view.
+        public static BodyPose Hold()
+        {
+            return Held(new(0.17f, 1.49f, 0.5f), new(-0.08f, 1f, 0.12f), new(-0.25f, 0.45f, 0.85f));
+        }
+
+        /// Drinking as in Dark and Darker: the bottle tips its mouth to the eyes on the way up, the hand turns over it
+        /// and pours it out before the face, then it comes back the same way.
         public static List<PoseKey> UseKeys()
         {
+            BodyPose tip = Held(new(0.03f, 1.62f, 0.42f), new(0.05f, 0.35f, -0.94f), new(-0.75f, 0.35f, 0.55f));
+            BodyPose drink = Held(new(-0.02f, 1.7f, 0.34f), new(0.08f, -0.25f, -0.96f), new(-0.9f, 0.25f, 0.35f), -4f);
+            BodyPose drain = Held(new(-0.02f, 1.72f, 0.33f), new(0.08f, -0.45f, -0.89f), new(-0.9f, 0.3f, 0.3f), -7f);
+
             return new List<PoseKey>
             {
-                new(0f, OneHanded(new(0.26f, 1.05f, 0.3f), new(0.2f, 0.4f, 0.9f))),
-                new(0.4f, OneHanded(new(0.08f, 1.52f, 0.22f), new(-0.3f, 0.95f, 0.1f), pitch: 6f), Ease.Out),
-                new(1.6f, OneHanded(new(0.06f, 1.55f, 0.2f), new(-0.3f, 0.95f, 0.1f), pitch: 8f)),
-                new(2f, OneHanded(new(0.26f, 1.05f, 0.3f), new(0.2f, 0.4f, 0.9f)))
+                new(0f, Hold()),
+                new(0.3f, tip),
+                new(0.65f, drink, Ease.Out),
+                new(1.38f, drain),
+                new(1.5f, tip),
+                new(1.75f, Hold()),
+                new(DrinkTime, Hold())
             };
+        }
+
+        /// The main hand holds an item by its axis with the forearm pointing a given way; the off hand rests by the hip.
+        private static BodyPose Held(Vector3 grip, Vector3 axis, Vector3 forearm, float pitch = 0f)
+        {
+            BodyPose pose = OneHanded(grip, axis, pitch: pitch);
+            pose.Edge = forearm;
+            pose.MainOpen = HeldOpen;
+
+            return pose;
+        }
+
+        /// Bare hands held alike on both sides: the thumb and the fingers of the main hand say how, the off hand mirrors it.
+        internal static BodyPose Guard(Vector3 hand, Vector3 thumb, Vector3 fingers, float open = 0f, float pitch = 0f)
+        {
+            BodyPose pose = Upper(0f, pitch);
+            pose.Main = new HandPose(hand, thumb);
+            pose.Edge = fingers;
+            pose.Off = new HandPose(Flip(hand), Flip(thumb), Flip(fingers));
+            pose.OffSocket = WeaponSocket.LeftHand;
+            pose.MainOpen = open;
+            pose.OffOpen = open;
+
+            return pose;
+        }
+
+        /// A punch: the fist of the main hand is upright, its knuckles turn to where it travels. The off hand, thumb up,
+        /// reaches out or waits by the chest.
+        internal static BodyPose Punch(Vector3 fist, Vector3 off, Vector3 offFingers, float offOpen, float yaw, float pitch = 0f)
+        {
+            BodyPose pose = Upper(yaw, pitch);
+            pose.Main = new HandPose(fist, Vector3.up);
+            pose.Off = new HandPose(off, Vector3.up, offFingers);
+            pose.OffSocket = WeaponSocket.LeftHand;
+            pose.OffOpen = offOpen;
+
+            return pose;
+        }
+
+        private static Vector3 Flip(Vector3 vector)
+        {
+            return new Vector3(-vector.x, vector.y, vector.z);
         }
 
         /// Bandaging as the player sees it: the off forearm is held up across the view and the main hand winds the

@@ -13,6 +13,7 @@ namespace Game.Scripts.Editor.Battle
 
         private const int BodyMuscleCount = 55;
         private const float FingerCurl = -0.8f;
+        private const float FingerOpen = 0.4f;
         private const float MaxStrideScale = 2f;
         private const float SprintSpeed = 1.44f;
         private const float BandageCycle = 0.9f;
@@ -54,7 +55,9 @@ namespace Game.Scripts.Editor.Battle
 
             BuildActions(upper);
             AddKeyed(rig, upper, FighterAnimComponent.CastFirstPersonState, 2f, SettleRoll(rig, BattleAnimationLibrary.CastKeys()));
-            AddKeyed(rig, upper, FighterAnimComponent.UseFirstPersonState, 2f, SettleRoll(rig, BattleAnimationLibrary.UseKeys()));
+            List<PoseKey> use = SettleRoll(rig, BattleAnimationLibrary.UseKeys());
+            AddKeyed(rig, upper, FighterAnimComponent.UseFirstPersonState, BattleAnimationLibrary.DrinkTime, use);
+            AddState(upper, FighterAnimComponent.HoldState, Record(rig, FighterAnimComponent.HoldState, 1f, true, _ => use[0].Pose));
             AddState(upper, FighterAnimComponent.BandageFirstPersonState, Record(rig, FighterAnimComponent.BandageFirstPersonState, BandageCycle, true,
                 time => BattleAnimationLibrary.Bandage(time / BandageCycle)));
             BuildHitReactions(controller.layers[2].stateMachine);
@@ -291,8 +294,7 @@ namespace Game.Scripts.Editor.Battle
             // The belt item sits in the right hand while the library drinks with the left: the state is flipped for good.
             // Mirroring a looped clip starts it half a cycle later, which the offset takes back.
             AnimatorState use = AddState(stateMachine, FighterAnimComponent.UseState, BattleEditorUtility.LoadLibraryClip("Consume_Loop"));
-            use.mirrorParameterActive = false;
-            use.mirror = true;
+            Flip(use);
             use.cycleOffset = 0.5f;
         }
 
@@ -334,10 +336,16 @@ namespace Game.Scripts.Editor.Battle
             for (int i = 0; i < weapon.Attacks.Length; i++)
             {
                 AttackDefinition attack = weapon.Attacks[i];
-                AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.AttackSuffix + i, attack.Duration,
+                AnimatorState swing = AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.AttackSuffix + i, attack.Duration,
                     BattleAnimationLibrary.AttackKeys(weapon, attack));
-                AddState(legs, prefix + FighterAnimComponent.AttackLegsSuffix + i,
+                AnimatorState footwork = AddState(legs, prefix + FighterAnimComponent.AttackLegsSuffix + i,
                     RecordAttackLegs(rig, prefix + FighterAnimComponent.AttackLegsSuffix + i, weapon, i));
+
+                if (!attack.IsOffHand)
+                    continue;
+
+                Flip(swing);
+                Flip(footwork);
             }
 
             if (weapon.CanBlock)
@@ -383,9 +391,9 @@ namespace Game.Scripts.Editor.Battle
             return keys;
         }
 
-        private static void AddKeyed(BattlePoseRig rig, AnimatorStateMachine stateMachine, string name, float duration, List<PoseKey> keys)
+        private static AnimatorState AddKeyed(BattlePoseRig rig, AnimatorStateMachine stateMachine, string name, float duration, List<PoseKey> keys)
         {
-            AddState(stateMachine, name, Record(rig, name, duration, false, time => BattleAnimationLibrary.Sample(keys, time)));
+            return AddState(stateMachine, name, Record(rig, name, duration, false, time => BattleAnimationLibrary.Sample(keys, time)));
         }
 
         private static AnimatorState AddState(AnimatorStateMachine stateMachine, string name, AnimationClip clip)
@@ -398,6 +406,24 @@ namespace Game.Scripts.Editor.Battle
             state.speedParameter = FighterAnimComponent.ActionSpeedParam;
 
             return state;
+        }
+
+        /// How far the fingers of a hand are curled over a clip: a single value while the hand keeps its grip.
+        private static AnimationCurve Curl(BodyPose[] poses, float duration, bool isOff)
+        {
+            AnimationCurve curve = new AnimationCurve();
+
+            for (int frame = 0; frame < poses.Length; frame++)
+                curve.AddKey(Mathf.Min(frame / FrameRate, duration), Mathf.Lerp(FingerCurl, FingerOpen, isOff ? poses[frame].OffOpen : poses[frame].MainOpen));
+
+            return Array.TrueForAll(curve.keys, key => key.value == curve[0].value) ? AnimationCurve.Constant(0f, duration, curve[0].value) : curve;
+        }
+
+        /// The state plays its clip mirrored whichever hand the weapon is in.
+        private static void Flip(AnimatorState state)
+        {
+            state.mirrorParameterActive = false;
+            state.mirror = true;
         }
 
         private static AnimationClip RecordWalk(BattlePoseRig rig, string name, float cycle, Vector2 direction, float stride,
@@ -460,11 +486,18 @@ namespace Game.Scripts.Editor.Battle
             for (int i = 0; i < muscles.Length; i++)
                 SetCurve(clip, HumanTrait.MuscleName[i], muscles[i]);
 
-            // Hands that hold something close into a grip; the spread muscles stay neutral.
+            // Hands that hold something close into a grip, free ones open as far as the poses say; the spread muscles stay neutral.
+            AnimationCurve[] curls = { Curl(poses, duration, false), Curl(poses, duration, true) };
+
             for (int i = BodyMuscleCount; i < HumanTrait.MuscleCount && poses[0].HasHands; i++)
             {
-                if (HumanTrait.MuscleName[i].Contains("Stretched"))
-                    SetCurve(clip, HumanTrait.MuscleName[i], AnimationCurve.Constant(0f, duration, FingerCurl));
+                string[] muscle = HumanTrait.MuscleName[i].Split(' ');
+
+                if (muscle[^1] != "Stretched")
+                    continue;
+
+                // The curve of a finger is named after its hand: 'Left Index 1 Stretched' is 'LeftHand.Index.1 Stretched'.
+                SetCurve(clip, $"{muscle[0]}Hand.{muscle[1]}.{muscle[2]} {muscle[3]}", curls[muscle[0] == "Left" ? 1 : 0]);
             }
 
             for (int i = 0; i < root.Length; i++)

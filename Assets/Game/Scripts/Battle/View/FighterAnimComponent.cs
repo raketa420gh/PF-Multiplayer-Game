@@ -29,6 +29,7 @@ namespace Game.Scripts.Battle
         public const string InteractState = "Interact";
         public const string CastFirstPersonState = "CastFp";
         public const string UseFirstPersonState = "UseFp";
+        public const string HoldState = "Hold";
         public const string ThrowState = "Throw";
         public const string OpenState = "Open";
         public const string PickUpState = "PickUp";
@@ -114,6 +115,7 @@ namespace Game.Scripts.Battle
         private static readonly int s_hitHead = Animator.StringToHash(HitHeadState);
         private static readonly int s_hitStagger = Animator.StringToHash(HitStaggerState);
         private static readonly int s_castRelease = Animator.StringToHash(CastReleaseState);
+        private static readonly int s_hold = Animator.StringToHash(HoldState);
 
         /// Indexed by CombatComponent.BusyKind.
         private static readonly int[] s_busy =
@@ -155,6 +157,7 @@ namespace Game.Scripts.Battle
         private float _landLeft;
         private bool _isHeadHidden;
         private bool _isKneeling;
+        private bool _isHolding;
 
         public override void Spawned()
         {
@@ -187,6 +190,12 @@ namespace Game.Scripts.Battle
         public void SetKneeling(bool isKneeling)
         {
             _isKneeling = isKneeling;
+        }
+
+        /// While set, the idle hands hold an item instead of the weapon.
+        public void SetHolding(bool isHolding)
+        {
+            _isHolding = isHolding;
         }
 
         private void LateUpdate()
@@ -356,7 +365,7 @@ namespace Game.Scripts.Battle
                     }
                     break;
                 default:
-                    state = states.Idle;
+                    state = _isHolding ? s_hold : states.Idle;
                     time = 0f;
                     break;
             }

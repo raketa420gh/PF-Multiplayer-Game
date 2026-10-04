@@ -118,6 +118,9 @@ namespace Game.Scripts.Dungeon
             _ => false
         };
 
+        /// A potion is being drunk: the animation says it all, no progress bar; bandages and surgical kits fill one.
+        public bool IsDrinking => Pending == PendingAction.Consumable && _fighter.Combat.BusyKind == BusyUse;
+
         /// Bag index of the item being discovered in the opened container, NoSearch when nothing is left to find.
         [Networked]
         public byte SearchIndex { get; private set; } = NoSearch;

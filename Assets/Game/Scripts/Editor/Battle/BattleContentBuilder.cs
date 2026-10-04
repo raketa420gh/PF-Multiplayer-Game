@@ -597,7 +597,7 @@ namespace Game.Scripts.Editor.Battle
                 AttackDefinition attack = weapon.Attacks[attackIndex];
                 string state = weapon.Prefix + FighterAnimComponent.AttackSuffix + attackIndex;
                 int samples = Mathf.CeilToInt(attack.Duration * BattleAnimationBuilder.FrameRate);
-                Transform socket = _sockets[(int)WeaponSocket.RightHand];
+                Transform socket = _sockets[(int)(attack.IsOffHand ? WeaponSocket.LeftHand : WeaponSocket.RightHand)];
 
                 traceBase = new List<Vector3>(samples + 1);
                 traceTip = new List<Vector3>(samples + 1);

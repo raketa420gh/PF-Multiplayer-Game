@@ -114,6 +114,9 @@ namespace Game.Scripts.Editor.Dungeon
     /// Items, classes, abilities and perks of the prototype.
     internal static class DungeonItemLibrary
     {
+        /// Every drink takes as long as its animation.
+        private const float DrinkTime = Game.Scripts.Editor.Battle.BattleAnimationLibrary.DrinkTime;
+
         private static readonly Color s_steel = new(0.8f, 0.82f, 0.88f);
         private static readonly Color s_wood = new(0.65f, 0.45f, 0.25f);
         private static readonly Color s_leather = new(0.55f, 0.35f, 0.18f);
@@ -169,10 +172,10 @@ namespace Game.Scripts.Editor.Dungeon
                 Jewelry("Gem Ring", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Reflex, 1f)),
 
                 Consumable("Bandage", ConsumableEffect.HealInstant, 15f, 0f, 4f, 3, "+", new Color(0.9f, 0.9f, 0.85f), 5, "Wrap a wound. Heals after a few seconds."),
-                Consumable("Potion of Healing", ConsumableEffect.HealOverTime, 20f, 20f, 3f, 3, "Po", s_potion, 12, "Restores health over time."),
-                Consumable("Potion of Protection", ConsumableEffect.Protection, 10f, 24f, 3f, 3, "Po", new Color(0.3f, 0.5f, 1f), 14, "A shield that absorbs physical damage."),
+                Consumable("Potion of Healing", ConsumableEffect.HealOverTime, 20f, 20f, DrinkTime, 3, "Po", s_potion, 12, "Restores health over time."),
+                Consumable("Potion of Protection", ConsumableEffect.Protection, 10f, 24f, DrinkTime, 3, "Po", new Color(0.3f, 0.5f, 1f), 14, "A shield that absorbs physical damage."),
                 Consumable("Surgical Kit", ConsumableEffect.HealInstant, 100f, 0f, 12f, 1, "+", new Color(0.7f, 0.2f, 0.2f), 30, "Full heal after a long, vulnerable procedure.", 2, 2),
-                Consumable("Ale", ConsumableEffect.Haste, 6f, 15f, 3f, 2, "Al", new Color(0.85f, 0.6f, 0.2f), 8, "Liquid courage. Quickens the step."),
+                Consumable("Ale", ConsumableEffect.Haste, 6f, 15f, DrinkTime, 2, "Al", new Color(0.85f, 0.6f, 0.2f), 8, "Liquid courage. Quickens the step."),
 
                 Utility("Francisca Axe", UtilityKind.ThrowingWeapon, 18, 0.5f, 2, 1, 2, "Ax", s_steel, 12, "Thrown axe."),
                 Utility("Throwing Knife", UtilityKind.ThrowingWeapon, 14, 0.4f, 2, 1, 2, "Dg", s_steel, 10, "Thrown knife."),
@@ -243,8 +246,8 @@ namespace Game.Scripts.Editor.Dungeon
                 Jewelry("Ring of Finesse", EquipSlot.Ring1, "Rg", new Color(0.95f, 0.85f, 0.4f), 60, new StatModifier(StatType.Craft, 2f)),
                 Jewelry("Ring of Wisdom", EquipSlot.Ring1, "Rg", new Color(0.5f, 0.65f, 1f), 60, new StatModifier(StatType.Resonance, 2f)),
 
-                Consumable("Troll's Blood", ConsumableEffect.HealOverTime, 45f, 30f, 2f, 1, "Tb", new Color(0.35f, 0.75f, 0.3f), 40, "Thick green blood. Slowly knits even grave wounds."),
-                Consumable("Potion of Invisibility", ConsumableEffect.Invisibility, 0f, 8f, 1.5f, 2, "Po", new Color(0.8f, 0.85f, 0.95f), 30, "Monsters and players lose sight of you for a few seconds."),
+                Consumable("Troll's Blood", ConsumableEffect.HealOverTime, 45f, 30f, DrinkTime, 1, "Tb", new Color(0.35f, 0.75f, 0.3f), 40, "Thick green blood. Slowly knits even grave wounds."),
+                Consumable("Potion of Invisibility", ConsumableEffect.Invisibility, 0f, 8f, DrinkTime, 2, "Po", new Color(0.8f, 0.85f, 0.95f), 30, "Monsters and players lose sight of you for a few seconds."),
 
                 Treasure("Silver Chalice", 1, 1, 1, 28, "Ch", s_silver),
                 Treasure("Gold Crown", 2, 2, 1, 220, "Cr", s_gold),

@@ -338,11 +338,12 @@ namespace Game.Scripts.Editor.Dungeon
             return null;
         }
 
+        /// Bare hands of Dark and Darker. Open hands wait low in the view; a hook comes round from the right, then one
+        /// from the left, each while the other hand reaches out at the target; the block shuts both forearms before
+        /// the face. A fist is a short blade that runs across it, from the palm to the thumb.
         private static WeaponDefinition CreateFists()
         {
-            // A fist is a short blade that runs across it, from the palm to the thumb: held upright, it is carried forward
-            // by the forearm, knuckles first.
-            BodyPose idle = BattleAnimationLibrary.OneHanded(new(0.2f, 1.32f, 0.3f), new(-0.3f, 0.9f, 0.3f));
+            BodyPose idle = BattleAnimationLibrary.Guard(new(0.2f, 1.47f, 0.48f), new(-0.3f, 0.95f, 0f), new(-0.35f, 0.45f, 0.8f), 0.6f);
 
             return new WeaponDefinition
             {
@@ -355,25 +356,7 @@ namespace Game.Scripts.Editor.Dungeon
                 BladeTip = 0.12f,
                 IsUnarmed = true,
                 Idle = idle,
-                Attacks = new[]
-                {
-                    new AttackDefinition
-                    {
-                        Windup = 0.22f, Active = 0.12f, Recovery = 0.3f, ComboStart = 0.3f, ComboEnd = 0.6f,
-                        Damage = 8, MoveMultiplier = 0.8f,
-                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.26f, 1.42f, 0.14f), new(-0.2f, 0.95f, 0.2f), yaw: 16f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(0f, 1.68f, 0.54f), Vector3.up),
-                        EndPose = BattleAnimationLibrary.OneHanded(new(-0.02f, 1.69f, 0.6f), new(-0.1f, 0.98f, 0.15f), yaw: -12f)
-                    },
-                    new AttackDefinition
-                    {
-                        Windup = 0.22f, Active = 0.12f, Recovery = 0.3f, ComboStart = 0.3f, ComboEnd = 0.6f,
-                        Damage = 8, MoveMultiplier = 0.8f,
-                        WindupPose = BattleAnimationLibrary.OneHanded(new(0.4f, 1.5f, 0.2f), new(0f, 1f, 0.1f), yaw: 22f),
-                        MidPose = BattleAnimationLibrary.OneHanded(new(0.04f, 1.68f, 0.54f), Vector3.up),
-                        EndPose = BattleAnimationLibrary.OneHanded(new(-0.14f, 1.62f, 0.42f), new(-0.2f, 0.95f, 0.2f), yaw: -20f)
-                    }
-                },
+                Attacks = new[] { Hook(34 * Frame, false), Hook(22 * Frame, true) },
                 CanBlock = true,
                 BlockRaise = 0.15f,
                 BlockMitigation = 0.4f,
@@ -381,13 +364,32 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockRecovery = 0.3f,
                 BlockAngle = 80f,
                 BlockMove = 0.7f,
-                Block = BattleAnimationLibrary.Cast(0.18f, 0.36f, 1.5f),
-                BlockHit = BattleAnimationLibrary.Cast(0.2f, 0.3f, 1.44f, -4f),
-                BlockLowered = BattleAnimationLibrary.Cast(0.2f, 0.3f, 1.36f),
+                Block = BattleAnimationLibrary.Guard(new(0.045f, 1.87f, 0.29f), new(1f, 0f, -0.2f), Vector3.up),
+                BlockHit = BattleAnimationLibrary.Guard(new(0.05f, 1.83f, 0.24f), new(1f, 0f, -0.2f), new(0f, 1f, -0.15f), pitch: -4f),
+                BlockLowered = BattleAnimationLibrary.Guard(new(0.05f, 1.81f, 0.27f), new(1f, 0f, -0.2f), Vector3.up),
                 DeflectPose = idle,
                 BlockSocket = WeaponSocket.LeftHand,
                 BlockBoxCenter = Vector3.zero,
                 BlockBoxExtents = new Vector3(0.14f, 0.14f, 0.08f)
+            };
+        }
+
+        /// The fist is drawn back to the side while the free hand reaches out, then swings level across the view.
+        private static AttackDefinition Hook(float windup, bool isOffHand)
+        {
+            const float active = 9 * Frame;
+            const float recovery = 0.5f;
+            Vector3 guard = new Vector3(-0.2f, 1.36f, 0.3f);
+            Vector3 ahead = new Vector3(0.2f, 0.25f, 0.95f);
+
+            return new AttackDefinition
+            {
+                Windup = windup, Active = active, Recovery = recovery,
+                ComboStart = windup + active * 0.5f, ComboEnd = windup + active + recovery * 0.65f,
+                Damage = 8, MoveMultiplier = 0.8f, IsOffHand = isOffHand,
+                WindupPose = BattleAnimationLibrary.Punch(new(0.44f, 1.56f, 0.1f), new(-0.02f, 1.57f, 0.47f), ahead, 1f, 30f),
+                MidPose = BattleAnimationLibrary.Punch(new(0f, 1.68f, 0.5f), guard, ahead, 0f, -38f, 8f),
+                EndPose = BattleAnimationLibrary.Punch(new(-0.34f, 1.6f, 0.44f), guard, ahead, 0f, -50f, 8f)
             };
         }
 

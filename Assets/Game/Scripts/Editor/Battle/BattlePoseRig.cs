@@ -49,6 +49,9 @@ namespace Game.Scripts.Editor.Battle
         public Vector3 Edge;
         /// How far an off hand on the same weapon is turned about it from the main hand, in degrees: hands keep their grip.
         public float OffRoll;
+        /// How far the fingers of the main and the off hand are open, 0..1: a hand that holds nothing is not always a fist.
+        public float MainOpen;
+        public float OffOpen;
     }
 
     /// Poses a model instance with FK/IK in root space and converts the result to humanoid muscle curves.
