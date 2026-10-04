@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -8,6 +9,7 @@ namespace Game.Scripts.Battle
     /// Frame-by-frame bone posing on top of the animation test scene: pick a bone, turn it with the rotation rings and the change
     /// is keyed on the current frame of the clip under edit. Edited clips play from their untouched source with the keys turned on
     /// top; Save bakes the keys into the clip and keeps them in AnimationEditConfig, so the next animation rebuild puts them back.
+    /// Grip points mark where hands take hold of the current weapon; a hand snapped to a point stays on it while the point moves.
     [DefaultExecutionOrder(-100)]
     public sealed class AnimationEditorView : MonoBehaviour
     {
@@ -32,14 +34,18 @@ namespace Game.Scripts.Battle
 
         private const int BaseLayer = AnimationTestView.BaseLayer;
         private const int UpperLayer = AnimationTestView.UpperLayer;
+        private const int BonesTab = 0;
+        private const int PointsTab = 1;
         private const int ViewAxis = 3;
         private const int RingSegments = 64;
         private const float FrameRate = 60f;
         private const float GuiHeight = AnimationTestView.GuiHeight;
         private const float Margin = AnimationTestView.Margin;
-        private const float TimelineHeight = 196f;
-        private const float BonePanelWidth = 280f;
-        private const float TrackLabelWidth = 90f;
+        private const float HeaderHeight = 38f;
+        private const float TimelineHeight = 140f;
+        private const float InspectorWidth = 300f;
+        private const float HelpWidth = 380f;
+        private const float TrackLabelWidth = 96f;
         private const float RulerHeight = 18f;
         private const float RowHeight = 22f;
         private const float KeySize = 9f;
@@ -47,6 +53,9 @@ namespace Game.Scripts.Battle
         private const float ViewRingScale = 1.2f;
         private const float ReplayWindow = 2f;
         private const float JointScale = 0.05f;
+        private const float PointScale = 0.3f;
+        private const float PointReach = 0.8f;
+        private const float PointSide = 0.2f;
         private const HumanBodyBones NoBone = HumanBodyBones.LastBone;
 
         private static readonly Vector3[] s_axes = { Vector3.right, Vector3.up, Vector3.forward };
@@ -54,10 +63,20 @@ namespace Game.Scripts.Battle
         private static readonly Color s_activeColor = new(1f, 0.85f, 0.2f);
         private static readonly Color s_keyColor = new(1f, 0.55f, 0.15f);
         private static readonly Color s_trackColor = new(0.55f, 0.85f, 1f);
-        private static readonly Color s_cursorColor = new(1f, 0.25f, 0.25f);
-        private static readonly Color s_gripColor = new(1f, 0.3f, 1f, 0.45f);
-        private static readonly Color s_rangeColor = new(0.3f, 0.8f, 1f, 0.25f);
+        private static readonly Color s_cursorColor = new(1f, 0.3f, 0.3f);
+        private static readonly Color s_gripColor = new(1f, 0.35f, 1f);
+        private static readonly Color s_rangeColor = new(0.3f, 0.8f, 1f, 0.2f);
+        private static readonly Color s_rowColor = new(1f, 1f, 1f, 0.03f);
         private static readonly string[] s_layerNames = { "Legs", "Upper body" };
+
+        private static readonly string[] s_help =
+        {
+            "LMB joint / grip point — select,  empty space or Esc — deselect", "Drag a ring — rotate (E),  drag an arrow — move (W)",
+            "RMB — orbit,  wheel — zoom", "Space — play / pause,  , .  — frame,  [ ]  — previous / next key",
+            "K — key bone,  Shift+K — key pose", "X / Del — delete key,  with Shift — the whole pose",
+            "R — reset bone (or point rotation)", "C / V — copy / paste pose", "G — snap the selected hand to the nearest grip point",
+            "Shift+drag the timeline — range,  I — in-betweens", "Z — undo,  Shift+Z — redo,  Tab — hide the editor"
+        };
 
         private static readonly HumanBodyBones[] s_legBones =
         {
@@ -75,18 +94,24 @@ namespace Game.Scripts.Battle
         private readonly List<HumanBodyBones> _bones = new();
         private readonly Dictionary<HumanBodyBones, HumanBodyBones> _parents = new();
         private readonly Dictionary<HumanBodyBones, int> _depths = new();
+        private readonly Dictionary<HumanBodyBones, string> _names = new();
         private readonly Vector3[] _ring = new Vector3[RingSegments + 1];
-        /// Weapon sockets as the character is built; holding grips move them, so they are put back every frame.
+        /// Weapon sockets as the character is built (the palm of each hand); holding grips move them, so they are put back every frame.
         private readonly Dictionary<HumanBodyBones, Pose> _socketRests = new();
         private AnimatorOverrideController _overrides;
         private Material _material;
-        private GUIStyle _listStyle;
+        private AnimationEditorSkin _skin;
         private ClipEdit _edit;
+        private WeaponGrips _grips;
+        private GripPoint _point;
         private HumanBodyBones _bone = NoBone;
-        private Rect _toggleRect;
+        private HumanBodyBones _carrier = NoBone;
+        private Rect _headerRect;
         private Rect _timelineRect;
-        private Rect _boneRect;
+        private Rect _inspectorRect;
+        private Rect _helpRect;
         private Vector2 _boneScroll;
+        private Vector2 _pointScroll;
         private Vector2 _lastMouse;
         private Vector2 _dragTangent;
         private Vector3 _moveTarget;
@@ -97,6 +122,7 @@ namespace Game.Scripts.Battle
         private int _draggedKey = -1;
         private int _editLayer = UpperLayer;
         private int _testLayer = -1;
+        private int _tab = BonesTab;
         private int _frame;
         private int _frameCount = 1;
         private int _rangeStart = -1;
@@ -111,6 +137,9 @@ namespace Game.Scripts.Battle
         private bool _isShowingBaked;
         private bool _isMoving;
         private bool _isSkeletonVisible = true;
+        private bool _arePointsVisible = true;
+        private bool _arePointsDirty;
+        private bool _isHelpVisible;
         private bool _isSelectingRange;
         private bool _isEasing = true;
 
@@ -151,6 +180,7 @@ namespace Game.Scripts.Battle
         private void OnDestroy()
         {
             Destroy(_material);
+            _skin?.Dispose();
         }
 
         private void Update()
@@ -158,10 +188,14 @@ namespace Game.Scripts.Battle
             if (Input.GetKeyDown(KeyCode.Tab))
                 _isOpen = !_isOpen;
 
+            Vector2 mouse = Input.mousePosition;
+            Vector2 point = new Vector2(mouse.x, Screen.height - mouse.y) * GuiHeight / Screen.height;
+            bool isOverGui = _headerRect.Contains(point) || _timelineRect.Contains(point) || _inspectorRect.Contains(point) || _helpRect.Contains(point);
             _test.SetEditing(_isOpen);
+            _test.SetViewportBlocked(isOverGui);
 
             if (Time.unscaledTime < _replayEnd && !_test.IsCurrent)
-                _test.Seek(_replayTime);
+                _test.Seek(_editLayer, _replayTime);
 
             if (_test.Layer != _testLayer)
                 _editLayer = (_testLayer = _test.Layer) == BaseLayer ? BaseLayer : UpperLayer;
@@ -170,17 +204,27 @@ namespace Game.Scripts.Battle
             _frameCount = Mathf.Max(1, Mathf.RoundToInt(_test.GetLength(_editLayer) * FrameRate));
             _framePosition = _test.GetTime(_editLayer) * FrameRate;
             _frame = Mathf.RoundToInt(_framePosition);
+            _grips = _config.GetGrips(_test.Weapon);
+            _carrier = _grips.GetCarrier();
 
             if (_bone != NoBone && !IsLayerBone(_bone))
                 _bone = NoBone;
 
+            if (_point != null && (!HasPoints() || _grips.Find(_point.Name) != _point))
+                _point = null;
+
             if (Input.GetMouseButtonUp(0))
                 _isChanging = false;
 
-            if (!_isOpen || _edit == null || _isShowingBaked)
+            if (!_isOpen || _edit == null)
                 return;
 
-            UpdateGizmo();
+            UpdateNavigation();
+
+            if (_isShowingBaked)
+                return;
+
+            UpdateGizmo(mouse, _test.IsOverViewport(point) && !isOverGui);
             UpdateShortcuts();
         }
 
@@ -204,32 +248,43 @@ namespace Game.Scripts.Battle
             float left = (AnimationTestView.PanelWidth + Margin) * 2f + Margin;
             float right = width - AnimationTestView.PanelWidth - Margin * 2f;
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
-            _listStyle ??= new GUIStyle(GUI.skin.button) { alignment = TextAnchor.MiddleLeft };
+            _skin ??= new AnimationEditorSkin();
 
-            _toggleRect = new Rect(left, Margin, 200f, 26f);
-
-            if (GUI.Button(_toggleRect, _isOpen ? "Close animation editor (Tab)" : "Animation editor (Tab)"))
-                _isOpen = !_isOpen;
+            _headerRect = new Rect(left, Margin, _isOpen ? right - left : 190f, HeaderHeight);
+            _timelineRect = _inspectorRect = _helpRect = Rect.zero;
+            GUILayout.BeginArea(_headerRect, _skin.Panel);
+            GUILayout.BeginHorizontal();
+            DrawHeader();
+            GUILayout.EndHorizontal();
+            GUILayout.EndArea();
 
             if (!_isOpen)
-            {
-                _timelineRect = _boneRect = Rect.zero;
-
                 return;
-            }
 
             _timelineRect = new Rect(left, GuiHeight - Margin - TimelineHeight, right - left, TimelineHeight);
-            _boneRect = _edit == null ? Rect.zero : new Rect(right - BonePanelWidth, Margin, BonePanelWidth, GuiHeight - TimelineHeight - Margin * 3f);
-
-            GUILayout.BeginArea(_timelineRect, GUI.skin.box);
+            GUILayout.BeginArea(_timelineRect, _skin.Panel);
             DrawTimelinePanel();
             GUILayout.EndArea();
+
+            if (_isHelpVisible)
+            {
+                _helpRect = new Rect(left, _headerRect.yMax + Margin, HelpWidth, s_help.Length * 22f + 44f);
+                GUILayout.BeginArea(_helpRect, _skin.Panel);
+                GUILayout.Label("Shortcuts", _skin.Header);
+
+                foreach (string line in s_help)
+                    GUILayout.Label(line, _skin.Hint);
+
+                GUILayout.EndArea();
+            }
 
             if (_edit == null)
                 return;
 
-            GUILayout.BeginArea(_boneRect, GUI.skin.box);
-            DrawBonePanel();
+            DrawPointLabels(scale);
+            _inspectorRect = new Rect(right - InspectorWidth, _headerRect.yMax + Margin, InspectorWidth, _timelineRect.y - _headerRect.yMax - Margin * 2f);
+            GUILayout.BeginArea(_inspectorRect, _skin.Panel);
+            DrawInspector();
             GUILayout.EndArea();
         }
 
@@ -259,6 +314,7 @@ namespace Game.Scripts.Battle
                 _bones.Add(bone);
                 _parents[bone] = parent != null ? bones[parent] : NoBone;
                 _depths[bone] = parent != null ? _depths[bones[parent]] + 1 : 0;
+                _names[bone] = Regex.Replace(bone.ToString(), "(?<=[a-z])(?=[A-Z])", " ");
             }
         }
 
@@ -302,11 +358,24 @@ namespace Game.Scripts.Battle
             return _edit.Find(bone)?.Evaluate(_frame) ?? new BoneKey(_frame, Quaternion.identity, Vector3.zero);
         }
 
+        private void Select(HumanBodyBones bone)
+        {
+            _bone = bone;
+            _point = null;
+            _tab = bone != NoBone ? BonesTab : _tab;
+        }
+
+        private void Select(GripPoint point)
+        {
+            _point = point;
+            _bone = NoBone;
+            _tab = PointsTab;
+        }
+
         private void SetFrame(int frame)
         {
-            float length = _test.GetLength(_editLayer);
-            _test.Seek(Mathf.Clamp01(Mathf.Clamp(frame, 0, _frameCount) / FrameRate / length));
             _framePosition = _frame = Mathf.Clamp(frame, 0, _frameCount);
+            _test.Seek(_editLayer, Mathf.Clamp01(_frame / FrameRate / _test.GetLength(_editLayer)));
         }
 
         private void JumpToKey(int direction)
@@ -329,10 +398,64 @@ namespace Game.Scripts.Battle
                 SetFrame(target);
         }
 
-        private void UpdateGizmo()
+        private void UpdateNavigation()
         {
-            Vector2 mouse = Input.mousePosition;
+            if (Input.GetKeyDown(KeyCode.Space))
+                _test.SetPaused(!_test.IsPaused);
 
+            if (Input.GetKeyDown(KeyCode.Comma))
+                SetFrame(_frame - 1);
+
+            if (Input.GetKeyDown(KeyCode.Period))
+                SetFrame(_frame + 1);
+
+            if (Input.GetKeyDown(KeyCode.LeftBracket))
+                JumpToKey(-1);
+
+            if (Input.GetKeyDown(KeyCode.RightBracket))
+                JumpToKey(1);
+
+            if (Input.GetKeyDown(KeyCode.Escape))
+                Select(NoBone);
+        }
+
+        private void UpdateShortcuts()
+        {
+            bool isShift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+            if (Input.GetKeyDown(KeyCode.K))
+                SetKeys(isShift);
+
+            if (Input.GetKeyDown(KeyCode.Delete) || Input.GetKeyDown(KeyCode.X))
+                DeleteKeys(isShift);
+
+            if (Input.GetKeyDown(KeyCode.W))
+                _isMoving = true;
+
+            if (Input.GetKeyDown(KeyCode.E))
+                _isMoving = false;
+
+            if (Input.GetKeyDown(KeyCode.R))
+                ResetSelection();
+
+            if (Input.GetKeyDown(KeyCode.C))
+                CopyPose();
+
+            if (Input.GetKeyDown(KeyCode.V))
+                PastePose();
+
+            if (Input.GetKeyDown(KeyCode.G))
+                SnapToNearest();
+
+            if (Input.GetKeyDown(KeyCode.I))
+                GenerateInBetweens();
+
+            if (Input.GetKeyDown(KeyCode.Z))
+                StepHistory(isShift ? _redo : _undo, isShift ? _undo : _redo);
+        }
+
+        private void UpdateGizmo(Vector2 mouse, bool isOverView)
+        {
             if (_dragAxis >= 0)
             {
                 if (!Input.GetMouseButton(0))
@@ -356,30 +479,48 @@ namespace Game.Scripts.Battle
                 return;
             }
 
-            Vector2 point = new Vector2(mouse.x, Screen.height - mouse.y) * GuiHeight / Screen.height;
-            bool isOverView = _test.IsOverViewport(point) && !_toggleRect.Contains(point) && !_timelineRect.Contains(point) && !_boneRect.Contains(point);
-            _hoverAxis = !isOverView || _bone == NoBone ? -1 : !_isMoving ? PickAxis(mouse) : CanMove(_bone) ? PickMoveAxis(mouse) : -1;
+            bool hasTarget = _bone != NoBone || _point != null;
+            _hoverAxis = !isOverView || !hasTarget ? -1 : !_isMoving ? PickAxis(mouse) : CanMove() ? PickMoveAxis(mouse) : -1;
 
             if (!isOverView || !Input.GetMouseButtonDown(0))
                 return;
 
             if (_hoverAxis < 0)
             {
-                _bone = PickBone(mouse);
+                Pick(mouse);
 
                 return;
             }
 
             _dragAxis = _hoverAxis;
             _lastMouse = mouse;
-            _moveTarget = GetBone(_bone).position;
+            _moveTarget = GetTarget().position;
+        }
+
+        /// World pose the gizmo works on: the selected grip point or bone.
+        private Pose GetTarget()
+        {
+            if (_point != null)
+                return GetPointPose(_point);
+
+            Transform bone = GetBone(_bone);
+
+            return new Pose(bone.position, bone.rotation);
         }
 
         private void Rotate(Vector2 delta)
         {
-            Quaternion rotation = GetBone(_bone).rotation;
-            Vector3 axis = _dragAxis < ViewAxis ? s_axes[_dragAxis] : Quaternion.Inverse(rotation) * _camera.transform.forward;
+            Pose target = GetTarget();
+            Vector3 axis = _dragAxis < ViewAxis ? s_axes[_dragAxis] : Quaternion.Inverse(target.rotation) * _camera.transform.forward;
             Quaternion turn = Quaternion.AngleAxis(Vector2.Dot(delta, _dragTangent) / _gizmoRadius * Mathf.Rad2Deg, axis);
+
+            if (_point != null)
+            {
+                SetPoint(_point.Pose.position, _point.Pose.rotation * turn);
+
+                return;
+            }
+
             HandGrip grip = GetActiveGrip(_bone);
 
             if (grip != null)
@@ -401,16 +542,24 @@ namespace Game.Scripts.Battle
             ChangeKey(_bone, new BoneKey(_frame, key.Rotation * turn, key.Position));
         }
 
-        /// The hips shift by themselves; any other joint is pulled by turning the bones above it, and the change is keyed as
-        /// rotations of those bones. A hand or a foot bends its limb and keeps its own orientation.
+        /// A grip point slides over its weapon. The hips shift by themselves; any other joint is pulled by turning the bones above
+        /// it, and the change is keyed as rotations of those bones. A hand or a foot bends its limb and keeps its own orientation.
         private void Move(Vector2 delta)
         {
-            Transform bone = GetBone(_bone);
             Transform camera = _camera.transform;
+            Vector3 position = GetTarget().position;
             _moveTarget += _dragAxis < ViewAxis
                 ? GetMoveAxis(_dragAxis) * (Vector2.Dot(delta, _dragTangent) * _dragScale)
-                : (camera.right * delta.x + camera.up * delta.y) * (GetRingRadius(bone.position, 0) / _gizmoRadius);
+                : (camera.right * delta.x + camera.up * delta.y) * (GetRingRadius(position, 0) / _gizmoRadius);
 
+            if (_point != null)
+            {
+                SetPoint(GetCarrierSocket().InverseTransformPoint(_moveTarget), _point.Pose.rotation);
+
+                return;
+            }
+
+            Transform bone = GetBone(_bone);
             HandGrip grip = GetActiveGrip(_bone);
 
             if (grip != null)
@@ -468,23 +617,27 @@ namespace Game.Scripts.Battle
             };
         }
 
-        /// Every bone the move would key must belong to the edited layer.
-        private bool CanMove(HumanBodyBones bone)
+        /// Points always move; a bone only when every bone the move would key belongs to the edited layer.
+        private bool CanMove()
         {
-            HumanBodyBones[] chain = GetMoveChain(bone);
+            if (_point != null || _bone == HumanBodyBones.Hips)
+                return true;
 
-            return bone == HumanBodyBones.Hips || chain.Length > 0 && Array.TrueForAll(chain, IsLayerBone);
+            HumanBodyBones[] chain = GetMoveChain(_bone);
+
+            return chain.Length > 0 && Array.TrueForAll(chain, IsLayerBone);
         }
 
+        /// Character axes for bones, weapon axes for grip points (Z runs along the blade).
         private Vector3 GetMoveAxis(int axis)
         {
-            return _animator.transform.rotation * s_axes[axis];
+            return (_point != null ? GetTarget().rotation : _animator.transform.rotation) * s_axes[axis];
         }
 
-        /// Axis arrows in character space; the square in the middle moves in the view plane.
+        /// Axis arrows; the square in the middle moves in the view plane.
         private int PickMoveAxis(Vector2 mouse)
         {
-            Vector3 position = GetBone(_bone).position;
+            Vector3 position = GetTarget().position;
             float radius = GetRingRadius(position, 0);
             Vector2 center = _camera.WorldToScreenPoint(position);
 
@@ -511,6 +664,207 @@ namespace Game.Scripts.Battle
             return picked;
         }
 
+        /// Index of the ring under the mouse (local X, Y, Z or the view ring) and the screen direction that turns it forward.
+        private int PickAxis(Vector2 mouse)
+        {
+            Pose target = GetTarget();
+            float best = PickDistance;
+            int axis = -1;
+
+            for (int i = 0; i <= ViewAxis; i++)
+            {
+                Vector3 normal = GetRingNormal(target.rotation, i);
+                BuildRing(target.position, normal, GetRingRadius(target.position, i));
+
+                for (int j = 0; j < RingSegments; j++)
+                {
+                    Vector3 a = _camera.WorldToScreenPoint(_ring[j]);
+                    Vector3 b = _camera.WorldToScreenPoint(_ring[j + 1]);
+                    float distance = DistanceToSegment(mouse, a, b);
+
+                    if (a.z <= 0f || distance >= best)
+                        continue;
+
+                    best = distance;
+                    axis = i;
+                    Vector3 tangent = Vector3.Cross(normal, _ring[j] - target.position) * 0.05f;
+                    _dragTangent = ((Vector2)_camera.WorldToScreenPoint(_ring[j] + tangent) - (Vector2)a).normalized;
+                }
+            }
+
+            return axis;
+        }
+
+        /// Joints of the edited layer and grip points of the weapon; clicking past all of them clears the selection.
+        private void Pick(Vector2 mouse)
+        {
+            HumanBodyBones bone = NoBone;
+            GripPoint point = null;
+            float best = PickDistance * 1.5f;
+
+            foreach (HumanBodyBones candidate in _bones)
+            {
+                if (IsLayerBone(candidate) && TryGetScreenDistance(mouse, GetBone(candidate).position, best, out float distance))
+                    (bone, best) = (candidate, distance);
+            }
+
+            if (ArePointsShown())
+            {
+                foreach (GripPoint candidate in _grips.Points)
+                {
+                    if (TryGetScreenDistance(mouse, GetPointPose(candidate).position, best, out float distance))
+                        (point, best) = (candidate, distance);
+                }
+            }
+
+            if (point != null)
+                Select(point);
+            else
+                Select(bone);
+        }
+
+        private bool TryGetScreenDistance(Vector2 mouse, Vector3 position, float limit, out float distance)
+        {
+            Vector3 point = _camera.WorldToScreenPoint(position);
+            distance = Vector2.Distance(mouse, point);
+
+            return point.z > 0f && distance < limit;
+        }
+
+        private Vector3 GetRingNormal(Quaternion rotation, int axis)
+        {
+            return axis < ViewAxis ? rotation * s_axes[axis] : _camera.transform.forward;
+        }
+
+        private float GetRingRadius(Vector3 position, int axis)
+        {
+            float depth = Vector3.Dot(position - _camera.transform.position, _camera.transform.forward);
+            float radius = _gizmoRadius * 2f * depth * Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad) / Screen.height;
+
+            return axis == ViewAxis ? radius * ViewRingScale : radius;
+        }
+
+        private void BuildRing(Vector3 center, Vector3 normal, float radius)
+        {
+            Vector3 u = Vector3.Cross(normal, Mathf.Abs(normal.y) < 0.9f ? Vector3.up : Vector3.right).normalized * radius;
+            Vector3 v = Vector3.Cross(normal, u);
+
+            for (int i = 0; i <= RingSegments; i++)
+            {
+                float angle = i * Mathf.PI * 2f / RingSegments;
+                _ring[i] = center + u * Mathf.Cos(angle) + v * Mathf.Sin(angle);
+            }
+        }
+
+        /// Grip points need a weapon in a hand socket, and hands are posed on the upper body layer only.
+        private bool HasPoints()
+        {
+            return _carrier != NoBone && _editLayer == UpperLayer;
+        }
+
+        private bool ArePointsShown()
+        {
+            return _arePointsVisible && HasPoints();
+        }
+
+        private Transform GetCarrierSocket()
+        {
+            return HandGrip.GetSocket(_animator, _carrier);
+        }
+
+        private Pose GetPointPose(GripPoint point)
+        {
+            Transform socket = GetCarrierSocket();
+            Pose pose = point.Pose;
+
+            return new Pose(socket.TransformPoint(pose.position), socket.rotation * pose.rotation);
+        }
+
+        private void SetPoint(Vector3 position, Quaternion rotation)
+        {
+            _point.SetPose(position, rotation);
+            _arePointsDirty = true;
+            Relink(_point);
+        }
+
+        /// Hands snapped to a point follow it in every edited clip of the weapon.
+        private void Relink(GripPoint point)
+        {
+            foreach (ClipEdit stored in _config.Clips)
+                GetEdit(stored.Clip);
+
+            foreach (ClipEdit edit in _edits.Values)
+            {
+                foreach (HandGrip grip in edit.Grips)
+                {
+                    if (!grip.IsSnapped(_test.Weapon, point))
+                        continue;
+
+                    grip.Snap(_test.Weapon, point, _socketRests[grip.Hand]);
+                    _dirty.Add(edit.Clip);
+                }
+            }
+        }
+
+        /// The weapon-carrying hand slides over the weapon (hold), the other one is pinned to it; an existing grip keeps its range.
+        private void Snap(HumanBodyBones hand, GripPoint point)
+        {
+            HandGrip grip = _edit.FindGrip(hand);
+            bool isHolding = hand == _carrier;
+            int start = grip?.Start ?? 0;
+            int end = grip?.End ?? _frameCount;
+            PushUndo();
+
+            if (grip == null || grip.IsHolding != isHolding)
+                _edit.SetGrip(grip = isHolding ? HandGrip.Hold(hand, _socketRests[hand], start, end) : HandGrip.Pin(_animator, hand, start, end));
+
+            grip.Snap(_test.Weapon, point, _socketRests[hand]);
+            _dirty.Add(_edit.Clip);
+        }
+
+        private void SnapToNearest()
+        {
+            if (!HasPoints() || !_socketRests.TryGetValue(_bone, out Pose palm))
+                return;
+
+            Vector3 position = GetBone(_bone).TransformPoint(palm.position);
+            GripPoint nearest = null;
+            float best = float.MaxValue;
+
+            foreach (GripPoint point in _grips.Points)
+            {
+                float distance = (GetPointPose(point).position - position).sqrMagnitude;
+
+                if (distance < best)
+                    (nearest, best) = (point, distance);
+            }
+
+            if (nearest != null)
+                Snap(_bone, nearest);
+        }
+
+        /// The point takes the palm of a hand as it is posed now.
+        private void TakeFromHand(HumanBodyBones hand)
+        {
+            Transform bone = GetBone(hand);
+            Transform socket = GetCarrierSocket();
+            Pose palm = _socketRests[hand];
+            SetPoint(socket.InverseTransformPoint(bone.TransformPoint(palm.position)), Quaternion.Inverse(socket.rotation) * bone.rotation * palm.rotation);
+        }
+
+        private void AddPoint()
+        {
+            Select(_grips.Add(_point != null ? _point.Pose.position + Vector3.forward * 0.1f : Vector3.zero));
+            _arePointsDirty = true;
+        }
+
+        private void RemovePoint()
+        {
+            _grips.Remove(_point);
+            _point = null;
+            _arePointsDirty = true;
+        }
+
         /// A pinned hand inside its range moves its grip, not its keys: the weapon stays and the hand slides over it on every frame.
         private HandGrip GetActiveGrip(HumanBodyBones bone)
         {
@@ -532,127 +886,6 @@ namespace Game.Scripts.Battle
             Transform socket = HandGrip.GetSocket(_animator, hand);
 
             return socket != null && socket.childCount > 0;
-        }
-
-        private void UpdateShortcuts()
-        {
-            bool isShift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-
-            if (Input.GetKeyDown(KeyCode.Space))
-                _test.SetPaused(!_test.IsPaused);
-
-            if (Input.GetKeyDown(KeyCode.Comma))
-                SetFrame(_frame - 1);
-
-            if (Input.GetKeyDown(KeyCode.Period))
-                SetFrame(_frame + 1);
-
-            if (Input.GetKeyDown(KeyCode.LeftBracket))
-                JumpToKey(-1);
-
-            if (Input.GetKeyDown(KeyCode.RightBracket))
-                JumpToKey(1);
-
-            if (Input.GetKeyDown(KeyCode.K))
-                SetKeys(isShift);
-
-            if (Input.GetKeyDown(KeyCode.Delete) || Input.GetKeyDown(KeyCode.X))
-                DeleteKeys(isShift);
-
-            if (Input.GetKeyDown(KeyCode.W))
-                _isMoving = true;
-
-            if (Input.GetKeyDown(KeyCode.E))
-                _isMoving = false;
-
-            if (Input.GetKeyDown(KeyCode.R))
-                ResetBone();
-
-            if (Input.GetKeyDown(KeyCode.C))
-                CopyPose();
-
-            if (Input.GetKeyDown(KeyCode.V))
-                PastePose();
-
-            if (Input.GetKeyDown(KeyCode.I))
-                GenerateInBetweens();
-
-            if (Input.GetKeyDown(KeyCode.Z))
-                StepHistory(isShift ? _redo : _undo, isShift ? _undo : _redo);
-        }
-
-        /// Index of the ring under the mouse (local X, Y, Z or the view ring) and the screen direction that turns it forward.
-        private int PickAxis(Vector2 mouse)
-        {
-            Transform bone = GetBone(_bone);
-            float best = PickDistance;
-            int axis = -1;
-
-            for (int i = 0; i <= ViewAxis; i++)
-            {
-                Vector3 normal = GetRingNormal(bone, i);
-                BuildRing(bone.position, normal, GetRingRadius(bone.position, i));
-
-                for (int j = 0; j < RingSegments; j++)
-                {
-                    Vector3 a = _camera.WorldToScreenPoint(_ring[j]);
-                    Vector3 b = _camera.WorldToScreenPoint(_ring[j + 1]);
-                    float distance = DistanceToSegment(mouse, a, b);
-
-                    if (a.z <= 0f || distance >= best)
-                        continue;
-
-                    best = distance;
-                    axis = i;
-                    Vector3 tangent = Vector3.Cross(normal, _ring[j] - bone.position) * 0.05f;
-                    _dragTangent = ((Vector2)_camera.WorldToScreenPoint(_ring[j] + tangent) - (Vector2)a).normalized;
-                }
-            }
-
-            return axis;
-        }
-
-        /// Clicking past every joint clears the selection.
-        private HumanBodyBones PickBone(Vector2 mouse)
-        {
-            HumanBodyBones picked = NoBone;
-            float best = PickDistance * 1.5f;
-
-            foreach (HumanBodyBones bone in _bones)
-            {
-                Vector3 point = _camera.WorldToScreenPoint(GetBone(bone).position);
-                float distance = Vector2.Distance(mouse, point);
-
-                if (IsLayerBone(bone) && point.z > 0f && distance < best)
-                    (picked, best) = (bone, distance);
-            }
-
-            return picked;
-        }
-
-        private Vector3 GetRingNormal(Transform bone, int axis)
-        {
-            return axis < ViewAxis ? bone.rotation * s_axes[axis] : _camera.transform.forward;
-        }
-
-        private float GetRingRadius(Vector3 position, int axis)
-        {
-            float depth = Vector3.Dot(position - _camera.transform.position, _camera.transform.forward);
-            float radius = _gizmoRadius * 2f * depth * Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad) / Screen.height;
-
-            return axis == ViewAxis ? radius * ViewRingScale : radius;
-        }
-
-        private void BuildRing(Vector3 center, Vector3 normal, float radius)
-        {
-            Vector3 u = Vector3.Cross(normal, Mathf.Abs(normal.y) < 0.9f ? Vector3.up : Vector3.right).normalized * radius;
-            Vector3 v = Vector3.Cross(normal, u);
-
-            for (int i = 0; i <= RingSegments; i++)
-            {
-                float angle = i * Mathf.PI * 2f / RingSegments;
-                _ring[i] = center + u * Mathf.Cos(angle) + v * Mathf.Sin(angle);
-            }
         }
 
         /// Continuous edits (ring drags, sliders, key drags) take one undo step per mouse press.
@@ -757,8 +990,16 @@ namespace Game.Scripts.Battle
             return _isDraggingPose || track.Bone == _bone;
         }
 
-        private void ResetBone()
+        /// R: the selected bone back to the clip on this frame, or the selected grip point back to the hand's own orientation.
+        private void ResetSelection()
         {
+            if (_point != null)
+            {
+                SetPoint(_point.Pose.position, Quaternion.identity);
+
+                return;
+            }
+
             if (_bone == NoBone)
                 return;
 
@@ -886,6 +1127,7 @@ namespace Game.Scripts.Battle
             _dirty.Add(_edit.Clip);
         }
 
+        /// Back to the saved state of the current clip; grip points are not part of a clip and stay.
         private void Revert()
         {
             PushUndo();
@@ -905,7 +1147,11 @@ namespace Game.Scripts.Battle
                 Override(_edits[clip]);
             }
 
+            if (_arePointsDirty)
+                AnimationEditBaker.SaveConfig(_config);
+
             _dirty.Clear();
+            _arePointsDirty = false;
 #endif
         }
 
@@ -913,6 +1159,7 @@ namespace Game.Scripts.Battle
         {
             Replay();
             _isShowingBaked = !_isShowingBaked;
+            _dragAxis = _hoverAxis = -1;
 
             foreach (ClipEdit edit in _config.Clips)
                 Override(edit);
@@ -924,154 +1171,185 @@ namespace Game.Scripts.Battle
         {
             _replayTime = Mathf.Clamp01(_frame / FrameRate / _test.GetLength(_editLayer));
             _replayEnd = Time.unscaledTime + ReplayWindow;
-            _test.Seek(_replayTime);
+            _test.Seek(_editLayer, _replayTime);
+        }
+
+        private void DrawHeader()
+        {
+            if (_skin.Button(_isOpen ? "Close editor  Tab" : "Animation editor  Tab", _isOpen, 170f))
+                _isOpen = !_isOpen;
+
+            if (!_isOpen)
+                return;
+
+            AnimationClip clip = _test.GetClip(_editLayer);
+            GUILayout.Space(8f);
+            GUILayout.Label(_edit == null ? $"{(clip != null ? clip.name : "-")}  (read-only)" : _edit.Clip.name + (_dirty.Contains(_edit.Clip) ? "  *" : string.Empty),
+                _skin.Header, GUILayout.MinWidth(120f));
+            GUILayout.Label($"frame {_frame} / {_frameCount}", _skin.Label, GUILayout.Width(110f));
+            GUILayout.FlexibleSpace();
+
+            for (int layer = BaseLayer; layer <= UpperLayer; layer++)
+            {
+                if (_skin.Button(s_layerNames[layer], _editLayer == layer, 90f))
+                    _editLayer = layer;
+            }
+
+            GUILayout.Space(12f);
+            GUI.enabled = _edit != null && !_isShowingBaked;
+
+            if (_skin.Button("Rotate  E", !_isMoving, 84f))
+                _isMoving = false;
+
+            if (_skin.Button("Move  W", _isMoving, 84f))
+                _isMoving = true;
+
+            GUILayout.Space(12f);
+            GUI.enabled = _edit != null && _dirty.Contains(_edit.Clip);
+
+            if (_skin.Button("Revert", false, 70f))
+                Revert();
+
+            GUI.enabled = _dirty.Count > 0 || _arePointsDirty;
+
+            if (_skin.Button(_dirty.Count > 1 ? $"Save {_dirty.Count} clips" : "Save", GUI.enabled, 100f))
+                Save();
+
+            GUI.enabled = true;
+            _isHelpVisible = _skin.Toggle(_isHelpVisible, "?", 28f);
         }
 
         private void DrawTimelinePanel()
         {
             if (_edit == null)
             {
-                GUILayout.Label($"{s_layerNames[_editLayer]}: {(_test.GetClip(_editLayer) != null ? _test.GetClip(_editLayer).name : "-")} is not editable. " +
-                    "Only generated clips (.anim) can be edited; library takes are read-only.");
-                DrawLayerButtons();
+                GUILayout.Label($"{s_layerNames[_editLayer]}: only generated clips (.anim) can be edited, library takes are read-only. " +
+                    "Pick another state or layer.", _skin.Hint);
 
                 return;
             }
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"{_edit.Clip.name}{(_dirty.Contains(_edit.Clip) ? " *" : string.Empty)}    frame {_frame} / {_frameCount}", GUILayout.Width(330f));
-            DrawLayerButtons();
-            _isSkeletonVisible = GUILayout.Toggle(_isSkeletonVisible, "Skeleton", GUILayout.Width(80f));
 
-            if (AnimationTestView.Button("Rotate (E)", !_isMoving))
-                _isMoving = false;
-
-            if (AnimationTestView.Button("Move (W)", _isMoving))
-                _isMoving = true;
-
-            if (AnimationTestView.Button(_isShowingBaked ? "Showing baked clip" : "Show baked clip", _isShowingBaked))
-                ToggleBaked();
-
-            GUILayout.FlexibleSpace();
-            GUI.enabled = _dirty.Count > 0;
-
-            if (GUILayout.Button("Revert", GUILayout.Width(70f)))
-                Revert();
-
-            if (GUILayout.Button(_dirty.Count > 1 ? $"Save ({_dirty.Count} clips)" : "Save", GUILayout.Width(110f)))
-                Save();
-
-            GUI.enabled = true;
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-
-            if (GUILayout.Button("|<"))
+            if (_skin.Button("|<", false, 34f))
                 SetFrame(0);
 
-            if (GUILayout.Button("<"))
+            if (_skin.Button("<", false, 34f))
                 SetFrame(_frame - 1);
 
-            if (GUILayout.Button(_test.IsPaused ? "Play" : "Pause", GUILayout.Width(70f)))
+            if (_skin.Button(_test.IsPaused ? "Play" : "Pause", !_test.IsPaused, 64f))
                 _test.SetPaused(!_test.IsPaused);
 
-            if (GUILayout.Button(">"))
+            if (_skin.Button(">", false, 34f))
                 SetFrame(_frame + 1);
 
-            if (GUILayout.Button(">|"))
+            if (_skin.Button(">|", false, 34f))
                 SetFrame(_frameCount);
 
-            if (GUILayout.Button("Prev key"))
+            GUILayout.Space(8f);
+
+            if (_skin.Button("[  Prev key", false, 86f))
                 JumpToKey(-1);
 
-            if (GUILayout.Button("Next key"))
+            if (_skin.Button("Next key  ]", false, 86f))
                 JumpToKey(1);
 
-            if (GUILayout.Button("Undo"))
+            GUILayout.Space(8f);
+            GUI.enabled = _undo.Count > 0;
+
+            if (_skin.Button("Undo", false, 56f))
                 StepHistory(_undo, _redo);
 
-            if (GUILayout.Button("Redo"))
+            GUI.enabled = _redo.Count > 0;
+
+            if (_skin.Button("Redo", false, 56f))
                 StepHistory(_redo, _undo);
+
+            GUI.enabled = true;
+            GUILayout.FlexibleSpace();
+            _isSkeletonVisible = _skin.Toggle(_isSkeletonVisible, "Skeleton", 80f);
+            GUI.enabled = HasPoints();
+            _arePointsVisible = _skin.Toggle(_arePointsVisible, "Grip points", 92f);
+            GUI.enabled = true;
+
+            if (_skin.Button("Baked clip", _isShowingBaked, 90f))
+                ToggleBaked();
 
             GUILayout.EndHorizontal();
 
             GUI.enabled = !_isShowingBaked;
             GUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("Key bone"))
+            if (_skin.Button("Key bone  K"))
                 SetKeys(false);
 
-            if (GUILayout.Button("Key pose"))
+            if (_skin.Button("Key pose  Shift+K"))
                 SetKeys(true);
 
-            if (GUILayout.Button("Delete key"))
+            if (_skin.Button("Delete key  X"))
                 DeleteKeys(false);
 
-            if (GUILayout.Button("Delete pose keys"))
+            if (_skin.Button("Delete pose  Shift+X"))
                 DeleteKeys(true);
 
-            if (GUILayout.Button("Copy pose"))
+            if (_skin.Button("Copy pose  C"))
                 CopyPose();
 
-            if (GUILayout.Button("Paste pose"))
+            if (_skin.Button("Paste pose  V"))
                 PastePose();
 
+            GUILayout.FlexibleSpace();
             int start = Mathf.Min(_rangeStart, _rangeEnd);
             int end = Mathf.Max(_rangeStart, _rangeEnd);
             GUI.enabled = !_isShowingBaked && start >= 0 && end - start >= 2;
 
-            if (GUILayout.Button(GUI.enabled ? $"In-betweens {start}-{end} (I)" : "In-betweens (Shift+drag range)", GUILayout.Width(230f)))
+            if (_skin.Button(GUI.enabled ? $"In-betweens {start}-{end}  I" : "In-betweens: Shift+drag a range", false, 220f))
                 GenerateInBetweens();
 
             GUI.enabled = !_isShowingBaked;
-            _isEasing = GUILayout.Toggle(_isEasing, "Ease", GUILayout.Width(60f));
+            _isEasing = _skin.Toggle(_isEasing, "Ease", 56f);
             GUILayout.EndHorizontal();
 
             GUI.enabled = true;
+            GUILayout.Space(4f);
             DrawTimeline(GUILayoutUtility.GetRect(0f, RulerHeight + RowHeight * 2f, GUILayout.ExpandWidth(true)));
-            GUILayout.Label("LMB joint: select, ring / arrow: drag   E rotate   W move   RMB: orbit   Space: play   , . frame   [ ] key   K key (Shift: pose)   " +
-                "X/Del delete (Shift: pose)   R reset   C/V pose   Shift+drag timeline: range   I in-betweens   Z undo (Shift: redo)   Tab: hide");
-        }
-
-        private void DrawLayerButtons()
-        {
-            for (int layer = BaseLayer; layer <= UpperLayer; layer++)
-            {
-                if (AnimationTestView.Button(s_layerNames[layer], _editLayer == layer))
-                    _editLayer = layer;
-            }
         }
 
         /// Ruler, a row with the keys of every bone and a row with the keys of the selected one. Dragging a key retimes it, dragging
         /// anywhere else scrubs.
         private void DrawTimeline(Rect area)
         {
-            GUI.Box(area, GUIContent.none);
             Rect track = new Rect(area.x + TrackLabelWidth, area.y, area.width - TrackLabelWidth - KeySize, area.height);
             Rect poseRow = new Rect(area.x, area.y + RulerHeight, area.width, RowHeight);
             Rect boneRow = new Rect(area.x, poseRow.yMax, area.width, RowHeight);
             int step = track.width / _frameCount >= 8f ? 5 : track.width / _frameCount >= 4f ? 10 : 30;
 
+            AnimationEditorSkin.Fill(area, new Color(0f, 0f, 0f, 0.35f));
+            AnimationEditorSkin.Fill(poseRow, s_rowColor);
+            AnimationEditorSkin.Fill(new Rect(area.x + TrackLabelWidth - 4f, area.y, 1f, area.height), AnimationEditorSkin.Line);
+
             for (int frame = 0; frame <= _frameCount; frame += step)
             {
                 float x = GetX(track, frame);
-                Fill(new Rect(x, area.y, 1f, frame % (step * 2) == 0 ? 8f : 4f), Color.gray);
+                bool isMajor = frame % (step * 2) == 0;
+                AnimationEditorSkin.Fill(new Rect(x, area.y, 1f, isMajor ? area.height : 5f), new Color(1f, 1f, 1f, isMajor ? 0.08f : 0.2f));
 
-                if (frame % (step * 2) == 0)
-                    GUI.Label(new Rect(x + 2f, area.y, 40f, RulerHeight), frame.ToString());
+                if (isMajor)
+                    GUI.Label(new Rect(x + 2f, area.y, 40f, RulerHeight), frame.ToString(), _skin.Hint);
             }
 
-            GUI.Label(poseRow, "  All bones");
-            GUI.Label(boneRow, "  " + (_bone == NoBone ? "-" : _bone.ToString()));
+            GUI.Label(new Rect(poseRow.x + 4f, poseRow.y, TrackLabelWidth, RowHeight), "All bones", _skin.Label);
+            GUI.Label(new Rect(boneRow.x + 4f, boneRow.y, TrackLabelWidth, RowHeight), _bone == NoBone ? "—" : _names[_bone], _skin.Label);
 
             HandGrip grip = _bone == NoBone ? null : _edit.FindGrip(_bone);
 
             if (grip != null)
-                Fill(new Rect(GetX(track, grip.Start), boneRow.y + 3f, GetX(track, grip.End) - GetX(track, grip.Start), boneRow.height - 6f), s_gripColor);
+                AnimationEditorSkin.Fill(new Rect(GetX(track, grip.Start), boneRow.y + 4f, GetX(track, grip.End) - GetX(track, grip.Start), boneRow.height - 8f),
+                    new Color(s_gripColor.r, s_gripColor.g, s_gripColor.b, 0.35f));
 
             if (_rangeStart >= 0 && _rangeEnd != _rangeStart)
-                Fill(new Rect(GetX(track, Mathf.Min(_rangeStart, _rangeEnd)), area.y, Mathf.Abs(GetX(track, _rangeEnd) - GetX(track, _rangeStart)), area.height),
-                    s_rangeColor);
+                AnimationEditorSkin.Fill(new Rect(GetX(track, Mathf.Min(_rangeStart, _rangeEnd)), area.y, Mathf.Abs(GetX(track, _rangeEnd) - GetX(track, _rangeStart)),
+                    area.height), s_rangeColor);
 
             foreach (BoneTrack boneTrack in _edit.Tracks)
             {
@@ -1084,7 +1362,10 @@ namespace Game.Scripts.Battle
                 }
             }
 
-            Fill(new Rect(GetX(track, _framePosition) - 1f, area.y, 2f, area.height), s_cursorColor);
+            float cursor = GetX(track, _framePosition);
+            AnimationEditorSkin.Fill(new Rect(cursor - 1f, area.y, 2f, area.height), s_cursorColor);
+            AnimationEditorSkin.Fill(new Rect(cursor - 14f, area.y, 28f, RulerHeight - 2f), s_cursorColor);
+            GUI.Label(new Rect(cursor - 14f, area.y, 28f, RulerHeight - 2f), _frame.ToString(), _skin.Badge);
             HandleTimeline(track, poseRow, boneRow);
         }
 
@@ -1161,12 +1442,36 @@ namespace Game.Scripts.Battle
 
         private void DrawKey(Rect track, Rect row, int frame, Color color)
         {
-            Fill(new Rect(GetX(track, frame) - KeySize * 0.5f, row.center.y - KeySize * 0.5f, KeySize, KeySize), color);
+            Rect key = new Rect(GetX(track, frame) - KeySize * 0.5f, row.center.y - KeySize * 0.5f, KeySize, KeySize);
+            AnimationEditorSkin.Fill(new Rect(key.x - 1f, key.y - 1f, key.width + 2f, key.height + 2f), Color.black);
+            AnimationEditorSkin.Fill(key, color);
         }
 
-        private void DrawBonePanel()
+        private void DrawInspector()
         {
-            GUILayout.Label($"{s_layerNames[_editLayer]} bones   (* animated, [key] keyed here)");
+            GUILayout.BeginHorizontal();
+
+            if (_skin.Button("Bones", _tab == BonesTab))
+                _tab = BonesTab;
+
+            GUI.enabled = HasPoints();
+
+            if (_skin.Button("Grip points", _tab == PointsTab && HasPoints()))
+                _tab = PointsTab;
+
+            GUI.enabled = true;
+            GUILayout.EndHorizontal();
+            GUILayout.Space(4f);
+
+            if (_tab == PointsTab && HasPoints())
+                DrawPointsTab();
+            else
+                DrawBonesTab();
+        }
+
+        private void DrawBonesTab()
+        {
+            GUILayout.Label($"{s_layerNames[_editLayer]} bones", _skin.Header);
             _boneScroll = GUILayout.BeginScrollView(_boneScroll);
 
             foreach (HumanBodyBones bone in _bones)
@@ -1175,17 +1480,12 @@ namespace Game.Scripts.Battle
                     continue;
 
                 BoneTrack track = _edit.Find(bone);
-                string mark = (track == null || track.Keys.Count == 0 ? string.Empty : track.IndexOf(_frame) >= 0 ? "   [key]" : "   *") +
-                    (_edit.FindGrip(bone) != null ? "   [pin]" : string.Empty);
-                GUILayout.BeginHorizontal();
-                GUILayout.Space(_depths[bone] * 10f);
-                GUI.color = bone == _bone ? Color.yellow : Color.white;
+                bool isKeyed = track != null && track.Keys.Count > 0;
+                bool isKey = isKeyed && track.IndexOf(_frame) >= 0;
+                string tag = (isKey ? "KEY" : isKeyed ? "anim" : string.Empty) + (_edit.FindGrip(bone) != null ? "  grip" : string.Empty);
 
-                if (GUILayout.Button(bone + mark, _listStyle))
-                    _bone = bone;
-
-                GUI.color = Color.white;
-                GUILayout.EndHorizontal();
+                if (_skin.Row(_names[bone], bone == _bone, _depths[bone] * 10f, tag, isKey ? s_keyColor : isKeyed ? s_trackColor : s_gripColor))
+                    Select(bone);
             }
 
             GUILayout.EndScrollView();
@@ -1193,27 +1493,28 @@ namespace Game.Scripts.Battle
             if (_bone == NoBone || _isShowingBaked)
                 return;
 
-            BoneKey key = Evaluate(_bone);
-            Vector3 euler = key.Rotation.eulerAngles;
-            Vector3 position = key.Position;
-            euler = new Vector3(Mathf.DeltaAngle(0f, euler.x), Mathf.DeltaAngle(0f, euler.y), Mathf.DeltaAngle(0f, euler.z));
+            _skin.Separator();
+            GUILayout.Label($"{_names[_bone]}  ·  frame {_frame}", _skin.Header);
 
-            DrawGrip();
+            if (_socketRests.ContainsKey(_bone))
+                DrawGrip();
 
             if (GetActiveGrip(_bone) != null)
                 return;
 
-            GUILayout.Label($"{_bone} offset at frame {_frame}");
+            BoneKey key = Evaluate(_bone);
+            Vector3 euler = ToSigned(key.Rotation.eulerAngles);
+            Vector3 position = key.Position;
             GUI.changed = false;
-            euler.x = AnimationTestView.Slider("Rotate X", euler.x, -180f, 180f);
-            euler.y = AnimationTestView.Slider("Rotate Y", euler.y, -180f, 180f);
-            euler.z = AnimationTestView.Slider("Rotate Z", euler.z, -180f, 180f);
+            euler.x = _skin.Slider("Rotate X", euler.x, -180f, 180f);
+            euler.y = _skin.Slider("Rotate Y", euler.y, -180f, 180f);
+            euler.z = _skin.Slider("Rotate Z", euler.z, -180f, 180f);
 
             if (_bone == HumanBodyBones.Hips)
             {
-                position.x = AnimationTestView.Slider("Move X", position.x, -0.5f, 0.5f);
-                position.y = AnimationTestView.Slider("Move Y", position.y, -0.5f, 0.5f);
-                position.z = AnimationTestView.Slider("Move Z", position.z, -0.5f, 0.5f);
+                position.x = _skin.Slider("Move X", position.x, -0.5f, 0.5f, "F3");
+                position.y = _skin.Slider("Move Y", position.y, -0.5f, 0.5f, "F3");
+                position.z = _skin.Slider("Move Z", position.z, -0.5f, 0.5f, "F3");
             }
 
             if (GUI.changed)
@@ -1221,16 +1522,16 @@ namespace Game.Scripts.Battle
 
             GUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("Key"))
+            if (_skin.Button("Key"))
                 SetKeys(false);
 
-            if (GUILayout.Button("Reset"))
-                ResetBone();
+            if (_skin.Button("Reset"))
+                ResetSelection();
 
-            if (GUILayout.Button("Delete key"))
+            if (_skin.Button("Delete key"))
                 DeleteKeys(false);
 
-            if (GUILayout.Button("Clear track"))
+            if (_skin.Button("Clear track"))
                 ClearTrack();
 
             GUILayout.EndHorizontal();
@@ -1238,25 +1539,38 @@ namespace Game.Scripts.Battle
 
         private void DrawGrip()
         {
-            if (_bone != HumanBodyBones.LeftHand && _bone != HumanBodyBones.RightHand)
-                return;
-
             HandGrip grip = _edit.FindGrip(_bone);
+
+            if (HasPoints())
+            {
+                GUILayout.Label("Snap to a grip point  (G — nearest)", _skin.Hint);
+                GUILayout.BeginHorizontal();
+
+                foreach (GripPoint point in _grips.Points)
+                {
+                    if (_skin.Button(point.Name, grip != null && grip.IsSnapped(_test.Weapon, point)))
+                        Snap(_bone, point);
+                }
+
+                GUILayout.EndHorizontal();
+            }
 
             if (grip == null)
             {
                 bool isHolding = IsHolding(_bone);
 
-                if (GUILayout.Button(isHolding ? "Regrip: hand slides, weapon stays" : "Pin to weapon (other hand)"))
+                if (_skin.Button(isHolding ? "Free regrip: hand slides, weapon stays" : "Pin to the weapon as posed"))
                     Pin(isHolding);
 
                 return;
             }
 
-            GUILayout.Label(grip.IsHolding ? "Regrip: drag the hand, the weapon keeps its path" : $"Pinned to the weapon in {grip.Anchor}: drag the hand to move the grip");
+            GUILayout.Label(grip.Point.Length > 0 ? $"On point “{grip.Point}”: moves with it; dragging the hand frees it" :
+                grip.IsHolding ? "Regrip: drag the hand, the weapon keeps its path" : $"Pinned to the weapon in {grip.Anchor}: drag the hand to move the grip",
+                _skin.Hint);
             GUI.changed = false;
-            int start = FrameSlider("From frame", grip.Start);
-            int end = FrameSlider("To frame", grip.End);
+            int start = Mathf.RoundToInt(_skin.Slider("From", grip.Start, 0f, _frameCount, "F0"));
+            int end = Mathf.RoundToInt(_skin.Slider("To", grip.End, 0f, _frameCount, "F0"));
 
             if (GUI.changed)
             {
@@ -1267,23 +1581,20 @@ namespace Game.Scripts.Battle
 
             GUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("Range from here"))
+            if (_skin.Button("From here"))
                 SetGripRange(grip, _frame, grip.End);
 
-            if (GUILayout.Button("Range to here"))
+            if (_skin.Button("To here"))
                 SetGripRange(grip, grip.Start, _frame);
 
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-
-            if (GUILayout.Button(grip.IsHolding ? "Reset grip" : "Re-pin here"))
+            if (_skin.Button(grip.IsHolding ? "Reset" : "Re-pin"))
             {
                 PushUndo();
                 grip.Capture(_animator);
                 _dirty.Add(_edit.Clip);
             }
 
-            if (GUILayout.Button(grip.IsHolding ? "Remove regrip" : "Unpin"))
+            if (_skin.Button("Release"))
             {
                 PushUndo();
                 _edit.RemoveGrip(_bone);
@@ -1291,16 +1602,114 @@ namespace Game.Scripts.Battle
             }
 
             GUILayout.EndHorizontal();
+            _skin.Separator();
         }
 
-        private int FrameSlider(string label, int frame)
+        private void DrawPointsTab()
         {
+            GUILayout.Label($"{_test.Weapon.name}  ·  in the {(_carrier == HumanBodyBones.RightHand ? "right" : "left")} hand", _skin.Header);
+            GUILayout.Label("Points sit in the weapon socket frame, Z runs along the blade. A snapped hand follows its point in every clip.",
+                _skin.Hint);
+            _pointScroll = GUILayout.BeginScrollView(_pointScroll, GUILayout.Height(Mathf.Min(_grips.Points.Count, 6) * 21f + 6f));
+
+            foreach (GripPoint point in _grips.Points)
+            {
+                if (_skin.Row(point.Name, point == _point, 0f, GetSnappedHands(point), s_gripColor))
+                    Select(point);
+            }
+
+            GUILayout.EndScrollView();
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"{label} {frame}", GUILayout.Width(100f));
-            frame = Mathf.RoundToInt(GUILayout.HorizontalSlider(frame, 0f, _frameCount));
+
+            if (_skin.Button("Add point"))
+                AddPoint();
+
+            GUI.enabled = _point != null;
+
+            if (_skin.Button("Remove"))
+                RemovePoint();
+
+            GUI.enabled = true;
             GUILayout.EndHorizontal();
 
-            return frame;
+            if (_point == null || _isShowingBaked)
+                return;
+
+            _skin.Separator();
+            GUILayout.Label(_point.Name, _skin.Header);
+            Pose pose = _point.Pose;
+            Vector3 position = pose.position;
+            Vector3 euler = ToSigned(pose.rotation.eulerAngles);
+            GUI.changed = false;
+            position.z = _skin.Slider("Along Z", position.z, -PointReach, PointReach, "F3");
+            position.x = _skin.Slider("Side X", position.x, -PointSide, PointSide, "F3");
+            position.y = _skin.Slider("Side Y", position.y, -PointSide, PointSide, "F3");
+            euler.z = _skin.Slider("Roll Z", euler.z, -180f, 180f);
+            euler.x = _skin.Slider("Tilt X", euler.x, -180f, 180f);
+            euler.y = _skin.Slider("Tilt Y", euler.y, -180f, 180f);
+
+            if (GUI.changed)
+                SetPoint(position, Quaternion.Euler(euler));
+
+            GUILayout.Label("Snap a hand  (magnet)", _skin.Hint);
+            GUILayout.BeginHorizontal();
+
+            if (_skin.Button("Left hand", IsSnapped(HumanBodyBones.LeftHand, _point)))
+                Snap(HumanBodyBones.LeftHand, _point);
+
+            if (_skin.Button("Right hand", IsSnapped(HumanBodyBones.RightHand, _point)))
+                Snap(HumanBodyBones.RightHand, _point);
+
+            GUILayout.EndHorizontal();
+            GUILayout.Label("Take the point from a hand as posed", _skin.Hint);
+            GUILayout.BeginHorizontal();
+
+            if (_skin.Button("Left palm"))
+                TakeFromHand(HumanBodyBones.LeftHand);
+
+            if (_skin.Button("Right palm"))
+                TakeFromHand(HumanBodyBones.RightHand);
+
+            if (_skin.Button("Reset turn"))
+                ResetSelection();
+
+            GUILayout.EndHorizontal();
+        }
+
+        /// Point names next to their markers in the viewport, with the hands snapped to them in this clip.
+        private void DrawPointLabels(float scale)
+        {
+            if (!ArePointsShown() || _isShowingBaked)
+                return;
+
+            foreach (GripPoint point in _grips.Points)
+            {
+                Vector3 screen = _camera.WorldToScreenPoint(GetPointPose(point).position);
+
+                if (screen.z <= 0f)
+                    continue;
+
+                string hands = GetSnappedHands(point);
+                GUI.color = point == _point ? s_activeColor : s_gripColor;
+                GUI.Label(new Rect(screen.x / scale + 8f, (Screen.height - screen.y) / scale - 18f, 160f, 20f),
+                    hands.Length > 0 ? $"{point.Name}  ·  {hands}" : point.Name, _skin.Header);
+                GUI.color = Color.white;
+            }
+        }
+
+        private bool IsSnapped(HumanBodyBones hand, GripPoint point)
+        {
+            HandGrip grip = _edit.FindGrip(hand);
+
+            return grip != null && grip.IsSnapped(_test.Weapon, point);
+        }
+
+        private string GetSnappedHands(GripPoint point)
+        {
+            bool isLeft = IsSnapped(HumanBodyBones.LeftHand, point);
+            bool isRight = IsSnapped(HumanBodyBones.RightHand, point);
+
+            return isLeft && isRight ? "L R" : isLeft ? "L" : isRight ? "R" : string.Empty;
         }
 
         private void SetGripRange(HandGrip grip, int start, int end)
@@ -1308,6 +1717,11 @@ namespace Game.Scripts.Battle
             PushUndo();
             grip.SetRange(start, end);
             _dirty.Add(_edit.Clip);
+        }
+
+        private static Vector3 ToSigned(Vector3 euler)
+        {
+            return new Vector3(Mathf.DeltaAngle(0f, euler.x), Mathf.DeltaAngle(0f, euler.y), Mathf.DeltaAngle(0f, euler.z));
         }
 
         private static bool IsEditable(AnimationClip clip)
@@ -1325,13 +1739,6 @@ namespace Game.Scripts.Battle
             float t = ab.sqrMagnitude > 0f ? Mathf.Clamp01(Vector2.Dot(point - a, ab) / ab.sqrMagnitude) : 0f;
 
             return Vector2.Distance(point, a + ab * t);
-        }
-
-        private static void Fill(Rect rect, Color color)
-        {
-            GUI.color = color;
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = Color.white;
         }
 
         private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
@@ -1358,13 +1765,7 @@ namespace Game.Scripts.Battle
                 if (_parents[bone] != NoBone)
                     DrawLine(GetBone(_parents[bone]).position, position, new Color(1f, 1f, 1f, 0.5f));
 
-                float size = GetRingRadius(position, 0) * JointScale * 2f;
-                Vector3 right = camera.transform.right * size;
-                Vector3 up = camera.transform.up * size;
-                DrawLine(position + right, position + up, color);
-                DrawLine(position + up, position - right, color);
-                DrawLine(position - right, position - up, color);
-                DrawLine(position - up, position + right, color);
+                DrawDiamond(position, camera.transform, GetRingRadius(position, 0) * JointScale * 2f, color);
             }
 
             foreach (HandGrip grip in _edit.Grips)
@@ -1373,16 +1774,23 @@ namespace Game.Scripts.Battle
                     DrawLine(HandGrip.GetSocket(_animator, grip.Anchor).position, GetBone(grip.Hand).position, s_gripColor);
             }
 
-            if (_bone != NoBone && _isMoving && CanMove(_bone))
-                DrawMoveGizmo(GetBone(_bone).position, camera.transform, _dragAxis >= 0 ? _dragAxis : _hoverAxis);
-            else if (_bone != NoBone && !_isMoving)
+            if (ArePointsShown())
             {
-                Transform bone = GetBone(_bone);
-                int active = _dragAxis >= 0 ? _dragAxis : _hoverAxis;
+                foreach (GripPoint point in _grips.Points)
+                    DrawPoint(GetPointPose(point), camera.transform, point == _point ? s_activeColor : s_gripColor);
+            }
+
+            int active = _dragAxis >= 0 ? _dragAxis : _hoverAxis;
+
+            if ((_bone != NoBone || _point != null) && _isMoving && CanMove())
+                DrawMoveGizmo(GetTarget().position, camera.transform, active);
+            else if ((_bone != NoBone || _point != null) && !_isMoving)
+            {
+                Pose target = GetTarget();
 
                 for (int axis = 0; axis <= ViewAxis; axis++)
                 {
-                    BuildRing(bone.position, GetRingNormal(bone, axis), GetRingRadius(bone.position, axis));
+                    BuildRing(target.position, GetRingNormal(target.rotation, axis), GetRingRadius(target.position, axis));
 
                     for (int i = 0; i < RingSegments; i++)
                         DrawLine(_ring[i], _ring[i + 1], axis == active ? s_activeColor : s_axisColors[axis]);
@@ -1391,6 +1799,15 @@ namespace Game.Scripts.Battle
 
             GL.End();
             GL.PopMatrix();
+        }
+
+        /// Diamond on the point with its handle axis (Z, blue) and palm up axis (Y, green).
+        private void DrawPoint(Pose pose, Transform camera, Color color)
+        {
+            float size = GetRingRadius(pose.position, 0) * PointScale;
+            DrawDiamond(pose.position, camera, size * 0.3f, color);
+            DrawLine(pose.position - pose.forward * size, pose.position + pose.forward * size, s_axisColors[2]);
+            DrawLine(pose.position, pose.position + pose.up * size * 0.6f, s_axisColors[1]);
         }
 
         private void DrawMoveGizmo(Vector3 position, Transform camera, int active)
@@ -1416,6 +1833,16 @@ namespace Game.Scripts.Battle
             DrawLine(position + right - up, position + right + up, center);
             DrawLine(position + right + up, position - right + up, center);
             DrawLine(position - right + up, position - right - up, center);
+        }
+
+        private static void DrawDiamond(Vector3 position, Transform camera, float size, Color color)
+        {
+            Vector3 right = camera.right * size;
+            Vector3 up = camera.up * size;
+            DrawLine(position + right, position + up, color);
+            DrawLine(position + up, position - right, color);
+            DrawLine(position - right, position - up, color);
+            DrawLine(position - up, position + right, color);
         }
 
         private static void DrawLine(Vector3 from, Vector3 to, Color color)

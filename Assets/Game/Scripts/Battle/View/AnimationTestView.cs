@@ -16,6 +16,7 @@ namespace Game.Scripts.Battle
         public int Layer => _layer;
         public bool IsPaused => _isPaused;
         public bool IsCurrent => IsPlaying(_layer, out _);
+        public WeaponConfig Weapon => _weapons[_weaponIndex];
 
         [SerializeField]
         private Animator _animator;
@@ -87,6 +88,7 @@ namespace Game.Scripts.Battle
         private bool _hasFootwork = true;
         private bool _isFirstPerson;
         private bool _isEditing;
+        private bool _isViewportBlocked;
 
         private void Awake()
         {
@@ -197,10 +199,20 @@ namespace Game.Scripts.Battle
 
         public void SetPaused(bool isPaused) => _isPaused = isPaused;
 
-        public void Seek(float normalizedTime)
+        /// The mouse is over panels drawn on top of the viewport (the animation editor), so the wheel scrolls them, not the camera.
+        public void SetViewportBlocked(bool isBlocked) => _isViewportBlocked = isBlocked;
+
+        public void Seek(float normalizedTime) => Seek(_layer, normalizedTime);
+
+        /// Seeks a layer without moving the focus; attack footwork is seeked through its attack, so both stay in step.
+        public void Seek(int layer, float normalizedTime)
         {
             _isPaused = true;
-            Play(_layer, _current[_layer], normalizedTime);
+
+            if (layer == BaseLayer && _current[BaseLayer].Contains(FighterAnimComponent.AttackLegsSuffix))
+                layer = UpperLayer;
+
+            Play(layer, _current[layer], normalizedTime);
         }
 
         /// The clip with the largest weight, so a blend tree reports the take that shapes the pose.
@@ -253,6 +265,7 @@ namespace Game.Scripts.Battle
             foreach (WeaponAttachment attachment in weapon.Attachments)
                 _attachments.Add(Instantiate(attachment.Prefab, _sockets[(int)attachment.Socket], false));
 
+            _layer = UpperLayer;
             AddWeaponState(prefix + FighterAnimComponent.IdleSuffix);
 
             for (int i = 0; i < weapon.Attacks.Length; i++)
@@ -277,7 +290,6 @@ namespace Game.Scripts.Battle
         /// An attack takes its footwork along, any other upper body state puts the legs back under the fighter.
         private void Play(int layer, string state, float normalizedTime = 0f)
         {
-            _layer = layer;
             _current[layer] = state;
             _animator.Play(state, layer, normalizedTime);
 
@@ -317,7 +329,7 @@ namespace Game.Scripts.Battle
 
         private void UpdateOrbit()
         {
-            if (IsOverViewport(Input.mousePosition * GuiHeight / Screen.height))
+            if (!_isViewportBlocked && IsOverViewport(Input.mousePosition * GuiHeight / Screen.height))
                 _distance = Mathf.Clamp(_distance - Input.mouseScrollDelta.y * 0.3f, 1f, 8f);
 
             if (!Input.GetMouseButton(1))
@@ -333,8 +345,11 @@ namespace Game.Scripts.Battle
 
             foreach (string state in states)
             {
-                if (Button(state, _current[layer] == state))
-                    Play(layer, state);
+                if (!Button(state, _current[layer] == state))
+                    continue;
+
+                _layer = layer;
+                Play(layer, state);
             }
         }
 

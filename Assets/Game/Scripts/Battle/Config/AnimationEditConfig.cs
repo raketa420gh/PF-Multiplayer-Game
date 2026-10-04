@@ -14,6 +14,9 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private List<ClipEdit> _clips = new();
 
+        [SerializeField]
+        private List<WeaponGrips> _weapons = new();
+
         public ClipEdit Find(AnimationClip clip)
         {
             return _clips.Find(edit => edit.Clip == clip);
@@ -23,6 +26,107 @@ namespace Game.Scripts.Battle
         {
             _clips.RemoveAll(other => other.Clip == edit.Clip);
             _clips.Add(edit);
+        }
+
+        public WeaponGrips GetGrips(WeaponConfig weapon)
+        {
+            WeaponGrips grips = _weapons.Find(other => other.Weapon == weapon);
+
+            if (grips != null)
+                return grips;
+
+            _weapons.Add(grips = new WeaponGrips(weapon));
+
+            return grips;
+        }
+    }
+
+    /// Points on a weapon where hands take hold, in the frame of the hand socket that carries it: the palm (the hand's own
+    /// socket as built) is put on the point and turned as the point is. A two-handed weapon starts with a point for each hand.
+    [Serializable]
+    public sealed class WeaponGrips
+    {
+        public const float OffHandDistance = -0.14f;
+
+        public WeaponConfig Weapon => _weapon;
+        public IReadOnlyList<GripPoint> Points => _points;
+
+        [SerializeField]
+        private WeaponConfig _weapon;
+
+        [SerializeField]
+        private List<GripPoint> _points = new();
+
+        public WeaponGrips(WeaponConfig weapon)
+        {
+            _weapon = weapon;
+            _points.Add(new GripPoint("Main", Vector3.zero));
+
+            if (weapon.Kind == WeaponKind.TwoHanded)
+                _points.Add(new GripPoint("Off", new Vector3(0f, 0f, OffHandDistance)));
+        }
+
+        /// The hand whose socket carries the weapon; LastBone when it hangs on a shield socket only.
+        public HumanBodyBones GetCarrier()
+        {
+            foreach (WeaponAttachment attachment in _weapon.Attachments)
+            {
+                if (attachment.Socket is WeaponSocket.RightHand or WeaponSocket.LeftHand)
+                    return attachment.Socket == WeaponSocket.RightHand ? HumanBodyBones.RightHand : HumanBodyBones.LeftHand;
+            }
+
+            return HumanBodyBones.LastBone;
+        }
+
+        public GripPoint Find(string name)
+        {
+            return _points.Find(point => point.Name == name);
+        }
+
+        public GripPoint Add(Vector3 position)
+        {
+            int index = _points.Count + 1;
+
+            while (Find("Grip " + index) != null)
+                index++;
+
+            GripPoint point = new GripPoint("Grip " + index, position);
+            _points.Add(point);
+
+            return point;
+        }
+
+        public void Remove(GripPoint point)
+        {
+            _points.Remove(point);
+        }
+    }
+
+    [Serializable]
+    public sealed class GripPoint
+    {
+        public string Name => _name;
+        public Pose Pose => new(_position, _rotation);
+
+        [SerializeField]
+        private string _name;
+
+        [SerializeField]
+        private Vector3 _position;
+
+        [SerializeField]
+        private Quaternion _rotation = Quaternion.identity;
+
+        public GripPoint(string name, Vector3 position)
+        {
+            _name = name;
+            _position = position;
+        }
+
+        public void SetPose(Vector3 position, Quaternion rotation)
+        {
+            _position = position;
+            _rotation = rotation;
         }
     }
 
@@ -287,6 +391,9 @@ namespace Game.Scripts.Battle
         public Quaternion Rotation => _rotation;
         public int Start => _start;
         public int End => _end;
+        /// Weapon and name of the grip point the hand is snapped to; empty for a free grip.
+        public WeaponConfig Weapon => _weapon;
+        public string Point => _point;
 
         [SerializeField]
         private HumanBodyBones _hand;
@@ -315,6 +422,12 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private int _end;
+
+        [SerializeField]
+        private WeaponConfig _weapon;
+
+        [SerializeField]
+        private string _point = string.Empty;
 
         private HandGrip(HumanBodyBones hand, HumanBodyBones anchor, bool isHolding, int start, int end)
         {
@@ -346,10 +459,29 @@ namespace Game.Scripts.Battle
             return animator.GetBoneTransform(hand).Find(hand + "Socket");
         }
 
+        /// A pose set by hand frees the grip from its point.
         public void SetPose(Vector3 position, Quaternion rotation)
         {
             _position = position;
             _rotation = rotation;
+            _point = string.Empty;
+        }
+
+        /// Puts the palm (hand-space pose of the hand's own socket) on a point given in the anchor socket's frame.
+        /// Pin: hand = point · palm⁻¹. Hold: socket = palm · point⁻¹.
+        public void Snap(WeaponConfig weapon, GripPoint point, Pose palm)
+        {
+            Pose a = _isHolding ? palm : point.Pose;
+            Pose b = _isHolding ? point.Pose : palm;
+            Quaternion inverse = Quaternion.Inverse(b.rotation);
+            SetPose(a.position - a.rotation * (inverse * b.position), a.rotation * inverse);
+            _weapon = weapon;
+            _point = point.Name;
+        }
+
+        public bool IsSnapped(WeaponConfig weapon, GripPoint point)
+        {
+            return _weapon == weapon && _point == point.Name;
         }
 
         /// Pin: takes the hand as it is posed now on the weapon. Hold: back to the grip the character is built with.
