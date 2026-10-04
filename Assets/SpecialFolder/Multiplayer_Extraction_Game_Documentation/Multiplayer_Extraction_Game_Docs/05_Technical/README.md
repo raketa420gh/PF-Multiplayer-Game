@@ -8,3 +8,4 @@
 - `Performance.md`
 - `Build_And_Release.md`
 - `Coding_Standards.md`
+- `Animation_Test_Scene.md`
