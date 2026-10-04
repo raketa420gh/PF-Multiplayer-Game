@@ -255,14 +255,16 @@ namespace Game.Scripts.Editor.Battle
             _frame = -1;
         }
 
-        /// Gives a pose the leading edge the arm solve finds for its main hand, and the roll it finds for an off hand
-        /// on the same weapon.
+        /// Gives a pose the leading edge the arm solve finds for its main hand, unless it is authored with one, and the
+        /// roll the solve finds for an off hand on the same weapon.
         public void SolveEdge(ref BodyPose pose)
         {
+            Vector3 authored = pose.Edge;
             pose.Edge = Vector3.zero;
             Apply(pose);
-            pose.Edge = _sockets[(int)WeaponSocket.RightHand].up;
-            pose.OffRoll = IsShared(pose) ? Vector3.SignedAngle(pose.Edge, _sockets[(int)pose.OffSocket].up, pose.Main.Forward) : 0f;
+            Vector3 solved = _sockets[(int)WeaponSocket.RightHand].up;
+            pose.OffRoll = IsShared(pose) ? Vector3.SignedAngle(solved, _sockets[(int)pose.OffSocket].up, pose.Main.Forward) : 0f;
+            pose.Edge = authored == Vector3.zero ? solved : Vector3.ProjectOnPlane(authored, pose.Main.Forward).normalized;
         }
 
         private static bool IsShared(in BodyPose pose)

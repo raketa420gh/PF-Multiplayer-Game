@@ -81,7 +81,7 @@ namespace Game.Scripts.Editor.Battle
             GameObject longsword = BattleWeaponPrefabBuilder.BuildSword("Longsword", 0.18f, 1.05f, 0.05f, 0.26f, 0.18f, SwordStyle.Longsword);
             GameObject greatsword = BattleWeaponPrefabBuilder.BuildSword("Greatsword", 0.18f, 1.35f, 0.056f, 0.34f, 0.22f, SwordStyle.Greatsword);
             GameObject dagger = BattleWeaponPrefabBuilder.BuildSword("Dagger", 0.06f, 0.42f, 0.03f, 0.075f, 0.06f, SwordStyle.Rondel);
-            GameObject axe = DungeonWeaponPrefabBuilder.BuildAxe("BattleAxe", 1.15f, 0.32f, AxeStyle.Battle);
+            GameObject axe = DungeonWeaponPrefabBuilder.BuildAxe("BattleAxe", 0.92f, 0.3f, AxeStyle.Battle);
             GameObject mace = DungeonWeaponPrefabBuilder.BuildMace();
             GameObject spear = DungeonWeaponPrefabBuilder.BuildSpear();
             GameObject staff = DungeonWeaponPrefabBuilder.BuildStaff();
@@ -98,7 +98,7 @@ namespace Game.Scripts.Editor.Battle
             GameObject morningStar = DungeonWeaponPrefabBuilder.BuildMorningStar();
             GameObject castillon = BattleWeaponPrefabBuilder.BuildSword("CastillonDagger", 0.06f, 0.5f, 0.046f, 0.1f, 0.06f, SwordStyle.Castillon);
             GameObject stiletto = BattleWeaponPrefabBuilder.BuildSword("Stiletto", 0.06f, 0.46f, 0.014f, 0.07f, 0.06f, SwordStyle.Stiletto);
-            GameObject fellingAxe = DungeonWeaponPrefabBuilder.BuildAxe("FellingAxe", 1f, 0.24f, AxeStyle.Felling);
+            GameObject fellingAxe = DungeonWeaponPrefabBuilder.BuildAxe("FellingAxe", 0.94f, 0.24f, AxeStyle.Felling);
             GameObject maul = DungeonWeaponPrefabBuilder.BuildMaul();
             GameObject halberd = DungeonWeaponPrefabBuilder.BuildHalberd();
             arrow = BattleWeaponPrefabBuilder.BuildArrow();

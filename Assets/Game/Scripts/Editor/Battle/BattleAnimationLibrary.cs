@@ -53,6 +53,9 @@ namespace Game.Scripts.Editor.Battle
         public BodyPose WindupPose;
         public BodyPose MidPose;
         public BodyPose EndPose;
+        /// The swing of the series this one is chained to. Its clip then sets off from where that swing ends its active
+        /// phase instead of the idle pose: the weapon goes on from the cut into the next windup.
+        public AttackDefinition After;
 
         public float Duration => Windup + Active + Recovery;
     }
@@ -145,12 +148,15 @@ namespace Game.Scripts.Editor.Battle
         private const float MaxAimOffset = 0.75f;
         /// A fist is held upright: its short blade does lie across the view.
         private const float MaxFistOffset = 0.95f;
+        /// An edge that has further than this to turn between two keys is all but turned over: it has two ways round.
+        private const float TurnOver = 135f;
 
         private static readonly Vector3 s_shieldRest =new(-0.24f, 1.3f, 0.28f);
         private static readonly Vector3 s_shieldRestNormal = new(-0.35f, 0f, 0.94f);
         private static readonly Vector3 s_shieldBack = new(-0.32f, 1.2f, 0.14f);
         private static readonly Vector3 s_shieldBackNormal = new(-0.7f, 0f, 0.7f);
         private static readonly Vector3 s_offHandRest = new(-0.24f, 0.84f, 0.1f);
+        private static readonly Vector3 s_mainShoulder = new(0.17f, 1.47f, -0.06f);
 
         public static WeaponDefinition CreateSwordShield()
         {
@@ -306,10 +312,11 @@ namespace Game.Scripts.Editor.Battle
             float peakTime = PeakTime(attack);
             float endTime = attack.Windup + attack.Active;
             float followTime = endTime + Mathf.Clamp(attack.Recovery * FollowShare, MinFollow, MaxFollow);
+            BodyPose start = attack.After == null ? weapon.Idle : AttackKeys(weapon, attack.After)[EndKey].Pose;
 
             return new List<PoseKey>
             {
-                PoseKey.Flow(0f, weapon.Idle, RaiseSlope / attack.Windup),
+                PoseKey.Flow(0f, start, RaiseSlope / attack.Windup),
                 PoseKey.Flow(attack.Windup, attack.WindupPose, SettleSlope / attack.Windup),
                 PoseKey.Flow(peakTime, peak, StrikeSlope / (attack.Active * 0.5f)),
                 PoseKey.Flow(endTime, attack.EndPose, EndSlope / (endTime - peakTime)),
@@ -721,13 +728,37 @@ namespace Game.Scripts.Editor.Battle
 
         /// The edge between two keys that have one. Each key carries its edge along as the blade turns away from it,
         /// without rolling the weapon; the two meet halfway. A swing that stays in one plane then gets no roll of its
-        /// own, however far the blade sweeps.
+        /// own, however far the blade sweeps. An edge that is turned over between the keys has two ways round: it takes
+        /// the one that keeps it on the side away from the shoulder, where the forearm is, as the wrist does not bend
+        /// the other way.
         private static Vector3 Roll(in BodyPose from, in BodyPose to, Vector3 blade, float alpha)
         {
             if (from.Edge == Vector3.zero || to.Edge == Vector3.zero)
                 return Vector3.zero;
 
-            return Vector3.Slerp(Carry(from.Main.Forward, from.Edge, blade), Carry(to.Main.Forward, to.Edge, blade), alpha);
+            Vector3 edge = Carry(from.Main.Forward, from.Edge, blade);
+            float turn = Vector3.SignedAngle(edge, Carry(to.Main.Forward, to.Edge, blade), blade);
+            float sense = TurnSense(from, to);
+
+            if (turn * sense < 0f && Mathf.Abs(turn) > 90f)
+                turn += 360f * sense;
+
+            return Quaternion.AngleAxis(turn * alpha, blade) * edge;
+        }
+
+        /// Which way round the edge goes between two keys that turn it over; zero when it merely turns.
+        private static float TurnSense(in BodyPose from, in BodyPose to)
+        {
+            Vector3 blade = Vector3.Slerp(from.Main.Forward, to.Main.Forward, 0.5f).normalized;
+            Vector3 edge = Carry(from.Main.Forward, from.Edge, blade);
+            float turn = Vector3.SignedAngle(edge, Carry(to.Main.Forward, to.Edge, blade), blade);
+
+            if (Mathf.Abs(turn) < TurnOver)
+                return 0f;
+
+            Vector3 arm = (from.Main.Position + to.Main.Position) * 0.5f - s_mainShoulder;
+
+            return Vector3.Dot(Quaternion.AngleAxis(turn * 0.5f, blade) * edge, arm) < 0f ? -Mathf.Sign(turn) : Mathf.Sign(turn);
         }
 
         /// The edge of a weapon whose blade turns the short way to a new direction.
