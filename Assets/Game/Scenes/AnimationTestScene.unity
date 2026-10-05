@@ -547,32 +547,14 @@ MonoBehaviour:
   _weapons:
   - {fileID: 11400000, guid: 8715661ea23838e4589a397f1f6f79b0, type: 2}
   - {fileID: 11400000, guid: 7740e636b2b5d4c4796b626ebbbc09f0, type: 2}
-  - {fileID: 11400000, guid: e7300d55440ce97468d68f2fa481e50e, type: 2}
   - {fileID: 11400000, guid: 40c3356d76b3d8c42aa34bd650560225, type: 2}
-  - {fileID: 11400000, guid: 4d5899e557ccb564a843822017afbd79, type: 2}
-  - {fileID: 11400000, guid: 248962d49ea2cac49872ba0ca5c71201, type: 2}
-  - {fileID: 11400000, guid: db2a02067de613f48ad41dc4d1cb06a9, type: 2}
-  - {fileID: 11400000, guid: 8c01b927e5709d149a716e907bdc45d8, type: 2}
   - {fileID: 11400000, guid: 99beb55c5ae0ea741b445dd172d5d5ae, type: 2}
-  - {fileID: 11400000, guid: e00c077242c58eb4193dcba14c8ad7dd, type: 2}
-  - {fileID: 11400000, guid: 28eb9c8c930cd9e438ca3e79fae678eb, type: 2}
-  - {fileID: 11400000, guid: a77f4b3906d7bf24a82908260dcfdee8, type: 2}
   - {fileID: 11400000, guid: 12826862ca5158846abb8110f1516642, type: 2}
-  - {fileID: 11400000, guid: e02e306b5338f0448899631c82d7b781, type: 2}
-  - {fileID: 11400000, guid: 83b66799816cc1849af1768ef724b070, type: 2}
   - {fileID: 11400000, guid: 4c453e971f5fe0e48bf2f5603037b9bd, type: 2}
   - {fileID: 11400000, guid: ef65dddab87769f45b4199c2f60aec1b, type: 2}
   - {fileID: 11400000, guid: f9fefec3623f3194e8fcd2b0a3af4b61, type: 2}
-  - {fileID: 11400000, guid: 7c74c9a81c20f6341a3a252a447b14f6, type: 2}
-  - {fileID: 11400000, guid: e05eafa9418fbcf4299b9201d73ac212, type: 2}
-  - {fileID: 11400000, guid: d30ad6df5f048d5408426bd1bc4e143d, type: 2}
-  - {fileID: 11400000, guid: ef164450d9b94134ea9b96754eeea6db, type: 2}
-  - {fileID: 11400000, guid: 9b276f1d990f36f4f8a4cdc45ef0be81, type: 2}
   - {fileID: 11400000, guid: 0c6405f0a5761554cb7da3021b213916, type: 2}
   - {fileID: 11400000, guid: 080abe6f99fc9a04d8f6ac4b86573ac5, type: 2}
-  - {fileID: 11400000, guid: 6f7fc28a7950b8548a6e8f5574bfa9b7, type: 2}
-  - {fileID: 11400000, guid: c2cd5125c9be1d94cad80b5b8d5e6cee, type: 2}
-  - {fileID: 11400000, guid: 430b62f2943db8145823c4d13c225cc1, type: 2}
   - {fileID: 11400000, guid: 396ebe5741baddd47bc776dadeddfa40, type: 2}
   - {fileID: 11400000, guid: e5baa891888df4444a55c829b2fe6176, type: 2}
   - {fileID: 11400000, guid: 5293c7e8d0b35204c8747b076423af5c, type: 2}
@@ -657,6 +639,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1621202150}
   - component: {fileID: 1621202149}
+  - component: {fileID: 1621202151}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -744,6 +727,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1621202151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1621202148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1001 &2059216213
 PrefabInstance:
   m_ObjectHideFlags: 0
