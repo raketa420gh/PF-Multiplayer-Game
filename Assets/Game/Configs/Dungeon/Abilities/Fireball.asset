@@ -13,27 +13,29 @@ MonoBehaviour:
   m_Name: Fireball
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Fireball
-  _description: 30 fire with splash and burn.
+  _description: Explodes for up to 30 magical damage around the impact and sets the
+    struck ablaze.
   _kind: 2
   _isSpell: 1
-  _charges: 4
+  _charges: 3
   _cooldown: 1
-  _castTime: 2
+  _castTime: 1.1
   _magnitude: 30
   _duration: 0
-  _radius: 1.6
+  _radius: 2.5
   _effect: 7
   _damageType: 1
-  _projectileSpeed: 20
-  _projectileGravity: -2
+  _projectileSpeed: 22
+  _projectileGravity: 0
   _projectileCount: 1
   _projectileSpread: 0
   _projectileKind: 2
-  _effectMagnitude: 6
-  _effectDuration: 2
-  _color: {r: 1, g: 0.5, b: 0.1, a: 1}
-  _glyph: Fb
+  _effectMagnitude: 12
+  _effectDuration: 4
+  _color: {r: 1, g: 0.45, b: 0.12, a: 1}
+  _glyph: FB
+  _icon: {fileID: 21300000, guid: 2f581159014f64e4cb893f105801c506, type: 3}
   _healthCost: 0
   _lifeSteal: 0
   _spawnPrefab: {fileID: 0}
-  _staggerDuration: 0.1
+  _staggerDuration: 0.3

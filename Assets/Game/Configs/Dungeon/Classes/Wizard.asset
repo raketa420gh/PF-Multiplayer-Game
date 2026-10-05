@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d988ee4bac2acf74b80699d6e83c0b70, type: 3}
+  m_Name: Wizard
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
+  _id: 1
+  _displayName: Wizard
+  _description: 'Master of spells: frost, fire and lightning from two spell wheels.
+    Spells run out and come back only by a campfire. Fragile in melee.'
+  _baseStats:
+    Flesh: 9
+    Grip: 8
+    Reflex: 12
+    Craft: 13
+    Insight: 21
+    Resonance: 23
+  _color: {r: 0.65, g: 0.45, b: 1, a: 1}
+  _bodyColor: {r: 0.78, g: 0.66, b: 0.56, a: 1}
+  _skills:
+  - {fileID: 11400000, guid: d303210ef3c48a14e8e9f5dbef4c85e7, type: 2}
+  - {fileID: 11400000, guid: be58156c84422e248af9f279c12fca93, type: 2}
+  - {fileID: 11400000, guid: 1580786ef315ae6498759ea65bd34ddc, type: 2}
+  - {fileID: 11400000, guid: 531e1b702e96fc74c9a4814ff6c98b74, type: 2}
+  _spells:
+  - {fileID: 11400000, guid: 385d55f047a590d46afacfa522a355cc, type: 2}
+  - {fileID: 11400000, guid: eb98f996a3a65fa42923f55944a2cce3, type: 2}
+  - {fileID: 11400000, guid: c6f1859333260694b847af8561cefe9e, type: 2}
+  - {fileID: 11400000, guid: 16db566873570464eb1e0fe1c792b6dc, type: 2}
+  - {fileID: 11400000, guid: 8ca36ccb603995842b7a607a016c6b72, type: 2}
+  - {fileID: 11400000, guid: 3d8000edbd09f0e4a92ea1f6afc56348, type: 2}
+  - {fileID: 11400000, guid: 68169288e63f5744db89ea8d8b1b2497, type: 2}
+  - {fileID: 11400000, guid: 12c8ec57a6709174ba976fdb342f9760, type: 2}
+  - {fileID: 11400000, guid: c62cf91ff561076408cb971c786edad7, type: 2}
+  - {fileID: 11400000, guid: 471621ec6502bb64c874549fcb2e1dde, type: 2}
+  _perks:
+  - _name: Arcane Mastery
+    _description: +6 magical power and +10% magical damage.
+    _modifiers:
+    - Stat: 11
+      Value: 6
+    - Stat: 14
+      Value: 0.1
+    _icon: {fileID: 21300000, guid: 2e0148156428dbf45aff6a031dc5fea4, type: 3}
+  - _name: Sage
+    _description: '+10 Resonance: more charges for every spell.'
+    _modifiers:
+    - Stat: 5
+      Value: 10
+    _icon: {fileID: 21300000, guid: 148348c4b17af5f448453754d032a36a, type: 3}
+  - _name: Spell Ward
+    _description: +30 magic resistance.
+    _modifiers:
+    - Stat: 8
+      Value: 30
+    _icon: {fileID: 21300000, guid: 4cb22c13b94331748a95b6ec59046e42, type: 3}
+  - _name: Focused Mind
+    _description: '+8 Insight: faster casting, faster recovery by the fire.'
+    _modifiers:
+    - Stat: 4
+      Value: 8
+    _icon: {fileID: 21300000, guid: 06b0fde5566646a46bec2d3b95f675d8, type: 3}
+  _startingKit:
+  - _item: {fileID: 11400000, guid: 03db1738938f1ee419d7c1f8073365ba, type: 2}
+    _slot: 9
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 14c9a613182090f48b798823d6e15972, type: 2}
+    _slot: 11
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: e044b711b014ff84fb45341b202b2fd8, type: 2}
+    _slot: 0
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: b9cb163780bddbe4aaa69e94f9735eec, type: 2}
+    _slot: 1
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 2cf24320bc8a42e4a86968714252f9f1, type: 2}
+    _slot: 13
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 1cf148bc8a302b84d87d1896014a5456, type: 2}
+    _slot: 14
+    _count: 2
+    _isEquipped: 1
+  _allowedWeapons: 070a0b0300
+  _allowedArmor: 00
+  _castFocus: 0
