@@ -15,6 +15,8 @@ namespace Game.Scripts.Dungeon
         public float MoveSpeedPenalty => _moveSpeedPenalty;
         public ArmorVisual Visual => _visual;
         public Color VisualColor => _visualColor;
+        /// Classes that may wear the piece; empty means everyone.
+        public ClassConfig[] Classes => _classes;
 
         [SerializeField]
         private EquipSlot _slot;
@@ -37,12 +39,20 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private Color _visualColor = Color.gray;
 
+        [SerializeField]
+        private ClassConfig[] _classes = Array.Empty<ClassConfig>();
+
         public override bool CanEquip(EquipSlot slot)
         {
             if (_slot == EquipSlot.Ring1)
                 return slot is EquipSlot.Ring1 or EquipSlot.Ring2;
 
             return slot == _slot;
+        }
+
+        public bool Fits(ClassConfig config)
+        {
+            return _classes.Length == 0 || Array.IndexOf(_classes, config) >= 0;
         }
     }
 }

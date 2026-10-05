@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Crypt props assembled from procedural meshes and textured materials. Returns unsaved objects for the content builder.
+    /// Dungeon props assembled from procedural meshes and textured materials. Returns unsaved objects for the content builder.
     internal static class DungeonPropBuilder
     {
         public const string PrefabsFolder = "Assets/Game/Prefabs/Dungeon";
@@ -15,14 +15,11 @@ namespace Game.Scripts.Editor.Dungeon
         public const float WallThickness = 0.6f;
 
         public static Material StoneWall => Textured("StoneWall", "StoneWall", 0.5f, 0.15f);
-        public static Material StoneFloor => Textured("StoneFloor", "StoneFloor", 0.5f, 0.25f);
         public static Material Cobble => Textured("Cobble", "Cobble", 0.5f, 0.15f);
-        public static Material Dirt => Textured("Dirt", "Dirt", 0.3f, 0.05f);
         public static Material WoodPlanks => Textured("WoodPlanks", "WoodPlanks", 0.5f, 0.25f);
         public static Material DarkWood => Textured("DarkWood", "DarkWood", 0.5f, 0.3f);
         public static Material RustyMetal => Textured("RustyMetal", "RustyMetal", 0.6f, 0.4f, 0.6f);
         public static Material Bone => Textured("Bone", "Bone", 0.8f, 0.35f);
-        public static Material ClothRed => Textured("ClothRed", "ClothRed", 1f, 0.1f);
         public static Material Gold => Textured("Gold", "Gold", 0.8f, 0.75f, 0.8f);
         public static Material Fire => FireMaterial();
         public static Material PortalBlue => Emissive("PortalBlue", new Color(0.2f, 0.5f, 1f), 4f);
@@ -217,48 +214,6 @@ namespace Game.Scripts.Editor.Dungeon
             return flame;
         }
 
-        public static GameObject Wall(float length, string name)
-        {
-            DungeonMeshBuilder builder = new DungeonMeshBuilder(0.5f).Box(new Vector3(0f, WallHeight * 0.5f, 0f), new Vector3(length, WallHeight + 0.3f, WallThickness));
-            Trim(builder, length, 0f);
-
-            return MeshObject(name, null, builder.Save(name), StoneWall);
-        }
-
-        /// Plinth, cornice and pilasters that break up a flat wall run (both faces).
-        private static void Trim(DungeonMeshBuilder builder, float length, float gap)
-        {
-            float depth = WallThickness + 0.24f;
-            builder.Box(new Vector3(0f, 0.2f, 0f), new Vector3(length, 0.4f, depth));
-            builder.Box(new Vector3(0f, WallHeight - 0.25f, 0f), new Vector3(length, 0.3f, depth));
-            int count = Mathf.Max(1, Mathf.RoundToInt(length / 3.5f));
-
-            for (int i = 0; i <= count; i++)
-            {
-                float x = -length * 0.5f + length * i / count;
-
-                if (Mathf.Abs(x) < gap)
-                    continue;
-
-                builder.Box(new Vector3(x, WallHeight * 0.5f, 0f), new Vector3(0.5f, WallHeight, depth + 0.1f));
-            }
-        }
-
-        public static GameObject Cobweb()
-        {
-            Mesh mesh = new DungeonMeshBuilder(1f).DoubleQuad(Vector3.zero, Vector3.forward, Vector3.right * 0.7f, Vector3.up * 0.7f).Save("Cobweb");
-            GameObject root = new GameObject("Cobweb");
-            MeshObject("Web", root.transform, mesh, CobwebMaterial(), default, default, false, false);
-
-            return root;
-        }
-
-        /// Hangs from its pivot: put it on the ceiling.
-        public static GameObject Chandelier()
-        {
-            return Wrap("Chandelier", "Chandelier", 1f);
-        }
-
         public static GameObject CandleCluster()
         {
             Mesh candle = new DungeonMeshBuilder(1f).Cylinder(new Vector3(0f, 0.1f, 0f), 0.03f, 0.2f, 6).Save("Candle");
@@ -275,46 +230,6 @@ namespace Game.Scripts.Editor.Dungeon
             return root;
         }
 
-        public static GameObject Chain()
-        {
-            DungeonMeshBuilder builder = new DungeonMeshBuilder(1f);
-
-            for (int i = 0; i < 10; i++)
-                builder.Box(new Vector3(0f, -i * 0.22f - 0.1f, 0f), i % 2 == 0 ? new Vector3(0.09f, 0.26f, 0.03f) : new Vector3(0.03f, 0.26f, 0.09f));
-
-            builder.Box(new Vector3(0f, -2.35f, 0f), new Vector3(0.14f, 0.1f, 0.14f));
-            GameObject root = new GameObject("Chain");
-            MeshObject("Links", root.transform, builder.Save("Chain"), RustyMetal, default, default, false, false);
-
-            return root;
-        }
-
-        private static Material CobwebMaterial()
-        {
-            BattleEditorUtility.EnsureFolder(MaterialsFolder);
-            string path = $"{MaterialsFolder}/Cobweb.mat";
-            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-
-            if (material == null)
-            {
-                material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                AssetDatabase.CreateAsset(material, path);
-            }
-
-            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{DungeonTextureBuilder.Folder}/Cobweb.png"));
-            material.SetColor("_BaseColor", new Color(0.9f, 0.9f, 0.85f, 0.9f));
-            material.SetFloat("_AlphaClip", 1f);
-            material.SetFloat("_Cutoff", 0.35f);
-            material.SetFloat("_Cull", 0f);
-            material.SetFloat("_Smoothness", 0.1f);
-            material.EnableKeyword("_ALPHATEST_ON");
-            material.SetOverrideTag("RenderType", "TransparentCutout");
-            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
-            EditorUtility.SetDirty(material);
-
-            return material;
-        }
-
         public static GameObject Pillar()
         {
             Mesh mesh = new DungeonMeshBuilder(0.5f)
@@ -324,47 +239,6 @@ namespace Game.Scripts.Editor.Dungeon
                 .Save("Pillar");
 
             return MeshObject("Pillar", null, mesh, StoneWall);
-        }
-
-        public static GameObject Floor(float size)
-        {
-            Mesh mesh = new DungeonMeshBuilder(0.5f).Quad(Vector3.zero, Vector3.up, Vector3.right * size * 0.5f, Vector3.forward * size * 0.5f).Save("Floor" + size);
-
-            return MeshObject("Floor", null, mesh, StoneFloor);
-        }
-
-        public static GameObject Ceiling(float size)
-        {
-            Mesh mesh = new DungeonMeshBuilder(0.5f).Quad(Vector3.zero, Vector3.down, Vector3.right * size * 0.5f, Vector3.back * size * 0.5f).Save("Ceiling" + size);
-
-            return MeshObject("Ceiling", null, mesh, StoneWall);
-        }
-
-        /// Doorway through a wall: two posts and a lintel, opening 2.2 wide x 3 high.
-        public static GameObject DoorFrame(float wallLength)
-        {
-            float side = (wallLength - 2.2f) * 0.5f;
-            DungeonMeshBuilder builder = new DungeonMeshBuilder(0.5f)
-                .Box(new Vector3(-1.1f - side * 0.5f, WallHeight * 0.5f, 0f), new Vector3(side, WallHeight + 0.3f, WallThickness))
-                .Box(new Vector3(1.1f + side * 0.5f, WallHeight * 0.5f, 0f), new Vector3(side, WallHeight + 0.3f, WallThickness))
-                .Box(new Vector3(0f, 3f + (WallHeight - 3f) * 0.5f + 0.075f, 0f), new Vector3(2.2f, WallHeight - 3f + 0.15f, WallThickness))
-                .Box(new Vector3(-1.2f, 1.5f, 0f), new Vector3(0.2f, 3f, WallThickness + 0.2f))
-                .Box(new Vector3(1.2f, 1.5f, 0f), new Vector3(0.2f, 3f, WallThickness + 0.2f))
-                .Box(new Vector3(0f, 3.1f, 0f), new Vector3(2.6f, 0.2f, WallThickness + 0.2f));
-            Trim(builder, wallLength, 2.0f);
-            Mesh mesh = builder.Save("DoorFrame" + wallLength);
-            GameObject frame = MeshObject("DoorFrame", null, mesh, StoneWall);
-            Mesh stone = new DungeonMeshBuilder(0.5f).Box(Vector3.zero, new Vector3(0.42f, 0.3f, WallThickness + 0.3f)).Save("ArchStone");
-
-            // Decorative voussoir arch over the lintel.
-            for (int i = 0; i <= 6; i++)
-            {
-                float angle = i / 6f * Mathf.PI;
-                Vector3 position = new Vector3(Mathf.Cos(angle) * 1.45f, 3.0f + Mathf.Sin(angle) * 1.1f, 0f);
-                MeshObject("Arch", frame.transform, stone, StoneWall, position, new Vector3(0f, 0f, angle * Mathf.Rad2Deg - 90f), false);
-            }
-
-            return frame;
         }
 
         public static GameObject DoorLeaf()
@@ -520,36 +394,6 @@ namespace Game.Scripts.Editor.Dungeon
 
             GameObject root = new GameObject("SkullPile");
             MeshObject("Skulls", root.transform, builder.Save("SkullPile"), Bone, default, default, false, false);
-
-            return root;
-        }
-
-        public static GameObject Rubble()
-        {
-            DungeonMeshBuilder builder = new DungeonMeshBuilder(0.6f);
-            System.Random random = new System.Random(11);
-
-            for (int i = 0; i < 9; i++)
-            {
-                Vector3 size = new Vector3(0.2f + (float)random.NextDouble() * 0.5f, 0.15f + (float)random.NextDouble() * 0.3f, 0.2f + (float)random.NextDouble() * 0.5f);
-                builder.Box(new Vector3(((float)random.NextDouble() - 0.5f) * 1.6f, size.y * 0.4f, ((float)random.NextDouble() - 0.5f) * 1.6f), size);
-            }
-
-            GameObject root = new GameObject("Rubble");
-            MeshObject("Stones", root.transform, builder.Save("Rubble"), StoneWall, default, default, true, false);
-
-            return root;
-        }
-
-        public static GameObject Sarcophagus()
-        {
-            Mesh mesh = new DungeonMeshBuilder(0.5f)
-                .Box(new Vector3(0f, 0.45f, 0f), new Vector3(1.1f, 0.9f, 2.4f))
-                .Box(new Vector3(0f, 0.95f, 0f), new Vector3(1.2f, 0.12f, 2.5f))
-                .Box(new Vector3(0f, 1.1f, 0f), new Vector3(0.5f, 0.2f, 1.7f))
-                .Save("Sarcophagus");
-            GameObject root = new GameObject("Sarcophagus");
-            MeshObject("Stone", root.transform, mesh, StoneWall, default, default, true, false);
 
             return root;
         }

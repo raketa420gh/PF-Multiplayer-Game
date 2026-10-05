@@ -508,7 +508,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(mso, "_worldSize", DungeonMapBuilder.WorldSize);
             BattleEditorUtility.Set(mso, "_floorSizes", DungeonMapBuilder.FloorSizes);
             BattleEditorUtility.Set(mso, "_floorGrids", DungeonMapBuilder.FloorGrids);
-            BattleEditorUtility.Set(mso, "_windowSize", DungeonMapBuilder.Module * 1.3f);
+            BattleEditorUtility.Set(mso, "_windowSize", DungeonMapBuilder.WorldSize);
             mso.ApplyModifiedPropertiesWithoutUndo();
 
             // Top corners.
@@ -1079,7 +1079,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             (string title, string info, Texture picture, string scene)[] destinations =
             {
-                (DungeonSceneBuilder.Title, "Two floors · undead · escape through the portals", inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null, SceneTravel.DungeonScene),
+                (DungeonSceneBuilder.Title, "A lone room for now · a chest · escape through the portal", inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null, SceneTravel.DungeonScene),
                 ("Training Grounds", "Test scene · weapon table, dummies, dev spawns", DungeonTextureBuilder.Load("Cobble", false), SceneTravel.SandboxScene)
             };
 

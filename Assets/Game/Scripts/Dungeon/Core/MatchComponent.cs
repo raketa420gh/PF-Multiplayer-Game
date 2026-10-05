@@ -15,7 +15,7 @@ namespace Game.Scripts.Dungeon
     /// arrives, and its circle closes in stages from the whole floor towards a random point.
     public sealed class MatchComponent : NetworkBehaviour
     {
-        public const int FloorCount = 2;
+        public const int FloorCount = 1;
 
         public DungeonConfig Config => _config;
         public float Elapsed => State == MatchState.Running ? Runner.SecondsSince(StartTick) : 0f;

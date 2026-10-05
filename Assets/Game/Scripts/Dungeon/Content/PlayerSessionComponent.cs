@@ -496,7 +496,7 @@ namespace Game.Scripts.Dungeon
             return item switch
             {
                 WeaponItemConfig weapon => config.CanUseWeapon(weapon.WeaponClass),
-                ArmorItemConfig armor => config.CanWearArmor(armor.ArmorType),
+                ArmorItemConfig armor => armor.Fits(config),
                 _ => true
             };
         }

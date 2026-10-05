@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Scripts.Dungeon
@@ -20,11 +21,19 @@ namespace Game.Scripts.Dungeon
         private const string SkillBKey = "skillB";
         private const string PerksKey = "perks";
         private const string SpellsKey = "spells";
+        private const string ItemsKey = "dad.items";
+        /// Version of the item list the saves refer to, see Migrate.
+        private const int ItemsVersion = 2;
 
         public static int Slot => s_slot;
 
         private static readonly byte[] s_buffer = new byte[(InventoryComponent.Capacity + InventoryComponent.EquipmentCapacity) * ItemStack.ByteSize + 2];
         private static int s_slot = Mathf.Clamp(PlayerPrefs.GetInt(SlotKey, 0), 0, SlotCount - 1);
+
+        static StashService()
+        {
+            Migrate();
+        }
 
         public static bool HasCharacter(int slot) => PlayerPrefs.HasKey(Key(slot, ClassKey));
         public static byte LoadClass(int slot) => (byte)PlayerPrefs.GetInt(Key(slot, ClassKey), 0);
@@ -137,6 +146,68 @@ namespace Game.Scripts.Dungeon
         private static string StashPageKey(int slot, int page)
         {
             return Key(slot, page == 0 ? StashKey : StashKey + (page + 1));
+        }
+
+        /// Item ids are positions in the item list. Version 2 cut the old clothes out of it and everything behind them moved up:
+        /// older saves get their ids shifted and lose the pieces that no longer exist.
+        private static void Migrate()
+        {
+            if (PlayerPrefs.GetInt(ItemsKey, 1) >= ItemsVersion)
+                return;
+
+            for (int slot = 0; slot < SlotCount; slot++)
+            {
+                Migrate(Key(slot, KitKey));
+
+                for (int page = 0; page < PlayerSessionComponent.StashPages; page++)
+                    Migrate(StashPageKey(slot, page));
+            }
+
+            PlayerPrefs.SetInt(ItemsKey, ItemsVersion);
+            PlayerPrefs.Save();
+        }
+
+        private static void Migrate(string key)
+        {
+            byte[] data = Load(key);
+            int count = data.Length < 2 ? 0 : data[0] + data[1];
+
+            if (count == 0)
+                return;
+
+            int size = (data.Length - 2) / count;
+            List<byte> result = new() { 0, 0 };
+
+            for (int i = 0; i < count; i++)
+            {
+                int offset = 2 + i * size;
+                int id = MigrateId(data[offset] | (data[offset + 1] << 8));
+
+                if (id == 0)
+                    continue;
+
+                data[offset] = (byte)id;
+                data[offset + 1] = (byte)(id >> 8);
+                result.AddRange(new ArraySegment<byte>(data, offset, size));
+                result[i < data[0] ? 0 : 1]++;
+            }
+
+            PlayerPrefs.SetString(key, Convert.ToBase64String(result.ToArray()));
+        }
+
+        /// The removed clothes sat in three runs of the old list: 17-36, 59 and 72-97.
+        private static int MigrateId(int id)
+        {
+            return id switch
+            {
+                <= 16 => id,
+                <= 36 => 0,
+                <= 58 => id - 20,
+                59 => 0,
+                <= 71 => id - 21,
+                <= 97 => 0,
+                _ => id - 47
+            };
         }
 
         private static void Save(string key, InventoryComponent inventory)

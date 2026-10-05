@@ -12,12 +12,12 @@ using UnityEngine.SceneManagement;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Assembles DungeonScene: dark lighting, Fusion bootstrap, context, director, the two floors and the gameplay UI.
+    /// Assembles DungeonScene: dark lighting, Fusion bootstrap, context, director, the dungeon and the gameplay UI.
     /// Players come here from LobbyScene and are dropped into the dungeon as soon as the session has their kit.
     internal static class DungeonSceneBuilder
     {
         public const string ScenePath = "Assets/Game/Scenes/DungeonScene.unity";
-        public const string Title = "Forgotten Crypt";
+        public const string Title = "The Dungeon";
         private const string ReflectionPath = DungeonTextureBuilder.Folder + "/Reflection.cubemap";
 
         public static void Build()
@@ -83,10 +83,10 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_director", director);
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            Transform dungeon = DungeonMapBuilder.Build(director);
+            Transform dungeon = DungeonMapBuilder.Build(director, out Texture2D[] floorMaps);
             so = new SerializedObject(dungeon.gameObject.AddComponent<FloorVisibilityView>());
             BattleEditorUtility.Set(so, "_context", context);
-            BattleEditorUtility.Set(so, "_floors", new[] { dungeon.Find("Floor1"), dungeon.Find("Floor2") });
+            BattleEditorUtility.Set(so, "_floors", new[] { dungeon.Find("Floor1") });
             so.ApplyModifiedPropertiesWithoutUndo();
             DungeonUiBuilder.Build(new DungeonUiBuilder.Inputs
             {
@@ -95,7 +95,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Camera = camera,
                 PreviewRig = AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("PreviewRig")),
                 PieceSet = AssetDatabase.LoadAssetAtPath<ArmorPieceSetConfig>($"{DungeonContentBuilder.ConfigsFolder}/ArmorPieces.asset"),
-                FloorMaps = DungeonMapBuilder.FloorMaps,
+                FloorMaps = floorMaps,
                 ModuleNames = DungeonMapBuilder.ModuleNames,
                 Title = Title
             });

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Fusion;
 using Game.Scripts.Battle;
 using Game.Scripts.Dungeon;
@@ -55,16 +56,15 @@ namespace Game.Scripts.Editor.Dungeon
             BuildPreviewRig(pieceSet);
 
             BuildAdventurer(loadouts, arrow, orb, database, classes, config, weapons, worldItem, corpse, campfire, pieceSet);
-            Color rust = new Color(0.4f, 0.3f, 0.22f);
             Color rags = new Color(0.25f, 0.22f, 0.16f);
             BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = 5, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
-                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Helmet, rust), (ArmorVisual.Tunic, rags) } }, loadouts, arrow, orb, database, pieceSet);
+                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.PeasantChest, rags) } }, loadouts, arrow, orb, database, pieceSet);
             BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = 2, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
-                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.Hood, rags) } }, loadouts, arrow, orb, database, pieceSet);
+                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.RangerHead, rags) } }, loadouts, arrow, orb, database, pieceSet);
             BuildFlyingHead(new MonsterDef { Name = "FlyingHead", DisplayName = "Flying Head", Health = 60, Damage = 1f, MoveSpeed = 230f, ActionSpeed = 1f, Aggro = 12f, Experience = 30, Loot = loot["Monster"], Scale = 1f,
                 Voice = DungeonSound.Screech, Charge = 900f }, arrow, orb, database);
             BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 210f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = 15, Experience = 150, Loot = loot["Boss"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
-                IsBoss = true, Lunge = 5f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.GreatHelm, new Color(0.85f, 0.7f, 0.3f)), (ArmorVisual.PlateChest, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Greaves, new Color(0.3f, 0.3f, 0.34f)), (ArmorVisual.Cloak, new Color(0.35f, 0.08f, 0.1f)) } }, loadouts, arrow, orb, database, pieceSet);
+                IsBoss = true, Lunge = 5f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.MarauderHead, Color.gray), (ArmorVisual.MarauderChest, Color.gray), (ArmorVisual.MarauderHands, Color.gray), (ArmorVisual.MarauderLegs, Color.gray), (ArmorVisual.MarauderFeet, Color.gray) } }, loadouts, arrow, orb, database, pieceSet);
 
             BuildFigures();
             BuildSession(database, classes, config, BuildMerchants(database));
@@ -96,9 +96,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             List<ItemDef> defs = DungeonItemLibrary.CreateItems();
             ItemConfig[] configs = new ItemConfig[defs.Count];
-            GameObject[] armorPieces = BuildArmorPieces();
-            (ArmorVisual visual, int prefab, HumanBodyBones bone, bool mirrored)[] mapping = ArmorMapping();
-            Dictionary<ArmorVisual, GameObject> outfitModels = BuildOutfitModels();
+            Dictionary<ArmorVisual, GameObject> outfitModels = BuildOutfitModels(defs);
 
             for (int i = 0; i < defs.Count; i++)
             {
@@ -126,10 +124,9 @@ namespace Game.Scripts.Editor.Dungeon
                 BattleEditorUtility.Set(so, "_iconGlyph", def.Glyph);
                 BattleEditorUtility.Set(so, "_canRollRarity", def.RollsRarity);
                 SetModifiers(so, "_modifiers", def.Modifiers);
-                GameObject model = ResolveModel(def, weapons, armorPieces, mapping, outfitModels, out float zoom, out Vector3 euler);
+                GameObject model = ResolveModel(def, weapons, outfitModels, out float zoom, out Vector3 euler, out Vector3 shift);
                 BattleEditorUtility.Set(so, "_worldModel", def.Kind == ItemKind.Armor ? null : model);
-                Color? tint = def.Kind == ItemKind.Armor && !outfitModels.ContainsKey(def.Visual) ? def.VisualColor : (Color?)null;
-                BattleEditorUtility.Set(so, "_icon", model != null ? DungeonIconBuilder.Render(model, Sanitize(def.Name), zoom, euler, 0f, tint) : null);
+                BattleEditorUtility.Set(so, "_icon", model != null ? DungeonIconBuilder.Render(model, Sanitize(def.Name), zoom, euler, shift) : null);
 
                 switch (def.Kind)
                 {
@@ -150,7 +147,9 @@ namespace Game.Scripts.Editor.Dungeon
                         BattleEditorUtility.Set(so, "_magicResistance", def.MagicResist);
                         BattleEditorUtility.Set(so, "_moveSpeedPenalty", -def.MovePenalty);
                         BattleEditorUtility.Set(so, "_visual", def.Visual);
-                        BattleEditorUtility.Set(so, "_visualColor", outfitModels.ContainsKey(def.Visual) ? Color.white : def.VisualColor);
+                        BattleEditorUtility.Set(so, "_visualColor", Color.white);
+                        BattleEditorUtility.Set(so, "_classes", System.Array.ConvertAll(def.Classes ?? new string[0],
+                            name => BattleEditorUtility.LoadOrCreate<ClassConfig>($"{ClassesFolder}/{name}.asset")));
                         break;
                     case ItemKind.Consumable:
                         BattleEditorUtility.Set(so, "_effect", def.Effect);
@@ -175,13 +174,13 @@ namespace Game.Scripts.Editor.Dungeon
             return database;
         }
 
-        /// Picks the 3D representation of an item: weapon attachments, armor pieces or a dedicated small model.
-        private static GameObject ResolveModel(ItemDef def, Dictionary<string, WeaponConfig> weapons, GameObject[] armorPieces,
-            (ArmorVisual visual, int prefab, HumanBodyBones bone, bool mirrored)[] mapping, Dictionary<ArmorVisual, GameObject> outfitModels,
-            out float zoom, out Vector3 euler)
+        /// Picks the 3D representation of an item: weapon attachments, outfit parts or a dedicated small model.
+        private static GameObject ResolveModel(ItemDef def, Dictionary<string, WeaponConfig> weapons, Dictionary<ArmorVisual, GameObject> outfitModels,
+            out float zoom, out Vector3 euler, out Vector3 shift)
         {
             zoom = 1f;
             euler = Vector3.zero;
+            shift = Vector3.zero;
 
             switch (def.Kind)
             {
@@ -206,24 +205,12 @@ namespace Game.Scripts.Editor.Dungeon
 
                     return null;
                 case ItemKind.Armor:
-                    if (outfitModels.TryGetValue(def.Visual, out GameObject outfit))
-                    {
-                        zoom = 1.1f;
+                    // The figure stands with its arms spread: sleeves are cropped to the body, of a pair of bracers one is shown.
+                    bool hasSleeves = def.Parts != null && System.Array.Exists(def.Parts, part => part is OutfitPart.PeasantArms or OutfitPart.RangerArms);
+                    zoom = def.Slot == EquipSlot.Hands ? 4.2f : hasSleeves ? 2.2f : 1.1f;
+                    shift = def.Slot == EquipSlot.Hands ? Vector3.left * 0.8f : Vector3.zero;
 
-                        return outfit;
-                    }
-
-                    foreach ((ArmorVisual visual, int prefab, HumanBodyBones bone, bool mirrored) entry in mapping)
-                    {
-                        if (entry.visual == def.Visual)
-                        {
-                            zoom = 1.1f;
-
-                            return armorPieces[entry.prefab];
-                        }
-                    }
-
-                    return null;
+                    return outfitModels.GetValueOrDefault(def.Visual);
                 default:
                     zoom = 1.05f;
 
@@ -358,12 +345,6 @@ namespace Game.Scripts.Editor.Dungeon
                     weapons.GetArrayElementAtIndex(w).intValue = (int)def.Weapons[w];
 
                 BattleEditorUtility.Set(so, "_castFocus", def.Focus);
-                SerializedProperty armor = so.FindProperty("_allowedArmor");
-                armor.arraySize = def.Armor.Length;
-
-                for (int a = 0; a < def.Armor.Length; a++)
-                    armor.GetArrayElementAtIndex(a).intValue = (int)def.Armor[a];
-
                 so.ApplyModifiedPropertiesWithoutUndo();
                 configs[i] = config;
             }
@@ -373,59 +354,56 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Dictionary<string, LootTableConfig> BuildLootTables(ItemDatabase database)
         {
-            (string name, float weight, int min, int max)[] common =
+            List<ItemDef> defs = DungeonItemLibrary.CreateItems();
+
+            // Every piece of the given outfits at one weight.
+            IEnumerable<(string, float, int, int)> Pieces(float weight, params string[] sets)
+            {
+                return defs.Where(def => System.Array.IndexOf(sets, def.Set) >= 0).Select(def => (def.Name, weight, 1, 1));
+            }
+
+            (string name, float weight, int min, int max)[] common = new (string, float, int, int)[]
             {
                 ("Gold Coins", 8f, 3, 14), ("Bandage", 4f, 1, 3), ("Potion of Healing", 3f, 1, 2), ("Potion of Protection", 1.5f, 1, 1), ("Lockpick", 1.5f, 1, 2),
                 ("Ale", 1f, 1, 1), ("Throwing Knife", 1f, 1, 2), ("Francisca Axe", 0.8f, 1, 2), ("Torch", 1.5f, 1, 1), ("Campfire Kit", 0.6f, 1, 1),
                 ("Arming Sword", 1f, 1, 1), ("Falchion", 0.7f, 1, 1), ("Flanged Mace", 0.7f, 1, 1), ("Rondel Dagger", 1f, 1, 1), ("Recurve Bow", 0.6f, 1, 1), ("Round Shield", 0.8f, 1, 1),
                 ("Spear", 0.5f, 1, 1), ("Longsword", 0.5f, 1, 1), ("Crossbow", 0.4f, 1, 1), ("Magic Staff", 0.5f, 1, 1), ("Battle Axe", 0.4f, 1, 1), ("Zweihander", 0.3f, 1, 1),
-                ("Leather Cap", 1f, 1, 1), ("Woolen Cap", 0.8f, 1, 1), ("Rogue Cowl", 0.5f, 1, 1), ("Wizard Hat", 0.5f, 1, 1), ("Kettle Hat", 0.6f, 1, 1),
-                ("Adventurer Tunic", 1f, 1, 1), ("Doublet", 0.8f, 1, 1), ("Frock", 0.5f, 1, 1), ("Heavy Gambeson", 0.4f, 1, 1), ("Leather Gloves", 0.8f, 1, 1),
-                ("Cloth Pants", 0.8f, 1, 1), ("Leather Leggings", 0.7f, 1, 1), ("Adventurer Boots", 0.8f, 1, 1), ("Adventurer Cloak", 0.6f, 1, 1),
                 ("Ruby", 0.5f, 1, 1), ("Emerald", 0.5f, 1, 1), ("Sapphire", 0.5f, 1, 1), ("Gold Goblet", 0.5f, 1, 1),
                 ("Short Sword", 0.9f, 1, 1), ("Rapier", 0.5f, 1, 1), ("Viking Sword", 0.5f, 1, 1), ("Hatchet", 0.8f, 1, 1), ("Morning Star", 0.5f, 1, 1),
                 ("Castillon Dagger", 0.6f, 1, 1), ("Stiletto Dagger", 0.6f, 1, 1), ("Felling Axe", 0.5f, 1, 1), ("Halberd", 0.3f, 1, 1), ("Buckler", 0.6f, 1, 1),
-                ("Ranger Hood", 0.6f, 1, 1), ("Feathered Hat", 0.5f, 1, 1), ("Viking Helm", 0.5f, 1, 1), ("Chapel De Fer", 0.5f, 1, 1), ("Occultist Hood", 0.4f, 1, 1),
-                ("Padded Tunic", 0.8f, 1, 1), ("Wanderer Attire", 0.6f, 1, 1), ("Marauder Outfit", 0.5f, 1, 1), ("Mystic Vestments", 0.3f, 1, 1),
-                ("Rawhide Gloves", 0.7f, 1, 1), ("Riveted Gloves", 0.5f, 1, 1), ("Loose Trousers", 0.7f, 1, 1), ("Heavy Leather Leggings", 0.5f, 1, 1),
-                ("Lightfoot Boots", 0.5f, 1, 1), ("Laced Turnshoe", 0.6f, 1, 1), ("Vigilant Cloak", 0.4f, 1, 1),
                 ("Potion of Invisibility", 0.6f, 1, 1), ("Silver Chalice", 0.6f, 1, 1), ("Gold Ore", 0.8f, 1, 3), ("Silver Ingot", 0.3f, 1, 1)
-            };
-            (string name, float weight, int min, int max)[] ornate =
+            }.Concat(Pieces(0.9f, "Peasant")).Concat(Pieces(0.6f, "Ranger")).Concat(Pieces(0.3f, "Mystic", "Occultist", "Marauder", "Berserker")).ToArray();
+            (string name, float weight, int min, int max)[] ornate = new (string, float, int, int)[]
             {
                 ("Gold Coin Purse", 4f, 1, 2), ("Gold Coin Bag", 1f, 1, 1), ("Gold Coins", 3f, 10, 25), ("Diamond", 1.5f, 1, 2), ("Ruby", 2f, 1, 3), ("Emerald", 2f, 1, 3), ("Sapphire", 2f, 1, 3),
                 ("Gold Candlestick", 2f, 1, 1), ("Gold Goblet", 2f, 1, 1), ("Ancient Scroll", 1.5f, 1, 1), ("Gem Necklace", 1f, 1, 1), ("Gold Band", 1f, 1, 1), ("Gem Ring", 1f, 1, 1),
-                ("Templar Armor", 0.8f, 1, 1), ("Dark Plate Armor", 0.5f, 1, 1), ("Great Helm", 0.8f, 1, 1), ("Heavy Gauntlets", 0.8f, 1, 1), ("Plate Pants", 0.8f, 1, 1), ("Plate Boots", 0.8f, 1, 1),
                 ("Zweihander", 0.8f, 1, 1), ("Longsword", 1f, 1, 1), ("Battle Axe", 0.8f, 1, 1), ("Crossbow", 0.8f, 1, 1), ("Magic Staff", 0.8f, 1, 1), ("Surgical Kit", 1.5f, 1, 1),
                 ("War Maul", 0.8f, 1, 1), ("Halberd", 0.8f, 1, 1), ("Rapier", 0.8f, 1, 1), ("Viking Sword", 0.8f, 1, 1), ("Heater Shield", 0.8f, 1, 1),
-                ("Crusader Helm", 0.6f, 1, 1), ("Barbuta Helm", 0.6f, 1, 1), ("Fine Cuirass", 0.5f, 1, 1), ("Champion Armor", 0.5f, 1, 1), ("Ornate Jazerant", 0.8f, 1, 1),
-                ("Regal Gambeson", 0.8f, 1, 1), ("Oracle Robe", 0.6f, 1, 1), ("Light Gauntlets", 0.6f, 1, 1), ("Heavy Boots", 0.6f, 1, 1), ("Radiant Cloak", 0.6f, 1, 1),
                 ("Fox Pendant", 0.6f, 1, 1), ("Ox Pendant", 0.6f, 1, 1), ("Bear Pendant", 0.6f, 1, 1), ("Owl Pendant", 0.6f, 1, 1),
                 ("Ring of Courage", 0.6f, 1, 1), ("Ring of Vitality", 0.6f, 1, 1), ("Ring of Finesse", 0.6f, 1, 1), ("Ring of Wisdom", 0.6f, 1, 1),
                 ("Troll's Blood", 1f, 1, 1), ("Potion of Invisibility", 1f, 1, 2), ("Gold Crown", 0.5f, 1, 1), ("Gold Ingot", 1f, 1, 2), ("Pearl Necklace", 1f, 1, 1)
-            };
+            }.Concat(Pieces(0.5f, "Ranger")).Concat(Pieces(0.7f, "Mystic", "Occultist", "Marauder", "Berserker")).ToArray();
             (string name, float weight, int min, int max)[] coffin =
             {
                 ("Gold Coins", 5f, 2, 10), ("Ruby", 1f, 1, 1), ("Sapphire", 1f, 1, 1), ("Gold Band", 0.8f, 1, 1), ("Gem Necklace", 0.6f, 1, 1), ("Ancient Scroll", 1f, 1, 1),
-                ("Rondel Dagger", 1f, 1, 1), ("Arming Sword", 0.8f, 1, 1), ("Adventurer Cloak", 0.8f, 1, 1), ("Bandage", 2f, 1, 2), ("Gold Goblet", 1f, 1, 1),
+                ("Rondel Dagger", 1f, 1, 1), ("Arming Sword", 0.8f, 1, 1), ("Peasant Hood", 0.8f, 1, 1), ("Bandage", 2f, 1, 2), ("Gold Goblet", 1f, 1, 1),
                 ("Silver Chalice", 1f, 1, 1), ("Pearl Necklace", 0.5f, 1, 1), ("Ring of Vitality", 0.4f, 1, 1), ("Bear Pendant", 0.3f, 1, 1),
-                ("Stiletto Dagger", 0.6f, 1, 1), ("Vigilant Cloak", 0.5f, 1, 1), ("Troll's Blood", 0.4f, 1, 1)
+                ("Stiletto Dagger", 0.6f, 1, 1), ("Ranger Hood", 0.5f, 1, 1), ("Troll's Blood", 0.4f, 1, 1)
             };
             (string name, float weight, int min, int max)[] barrel =
             {
                 ("Gold Coins", 4f, 1, 6), ("Bandage", 3f, 1, 2), ("Potion of Healing", 2f, 1, 1), ("Ale", 2f, 1, 2), ("Torch", 2f, 1, 1), ("Throwing Knife", 1f, 1, 2), ("Lockpick", 1f, 1, 1)
             };
-            (string name, float weight, int min, int max)[] bookshelf =
+            (string name, float weight, int min, int max)[] bookshelf = new (string, float, int, int)[]
             {
-                ("Ancient Scroll", 4f, 1, 2), ("Potion of Protection", 2f, 1, 1), ("Potion of Healing", 2f, 1, 1), ("Gold Coins", 2f, 2, 8), ("Wizard Hat", 0.6f, 1, 1), ("Magic Staff", 0.5f, 1, 1), ("Sapphire", 1f, 1, 1),
-                ("Potion of Invisibility", 1.5f, 1, 1), ("Occultist Hood", 0.6f, 1, 1), ("Mystic Vestments", 0.5f, 1, 1), ("Oracle Robe", 0.4f, 1, 1), ("Owl Pendant", 0.3f, 1, 1), ("Ring of Wisdom", 0.3f, 1, 1)
-            };
-            (string name, float weight, int min, int max)[] monster =
+                ("Ancient Scroll", 4f, 1, 2), ("Potion of Protection", 2f, 1, 1), ("Potion of Healing", 2f, 1, 1), ("Gold Coins", 2f, 2, 8), ("Magic Staff", 0.5f, 1, 1), ("Sapphire", 1f, 1, 1),
+                ("Potion of Invisibility", 1.5f, 1, 1), ("Owl Pendant", 0.3f, 1, 1), ("Ring of Wisdom", 0.3f, 1, 1)
+            }.Concat(Pieces(0.4f, "Mystic", "Occultist")).ToArray();
+            (string name, float weight, int min, int max)[] monster = new (string, float, int, int)[]
             {
                 ("Gold Coins", 5f, 1, 6), ("Bandage", 2f, 1, 1), ("Ruby", 0.5f, 1, 1), ("Rondel Dagger", 0.5f, 1, 1), ("Potion of Healing", 1f, 1, 1),
-                ("Short Sword", 0.4f, 1, 1), ("Hatchet", 0.4f, 1, 1), ("Leather Cap", 0.4f, 1, 1), ("Padded Tunic", 0.4f, 1, 1), ("Loose Trousers", 0.4f, 1, 1),
-                ("Rawhide Gloves", 0.4f, 1, 1), ("Gold Ore", 0.6f, 1, 2), ("Silver Chalice", 0.3f, 1, 1)
-            };
+                ("Short Sword", 0.4f, 1, 1), ("Hatchet", 0.4f, 1, 1), ("Gold Ore", 0.6f, 1, 2), ("Silver Chalice", 0.3f, 1, 1)
+            }.Concat(Pieces(0.4f, "Peasant")).ToArray();
 
             return new Dictionary<string, LootTableConfig>
             {
@@ -587,14 +565,14 @@ namespace Game.Scripts.Editor.Dungeon
             SerializedProperty outfits = so.FindProperty("_outfits");
             outfits.arraySize = 0;
 
-            foreach ((ArmorVisual visual, string material, OutfitPart[] parts) in OutfitMapping())
+            foreach (ItemDef def in Outfits(DungeonItemLibrary.CreateItems()))
             {
-                foreach (OutfitPart part in parts)
+                foreach (OutfitPart part in def.Parts)
                 {
                     SerializedProperty element = outfits.GetArrayElementAtIndex(outfits.arraySize++);
-                    element.FindPropertyRelative("Visual").intValue = (int)visual;
+                    element.FindPropertyRelative("Visual").intValue = (int)def.Visual;
                     element.FindPropertyRelative("Part").intValue = (int)part;
-                    element.FindPropertyRelative("Material").objectReferenceValue = BattleCharacterBuilder.LoadMaterial(material);
+                    element.FindPropertyRelative("Material").objectReferenceValue = BattleCharacterBuilder.LoadMaterial(def.Material);
                 }
             }
 
@@ -603,34 +581,21 @@ namespace Game.Scripts.Editor.Dungeon
             return config;
         }
 
-        /// Looks worn as skinned parts of the character model: the peasant and ranger outfits in both texture variants.
-        private static (ArmorVisual visual, string material, OutfitPart[] parts)[] OutfitMapping()
+        /// Clothes are skinned parts of the character model.
+        private static IEnumerable<ItemDef> Outfits(List<ItemDef> defs)
         {
-            return new[]
-            {
-                (ArmorVisual.Hood, BattleCharacterBuilder.RangerMaterial, new[] { OutfitPart.RangerHood }),
-                (ArmorVisual.WizardHood, BattleCharacterBuilder.RangerAltMaterial, new[] { OutfitPart.RangerHood }),
-                (ArmorVisual.Tunic, BattleCharacterBuilder.PeasantMaterial, new[] { OutfitPart.PeasantBody, OutfitPart.PeasantArms }),
-                (ArmorVisual.Robe, BattleCharacterBuilder.PeasantAltMaterial, new[] { OutfitPart.PeasantBody, OutfitPart.PeasantArms }),
-                (ArmorVisual.LeatherChest, BattleCharacterBuilder.RangerMaterial, new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt1 }),
-                (ArmorVisual.Gambeson, BattleCharacterBuilder.RangerAltMaterial, new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt2, OutfitPart.RangerPauldron }),
-                (ArmorVisual.Gloves, BattleCharacterBuilder.RangerMaterial, new[] { OutfitPart.RangerBracers }),
-                (ArmorVisual.Pants, BattleCharacterBuilder.PeasantMaterial, new[] { OutfitPart.PeasantLegs }),
-                (ArmorVisual.LeatherPants, BattleCharacterBuilder.RangerMaterial, new[] { OutfitPart.RangerLegs }),
-                (ArmorVisual.Boots, BattleCharacterBuilder.RangerMaterial, new[] { OutfitPart.RangerBoots }),
-                (ArmorVisual.Shoes, BattleCharacterBuilder.PeasantAltMaterial, new[] { OutfitPart.PeasantFeet })
-            };
+            return defs.Where(def => def.Parts != null);
         }
 
-        /// Static T-pose figures of every outfit look, used to render the item icons.
-        private static Dictionary<ArmorVisual, GameObject> BuildOutfitModels()
+        /// Static T-pose figures of every outfit piece, used to render the item icons.
+        private static Dictionary<ArmorVisual, GameObject> BuildOutfitModels(List<ItemDef> defs)
         {
             Dictionary<ArmorVisual, GameObject> models = new();
 
-            foreach ((ArmorVisual visual, string material, OutfitPart[] parts) in OutfitMapping())
+            foreach (ItemDef def in Outfits(defs))
             {
-                GameObject root = BattleCharacterBuilder.CreateOutfitModel("Armor_" + visual, BattleCharacterBuilder.LoadMaterial(material), parts);
-                models[visual] = PrefabUtility.SaveAsPrefabAsset(root, $"{ArmorFolder}/{root.name}.prefab");
+                GameObject root = BattleCharacterBuilder.CreateOutfitModel("Armor_" + def.Visual, BattleCharacterBuilder.LoadMaterial(def.Material), def.Parts);
+                models[def.Visual] = PrefabUtility.SaveAsPrefabAsset(root, $"{ArmorFolder}/{root.name}.prefab");
                 Object.DestroyImmediate(root);
             }
 
@@ -662,88 +627,18 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static (ArmorVisual, int, HumanBodyBones, bool)[] ArmorMapping()
         {
-            return new[]
-            {
-                (ArmorVisual.Cap, 0, HumanBodyBones.Head, false), (ArmorVisual.Helmet, 1, HumanBodyBones.Head, false),
-                (ArmorVisual.GreatHelm, 2, HumanBodyBones.Head, false), (ArmorVisual.PlateChest, 3, HumanBodyBones.Spine, false),
-                (ArmorVisual.Gauntlets, 4, HumanBodyBones.LeftHand, false), (ArmorVisual.Gauntlets, 4, HumanBodyBones.RightHand, true),
-                (ArmorVisual.Greaves, 5, HumanBodyBones.LeftLowerLeg, false), (ArmorVisual.Greaves, 5, HumanBodyBones.RightLowerLeg, true),
-                (ArmorVisual.PlateBoots, 6, HumanBodyBones.LeftFoot, false), (ArmorVisual.PlateBoots, 6, HumanBodyBones.RightFoot, true),
-                (ArmorVisual.Cloak, 7, HumanBodyBones.UpperChest, false),
-                (ArmorVisual.Skull, 8, HumanBodyBones.Head, false), (ArmorVisual.Ribcage, 9, HumanBodyBones.Spine, false),
-                (ArmorVisual.ChainChest, 10, HumanBodyBones.Spine, false)
-            };
+            return new[] { (ArmorVisual.Skull, 0, HumanBodyBones.Head, false), (ArmorVisual.Ribcage, 1, HumanBodyBones.Spine, false) };
         }
 
-        /// Composite metal pieces parented to bones: index order matches ArmorMapping. Parts named "Fixed" keep their own colour.
-        /// Cloth and leather looks are skinned outfit parts, see OutfitMapping.
+        /// What shows a monster's bones through its body, parented to bones: index order matches ArmorMapping.
         private static GameObject[] BuildArmorPieces()
         {
-            foreach (string replaced in new[] { "Hood", "Tunic", "LeatherChest", "Gloves", "Pants", "Boots" })
-                AssetDatabase.DeleteAsset($"{ArmorFolder}/Armor_{replaced}.prefab");
-
-            Material cloth = BattleEditorUtility.GetMaterial("ArmorCloth", new Color(0.5f, 0.45f, 0.4f), 0f, 0.2f);
-            Material metal = BattleEditorUtility.GetMaterial("ArmorMetal", new Color(0.7f, 0.72f, 0.78f), 0.8f, 0.6f);
-            Material leather = BattleEditorUtility.GetMaterial("ArmorLeather", new Color(0.45f, 0.3f, 0.18f), 0f, 0.35f);
             Material dark = BattleEditorUtility.GetMaterial("ArmorDark", new Color(0.12f, 0.1f, 0.08f), 0.1f, 0.3f);
-            Material chain = DungeonPropBuilder.Textured("ChainMail", "RustyMetal", 3f, 0.5f, 0.7f);
             const PrimitiveType sphere = PrimitiveType.Sphere;
-            const PrimitiveType cylinder = PrimitiveType.Cylinder;
             const PrimitiveType cube = PrimitiveType.Cube;
 
             return new[]
             {
-                Composite("Armor_Cap", root =>
-                {
-                    Part(root, sphere, new Vector3(0f, 0.12f, 0f), new Vector3(0.25f, 0.19f, 0.26f), leather);
-                    Part(root, cylinder, new Vector3(0f, 0.06f, 0.02f), new Vector3(0.3f, 0.008f, 0.31f), leather);
-                }),
-                Composite("Armor_Helmet", root =>
-                {
-                    Part(root, sphere, new Vector3(0f, 0.1f, 0f), new Vector3(0.27f, 0.27f, 0.28f), metal);
-                    Part(root, cylinder, new Vector3(0f, 0.03f, 0f), new Vector3(0.31f, 0.01f, 0.32f), metal);
-                    Part(root, cube, new Vector3(0f, 0.0f, 0.14f), new Vector3(0.03f, 0.14f, 0.02f), metal);
-                    Part(root, cylinder, new Vector3(0f, 0.25f, 0f), new Vector3(0.025f, 0.03f, 0.025f), metal);
-                }),
-                Composite("Armor_GreatHelm", root =>
-                {
-                    Part(root, cylinder, new Vector3(0f, 0.06f, 0f), new Vector3(0.28f, 0.14f, 0.28f), metal);
-                    Part(root, cylinder, new Vector3(0f, 0.2f, 0f), new Vector3(0.3f, 0.012f, 0.3f), metal);
-                    Part(root, cube, new Vector3(0f, 0.1f, 0.14f), new Vector3(0.16f, 0.012f, 0.02f), dark, default, true);
-                    Part(root, cube, new Vector3(0f, 0.06f, 0.14f), new Vector3(0.012f, 0.1f, 0.02f), dark, default, true);
-                }),
-                Composite("Armor_PlateChest", root =>
-                {
-                    Part(root, cylinder, new Vector3(0f, 0.16f, 0f), new Vector3(0.46f, 0.21f, 0.36f), metal);
-                    Part(root, cylinder, new Vector3(0f, 0.36f, 0f), new Vector3(0.3f, 0.02f, 0.26f), metal);
-                    Part(root, sphere, new Vector3(0.25f, 0.39f, -0.02f), new Vector3(0.2f, 0.12f, 0.22f), metal);
-                    Part(root, sphere, new Vector3(-0.25f, 0.39f, -0.02f), new Vector3(0.2f, 0.12f, 0.22f), metal);
-                    Part(root, cube, new Vector3(0.12f, -0.08f, 0.1f), new Vector3(0.18f, 0.14f, 0.03f), metal, new Vector3(-10f, 0f, 0f));
-                    Part(root, cube, new Vector3(-0.12f, -0.08f, 0.1f), new Vector3(0.18f, 0.14f, 0.03f), metal, new Vector3(-10f, 0f, 0f));
-                    Part(root, cube, new Vector3(0f, -0.02f, 0f), new Vector3(0.48f, 0.05f, 0.38f), leather, default, true);
-                }),
-                Composite("Armor_Gauntlets", root =>
-                {
-                    Part(root, cube, new Vector3(-0.1f, 0f, 0.015f), new Vector3(0.23f, 0.08f, 0.14f), metal);
-                    Part(root, cylinder, new Vector3(0.03f, 0f, 0f), new Vector3(0.12f, 0.035f, 0.12f), metal, new Vector3(0f, 0f, 90f));
-                    Part(root, cube, new Vector3(-0.09f, 0.045f, 0.015f), new Vector3(0.07f, 0.02f, 0.11f), metal);
-                }),
-                Composite("Armor_Greaves", root =>
-                {
-                    Part(root, cylinder, new Vector3(0f, -0.2f, -0.03f), new Vector3(0.16f, 0.2f, 0.17f), metal);
-                    Part(root, sphere, new Vector3(0f, 0f, 0.03f), new Vector3(0.13f, 0.1f, 0.13f), metal);
-                }),
-                Composite("Armor_PlateBoots", root =>
-                {
-                    Part(root, cube, new Vector3(0f, -0.02f, 0.08f), new Vector3(0.15f, 0.12f, 0.31f), metal);
-                    Part(root, cube, new Vector3(0f, -0.02f, 0.21f), new Vector3(0.13f, 0.1f, 0.06f), metal);
-                    Part(root, cylinder, new Vector3(0f, 0.08f, -0.02f), new Vector3(0.17f, 0.09f, 0.17f), metal);
-                }),
-                Composite("Armor_Cloak", root =>
-                {
-                    Part(root, cube, new Vector3(0f, -0.35f, -0.17f), new Vector3(0.44f, 0.9f, 0.03f), cloth);
-                    Part(root, cube, new Vector3(0f, 0.05f, -0.1f), new Vector3(0.5f, 0.08f, 0.2f), cloth);
-                }),
                 Composite("Armor_Skull", root =>
                 {
                     Part(root, sphere, new Vector3(0.045f, 0.1f, 0.1f), new Vector3(0.06f, 0.05f, 0.04f), dark, default, true);
@@ -757,12 +652,6 @@ namespace Game.Scripts.Editor.Dungeon
                         Part(root, cube, new Vector3(0f, 0.28f - i * 0.055f, 0.14f), new Vector3(0.3f - i * 0.02f, 0.015f, 0.03f), dark, default, true);
 
                     Part(root, cube, new Vector3(0f, 0.2f, 0.15f), new Vector3(0.03f, 0.3f, 0.02f), dark, default, true);
-                }),
-                Composite("Armor_ChainChest", root =>
-                {
-                    Part(root, cylinder, new Vector3(0f, 0.16f, 0f), new Vector3(0.42f, 0.21f, 0.32f), chain);
-                    Part(root, cylinder, new Vector3(0f, -0.1f, 0f), new Vector3(0.44f, 0.07f, 0.34f), chain);
-                    Part(root, cube, new Vector3(0f, -0.02f, 0f), new Vector3(0.44f, 0.05f, 0.34f), leather, default, true);
                 })
             };
         }

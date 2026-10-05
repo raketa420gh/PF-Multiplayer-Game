@@ -102,7 +102,6 @@ namespace Game.Scripts.Dungeon
         public PerkDefinition[] Perks => _perks;
         public StartingItem[] StartingKit => _startingKit;
         public WeaponClass[] AllowedWeapons => _allowedWeapons;
-        public ArmorType[] AllowedArmor => _allowedArmor;
         public const int SpellWheelSize = 5;
         /// The spell mask keeps a wheel in each half: bit i is spell i in wheel I, bit WheelBits + i is spell i in wheel II.
         public const int WheelBits = 16;
@@ -147,9 +146,6 @@ namespace Game.Scripts.Dungeon
         private WeaponClass[] _allowedWeapons = Array.Empty<WeaponClass>();
 
         [SerializeField]
-        private ArmorType[] _allowedArmor = Array.Empty<ArmorType>();
-
-        [SerializeField]
         private CastFocus _castFocus;
 
         public static int WheelBit(int wheel, int spell)
@@ -165,11 +161,6 @@ namespace Game.Scripts.Dungeon
         public bool CanUseWeapon(WeaponClass weaponClass)
         {
             return Array.IndexOf(_allowedWeapons, weaponClass) >= 0;
-        }
-
-        public bool CanWearArmor(ArmorType armorType)
-        {
-            return Array.IndexOf(_allowedArmor, armorType) >= 0;
         }
 
         /// Perks unlock at levels 1, 5, 10, 15.

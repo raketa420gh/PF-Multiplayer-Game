@@ -198,7 +198,7 @@ namespace Game.Scripts.Dungeon
         private void UpdateMatch(AdventurerComponent adventurer)
         {
             MatchComponent match = _context.Match;
-            _floorText.text = adventurer.Floor == 1 ? "The Crypts · Upper floor" : "The Crypts · Lower floor";
+            _floorText.text = MatchComponent.FloorCount > 1 ? $"Dungeon · Floor {adventurer.Floor}" : "Dungeon";
 
             if (match == null || !match.IsRunning)
             {

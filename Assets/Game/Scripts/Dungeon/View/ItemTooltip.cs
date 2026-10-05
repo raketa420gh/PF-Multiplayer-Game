@@ -36,6 +36,10 @@ namespace Game.Scripts.Dungeon
                     break;
                 case ArmorItemConfig armor:
                     s_builder.AppendLine($"{armor.ArmorType} {armor.Slot}");
+
+                    if (armor.Classes.Length > 0)
+                        s_builder.AppendLine($"Class: {string.Join(", ", System.Array.ConvertAll(armor.Classes, c => c.DisplayName))}");
+
                     s_builder.AppendLine($"Armor Rating {armor.ArmorRating + tier * 2f:0}");
 
                     if (armor.MagicResistance != 0f)

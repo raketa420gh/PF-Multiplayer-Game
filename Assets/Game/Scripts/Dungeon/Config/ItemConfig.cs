@@ -51,9 +51,7 @@ namespace Game.Scripts.Dungeon
     public enum ArmorType : byte
     {
         Cloth,
-        Leather,
-        Chain,
-        Plate
+        Leather
     }
 
     public enum WeaponClass : byte
@@ -169,31 +167,42 @@ namespace Game.Scripts.Dungeon
         public virtual bool CanEquip(EquipSlot slot) => false;
     }
 
+    /// Outfit looks go set by set in slot order (head, chest, hands, legs, feet); the item library counts on it.
     public enum ArmorVisual : byte
     {
         None,
-        Hood,
-        Cap,
-        Helmet,
-        GreatHelm,
-        Tunic,
-        LeatherChest,
-        ChainChest,
-        PlateChest,
-        Gloves,
-        Gauntlets,
-        Pants,
-        Greaves,
-        Boots,
-        PlateBoots,
-        Cloak,
         Skull,
         Ribcage,
-        Robe,
-        Gambeson,
-        LeatherPants,
-        Shoes,
-        WizardHood
+        PeasantHead,
+        PeasantChest,
+        PeasantHands,
+        PeasantLegs,
+        PeasantFeet,
+        RangerHead,
+        RangerChest,
+        RangerHands,
+        RangerLegs,
+        RangerFeet,
+        MysticHead,
+        MysticChest,
+        MysticHands,
+        MysticLegs,
+        MysticFeet,
+        OccultistHead,
+        OccultistChest,
+        OccultistHands,
+        OccultistLegs,
+        OccultistFeet,
+        MarauderHead,
+        MarauderChest,
+        MarauderHands,
+        MarauderLegs,
+        MarauderFeet,
+        BerserkerHead,
+        BerserkerChest,
+        BerserkerHands,
+        BerserkerLegs,
+        BerserkerFeet
     }
 
     public enum ConsumableEffect : byte

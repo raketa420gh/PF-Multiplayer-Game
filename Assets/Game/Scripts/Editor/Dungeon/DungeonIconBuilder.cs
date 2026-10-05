@@ -11,8 +11,8 @@ namespace Game.Scripts.Editor.Dungeon
         private const int Size = 128;
         private static readonly Vector3 s_stage = new(2000f, 2000f, 2000f);
 
-        /// The tint recolours every part not named "Fixed", the way ArmorDresser paints a worn composite piece.
-        public static Sprite Render(GameObject model, string name, float zoom = 1f, Vector3 euler = default, float lift = 0f, Color? tint = null)
+        /// The shift moves the centre of the picture off the centre of the model, in shares of its size.
+        public static Sprite Render(GameObject model, string name, float zoom = 1f, Vector3 euler = default, Vector3 shift = default)
         {
             BattleEditorUtilityShim.EnsureFolder(Folder);
             GameObject instance = Object.Instantiate(model, s_stage, Quaternion.Euler(euler));
@@ -36,9 +36,6 @@ namespace Game.Scripts.Editor.Dungeon
                     materials[i].SetFloat("_Metallic", materials[i].GetFloat("_Metallic") * 0.35f);
                     materials[i].SetFloat("_Smoothness", Mathf.Min(materials[i].GetFloat("_Smoothness"), 0.6f));
 
-                    if (tint.HasValue && renderer.name != "Fixed")
-                        materials[i].SetColor("_BaseColor", tint.Value);
-
                     copies.Add(materials[i]);
                 }
 
@@ -52,7 +49,7 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 Bounds bounds = CalculateBounds(instance);
                 float radius = Mathf.Max(bounds.extents.x, bounds.extents.y, bounds.extents.z, 0.05f);
-                Vector3 center = bounds.center + Vector3.up * lift * radius;
+                Vector3 center = bounds.center + shift * radius;
 
                 Camera camera = cameraObject.AddComponent<Camera>();
                 camera.orthographic = true;

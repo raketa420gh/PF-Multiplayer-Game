@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Game.Scripts.Battle;
 using Game.Scripts.Dungeon;
+using Game.Scripts.Editor.Battle;
 using UnityEngine;
 
 namespace Game.Scripts.Editor.Dungeon
@@ -33,7 +34,12 @@ namespace Game.Scripts.Editor.Dungeon
         public float Armor;
         public float MagicResist;
         public ArmorVisual Visual;
-        public Color VisualColor = Color.gray;
+        /// Outfit pieces: the skinned parts of the character model they show, the cloth material, the set and the classes
+        /// that may wear them (null = everyone).
+        public OutfitPart[] Parts;
+        public string Material;
+        public string Set;
+        public string[] Classes;
 
         public ConsumableEffect Effect;
         public float Magnitude;
@@ -107,7 +113,6 @@ namespace Game.Scripts.Editor.Dungeon
         public PerkDef[] Perks;
         public (string item, EquipSlot slot, int count, bool equipped)[] Kit;
         public WeaponClass[] Weapons;
-        public ArmorType[] Armor;
         public CastFocus Focus = CastFocus.Magic;
     }
 
@@ -115,13 +120,16 @@ namespace Game.Scripts.Editor.Dungeon
     internal static class DungeonItemLibrary
     {
         /// Every drink takes as long as its animation.
-        private const float DrinkTime = Game.Scripts.Editor.Battle.BattleAnimationLibrary.DrinkTime;
+        private const float DrinkTime = BattleAnimationLibrary.DrinkTime;
+
+        private const string MysticPeasantMaterial = OutfitDyeBuilder.Prefix + "PeasantMystic";
+        private const string MysticRangerMaterial = OutfitDyeBuilder.Prefix + "RangerMystic";
+        private const string OccultistMaterial = OutfitDyeBuilder.Prefix + "RangerOccultist";
+        private const string MarauderMaterial = OutfitDyeBuilder.Prefix + "RangerMarauder";
+        private const string BerserkerMaterial = OutfitDyeBuilder.Prefix + "RangerBerserker";
 
         private static readonly Color s_steel = new(0.8f, 0.82f, 0.88f);
         private static readonly Color s_wood = new(0.65f, 0.45f, 0.25f);
-        private static readonly Color s_leather = new(0.55f, 0.35f, 0.18f);
-        private static readonly Color s_cloth = new(0.75f, 0.7f, 0.6f);
-        private static readonly Color s_plate = new(0.7f, 0.72f, 0.78f);
         private static readonly Color s_potion = new(0.9f, 0.25f, 0.3f);
         private static readonly Color s_gold = new(1f, 0.82f, 0.3f);
         private static readonly Color s_silver = new(0.85f, 0.86f, 0.9f);
@@ -147,26 +155,6 @@ namespace Game.Scripts.Editor.Dungeon
                 Weapon("Crystal Ball", null, WeaponClass.CrystalBall, 2, 2, 15f, "Cb", new Color(0.6f, 0.85f, 1f), 45, "Off-hand magical focus. Cast with a one-handed weapon in the main hand.", offHand: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 5f) }),
                 Weapon("Lute", DungeonWeaponLibrary.Lute, WeaponClass.Instrument, 2, 3, 10f, "Lt", new Color(0.8f, 0.6f, 0.3f), 35, "Bard instrument. Songs are performed with it in hand.", twoHanded: true),
 
-                Armor("Woolen Cap", EquipSlot.Head, ArmorType.Cloth, 20f, 2f, ArmorVisual.Cap, new Color(0.35f, 0.3f, 0.25f), 2, 2, "Hd", 8),
-                Armor("Rogue Cowl", EquipSlot.Head, ArmorType.Cloth, 25f, 2f, ArmorVisual.Hood, new Color(0.2f, 0.2f, 0.22f), 2, 2, "Hd", 14, modifiers: new[] { new StatModifier(StatType.Reflex, 1f) }),
-                Armor("Wizard Hat", EquipSlot.Head, ArmorType.Cloth, 20f, 2f, ArmorVisual.WizardHood, new Color(0.25f, 0.2f, 0.45f), 2, 2, "Hd", 14, modifiers: new[] { new StatModifier(StatType.Insight, 1f) }),
-                Armor("Leather Cap", EquipSlot.Head, ArmorType.Leather, 31f, 3f, ArmorVisual.Cap, s_leather, 2, 2, "Hd", 15),
-                Armor("Kettle Hat", EquipSlot.Head, ArmorType.Plate, 30f, 3f, ArmorVisual.Helmet, s_plate, 2, 2, "Hd", 22),
-                Armor("Great Helm", EquipSlot.Head, ArmorType.Plate, 49f, 7f, ArmorVisual.GreatHelm, s_plate, 2, 2, "Hd", 40),
-                Armor("Adventurer Tunic", EquipSlot.Chest, ArmorType.Cloth, 33f, 3f, ArmorVisual.Tunic, new Color(0.45f, 0.4f, 0.3f), 2, 3, "Ch", 12),
-                Armor("Frock", EquipSlot.Chest, ArmorType.Cloth, 42f, 4f, ArmorVisual.Robe, new Color(0.3f, 0.25f, 0.5f), 2, 3, "Ch", 25, magicResist: 25f),
-                Armor("Doublet", EquipSlot.Chest, ArmorType.Leather, 44f, 4f, ArmorVisual.LeatherChest, new Color(0.4f, 0.25f, 0.15f), 2, 3, "Ch", 28, modifiers: new[] { new StatModifier(StatType.Craft, 1f) }),
-                Armor("Heavy Gambeson", EquipSlot.Chest, ArmorType.Leather, 85f, 8f, ArmorVisual.Gambeson, new Color(0.5f, 0.42f, 0.3f), 2, 3, "Ch", 45),
-                Armor("Templar Armor", EquipSlot.Chest, ArmorType.Plate, 81f, 9f, ArmorVisual.PlateChest, new Color(0.75f, 0.75f, 0.8f), 2, 3, "Ch", 70, magicResist: 20f),
-                Armor("Dark Plate Armor", EquipSlot.Chest, ArmorType.Plate, 101f, 14f, ArmorVisual.PlateChest, new Color(0.25f, 0.25f, 0.3f), 2, 3, "Ch", 110),
-                Armor("Leather Gloves", EquipSlot.Hands, ArmorType.Leather, 15f, 0f, ArmorVisual.Gloves, s_leather, 2, 2, "Gl", 10),
-                Armor("Heavy Gauntlets", EquipSlot.Hands, ArmorType.Plate, 31f, 1f, ArmorVisual.Gauntlets, s_plate, 2, 2, "Gl", 32, magicResist: -5f),
-                Armor("Cloth Pants", EquipSlot.Legs, ArmorType.Cloth, 30f, 3f, ArmorVisual.Pants, s_cloth, 2, 2, "Lg", 10),
-                Armor("Leather Leggings", EquipSlot.Legs, ArmorType.Leather, 43f, 4f, ArmorVisual.LeatherPants, s_leather, 2, 2, "Lg", 20),
-                Armor("Plate Pants", EquipSlot.Legs, ArmorType.Plate, 75f, 8f, ArmorVisual.Greaves, s_plate, 2, 2, "Lg", 55),
-                Armor("Adventurer Boots", EquipSlot.Feet, ArmorType.Leather, 23f, -6f, ArmorVisual.Boots, s_leather, 2, 2, "Bt", 12),
-                Armor("Plate Boots", EquipSlot.Feet, ArmorType.Plate, 42f, -4f, ArmorVisual.PlateBoots, s_plate, 2, 2, "Bt", 38, magicResist: -5f),
-                Armor("Adventurer Cloak", EquipSlot.Back, ArmorType.Cloth, 6f, 0f, ArmorVisual.Cloak, new Color(0.3f, 0.12f, 0.1f), 2, 3, "Ck", 15, modifiers: new[] { new StatModifier(StatType.Reflex, 1f) }),
                 Jewelry("Gem Necklace", EquipSlot.Necklace, "Nk", 60, new StatModifier(StatType.Resonance, 2f)),
                 Jewelry("Gold Band", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Grip, 1f)),
                 Jewelry("Gem Ring", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Reflex, 1f)),
@@ -193,9 +181,6 @@ namespace Game.Scripts.Editor.Dungeon
                 Treasure("Gold Candlestick", 1, 1, 1, 50, "Cs", s_gold),
                 Treasure("Ancient Scroll", 1, 1, 3, 60, "Sc", new Color(0.85f, 0.75f, 0.5f), true),
 
-                // Appended last: item ids are list positions and saved stashes refer to them.
-                Armor("Cloth Shoes", EquipSlot.Feet, ArmorType.Cloth, 12f, -4f, ArmorVisual.Shoes, s_cloth, 2, 2, "Bt", 8),
-
                 // Second wave of Dark and Darker gear; the weapons play the clips of an older weapon with their own model and damage.
                 Weapon("Short Sword", DungeonWeaponLibrary.ShortSword, WeaponClass.Sword, 1, 2, 15f, "Sw", s_steel, 20, "Light blade. Easy on the feet, short on reach.", shield: DungeonWeaponLibrary.SwordShield),
                 Weapon("Rapier", DungeonWeaponLibrary.Rapier, WeaponClass.Sword, 1, 3, 18f, "Rp", s_steel, 34, "Long thin blade that outreaches heavier swords.", shield: DungeonWeaponLibrary.SwordShield, modifiers: new[] { new StatModifier(StatType.ActionSpeed, 2f) }),
@@ -209,33 +194,6 @@ namespace Game.Scripts.Editor.Dungeon
                 Weapon("Halberd", DungeonWeaponLibrary.Halberd, WeaponClass.Spear, 1, 4, 45f, "Hb", s_steel, 60, "Axe blade on a spear shaft. Long reach, heavy thrusts.", twoHanded: true),
                 Weapon("Buckler", null, WeaponClass.Shield, 2, 2, 6f, "Bk", s_steel, 22, "Small shield that barely slows you down.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 12f) }),
                 Weapon("Heater Shield", null, WeaponClass.Shield, 2, 3, 18f, "Sh", s_steel, 45, "Heavy knightly shield.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 30f) }),
-
-                Armor("Ranger Hood", EquipSlot.Head, ArmorType.Leather, 26f, 2f, ArmorVisual.Hood, new Color(0.25f, 0.3f, 0.2f), 2, 2, "Hd", 18, modifiers: new[] { new StatModifier(StatType.Craft, 1f) }),
-                Armor("Occultist Hood", EquipSlot.Head, ArmorType.Cloth, 18f, 2f, ArmorVisual.WizardHood, new Color(0.3f, 0.15f, 0.35f), 2, 2, "Hd", 22, magicResist: 10f, modifiers: new[] { new StatModifier(StatType.Resonance, 1f) }),
-                Armor("Feathered Hat", EquipSlot.Head, ArmorType.Cloth, 15f, 1f, ArmorVisual.Cap, new Color(0.25f, 0.4f, 0.28f), 2, 2, "Hd", 16, modifiers: new[] { new StatModifier(StatType.Reflex, 1f) }),
-                Armor("Viking Helm", EquipSlot.Head, ArmorType.Chain, 34f, 3f, ArmorVisual.Helmet, new Color(0.62f, 0.5f, 0.34f), 2, 2, "Hd", 30, modifiers: new[] { new StatModifier(StatType.Grip, 1f) }),
-                Armor("Chapel De Fer", EquipSlot.Head, ArmorType.Chain, 38f, 4f, ArmorVisual.Cap, s_plate, 2, 2, "Hd", 28),
-                Armor("Barbuta Helm", EquipSlot.Head, ArmorType.Plate, 42f, 5f, ArmorVisual.Helmet, new Color(0.42f, 0.44f, 0.5f), 2, 2, "Hd", 34, magicResist: -3f),
-                Armor("Crusader Helm", EquipSlot.Head, ArmorType.Plate, 55f, 8f, ArmorVisual.GreatHelm, new Color(0.86f, 0.85f, 0.8f), 2, 2, "Hd", 55, magicResist: 10f),
-                Armor("Padded Tunic", EquipSlot.Chest, ArmorType.Cloth, 38f, 3f, ArmorVisual.Tunic, new Color(0.5f, 0.42f, 0.3f), 2, 3, "Ch", 18),
-                Armor("Oracle Robe", EquipSlot.Chest, ArmorType.Cloth, 36f, 4f, ArmorVisual.Robe, new Color(0.75f, 0.7f, 0.55f), 2, 3, "Ch", 40, magicResist: 30f, modifiers: new[] { new StatModifier(StatType.Resonance, 1f) }),
-                Armor("Mystic Vestments", EquipSlot.Chest, ArmorType.Cloth, 30f, 3f, ArmorVisual.Robe, new Color(0.25f, 0.3f, 0.5f), 2, 3, "Ch", 38, magicResist: 20f, modifiers: new[] { new StatModifier(StatType.Insight, 2f) }),
-                Armor("Wanderer Attire", EquipSlot.Chest, ArmorType.Leather, 52f, 5f, ArmorVisual.LeatherChest, new Color(0.38f, 0.3f, 0.2f), 2, 3, "Ch", 36, modifiers: new[] { new StatModifier(StatType.Reflex, 1f) }),
-                Armor("Marauder Outfit", EquipSlot.Chest, ArmorType.Leather, 58f, 5f, ArmorVisual.LeatherChest, new Color(0.3f, 0.2f, 0.15f), 2, 3, "Ch", 42, modifiers: new[] { new StatModifier(StatType.Grip, 1f) }),
-                Armor("Regal Gambeson", EquipSlot.Chest, ArmorType.Leather, 78f, 7f, ArmorVisual.Gambeson, new Color(0.45f, 0.2f, 0.2f), 2, 3, "Ch", 60, magicResist: 10f),
-                Armor("Ornate Jazerant", EquipSlot.Chest, ArmorType.Chain, 90f, 11f, ArmorVisual.ChainChest, new Color(0.7f, 0.62f, 0.42f), 2, 3, "Ch", 85, magicResist: 15f),
-                Armor("Fine Cuirass", EquipSlot.Chest, ArmorType.Plate, 110f, 16f, ArmorVisual.PlateChest, new Color(0.82f, 0.84f, 0.9f), 2, 3, "Ch", 120),
-                Armor("Champion Armor", EquipSlot.Chest, ArmorType.Plate, 95f, 12f, ArmorVisual.PlateChest, new Color(0.75f, 0.62f, 0.35f), 2, 3, "Ch", 100, modifiers: new[] { new StatModifier(StatType.Flesh, 1f) }),
-                Armor("Rawhide Gloves", EquipSlot.Hands, ArmorType.Leather, 18f, 0f, ArmorVisual.Gloves, s_leather, 2, 2, "Gl", 14, modifiers: new[] { new StatModifier(StatType.Craft, 1f) }),
-                Armor("Riveted Gloves", EquipSlot.Hands, ArmorType.Chain, 24f, 1f, ArmorVisual.Gloves, new Color(0.4f, 0.36f, 0.3f), 2, 2, "Gl", 24, modifiers: new[] { new StatModifier(StatType.Grip, 1f) }),
-                Armor("Light Gauntlets", EquipSlot.Hands, ArmorType.Plate, 26f, 1f, ArmorVisual.Gauntlets, new Color(0.75f, 0.76f, 0.8f), 2, 2, "Gl", 26),
-                Armor("Loose Trousers", EquipSlot.Legs, ArmorType.Cloth, 28f, 2f, ArmorVisual.Pants, s_cloth, 2, 2, "Lg", 14, modifiers: new[] { new StatModifier(StatType.Reflex, 1f) }),
-                Armor("Heavy Leather Leggings", EquipSlot.Legs, ArmorType.Leather, 54f, 6f, ArmorVisual.LeatherPants, s_leather, 2, 2, "Lg", 34, modifiers: new[] { new StatModifier(StatType.Flesh, 1f) }),
-                Armor("Lightfoot Boots", EquipSlot.Feet, ArmorType.Leather, 14f, -9f, ArmorVisual.Boots, s_leather, 2, 2, "Bt", 30),
-                Armor("Laced Turnshoe", EquipSlot.Feet, ArmorType.Cloth, 10f, -7f, ArmorVisual.Shoes, s_cloth, 2, 2, "Bt", 16, modifiers: new[] { new StatModifier(StatType.Reflex, 1f) }),
-                Armor("Heavy Boots", EquipSlot.Feet, ArmorType.Plate, 48f, -2f, ArmorVisual.PlateBoots, new Color(0.3f, 0.3f, 0.34f), 2, 2, "Bt", 44),
-                Armor("Vigilant Cloak", EquipSlot.Back, ArmorType.Cloth, 8f, 0f, ArmorVisual.Cloak, new Color(0.2f, 0.26f, 0.38f), 2, 3, "Ck", 24, modifiers: new[] { new StatModifier(StatType.Flesh, 1f) }),
-                Armor("Radiant Cloak", EquipSlot.Back, ArmorType.Cloth, 6f, 0f, ArmorVisual.Cloak, new Color(0.85f, 0.8f, 0.6f), 2, 3, "Ck", 40, magicResist: 15f, modifiers: new[] { new StatModifier(StatType.Resonance, 1f) }),
 
                 Jewelry("Fox Pendant", EquipSlot.Necklace, "Nk", new Color(0.95f, 0.55f, 0.25f), 70, new StatModifier(StatType.Reflex, 2f)),
                 Jewelry("Ox Pendant", EquipSlot.Necklace, "Nk", new Color(0.75f, 0.45f, 0.3f), 70, new StatModifier(StatType.Grip, 2f)),
@@ -257,7 +215,111 @@ namespace Game.Scripts.Editor.Dungeon
                 Treasure("Gold Ore", 1, 1, 5, 18, "Or", new Color(0.8f, 0.65f, 0.3f))
             };
 
+            // New items go to the end: item ids are list positions and saved stashes refer to them.
+            AddOutfits(items);
+
             return items;
+        }
+
+        /// Six outfits of five pieces, all cut from the peasant and the ranger of the character pack: the two as they come for
+        /// everyone, four dyed and recombined for the classes. A full class set lifts its attribute to the threshold of 30.
+        private static void AddOutfits(List<ItemDef> items)
+        {
+            const string barbarian = "Barbarian";
+            const string wizard = "Wizard";
+            OutfitPart[] hood = { OutfitPart.RangerHood };
+            OutfitPart[] bracers = { OutfitPart.RangerBracers };
+            OutfitPart[] shirt = { OutfitPart.PeasantBody, OutfitPart.PeasantArms };
+            OutfitPart[] trousers = { OutfitPart.PeasantLegs };
+            OutfitPart[] shoes = { OutfitPart.PeasantFeet };
+            OutfitPart[] leggings = { OutfitPart.RangerLegs };
+            OutfitPart[] boots = { OutfitPart.RangerBoots };
+
+            // Plain cloth: next to no protection, nothing in the way.
+            AddOutfit(items, "Peasant", null, ArmorType.Cloth, BattleCharacterBuilder.PeasantMaterial, BattleCharacterBuilder.RangerAltMaterial, new Color(0.75f, 0.7f, 0.6f),
+                Piece("Peasant Hood", hood, 12f, 0f, 8),
+                Piece("Peasant Shirt", shirt, 25f, 1f, 12),
+                Piece("Peasant Wraps", bracers, 8f, 0f, 6),
+                Piece("Peasant Trousers", trousers, 18f, 1f, 10),
+                Piece("Peasant Boots", shoes, 10f, -3f, 8));
+
+            // Leather for any class: decent armour, quick hands and feet.
+            AddOutfit(items, "Ranger", null, ArmorType.Leather, null, BattleCharacterBuilder.RangerMaterial, new Color(0.4f, 0.65f, 0.3f),
+                Piece("Ranger Hood", hood, 26f, 1f, 18, 0f, new StatModifier(StatType.Craft, 1f)),
+                Piece("Ranger Jerkin", new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt1, OutfitPart.RangerPauldron }, 52f, 4f, 36, 0f,
+                    new StatModifier(StatType.Reflex, 1f)),
+                Piece("Ranger Bracers", bracers, 18f, 0f, 14, 0f, new StatModifier(StatType.Craft, 1f)),
+                Piece("Ranger Leggings", leggings, 40f, 3f, 24, 0f, new StatModifier(StatType.Reflex, 1f)),
+                Piece("Ranger Boots", boots, 20f, -7f, 22));
+
+            // Wizard, Resonance +7 (23 -> 30): magical power, one more charge of every spell and a free first spell.
+            AddOutfit(items, "Mystic", new[] { wizard }, ArmorType.Cloth, MysticPeasantMaterial, MysticRangerMaterial, new Color(0.4f, 0.45f, 0.95f),
+                Piece("Mystic Cowl", hood, 16f, 1f, 30, 10f, new StatModifier(StatType.Resonance, 1f)),
+                Piece("Mystic Vestments", shirt, 32f, 2f, 55, 25f, new StatModifier(StatType.Resonance, 2f), new StatModifier(StatType.MagicalPower, 2f)),
+                Piece("Mystic Wraps", bracers, 10f, 0f, 26, 5f, new StatModifier(StatType.Resonance, 1f)),
+                Piece("Mystic Trousers", trousers, 24f, 1f, 34, 10f, new StatModifier(StatType.Resonance, 2f)),
+                Piece("Mystic Shoes", shoes, 10f, -5f, 28, 5f, new StatModifier(StatType.Resonance, 1f)));
+
+            // Wizard, Insight +9 (21 -> 30): faster casts and cooldowns, slows do not stick.
+            AddOutfit(items, "Occultist", new[] { wizard }, ArmorType.Leather, null, OccultistMaterial, new Color(0.6f, 0.3f, 0.75f),
+                Piece("Occultist Hood", hood, 20f, 1f, 32, 5f, new StatModifier(StatType.Insight, 2f)),
+                Piece("Occultist Coat", new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt2 }, 40f, 4f, 60, 15f,
+                    new StatModifier(StatType.Insight, 3f)),
+                Piece("Occultist Bracers", bracers, 14f, 0f, 28, 0f, new StatModifier(StatType.Insight, 1f), new StatModifier(StatType.MagicalPower, 2f)),
+                Piece("Occultist Leggings", leggings, 30f, 2f, 38, 5f, new StatModifier(StatType.Insight, 2f)),
+                Piece("Occultist Boots", boots, 16f, -4f, 30, 0f, new StatModifier(StatType.Insight, 1f)));
+
+            // Barbarian, Grip +9 (21 -> 30): physical power and +10% physical damage. The heaviest clothes there are.
+            AddOutfit(items, "Marauder", new[] { barbarian }, ArmorType.Leather, null, MarauderMaterial, new Color(0.8f, 0.25f, 0.2f),
+                Piece("Marauder Hood", hood, 30f, 2f, 34, 0f, new StatModifier(StatType.Grip, 2f)),
+                Piece("Marauder Jerkin", new[] { OutfitPart.RangerBody, OutfitPart.RangerBelt1, OutfitPart.RangerBelt2, OutfitPart.RangerPauldron }, 70f, 7f, 65, 0f,
+                    new StatModifier(StatType.Grip, 3f)),
+                Piece("Marauder Bracers", bracers, 22f, 0f, 30, 0f, new StatModifier(StatType.Grip, 1f), new StatModifier(StatType.PhysicalPower, 2f)),
+                Piece("Marauder Leggings", leggings, 48f, 4f, 40, 0f, new StatModifier(StatType.Grip, 2f)),
+                Piece("Marauder Boots", boots, 26f, -2f, 32, 0f, new StatModifier(StatType.Grip, 1f)));
+
+            // Barbarian, Flesh +8 (22 -> 30): health, rest heals twice as fast, and the action speed his Reflex lacks.
+            // Straps on a bare chest protect next to nothing.
+            AddOutfit(items, "Berserker", new[] { barbarian }, ArmorType.Leather, BattleCharacterBuilder.PeasantAltMaterial, BerserkerMaterial, new Color(0.75f, 0.7f, 0.65f),
+                Piece("Berserker Hood", hood, 18f, 0f, 30, 0f, new StatModifier(StatType.Flesh, 1f)),
+                Piece("Berserker Harness", new[] { OutfitPart.RangerBelt1, OutfitPart.RangerBelt2, OutfitPart.RangerPauldron }, 22f, 0f, 60, 0f,
+                    new StatModifier(StatType.Flesh, 3f), new StatModifier(StatType.ActionSpeed, 4f)),
+                Piece("Berserker Bracers", bracers, 14f, 0f, 28, 0f, new StatModifier(StatType.Flesh, 1f), new StatModifier(StatType.ActionSpeed, 2f)),
+                Piece("Berserker Trousers", trousers, 26f, 1f, 36, 0f, new StatModifier(StatType.Flesh, 2f)),
+                Piece("Berserker Boots", shoes, 14f, -6f, 30, 0f, new StatModifier(StatType.Flesh, 1f)));
+        }
+
+        /// Pieces come in slot order: head, chest, hands, legs, feet. Peasant parts wear the peasant cloth, ranger parts the ranger one.
+        private static void AddOutfit(List<ItemDef> items, string set, string[] classes, ArmorType type, string peasantCloth, string rangerCloth, Color color,
+            params ItemDef[] pieces)
+        {
+            string[] glyphs = { "Hd", "Ch", "Gl", "Lg", "Bt" };
+            int index = items.FindAll(item => item.Parts != null).Count;
+
+            for (int i = 0; i < pieces.Length; i++)
+            {
+                ItemDef piece = pieces[i];
+                piece.Set = set;
+                piece.Classes = classes;
+                piece.ArmorType = type;
+                piece.Slot = (EquipSlot)i;
+                piece.Visual = (ArmorVisual)((int)ArmorVisual.PeasantHead + index + i);
+                piece.Material = piece.Parts[0] <= OutfitPart.PeasantFeet ? peasantCloth : rangerCloth;
+                piece.Glyph = glyphs[i];
+                piece.Color = color;
+                piece.Height = piece.Slot == EquipSlot.Chest ? 3 : 2;
+                items.Add(piece);
+            }
+        }
+
+        private static ItemDef Piece(string name, OutfitPart[] parts, float armor, float movePenalty, int value, float magicResist = 0f,
+            params StatModifier[] modifiers)
+        {
+            return new ItemDef
+            {
+                Name = name, Kind = ItemKind.Armor, Parts = parts, Armor = armor, MovePenalty = movePenalty, Value = value, MagicResist = magicResist,
+                Width = 2, RollsRarity = true, Modifiers = new List<StatModifier>(modifiers)
+            };
         }
 
         private static ItemDef Weapon(string name, string prefix, WeaponClass weaponClass, int width, int height, float movePenalty, string glyph,
@@ -269,17 +331,6 @@ namespace Game.Scripts.Editor.Dungeon
                 Name = name, Kind = ItemKind.Weapon, WeaponPrefix = prefix, ShieldPrefix = shield, WeaponClass = weaponClass, Width = width, Height = height,
                 MovePenalty = movePenalty, Glyph = glyph, Color = color, Value = value, Description = description, TwoHanded = twoHanded, OffHand = offHand,
                 LightRange = light, RollsRarity = true, Modifiers = modifiers != null ? new List<StatModifier>(modifiers) : new List<StatModifier>()
-            };
-        }
-
-        private static ItemDef Armor(string name, EquipSlot slot, ArmorType type, float armor, float movePenalty, ArmorVisual visual, Color visualColor,
-            int width, int height, string glyph, int value, float magicResist = 0f, StatModifier[] modifiers = null)
-        {
-            return new ItemDef
-            {
-                Name = name, Kind = ItemKind.Armor, Slot = slot, ArmorType = type, Armor = armor, MovePenalty = movePenalty, Visual = visual,
-                VisualColor = visualColor, Width = width, Height = height, Glyph = glyph, Color = visualColor * 1.3f, Value = value, MagicResist = magicResist,
-                RollsRarity = true, Modifiers = modifiers != null ? new List<StatModifier>(modifiers) : new List<StatModifier>()
             };
         }
 

@@ -27,16 +27,15 @@ namespace Game.Scripts.Editor.Dungeon
                         new PerkDef("Axe Mastery", "+8 physical power and +10% physical damage.", new StatModifier(StatType.PhysicalPower, 8f), new StatModifier(StatType.PhysicalDamageBonus, 0.1f)) { Icon = "Axe", Color = new Color(0.78f, 0.8f, 0.86f) },
                         new PerkDef("Bloodlust", "+12% action speed.", new StatModifier(StatType.ActionSpeed, 12f)) { Icon = "Blood", Color = new Color(0.86f, 0.14f, 0.17f) }
                     },
-                    Kit = new[] { ("Battle Axe", EquipSlot.Weapon1Main, 1, true), ("Zweihander", EquipSlot.Weapon2Main, 1, true), ("Adventurer Tunic", EquipSlot.Chest, 1, true), ("Adventurer Boots", EquipSlot.Feet, 1, true), ("Francisca Axe", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 3, true) },
-                    Weapons = new[] { WeaponClass.Axe, WeaponClass.Sword, WeaponClass.Mace, WeaponClass.Spear, WeaponClass.Dagger, WeaponClass.Torch },
-                    Armor = new[] { ArmorType.Cloth, ArmorType.Leather, ArmorType.Chain }
+                    Kit = new[] { ("Battle Axe", EquipSlot.Weapon1Main, 1, true), ("Zweihander", EquipSlot.Weapon2Main, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Francisca Axe", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 3, true) },
+                    Weapons = new[] { WeaponClass.Axe, WeaponClass.Sword, WeaponClass.Mace, WeaponClass.Spear, WeaponClass.Dagger, WeaponClass.Torch }
                 },
                 CreateWizard()
             };
         }
 
         /// Magical damage from two spell wheels (or one wheel and an active skill), cast with a staff, a spellbook or a crystal
-        /// ball. Spells have charges that come back only by a campfire. Paper-thin against weapons: cloth only, little health.
+        /// ball. Spells have charges that come back only by a campfire. Paper-thin against weapons: little health.
         private static ClassDef CreateWizard()
         {
             Color frost = new Color(0.55f, 0.85f, 1f);
@@ -94,10 +93,9 @@ namespace Game.Scripts.Editor.Dungeon
                     new PerkDef("Spell Ward", "+30 magic resistance.", new StatModifier(StatType.MagicResistance, 30f)) { Icon = "Shield" },
                     new PerkDef("Focused Mind", "+8 Insight: faster casting, faster recovery by the fire.", new StatModifier(StatType.Insight, 8f)) { Icon = "Eye" }
                 },
-                Kit = new[] { ("Spellbook", EquipSlot.Weapon1Main, 1, true), ("Magic Staff", EquipSlot.Weapon2Main, 1, true), ("Wizard Hat", EquipSlot.Head, 1, true),
-                    ("Adventurer Tunic", EquipSlot.Chest, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true), ("Bandage", EquipSlot.Utility2, 2, true) },
+                Kit = new[] { ("Spellbook", EquipSlot.Weapon1Main, 1, true), ("Magic Staff", EquipSlot.Weapon2Main, 1, true), ("Peasant Hood", EquipSlot.Head, 1, true),
+                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true), ("Bandage", EquipSlot.Utility2, 2, true) },
                 Weapons = new[] { WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.CrystalBall, WeaponClass.Dagger, WeaponClass.Sword },
-                Armor = new[] { ArmorType.Cloth },
                 Focus = CastFocus.Magic
             };
         }

@@ -18,17 +18,13 @@ namespace Game.Scripts.Editor.Dungeon
             Directory.CreateDirectory(Folder);
 
             Write("StoneWall", StoneWall, 0.8f, EnvironmentSize, true);
-            Write("StoneFloor", StoneFloor, 0.8f, EnvironmentSize, true);
             Write("Cobble", Cobble, 1f, EnvironmentSize, true);
             Write("WoodPlanks", WoodPlanks, 0.6f, EnvironmentSize, true);
             Write("DarkWood", DarkWood, 0.4f);
             Write("RustyMetal", RustyMetal, 0.35f);
             Write("Bone", Bone, 0.5f);
-            Write("ClothRed", ClothRed, 0.25f);
             Write("Gold", Gold, 0.3f);
-            Write("Dirt", Dirt, 0.6f);
             WriteFlame();
-            WriteCobweb();
 
             AssetDatabase.Refresh();
             Debug.Log($"[{nameof(DungeonTextureBuilder)}] Textures built in {Folder}");
@@ -70,49 +66,6 @@ namespace Game.Scripts.Editor.Dungeon
             texture.SetPixels(pixels);
             texture.Apply();
             string path = $"{Folder}/Flame.png";
-            File.WriteAllBytes(path, texture.EncodeToPNG());
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
-            importer.alphaIsTransparency = true;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.SaveAndReimport();
-            UnityEngine.Object.DestroyImmediate(texture);
-        }
-
-        /// Radial web with concentric strands, alpha outside the strands (RGBA, clamped).
-        private static void WriteCobweb()
-        {
-            const int size = 256;
-            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            Color[] pixels = new Color[size * size];
-            System.Random random = new System.Random(7);
-            float[] ringJitter = new float[12];
-
-            for (int i = 0; i < ringJitter.Length; i++)
-                ringJitter[i] = (float)random.NextDouble() * 0.03f;
-
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    float dx = (x + 0.5f) / size;
-                    float dy = (y + 0.5f) / size;
-                    float radius = Mathf.Sqrt(dx * dx + dy * dy);
-                    float angle = Mathf.Atan2(dy, dx);
-                    float spokes = Mathf.Abs(Mathf.Sin(angle * 9f));
-                    float spoke = Step(0.985f, 1f, 1f - spokes);
-                    int ring = Mathf.FloorToInt(radius * 11f);
-                    float ringPos = Mathf.Repeat(radius * 11f + (ring < ringJitter.Length ? ringJitter[ring] : 0f) + Mathf.Sin(angle * 9f) * 0.12f, 1f);
-                    float strand = Step(0.9f, 1f, 1f - Mathf.Abs(ringPos - 0.5f) * 2f);
-                    float fade = Mathf.Clamp01(1.15f - radius);
-                    float alpha = Mathf.Max(spoke, strand) * fade * (0.55f + 0.45f * Noise(dx, dy, 6f, 2));
-                    pixels[y * size + x] = new Color(0.85f, 0.85f, 0.8f, alpha);
-                }
-            }
-
-            texture.SetPixels(pixels);
-            texture.Apply();
-            string path = $"{Folder}/Cobweb.png";
             File.WriteAllBytes(path, texture.EncodeToPNG());
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -362,28 +315,6 @@ namespace Game.Scripts.Editor.Dungeon
             return Color.Lerp(mortar, stone, face);
         }
 
-        /// Worn flagstones, 6 x 6 per tile: two thirds of a metre on a 4 m tile.
-        private static Color StoneFloor(float u, float v, out float height)
-        {
-            const float joint = 0.0016f;
-            float edge = Blocks(u, v, 6, 6, 0.7f, out int id);
-            float grain = Grain(u, v, 64f, 2.6f);
-            float patches = Grain(u + 0.21f, v + 0.63f, 12f, 2.2f);
-            float wear = TileNoise(u + 0.3f, v + 0.6f, 6f, 3);
-            float chip = Grain(u + 0.1f, v + 0.8f, 26f, 3f);
-            float pit = Step(0.79f, 0.86f, Grain(u + 0.4f, v + 0.5f, 100f, 2.4f));
-            float face = Step(joint, joint + 0.003f + chip * chip * 0.012f, edge);
-            height = face * (0.7f + Hash(id, 5) * 0.1f + grain * 0.12f + patches * 0.08f - pit * 0.15f);
-
-            Color stone = Color.Lerp(new Color(0.5f, 0.49f, 0.47f), new Color(0.47f, 0.44f, 0.4f), Hash(id, 3));
-            stone *= (0.85f + Hash(id, 7) * 0.22f) * (0.76f + grain * 0.32f + patches * 0.16f) * (1f - pit * 0.3f);
-            stone = Color.Lerp(stone, stone * 0.74f, Step(0.5f, 0.8f, wear));
-            stone *= Mathf.Lerp(0.74f, 1f, Step(joint, joint + 0.016f, edge));
-            Color gap = new Color(0.17f, 0.15f, 0.12f) * (0.6f + grain * 0.7f);
-
-            return Color.Lerp(gap, stone, face);
-        }
-
         /// Rounded cobbles bedded in dirt, 16 x 16 per tile: a quarter of a metre on a 4 m tile.
         private static Color Cobble(float u, float v, out float height)
         {
@@ -491,19 +422,6 @@ namespace Game.Scripts.Editor.Dungeon
             return Color.Lerp(new Color(0.3f, 0.25f, 0.18f), bone, cracks);
         }
 
-        private static Color ClothRed(float u, float v, out float height)
-        {
-            float weave = (Mathf.Sin(u * Mathf.PI * 160f) * Mathf.Sin(v * Mathf.PI * 160f)) * 0.5f + 0.5f;
-            float wear = TileNoise(u, v, 4f, 3);
-            float emblem = Mathf.Abs(u - 0.5f) < 0.18f && Mathf.Abs(v - 0.5f) < 0.22f
-                ? Mathf.Clamp01(1f - (Mathf.Abs(Mathf.Abs(u - 0.5f) - Mathf.Abs(v - 0.5f) * 0.6f)) * 12f)
-                : 0f;
-            height = 0.5f + weave * 0.1f;
-            Color cloth = Color.Lerp(new Color(0.45f, 0.08f, 0.08f), new Color(0.3f, 0.05f, 0.05f), wear) * (0.9f + weave * 0.15f);
-
-            return Color.Lerp(cloth, new Color(0.85f, 0.7f, 0.3f), emblem * 0.9f);
-        }
-
         private static Color Gold(float u, float v, out float height)
         {
             float coins = 0f;
@@ -529,13 +447,5 @@ namespace Game.Scripts.Editor.Dungeon
             return Color.Lerp(new Color(0.35f, 0.25f, 0.08f), new Color(0.95f, 0.78f, 0.3f), coins * (0.7f + shine * 0.3f));
         }
 
-        private static Color Dirt(float u, float v, out float height)
-        {
-            float lumps = TileNoise(u, v, 9f, 4);
-            float pebbles = Step(0.6f, 0.75f, TileNoise(u + 0.5f, v + 0.1f, 25f, 2));
-            height = lumps * 0.5f + pebbles * 0.4f;
-
-            return Color.Lerp(new Color(0.22f, 0.17f, 0.12f), new Color(0.35f, 0.28f, 0.2f), lumps) * (1f + pebbles * 0.3f);
-        }
     }
 }

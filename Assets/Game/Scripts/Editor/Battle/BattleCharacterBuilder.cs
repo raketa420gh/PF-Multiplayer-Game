@@ -108,10 +108,11 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.EnsureFolder(BattleEditorUtility.MaterialsFolder);
             BattleEditorUtility.EnsureFolder(BattleEditorUtility.PrefabsFolder);
 
-            Material peasant = ClothMaterial(PeasantMaterial, "Peasant", "T_Peasant_BaseColor");
-            Material ranger = ClothMaterial(RangerMaterial, "Ranger", "T_Ranger_BaseColor");
-            ClothMaterial(PeasantAltMaterial, "Peasant", "T_Peasant_2_BaseColor");
-            ClothMaterial(RangerAltMaterial, "Ranger", "T_Ranger_3_BaseColor");
+            Material peasant = ClothMaterial(PeasantMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_BaseColor"));
+            Material ranger = ClothMaterial(RangerMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_BaseColor"));
+            ClothMaterial(PeasantAltMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_2_BaseColor"));
+            ClothMaterial(RangerAltMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_3_BaseColor"));
+            OutfitDyeBuilder.Build();
             Material body = BattleEditorUtility.GetMaterial("FighterBody", new Color(0.86f, 0.64f, 0.5f));
             Material joints = BattleEditorUtility.GetMaterial("FighterJoints", new Color(0.52f, 0.35f, 0.27f));
 
@@ -696,11 +697,15 @@ namespace Game.Scripts.Editor.Battle
             return avatar;
         }
 
-        private static Material ClothMaterial(string name, string outfit, string baseColor)
+        public static string PackTexture(string outfit, string name)
         {
-            string folder = $"{OutfitsFolder}/Textures/{outfit}";
+            return $"{OutfitsFolder}/Textures/{outfit}/{name}.png";
+        }
 
-            return TexturedMaterial(name, $"{folder}/{baseColor}.png", $"{folder}/T_{outfit}_Normal.png", CreateMask($"{folder}/T_{outfit}_ORM.png", true));
+        /// Cloth of an outfit: any base colour atlas over the normals and the mask of the pack.
+        public static Material ClothMaterial(string name, string outfit, string baseColor)
+        {
+            return TexturedMaterial(name, baseColor, PackTexture(outfit, $"T_{outfit}_Normal"), CreateMask(PackTexture(outfit, $"T_{outfit}_ORM"), true));
         }
 
         private static Material SkinMaterial(string gender)
