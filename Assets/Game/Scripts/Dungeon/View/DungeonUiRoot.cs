@@ -41,6 +41,7 @@ namespace Game.Scripts.Dungeon
         private SessionState _shownState = (SessionState)255;
         private bool _isInventoryOpen;
         private int _wheelSkill = -1;
+        private int _wheelReadied = -1;
         private readonly System.Collections.Generic.List<int> _wheelSpells = new();
         private readonly System.Collections.Generic.List<(string, Sprite, string, Color, string)> _wheelEntries = new();
         private Fusion.NetworkBehaviourId _openedContainer;
@@ -118,6 +119,7 @@ namespace Game.Scripts.Dungeon
             }
 
             _wheel.Move(new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) * 12f);
+            ReadyHoveredSpell();
 
             if (!Input.GetKey(_wheelSkill == 0 ? KeyCode.Q : KeyCode.E))
                 CloseWheel(true);
@@ -155,7 +157,21 @@ namespace Game.Scripts.Dungeon
                 _wheel.Open(skill.DisplayName, _wheelEntries, "Weapon");
             }
 
+            _wheelReadied = -1;
             _context.Battle.Input.SetLookFrozen(true);
+            ReadyHoveredSpell();
+        }
+
+        /// A spell is readied the moment the cursor enters its sector (the wheel opens on the centre); forms wait for the wheel to close.
+        private void ReadyHoveredSpell()
+        {
+            int selected = _wheel.Selected;
+
+            if (selected == _wheelReadied || _adventurer.GetSkill(_wheelSkill).Kind == AbilityKind.Shapeshift)
+                return;
+
+            _wheelReadied = selected;
+            _adventurer.RpcReadySpell(selected == SpellWheelView.Center ? AdventurerComponent.NoSpell : (byte)_wheelSpells[selected]);
         }
 
         private void CloseWheel(bool apply)
@@ -169,17 +185,8 @@ namespace Game.Scripts.Dungeon
             _context.Battle.Input.SetLookFrozen(false);
             _wheelSkill = -1;
 
-            if (!apply)
-                return;
-
-            if (selected == SpellWheelView.Center)
-                _adventurer.RpcReadySpell(AdventurerComponent.NoSpell);
-            else if (selected < 0)
-                return;
-            else if (skill.Kind == AbilityKind.Shapeshift)
+            if (apply && selected >= 0 && skill.Kind == AbilityKind.Shapeshift)
                 _adventurer.RpcShapeshift((ShapeshiftForm)(selected + 1));
-            else
-                _adventurer.RpcReadySpell((byte)_wheelSpells[selected]);
         }
 
         private void OnSessionChanged(PlayerSessionComponent session)

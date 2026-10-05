@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Radial menu held open with the memory skill key: move the mouse to a sector, release to ready that spell or form.
+    /// Radial menu held open with the memory skill key: moving the mouse to a sector readies that spell at once, a form is taken on release.
     /// A wheel opened with a centre zone selects it while the cursor stays in the middle.
     public sealed class SpellWheelView : DisplayableView
     {
