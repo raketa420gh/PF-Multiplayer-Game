@@ -18,7 +18,7 @@ namespace Game.Scripts.Editor.Battle
         private const float MaxStrideScale = 2f;
         private const float SprintSpeed = 1.44f;
         private const float BandageCycle = 0.9f;
-        private const float IdleDrop = 0.03f;
+        private const float IdleDrop = FighterAnimComponent.IdleDrop;
         private const float FootworkStride = 0.5f;
         private const float FootworkBob = 0.25f;
         /// A cut whose grip ends less than this far to the side of where it was raised comes down from above.
@@ -335,8 +335,9 @@ namespace Game.Scripts.Editor.Battle
 
             Settle(rig, weapon);
 
+            List<PoseKey> idle = BattleAnimationLibrary.IdleKeys(weapon);
             AddState(stateMachine, prefix + FighterAnimComponent.IdleSuffix,
-                Record(rig, prefix + FighterAnimComponent.IdleSuffix, 1f, true, _ => weapon.Idle));
+                Record(rig, prefix + FighterAnimComponent.IdleSuffix, idle[^1].Time, true, time => BattleAnimationLibrary.Sample(idle, time)));
 
             for (int i = 0; i < weapon.Attacks.Length; i++)
                 BuildSwing(rig, stateMachine, legs, weapon, weapon.Attacks[i], i,
@@ -390,6 +391,7 @@ namespace Game.Scripts.Editor.Battle
         public static void Settle(BattlePoseRig rig, WeaponDefinition weapon)
         {
             SettleRoll(rig, ref weapon.Idle);
+            SettleRoll(rig, ref weapon.IdleBreath);
             SettleRoll(rig, ref weapon.Block);
             SettleRoll(rig, ref weapon.BlockHit);
             SettleRoll(rig, ref weapon.BlockLowered);

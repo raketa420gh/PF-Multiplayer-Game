@@ -37,7 +37,7 @@ namespace Game.Scripts.Editor.Battle
             public BodyPose[] Poses;
         }
 
-        /// Swings: numbers of the series, "r" for the riposte, "block", "impact", "deflect". Views: fp, front, side, top,
+        /// Swings: numbers of the series, "r" for the riposte, "idle", "block", "impact", "deflect". Views: fp, front, side, top,
         /// or none for the numbers alone. Frames: clip frames to render, or none for the frames of the keys. Writes
         /// report_{swing}.txt and g_{swing}_{view}_{frame}.png into the folder and returns what is out of limits.
         public static string Run(string prefix, string swings, string views, string frames, string folder, int size)
@@ -70,6 +70,7 @@ namespace Game.Scripts.Editor.Battle
             AttackDefinition attack = swing == "r" ? weapon.Riposte : int.TryParse(swing, out int index) ? weapon.Attacks[index] : null;
             List<PoseKey> keys = swing switch
             {
+                "idle" => BattleAnimationLibrary.IdleKeys(weapon),
                 "block" => BattleAnimationLibrary.BlockKeys(weapon),
                 "impact" => BattleAnimationLibrary.BlockImpactKeys(weapon),
                 "deflect" => BattleAnimationLibrary.DeflectKeys(weapon),

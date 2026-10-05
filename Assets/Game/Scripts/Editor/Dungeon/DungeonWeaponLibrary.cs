@@ -358,7 +358,16 @@ namespace Game.Scripts.Editor.Dungeon
         /// the face. A fist is a short blade that runs across it, from the palm to the thumb.
         private static WeaponDefinition CreateFists()
         {
-            BodyPose idle = BattleAnimationLibrary.Guard(new(0.2f, 1.47f, 0.48f), new(-0.3f, 0.95f, 0f), new(-0.35f, 0.45f, 0.8f), 0.6f);
+            // A loose brawler's guard: half fists below the chin, the left one leading, elbows flared, the back rounded.
+            // It breathes: the hands sink and draw back 2 cm with the chest once every 98 video frames.
+            BodyPose idle = BattleAnimationLibrary.Elbows(
+                BattleAnimationLibrary.Guard(new(0.22f, 1.49f, 0.4f), new(-0.7f, 0.7f, 0f), new(-0.25f, 0.35f, 0.9f), 0.1f, 12f),
+                new(0.33f, 1.17f, 0.28f), new(-0.33f, 1.17f, 0.28f));
+            idle.Off.Position = new Vector3(-0.2f, 1.48f, 0.44f);
+            BodyPose breath = idle;
+            breath.Main.Position += new Vector3(0f, -0.018f, -0.018f);
+            breath.Off.Position += new Vector3(0f, -0.018f, -0.018f);
+            breath.Spine.x -= 1f;
 
             return new WeaponDefinition
             {
@@ -371,6 +380,8 @@ namespace Game.Scripts.Editor.Dungeon
                 BladeTip = 0.12f,
                 IsUnarmed = true,
                 Idle = idle,
+                IdleBreath = breath,
+                IdleCycle = 98 * Footage,
                 Attacks = new[] { Hook(34 * Frame, false), Hook(22 * Frame, true) },
                 CanBlock = true,
                 BlockRaise = 0.15f,

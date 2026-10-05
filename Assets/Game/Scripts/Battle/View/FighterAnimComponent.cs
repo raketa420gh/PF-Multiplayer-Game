@@ -42,6 +42,8 @@ namespace Game.Scripts.Battle
         public const string HitChestState = "HitChest";
         public const string HitHeadState = "HitHead";
         public const string HitStaggerState = "HitStagger";
+        /// How far the standing legs clips lower the hips below the bind pose.
+        public const float IdleDrop = 0.03f;
 
         [SerializeField]
         private FighterComponent _fighter;
@@ -163,6 +165,14 @@ namespace Game.Scripts.Battle
         private bool _isHeadHidden;
         private bool _isKneeling;
         private bool _isHolding;
+        private float _crouch;
+        private float _spineHeight;
+
+        private void Awake()
+        {
+            if (_spineBones.Length > 0)
+                _spineHeight = transform.InverseTransformPoint(_spineBones[0].position).y;
+        }
 
         public override void Spawned()
         {
@@ -219,7 +229,10 @@ namespace Game.Scripts.Battle
             _spineBones[0].rotation = Quaternion.AngleAxis(-_flinch, axis) * _spineBones[0].rotation;
 
             if (_isHeadHidden)
+            {
                 _headBone.localScale = Vector3.zero;
+                HoldUpperBody();
+            }
         }
 
         private static WeaponStates CreateStates(WeaponConfig weapon)
@@ -254,11 +267,11 @@ namespace Game.Scripts.Battle
             FighterMoveComponent move = _fighter.Move;
             Vector3 velocity = Quaternion.Inverse(transform.rotation) * move.Velocity;
             float walkSpeed = move.Config.RunSpeed * move.Config.WalkMultiplier;
-            float crouch = new NetworkBehaviourBufferInterpolator(move).Float(nameof(FighterMoveComponent.CrouchAmount));
+            _crouch = new NetworkBehaviourBufferInterpolator(move).Float(nameof(FighterMoveComponent.CrouchAmount));
 
             _animator.SetFloat(s_moveX, velocity.x / walkSpeed, _moveDamping, deltaTime);
             _animator.SetFloat(s_moveY, velocity.z / walkSpeed, _moveDamping, deltaTime);
-            _animator.SetFloat(s_crouch, crouch);
+            _animator.SetFloat(s_crouch, _crouch);
 
             _airTime = move.IsGrounded ? 0f : _airTime + deltaTime;
             _landLeft -= deltaTime;
@@ -403,6 +416,15 @@ namespace Game.Scripts.Battle
             _pitch = HasInputAuthority && context != null
                 ? context.Input.LookRotation.x
                 : new NetworkBehaviourBufferInterpolator(_fighter.Move).Float(nameof(FighterMoveComponent.Pitch));
+        }
+
+        /// The legs clips bob the hips (breath, crouch, push-off, landing), the eye follows the body model and does not:
+        /// in own eyes the upper body is held at the model's height, so the arms stay put on the screen.
+        private void HoldUpperBody()
+        {
+            Transform spine = _spineBones[0];
+            float height = _spineHeight - IdleDrop - _fighter.Body.Config.CrouchDrop * _crouch;
+            spine.position += transform.up * ((height - transform.InverseTransformPoint(spine.position).y) * _upperWeight);
         }
 
         private void OnHitEvent(HitEventData hit)

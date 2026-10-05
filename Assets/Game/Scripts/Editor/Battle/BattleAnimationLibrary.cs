@@ -89,6 +89,9 @@ namespace Game.Scripts.Editor.Battle
         /// A round haft (staff): it has no edge to lead a cut with, so the hand keeps the roll the arm gives it.
         public bool IsRound;
         public BodyPose Idle;
+        /// Breathing at rest: the idle sinks into this pose and back once per cycle (seconds of clip); no cycle = a still pose.
+        public BodyPose IdleBreath;
+        public float IdleCycle;
         public AttackDefinition[] Attacks = Array.Empty<AttackDefinition>();
         /// The answer to a blocked hit: not a part of the series, it sets off from the block pose.
         public AttackDefinition Riposte;
@@ -121,7 +124,7 @@ namespace Game.Scripts.Editor.Battle
         /// Distance from the grip to the part of the weapon that meets the crosshair at the peak of a swing.
         public float StrikePoint => Strike > 0f ? Strike : Mathf.Lerp(BladeBase, BladeTip, 0.65f);
 
-        public float StrikeOf(AttackDefinition attack) => attack.Strike != 0f ? attack.Strike : StrikePoint;
+        public float StrikeOf(AttackDefinition attack) => attack != null && attack.Strike != 0f ? attack.Strike : StrikePoint;
     }
 
     /// Hand-authored key poses (root space, character faces +Z) and timings shared by clips and weapon configs.
@@ -588,6 +591,19 @@ namespace Game.Scripts.Editor.Battle
             Vector2 offset = new Vector2(Eye.x - grip.x, Eye.y - grip.y);
 
             return new Vector3(offset.x, offset.y, Mathf.Sqrt(Mathf.Max(strike * strike - offset.sqrMagnitude, 0f)));
+        }
+
+        /// The idle loop: it sinks into the breath pose and back, or holds still for a second.
+        public static List<PoseKey> IdleKeys(WeaponDefinition weapon)
+        {
+            float cycle = weapon.IdleCycle > 0f ? weapon.IdleCycle : 1f;
+
+            return new List<PoseKey>
+            {
+                new(0f, weapon.Idle),
+                new(cycle * 0.5f, weapon.IdleCycle > 0f ? weapon.IdleBreath : weapon.Idle),
+                new(cycle, weapon.Idle)
+            };
         }
 
         public static BodyPose Sample(List<PoseKey> keys, float time)
