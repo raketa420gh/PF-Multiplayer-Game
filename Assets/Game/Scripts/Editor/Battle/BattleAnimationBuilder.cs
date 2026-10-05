@@ -54,7 +54,8 @@ namespace Game.Scripts.Editor.Battle
             }
 
             BuildActions(upper);
-            AddKeyed(rig, upper, FighterAnimComponent.CastFirstPersonState, 2f, SettleRoll(rig, BattleAnimationLibrary.CastKeys()));
+            AddKeyed(rig, upper, FighterAnimComponent.CastFirstPersonState, BattleAnimationLibrary.CastChargeTime, SettleRoll(rig, BattleAnimationLibrary.CastKeys()));
+            AddKeyed(rig, upper, FighterAnimComponent.CastReleaseFirstPersonState, BattleAnimationLibrary.CastReleaseTime, SettleRoll(rig, BattleAnimationLibrary.CastReleaseKeys()));
             List<PoseKey> use = SettleRoll(rig, BattleAnimationLibrary.UseKeys());
             AddKeyed(rig, upper, FighterAnimComponent.UseFirstPersonState, BattleAnimationLibrary.DrinkTime, use);
             AddState(upper, FighterAnimComponent.HoldState, Record(rig, FighterAnimComponent.HoldState, 1f, true, _ => use[0].Pose));

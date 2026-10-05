@@ -34,11 +34,12 @@ namespace Game.Scripts.Dungeon
         public const byte BusyOpen = 4;
         public const byte BusyPickUp = 5;
         public const byte BusyBandage = 6;
+        public const byte BusyRelease = 7;
         public const int BeltGroupSize = 3;
         public const byte NoBelt = 255;
         public const byte NoSearch = 255;
         private const float ContainerRange = 5f;
-        private const float CastPadding = 0.15f;
+        private const float CastReleaseTime = 0.35f;
         private const float RootTurnLimit = 90f;
         private const float QuickCastTime = 0.05f;
         /// Reach of the hitscan spells and of weapon enchants cast on an ally.
@@ -139,8 +140,8 @@ namespace Game.Scripts.Dungeon
             ? 0f
             : Mathf.Clamp01((Runner.Tick - _searchStartTick) / (float)(_searchEndTick - _searchStartTick));
 
-        /// Charge progress of the spell being held (0 when not charging).
-        public float CastCharge => Pending == PendingAction.Ability && _isHoldingCast ? _fighter.Combat.BusyProgress : 0f;
+        /// Charge progress of the spell being held: 0 when not charging, 1 once it is kept ready until the button is let go.
+        public float CastCharge => IsHoldingCast ? Mathf.InverseLerp(_fighter.Combat.StateTick, _pendingCompleteTick, Runner.Tick) : 0f;
         public bool IsHoldingCast => Pending == PendingAction.Ability && _isHoldingCast;
 
         public const byte NoSpell = 255;
@@ -468,10 +469,16 @@ namespace Game.Scripts.Dungeon
         }
 
         /// Spell wheel selection: readies a spell; it is cast with the secondary button once a focus is taken in hand.
+        /// The centre of the wheel sends NoSpell: the secondary button goes back to blocking with the weapon.
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcReadySpell(byte spellIndex)
         {
-            ReadiedSpell = spellIndex < _class.Spells.Length && IsSpellMemorized(spellIndex) ? spellIndex : NoSpell;
+            byte spell = spellIndex < _class.Spells.Length && IsSpellMemorized(spellIndex) ? spellIndex : NoSpell;
+
+            if (spell != ReadiedSpell && IsHoldingCast)
+                CancelPending();
+
+            ReadiedSpell = spell;
         }
 
         public bool IsSpellInWheel(int spellIndex, int wheel)
@@ -623,11 +630,13 @@ namespace Game.Scripts.Dungeon
                     _effects.Add(StatusEffectKind.ActionSpeed, 20f, 2f);
             }
 
-            if (_isHoldingCast && Pending == PendingAction.Ability)
+            if (IsHoldingCast)
             {
-                if (Runner.Tick >= _pendingCompleteTick)
+                bool isReleased = !buttons.IsSet(PlayerInputButtons.Secondary);
+
+                if (isReleased && Runner.Tick >= _pendingCompleteTick)
                     FinishCast();
-                else if (!buttons.IsSet(PlayerInputButtons.Secondary) || buttons.WasPressed(previous, PlayerInputButtons.Interact))
+                else if (isReleased || buttons.WasPressed(previous, PlayerInputButtons.Interact))
                     CancelPending();
             }
             else
@@ -766,7 +775,8 @@ namespace Game.Scripts.Dungeon
             bool isQuick = _effects.Has(StatusEffectKind.QuickCast);
             float duration = isQuick ? QuickCastTime : Mathf.Max(0.1f, spell.CastTime / _stats.CastSpeed);
 
-            if (!_fighter.Combat.StartBusy(duration + CastPadding, BusyCast))
+            // The charged spell stays in the hands for as long as the button is held.
+            if (!_fighter.Combat.StartBusy(float.PositiveInfinity, BusyCast))
                 return;
 
             if (isQuick)
@@ -778,13 +788,14 @@ namespace Game.Scripts.Dungeon
             _isHoldingCast = true;
         }
 
-        /// The spell takes effect when the cast completes; letting go of the button earlier cancels it for free.
+        /// The charged spell takes effect when the button is let go; letting go before the cast completes cancels it for free.
         private void FinishCast()
         {
             int index = _pendingIndex;
             Pending = PendingAction.None;
             _isHoldingCast = false;
             _fighter.Combat.CancelBusy();
+            _fighter.Combat.StartBusy(CastReleaseTime, BusyRelease);
             AbilityConfig ability = _abilities[index];
 
             if (ability.HealthCost > 0)

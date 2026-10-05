@@ -18,7 +18,7 @@ namespace Game.Scripts.Editor.Dungeon
         private const string HelpText =
             "<b>Controls</b>\n" +
             "WASD move · Shift walk (quiet) · Space jump · Ctrl/C crouch (duck under swings)\n" +
-            "LMB attack / draw · RMB block, or hold to cast a readied spell · 1 / 2 weapon sets · X put the weapon away · Tab inventory\n" +
+            "LMB attack / draw · RMB block, or hold and release to cast a readied spell · 1 / 2 weapon sets · X put the weapon away · Tab inventory\n" +
             "3 / 4 belt item in hand (press again for the next of three), LMB use, RMB put away · F interact (hold; chests and corpses open at once) · Q / E skills · G rest · M map · H help\n" +
             "Casters need a staff, spellbook or crystal ball in hand; bards need an instrument. Rest at a campfire to recover charges.";
 
@@ -1644,11 +1644,13 @@ namespace Game.Scripts.Editor.Dungeon
             TMP_Text title = CreateText("Title", panel, new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(400f, 30f), 20f, TextAlignmentOptions.Center);
             title.rectTransform.pivot = new Vector2(0.5f, 1f);
             title.color = s_gold;
-            TMP_Text centerText = CreateText("Center", panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(200f, 40f), 16f, TextAlignmentOptions.Center);
+            Image centerBack = CreateImage("CenterBack", panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(100f, 100f), new Color(0.08f, 0.07f, 0.06f, 0.9f));
+            centerBack.sprite = dim.sprite;
             RectTransform slotsRoot = CreateRect("Slots", panel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             Image cursor = CreateImage("Cursor", panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(14f, 14f), s_gold);
             cursor.sprite = dim.sprite;
             cursor.raycastTarget = false;
+            TMP_Text centerText = CreateText("Center", panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(200f, 40f), 16f, TextAlignmentOptions.Center);
 
             RectTransform slot = CreateRect("Slot", panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(104f, 84f));
             Image slotBack = slot.gameObject.AddComponent<Image>();
@@ -1669,6 +1671,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_slotsRoot", slotsRoot);
             BattleEditorUtility.Set(so, "_titleText", title);
             BattleEditorUtility.Set(so, "_centerText", centerText);
+            BattleEditorUtility.Set(so, "_centerBack", centerBack);
             BattleEditorUtility.Set(so, "_cursorMark", cursor.rectTransform);
             so.ApplyModifiedPropertiesWithoutUndo();
 

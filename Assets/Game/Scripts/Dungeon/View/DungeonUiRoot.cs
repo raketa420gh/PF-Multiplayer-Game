@@ -134,7 +134,7 @@ namespace Game.Scripts.Dungeon
                 _wheelEntries.Add(("Bear", null, "Br", new Color(0.7f, 0.5f, 0.3f), "+50% HP, slow, heavy claws"));
                 _wheelEntries.Add(("Panther", null, "Pn", new Color(0.4f, 0.35f, 0.5f), "fast, quick claws"));
                 _wheelEntries.Add(("Rat", null, "Rt", new Color(0.6f, 0.6f, 0.6f), "tiny, fragile, sneaky"));
-                _wheel.Open("Shapeshift", _wheelEntries, -1);
+                _wheel.Open("Shapeshift", _wheelEntries);
             }
             else
             {
@@ -152,7 +152,7 @@ namespace Game.Scripts.Dungeon
                     _wheelEntries.Add((spells[i].DisplayName, spells[i].Icon, spells[i].Glyph, spells[i].Color, detail));
                 }
 
-                _wheel.Open(skill.DisplayName, _wheelEntries, -1);
+                _wheel.Open(skill.DisplayName, _wheelEntries, "Weapon");
             }
 
             _context.Battle.Input.SetLookFrozen(true);
@@ -169,10 +169,14 @@ namespace Game.Scripts.Dungeon
             _context.Battle.Input.SetLookFrozen(false);
             _wheelSkill = -1;
 
-            if (!apply || selected < 0)
+            if (!apply)
                 return;
 
-            if (skill.Kind == AbilityKind.Shapeshift)
+            if (selected == SpellWheelView.Center)
+                _adventurer.RpcReadySpell(AdventurerComponent.NoSpell);
+            else if (selected < 0)
+                return;
+            else if (skill.Kind == AbilityKind.Shapeshift)
                 _adventurer.RpcShapeshift((ShapeshiftForm)(selected + 1));
             else
                 _adventurer.RpcReadySpell((byte)_wheelSpells[selected]);

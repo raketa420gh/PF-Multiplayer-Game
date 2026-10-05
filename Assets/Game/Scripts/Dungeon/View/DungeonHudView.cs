@@ -250,9 +250,9 @@ namespace Game.Scripts.Dungeon
             if (adventurer.IsHoldingCast)
             {
                 AbilityConfig spell = adventurer.ReadiedSpellConfig;
-                float duration = spell != null ? spell.CastTime / adventurer.Stats.CastSpeed : 1f;
-                _castBar.fillAmount = Mathf.Clamp01(combat.StateTime / Mathf.Max(0.1f, duration));
-                _castText.text = spell != null ? spell.DisplayName : string.Empty;
+                float charge = adventurer.CastCharge;
+                _castBar.fillAmount = charge;
+                _castText.text = spell == null ? string.Empty : charge < 1f ? spell.DisplayName : $"{spell.DisplayName}  <size=70%>release to cast</size>";
             }
             else
             {

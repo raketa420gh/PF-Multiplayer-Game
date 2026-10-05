@@ -118,6 +118,8 @@ namespace Game.Scripts.Editor.Battle
         public const float CrouchDrop = 0.45f;
         /// Length of the drinking clip, which is how long a potion takes at the base Action Speed.
         public const float DrinkTime = 129f / BattleAnimationBuilder.FrameRate;
+        public const float CastChargeTime = 1f;
+        public const float CastReleaseTime = 0.5f;
         /// A belt item is no handle to close the fist on: the fingers lie around it.
         private const float HeldOpen = 0.55f;
 
@@ -601,15 +603,25 @@ namespace Game.Scripts.Editor.Battle
             return pose;
         }
 
+        /// The hands gather the spell: the clip ends on the charged pose, which is kept until the cast is released.
         public static List<PoseKey> CastKeys()
         {
             return new List<PoseKey>
             {
                 new(0f, Cast(0.22f, 0.3f, 1.25f)),
                 new(0.35f, Cast(0.16f, 0.42f, 1.42f, -4f), Ease.Out),
-                new(1f, Cast(0.14f, 0.5f, 1.45f, -6f)),
-                new(1.4f, Cast(0.26f, 0.62f, 1.4f, 4f), Ease.In),
-                new(2f, Cast(0.22f, 0.3f, 1.25f))
+                new(CastChargeTime, Cast(0.14f, 0.5f, 1.45f, -6f))
+            };
+        }
+
+        /// The charged spell is pushed out and the hands come down.
+        public static List<PoseKey> CastReleaseKeys()
+        {
+            return new List<PoseKey>
+            {
+                new(0f, Cast(0.14f, 0.5f, 1.45f, -6f)),
+                new(0.15f, Cast(0.26f, 0.62f, 1.4f, 4f), Ease.In),
+                new(CastReleaseTime, Cast(0.22f, 0.3f, 1.25f))
             };
         }
 

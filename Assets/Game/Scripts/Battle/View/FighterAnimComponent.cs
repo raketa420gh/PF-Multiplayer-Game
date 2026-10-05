@@ -36,6 +36,7 @@ namespace Game.Scripts.Battle
         public const string BandageState = "Bandage";
         public const string BandageFirstPersonState = "BandageFp";
         public const string CastReleaseState = "CastRelease";
+        public const string CastReleaseFirstPersonState = "CastReleaseFp";
         public const string HitChestState = "HitChest";
         public const string HitHeadState = "HitHead";
         public const string HitStaggerState = "HitStagger";
@@ -122,14 +123,14 @@ namespace Game.Scripts.Battle
         {
             Animator.StringToHash(CastState), Animator.StringToHash(UseState), Animator.StringToHash(InteractState),
             Animator.StringToHash(ThrowState), Animator.StringToHash(OpenState), Animator.StringToHash(PickUpState),
-            Animator.StringToHash(BandageState)
+            Animator.StringToHash(BandageState), Animator.StringToHash(CastReleaseState)
         };
 
         /// Own-eyes variants of the busy states whose library motion stays outside the first-person view; 0 = there is none.
         private static readonly int[] s_busyFirstPerson =
         {
             Animator.StringToHash(CastFirstPersonState), Animator.StringToHash(UseFirstPersonState), 0, 0, 0, 0,
-            Animator.StringToHash(BandageFirstPersonState)
+            Animator.StringToHash(BandageFirstPersonState), Animator.StringToHash(CastReleaseFirstPersonState)
         };
 
         private struct WeaponStates

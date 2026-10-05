@@ -49,7 +49,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Stats = new ClassStats(9, 8, 12, 13, 21, 23), Color = arcane, Body = new Color(0.78f, 0.66f, 0.56f),
                 Skills = new[]
                 {
-                    Memory("Spell Memory I", "Hold to open the first spell wheel and ready a spell; cast it with RMB while holding a magical focus.", "M1", arcane, 0),
+                    Memory("Spell Memory I", "Hold to open the first spell wheel and ready a spell; hold RMB with a magical focus in hand and release to cast. The centre of the wheel returns RMB to the weapon.", "M1", arcane, 0),
                     Memory("Spell Memory II", "Hold to open the second spell wheel. Take both memories for ten spells, or one and an active skill.", "M2", arcane, 1),
                     Skill("Arcane Shield", "A barrier absorbs 35 damage for 6s.", AbilityKind.Shield, 35f, 6f, 30f, "AS", arcane, castTime: 0.3f, icon: "Shield"),
                     Skill("Quick Chant", "The next spell within 15s is cast instantly.", AbilityKind.QuickCast, 0f, 15f, 35f, "QC", arcane, castTime: 0.2f, icon: "Hourglass")

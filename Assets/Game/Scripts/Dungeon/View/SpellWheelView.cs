@@ -6,8 +6,11 @@ using UnityEngine.UI;
 namespace Game.Scripts.Dungeon
 {
     /// Radial menu held open with the memory skill key: move the mouse to a sector, release to ready that spell or form.
+    /// A wheel opened with a centre zone selects it while the cursor stays in the middle.
     public sealed class SpellWheelView : DisplayableView
     {
+        public const int Center = -2;
+
         public int Selected => _selected;
 
         [SerializeField]
@@ -23,27 +26,36 @@ namespace Game.Scripts.Dungeon
         private TMP_Text _centerText;
 
         [SerializeField]
+        private Image _centerBack;
+
+        [SerializeField]
         private RectTransform _cursorMark;
 
         [SerializeField]
         private float _radius = 150f;
 
         [SerializeField]
-        private float _deadZone = 25f;
+        private float _deadZone = 50f;
+
+        private static readonly Color s_selected = new(0.6f, 0.45f, 0.15f, 0.95f);
+        private static readonly Color s_idle = new(0.08f, 0.07f, 0.06f, 0.9f);
 
         private readonly List<RectTransform> _slots = new();
         private readonly List<Image> _backgrounds = new();
         private readonly List<string> _names = new();
         private Vector2 _cursor;
         private int _selected = -1;
+        private string _centerName;
 
-        public void Open(string title, IReadOnlyList<(string name, Sprite icon, string glyph, Color color, string detail)> entries, int current)
+        public void Open(string title, IReadOnlyList<(string name, Sprite icon, string glyph, Color color, string detail)> entries, string centerName = null)
         {
             Show();
             _titleText.text = title;
             _cursor = Vector2.zero;
             _cursorMark.anchoredPosition = _cursor;
-            _selected = current;
+            _centerName = centerName;
+            _centerBack.enabled = centerName != null;
+            _selected = centerName != null ? Center : -1;
             _names.Clear();
 
             while (_slots.Count < entries.Count)
@@ -86,8 +98,19 @@ namespace Game.Scripts.Dungeon
 
             _cursorMark.anchoredPosition = _cursor;
 
-            if (_cursor.magnitude < _deadZone || _names.Count == 0)
+            if (_names.Count == 0)
                 return;
+
+            if (_cursor.magnitude < _deadZone)
+            {
+                if (_centerName != null)
+                {
+                    _selected = Center;
+                    Highlight();
+                }
+
+                return;
+            }
 
             float angle = Mathf.Atan2(_cursor.x, _cursor.y);
 
@@ -102,9 +125,10 @@ namespace Game.Scripts.Dungeon
         private void Highlight()
         {
             for (int i = 0; i < _backgrounds.Count; i++)
-                _backgrounds[i].color = i == _selected ? new Color(0.6f, 0.45f, 0.15f, 0.95f) : new Color(0.08f, 0.07f, 0.06f, 0.9f);
+                _backgrounds[i].color = i == _selected ? s_selected : s_idle;
 
-            _centerText.text = _selected >= 0 && _selected < _names.Count ? _names[_selected] : "Move to choose";
+            _centerBack.color = _selected == Center ? s_selected : s_idle;
+            _centerText.text = _selected >= 0 && _selected < _names.Count ? _names[_selected] : _centerName ?? "Move to choose";
         }
     }
 }
