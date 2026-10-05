@@ -34,9 +34,8 @@ namespace Game.Scripts.Editor.Battle
 
         private static readonly string[] s_tableItems =
         {
-            "Arming Sword", "Round Shield", "Falchion", "Zweihander", "Battle Axe", "Spear", "Flanged Mace", "Rondel Dagger", "Recurve Bow",
-            "Crossbow", "Torch", "Bandage", "Potion of Healing", "Potion of Protection", "Ale", "Throwing Knife", "Francisca Axe",
-            "Short Sword", "Rapier", "Viking Sword", "Hatchet", "Morning Star", "Stiletto Dagger", "Felling Axe", "War Maul", "Halberd", "Potion of Invisibility"
+            "Battle Axe", "Round Shield", "Hatchet", "Spellbook", "Magic Staff",
+            "Bandage", "Potion of Healing", "Potion of Protection", "Ale", "Potion of Invisibility"
         };
 
         [MenuItem("Tools/Game/Battle/Build Scene")]
