@@ -8,7 +8,6 @@ namespace Game.Scripts.Dungeon
     {
         public ClassStats Attributes => _attributes;
         public int MaxHealth => _maxHealth;
-        public float Toughness => _toughness;
         public float ArmorRating => _armorRating;
         public float MagicResistance => _magicResistance;
         public float PhysicalReduction => _physicalReduction;
@@ -20,17 +19,16 @@ namespace Game.Scripts.Dungeon
         public float ActionSpeed => _actionSpeed;
         public float HandlingSpeed => _handlingSpeed;
         public float InteractionSpeed => _interactionSpeed;
-        public float Weakpoint => _weakpoint;
+        public float MagicalInteractionSpeed => _magicalInteractionSpeed;
         public float Perception => _perception;
         public float CooldownSpeed => _cooldownSpeed;
-        public float ControlResistance => _controlResistance;
         public float CastSpeed => _castSpeed;
-        public float Mending => _mending;
+        public float PhysicalHealing => _physicalHealing;
+        public float MagicalHealing => _magicalHealing;
         public int BonusCharges => _bonusCharges;
 
         private ClassStats _attributes;
         private int _maxHealth = 100;
-        private float _toughness = 1f;
         private float _armorRating;
         private float _magicResistance;
         private float _physicalReduction;
@@ -42,12 +40,12 @@ namespace Game.Scripts.Dungeon
         private float _actionSpeed = 1f;
         private float _handlingSpeed = 1f;
         private float _interactionSpeed = 1f;
-        private float _weakpoint = 1f;
+        private float _magicalInteractionSpeed = 1f;
         private float _perception = 1f;
         private float _cooldownSpeed = 1f;
-        private float _controlResistance;
         private float _castSpeed = 1f;
-        private float _mending = 1f;
+        private float _physicalHealing = 1f;
+        private float _magicalHealing = 1f;
         private int _bonusCharges;
         private readonly float[] _flat = new float[(int)StatType.Count];
         private readonly StatModifier[] _affixes = new StatModifier[ItemAffixes.MaxCount];
@@ -56,7 +54,7 @@ namespace Game.Scripts.Dungeon
         {
             return type switch
             {
-                DamageType.Physical => 1f + DungeonFormulas.PowerBonus(_physicalPower) + _flat[(int)StatType.PhysicalDamageBonus] + (HasThreshold(StatType.Grip) ? 0.1f : 0f),
+                DamageType.Physical => 1f + DungeonFormulas.PowerBonus(_physicalPower) + _flat[(int)StatType.PhysicalDamageBonus],
                 DamageType.Magical => 1f + DungeonFormulas.PowerBonus(_magicalPower) + _flat[(int)StatType.MagicalDamageBonus],
                 _ => 1f
             };
@@ -115,69 +113,68 @@ namespace Game.Scripts.Dungeon
             }
 
             float rage = Effect(effects, StatusEffectKind.Rage);
-            float flesh = Attribute(StatType.Flesh);
-            float grip = Attribute(StatType.Grip) + Effect(effects, StatusEffectKind.Grip) + rage;
-            float reflex = Attribute(StatType.Reflex);
-            float craft = Attribute(StatType.Craft);
-            float insight = Attribute(StatType.Insight);
-            float resonance = Attribute(StatType.Resonance);
+            float strength = Attribute(StatType.Strength) + Effect(effects, StatusEffectKind.Strength) + rage;
+            float vitality = Attribute(StatType.Vitality);
+            float spirit = Attribute(StatType.Spirit);
+            float knowledge = Attribute(StatType.Knowledge);
+            float agility = Attribute(StatType.Agility);
+            float dexterity = Attribute(StatType.Dexterity);
 
-            _attributes = new ClassStats(Mathf.RoundToInt(flesh), Mathf.RoundToInt(grip), Mathf.RoundToInt(reflex),
-                Mathf.RoundToInt(craft), Mathf.RoundToInt(insight), Mathf.RoundToInt(resonance));
+            _attributes = new ClassStats(Mathf.RoundToInt(strength), Mathf.RoundToInt(vitality), Mathf.RoundToInt(spirit),
+                Mathf.RoundToInt(knowledge), Mathf.RoundToInt(agility), Mathf.RoundToInt(dexterity));
 
-            // Flesh
+            // Strength and Spirit only raise the powers; the damage bonus grows from the power alone.
+            _physicalPower = strength + _flat[(int)StatType.PhysicalPower] + Effect(effects, StatusEffectKind.Power) + ThresholdPower(StatType.Strength);
+
+            // Vitality
             float healthBonus = _flat[(int)StatType.MaxHealth] + Effect(effects, StatusEffectKind.Fortify) + FormHealthBonus(form);
-            _maxHealth = Mathf.CeilToInt(DungeonFormulas.BaseHealth * DungeonFormulas.Scale(flesh, 1f) * (1f + healthBonus / 100f));
+            _maxHealth = Mathf.CeilToInt(DungeonFormulas.BaseHealth * DungeonFormulas.Scale(vitality, 1f) * (1f + healthBonus / 100f));
 
-            // Grip
-            _physicalPower = grip + _flat[(int)StatType.PhysicalPower] + Effect(effects, StatusEffectKind.Power);
+            _magicalPower = spirit + _flat[(int)StatType.MagicalPower] + ThresholdPower(StatType.Spirit);
 
-            // Reflex
-            _actionSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(reflex, 0.5f) + _flat[(int)StatType.ActionSpeed] / 100f + Effect(effects, StatusEffectKind.ActionSpeed) / 100f);
+            // Knowledge
+            _castSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(knowledge, 0.8f));
+            _bonusCharges = DungeonFormulas.BonusCharges(knowledge);
 
-            // Craft
-            _interactionSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(craft, 1.5f));
-            _weakpoint = Mathf.Max(0.5f, DungeonFormulas.Scale(craft, 0.5f));
-
-            // Insight
-            _cooldownSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(insight, 0.6f));
-            _controlResistance = Mathf.Clamp(DungeonFormulas.Curve(insight), -0.5f, 0.8f);
-
-            // Resonance
-            _magicalPower = resonance + _flat[(int)StatType.MagicalPower];
-            _bonusCharges = DungeonFormulas.BonusCharges(resonance);
-
-            // Edges: geometric mean of two neighbours on the ring.
-            _toughness = Mathf.Max(0.3f, DungeonFormulas.Scale(DungeonFormulas.Edge(flesh, grip), 1f));
-            _handlingSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(DungeonFormulas.Edge(reflex, craft), 1f));
-            _perception = Mathf.Max(0.3f, DungeonFormulas.Scale(DungeonFormulas.Edge(craft, insight), 1f));
-            _castSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(DungeonFormulas.Edge(insight, resonance), 0.8f));
-            _mending = Mathf.Max(0.3f, DungeonFormulas.Scale(DungeonFormulas.Edge(resonance, flesh), 0.6f));
-
+            // Agility: the only attribute that moves the feet.
             float haste = Effect(effects, StatusEffectKind.Haste) - Effect(effects, StatusEffectKind.Slow);
-            float rating = DungeonFormulas.BaseMoveSpeed * DungeonFormulas.Scale(DungeonFormulas.Edge(grip, reflex), 0.2f)
-                + moveAdd + _flat[(int)StatType.MoveSpeed] + FormMoveAdd(form);
+            float rating = DungeonFormulas.BaseMoveSpeed * DungeonFormulas.Scale(agility, 0.2f) + moveAdd + _flat[(int)StatType.MoveSpeed] + FormMoveAdd(form);
             rating *= 1f + (haste + rage * 0.7f) / 100f;
             _moveSpeedRating = Mathf.Min(rating, DungeonFormulas.MaxMoveSpeed);
             _moveSpeedMultiplier = Mathf.Max(0.3f, _moveSpeedRating / DungeonFormulas.BaseMoveSpeed);
 
+            // Dexterity: the only attribute that speeds up the hands.
+            _actionSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(dexterity, 0.5f) + _flat[(int)StatType.ActionSpeed] / 100f + Effect(effects, StatusEffectKind.ActionSpeed) / 100f);
+
+            // Edges: geometric mean of two neighbours on the ring.
+            _physicalHealing = Mathf.Max(0.3f, DungeonFormulas.Scale(DungeonFormulas.Edge(strength, vitality), 0.6f));
+            _magicalHealing = Mathf.Max(0.3f, DungeonFormulas.Scale(DungeonFormulas.Edge(vitality, spirit), 0.6f));
+            _magicalInteractionSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(DungeonFormulas.Edge(spirit, knowledge), 1.5f));
+            _perception = Mathf.Max(0.3f, DungeonFormulas.Scale(DungeonFormulas.Edge(knowledge, agility), 1f));
+            _interactionSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(DungeonFormulas.Edge(agility, dexterity), 1.5f));
+            _handlingSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(DungeonFormulas.Edge(dexterity, strength), 1f));
+
+            // Gear only.
+            _cooldownSpeed = Mathf.Max(0.4f, 1f + _flat[(int)StatType.CooldownRecovery] / 100f);
             _armorRating = armor + _flat[(int)StatType.ArmorRating];
             _magicResistance = DungeonFormulas.BaseMagicResistance + magicResistance + _flat[(int)StatType.MagicResistance];
             _physicalReduction = DungeonFormulas.ArmorReduction(_armorRating) + rage * -0.01f;
             _magicalReduction = DungeonFormulas.MagicReduction(_magicResistance);
 
             float Attribute(StatType stat) => config.BaseStats.Get(stat) + _flat[(int)stat];
+            float ThresholdPower(StatType attribute) => HasThreshold(attribute) ? DungeonFormulas.ThresholdPower : 0f;
         }
 
-        /// Stats only shorten debuffs: bleeding and burning by Toughness, slows by Control Resist (Insight 30 ignores them).
+        /// Debuffs last as long as they were cast, only Agility 30 ignores slows.
         public float GetDurationScale(StatusEffectKind kind)
         {
-            return kind switch
-            {
-                StatusEffectKind.Burn => 1f / _toughness,
-                StatusEffectKind.Slow => HasThreshold(StatType.Insight) ? 0f : 1f - _controlResistance,
-                _ => 1f
-            };
+            return kind == StatusEffectKind.Slow && HasThreshold(StatType.Agility) ? 0f : 1f;
+        }
+
+        /// Altars answer to magic; doors, levers, portals and the rest to the hands.
+        public float GetInteractionSpeed(bool isMagical)
+        {
+            return isMagical ? _magicalInteractionSpeed : _interactionSpeed;
         }
 
         public bool HasThreshold(StatType attribute)

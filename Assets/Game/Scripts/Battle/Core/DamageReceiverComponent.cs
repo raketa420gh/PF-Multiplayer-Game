@@ -48,7 +48,6 @@ namespace Game.Scripts.Battle
         /// Optional second interface: outgoing hit bonuses and incoming armor and resistances of the receiver.
         public interface IHitModifier
         {
-            float WeakpointMultiplier { get; }
             int ModifyIncomingDamage(int damage, DamageType type, HitZone zone);
         }
 
@@ -146,8 +145,7 @@ namespace Game.Scripts.Battle
             HitResult result = blockRays == 0 ? HitResult.Hit : bodyRays == 0 ? HitResult.Blocked : HitResult.PartialBlock;
             float blockedShare = blockRays / (float)(blockRays + bodyRays);
             IHitModifier attacker = request.Attacker != null ? request.Attacker._modifier : null;
-            float weakpoint = request.Zone == HitZone.Head ? attacker?.WeakpointMultiplier ?? 1f : 1f;
-            float zoneMultiplier = result == HitResult.Blocked ? 1f : _zoneConfig.GetMultiplier(request.Zone) * weakpoint;
+            float zoneMultiplier = result == HitResult.Blocked ? 1f : _zoneConfig.GetMultiplier(request.Zone);
             float mitigation = block != null ? block.Mitigation * blockedShare : 0f;
             int damage = Mathf.RoundToInt(request.BaseDamage * zoneMultiplier * (1f - mitigation));
 

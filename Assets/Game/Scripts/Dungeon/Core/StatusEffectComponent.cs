@@ -16,7 +16,7 @@ namespace Game.Scripts.Dungeon
         Burn,
         Invisible,
         Rage,
-        Grip,
+        Strength,
         Fortify,
         Rupture,
         Taunt,

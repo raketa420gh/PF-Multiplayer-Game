@@ -11,6 +11,8 @@ namespace Game.Scripts.Dungeon
         public const float BaseMagicResistance = 30f;
         public const float MaxDamageReduction = 0.65f;
         public const int Threshold = 30;
+        /// Physical or magical power that Strength or Spirit gives on reaching the threshold.
+        public const float ThresholdPower = 5f;
 
         /// 15 is neutral; 3% per point below 15 and up to 25, 2% up to 35, then 1%.
         private static readonly Vector2[] s_attribute =
@@ -33,7 +35,7 @@ namespace Game.Scripts.Dungeon
         public static float Scale(float value, float weight) => 1f + weight * Curve(value);
         public static float Edge(float a, float b) => Mathf.Sqrt(Mathf.Max(0f, a) * Mathf.Max(0f, b));
         public static float PowerBonus(float power) => Curve(power);
-        public static int BonusCharges(float resonance) => Mathf.Clamp(Mathf.FloorToInt((resonance - 10f) / 10f), 0, 3);
+        public static int BonusCharges(float knowledge) => Mathf.Clamp(Mathf.FloorToInt((knowledge - 10f) / 10f), 0, 3);
         /// Seconds to discover one unsearched item at neutral Perception: rarer loot takes longer to make out.
         public static float SearchTime(ItemRarity rarity) => 0.5f + 0.25f * (int)rarity;
         /// Merchants pay the item's value, half as much again per rarity tier above Common, for every piece of the stack.

@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.5 — 2026-10-05
+
+### Changed
+- Hexagram attributes renamed and reworked: Strength, Vitality, Spirit, Knowledge, Agility, Dexterity (see `02_Gameplay/Attributes.md`).
+- Move Speed comes only from Agility, Action Speed only from Dexterity.
+- Mending split into Physical Healing (bandages, surgical kits, campfires, resting) and Magical Healing (potions, spells).
+- Interaction Speed (doors, levers, portals) and new Magical Interaction (altars).
+- Barbarian, Wizard, outfits, jewelry, affixes and perks moved to the new attributes.
+
+- Character sheet: minor stats are dots on the hexagram sides, a Dark and Darker style list of all stats below; power → damage % and armor/resistance → reduction pairs are linked.
+- Physical / magical damage % grows only from Physical / Magical Power (plus gear % bonuses); the Strength and Spirit thresholds give +5 power instead of +10% damage.
+- Perception no longer changes how loud footsteps are; it only speeds up searching.
+
+### Removed
+- Weakpoint: head damage depends only on hit zone and gear.
+- Control Resistance and Toughness: debuffs last their full duration, slows are ignored at Agility 30.
+- Cooldown Recovery no longer grows from Knowledge; it comes from gear and perks only (`StatType.CooldownRecovery`).
+
 ## v0.4 — 2026-10-04
 
 ### Added

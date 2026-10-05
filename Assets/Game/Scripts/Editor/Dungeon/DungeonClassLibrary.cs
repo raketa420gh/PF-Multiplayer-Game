@@ -14,7 +14,7 @@ namespace Game.Scripts.Editor.Dungeon
                 new ClassDef
                 {
                     Id = 0, Name = "Barbarian", Description = "Tough two-handed axe fighter. Shouts turn the tide, but he is slow and has only throwing axes at range.",
-                    Stats = new ClassStats(22, 21, 9, 13, 11, 10), Color = new Color(0.85f, 0.35f, 0.2f), Body = new Color(0.8f, 0.58f, 0.45f),
+                    Stats = new ClassStats(21, 22, 8, 9, 15, 15), Color = new Color(0.85f, 0.35f, 0.2f), Body = new Color(0.8f, 0.58f, 0.45f),
                     Skills = new[]
                     {
                         Skill("Battle Roar", "Berserk fury: +10 rage (power, speed, but less armor) for 10s.", AbilityKind.Buff, 10f, 10f, 35f, "BR", new Color(1f, 0.4f, 0.2f), StatusEffectKind.Rage, 0.4f, icon: "Maw"),
@@ -46,7 +46,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new ClassDef
             {
                 Id = 1, Name = "Wizard", Description = "Master of spells: frost, fire and lightning from two spell wheels. Spells run out and come back only by a campfire. Fragile in melee.",
-                Stats = new ClassStats(9, 8, 12, 13, 21, 23), Color = arcane, Body = new Color(0.78f, 0.66f, 0.56f),
+                Stats = new ClassStats(8, 10, 23, 21, 15, 13), Color = arcane, Body = new Color(0.78f, 0.66f, 0.56f),
                 Skills = new[]
                 {
                     Memory("Spell Memory I", "Hold to open the first spell wheel and ready a spell; hold RMB with a magical focus in hand and release to cast. The centre of the wheel returns RMB to the weapon.", "M1", arcane, 0),
@@ -89,9 +89,9 @@ namespace Game.Scripts.Editor.Dungeon
                 Perks = new[]
                 {
                     new PerkDef("Arcane Mastery", "+6 magical power and +10% magical damage.", new StatModifier(StatType.MagicalPower, 6f), new StatModifier(StatType.MagicalDamageBonus, 0.1f)) { Icon = "Burst" },
-                    new PerkDef("Sage", "+10 Resonance: more charges for every spell.", new StatModifier(StatType.Resonance, 10f)) { Icon = "Book" },
+                    new PerkDef("Sage", "+10 Knowledge: more charges for every spell, faster casting.", new StatModifier(StatType.Knowledge, 10f)) { Icon = "Book" },
                     new PerkDef("Spell Ward", "+30 magic resistance.", new StatModifier(StatType.MagicResistance, 30f)) { Icon = "Shield" },
-                    new PerkDef("Focused Mind", "+8 Insight: faster casting, faster recovery by the fire.", new StatModifier(StatType.Insight, 8f)) { Icon = "Eye" }
+                    new PerkDef("Focused Mind", "+8 Spirit: stronger spells and healing.", new StatModifier(StatType.Spirit, 8f)) { Icon = "Eye" }
                 },
                 Kit = new[] { ("Spellbook", EquipSlot.Weapon1Main, 1, true), ("Magic Staff", EquipSlot.Weapon2Main, 1, true), ("Peasant Hood", EquipSlot.Head, 1, true),
                     ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true), ("Bandage", EquipSlot.Utility2, 2, true) },

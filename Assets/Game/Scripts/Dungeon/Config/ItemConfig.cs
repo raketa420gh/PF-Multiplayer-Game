@@ -73,12 +73,12 @@ namespace Game.Scripts.Dungeon
 
     public enum StatType : byte
     {
-        Flesh,
-        Grip,
-        Reflex,
-        Craft,
-        Insight,
-        Resonance,
+        Strength,
+        Vitality,
+        Spirit,
+        Knowledge,
+        Agility,
+        Dexterity,
         MaxHealth,
         ArmorRating,
         MagicResistance,
@@ -88,6 +88,7 @@ namespace Game.Scripts.Dungeon
         ActionSpeed,
         PhysicalDamageBonus,
         MagicalDamageBonus,
+        CooldownRecovery,
         Count
     }
 

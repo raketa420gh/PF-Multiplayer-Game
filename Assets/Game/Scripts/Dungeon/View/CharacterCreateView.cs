@@ -66,7 +66,7 @@ namespace Game.Scripts.Dungeon
             _nameText.text = config.DisplayName;
             ClassStats stats = config.BaseStats;
             _descriptionText.text = $"{config.Description}\n\n<color=#d9b873>Attributes</color>\n" +
-                $"Flesh {stats.Flesh}  ·  Grip {stats.Grip}  ·  Reflex {stats.Reflex}\nCraft {stats.Craft}  ·  Insight {stats.Insight}  ·  Resonance {stats.Resonance}";
+                $"Strength {stats.Strength}  ·  Vitality {stats.Vitality}  ·  Spirit {stats.Spirit}\nKnowledge {stats.Knowledge}  ·  Agility {stats.Agility}  ·  Dexterity {stats.Dexterity}";
         }
 
         private static void Click()

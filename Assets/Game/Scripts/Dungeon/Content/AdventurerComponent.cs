@@ -198,7 +198,7 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _restHealInterval = 2f;
 
-        [SerializeField, Tooltip("Seconds per spell charge regained by the campfire, at neutral Insight")]
+        [SerializeField, Tooltip("Seconds per spell charge regained by the campfire, at neutral Knowledge")]
         private float _spellRecoverInterval = 2f;
 
         [Networked, Capacity(AbilityCapacity)]
@@ -230,9 +230,6 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         private NetworkBool _isHoldingCast { get; set; }
-
-        [Networked]
-        private int _seenStaggerTick { get; set; }
 
         [Networked]
         private NetworkBool _isAttuned { get; set; }
@@ -393,7 +390,7 @@ namespace Game.Scripts.Dungeon
             return _charges[ability];
         }
 
-        /// Resonance adds charges to every charge-based spell.
+        /// Knowledge adds charges to every charge-based spell.
         public int GetMaxCharges(int ability)
         {
             AbilityConfig config = _abilities[ability];
@@ -622,14 +619,6 @@ namespace Game.Scripts.Dungeon
 
             CombatComponent combat = _fighter.Combat;
 
-            if (combat.State == CombatState.Stagger && combat.StateTick != _seenStaggerTick)
-            {
-                _seenStaggerTick = combat.StateTick;
-
-                if (_stats.HasThreshold(StatType.Reflex))
-                    _effects.Add(StatusEffectKind.ActionSpeed, 20f, 2f);
-            }
-
             if (IsHoldingCast)
             {
                 bool isReleased = !buttons.IsSet(PlayerInputButtons.Secondary);
@@ -745,7 +734,7 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
-            float duration = target.HoldTime / _stats.InteractionSpeed;
+            float duration = target.HoldTime / _stats.GetInteractionSpeed(target.IsMagical);
 
             if (!_fighter.Combat.StartBusy(duration, target.BusyKind))
                 return;
@@ -878,9 +867,9 @@ namespace Game.Scripts.Dungeon
             {
                 case AbilityKind.Heal:
                     if (ability.Duration > 0f)
-                        _effects.Add(StatusEffectKind.HealOverTime, ability.Magnitude * HealScale() * _stats.Mending, ability.Duration);
+                        _effects.Add(StatusEffectKind.HealOverTime, ability.Magnitude * HealScale() * _stats.MagicalHealing, ability.Duration);
                     else
-                        _fighter.Health.Restore(Mathf.RoundToInt(ability.Magnitude * HealScale() * _stats.Mending));
+                        _fighter.Health.Restore(Mathf.RoundToInt(ability.Magnitude * HealScale() * _stats.MagicalHealing));
                     break;
                 case AbilityKind.Buff:
                     _effects.Add(ability.Effect, ability.Magnitude, buffDuration);
@@ -929,7 +918,7 @@ namespace Game.Scripts.Dungeon
 
             if (ability.IsSpell && !ability.IsCooldownBased)
             {
-                if (_isAttuned && _stats.HasThreshold(StatType.Resonance))
+                if (_isAttuned && _stats.HasThreshold(StatType.Knowledge))
                     _isAttuned = false;
                 else
                     _charges.Set(index, (byte)Mathf.Max(0, _charges[index] - 1));
@@ -1182,10 +1171,10 @@ namespace Game.Scripts.Dungeon
             switch (item.Effect)
             {
                 case ConsumableEffect.HealInstant:
-                    _fighter.Health.Restore(Mathf.RoundToInt((item.Magnitude + tier * 4f) * _stats.Mending));
+                    _fighter.Health.Restore(Mathf.RoundToInt((item.Magnitude + tier * 4f) * _stats.PhysicalHealing));
                     break;
                 case ConsumableEffect.HealOverTime:
-                    _effects.Add(StatusEffectKind.HealOverTime, item.Magnitude * _stats.Mending, Mathf.Max(1f, item.Duration - tier * 2.5f));
+                    _effects.Add(StatusEffectKind.HealOverTime, item.Magnitude * _stats.MagicalHealing, Mathf.Max(1f, item.Duration - tier * 2.5f));
                     break;
                 case ConsumableEffect.Protection:
                     _effects.Add(StatusEffectKind.Protection, item.Magnitude + tier * 5f, item.Duration);
@@ -1253,8 +1242,8 @@ namespace Game.Scripts.Dungeon
             }
         }
 
-        /// As in Dark and Darker, spells come back only by the fire: one charge at a time, the most spent spell first; Insight
-        /// sets the pace. The free cast of Resonance 30 returns with the last charge.
+        /// As in Dark and Darker, spells come back only by the fire: one charge at a time, the most spent spell first; Knowledge
+        /// sets the pace. The free cast of Knowledge 30 returns with the last charge.
         private void SimulateSpellRecovery()
         {
             int spell = IsRecoveringSpells ? FindSpentSpell() : -1;
@@ -1299,10 +1288,10 @@ namespace Game.Scripts.Dungeon
             return found;
         }
 
-        /// Flesh 30 rests twice as fast.
+        /// Vitality 30 rests twice as fast.
         private float RestHealInterval()
         {
-            return _restHealInterval / _stats.Mending / (_stats.HasThreshold(StatType.Flesh) ? 2f : 1f);
+            return _restHealInterval / _stats.PhysicalHealing / (_stats.HasThreshold(StatType.Vitality) ? 2f : 1f);
         }
 
         /// Unsearched loot of the opened container is discovered one item at a time; Perception sets the pace.
@@ -1526,7 +1515,6 @@ namespace Game.Scripts.Dungeon
         {
         }
 
-        float DamageReceiverComponent.IHitModifier.WeakpointMultiplier => _stats.Weakpoint;
 
         int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, DamageType type, HitZone zone)
         {

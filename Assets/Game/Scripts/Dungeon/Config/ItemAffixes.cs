@@ -26,8 +26,8 @@ namespace Game.Scripts.Dungeon
 
         private static readonly Affix[] s_pool =
         {
-            new(StatType.Flesh, 1f, 1f, 2), new(StatType.Grip, 1f, 1f, 2), new(StatType.Reflex, 1f, 1f, 2),
-            new(StatType.Craft, 1f, 1f, 2), new(StatType.Insight, 1f, 1f, 2), new(StatType.Resonance, 1f, 1f, 2),
+            new(StatType.Strength, 1f, 1f, 2), new(StatType.Vitality, 1f, 1f, 2), new(StatType.Spirit, 1f, 1f, 2),
+            new(StatType.Knowledge, 1f, 1f, 2), new(StatType.Agility, 1f, 1f, 2), new(StatType.Dexterity, 1f, 1f, 2),
             new(StatType.MaxHealth, 2f, 1f, 4), new(StatType.ArmorRating, 4f, 2f, 6), new(StatType.MagicResistance, 4f, 2f, 6),
             new(StatType.MoveSpeed, 1f, 1f, 4), new(StatType.PhysicalPower, 1f, 1f, 2), new(StatType.MagicalPower, 1f, 1f, 2),
             new(StatType.ActionSpeed, 1f, 1f, 3), new(StatType.PhysicalDamageBonus, 0.01f, 0.01f, 3), new(StatType.MagicalDamageBonus, 0.01f, 0.01f, 3)
@@ -83,6 +83,7 @@ namespace Game.Scripts.Dungeon
                 StatType.ActionSpeed => $"Action Speed {modifier.Value:+0.#;-0.#}%",
                 StatType.PhysicalDamageBonus => $"Physical Damage {modifier.Value * 100f:+0.#;-0.#}%",
                 StatType.MagicalDamageBonus => $"Magical Damage {modifier.Value * 100f:+0.#;-0.#}%",
+                StatType.CooldownRecovery => $"Cooldown Recovery {modifier.Value:+0.#;-0.#}%",
                 _ => $"{modifier.Stat} {modifier.Value:+0.#;-0.#}"
             };
         }

@@ -9,33 +9,32 @@ namespace Game.Scripts.Dungeon
     /// the edge stats: edge i joins attribute i and its next neighbour on the ring.
     public enum StatId : byte
     {
-        Flesh,
-        Grip,
-        Reflex,
-        Craft,
-        Insight,
-        Resonance,
-        Toughness,
-        MoveSpeed,
-        Handling,
+        Strength,
+        Vitality,
+        Spirit,
+        Knowledge,
+        Agility,
+        Dexterity,
+        PhysicalHealing,
+        MagicalHealing,
+        MagicalInteraction,
         Perception,
-        CastSpeed,
-        Mending,
-        Health,
+        InteractionSpeed,
+        Handling,
         PhysicalPower,
         PhysicalDamage,
-        ActionSpeed,
-        InteractionSpeed,
-        Weakpoint,
-        CooldownSpeed,
-        ControlResistance,
+        Health,
         MagicalPower,
         MagicalDamage,
+        CastSpeed,
         BonusCharges,
+        MoveSpeed,
+        ActionSpeed,
         ArmorRating,
         PhysicalReduction,
         MagicResistance,
-        MagicalReduction
+        MagicalReduction,
+        CooldownSpeed
     }
 
     /// Names, values and hover texts of the character sheet.
@@ -51,84 +50,108 @@ namespace Game.Scripts.Dungeon
 
         private static readonly string[] s_names =
         {
-            "Flesh", "Grip", "Reflex", "Craft", "Insight", "Resonance",
-            "Toughness", "Move Speed", "Handling", "Perception", "Cast Speed", "Mending",
-            "Health", "Physical Power", "Physical Damage", "Action Speed",
-            "Interaction Speed", "Weakpoint", "Cooldown Recovery", "Control Resist", "Magical Power", "Magical Damage",
-            "Spell Charges", "Armor Rating", "Physical Reduction", "Magic Resistance", "Magical Reduction"
+            "Strength", "Vitality", "Spirit", "Knowledge", "Agility", "Dexterity",
+            "Physical Healing", "Magical Healing", "Magical Interaction", "Perception", "Interaction Speed", "Handling",
+            "Physical Power", "Physical Damage", "Health", "Magical Power", "Magical Damage",
+            "Cast Speed", "Spell Memory", "Move Speed", "Action Speed",
+            "Armor Rating", "Physical Reduction", "Magic Resistance", "Magical Reduction", "Cooldown Recovery"
         };
 
         private static readonly string[] s_descriptions =
         {
-            "Body mass: how much punishment you take before going down and how fast bleeding wears off.",
-            "Strength of the arms: how hard you hit.",
-            "Speed of the nerves: how fast you swing, block, draw and drink.",
-            "Skill of the hands: opening, picking, searching and hitting where it hurts.",
-            "Clarity of the mind: skills come back sooner, slows wear off faster.",
-            "Bond with magic: spell power, healing power and extra spell charges.",
-            "Bleeding and burning on you wear off this much sooner and deal as much less damage.",
-            "Base 300, capped at 330. Armor and weapon penalties are subtracted as they are.",
+            "Power of the arms: how hard weapons hit.",
+            "Health: how much you take before going down.",
+            "Power of the mind: how hard spells hit and how much they heal.",
+            "Learning: how fast spells are cast and how many charges they hold.",
+            "Speed of the legs. The only attribute that makes you run faster.",
+            "Speed of the hands: attacks, blocks, bow draws, drinking. Does not make you run faster.",
+            "Multiplies healing from bandages, surgical kits, campfires and resting.",
+            "Multiplies healing from potions and spells.",
+            "Speed of praying at altars.",
+            "How fast you discover items in containers and corpses.",
+            "Speed of opening doors, pulling levers and activating portals.",
             "Speed of swapping weapons, reloading, bandaging and using utility items.",
-            "How loud the footsteps of others are to you and how fast you discover items in containers and corpses.",
-            "Speed of casting spells and spell-like skills.",
-            "Multiplies incoming healing: spells, potions, bandages and the regeneration while resting.",
+            "The only source of the physical damage bonus. Strength plus flat bonuses from gear and perks.",
+            "Physical Power run through the shared curve, plus Physical Damage bonuses of gear.",
             "Damage you can take before dying.",
-            "Raises physical damage along the shared attribute curve. Grip plus flat bonuses from gear and perks.",
-            "Total multiplier of the physical damage you deal.",
+            "The only source of the magical damage bonus; half as much it raises the healing you cast. Spirit plus flat bonuses.",
+            "Magical Power run through the shared curve, plus Magical Damage bonuses of gear.",
+            "Speed of casting spells and spell-like skills.",
+            "Extra charges of every spell that uses charges: +1 at 20, 30 and 40 Knowledge.",
+            "Base 300, capped at 330. Armor and weapon penalties are subtracted as they are.",
             "Pace of attacks, blocks, bow draws and drinking potions, animations included.",
-            "Speed of opening doors and chests, pulling levers and activating portals.",
-            "Multiplies the damage of your hits to the head.",
-            "Skill cooldowns run this much faster.",
-            "Slows applied to you wear off this much sooner.",
-            "Raises magical damage along the shared attribute curve and half as much the healing you cast. Resonance plus flat bonuses.",
-            "Total multiplier of the magical damage you deal.",
-            "Extra charges of every spell that uses charges: +1 at 20, 30 and 40 Resonance.",
             "Sum of the armor worn. Converts into Physical Reduction with diminishing returns.",
             "Share of incoming physical damage removed. Capped at 65%.",
             "Base 30 plus gear. Converts into Magical Reduction with diminishing returns.",
-            "Share of incoming magical damage removed. Capped at 65%."
+            "Share of incoming magical damage removed. Capped at 65%.",
+            "Skill cooldowns and spell recovery by the fire run this much faster. Comes from gear and perks only."
         };
 
         private static readonly string[] s_thresholds =
         {
+            "+5 Physical Power",
             "resting heals twice as fast",
-            "+10% physical damage",
-            "+20% Action Speed for 2s after being staggered",
-            "locked doors open without a lockpick",
+            "+5 Magical Power",
+            "the first spell of a run and after a campfire rest costs no charge",
             "slows do not affect you",
-            "the first spell of a run and after a campfire rest costs no charge"
+            "locked doors open without a lockpick"
         };
 
         private static readonly Color[] s_colors =
         {
-            new(0.88f, 0.33f, 0.28f), new(0.93f, 0.6f, 0.26f), new(0.82f, 0.84f, 0.32f),
-            new(0.32f, 0.8f, 0.62f), new(0.38f, 0.62f, 0.96f), new(0.72f, 0.46f, 0.92f)
+            new(0.93f, 0.6f, 0.26f), new(0.88f, 0.33f, 0.28f), new(0.72f, 0.46f, 0.92f),
+            new(0.38f, 0.62f, 0.96f), new(0.32f, 0.8f, 0.62f), new(0.82f, 0.84f, 0.32f)
         };
 
-        /// Armor Rating, Physical Reduction, Magic Resistance, Magical Reduction.
+        /// Armor Rating, Physical Reduction, Magic Resistance, Magical Reduction, Cooldown Recovery.
         private static readonly Color[] s_gearColors =
         {
-            new(0.78f, 0.8f, 0.86f), new(0.86f, 0.7f, 0.5f), new(0.5f, 0.78f, 0.95f), new(0.72f, 0.62f, 0.96f)
+            new(0.8f, 0.82f, 0.88f), new(0.62f, 0.66f, 0.78f), new(0.5f, 0.8f, 0.96f), new(0.36f, 0.6f, 0.9f), new(0.62f, 0.9f, 0.86f)
         };
 
         private static readonly StatId[][] s_ownStats =
         {
-            new[] { StatId.Health },
             new[] { StatId.PhysicalPower, StatId.PhysicalDamage },
-            new[] { StatId.ActionSpeed },
-            new[] { StatId.InteractionSpeed, StatId.Weakpoint },
-            new[] { StatId.CooldownSpeed, StatId.ControlResistance },
-            new[] { StatId.MagicalPower, StatId.MagicalDamage, StatId.BonusCharges }
+            new[] { StatId.Health },
+            new[] { StatId.MagicalPower, StatId.MagicalDamage },
+            new[] { StatId.CastSpeed, StatId.BonusCharges },
+            new[] { StatId.MoveSpeed },
+            new[] { StatId.ActionSpeed }
+        };
+
+        /// A flat stat and the share it turns into through a curve.
+        private static readonly (StatId source, StatId result)[] s_links =
+        {
+            (StatId.PhysicalPower, StatId.PhysicalDamage), (StatId.MagicalPower, StatId.MagicalDamage),
+            (StatId.ArmorRating, StatId.PhysicalReduction), (StatId.MagicResistance, StatId.MagicalReduction)
         };
 
         private static readonly StringBuilder s_builder = new();
 
         public static string Name(StatId stat) => s_names[(int)stat];
-        public static bool IsAttribute(StatId stat) => stat < StatId.Toughness;
-        public static bool IsEdge(StatId stat) => stat >= StatId.Toughness && stat < StatId.Health;
+        public static bool IsAttribute(StatId stat) => stat < StatId.PhysicalHealing;
+        public static bool IsEdge(StatId stat) => stat >= StatId.PhysicalHealing && stat < StatId.PhysicalPower;
         public static StatId[] OwnStats(StatId attribute) => s_ownStats[(int)attribute];
         /// Edge stat between the attribute with this index and the next one on the ring.
-        public static StatId Edge(int attribute) => (StatId)((int)StatId.Toughness + attribute);
+        public static StatId Edge(int attribute) => (StatId)((int)StatId.PhysicalHealing + attribute);
+
+        /// Share stat that this flat stat turns into: Physical Power gives Physical Damage, Armor Rating Physical Reduction and so on.
+        public static bool TryGetResult(StatId source, out StatId result)
+        {
+            foreach ((StatId linkSource, StatId linkResult) in s_links)
+            {
+                if (linkSource == source)
+                {
+                    result = linkResult;
+
+                    return true;
+                }
+            }
+
+            result = source;
+
+            return false;
+        }
 
         /// Attributes have their own colour, an edge blends its two ends, a derived stat gets a shade of its source's colour
         /// that no sibling shares, the stats of the gear have colours of their own.
@@ -138,7 +161,7 @@ namespace Game.Scripts.Dungeon
                 return s_colors[(int)stat];
 
             if (IsEdge(stat))
-                return Color.Lerp(s_colors[stat - StatId.Toughness], s_colors[(stat - StatId.Toughness + 1) % AttributeCount], 0.5f);
+                return Color.Lerp(s_colors[stat - StatId.PhysicalHealing], s_colors[(stat - StatId.PhysicalHealing + 1) % AttributeCount], 0.5f);
 
             int source = Source(stat);
 
@@ -183,7 +206,7 @@ namespace Game.Scripts.Dungeon
             }
             else if (IsEdge(stat))
             {
-                StatType first = (StatType)(stat - StatId.Toughness);
+                StatType first = (StatType)(stat - StatId.PhysicalHealing);
                 StatType second = (StatType)(((int)first + 1) % AttributeCount);
                 int a = stats.Attributes.Get(first);
                 int b = stats.Attributes.Get(second);
@@ -192,8 +215,16 @@ namespace Game.Scripts.Dungeon
                     .Append(" x ").Append(b).Append(") = ").Append(DungeonFormulas.Edge(a, b).ToString("0.#", CultureInfo.InvariantCulture))
                     .Append(". Neglecting either attribute drags it down.</color>");
             }
+            else if (TryGetSource(stat, out StatId flat))
+            {
+                s_builder.AppendLine().Append("<color=#").Append(Dim).Append(">From ").Append(Name(flat)).Append(" (").Append(Value(stats, flat, out _))
+                    .Append(").</color>");
+            }
             else
             {
+                if (TryGetResult(stat, out StatId result))
+                    Line(stats, result, "results from it");
+
                 int source = Source(stat);
                 s_builder.AppendLine().Append("<color=#").Append(Dim).Append('>')
                     .Append(source >= 0 ? $"From {s_names[source]} ({stats.Attributes.Get((StatType)source)})." : "From gear, perks and effects.").Append("</color>");
@@ -217,6 +248,23 @@ namespace Game.Scripts.Dungeon
             return $"<color=#{ColorUtility.ToHtmlStringRGB(color)}>{text}</color>";
         }
 
+        private static bool TryGetSource(StatId result, out StatId source)
+        {
+            foreach ((StatId linkSource, StatId linkResult) in s_links)
+            {
+                if (linkResult == result)
+                {
+                    source = linkSource;
+
+                    return true;
+                }
+            }
+
+            source = result;
+
+            return false;
+        }
+
         /// Attribute a derived stat grows from, -1 for the ones that come from gear alone.
         private static int Source(StatId stat)
         {
@@ -235,29 +283,28 @@ namespace Game.Scripts.Dungeon
 
             switch (stat)
             {
-                case StatId.Toughness: return Bonus(stats.Toughness, out sign);
-                case StatId.MoveSpeed:
-                    sign = Mathf.Round(stats.MoveSpeedRating - DungeonFormulas.BaseMoveSpeed);
-
-                    return stats.MoveSpeedRating.ToString("0");
-                case StatId.Handling: return Bonus(stats.HandlingSpeed, out sign);
+                case StatId.PhysicalHealing: return Bonus(stats.PhysicalHealing, out sign);
+                case StatId.MagicalHealing: return Bonus(stats.MagicalHealing, out sign);
+                case StatId.MagicalInteraction: return Bonus(stats.MagicalInteractionSpeed, out sign);
                 case StatId.Perception: return Bonus(stats.Perception, out sign);
-                case StatId.CastSpeed: return Bonus(stats.CastSpeed, out sign);
-                case StatId.Mending: return Bonus(stats.Mending, out sign);
-                case StatId.Health: return stats.MaxHealth.ToString();
+                case StatId.InteractionSpeed: return Bonus(stats.InteractionSpeed, out sign);
+                case StatId.Handling: return Bonus(stats.HandlingSpeed, out sign);
                 case StatId.PhysicalPower: return stats.PhysicalPower.ToString("0");
                 case StatId.PhysicalDamage: return Bonus(stats.GetDamageMultiplier(DamageType.Physical), out sign);
-                case StatId.ActionSpeed: return Bonus(stats.ActionSpeed, out sign);
-                case StatId.InteractionSpeed: return Bonus(stats.InteractionSpeed, out sign);
-                case StatId.Weakpoint: return Bonus(stats.Weakpoint, out sign);
-                case StatId.CooldownSpeed: return Bonus(stats.CooldownSpeed, out sign);
-                case StatId.ControlResistance: return Share(stats.ControlResistance, out sign);
+                case StatId.Health: return stats.MaxHealth.ToString();
                 case StatId.MagicalPower: return stats.MagicalPower.ToString("0");
                 case StatId.MagicalDamage: return Bonus(stats.GetDamageMultiplier(DamageType.Magical), out sign);
+                case StatId.CastSpeed: return Bonus(stats.CastSpeed, out sign);
                 case StatId.BonusCharges:
                     sign = stats.BonusCharges;
 
                     return $"+{stats.BonusCharges}";
+                case StatId.CooldownSpeed: return Bonus(stats.CooldownSpeed, out sign);
+                case StatId.MoveSpeed:
+                    sign = Mathf.Round(stats.MoveSpeedRating - DungeonFormulas.BaseMoveSpeed);
+
+                    return stats.MoveSpeedRating.ToString("0");
+                case StatId.ActionSpeed: return Bonus(stats.ActionSpeed, out sign);
                 case StatId.ArmorRating: return stats.ArmorRating.ToString("0");
                 case StatId.PhysicalReduction: return Share(stats.PhysicalReduction, out sign);
                 case StatId.MagicResistance: return stats.MagicResistance.ToString("0");

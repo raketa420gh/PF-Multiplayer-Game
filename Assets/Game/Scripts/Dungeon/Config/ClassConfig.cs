@@ -14,33 +14,33 @@ namespace Game.Scripts.Dungeon
     [Serializable]
     public struct ClassStats
     {
-        public int Flesh;
-        public int Grip;
-        public int Reflex;
-        public int Craft;
-        public int Insight;
-        public int Resonance;
+        public int Strength;
+        public int Vitality;
+        public int Spirit;
+        public int Knowledge;
+        public int Agility;
+        public int Dexterity;
 
-        public ClassStats(int flesh, int grip, int reflex, int craft, int insight, int resonance)
+        public ClassStats(int strength, int vitality, int spirit, int knowledge, int agility, int dexterity)
         {
-            Flesh = flesh;
-            Grip = grip;
-            Reflex = reflex;
-            Craft = craft;
-            Insight = insight;
-            Resonance = resonance;
+            Strength = strength;
+            Vitality = vitality;
+            Spirit = spirit;
+            Knowledge = knowledge;
+            Agility = agility;
+            Dexterity = dexterity;
         }
 
         public int Get(StatType stat)
         {
             return stat switch
             {
-                StatType.Flesh => Flesh,
-                StatType.Grip => Grip,
-                StatType.Reflex => Reflex,
-                StatType.Craft => Craft,
-                StatType.Insight => Insight,
-                StatType.Resonance => Resonance,
+                StatType.Strength => Strength,
+                StatType.Vitality => Vitality,
+                StatType.Spirit => Spirit,
+                StatType.Knowledge => Knowledge,
+                StatType.Agility => Agility,
+                StatType.Dexterity => Dexterity,
                 _ => 0
             };
         }

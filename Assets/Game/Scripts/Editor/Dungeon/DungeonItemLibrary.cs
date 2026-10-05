@@ -155,9 +155,9 @@ namespace Game.Scripts.Editor.Dungeon
                 Weapon("Crystal Ball", null, WeaponClass.CrystalBall, 2, 2, 15f, "Cb", new Color(0.6f, 0.85f, 1f), 45, "Off-hand magical focus. Cast with a one-handed weapon in the main hand.", offHand: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 5f) }),
                 Weapon("Lute", DungeonWeaponLibrary.Lute, WeaponClass.Instrument, 2, 3, 10f, "Lt", new Color(0.8f, 0.6f, 0.3f), 35, "Bard instrument. Songs are performed with it in hand.", twoHanded: true),
 
-                Jewelry("Gem Necklace", EquipSlot.Necklace, "Nk", 60, new StatModifier(StatType.Resonance, 2f)),
-                Jewelry("Gold Band", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Grip, 1f)),
-                Jewelry("Gem Ring", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Reflex, 1f)),
+                Jewelry("Gem Necklace", EquipSlot.Necklace, "Nk", 60, new StatModifier(StatType.Knowledge, 2f)),
+                Jewelry("Gold Band", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Strength, 1f)),
+                Jewelry("Gem Ring", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Dexterity, 1f)),
 
                 Consumable("Bandage", ConsumableEffect.HealInstant, 15f, 0f, 4f, 3, "+", new Color(0.9f, 0.9f, 0.85f), 5, "Wrap a wound. Heals after a few seconds."),
                 Consumable("Potion of Healing", ConsumableEffect.HealOverTime, 20f, 20f, DrinkTime, 3, "Po", s_potion, 12, "Restores health over time."),
@@ -195,14 +195,14 @@ namespace Game.Scripts.Editor.Dungeon
                 Weapon("Buckler", null, WeaponClass.Shield, 2, 2, 6f, "Bk", s_steel, 22, "Small shield that barely slows you down.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 12f) }),
                 Weapon("Heater Shield", null, WeaponClass.Shield, 2, 3, 18f, "Sh", s_steel, 45, "Heavy knightly shield.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 30f) }),
 
-                Jewelry("Fox Pendant", EquipSlot.Necklace, "Nk", new Color(0.95f, 0.55f, 0.25f), 70, new StatModifier(StatType.Reflex, 2f)),
-                Jewelry("Ox Pendant", EquipSlot.Necklace, "Nk", new Color(0.75f, 0.45f, 0.3f), 70, new StatModifier(StatType.Grip, 2f)),
-                Jewelry("Bear Pendant", EquipSlot.Necklace, "Nk", new Color(0.6f, 0.4f, 0.25f), 70, new StatModifier(StatType.Flesh, 2f)),
-                Jewelry("Owl Pendant", EquipSlot.Necklace, "Nk", new Color(0.7f, 0.75f, 0.95f), 70, new StatModifier(StatType.Insight, 2f)),
-                Jewelry("Ring of Courage", EquipSlot.Ring1, "Rg", new Color(0.95f, 0.4f, 0.3f), 60, new StatModifier(StatType.Grip, 2f)),
+                Jewelry("Fox Pendant", EquipSlot.Necklace, "Nk", new Color(0.95f, 0.55f, 0.25f), 70, new StatModifier(StatType.Agility, 2f)),
+                Jewelry("Ox Pendant", EquipSlot.Necklace, "Nk", new Color(0.75f, 0.45f, 0.3f), 70, new StatModifier(StatType.Strength, 2f)),
+                Jewelry("Bear Pendant", EquipSlot.Necklace, "Nk", new Color(0.6f, 0.4f, 0.25f), 70, new StatModifier(StatType.Vitality, 2f)),
+                Jewelry("Owl Pendant", EquipSlot.Necklace, "Nk", new Color(0.7f, 0.75f, 0.95f), 70, new StatModifier(StatType.Knowledge, 2f)),
+                Jewelry("Ring of Courage", EquipSlot.Ring1, "Rg", new Color(0.95f, 0.4f, 0.3f), 60, new StatModifier(StatType.Strength, 2f)),
                 Jewelry("Ring of Vitality", EquipSlot.Ring1, "Rg", new Color(0.45f, 0.9f, 0.45f), 60, new StatModifier(StatType.MaxHealth, 5f)),
-                Jewelry("Ring of Finesse", EquipSlot.Ring1, "Rg", new Color(0.95f, 0.85f, 0.4f), 60, new StatModifier(StatType.Craft, 2f)),
-                Jewelry("Ring of Wisdom", EquipSlot.Ring1, "Rg", new Color(0.5f, 0.65f, 1f), 60, new StatModifier(StatType.Resonance, 2f)),
+                Jewelry("Ring of Finesse", EquipSlot.Ring1, "Rg", new Color(0.95f, 0.85f, 0.4f), 60, new StatModifier(StatType.Dexterity, 2f)),
+                Jewelry("Ring of Wisdom", EquipSlot.Ring1, "Rg", new Color(0.5f, 0.65f, 1f), 60, new StatModifier(StatType.Knowledge, 2f)),
 
                 Consumable("Troll's Blood", ConsumableEffect.HealOverTime, 45f, 30f, DrinkTime, 1, "Tb", new Color(0.35f, 0.75f, 0.3f), 40, "Thick green blood. Slowly knits even grave wounds."),
                 Consumable("Potion of Invisibility", ConsumableEffect.Invisibility, 0f, 8f, DrinkTime, 2, "Po", new Color(0.8f, 0.85f, 0.95f), 30, "Monsters and players lose sight of you for a few seconds."),
@@ -247,48 +247,48 @@ namespace Game.Scripts.Editor.Dungeon
 
             // Leather for any class: decent armour, quick hands and feet.
             AddOutfit(items, "Ranger", null, ArmorType.Leather, null, BattleCharacterBuilder.RangerMaterial, new Color(0.4f, 0.65f, 0.3f),
-                Piece("Ranger Hood", hood, 26f, 1f, 18, 0f, new StatModifier(StatType.Craft, 1f)),
+                Piece("Ranger Hood", hood, 26f, 1f, 18, 0f, new StatModifier(StatType.Dexterity, 1f)),
                 Piece("Ranger Jerkin", new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt1, OutfitPart.RangerPauldron }, 52f, 4f, 36, 0f,
-                    new StatModifier(StatType.Reflex, 1f)),
-                Piece("Ranger Bracers", bracers, 18f, 0f, 14, 0f, new StatModifier(StatType.Craft, 1f)),
-                Piece("Ranger Leggings", leggings, 40f, 3f, 24, 0f, new StatModifier(StatType.Reflex, 1f)),
+                    new StatModifier(StatType.Agility, 1f)),
+                Piece("Ranger Bracers", bracers, 18f, 0f, 14, 0f, new StatModifier(StatType.Dexterity, 1f)),
+                Piece("Ranger Leggings", leggings, 40f, 3f, 24, 0f, new StatModifier(StatType.Agility, 1f)),
                 Piece("Ranger Boots", boots, 20f, -7f, 22));
 
-            // Wizard, Resonance +7 (23 -> 30): magical power, one more charge of every spell and a free first spell.
+            // Wizard, Spirit +7 (23 -> 30): magical power, magical damage and healing.
             AddOutfit(items, "Mystic", new[] { wizard }, ArmorType.Cloth, MysticPeasantMaterial, MysticRangerMaterial, new Color(0.4f, 0.45f, 0.95f),
-                Piece("Mystic Cowl", hood, 16f, 1f, 30, 10f, new StatModifier(StatType.Resonance, 1f)),
-                Piece("Mystic Vestments", shirt, 32f, 2f, 55, 25f, new StatModifier(StatType.Resonance, 2f), new StatModifier(StatType.MagicalPower, 2f)),
-                Piece("Mystic Wraps", bracers, 10f, 0f, 26, 5f, new StatModifier(StatType.Resonance, 1f)),
-                Piece("Mystic Trousers", trousers, 24f, 1f, 34, 10f, new StatModifier(StatType.Resonance, 2f)),
-                Piece("Mystic Shoes", shoes, 10f, -5f, 28, 5f, new StatModifier(StatType.Resonance, 1f)));
+                Piece("Mystic Cowl", hood, 16f, 1f, 30, 10f, new StatModifier(StatType.Spirit, 1f)),
+                Piece("Mystic Vestments", shirt, 32f, 2f, 55, 25f, new StatModifier(StatType.Spirit, 2f), new StatModifier(StatType.MagicalPower, 2f)),
+                Piece("Mystic Wraps", bracers, 10f, 0f, 26, 5f, new StatModifier(StatType.Spirit, 1f)),
+                Piece("Mystic Trousers", trousers, 24f, 1f, 34, 10f, new StatModifier(StatType.Spirit, 2f)),
+                Piece("Mystic Shoes", shoes, 10f, -5f, 28, 5f, new StatModifier(StatType.Spirit, 1f)));
 
-            // Wizard, Insight +9 (21 -> 30): faster casts and cooldowns, slows do not stick.
+            // Wizard, Knowledge +9 (21 -> 30): faster casts, more charges and a free first spell.
             AddOutfit(items, "Occultist", new[] { wizard }, ArmorType.Leather, null, OccultistMaterial, new Color(0.6f, 0.3f, 0.75f),
-                Piece("Occultist Hood", hood, 20f, 1f, 32, 5f, new StatModifier(StatType.Insight, 2f)),
+                Piece("Occultist Hood", hood, 20f, 1f, 32, 5f, new StatModifier(StatType.Knowledge, 2f)),
                 Piece("Occultist Coat", new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt2 }, 40f, 4f, 60, 15f,
-                    new StatModifier(StatType.Insight, 3f)),
-                Piece("Occultist Bracers", bracers, 14f, 0f, 28, 0f, new StatModifier(StatType.Insight, 1f), new StatModifier(StatType.MagicalPower, 2f)),
-                Piece("Occultist Leggings", leggings, 30f, 2f, 38, 5f, new StatModifier(StatType.Insight, 2f)),
-                Piece("Occultist Boots", boots, 16f, -4f, 30, 0f, new StatModifier(StatType.Insight, 1f)));
+                    new StatModifier(StatType.Knowledge, 3f)),
+                Piece("Occultist Bracers", bracers, 14f, 0f, 28, 0f, new StatModifier(StatType.Knowledge, 1f), new StatModifier(StatType.MagicalPower, 2f)),
+                Piece("Occultist Leggings", leggings, 30f, 2f, 38, 5f, new StatModifier(StatType.Knowledge, 2f)),
+                Piece("Occultist Boots", boots, 16f, -4f, 30, 0f, new StatModifier(StatType.Knowledge, 1f)));
 
-            // Barbarian, Grip +9 (21 -> 30): physical power and +10% physical damage. The heaviest clothes there are.
+            // Barbarian, Strength +9 (21 -> 30): physical power and +10% physical damage. The heaviest clothes there are.
             AddOutfit(items, "Marauder", new[] { barbarian }, ArmorType.Leather, null, MarauderMaterial, new Color(0.8f, 0.25f, 0.2f),
-                Piece("Marauder Hood", hood, 30f, 2f, 34, 0f, new StatModifier(StatType.Grip, 2f)),
+                Piece("Marauder Hood", hood, 30f, 2f, 34, 0f, new StatModifier(StatType.Strength, 2f)),
                 Piece("Marauder Jerkin", new[] { OutfitPart.RangerBody, OutfitPart.RangerBelt1, OutfitPart.RangerBelt2, OutfitPart.RangerPauldron }, 70f, 7f, 65, 0f,
-                    new StatModifier(StatType.Grip, 3f)),
-                Piece("Marauder Bracers", bracers, 22f, 0f, 30, 0f, new StatModifier(StatType.Grip, 1f), new StatModifier(StatType.PhysicalPower, 2f)),
-                Piece("Marauder Leggings", leggings, 48f, 4f, 40, 0f, new StatModifier(StatType.Grip, 2f)),
-                Piece("Marauder Boots", boots, 26f, -2f, 32, 0f, new StatModifier(StatType.Grip, 1f)));
+                    new StatModifier(StatType.Strength, 3f)),
+                Piece("Marauder Bracers", bracers, 22f, 0f, 30, 0f, new StatModifier(StatType.Strength, 1f), new StatModifier(StatType.PhysicalPower, 2f)),
+                Piece("Marauder Leggings", leggings, 48f, 4f, 40, 0f, new StatModifier(StatType.Strength, 2f)),
+                Piece("Marauder Boots", boots, 26f, -2f, 32, 0f, new StatModifier(StatType.Strength, 1f)));
 
-            // Barbarian, Flesh +8 (22 -> 30): health, rest heals twice as fast, and the action speed his Reflex lacks.
+            // Barbarian, Vitality +8 (22 -> 30): health, rest heals twice as fast, and some action speed.
             // Straps on a bare chest protect next to nothing.
             AddOutfit(items, "Berserker", new[] { barbarian }, ArmorType.Leather, BattleCharacterBuilder.PeasantAltMaterial, BerserkerMaterial, new Color(0.75f, 0.7f, 0.65f),
-                Piece("Berserker Hood", hood, 18f, 0f, 30, 0f, new StatModifier(StatType.Flesh, 1f)),
+                Piece("Berserker Hood", hood, 18f, 0f, 30, 0f, new StatModifier(StatType.Vitality, 1f)),
                 Piece("Berserker Harness", new[] { OutfitPart.RangerBelt1, OutfitPart.RangerBelt2, OutfitPart.RangerPauldron }, 22f, 0f, 60, 0f,
-                    new StatModifier(StatType.Flesh, 3f), new StatModifier(StatType.ActionSpeed, 4f)),
-                Piece("Berserker Bracers", bracers, 14f, 0f, 28, 0f, new StatModifier(StatType.Flesh, 1f), new StatModifier(StatType.ActionSpeed, 2f)),
-                Piece("Berserker Trousers", trousers, 26f, 1f, 36, 0f, new StatModifier(StatType.Flesh, 2f)),
-                Piece("Berserker Boots", shoes, 14f, -6f, 30, 0f, new StatModifier(StatType.Flesh, 1f)));
+                    new StatModifier(StatType.Vitality, 3f), new StatModifier(StatType.ActionSpeed, 4f)),
+                Piece("Berserker Bracers", bracers, 14f, 0f, 28, 0f, new StatModifier(StatType.Vitality, 1f), new StatModifier(StatType.ActionSpeed, 2f)),
+                Piece("Berserker Trousers", trousers, 26f, 1f, 36, 0f, new StatModifier(StatType.Vitality, 2f)),
+                Piece("Berserker Boots", shoes, 14f, -6f, 30, 0f, new StatModifier(StatType.Vitality, 1f)));
         }
 
         /// Pieces come in slot order: head, chest, hands, legs, feet. Peasant parts wear the peasant cloth, ranger parts the ranger one.

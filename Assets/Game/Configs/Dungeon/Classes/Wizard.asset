@@ -17,12 +17,12 @@ MonoBehaviour:
   _description: 'Master of spells: frost, fire and lightning from two spell wheels.
     Spells run out and come back only by a campfire. Fragile in melee.'
   _baseStats:
-    Flesh: 9
-    Grip: 8
-    Reflex: 12
-    Craft: 13
-    Insight: 21
-    Resonance: 23
+    Strength: 8
+    Vitality: 10
+    Spirit: 23
+    Knowledge: 21
+    Agility: 15
+    Dexterity: 13
   _color: {r: 0.65, g: 0.45, b: 1, a: 1}
   _bodyColor: {r: 0.78, g: 0.66, b: 0.56, a: 1}
   _skills:
@@ -51,9 +51,9 @@ MonoBehaviour:
       Value: 0.1
     _icon: {fileID: 21300000, guid: 2e0148156428dbf45aff6a031dc5fea4, type: 3}
   - _name: Sage
-    _description: '+10 Resonance: more charges for every spell.'
+    _description: '+10 Knowledge: more charges for every spell, faster casting.'
     _modifiers:
-    - Stat: 5
+    - Stat: 3
       Value: 10
     _icon: {fileID: 21300000, guid: 148348c4b17af5f448453754d032a36a, type: 3}
   - _name: Spell Ward
@@ -63,9 +63,9 @@ MonoBehaviour:
       Value: 30
     _icon: {fileID: 21300000, guid: 4cb22c13b94331748a95b6ec59046e42, type: 3}
   - _name: Focused Mind
-    _description: '+8 Insight: faster casting, faster recovery by the fire.'
+    _description: '+8 Spirit: stronger spells and healing.'
     _modifiers:
-    - Stat: 4
+    - Stat: 2
       Value: 8
     _icon: {fileID: 21300000, guid: 06b0fde5566646a46bec2d3b95f675d8, type: 3}
   _startingKit:

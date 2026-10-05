@@ -66,7 +66,7 @@ namespace Game.Scripts.Dungeon
         {
             if (IsLocked)
             {
-                if (!adventurer.Stats.HasThreshold(StatType.Craft) && !adventurer.Inventory.TryConsumeUtility(UtilityKind.Lockpick))
+                if (!adventurer.Stats.HasThreshold(StatType.Dexterity) && !adventurer.Inventory.TryConsumeUtility(UtilityKind.Lockpick))
                     return;
 
                 IsLocked = false;

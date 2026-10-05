@@ -16,6 +16,7 @@ namespace Game.Scripts.Dungeon
     {
         public override string Prompt => IsUsed ? "Depleted shrine" : $"Pray at the Shrine of {_kind}";
         public override bool IsAvailable => !IsUsed;
+        public override bool IsMagical => true;
         public override bool IsHandsOccupied => true;
 
         [Networked]

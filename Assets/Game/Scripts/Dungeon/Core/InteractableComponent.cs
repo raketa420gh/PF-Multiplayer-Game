@@ -9,6 +9,8 @@ namespace Game.Scripts.Dungeon
         public virtual string Prompt => _prompt;
         public virtual float HoldTime => _holdTime;
         public virtual bool IsAvailable => true;
+        /// Altars: held at Magical Interaction speed instead of Interaction speed.
+        public virtual bool IsMagical => false;
         /// The adventurer stands still instead of holding F; turning away cancels.
         public virtual bool IsRooting => false;
         /// Which busy animation the adventurer plays while holding F.

@@ -71,7 +71,7 @@ namespace Game.Scripts.Dungeon
 
         public override void Complete(AdventurerComponent adventurer)
         {
-            float amount = adventurer.Fighter.Health.MaxHealth * _healPercent / 100f;
+            float amount = adventurer.Fighter.Health.MaxHealth * _healPercent / 100f * adventurer.Stats.PhysicalHealing;
             adventurer.Effects.Add(StatusEffectKind.HealOverTime, amount, _healDuration);
         }
     }

@@ -94,7 +94,6 @@ namespace Game.Scripts.Dungeon
             return _config.DamageMultiplier;
         }
 
-        float DamageReceiverComponent.IHitModifier.WeakpointMultiplier => 1f;
 
 
 

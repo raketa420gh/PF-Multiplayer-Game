@@ -191,12 +191,12 @@ namespace Game.Scripts.Editor.Dungeon
             return stat switch
             {
                 StatType.ArmorRating or StatType.MagicResistance => "Armor",
-                StatType.MaxHealth or StatType.Flesh => "Heart",
-                StatType.PhysicalPower or StatType.PhysicalDamageBonus or StatType.Grip => "Axe",
-                StatType.ActionSpeed or StatType.MoveSpeed or StatType.Reflex => "Dash",
-                StatType.MagicalPower or StatType.MagicalDamageBonus or StatType.Resonance => "Burst",
-                StatType.Insight => "Eye",
-                StatType.Craft => "Bolt",
+                StatType.MaxHealth or StatType.Vitality => "Heart",
+                StatType.PhysicalPower or StatType.PhysicalDamageBonus or StatType.Strength => "Axe",
+                StatType.MoveSpeed or StatType.Agility => "Dash",
+                StatType.ActionSpeed or StatType.Dexterity => "Bolt",
+                StatType.MagicalPower or StatType.MagicalDamageBonus or StatType.Spirit => "Burst",
+                StatType.Knowledge => "Book",
                 _ => "Chevrons"
             };
         }

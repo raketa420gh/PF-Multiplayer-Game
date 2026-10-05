@@ -55,7 +55,7 @@ Hit detection и сетевой authority должны учитывать ори
 
 ## DD-006 — Hexagram Attribute System
 **Date:** 2026-10-03  
-**Status:** Accepted
+**Status:** Superseded by DD-009
 
 **Context**
 Семь атрибутов Dark and Darker (STR/VIG/AGI/DEX/WILL/KNOW/RES) повторяли оригинал.
@@ -91,6 +91,19 @@ Hit detection и сетевой authority должны учитывать ори
 
 **Consequences**
 Новые предметы добавляются в конец `DungeonItemLibrary.CreateItems` (id = позиция, сохранения ссылаются на них). Новое оружие — вариант в `DungeonWeaponLibrary.s_variants`.
+
+## DD-009 — Hexagram Rework: Simple Names, Separate Speeds
+**Date:** 2026-10-05
+**Status:** Accepted
+
+**Context**
+Названия основ (Плоть, Хватка, Реакция…) были вычурными. Move Speed и Action Speed росли от общих основ, билд «быстро бегает» и «быстро действует» не разделялся. Weakpoint позволял атрибутами усиливать урон в голову. Лечение было одним статом Mending.
+
+**Decision**
+Кольцо: Сила – Живучесть – Дух – Знание – Ловкость – Проворство. Move Speed — только от Ловкости, Action Speed — только от Проворства. Маг выбирает Дух (урон, лечение) или Знание (скорость чтения, память). Рёбра: Physical Healing, Magical Healing, Magical Interaction, Perception, Interaction Speed, Handling. Weakpoint, Control Resistance и Toughness удалены; Cooldown Recovery даёт только экипировка. Подробности — `02_Gameplay/Attributes.md`.
+
+**Consequences**
+`StatType`, `StatId`, `ClassStats` переименованы; классы, предметы и сцены пересобраны. `IHitModifier.WeakpointMultiplier` удалён, урон в голову меняет только экипировка. `InteractableComponent.IsMagical` переключает удержание F на Magical Interaction (алтари). Порог Реакции (+Action Speed после стаггера) удалён.
 
 ## Template
 
