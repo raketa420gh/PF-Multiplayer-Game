@@ -16,6 +16,8 @@ namespace Game.Scripts.Dungeon
         public float MoveSpeedPenalty => _moveSpeedPenalty;
         public DamageType DamageType => _damageType;
         public float LightRange => _lightRange;
+        /// Classes that may wield the weapon on top of its weapon class; empty means every class allowed that weapon class.
+        public ClassConfig[] Classes => _classes;
 
         [SerializeField]
         private WeaponConfig _weapon;
@@ -41,12 +43,20 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _lightRange;
 
+        [SerializeField]
+        private ClassConfig[] _classes = Array.Empty<ClassConfig>();
+
         public override bool CanEquip(EquipSlot slot)
         {
             bool isMain = slot is EquipSlot.Weapon1Main or EquipSlot.Weapon2Main;
             bool isOff = slot is EquipSlot.Weapon1Off or EquipSlot.Weapon2Off;
 
             return _isOffHand ? isOff : isMain;
+        }
+
+        public bool Fits(ClassConfig config)
+        {
+            return config.CanUseWeapon(_weaponClass) && (_classes.Length == 0 || Array.IndexOf(_classes, config) >= 0);
         }
     }
 }

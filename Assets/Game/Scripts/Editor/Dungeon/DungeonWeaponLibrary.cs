@@ -39,9 +39,12 @@ namespace Game.Scripts.Editor.Dungeon
         public const string FellingAxe = "FellingAxe";
         public const string WarMaul = "WarMaul";
         public const string Halberd = "Halberd";
+        public const string HorsemansAxe = "HorsemansAxe";
 
         private const float MaceHead = 0.6f;
         private const float AxeHead = 0.8f;
+        /// Middle of the bearded blade of the Horseman's Axe along the haft, from the grip.
+        private const float HorsemanHead = 0.7f;
         /// A long axe is held at the butt with the off hand, this far down the haft from the main hand.
         private const float AxeGrip = -0.42f;
         private const float Frame = 1f / BattleAnimationBuilder.FrameRate;
@@ -60,7 +63,8 @@ namespace Game.Scripts.Editor.Dungeon
         {
             SwordShield, Greatsword, Bow, SwordShieldLeft, Fists, ArmingSword, Falchion, Longsword, BattleAxe, Spear, Mace, Dagger, Crossbow, Staff, Torch, MaceShield,
             Spellbook, Lute, BearClaws, PantherClaws, RatBite,
-            ShortSword, Rapier, VikingSword, Hatchet, MorningStar, CastillonDagger, Stiletto, FellingAxe, WarMaul, Halberd
+            ShortSword, Rapier, VikingSword, Hatchet, MorningStar, CastillonDagger, Stiletto, FellingAxe, WarMaul, Halberd,
+            HorsemansAxe
         };
 
         /// Catalog entries that play another entry's clips (its prefix) with a model, reach and damage of their own.
@@ -83,7 +87,7 @@ namespace Game.Scripts.Editor.Dungeon
             ["Flanged Mace"] = (6, 3), ["Morning Star"] = (6, 3), ["Longsword"] = (5, 5), ["Spear"] = (4, 4), ["Magic Staff"] = (4, 4),
             ["Sword & Shield"] = (4, 7), ["Mace & Shield"] = (6, 7),
             ["Greatsword"] = (7, 5), ["Battle Axe"] = (7, 4), ["Felling Axe"] = (8, 4), ["Halberd"] = (7, 4),
-            ["War Maul"] = (9, 5), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2), ["Bear Claws"] = (7, 4)
+            ["War Maul"] = (9, 5), ["Horseman's Axe"] = (6, 3), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2), ["Bear Claws"] = (7, 4)
         };
 
         public static (int impact, int stability) Force(string displayName)
@@ -161,7 +165,8 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateDaggerVariant("Stiletto Dagger", 0.46f, 1.08f, 14),
                 CreateAxeVariant("Felling Axe", 0.68f, 0.94f, 1.6f, 37, 44, 0.3f, 0.4f),
                 CreateWarMaul(),
-                CreateHalberd()
+                CreateHalberd(),
+                CreateHorsemansAxe()
             };
         }
 
@@ -680,6 +685,123 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockBoxCenter = new Vector3(0f, 0f, 0.25f),
                 BlockBoxExtents = new Vector3(0.08f, 0.08f, 0.7f)
             };
+        }
+
+        /// The long one-handed axe of Dark and Darker: a bearded blade, a top spike and a back fluke on a slim haft held at the
+        /// butt, the off hand free. Carried upright at the belly. The series is a chop straight over the head, then twice the
+        /// same cut: the axe circles round the head (left, back, right) and comes down diagonally from the right. The riposte
+        /// goes from the high cross guard round the head without a pause into that cut. Every swing runs out forward and low,
+        /// rolls across the belly to the left and rises upright again.
+        private static WeaponDefinition CreateHorsemansAxe()
+        {
+            BodyPose idle = PoseAt(new(0.25f, 1.05f, 0.35f), 10f, 80f, elbow: new(0.25f, 1.05f, 0.05f));
+            // Where every cut stops, then the roll across the belly and the rise back to upright.
+            BodyPose stop = PoseAt(new(0.07f, 1.02f, 0.45f), -20f, -15f, -10f, 12f, elbow: new(0.15f, 1.32f, 0.3f));
+            BodyPose roll = PoseAt(new(0.15f, 1.05f, 0.5f), -40f, -5f, -5f, 10f, elbow: new(0.25f, 1.1f, 0.2f));
+            BodyPose rise = PoseAt(new(0.2f, 1.1f, 0.45f), -35f, 45f, 0f, 5f, elbow: new(0.25f, 1.05f, 0.1f));
+            BodyPose guard = PoseAt(new(0.2f, 1.62f, 0.38f), -45f, -25f, -10f, -15f, elbow: new(0.45f, 1.52f, 0.2f));
+            BodyPose peak = PoseAt(new(0.08f, 1.44f, 0.52f), 0f, 0f, -10f, 12f, elbow: new(0.2f, 1.62f, 0.3f));
+            // The riposte runs out a little higher than the series.
+            BodyPose high = PoseAt(new(0.05f, 1.18f, 0.5f), -5f, 0f, -10f, 15f, elbow: new(0.15f, 1.48f, 0.35f));
+            BodyPose end = PoseAt(new(0.04f, 1.1f, 0.5f), -12f, -5f, -10f, 15f, elbow: new(0.15f, 1.42f, 0.35f));
+
+            AttackDefinition chop = new AttackDefinition
+            {
+                Windup = 36 * Footage, Active = 8 * Footage, Recovery = 28 * Footage, Damage = 36, MoveMultiplier = 0.6f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(3, PoseAt(new(0.25f, 1.35f, 0.25f), 180f, 60f, 5f, elbow: new(0.35f, 1.25f, 0f))),
+                    Via(12, PoseAt(new(0.18f, 1.75f, 0.1f), 180f, 20f, 10f, -5f, elbow: new(0.35f, 1.5f, 0f)), 0.4f),
+                    Via(33, PoseAt(new(0.15f, 1.8f, 0.05f), 175f, 10f, 10f, -5f, elbow: new(0.35f, 1.5f, 0f)), 0.5f),
+                    Via(35, PoseAt(new(0.15f, 1.85f, 0.15f), 20f, 95f, 5f, elbow: new(0.25f, 1.75f, -0.12f)))
+                },
+                WindupPose = PoseAt(new(0.15f, 1.8f, 0.3f), 20f, 70f, 0f, 5f, elbow: new(0.22f, 1.8f, 0f)),
+                MidPose = peak,
+                EndPose = end,
+                Return = new() { Via(48, stop, 0.5f), Via(54, roll), Via(63, rise) }
+            };
+            AttackDefinition circle = Circle(chop, 9, 36);
+            AttackDefinition again = Circle(circle, 8, 36);
+            again.Stagger = 0.2f;
+
+            // From the guard the axe goes up level over the head pointing left, round behind it and out to the right.
+            AttackDefinition riposte = new AttackDefinition
+            {
+                Windup = 27 * Footage, Active = 9 * Footage, Recovery = 36 * Footage, Damage = 54, MoveMultiplier = 0.5f, Stagger = 0.3f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(4, PoseAt(new(0.22f, 1.72f, 0.32f), -60f, -10f, -5f, -10f, elbow: new(0.45f, 1.52f, 0.12f))),
+                    Via(8, PoseAt(new(0.25f, 1.85f, 0.2f), -80f, 0f, 0f, -5f, elbow: new(0.4f, 1.55f, 0.05f))),
+                    Via(12, PoseAt(new(0.22f, 1.85f, 0.15f), -110f, 5f, 5f, -5f, elbow: new(0.38f, 1.55f, 0.05f))),
+                    Via(16, PoseAt(new(0.2f, 1.85f, 0.1f), -150f, 10f, 10f, -5f, elbow: new(0.35f, 1.55f, 0f))),
+                    Via(22, PoseAt(new(0.22f, 1.85f, 0.1f), 175f, 30f, 10f, -5f, elbow: new(0.38f, 1.55f, 0f))),
+                    Via(25, PoseAt(new(0.28f, 1.8f, 0.2f), 130f, 80f, 5f, elbow: new(0.4f, 1.5f, 0.05f)))
+                },
+                WindupPose = PoseAt(new(0.3f, 1.7f, 0.3f), 100f, 70f, 0f, 5f, elbow: new(0.38f, 1.45f, 0.1f)),
+                MidPose = peak,
+                EndPose = high,
+                Return = new() { Via(42, stop, 0.5f), Via(54, roll), Via(64, rise) }
+            };
+
+            foreach (AttackDefinition attack in new[] { chop, circle, again, riposte })
+            {
+                attack.ComboStart = attack.Windup + attack.Active * 0.5f;
+                attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
+            }
+
+            return new WeaponDefinition
+            {
+                Prefix = HorsemansAxe,
+                DisplayName = "Horseman's Axe",
+                Kind = WeaponKind.OneHanded,
+                Reach = 1.5f,
+                DeflectDuration = 0.65f,
+                BladeBase = 0.55f,
+                BladeTip = 0.92f,
+                Strike = HorsemanHead,
+                Idle = idle,
+                Attacks = new[] { chop, circle, again },
+                Riposte = riposte,
+                CanBlock = true,
+                BlockRaise = 0.2f,
+                BlockMitigation = 0.7f,
+                BlockImpact = 0.28f,
+                BlockRecovery = 0.4f,
+                BlockAngle = 80f,
+                BlockMove = 0.6f,
+                // The high cross guard: the hand by the right temple, the haft slanting down across the face.
+                Block = guard,
+                BlockHit = PoseAt(new(0.19f, 1.56f, 0.33f), -45f, -25f, -10f, -18f, elbow: new(0.45f, 1.47f, 0.16f)),
+                BlockLowered = PoseAt(new(0.2f, 1.54f, 0.36f), -45f, -30f, -10f, -10f, elbow: new(0.45f, 1.45f, 0.17f)),
+                DeflectPose = PoseAt(new(0.3f, 1.6f, 0.3f), 20f, 80f, 12f, -6f, elbow: new(0.4f, 1.35f, 0.1f)),
+                BlockSocket = WeaponSocket.RightHand,
+                BlockBoxCenter = new Vector3(0f, 0f, 0.4f),
+                BlockBoxExtents = new Vector3(0.06f, 0.06f, 0.52f)
+            };
+
+            // The cut of the second and the third swing: up from the last one's stop, round the head and down from the right.
+            AttackDefinition Circle(AttackDefinition after, int active, int damage)
+            {
+                return new AttackDefinition
+                {
+                    Windup = 41 * Footage, Active = active * Footage, Recovery = 30 * Footage, Damage = damage, MoveMultiplier = 0.6f, Launch = 1f,
+                    Raise = new()
+                    {
+                        Via(3, PoseAt(new(0.06f, 1.06f, 0.46f), -15f, -10f, -10f, 12f, elbow: new(0.15f, 1.35f, 0.3f))),
+                        Via(9, PoseAt(new(0f, 1.25f, 0.45f), -40f, 60f, -5f, 5f, elbow: new(0.2f, 1.1f, 0.2f))),
+                        Via(15, PoseAt(new(0.2f, 1.55f, 0.3f), -120f, 45f, 0f, elbow: new(0.35f, 1.35f, 0.1f))),
+                        Via(19, PoseAt(new(0.2f, 1.8f, 0.15f), -150f, 15f, 5f, -5f, elbow: new(0.35f, 1.5f, 0.05f))),
+                        Via(25, PoseAt(new(0.18f, 1.85f, 0.1f), 180f, 5f, 10f, -5f, elbow: new(0.35f, 1.55f, 0f)), 0.4f),
+                        Via(35, PoseAt(new(0.25f, 1.85f, 0.1f), 160f, 30f, 10f, -5f, elbow: new(0.4f, 1.55f, 0f)), 0.5f),
+                        Via(38, PoseAt(new(0.28f, 1.8f, 0.2f), 130f, 80f, 5f, elbow: new(0.4f, 1.5f, 0.05f)))
+                    },
+                    WindupPose = PoseAt(new(0.3f, 1.68f, 0.3f), 100f, 65f, 0f, 5f, elbow: new(0.38f, 1.45f, 0.1f)),
+                    MidPose = peak,
+                    EndPose = end,
+                    Return = new() { Via(58, stop, 0.5f), Via(64, roll), Via(71, rise) },
+                    After = after
+                };
+            }
         }
 
         /// A pose a swing passes at a frame of the footage.

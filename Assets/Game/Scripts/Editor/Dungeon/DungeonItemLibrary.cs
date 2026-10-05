@@ -34,8 +34,8 @@ namespace Game.Scripts.Editor.Dungeon
         public float Armor;
         public float MagicResist;
         public ArmorVisual Visual;
-        /// Outfit pieces: the skinned parts of the character model they show, the cloth material, the set and the classes
-        /// that may wear them (null = everyone).
+        /// Outfit pieces: the skinned parts of the character model they show, the cloth material and the set. Outfit pieces
+        /// and weapons: the classes that may use them (null = everyone).
         public OutfitPart[] Parts;
         public string Material;
         public string Set;
@@ -217,6 +217,8 @@ namespace Game.Scripts.Editor.Dungeon
 
             // New items go to the end: item ids are list positions and saved stashes refer to them.
             AddOutfits(items);
+            items.Add(Weapon("Horseman's Axe", DungeonWeaponLibrary.HorsemansAxe, WeaponClass.Axe, 1, 3, 20f, "Ax", s_steel, 40,
+                "Long bearded axe for one hand. Wide chops round the head. Barbarians only.", classes: new[] { "Barbarian" }));
 
             return items;
         }
@@ -324,11 +326,11 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static ItemDef Weapon(string name, string prefix, WeaponClass weaponClass, int width, int height, float movePenalty, string glyph,
             Color color, int value, string description, bool twoHanded = false, bool offHand = false, float light = 0f, string shield = null,
-            StatModifier[] modifiers = null)
+            StatModifier[] modifiers = null, string[] classes = null)
         {
             return new ItemDef
             {
-                Name = name, Kind = ItemKind.Weapon, WeaponPrefix = prefix, ShieldPrefix = shield, WeaponClass = weaponClass, Width = width, Height = height,
+                Name = name, Kind = ItemKind.Weapon, Classes = classes, WeaponPrefix = prefix, ShieldPrefix = shield, WeaponClass = weaponClass, Width = width, Height = height,
                 MovePenalty = movePenalty, Glyph = glyph, Color = color, Value = value, Description = description, TwoHanded = twoHanded, OffHand = offHand,
                 LightRange = light, RollsRarity = true, Modifiers = modifiers != null ? new List<StatModifier>(modifiers) : new List<StatModifier>()
             };

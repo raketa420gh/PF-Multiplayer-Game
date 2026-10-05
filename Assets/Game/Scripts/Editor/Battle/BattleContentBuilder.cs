@@ -101,6 +101,7 @@ namespace Game.Scripts.Editor.Battle
             GameObject fellingAxe = DungeonWeaponPrefabBuilder.BuildAxe("FellingAxe", 0.94f, 0.24f, AxeStyle.Felling);
             GameObject maul = DungeonWeaponPrefabBuilder.BuildMaul();
             GameObject halberd = DungeonWeaponPrefabBuilder.BuildHalberd();
+            GameObject horsemansAxe = DungeonWeaponPrefabBuilder.BuildHorsemansAxe();
             arrow = BattleWeaponPrefabBuilder.BuildArrow();
             magicOrb = DungeonWeaponPrefabBuilder.BuildMagicOrb();
 
@@ -137,7 +138,8 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.Stiletto] = new[] { (stiletto, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.FellingAxe] = new[] { (fellingAxe, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.WarMaul] = new[] { (maul, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Halberd] = new[] { (halberd, WeaponSocket.RightHand) }
+                [DungeonWeaponLibrary.Halberd] = new[] { (halberd, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.HorsemansAxe] = new[] { (horsemansAxe, WeaponSocket.RightHand) }
             };
 
             string[] order = DungeonWeaponLibrary.CatalogOrder;

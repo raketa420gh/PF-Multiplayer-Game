@@ -97,6 +97,40 @@ namespace Game.Scripts.Editor.Dungeon
             return Save(root);
         }
 
+        /// A slim dark haft about a metre long held at the butt; a bearded blade with its upper horn hooked toward a top spike,
+        /// and a thin fluke on the back of the eye.
+        public static GameObject BuildHorsemansAxe()
+        {
+            const float head = 0.7f;
+
+            Material iron = WeaponMaterials.Iron;
+            Material steel = WeaponMaterials.Steel;
+            GameObject root = new GameObject("HorsemansAxe");
+            WeaponMesh mesh = new WeaponMesh();
+
+            mesh.Revolve(WeaponMaterials.DarkWood, new[]
+            {
+                new Vector2(-0.13f, 0.011f), new Vector2(-0.118f, 0.018f), new Vector2(-0.09f, 0.0155f), new Vector2(head - 0.1f, 0.014f), new Vector2(head + 0.07f, 0.0145f)
+            }, 10, 0.78f);
+            mesh.Revolve(iron, new[]
+            {
+                new Vector2(head - 0.1f, 0.0165f), new Vector2(head - 0.085f, 0.0195f), new Vector2(head + 0.065f, 0.0195f), new Vector2(head + 0.08f, 0.0165f)
+            }, 10, 0.8f);
+            mesh.Plate(steel, new Vector2[]
+            {
+                new(0.012f, head + 0.06f), new(0.05f, head + 0.07f), new(0.1f, head + 0.12f), new(0.115f, head + 0.075f), new(0.122f, head),
+                new(0.116f, head - 0.08f), new(0.1f, head - 0.15f), new(0.06f, head - 0.11f), new(0.03f, head - 0.075f), new(0.012f, head - 0.07f)
+            }, new[] { 0.011f, 0.007f, 0f, 0f, 0f, 0f, 0f, 0.004f, 0.008f, 0.011f }, new Vector2(0.055f, head - 0.01f), 0.0075f);
+            mesh.Plate(iron, new Vector2[] { new(-0.012f, head + 0.035f), new(-0.05f, head + 0.012f), new(-0.11f, head - 0.045f), new(-0.05f, head - 0.022f), new(-0.012f, head - 0.03f) },
+                new[] { 0.007f, 0.005f, 0f, 0.005f, 0.007f }, new Vector2(-0.04f, head), 0.006f);
+            WeaponParts.Spike(mesh, iron, new Vector3(0f, 0f, head + 0.08f), new Vector3(0f, 0f, head + 0.22f), 0.013f, 6);
+
+            mesh.Attach(root.transform, "HorsemansAxe");
+            root.AddComponent<WeaponVisual>();
+
+            return Save(root);
+        }
+
         public static GameObject BuildMace()
         {
             const float head = 0.6f;
