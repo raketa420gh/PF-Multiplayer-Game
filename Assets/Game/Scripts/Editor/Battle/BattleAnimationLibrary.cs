@@ -58,6 +58,15 @@ namespace Game.Scripts.Editor.Battle
         public AttackDefinition After;
         /// The off hand strikes. The swing is authored as the main hand's, and its states play mirrored.
         public bool IsOffHand;
+        /// Poses the weapon passes on its way to the windup pose, which is where the active phase finds it, and after
+        /// the active phase on its way back to rest: the first of those is the follow-through, which a swing without
+        /// them works out by itself. Flow keys; their rate is a slope, 1 = the pace that takes the weapon from the key
+        /// before to the key after in the time between them. The builder gives them the roll the arms are at ease
+        /// with: once the cut is over, the weapon is free to turn over in the hands.
+        public List<PoseKey> Raise = new();
+        public List<PoseKey> Return = new();
+        /// The same slope for the windup pose of a swing that is under way by then; 0 = the weapon settles into it.
+        public float Launch;
 
         public float Duration => Windup + Active + Recovery;
     }
@@ -77,6 +86,8 @@ namespace Game.Scripts.Editor.Battle
         public bool IsUnarmed;
         public BodyPose Idle;
         public AttackDefinition[] Attacks = Array.Empty<AttackDefinition>();
+        /// The answer to a blocked hit: not a part of the series, it sets off from the block pose.
+        public AttackDefinition Riposte;
 
         public bool CanBlock;
         public float BlockRaise;
@@ -147,10 +158,6 @@ namespace Game.Scripts.Editor.Battle
         /// Share of the way from the windup to the peak over which the edge takes to the path of the strike point: while
         /// the weapon turns over at the windup, its path has no direction worth following.
         private const float LeadIn = 0.3f;
-        private const int WindupKey = 1;
-        private const int PeakKey = 2;
-        private const int EndKey = 3;
-        private const int FollowKey = 4;
         /// At the peak the grip is no further from the aim line than this share of the strike distance: the strike point
         /// has to reach the crosshair, and the blade to cross it at an angle instead of lying flat across the view.
         private const float MaxAimOffset = 0.75f;
@@ -158,6 +165,8 @@ namespace Game.Scripts.Editor.Battle
         private const float MaxFistOffset = 0.95f;
         /// An edge that has further than this to turn between two keys is all but turned over: it has two ways round.
         private const float TurnOver = 135f;
+        /// How fast the weapon turns over in the hands once the cut is done, in radians a second.
+        private const float TurnOverRate = 12f * Mathf.Deg2Rad * BattleAnimationBuilder.FrameRate;
 
         private static readonly Vector3 s_shieldRest =new(-0.24f, 1.3f, 0.28f);
         private static readonly Vector3 s_shieldRestNormal = new(-0.35f, 0f, 0.94f);
@@ -298,14 +307,20 @@ namespace Game.Scripts.Editor.Battle
             };
         }
 
-        /// Idle, windup, peak, end of the active phase, follow-through, idle. The motion never stops between the windup
-        /// and the follow-through, and the peak is a key of its own, so its pose is reached exactly.
+        /// Idle, windup, peak, end of the active phase, follow-through, idle, and whatever poses the swing is given to
+        /// pass on the way up and back. The motion never stops between the windup and the follow-through, and the peak
+        /// is a key of its own, so its pose is reached exactly.
         public static List<PoseKey> AttackKeys(WeaponDefinition weapon, AttackDefinition attack)
         {
             List<PoseKey> keys = SwingKeys(weapon, attack);
-            LeadWithEdge(keys, weapon.StrikePoint, IsCut(weapon, attack), !weapon.IsUnarmed);
+            LeadWithEdge(keys, WindupIndex(attack), weapon.StrikePoint, IsCut(weapon, attack), !weapon.IsUnarmed);
 
             return keys;
+        }
+
+        private static int WindupIndex(AttackDefinition attack)
+        {
+            return 1 + attack.Raise.Count;
         }
 
         /// A cut carries its strike point across the blade through the peak. A thrust runs it along the blade.
@@ -320,35 +335,61 @@ namespace Game.Scripts.Editor.Battle
             float peakTime = PeakTime(attack);
             float endTime = attack.Windup + attack.Active;
             float followTime = endTime + Mathf.Clamp(attack.Recovery * FollowShare, MinFollow, MaxFollow);
-            BodyPose start = attack.After == null ? weapon.Idle : AttackKeys(weapon, attack.After)[EndKey].Pose;
+            float raiseTime = attack.Raise.Count > 0 ? attack.Raise[0].Time : attack.Windup;
+            float raisedTime = attack.Raise.Count > 0 ? attack.Raise[^1].Time : 0f;
+            BodyPose start = attack == weapon.Riposte ? weapon.Block
+                : attack.After == null ? weapon.Idle
+                : AttackKeys(weapon, attack.After)[WindupIndex(attack.After) + 2].Pose;
 
-            return new List<PoseKey>
+            List<PoseKey> keys = new List<PoseKey> { PoseKey.Flow(0f, start, RaiseSlope / raiseTime) };
+            keys.AddRange(attack.Raise);
+            keys.Add(PoseKey.Flow(attack.Windup, attack.WindupPose,
+                attack.Launch > 0f ? attack.Launch * 2f / (peakTime - raisedTime) : SettleSlope / attack.Windup));
+            keys.Add(PoseKey.Flow(peakTime, peak, StrikeSlope / (attack.Active * 0.5f)));
+            keys.Add(PoseKey.Flow(endTime, attack.EndPose, EndSlope / (endTime - peakTime)));
+
+            if (attack.Return.Count > 0)
+                keys.AddRange(attack.Return);
+            else
+                keys.Add(PoseKey.Flow(followTime, FollowThrough(peak, attack.EndPose), 0f));
+
+            keys.Add(PoseKey.Flow(attack.Duration, weapon.Idle, 0f));
+            Pace(keys, 1, attack.Raise.Count);
+            Pace(keys, keys.Count - 1 - attack.Return.Count, attack.Return.Count);
+
+            return keys;
+        }
+
+        /// Turns the slopes of the keys a swing passes into rates.
+        private static void Pace(List<PoseKey> keys, int first, int count)
+        {
+            for (int i = first; i < first + count; i++)
             {
-                PoseKey.Flow(0f, start, RaiseSlope / attack.Windup),
-                PoseKey.Flow(attack.Windup, attack.WindupPose, SettleSlope / attack.Windup),
-                PoseKey.Flow(peakTime, peak, StrikeSlope / (attack.Active * 0.5f)),
-                PoseKey.Flow(endTime, attack.EndPose, EndSlope / (endTime - peakTime)),
-                PoseKey.Flow(followTime, FollowThrough(peak, attack.EndPose), 0f),
-                PoseKey.Flow(attack.Duration, weapon.Idle, 0f)
-            };
+                PoseKey key = keys[i];
+                key.Rate *= 2f / (keys[i + 1].Time - keys[i - 1].Time);
+                keys[i] = key;
+            }
         }
 
         /// Turns the weapon about its own axis so that the leading edge faces where the strike point travels: the blade
         /// cuts along its path instead of slapping with the flat. A cut does so all the way from the windup to the end of
-        /// the active phase, and its follow-through keeps the roll the cut ended with. A thrust has no path across the
-        /// blade to face: the weapon keeps the roll it rests with. Needs the edge of the rest pose; without it the arm
-        /// solve rolls the weapon.
-        private static void LeadWithEdge(List<PoseKey> keys, float strike, bool isCut, bool followsPath)
+        /// the active phase, and its follow-through keeps the roll the cut ended with, or turns from it toward the roll
+        /// it comes with. A thrust has no path across the blade to face: the weapon keeps the roll it rests with. Needs
+        /// the edge of the rest pose; without it the arm solve rolls the weapon.
+        private static void LeadWithEdge(List<PoseKey> keys, int windup, float strike, bool isCut, bool followsPath)
         {
             if (keys[0].Pose.Edge == Vector3.zero)
                 return;
 
             const float step = 1f / BattleAnimationBuilder.FrameRate;
+            int peak = windup + 1;
+            int end = windup + 2;
+            int follow = windup + 3;
             HandPose held = keys[0].Pose.Main;
             held.Up = keys[0].Pose.Edge;
 
             // The windup is already turned for the cut that sets off from it.
-            for (float time = keys[WindupKey].Time + step; isCut && time < keys[PeakKey].Time; time += step)
+            for (float time = keys[windup].Time + step; isCut && time < keys[peak].Time; time += step)
             {
                 Locate(keys, time, out float alpha);
 
@@ -360,20 +401,55 @@ namespace Game.Scripts.Editor.Battle
                 break;
             }
 
-            for (int i = WindupKey; i <= FollowKey; i++)
+            for (int i = windup; i <= follow; i++)
             {
                 PoseKey key = keys[i];
                 Vector3 blade = key.Pose.Main.Forward;
 
                 // Where the point runs along the blade, the weapon keeps the roll it had on the key before.
-                if (isCut && i > WindupKey && i < FollowKey && Across(keys, key.Time, strike, out Vector3 normal) >= ThrustShare)
+                if (isCut && i > windup && i < follow && Across(keys, key.Time, strike, out Vector3 normal) >= ThrustShare)
                     held = new HandPose(key.Pose.Main.Position, blade, Vector3.Cross(normal, blade));
 
-                key.Pose.Edge = Carry(held.Forward, held.Up, blade);
-                key.Pose.OffRoll = keys[0].Pose.OffRoll;
-                key.Lead = isCut && followsPath && (i == PeakKey || i == EndKey) ? strike : 0f;
+                Vector3 edge = Carry(held.Forward, held.Up, blade);
+
+                // A follow-through that comes with a roll of its own is where the weapon starts to turn over to it.
+                if (i == follow && key.Pose.Edge != Vector3.zero)
+                    edge = Vector3.RotateTowards(edge, key.Pose.Edge, TurnOverRate * (key.Time - keys[end].Time), 0f);
+                else
+                    key.Pose.OffRoll = keys[0].Pose.OffRoll;
+
+                key.Pose.Edge = edge;
+                key.Lead = isCut && followsPath && (i == peak || i == end) ? strike : 0f;
                 keys[i] = key;
             }
+
+            Settle(keys, 0, windup);
+            Settle(keys, follow, keys.Count - 1);
+        }
+
+        /// The keys between two whose roll is settled turn toward the roll they come with no faster than a weapon is
+        /// turned over in the hands, counted from either side. A key that comes with none goes along with those around it.
+        private static void Settle(List<PoseKey> keys, int from, int to)
+        {
+            for (int i = from + 1; i < to; i++)
+                Turn(keys, i, i - 1);
+
+            for (int i = to - 1; i > from; i--)
+                Turn(keys, i, i + 1);
+        }
+
+        private static void Turn(List<PoseKey> keys, int index, int neighbour)
+        {
+            PoseKey key = keys[index];
+            PoseKey other = keys[neighbour];
+            Vector3 carried = Carry(other.Pose.Main.Forward, other.Pose.Edge, key.Pose.Main.Forward);
+
+            if (key.Pose.Edge == Vector3.zero)
+                key.Pose.OffRoll = other.Pose.OffRoll;
+
+            key.Pose.Edge = key.Pose.Edge == Vector3.zero ? carried
+                : Vector3.RotateTowards(carried, key.Pose.Edge, TurnOverRate * Mathf.Abs(key.Time - other.Time), 0f);
+            keys[index] = key;
         }
 
         /// Share of the travel of the point 'strike' metres up the weapon that goes across the blade at the given moment.
@@ -443,7 +519,7 @@ namespace Game.Scripts.Editor.Battle
         {
             return new List<PoseKey>
             {
-                new(0f, AttackKeys(weapon, weapon.Attacks[0])[PeakKey].Pose),
+                new(0f, AttackKeys(weapon, weapon.Attacks[0])[WindupIndex(weapon.Attacks[0]) + 1].Pose),
                 new(0.12f, weapon.DeflectPose, Ease.Out),
                 new(weapon.DeflectDuration, weapon.Idle)
             };

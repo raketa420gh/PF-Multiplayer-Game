@@ -228,7 +228,7 @@ namespace Game.Scripts.Dungeon
             string state = combat.State switch
             {
                 CombatState.Idle => string.Empty,
-                CombatState.Attack => $"Attack {combat.AttackIndex + 1}",
+                CombatState.Attack => combat.IsRiposte ? "Riposte" : $"Attack {combat.AttackIndex + 1}",
                 CombatState.Busy => adventurer.Pending.ToString(),
                 _ => combat.State.ToString()
             };

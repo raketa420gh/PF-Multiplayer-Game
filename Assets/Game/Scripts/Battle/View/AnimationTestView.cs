@@ -291,6 +291,9 @@ namespace Game.Scripts.Battle
             for (int i = 0; i < weapon.Attacks.Length; i++)
                 AddWeaponState(prefix + FighterAnimComponent.AttackSuffix + i);
 
+            if (weapon.HasRiposte)
+                AddWeaponState(prefix + FighterAnimComponent.RiposteSuffix);
+
             foreach (string suffix in new[]
                      {
                          FighterAnimComponent.BlockSuffix, FighterAnimComponent.BlockImpactSuffix, FighterAnimComponent.DeflectSuffix,
@@ -339,7 +342,7 @@ namespace Game.Scripts.Battle
             string attackPrefix = weapon.AnimationPrefix + FighterAnimComponent.AttackSuffix;
             bool isAttack = state.StartsWith(attackPrefix);
             string legs = state.Replace(FighterAnimComponent.AttackSuffix, FighterAnimComponent.AttackLegsSuffix);
-            _attack = isAttack ? weapon.Attacks[int.Parse(state[attackPrefix.Length..])] : null;
+            _attack = !isAttack ? null : int.TryParse(state[attackPrefix.Length..], out int index) ? weapon.Attacks[index] : weapon.Riposte;
 
             if (isAttack && _hasFootwork && _animator.HasState(BaseLayer, Animator.StringToHash(legs)))
                 _current[BaseLayer] = legs;

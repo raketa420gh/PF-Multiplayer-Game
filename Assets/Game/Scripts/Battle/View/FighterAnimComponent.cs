@@ -8,6 +8,8 @@ namespace Game.Scripts.Battle
         public const string IdleSuffix = "_Idle";
         public const string AttackSuffix = "_Attack";
         public const string AttackLegsSuffix = "_AttackLegs";
+        public const string RiposteSuffix = AttackSuffix + "Riposte";
+        public const string RiposteLegsSuffix = AttackLegsSuffix + "Riposte";
         public const string BlockSuffix = "_Block";
         public const string BlockImpactSuffix = "_BlockImpact";
         public const string DeflectSuffix = "_Deflect";
@@ -143,6 +145,8 @@ namespace Game.Scripts.Battle
             public int Release;
             public int[] Attacks;
             public int[] AttackLegs;
+            public int Riposte;
+            public int RiposteLegs;
         }
 
         private WeaponStates[] _weaponStates;
@@ -239,7 +243,9 @@ namespace Game.Scripts.Battle
                 Draw = Animator.StringToHash(prefix + DrawSuffix),
                 Release = Animator.StringToHash(prefix + ReleaseSuffix),
                 Attacks = attacks,
-                AttackLegs = attackLegs
+                AttackLegs = attackLegs,
+                Riposte = Animator.StringToHash(prefix + RiposteSuffix),
+                RiposteLegs = Animator.StringToHash(prefix + RiposteLegsSuffix)
             };
         }
 
@@ -292,7 +298,8 @@ namespace Game.Scripts.Battle
                 // One who strikes without walking steps into the swing.
                 if (isStill && combat.State == CombatState.Attack)
                 {
-                    state = _weaponStates[combat.WeaponIndex].AttackLegs[combat.AttackIndex];
+                    WeaponStates states = _weaponStates[combat.WeaponIndex];
+                    state = combat.IsRiposte ? states.RiposteLegs : states.AttackLegs[combat.AttackIndex];
                     time = combat.StateTime;
                     token = combat.StateTick;
                 }
@@ -324,7 +331,7 @@ namespace Game.Scripts.Battle
             switch (combat.State)
             {
                 case CombatState.Attack:
-                    state = states.Attacks[combat.AttackIndex];
+                    state = combat.IsRiposte ? states.Riposte : states.Attacks[combat.AttackIndex];
                     token = combat.StateTick;
                     break;
                 case CombatState.BlockRaise:

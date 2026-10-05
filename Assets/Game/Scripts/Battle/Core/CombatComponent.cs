@@ -48,7 +48,7 @@ namespace Game.Scripts.Battle
         public int SlotCount => _slotCount;
         public int WeaponIndex => GetWeaponIndex(WeaponSlot);
         public WeaponConfig Weapon => _loadout[WeaponIndex];
-        public MeleeAttackConfig Attack => Weapon.Attacks[AttackIndex];
+        public MeleeAttackConfig Attack => IsRiposte ? Weapon.Riposte : Weapon.Attacks[AttackIndex];
         public float StateTime => Runner.SecondsSince(StateTick) * TimeScale;
         public float EquipTime => _equipTime;
         public bool IsComboWindowOpen => State == CombatState.Attack && Attack.IsComboWindow(StateTime);
@@ -112,6 +112,10 @@ namespace Game.Scripts.Battle
 
         [Networked]
         public byte AttackIndex { get; private set; }
+
+        /// The attack under way is the riposte of the weapon, not a swing of its series.
+        [Networked]
+        public NetworkBool IsRiposte { get; private set; }
 
         [Networked]
         public byte WeaponSlot { get; private set; }
@@ -373,7 +377,9 @@ namespace Game.Scripts.Battle
                     break;
 
                 case CombatState.BlockImpact:
-                    if (time >= _stateDuration)
+                    if (isAttackPressed && weapon.HasRiposte)
+                        StartRiposte();
+                    else if (time >= _stateDuration)
                         SetState(isBlockHeld ? CombatState.Block : CombatState.Idle);
                     break;
 
@@ -416,7 +422,7 @@ namespace Game.Scripts.Battle
         /// Holding the attack button keeps queueing the next swing, so the series loops until released.
         private void SimulateAttack(WeaponConfig weapon, float time, bool isAttackHeld)
         {
-            MeleeAttackConfig attack = weapon.Attacks[AttackIndex];
+            MeleeAttackConfig attack = Attack;
 
             if (isAttackHeld && attack.IsComboWindow(time))
                 _comboQueued = true;
@@ -428,7 +434,7 @@ namespace Game.Scripts.Battle
                 return;
 
             if (_comboQueued && time >= attack.ActiveEnd)
-                StartAttack((AttackIndex + 1) % weapon.Attacks.Length);
+                StartAttack(IsRiposte ? 0 : (AttackIndex + 1) % weapon.Attacks.Length);
             else if (time >= attack.Duration)
                 SetState(CombatState.Idle);
             else if (_isBlockHeld && weapon.Block.CanBlock && time >= attack.ActiveEnd + attack.RecoveryTime * 0.5f)
@@ -443,6 +449,14 @@ namespace Game.Scripts.Battle
             _hitRoots.Clear();
             SetState(CombatState.Attack);
             AttackIndex = (byte)index;
+        }
+
+        /// A hit has just been blocked: the weapon strikes back from the block.
+        private void StartRiposte()
+        {
+            _hitRoots.Clear();
+            SetState(CombatState.Attack);
+            IsRiposte = true;
         }
 
         private void ReleaseDraw(RangedConfig ranged, float time)
@@ -475,6 +489,7 @@ namespace Game.Scripts.Battle
             State = state;
             StateTick = Runner.Tick;
             AttackIndex = 0;
+            IsRiposte = false;
             _comboQueued = false;
             _stateDuration = duration;
         }

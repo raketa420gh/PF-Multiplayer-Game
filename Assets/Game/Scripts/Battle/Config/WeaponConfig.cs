@@ -238,6 +238,8 @@ namespace Game.Scripts.Battle
         public float DeflectDuration => _deflectDuration;
         public float Reach => _reach;
         public MeleeAttackConfig[] Attacks => _attacks;
+        public bool HasRiposte => _hasRiposte;
+        public MeleeAttackConfig Riposte => _riposte;
         public BlockConfig Block => _block;
         public RangedConfig Ranged => _ranged;
         public DamageType DamageType => _damageType;
@@ -272,6 +274,13 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private MeleeAttackConfig[] _attacks = Array.Empty<MeleeAttackConfig>();
+
+        [SerializeField]
+        private bool _hasRiposte;
+
+        /// The swing that answers a blocked hit; it is not a part of the series.
+        [SerializeField]
+        private MeleeAttackConfig _riposte = new();
 
         [SerializeField]
         private BlockConfig _block = new();

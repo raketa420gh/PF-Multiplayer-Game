@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Game.Scripts.Battle;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -66,7 +67,20 @@ namespace Game.Scripts.Editor.Battle
 
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
+            ReloadUsers();
             Debug.Log($"[{nameof(BattleAnimationBuilder)}] Animations built in {BattleEditorUtility.AnimationsFolder}");
+        }
+
+        /// A loaded prefab goes on pointing at the controller that was deleted. Those no builder saves anew are loaded again.
+        private static void ReloadUsers()
+        {
+            foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Game" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+
+                if (Array.IndexOf(AssetDatabase.GetDependencies(path, false), BattleEditorUtility.ControllerPath) >= 0)
+                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            }
         }
 
         /// Hand edits made in the animation test scene go back onto the freshly generated clips.
@@ -228,11 +242,10 @@ namespace Game.Scripts.Editor.Battle
         /// The feet under the swing of a fighter who stands still, from the strike of the library that goes the same way.
         /// Its stride is retimed to land at the peak and shortened to what the legs reach from hips that stay where the
         /// combat model has them; of its crouch only a share is taken over.
-        private static AnimationClip RecordAttackLegs(BattlePoseRig rig, string name, WeaponDefinition weapon, int index)
+        private static AnimationClip RecordAttackLegs(BattlePoseRig rig, string name, WeaponDefinition weapon, AttackDefinition attack, int index)
         {
             const int samples = 24;
-            AttackDefinition attack = weapon.Attacks[index];
-            (string strike, string recovery, float blow) = Footwork(weapon, index);
+            (string strike, string recovery, float blow) = Footwork(weapon, attack, index);
             AnimationClip first = BattleEditorUtility.LoadLibraryClip(strike);
             AnimationClip second = recovery == null ? first : BattleEditorUtility.LoadLibraryClip(recovery);
             float length = recovery == null ? first.length : first.length + second.length;
@@ -257,9 +270,8 @@ namespace Game.Scripts.Editor.Battle
 
         /// The strike of the library whose feet go with an attack, the take it recovers with when that is a clip of its
         /// own, and the moment its feet are set for the blow.
-        private static (string strike, string recovery, float blow) Footwork(WeaponDefinition weapon, int index)
+        private static (string strike, string recovery, float blow) Footwork(WeaponDefinition weapon, AttackDefinition attack, int index)
         {
-            AttackDefinition attack = weapon.Attacks[index];
             float side = attack.WindupPose.Main.Position.x - attack.EndPose.Main.Position.x;
 
             if (weapon.IsUnarmed)
@@ -321,33 +333,18 @@ namespace Game.Scripts.Editor.Battle
         {
             string prefix = weapon.Prefix;
 
-            // The authored poses take the roll the arm solve gives them, and between them the weapon turns from key to key:
-            // a roll solved anew on every frame flips over whenever the blade passes the line of the forearm.
-            SettleRoll(rig, ref weapon.Idle);
-            SettleRoll(rig, ref weapon.Block);
-            SettleRoll(rig, ref weapon.BlockHit);
-            SettleRoll(rig, ref weapon.BlockLowered);
-            SettleRoll(rig, ref weapon.DeflectPose);
-            SettleRoll(rig, ref weapon.DrawPose);
-            SettleRoll(rig, ref weapon.ReleasePose);
+            Settle(rig, weapon);
 
             AddState(stateMachine, prefix + FighterAnimComponent.IdleSuffix,
                 Record(rig, prefix + FighterAnimComponent.IdleSuffix, 1f, true, _ => weapon.Idle));
 
             for (int i = 0; i < weapon.Attacks.Length; i++)
-            {
-                AttackDefinition attack = weapon.Attacks[i];
-                AnimatorState swing = AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.AttackSuffix + i, attack.Duration,
-                    BattleAnimationLibrary.AttackKeys(weapon, attack));
-                AnimatorState footwork = AddState(legs, prefix + FighterAnimComponent.AttackLegsSuffix + i,
-                    RecordAttackLegs(rig, prefix + FighterAnimComponent.AttackLegsSuffix + i, weapon, i));
+                BuildSwing(rig, stateMachine, legs, weapon, weapon.Attacks[i], i,
+                    prefix + FighterAnimComponent.AttackSuffix + i, prefix + FighterAnimComponent.AttackLegsSuffix + i);
 
-                if (!attack.IsOffHand)
-                    continue;
-
-                Flip(swing);
-                Flip(footwork);
-            }
+            if (weapon.Riposte != null)
+                BuildSwing(rig, stateMachine, legs, weapon, weapon.Riposte, weapon.Attacks.Length,
+                    prefix + FighterAnimComponent.RiposteSuffix, prefix + FighterAnimComponent.RiposteLegsSuffix);
 
             if (weapon.CanBlock)
             {
@@ -371,6 +368,39 @@ namespace Game.Scripts.Editor.Battle
                     BattleAnimationLibrary.DrawKeys(weapon, drawTime));
                 AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.ReleaseSuffix, reloadTime,
                     BattleAnimationLibrary.ReleaseKeys(weapon, reloadTime));
+            }
+        }
+
+        private static void BuildSwing(BattlePoseRig rig, AnimatorStateMachine stateMachine, AnimatorStateMachine legs, WeaponDefinition weapon,
+            AttackDefinition attack, int index, string name, string legsName)
+        {
+            AnimatorState swing = AddKeyed(rig, stateMachine, name, attack.Duration, BattleAnimationLibrary.AttackKeys(weapon, attack));
+            AnimatorState footwork = AddState(legs, legsName, RecordAttackLegs(rig, legsName, weapon, attack, index));
+
+            if (!attack.IsOffHand)
+                return;
+
+            Flip(swing);
+            Flip(footwork);
+        }
+
+        /// The authored poses take the roll the arm solve gives them, and between them the weapon turns from key to key:
+        /// a roll solved anew on every frame flips over whenever the blade passes the line of the forearm. So do the
+        /// poses a swing passes on its way up and back.
+        public static void Settle(BattlePoseRig rig, WeaponDefinition weapon)
+        {
+            SettleRoll(rig, ref weapon.Idle);
+            SettleRoll(rig, ref weapon.Block);
+            SettleRoll(rig, ref weapon.BlockHit);
+            SettleRoll(rig, ref weapon.BlockLowered);
+            SettleRoll(rig, ref weapon.DeflectPose);
+            SettleRoll(rig, ref weapon.DrawPose);
+            SettleRoll(rig, ref weapon.ReleasePose);
+
+            foreach (AttackDefinition attack in weapon.Riposte == null ? weapon.Attacks : weapon.Attacks.Append(weapon.Riposte))
+            {
+                SettleRoll(rig, attack.Raise);
+                SettleRoll(rig, attack.Return);
             }
         }
 

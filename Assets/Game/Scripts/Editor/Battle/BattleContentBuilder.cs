@@ -210,24 +210,12 @@ namespace Game.Scripts.Editor.Battle
             so.FindProperty("_attacks").arraySize = definition.Attacks.Length;
 
             for (int i = 0; i < definition.Attacks.Length; i++)
-            {
-                AttackDefinition attack = definition.Attacks[i];
-                string path = $"_attacks.Array.data[{i}].";
-                sampler.SampleTrace(definition, i, out List<Vector3> traceBase, out List<Vector3> traceTip);
-                CheckPeak(assetName, i, attack, traceBase, traceTip);
+                SetAttack(sampler, so, $"_attacks.Array.data[{i}].", assetName, definition, definition.Attacks[i], FighterAnimComponent.AttackSuffix + i);
 
-                BattleEditorUtility.Set(so, path + "_windupTime", attack.Windup);
-                BattleEditorUtility.Set(so, path + "_activeTime", attack.Active);
-                BattleEditorUtility.Set(so, path + "_recoveryTime", attack.Recovery);
-                BattleEditorUtility.Set(so, path + "_comboWindowStart", attack.ComboStart);
-                BattleEditorUtility.Set(so, path + "_comboWindowEnd", attack.ComboEnd);
-                BattleEditorUtility.Set(so, path + "_damage", attack.Damage);
-                BattleEditorUtility.Set(so, path + "_moveMultiplier", attack.MoveMultiplier);
-                BattleEditorUtility.Set(so, path + "_staggerDuration", attack.Stagger);
-                BattleEditorUtility.Set(so, path + "_traceSampleRate", BattleAnimationBuilder.FrameRate);
-                BattleEditorUtility.Set(so, path + "_traceBase", traceBase);
-                BattleEditorUtility.Set(so, path + "_traceTip", traceTip);
-            }
+            BattleEditorUtility.Set(so, "_hasRiposte", definition.Riposte != null);
+
+            if (definition.Riposte != null)
+                SetAttack(sampler, so, "_riposte.", assetName, definition, definition.Riposte, FighterAnimComponent.RiposteSuffix);
 
             BattleEditorUtility.Set(so, "_block._canBlock", definition.CanBlock);
 
@@ -258,8 +246,27 @@ namespace Game.Scripts.Editor.Battle
             };
         }
 
+        private static void SetAttack(TraceSampler sampler, SerializedObject so, string path, string assetName, WeaponDefinition definition,
+            AttackDefinition attack, string suffix)
+        {
+            sampler.SampleTrace(definition, attack, definition.Prefix + suffix, out List<Vector3> traceBase, out List<Vector3> traceTip);
+            CheckPeak(assetName + suffix, attack, traceBase, traceTip);
+
+            BattleEditorUtility.Set(so, path + "_windupTime", attack.Windup);
+            BattleEditorUtility.Set(so, path + "_activeTime", attack.Active);
+            BattleEditorUtility.Set(so, path + "_recoveryTime", attack.Recovery);
+            BattleEditorUtility.Set(so, path + "_comboWindowStart", attack.ComboStart);
+            BattleEditorUtility.Set(so, path + "_comboWindowEnd", attack.ComboEnd);
+            BattleEditorUtility.Set(so, path + "_damage", attack.Damage);
+            BattleEditorUtility.Set(so, path + "_moveMultiplier", attack.MoveMultiplier);
+            BattleEditorUtility.Set(so, path + "_staggerDuration", attack.Stagger);
+            BattleEditorUtility.Set(so, path + "_traceSampleRate", BattleAnimationBuilder.FrameRate);
+            BattleEditorUtility.Set(so, path + "_traceBase", traceBase);
+            BattleEditorUtility.Set(so, path + "_traceTip", traceTip);
+        }
+
         /// The baked blade must cross the crosshair ray at the peak of the swing, or aimed hits would not register.
-        private static void CheckPeak(string weapon, int index, AttackDefinition attack, List<Vector3> traceBase, List<Vector3> traceTip)
+        private static void CheckPeak(string swing, AttackDefinition attack, List<Vector3> traceBase, List<Vector3> traceTip)
         {
             const float tolerance = 0.01f;
             int sample = Mathf.RoundToInt(BattleAnimationLibrary.PeakTime(attack) * BattleAnimationBuilder.FrameRate);
@@ -271,7 +278,7 @@ namespace Game.Scripts.Editor.Battle
             float miss = Vector2.Distance(eye, start + blade * along);
 
             if (miss > tolerance)
-                Debug.LogError($"[{nameof(BattleContentBuilder)}] {weapon} attack {index}: the peak misses the crosshair by {miss:0.000} m");
+                Debug.LogError($"[{nameof(BattleContentBuilder)}] {swing}: the peak misses the crosshair by {miss:0.000} m");
         }
 
         /// The simulation body is authored data, not measured on the model: swapping the character must not move the
@@ -592,10 +599,8 @@ namespace Game.Scripts.Editor.Battle
                 Object.DestroyImmediate(_root);
             }
 
-            public void SampleTrace(WeaponDefinition weapon, int attackIndex, out List<Vector3> traceBase, out List<Vector3> traceTip)
+            public void SampleTrace(WeaponDefinition weapon, AttackDefinition attack, string state, out List<Vector3> traceBase, out List<Vector3> traceTip)
             {
-                AttackDefinition attack = weapon.Attacks[attackIndex];
-                string state = weapon.Prefix + FighterAnimComponent.AttackSuffix + attackIndex;
                 int samples = Mathf.CeilToInt(attack.Duration * BattleAnimationBuilder.FrameRate);
                 Transform socket = _sockets[(int)(attack.IsOffHand ? WeaponSocket.LeftHand : WeaponSocket.RightHand)];
 

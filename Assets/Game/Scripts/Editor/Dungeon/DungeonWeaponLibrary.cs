@@ -45,6 +45,9 @@ namespace Game.Scripts.Editor.Dungeon
         /// A long axe is held at the butt with the off hand, this far down the haft from the main hand.
         private const float AxeGrip = -0.42f;
         private const float Frame = 1f / BattleAnimationBuilder.FrameRate;
+        /// A frame of 60 fps footage of Dark and Darker. A fight there runs at full pace and ours at the base action
+        /// speed of the fighters, so a clip is that much shorter than what it is copied from.
+        private const float Footage = 0.75f * Frame;
         private const float SpearHead = 1.8f;
         private const float StaffGrip = -0.33f;
 
@@ -194,6 +197,8 @@ namespace Game.Scripts.Editor.Dungeon
 
             definition.Attacks[2].Damage = heavyDamage;
             definition.Attacks[2].Stagger = heavyStagger;
+            definition.Riposte.Damage = Mathf.RoundToInt(damage * 1.5f);
+            definition.Riposte.Stagger = heavyStagger;
 
             return definition;
         }
@@ -537,39 +542,88 @@ namespace Game.Scripts.Editor.Dungeon
 
         /// The double axe of Dark and Darker. It is carried upright by the right shoulder, bits across the view, and
         /// swung in a series of three: a cut down from the right shoulder, a level cut back from the left and a chop
-        /// over the head. Each swing sets off from where the one before ends, and the off hand slides up the haft to
-        /// the main one as a cut runs out to the side.
+        /// over the head. Before each of them the axe is laid back over a shoulder, and each sets off from where the
+        /// one before runs out to; a swing that is not followed up lifts the axe upright again on its way to rest.
+        /// A blocked hit is answered with a chop that goes up over the head straight from the block. The off hand
+        /// slides up the haft to the main one as the axe goes out to a side.
         private static WeaponDefinition CreateBattleAxe()
         {
             BodyPose idle = Axe(new(0.1f, 1.46f, 0.5f), new(0.52f, 0.82f, 0.25f), 8f);
             idle.Edge = Vector3.left;
+            BodyPose upright = Axe(new(-0.1f, 1.38f, 0.42f), new(-0.2f, 0.96f, 0.18f), -8f);
+            BodyPose left = Axe(new(-0.4f, 1.1f, 0.18f), new(-0.99f, 0f, -0.12f), -48f, 8f, -0.3f);
+            BodyPose leftLow = Axe(new(-0.3f, 1.08f, 0.3f), new(-0.8f, 0f, 0.6f), -30f, 10f, -0.3f);
+            BodyPose right = Axe(new(0.45f, 1.45f, -0.02f), new(0.82f, 0.28f, -0.5f), 75f, 0f, -0.3f);
 
             AttackDefinition cut = new AttackDefinition
             {
-                Windup = 59 * Frame, Active = 12 * Frame, Recovery = 0.9f, Damage = 43, MoveMultiplier = 0.5f, Stagger = 0.3f,
-                WindupPose = Axe(new(0.4f, 1.83f, 0.235f), new(0.75f, 0.42f, -0.5f), 28f),
+                Windup = 60 * Footage, Active = 14 * Footage, Recovery = 73 * Footage, Damage = 43, MoveMultiplier = 0.5f, Stagger = 0.3f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(18, Axe(new(0.3f, 1.45f, -0.02f), new(0.35f, 0f, -0.94f), 40f, 0f, -0.36f), 0.4f),
+                    Via(50, Axe(new(0.3f, 1.6f, -0.1f), new(0.36f, 0.08f, -0.93f), 55f, 0f, -0.36f), 0.5f)
+                },
+                WindupPose = Axe(new(0.38f, 1.76f, 0.12f), new(0.82f, 0.52f, -0.22f), 35f),
                 MidPose = Axe(new(-0.14f, 1.44f, 0.5f), Vector3.forward, -10f),
-                EndPose = Axe(new(-0.3f, 1.24f, 0.4f), new(-0.55f, 0f, 0.83f), -30f, 8f, -0.3f)
+                EndPose = Axe(new(-0.32f, 1.16f, 0.38f), new(-0.8f, -0.05f, 0.6f), -38f, 8f, -0.3f),
+                Return = new() { Via(80, left, 0.5f), Via(114, upright, 0.6f) }
             };
             AttackDefinition back = new AttackDefinition
             {
-                Windup = 71 * Frame, Active = 16 * Frame, Recovery = 0.9f, Damage = 43, MoveMultiplier = 0.5f, Stagger = 0.3f,
-                WindupPose = Axe(new(-0.34f, 1.3f, 0.14f), new(-0.95f, -0.2f, -0.2f), -45f, 6f),
+                Windup = 67.5f * Footage, Active = 9 * Footage, Recovery = 72.5f * Footage, Damage = 43, MoveMultiplier = 0.5f, Stagger = 0.3f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(6, left, 0.6f),
+                    Via(26, Axe(new(-0.3f, 1.4f, 0.25f), new(-0.25f, 0.95f, -0.15f), -40f, 0f, -0.3f)),
+                    Via(44, Axe(new(-0.2f, 1.56f, 0.1f), new(-0.3f, 0.05f, -0.95f), -50f, 0f, -0.3f), 0.4f),
+                    Via(58, Axe(new(-0.22f, 1.56f, 0.06f), new(-0.4f, 0.05f, -0.92f), -58f, 0f, -0.3f), 0.5f)
+                },
+                WindupPose = Axe(new(-0.3f, 1.52f, 0.22f), new(-0.99f, 0.05f, 0.08f), -40f, 0f, -0.3f),
                 MidPose = Axe(new(0.22f, 1.5f, 0.5f), Vector3.forward, 10f),
-                EndPose = Axe(new(0.55f, 1.48f, 0.22f), new(0.2f, 0.12f, 0.97f), 60f, 0f, -0.13f),
+                EndPose = Axe(new(0.45f, 1.48f, 0.26f), new(0.75f, 0.1f, 0.65f), 50f, 0f, -0.25f),
+                Return = new()
+                {
+                    Via(81, Axe(new(0.5f, 1.47f, 0.05f), new(0.98f, 0.14f, -0.17f), 65f, 0f, -0.3f)), Via(91, right, 0.5f),
+                    Via(111, Axe(new(0.3f, 1.42f, 0.3f), new(0.62f, 0.76f, -0.05f), 35f), 0.8f)
+                },
                 After = cut
             };
             AttackDefinition chop = new AttackDefinition
             {
-                Windup = 81 * Frame, Active = 12 * Frame, Recovery = 1f, Damage = 50, MoveMultiplier = 0.4f, Stagger = 0.45f,
+                Windup = 77 * Footage, Active = 10 * Footage, Recovery = 69 * Footage, Damage = 50, MoveMultiplier = 0.4f, Stagger = 0.45f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(10, right, 0.6f),
+                    Via(28, Axe(new(0.34f, 1.5f, 0.15f), new(0.3f, 0.93f, -0.2f), 40f)),
+                    Via(48, Axe(new(0.3f, 1.7f, -0.12f), new(0.2f, 0.08f, -0.97f), 40f, -4f, -0.25f), 0.4f),
+                    Via(68, Axe(new(0.26f, 1.8f, -0.1f), new(0.2f, 0.15f, -0.96f), 25f, -10f, -0.25f), 0.5f)
+                },
                 WindupPose = Axe(new(0.22f, 1.86f, 0.1f), new(0.25f, 0.5f, -0.83f), 12f, -12f),
                 MidPose = Axe(new(0.03f, 1.42f, 0.5f), Vector3.forward),
                 EndPose = Axe(new(0f, 1.12f, 0.38f), new(-0.05f, -0.3f, 0.95f), -4f, 14f),
+                Return = new()
+                {
+                    Via(97, Axe(new(-0.1f, 0.98f, 0.36f), new(-0.3f, -0.55f, 0.78f), -12f, 24f), 0.5f), Via(112, leftLow, 0.6f), Via(133, upright, 0.6f)
+                },
                 After = back
             };
-            AttackDefinition[] attacks = { cut, back, chop };
-
-            foreach (AttackDefinition attack in attacks)
+            AttackDefinition riposte = new AttackDefinition
+            {
+                Windup = 51 * Footage, Active = 8 * Footage, Recovery = 61 * Footage, Damage = 65, MoveMultiplier = 0.4f, Stagger = 0.45f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(18, Axe(new(0.26f, 1.74f, 0.02f), new(0.9f, 0.12f, -0.4f), 20f, -4f), 0.8f),
+                    Via(38, Axe(new(0.16f, 1.92f, -0.14f), new(0.5f, -0.05f, -0.86f), 10f, -8f), 0.4f)
+                },
+                WindupPose = Axe(new(0.1f, 1.72f, 0.3f), new(0.03f, 0.97f, -0.24f), 0f, -6f),
+                MidPose = Axe(new(0.03f, 1.42f, 0.5f), Vector3.forward),
+                EndPose = Axe(new(0f, 1.1f, 0.4f), new(0f, -0.35f, 0.94f), 0f, 16f),
+                Return = new()
+                {
+                    Via(67, Axe(new(-0.02f, 0.96f, 0.38f), new(-0.08f, -0.72f, 0.69f), -4f, 28f), 0.5f), Via(84, leftLow, 0.6f), Via(101, upright, 0.6f)
+                }
+            };
+            foreach (AttackDefinition attack in new[] { cut, back, chop, riposte })
             {
                 attack.ComboStart = attack.Windup + attack.Active * 0.5f;
                 attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
@@ -586,7 +640,8 @@ namespace Game.Scripts.Editor.Dungeon
                 BladeTip = 0.94f,
                 Strike = AxeHead,
                 Idle = idle,
-                Attacks = attacks,
+                Attacks = new[] { cut, back, chop },
+                Riposte = riposte,
                 CanBlock = true,
                 BlockRaise = 0.25f,
                 BlockMitigation = 0.7f,
@@ -603,6 +658,12 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockBoxCenter = new Vector3(0f, 0f, 0.25f),
                 BlockBoxExtents = new Vector3(0.08f, 0.08f, 0.7f)
             };
+        }
+
+        /// A pose a swing passes at a frame of the footage.
+        private static PoseKey Via(float frame, BodyPose pose, float slope = 1f)
+        {
+            return PoseKey.Flow(frame * Footage, pose, slope);
         }
 
         private static BodyPose Axe(Vector3 grip, Vector3 blade, float yaw = 0f, float pitch = 0f, float offHand = AxeGrip)
