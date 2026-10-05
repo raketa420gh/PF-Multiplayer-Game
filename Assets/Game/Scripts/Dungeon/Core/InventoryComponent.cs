@@ -182,6 +182,49 @@ namespace Game.Scripts.Dungeon
             return true;
         }
 
+        /// Belt items go onto a matching belt stack, then into a free belt slot. The stack keeps what did not fit.
+        public bool TryAddToBelt(ref ItemStack stack)
+        {
+            ItemConfig config = GetConfig(stack);
+
+            if (!_hasEquipment || config == null || !config.CanEquip(EquipSlot.Utility1))
+                return false;
+
+            for (EquipSlot slot = EquipSlot.Utility1; slot <= EquipSlot.Utility6 && stack.Count > 0; slot++)
+            {
+                ItemStack other = _equipment[(int)slot];
+
+                if (!other.CanStackWith(stack) || other.Count >= config.MaxStack)
+                    continue;
+
+                int moved = Mathf.Min(config.MaxStack - other.Count, stack.Count);
+                SetEquipment(slot, other.WithCount(other.Count + moved));
+                stack.Count = (byte)(stack.Count - moved);
+            }
+
+            for (EquipSlot slot = EquipSlot.Utility1; slot <= EquipSlot.Utility6 && stack.Count > 0; slot++)
+            {
+                if (!_equipment[(int)slot].IsEmpty)
+                    continue;
+
+                SetEquipment(slot, stack.At(0, 0));
+                stack.Count = 0;
+            }
+
+            return stack.Count == 0;
+        }
+
+        /// Looted items: the belt first, then the bag. Count drops to 0 once everything is taken.
+        public bool TryLoot(ref ItemStack stack)
+        {
+            if (!TryAddToBelt(ref stack) && !TryAdd(stack))
+                return false;
+
+            stack.Count = 0;
+
+            return true;
+        }
+
         /// True when a new stack of the item fits somewhere in the bag.
         public bool HasRoom(ItemConfig config)
         {

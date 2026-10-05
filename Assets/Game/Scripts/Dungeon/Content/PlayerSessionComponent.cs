@@ -506,7 +506,7 @@ namespace Game.Scripts.Dungeon
             return Array.IndexOf(_stashes, other) >= 0 && State == SessionState.Lobby;
         }
 
-        void InventoryActionsComponent.IOwner.OnUseItem(InventoryComponent source, int bagIndex, EquipSlot slot)
+        void InventoryActionsComponent.IOwner.OnUseItem(InventoryComponent source, int bagIndex)
         {
         }
 

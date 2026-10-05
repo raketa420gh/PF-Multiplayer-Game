@@ -34,7 +34,7 @@ namespace Game.Scripts.Editor.Battle
 
         private static readonly string[] s_tableItems =
         {
-            "Battle Axe", "Round Shield", "Hatchet", "Spellbook", "Magic Staff",
+            "Battle Axe", "Arming Sword", "Quarterstaff", "Round Shield", "Hatchet", "Spellbook", "Magic Staff",
             "Bandage", "Potion of Healing", "Potion of Protection", "Ale", "Potion of Invisibility"
         };
 

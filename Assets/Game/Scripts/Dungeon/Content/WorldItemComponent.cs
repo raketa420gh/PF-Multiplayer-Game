@@ -3,12 +3,11 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// An item lying on the floor. Picked up with a short hold.
+    /// An item lying on the floor. Picked up instantly; belt items go onto the belt first.
     public sealed class WorldItemComponent : InteractableComponent
     {
         public override string Prompt => "Take " + (Config != null ? Config.DisplayName : "item");
-        public override float HoldTime => 0.35f;
-        public override byte BusyKind => AdventurerComponent.BusyPickUp;
+        public override float HoldTime => 0f;
         public ItemConfig Config => _database.Get(Stack.ItemId);
 
         [Networked]
@@ -62,9 +61,20 @@ namespace Game.Scripts.Dungeon
             }
 
             _model = Instantiate(prefab, _modelRoot != null ? _modelRoot : transform, false);
-            bool isWeapon = config is WeaponItemConfig;
-            _model.transform.localPosition = isWeapon ? new Vector3(0f, 0.06f, 0f) : Vector3.zero;
-            _model.transform.localRotation = isWeapon ? Quaternion.Euler(0f, 0f, 90f) : Quaternion.identity;
+            // Weapons lie on the flat of the blade, shields face up, the open book shows its pages as in the hand.
+            WeaponClass? weaponClass = (config as WeaponItemConfig)?.WeaponClass;
+            _model.transform.localPosition = weaponClass switch
+            {
+                null or WeaponClass.Shield => Vector3.zero,
+                WeaponClass.Spellbook => new Vector3(0f, 0.02f, 0f),
+                _ => new Vector3(0f, 0.06f, 0f)
+            };
+            _model.transform.localRotation = weaponClass switch
+            {
+                null or WeaponClass.Spellbook => Quaternion.identity,
+                WeaponClass.Shield => Quaternion.Euler(-90f, 0f, 0f),
+                _ => Quaternion.Euler(0f, 0f, 90f)
+            };
 
             foreach (Collider collider in _model.GetComponentsInChildren<Collider>())
                 Destroy(collider);
@@ -88,10 +98,12 @@ namespace Game.Scripts.Dungeon
 
         public override void Complete(AdventurerComponent adventurer)
         {
-            if (!adventurer.Inventory.TryAdd(Stack))
-                return;
+            ItemStack stack = Stack;
 
-            Runner.Despawn(Object);
+            if (adventurer.Inventory.TryLoot(ref stack))
+                Runner.Despawn(Object);
+            else
+                Stack = stack;
         }
     }
 }

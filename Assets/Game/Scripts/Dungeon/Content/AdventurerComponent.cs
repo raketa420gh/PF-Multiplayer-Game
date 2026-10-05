@@ -694,7 +694,7 @@ namespace Game.Scripts.Dungeon
                 return false;
 
             if (buttons.WasPressed(previous, PlayerInputButtons.Primary))
-                OnUseItem(_inventory, -1, (EquipSlot)BeltSlot);
+                OnUseItem((EquipSlot)BeltSlot);
             else if (buttons.WasPressed(previous, PlayerInputButtons.Secondary))
                 BeltSlot = NoBelt;
 
@@ -1480,32 +1480,24 @@ namespace Game.Scripts.Dungeon
             return (other.transform.position - transform.position).sqrMagnitude < ContainerRange * ContainerRange;
         }
 
-        void InventoryActionsComponent.IOwner.OnUseItem(InventoryComponent source, int bagIndex, EquipSlot slot)
+        void InventoryActionsComponent.IOwner.OnUseItem(InventoryComponent source, int bagIndex)
         {
-            OnUseItem(source, bagIndex, slot);
+            if (State != AdventurerState.Alive)
+                return;
+
+            // Loot is never used straight from a bag: it lands on the belt (from a container: or in the bag) and is used from the hand.
+            ItemStack stack = source.Bag[bagIndex];
+            int count = stack.Count;
+            _ = source == _inventory ? _inventory.TryAddToBelt(ref stack) : _inventory.TryLoot(ref stack);
+
+            if (stack.Count < count)
+                source.RemoveAt(bagIndex, count - stack.Count);
         }
 
-        private void OnUseItem(InventoryComponent source, int bagIndex, EquipSlot slot)
+        private void OnUseItem(EquipSlot slot)
         {
             if (State != AdventurerState.Alive || Pending != PendingAction.None)
                 return;
-
-            if (bagIndex >= 0)
-            {
-                ItemStack stack = source.Bag[bagIndex];
-                ItemConfig config = source.GetConfig(stack);
-
-                if (config == null || config.Kind is not (ItemKind.Consumable or ItemKind.Utility))
-                    return;
-
-                slot = FindFreeUtilitySlot();
-
-                if (slot == EquipSlot.Count)
-                    return;
-
-                source.RemoveAt(bagIndex);
-                _inventory.SetEquipment(slot, stack.At(0, 0));
-            }
 
             ItemStack equipped = _inventory.GetEquipped(slot);
             ItemConfig item = _database.Get(equipped.ItemId);
@@ -1542,17 +1534,6 @@ namespace Game.Scripts.Dungeon
             Pending = action;
             _pendingIndex = (byte)slot;
             _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(useTime / Runner.DeltaTime);
-        }
-
-        private EquipSlot FindFreeUtilitySlot()
-        {
-            for (EquipSlot slot = EquipSlot.Utility1; slot <= EquipSlot.Utility6; slot++)
-            {
-                if (_inventory.GetEquipped(slot).IsEmpty)
-                    return slot;
-            }
-
-            return EquipSlot.Count;
         }
 
         void InventoryActionsComponent.IOwner.OnDropItem(ItemStack stack)

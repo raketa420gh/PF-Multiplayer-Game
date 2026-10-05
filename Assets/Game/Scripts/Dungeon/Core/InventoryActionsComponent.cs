@@ -11,7 +11,7 @@ namespace Game.Scripts.Dungeon
         {
             bool CanEquip(ItemConfig item, EquipSlot slot);
             bool CanAccess(InventoryComponent other);
-            void OnUseItem(InventoryComponent source, int bagIndex, EquipSlot slot);
+            void OnUseItem(InventoryComponent source, int bagIndex);
             void OnDropItem(ItemStack stack);
             void OnLoadChunk(byte kind, byte chunk, byte chunkCount, byte[] data);
         }
@@ -177,17 +177,12 @@ namespace Game.Scripts.Dungeon
             _owner?.OnDropItem(stack);
         }
 
+        /// A consumable from a bag or a container goes onto the belt; it is used only from the hand.
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcUse(NetworkBehaviourId source, int index)
         {
             if (TryResolve(source, out InventoryComponent from) && !from.Bag[index].IsHidden)
-                _owner?.OnUseItem(from, index, EquipSlot.Count);
-        }
-
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        public void RpcUseEquipped(EquipSlot slot)
-        {
-            _owner?.OnUseItem(_inventory, -1, slot);
+                _owner?.OnUseItem(from, index);
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
@@ -199,17 +194,18 @@ namespace Game.Scripts.Dungeon
             for (int i = 0; i < InventoryComponent.Capacity; i++)
             {
                 ItemStack stack = from.Bag[i];
+                int count = stack.Count;
 
-                if (!stack.IsEmpty && !stack.IsHidden && _inventory.TryAdd(stack))
-                    from.RemoveAt(i);
+                if (!stack.IsEmpty && !stack.IsHidden && (_inventory.TryLoot(ref stack) || stack.Count < count))
+                    from.RemoveAt(i, count - stack.Count);
             }
 
             for (int i = 0; i < InventoryComponent.EquipmentCapacity; i++)
             {
                 ItemStack stack = from.Equipment[i];
 
-                if (!stack.IsEmpty && _inventory.TryAdd(stack))
-                    from.SetEquipment((EquipSlot)i, default);
+                if (!stack.IsEmpty)
+                    from.SetEquipment((EquipSlot)i, _inventory.TryLoot(ref stack) ? default : stack);
             }
         }
 

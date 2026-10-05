@@ -258,15 +258,12 @@ namespace Game.Scripts.Dungeon
 
             if (item.IsEquipped)
             {
-                if (item.Config.Kind is ItemKind.Consumable or ItemKind.Utility && _allowWorldDrop)
-                    _actions.RpcUseEquipped(item.Slot);
-                else
-                    _actions.RpcUnequip(item.Slot, _primary.Id, -1, -1);
+                _actions.RpcUnequip(item.Slot, _primary.Id, -1, -1);
 
                 return;
             }
 
-            if (item.Config.Kind is ItemKind.Consumable or ItemKind.Utility && _allowWorldDrop && item.Inventory == _primary)
+            if (IsBeltLoot(item))
             {
                 _actions.RpcUse(item.Inventory.Id, item.BagIndex);
 
@@ -288,6 +285,13 @@ namespace Game.Scripts.Dungeon
 
             if (target == null)
                 return;
+
+            if (target == _primary && IsBeltLoot(item))
+            {
+                _actions.RpcUse(item.Inventory.Id, item.BagIndex);
+
+                return;
+            }
 
             for (int y = 0; y < target.Height; y++)
             {
@@ -347,6 +351,12 @@ namespace Game.Scripts.Dungeon
 
             foreach (EquipSlotView slot in _slots)
                 slot.Bind(this, _primary);
+        }
+
+        /// In the dungeon consumables and utilities are stowed on the belt instead of being used from the bag.
+        private bool IsBeltLoot(ItemView item)
+        {
+            return _allowWorldDrop && item.Config.Kind is ItemKind.Consumable or ItemKind.Utility;
         }
 
         private EquipSlot FindEquipSlot(ItemConfig config)

@@ -15,6 +15,10 @@ namespace Game.Scripts.Dungeon
         public override string Prompt => Kind == PortalKind.Escape ? "Escape the dungeon" : "Descend deeper";
         public override float HoldTime => _activationTime;
         public override bool IsAvailable => IsActive && !IsUsed;
+        /// Opened like a door (standing still, hands busy), but at Magical Interaction speed like an altar.
+        public override bool IsMagical => true;
+        public override bool IsRooting => true;
+        public override bool IsHandsOccupied => true;
         public PortalKind Kind => _kind;
 
         [Networked]
