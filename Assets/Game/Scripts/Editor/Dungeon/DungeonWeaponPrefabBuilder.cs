@@ -131,6 +131,29 @@ namespace Game.Scripts.Editor.Dungeon
             return Save(root);
         }
 
+        /// A plain hardwood staff about two metres long, held a third of the way from one end, with iron ferrules and a leather
+        /// wrap under each hand.
+        public static GameObject BuildQuarterstaff()
+        {
+            const float butt = -0.35f;
+            const float tip = 1.65f;
+
+            Material iron = WeaponMaterials.Iron;
+            GameObject root = new GameObject("Quarterstaff");
+            WeaponMesh mesh = new WeaponMesh();
+
+            WeaponParts.Shaft(mesh, WeaponMaterials.Wood, butt, tip, 0.0175f, 0.0175f, 10);
+            mesh.Revolve(iron, new[] { new Vector2(butt - 0.01f, 0.006f), new Vector2(butt, 0.0195f), new Vector2(butt + 0.07f, 0.0195f) }, 8);
+            mesh.Revolve(iron, new[] { new Vector2(tip + 0.01f, 0.006f), new Vector2(tip, 0.0195f), new Vector2(tip - 0.07f, 0.0195f) }, 8);
+            WeaponParts.Grip(mesh, WeaponMaterials.DarkLeather, -0.1f, 0.12f, 0.0195f, 0.03f, 0.96f);
+            WeaponParts.Grip(mesh, WeaponMaterials.DarkLeather, 0.5f, 0.74f, 0.0195f, 0.03f, 0.96f);
+
+            mesh.Attach(root.transform, "Quarterstaff");
+            root.AddComponent<WeaponVisual>();
+
+            return Save(root);
+        }
+
         public static GameObject BuildMace()
         {
             const float head = 0.6f;

@@ -40,6 +40,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const string WarMaul = "WarMaul";
         public const string Halberd = "Halberd";
         public const string HorsemansAxe = "HorsemansAxe";
+        public const string Quarterstaff = "Quarterstaff";
 
         private const float MaceHead = 0.6f;
         private const float AxeHead = 0.8f;
@@ -64,7 +65,7 @@ namespace Game.Scripts.Editor.Dungeon
             SwordShield, Greatsword, Bow, SwordShieldLeft, Fists, ArmingSword, Falchion, Longsword, BattleAxe, Spear, Mace, Dagger, Crossbow, Staff, Torch, MaceShield,
             Spellbook, Lute, BearClaws, PantherClaws, RatBite,
             ShortSword, Rapier, VikingSword, Hatchet, MorningStar, CastillonDagger, Stiletto, FellingAxe, WarMaul, Halberd,
-            HorsemansAxe
+            HorsemansAxe, Quarterstaff
         };
 
         /// Catalog entries that play another entry's clips (its prefix) with a model, reach and damage of their own.
@@ -87,7 +88,7 @@ namespace Game.Scripts.Editor.Dungeon
             ["Flanged Mace"] = (6, 3), ["Morning Star"] = (6, 3), ["Longsword"] = (5, 5), ["Spear"] = (4, 4), ["Magic Staff"] = (4, 4),
             ["Sword & Shield"] = (4, 7), ["Mace & Shield"] = (6, 7),
             ["Greatsword"] = (7, 5), ["Battle Axe"] = (7, 4), ["Felling Axe"] = (8, 4), ["Halberd"] = (7, 4),
-            ["War Maul"] = (9, 5), ["Horseman's Axe"] = (6, 3), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2), ["Bear Claws"] = (7, 4)
+            ["War Maul"] = (9, 5), ["Horseman's Axe"] = (6, 3), ["Quarterstaff"] = (5, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2), ["Bear Claws"] = (7, 4)
         };
 
         public static (int impact, int stability) Force(string displayName)
@@ -166,7 +167,8 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateAxeVariant("Felling Axe", 0.68f, 0.94f, 1.6f, 37, 44, 0.3f, 0.4f),
                 CreateWarMaul(),
                 CreateHalberd(),
-                CreateHorsemansAxe()
+                CreateHorsemansAxe(),
+                CreateQuarterstaff()
             };
         }
 
@@ -802,6 +804,173 @@ namespace Game.Scripts.Editor.Dungeon
                     After = after
                 };
             }
+        }
+
+        /// The two-handed quarterstaff of Dark and Darker: a plain pole carried diagonally across the body, the long end up over
+        /// the left shoulder. Four swings in a row, each pivoting round the hands: a chop from the upper left to the lower
+        /// right, a flat sweep from the right, a flat sweep from the left and a chop from the upper right. The riposte flips the
+        /// staff over the shoulders from a high guard and chops down from the right. The hands slide a little along the pole.
+        private static WeaponDefinition CreateQuarterstaff()
+        {
+            const float hands = 0.6f;
+            // The hands slide together through a swing and rest close together where it stops, the off hand behind the main one.
+            const float close = -0.28f;
+
+            BodyPose idle = PoseAt(Cm(25f, 1f, 15f), -50f, 35f, offHand: hands, elbow: Cm(25f, 1f, 0f), offElbow: Cm(-30f, 1.15f, 10f));
+            BodyPose guard = PoseAt(Cm(25f, 1.15f, 10f), 110f, 40f, offHand: -0.3f, elbow: Cm(35f, 1.25f, 0f), offElbow: Cm(-35f, 1.55f, 0f));
+            // The long end hangs forward and low at the right or the left, where a swing stops.
+            BodyPose hangRight = PoseAt(Cm(22f, 0.97f, 28f), 5f, -40f, 15f, 20f, close, Cm(28f, 1f, 5f), Cm(-10f, 1.05f, 15f));
+            BodyPose hangLeft = PoseAt(Cm(-10f, 0.95f, 25f), -22f, -40f, -10f, 20f, close, Cm(25f, 1f, 5f), Cm(-30f, 1.05f, 10f));
+
+            AttackDefinition chopLeft = new AttackDefinition
+            {
+                Windup = 46 * Footage, Active = 6 * Footage, Recovery = 57 * Footage, Damage = 30, MoveMultiplier = 0.5f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(10, PoseAt(Cm(25f, 1.1f, 30f), -72f, 0f, -15f, 0f, hands, Cm(30f, 1.05f, 0f), Cm(-35f, 1.1f, 5f))),
+                    Via(20, PoseAt(Cm(20f, 1.3f, 30f), -125f, 0f, -50f, 5f, hands, Cm(35f, 1.25f, 5f), Cm(-40f, 1.3f, -15f))),
+                    Via(30, PoseAt(Cm(20f, 1.38f, 35f), -148f, 15f, -90f, 5f, 0.5f, Cm(40f, 1.35f, 10f), Cm(-35f, 1.45f, -15f))),
+                    Via(41, PoseAt(Cm(18f, 1.36f, 38f), -145f, 60f, -105f, 0f, 0.45f, Cm(40f, 1.4f, 15f), Cm(-45f, 1.55f, -10f)), 0.5f)
+                },
+                WindupPose = PoseAt(Cm(20f, 1.3f, 35f), -105f, 68f, -60f, 5f, 0.5f, Cm(30f, 1.2f, 15f), Cm(-45f, 1.5f, 0f)),
+                MidPose = Peak(Cm(28f, 1.05f, 30f), 0f, 15f, 0.43f, Cm(30f, 1f, 10f), Cm(-15f, 1.1f, 15f)),
+                EndPose = hangRight,
+                Return = new()
+                {
+                    Via(58, hangRight, 0.5f), Via(85, hangRight, 0.5f),
+                    Via(97, PoseAt(Cm(25f, 1f, 20f), -30f, 0f, 0f, 5f, 0.3f, Cm(25f, 1f, 0f), Cm(-30f, 1.1f, 10f)))
+                }
+            };
+            // The long end comes up on the right, out to the side, and sweeps flat across the front to the left.
+            AttackDefinition sweepRight = new AttackDefinition
+            {
+                Windup = 44 * Footage, Active = 11 * Footage, Recovery = 49 * Footage, Damage = 32, MoveMultiplier = 0.5f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(15, PoseAt(Cm(30f, 1.05f, 25f), 25f, -35f, 0f, 5f, -0.3f, Cm(30f, 1.05f, 0f), Cm(-10f, 1.1f, 0f))),
+                    Via(28, PoseAt(Cm(25f, 1.1f, 25f), 40f, -20f, -15f, 0f, -0.3f, Cm(35f, 1.15f, 0f), Cm(-30f, 1.3f, 0f))),
+                    Via(36, PoseAt(Cm(20f, 1.2f, 30f), 105f, -5f, -22f, 5f, -0.3f, Cm(30f, 1.2f, 10f), Cm(-30f, 1.25f, 5f)), 0.6f)
+                },
+                WindupPose = PoseAt(Cm(15f, 1.2f, 30f), 90f, 0f, -25f, 5f, -0.3f, Cm(30f, 1.2f, 10f), Cm(-30f, 1.2f, 10f)),
+                MidPose = Peak(Cm(0f, 1.15f, 30f), 5f, 10f, -0.3f, Cm(22f, 1.15f, 10f), Cm(-30f, 1.2f, 10f)),
+                EndPose = hangLeft,
+                Return = new()
+                {
+                    Via(65, hangLeft, 0.5f), Via(80, hangLeft, 0.5f),
+                    Via(92, PoseAt(Cm(25f, 1.05f, 20f), -70f, 5f, 0f, 5f, hands, Cm(25f, 1f, 0f), Cm(-30f, 1.1f, 10f)))
+                },
+                After = chopLeft
+            };
+            // The same sweep from the other side: the pole is brought round behind the left and thrown to the right.
+            AttackDefinition sweepLeft = new AttackDefinition
+            {
+                Windup = 36 * Footage, Active = 12 * Footage, Recovery = 56 * Footage, Damage = 33, MoveMultiplier = 0.5f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(14, PoseAt(Cm(0f, 1.1f, 28f), -5f, -35f, -15f, 10f, close, Cm(25f, 1.1f, 0f), Cm(-25f, 1.1f, 5f))),
+                    Via(27, PoseAt(Cm(3f, 1.2f, 22f), -105f, -5f, -33f, 5f, 0.3f, Cm(25f, 1.15f, 0f), Cm(-30f, 1.2f, 5f)), 0.6f)
+                },
+                WindupPose = PoseAt(Cm(5f, 1.25f, 25f), -108f, 0f, -30f, 5f, 0.3f, Cm(30f, 1.25f, 5f), Cm(-30f, 1.25f, 5f)),
+                MidPose = Peak(Cm(0f, 1.3f, 35f), 0f, 5f, -0.1f, Cm(25f, 1.25f, 10f), Cm(-25f, 1.3f, 15f)),
+                EndPose = PoseAt(Cm(-5f, 1.25f, 30f), 35f, -10f, 20f, 10f, close, Cm(25f, 1.25f, 10f), Cm(-30f, 1.3f, 15f)),
+                Return = new()
+                {
+                    Via(60, PoseAt(Cm(0f, 1.1f, 25f), 33f, -25f, 20f, 10f, close, Cm(25f, 1.1f, 5f), Cm(-30f, 1.2f, 10f)), 0.5f),
+                    Via(80, PoseAt(Cm(20f, 0.95f, 20f), 5f, -40f, 0f, 10f, close, Cm(28f, 1f, 5f), Cm(-10f, 1.05f, 15f)), 0.5f),
+                    Via(95, PoseAt(Cm(25f, 1f, 20f), -40f, 20f, 0f, 5f, hands, Cm(25f, 1f, 0f), Cm(-30f, 1.1f, 10f)))
+                },
+                After = sweepRight
+            };
+            // The long end rises along the right, hangs high behind the shoulder and comes down across the body to the left hip.
+            AttackDefinition chopRight = new AttackDefinition
+            {
+                Windup = 42 * Footage, Active = 9 * Footage, Recovery = 60 * Footage, Damage = 35, MoveMultiplier = 0.5f, Stagger = 0.3f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(12, PoseAt(Cm(30f, 1.1f, 10f), 150f, 25f, 10f, 5f, -0.3f, Cm(30f, 1.1f, 0f), Cm(-10f, 1.25f, 15f))),
+                    Via(22, PoseAt(Cm(30f, 1.35f, 0f), 140f, 50f, 25f, 0f, -0.3f, Cm(40f, 1.35f, -5f), Cm(-25f, 1.2f, 5f))),
+                    Via(36, PoseAt(Cm(28f, 1.4f, 10f), 156f, 45f, 25f, 0f, -0.3f, Cm(35f, 1.4f, 0f), Cm(-25f, 1.15f, 10f)), 0.5f)
+                },
+                WindupPose = PoseAt(Cm(20f, 1.3f, 25f), 115f, 40f, 0f, 10f, -0.3f, Cm(30f, 1.25f, 10f), Cm(-25f, 1.1f, 10f)),
+                MidPose = Peak(Cm(10f, 1.1f, 30f), -5f, 15f, -0.3f, Cm(25f, 1.05f, 10f), Cm(-25f, 1.05f, 10f)),
+                EndPose = PoseAt(Cm(-10f, 0.95f, 25f), -22f, -40f, -10f, 20f, close, Cm(25f, 1f, 10f), Cm(-30f, 1.05f, 10f)),
+                Return = new()
+                {
+                    Via(65, PoseAt(Cm(-15f, 0.95f, 20f), -5f, -50f, -10f, 20f, close, Cm(25f, 1f, 5f), Cm(-30f, 1.05f, 10f)), 0.5f),
+                    Via(85, PoseAt(Cm(-15f, 0.95f, 20f), -5f, -50f, -10f, 20f, close, Cm(25f, 1f, 5f), Cm(-30f, 1.05f, 10f)), 0.5f),
+                    Via(100, PoseAt(Cm(25f, 1f, 20f), -40f, 20f, 0f, 5f, hands, Cm(25f, 1f, 0f), Cm(-30f, 1.1f, 10f)))
+                },
+                After = sweepLeft
+            };
+            // From the high guard the pole flips over the shoulders (up through the vertical) and chops down from the right.
+            AttackDefinition riposte = new AttackDefinition
+            {
+                Windup = 28 * Footage, Active = 12 * Footage, Recovery = 52 * Footage, Damage = 45, MoveMultiplier = 0.4f, Stagger = 0.4f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(8, PoseAt(Cm(20f, 1.2f, 15f), 125f, 42f, 0f, 0f, -0.3f, Cm(35f, 1.25f, 0f), Cm(-35f, 1.5f, 0f))),
+                    Via(14, PoseAt(Cm(20f, 1.35f, 12f), 145f, 45f, -20f, 0f, -0.3f, Cm(35f, 1.3f, 0f), Cm(-35f, 1.4f, 0f))),
+                    Via(21, PoseAt(Cm(25f, 1.55f, 8f), 110f, 55f, -20f, 0f, -0.3f, Cm(40f, 1.55f, 0f), Cm(-25f, 1.25f, 5f)))
+                },
+                WindupPose = PoseAt(Cm(20f, 1.55f, 10f), 85f, 45f, -10f, 0f, -0.3f, Cm(40f, 1.55f, 0f), Cm(-25f, 1.25f, 10f)),
+                MidPose = Peak(Cm(15f, 1.3f, 25f), 0f, 10f, -0.3f, Cm(25f, 1.25f, 10f), Cm(-25f, 1.05f, 10f)),
+                EndPose = PoseAt(Cm(-10f, 0.95f, 20f), -5f, -45f, 0f, 15f, close, Cm(25f, 1f, 5f), Cm(-30f, 1.05f, 10f)),
+                Return = new()
+                {
+                    Via(52, PoseAt(Cm(-5f, 0.95f, 20f), 11f, -45f, 0f, 15f, close, Cm(25f, 1f, 5f), Cm(-30f, 1.05f, 10f)), 0.5f),
+                    Via(64, PoseAt(Cm(10f, 0.95f, 20f), 37f, -30f, 0f, 10f, close, Cm(25f, 1f, 5f), Cm(-30f, 1.05f, 10f))),
+                    Via(76, PoseAt(Cm(22f, 1f, 18f), 90f, 0f, 0f, 5f, close, Cm(25f, 1f, 0f), Cm(-30f, 1.1f, 10f)))
+                }
+            };
+
+            foreach (AttackDefinition attack in new[] { chopLeft, sweepRight, sweepLeft, chopRight, riposte })
+            {
+                attack.ComboStart = attack.Windup + attack.Active * 0.5f;
+                attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
+            }
+
+            return new WeaponDefinition
+            {
+                Prefix = Quarterstaff,
+                DisplayName = "Quarterstaff",
+                Kind = WeaponKind.TwoHanded,
+                IsRound = true,
+                Reach = 1.8f,
+                DeflectDuration = 0.7f,
+                BladeBase = -0.35f,
+                BladeTip = 1.65f,
+                Strike = 1.4f,
+                Idle = idle,
+                Attacks = new[] { chopLeft, sweepRight, sweepLeft, chopRight },
+                Riposte = riposte,
+                CanBlock = true,
+                BlockRaise = 0.25f,
+                BlockMitigation = 0.65f,
+                BlockImpact = 0.3f,
+                BlockRecovery = 0.45f,
+                BlockAngle = 80f,
+                BlockMove = 0.5f,
+                // The high guard the riposte sets off from: the pole up on the right, the left hand under the butt.
+                Block = guard,
+                BlockHit = PoseAt(Cm(25f, 1.2f, 12f), 110f, 38f, pitch: -5f, offHand: -0.3f, elbow: Cm(30f, 1.05f, 0f), offElbow: Cm(-35f, 1.55f, 0f)),
+                BlockLowered = PoseAt(Cm(25f, 1.1f, 12f), 110f, 33f, offHand: -0.3f, elbow: Cm(30f, 1f, 0f), offElbow: Cm(-35f, 1.5f, 0f)),
+                DeflectPose = PoseAt(Cm(30f, 1.3f, 20f), 20f, 75f, 15f, -8f, 0.5f, Cm(35f, 1.2f, 0f), Cm(-20f, 1.1f, 10f)),
+                BlockSocket = WeaponSocket.RightHand,
+                BlockBoxCenter = new Vector3(0f, 0f, 0.65f),
+                BlockBoxExtents = new Vector3(0.05f, 0.05f, 1f)
+            };
+
+            // The peak of a swing: only the hands, torso and elbows matter, the aim replaces the blade direction.
+            BodyPose Peak(Vector3 grip, float torso, float pitch, float offHand, Vector3 elbow, Vector3 offElbow)
+            {
+                return BattleAnimationLibrary.Elbows(BattleAnimationLibrary.TwoHanded(grip, Vector3.forward, offHand, torso, pitch), elbow, offElbow);
+            }
+        }
+
+        /// A point of the footage in metres: centimetres to the right of the body line, height, centimetres ahead of the body.
+        private static Vector3 Cm(float side, float height, float depth)
+        {
+            return new Vector3(side * 0.01f, height, 0.1f + depth * 0.01f);
         }
 
         /// A pose a swing passes at a frame of the footage.
