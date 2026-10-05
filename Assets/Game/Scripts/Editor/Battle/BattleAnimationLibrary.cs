@@ -58,6 +58,8 @@ namespace Game.Scripts.Editor.Battle
         public AttackDefinition After;
         /// The off hand strikes. The swing is authored as the main hand's, and its states play mirrored.
         public bool IsOffHand;
+        /// Overrides the weapon's strike point for this swing; negative strikes with the butt, behind the grip.
+        public float Strike;
         /// Poses the weapon passes on its way to the windup pose, which is where the active phase finds it, and after
         /// the active phase on its way back to rest: the first of those is the follow-through, which a swing without
         /// them works out by itself. Flow keys; their rate is a slope, 1 = the pace that takes the weapon from the key
@@ -84,6 +86,8 @@ namespace Game.Scripts.Editor.Battle
         /// Bare hands and claws: the strike point sits in the hand, too close for its path to steer the roll frame by
         /// frame. The knuckles still lead a punch, turning from key to key.
         public bool IsUnarmed;
+        /// A round haft (staff): it has no edge to lead a cut with, so the hand keeps the roll the arm gives it.
+        public bool IsRound;
         public BodyPose Idle;
         public AttackDefinition[] Attacks = Array.Empty<AttackDefinition>();
         /// The answer to a blocked hit: not a part of the series, it sets off from the block pose.
@@ -116,6 +120,8 @@ namespace Game.Scripts.Editor.Battle
 
         /// Distance from the grip to the part of the weapon that meets the crosshair at the peak of a swing.
         public float StrikePoint => Strike > 0f ? Strike : Mathf.Lerp(BladeBase, BladeTip, 0.65f);
+
+        public float StrikeOf(AttackDefinition attack) => attack.Strike != 0f ? attack.Strike : StrikePoint;
     }
 
     /// Hand-authored key poses (root space, character faces +Z) and timings shared by clips and weapon configs.
@@ -313,7 +319,7 @@ namespace Game.Scripts.Editor.Battle
         public static List<PoseKey> AttackKeys(WeaponDefinition weapon, AttackDefinition attack)
         {
             List<PoseKey> keys = SwingKeys(weapon, attack);
-            LeadWithEdge(keys, WindupIndex(attack), weapon.StrikePoint, IsCut(weapon, attack), !weapon.IsUnarmed);
+            LeadWithEdge(keys, WindupIndex(attack), weapon.StrikeOf(attack), IsCut(weapon, attack), !weapon.IsUnarmed && !weapon.IsRound);
 
             return keys;
         }
@@ -326,7 +332,7 @@ namespace Game.Scripts.Editor.Battle
         /// A cut carries its strike point across the blade through the peak. A thrust runs it along the blade.
         public static bool IsCut(WeaponDefinition weapon, AttackDefinition attack)
         {
-            return Across(SwingKeys(weapon, attack), PeakTime(attack), weapon.StrikePoint, out _) >= ThrustShare;
+            return Across(SwingKeys(weapon, attack), PeakTime(attack), weapon.StrikeOf(attack), out _) >= ThrustShare;
         }
 
         private static List<PoseKey> SwingKeys(WeaponDefinition weapon, AttackDefinition attack)
@@ -558,9 +564,10 @@ namespace Game.Scripts.Editor.Battle
         public static BodyPose Peak(WeaponDefinition weapon, AttackDefinition attack)
         {
             BodyPose pose = attack.MidPose;
-            Vector2 offset = Vector2.ClampMagnitude(pose.Main.Position - Eye, weapon.StrikePoint * (weapon.IsUnarmed ? MaxFistOffset : MaxAimOffset));
+            float strike = weapon.StrikeOf(attack);
+            Vector2 offset = Vector2.ClampMagnitude(pose.Main.Position - Eye, Mathf.Abs(strike) * (weapon.IsUnarmed ? MaxFistOffset : MaxAimOffset));
             Vector3 grip = new Vector3(Eye.x + offset.x, Eye.y + offset.y, pose.Main.Position.z);
-            Vector3 blade = Aim(grip, weapon.StrikePoint).normalized;
+            Vector3 blade = Aim(grip, Mathf.Abs(strike)).normalized * Mathf.Sign(strike);
 
             // An off hand without a roll of its own holds the same weapon and follows it.
             if (pose.Off.IsAutoRoll)
@@ -875,8 +882,28 @@ namespace Game.Scripts.Editor.Battle
             {
                 Position = CatmullRom(before.Position, from.Position, to.Position, after.Position, alpha),
                 Forward = isFlow ? Arc(before.Forward, from.Forward, to.Forward, after.Forward, alpha) : Vector3.Slerp(from.Forward, to.Forward, alpha),
-                Up = from.IsAutoRoll || to.IsAutoRoll ? Vector3.zero : Vector3.Slerp(from.Up, to.Up, alpha)
+                Up = from.IsAutoRoll || to.IsAutoRoll ? Vector3.zero : Vector3.Slerp(from.Up, to.Up, alpha),
+                Elbow = from.ElbowWeight > 0f && to.ElbowWeight > 0f
+                    ? CatmullRom(ElbowOr(before, from), from.Elbow, to.Elbow, ElbowOr(after, to), alpha)
+                    : from.ElbowWeight > 0f ? from.Elbow : to.Elbow,
+                ElbowWeight = Mathf.Lerp(from.ElbowWeight, to.ElbowWeight, alpha)
             };
+        }
+
+        private static Vector3 ElbowOr(in HandPose hand, in HandPose fallback)
+        {
+            return hand.ElbowWeight > 0f ? hand.Elbow : fallback.Elbow;
+        }
+
+        /// Puts the elbows where the footage has them; zero leaves that arm to the solve.
+        internal static BodyPose Elbows(BodyPose pose, Vector3 main, Vector3 off = default)
+        {
+            pose.Main.Elbow = main;
+            pose.Main.ElbowWeight = main == Vector3.zero ? 0f : 1f;
+            pose.Off.Elbow = off;
+            pose.Off.ElbowWeight = off == Vector3.zero ? 0f : 1f;
+
+            return pose;
         }
 
         /// The edge between two keys that have one. Each key carries its edge along as the blade turns away from it,

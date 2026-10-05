@@ -12,6 +12,10 @@ namespace Game.Scripts.Editor.Battle
         public Vector3 Position;
         public Vector3 Forward;
         public Vector3 Up;
+        /// Where the elbow is, in root space, as the footage shows it; the arm solve pulls it there as hard as ElbowWeight
+        /// says (0 = wherever the arm is most at ease, 1 = authored).
+        public Vector3 Elbow;
+        public float ElbowWeight;
 
         /// Zero Up = the rig derives the hand roll from the solved forearm, keeping the wrist straight.
         public bool IsAutoRoll => Up == Vector3.zero;
@@ -22,6 +26,8 @@ namespace Game.Scripts.Editor.Battle
             Position = position;
             Forward = forward.normalized;
             Up = up.normalized;
+            Elbow = Vector3.zero;
+            ElbowWeight = 0f;
         }
 
         /// Gripping hand: weapon axis is given, the forearm direction comes from the arm solve.
@@ -69,6 +75,9 @@ namespace Game.Scripts.Editor.Battle
             public Transform Lower;
             public Transform Hand;
             public float Side;
+            // The humanoid muscles that turn the upper arm and the forearm about themselves.
+            public int ArmTwist;
+            public int ForearmTwist;
         }
 
         /// What a frame of a motion being planned knows about an elbow: the cost of every place on its swivel circle,
@@ -98,6 +107,13 @@ namespace Game.Scripts.Editor.Battle
         private const float MaxWristFlexion = 40f * Mathf.Deg2Rad;
         private const float WristStiffness = 15f;
         private const float ElbowRest = 1.5f;
+        /// How far the arm's twist muscles go before it costs; the avatar clamps them at 1 and the forearm reads as wrung.
+        private const float MaxTwistMuscle = 0.8f;
+        private const float TwistStiffness = 100f;
+        /// The twist is read off the humanoid pose on every this many places of the swivel circle, and interpolated between.
+        private const int TwistStep = 4;
+        /// What it costs an elbow to stand off the authored one, per (1 - cos) of the angle between them on the circle.
+        private const float ElbowAuthored = 40f;
         private const int SwivelSamples = 72;
         private const float SwivelStep = Mathf.PI * 2f / SwivelSamples;
         /// What it costs an elbow of a planned motion to move along its swivel circle within a frame.
@@ -312,7 +328,14 @@ namespace Game.Scripts.Editor.Battle
 
         private Arm CreateArm(HumanBodyBones shoulder, HumanBodyBones upper, HumanBodyBones lower, HumanBodyBones hand, float side)
         {
-            return new Arm { Shoulder = Bone(shoulder), Upper = Bone(upper), Lower = Bone(lower), Hand = Bone(hand), Side = side };
+            string name = side > 0f ? "Right" : "Left";
+
+            return new Arm
+            {
+                Shoulder = Bone(shoulder), Upper = Bone(upper), Lower = Bone(lower), Hand = Bone(hand), Side = side,
+                ArmTwist = Array.IndexOf(HumanTrait.MuscleName, $"{name} Arm Twist In-Out"),
+                ForearmTwist = Array.IndexOf(HumanTrait.MuscleName, $"{name} Forearm Twist In-Out")
+            };
         }
 
         private Leg CreateLeg(HumanBodyBones upper, HumanBodyBones lower, HumanBodyBones foot)
@@ -358,7 +381,7 @@ namespace Game.Scripts.Editor.Battle
             Vector3 forearm = isFree ? pose.Position - upperPosition : pose.IsAutoRoll ? edge : pose.Up;
             Quaternion handRotation = Quaternion.identity;
             Vector3 target = pose.Position;
-            Vector3 hint = defaultHint;
+            Vector3 hint = pose.IsAutoRoll ? defaultHint : Vector3.Lerp(defaultHint, pose.Elbow, pose.ElbowWeight);
 
             // Hand roll, wrist position and elbow swivel depend on each other; a few passes converge.
             for (int i = 0; i < (isFree ? 3 : 1); i++)
@@ -369,7 +392,7 @@ namespace Game.Scripts.Editor.Battle
                 if (!pose.IsAutoRoll)
                     break;
 
-                hint = FindElbow(arm, upperPosition, target, defaultHint, pose.Forward, edge);
+                hint = FindElbow(arm, upperPosition, target, defaultHint, pose, edge, handRotation);
                 forearm = target - hint;
             }
 
@@ -379,9 +402,11 @@ namespace Game.Scripts.Editor.Battle
 
         /// Picks the elbow on the IK swivel circle that keeps the forearm near perpendicular to the held weapon
         /// (natural grip, wrist deviation within limits) and behind the knuckles when the edge is given, while staying
-        /// close to the relaxed down-and-out elbow. In a planned motion the plan says where on the circle the elbow is.
-        private Vector3 FindElbow(in Arm arm, Vector3 upper, Vector3 wrist, Vector3 defaultHint, Vector3 weaponAxis, Vector3 edge)
+        /// close to the relaxed down-and-out elbow, or to the authored one. In a planned motion the plan says where on the
+        /// circle the elbow is.
+        private Vector3 FindElbow(in Arm arm, Vector3 upper, Vector3 wrist, Vector3 defaultHint, in HandPose pose, Vector3 edge, Quaternion hand)
         {
+            Vector3 weaponAxis = pose.Forward;
             float a = Vector3.Distance(upper, arm.Lower.position);
             float b = Vector3.Distance(arm.Lower.position, arm.Hand.position);
             Vector3 axis = wrist - upper;
@@ -393,22 +418,31 @@ namespace Game.Scripts.Editor.Battle
             Vector3 center = upper + axis * along;
             Vector3 relaxed = Vector3.ProjectOnPlane(defaultHint - upper, axis).normalized;
             Vector3 side = Vector3.Cross(axis, relaxed);
+            Vector3 authored = Vector3.ProjectOnPlane(pose.Elbow - center, axis);
+            float[] twists = TwistCosts(arm, upper, wrist, center, relaxed, side, radius, hand);
+            // An authored elbow near the line from the shoulder to the wrist says little about which side it is on.
+            float authoredWeight = pose.ElbowWeight * Mathf.InverseLerp(0.03f, 0.1f, authored.magnitude);
             int best = 0;
 
             for (int i = 0; i < SwivelSamples; i++)
             {
                 float angle = i * SwivelStep;
-                Vector3 elbow = center + (relaxed * Mathf.Cos(angle) + side * Mathf.Sin(angle)) * radius;
+                Vector3 place = relaxed * Mathf.Cos(angle) + side * Mathf.Sin(angle);
+                Vector3 elbow = center + place * radius;
                 Vector3 forearm = (wrist - elbow).normalized;
                 float tilt = Mathf.Asin(Mathf.Clamp(Vector3.Dot(forearm, weaponAxis), -1f, 1f));
                 float excess = Mathf.Max(0f, Mathf.Abs(tilt - GripTilt) - MaxWristDeviation);
-                float cost = excess * excess * WristStiffness + (1f - Mathf.Cos(angle)) * ElbowRest;
+                float rest = (1f - Mathf.Cos(angle)) * ElbowRest * (1f - authoredWeight);
+                // An elbow the footage shows is worth the wrist bend it takes.
+                float stiffness = WristStiffness * (1f - 0.5f * authoredWeight);
+                float cost = excess * excess * stiffness + rest + (1f - Vector3.Dot(place, authored.normalized)) * ElbowAuthored * authoredWeight;
+                cost += twists[i];
 
                 if (edge != Vector3.zero)
                 {
                     float flexion = Vector3.Angle(Vector3.ProjectOnPlane(forearm, weaponAxis), edge) * Mathf.Deg2Rad;
                     excess = Mathf.Max(0f, flexion - MaxWristFlexion);
-                    cost += excess * excess * WristStiffness;
+                    cost += excess * excess * stiffness;
                 }
 
                 s_swivelCosts[i] = cost;
@@ -434,6 +468,33 @@ namespace Game.Scripts.Editor.Battle
             }
 
             return center + (relaxed * Mathf.Cos(swivel) + side * Mathf.Sin(swivel)) * radius;
+        }
+
+        /// What it costs every place of the swivel circle to turn the upper arm and the forearm about themselves past
+        /// the reach of their muscles, read off the humanoid pose the arm takes there: the clip stores muscles, and a roll
+        /// past their end is clamped and wrings the forearm.
+        private float[] TwistCosts(in Arm arm, Vector3 upper, Vector3 wrist, Vector3 center, Vector3 relaxed, Vector3 side, float radius, Quaternion hand)
+        {
+            float[] costs = new float[SwivelSamples];
+
+            for (int i = 0; i < SwivelSamples; i += TwistStep)
+            {
+                float angle = i * SwivelStep;
+                SolveTwoBone(arm.Upper, arm.Lower, arm.Hand, wrist, center + (relaxed * Mathf.Cos(angle) + side * Mathf.Sin(angle)) * radius);
+                arm.Hand.rotation = hand;
+                _handler.GetHumanPose(ref _humanPose);
+                float upperExcess = Mathf.Max(0f, Mathf.Abs(_humanPose.muscles[arm.ArmTwist]) - MaxTwistMuscle);
+                float foreExcess = Mathf.Max(0f, Mathf.Abs(_humanPose.muscles[arm.ForearmTwist]) - MaxTwistMuscle);
+                costs[i] = (upperExcess * upperExcess + foreExcess * foreExcess) * TwistStiffness;
+            }
+
+            for (int i = 0; i < SwivelSamples; i++)
+            {
+                int from = i / TwistStep * TwistStep;
+                costs[i] = Mathf.Lerp(costs[from], costs[(from + TwistStep) % SwivelSamples], (float)(i - from) / TwistStep);
+            }
+
+            return costs;
         }
 
         /// The path around the swivel circle that costs the least over the whole motion when moving along the circle

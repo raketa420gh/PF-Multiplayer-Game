@@ -49,7 +49,10 @@ namespace Game.Scripts.Editor.Dungeon
         /// speed of the fighters, so a clip is that much shorter than what it is copied from.
         private const float Footage = 0.75f * Frame;
         private const float SpearHead = 1.8f;
-        private const float StaffGrip = -0.33f;
+        private const float StaffHands = -0.55f;
+        private const float StaffReach = -0.62f;
+        private const float StaffButt = -0.9f;
+        private const float StaffButtEnd = -1.2f;
 
         /// Catalog order = combat catalog index. Battle prefab slots 1-4 map to the first four entries; monsters refer to
         /// their weapon by index, so new entries go to the end.
@@ -548,79 +551,98 @@ namespace Game.Scripts.Editor.Dungeon
         /// slides up the haft to the main one as the axe goes out to a side.
         private static WeaponDefinition CreateBattleAxe()
         {
-            BodyPose idle = Axe(new(0.1f, 1.46f, 0.5f), new(0.52f, 0.82f, 0.25f), 8f);
+            // Port arms: the haft across the chest, the head up past the right shoulder, the elbows hanging at the sides.
+            BodyPose idle = PoseAt(new(0.05f, 1.25f, 0.3f), 70f, 50f, offHand: AxeGrip, elbow: new(0.2f, 1f, 0.05f), offElbow: new(-0.2f, 1.05f, 0.05f));
             idle.Edge = Vector3.left;
-            BodyPose upright = Axe(new(-0.1f, 1.38f, 0.42f), new(-0.2f, 0.96f, 0.18f), -8f);
-            BodyPose left = Axe(new(-0.4f, 1.1f, 0.18f), new(-0.99f, 0f, -0.12f), -48f, 8f, -0.3f);
-            BodyPose leftLow = Axe(new(-0.3f, 1.08f, 0.3f), new(-0.8f, 0f, 0.6f), -30f, 10f, -0.3f);
-            BodyPose right = Axe(new(0.45f, 1.45f, -0.02f), new(0.82f, 0.28f, -0.5f), 75f, 0f, -0.3f);
+            // The haft upright on the left, the right forearm level across the chest.
+            BodyPose upright = PoseAt(new(-0.25f, 1.3f, 0.3f), -30f, 85f, -25f, offHand: -0.3f, elbow: new(0.15f, 1.3f, 0.05f), offElbow: new(-0.25f, 1f, 0.05f));
+            // Where a cut to the left stops: both arms straight down across to the left hip.
+            BodyPose left = PoseAt(new(-0.25f, 1f, 0.4f), -90f, -10f, -45f, offHand: -0.25f, elbow: new(-0.03f, 1f, 0.3f), offElbow: new(-0.3f, 0.95f, 0f));
+            BodyPose leftLow = PoseAt(new(-0.1f, 1f, 0.38f), -40f, -45f, -25f, 25f, -0.25f, new(0.05f, 1f, 0.3f), new(-0.25f, 0.95f, 0.05f));
+            BodyPose right = PoseAt(new(0.28f, 1.05f, 0.28f), 120f, 0f, 45f, offHand: -0.22f, elbow: new(0.3f, 1.05f, 0.05f), offElbow: new(0.05f, 1.1f, 0.3f));
 
+            // Each windup bunches the hands near the butt by the right ear, the right elbow out to the side below them.
             AttackDefinition cut = new AttackDefinition
             {
-                Windup = 60 * Footage, Active = 14 * Footage, Recovery = 73 * Footage, Damage = 43, MoveMultiplier = 0.5f, Stagger = 0.3f, Launch = 1f,
+                Windup = 60 * Footage, Active = 9 * Footage, Recovery = 78 * Footage, Damage = 43, MoveMultiplier = 0.5f, Stagger = 0.3f, Launch = 1f,
                 Raise = new()
                 {
-                    Via(18, Axe(new(0.3f, 1.45f, -0.02f), new(0.35f, 0f, -0.94f), 40f, 0f, -0.36f), 0.4f),
-                    Via(50, Axe(new(0.3f, 1.6f, -0.1f), new(0.36f, 0.08f, -0.93f), 55f, 0f, -0.36f), 0.5f)
+                    Via(6, PoseAt(new(0.15f, 1.35f, 0.35f), 90f, 30f, 15f, offHand: -0.35f, elbow: new(0.25f, 1.1f, 0.1f), offElbow: new(-0.1f, 1.15f, 0.25f))),
+                    Via(12, PoseAt(new(0.15f, 1.4f, 0.35f), 90f, 0f, 20f, offHand: -0.35f, elbow: new(0.25f, 1.25f, 0.1f), offElbow: new(-0.05f, 1.2f, 0.3f))),
+                    Via(18, PoseAt(new(0.3f, 1.55f, 0.05f), 160f, 20f, 30f, offHand: -0.15f, elbow: new(0.4f, 1.3f, 0.1f), offElbow: new(0f, 1.3f, 0.3f))),
+                    Via(40, PoseAt(new(0.3f, 1.6f, 0f), 170f, 15f, 35f, offHand: -0.12f, elbow: new(0.4f, 1.3f, 0.1f), offElbow: new(0.05f, 1.3f, 0.3f)), 0.4f),
+                    Via(54, PoseAt(new(0.3f, 1.62f, 0f), 170f, 25f, 38f, offHand: -0.12f, elbow: new(0.4f, 1.3f, 0.1f), offElbow: new(0.05f, 1.3f, 0.3f)), 0.5f),
+                    Via(57, PoseAt(new(0.25f, 1.65f, 0.03f), 170f, 50f, 36f, offHand: -0.15f, elbow: new(0.4f, 1.38f, 0.08f), offElbow: new(0.05f, 1.35f, 0.25f)))
                 },
-                WindupPose = Axe(new(0.38f, 1.76f, 0.12f), new(0.82f, 0.52f, -0.22f), 35f),
-                MidPose = Axe(new(-0.14f, 1.44f, 0.5f), Vector3.forward, -10f),
-                EndPose = Axe(new(-0.32f, 1.16f, 0.38f), new(-0.8f, -0.05f, 0.6f), -38f, 8f, -0.3f),
-                Return = new() { Via(80, left, 0.5f), Via(114, upright, 0.6f) }
+                WindupPose = E(Axe(new(0.05f, 1.4f, 0.35f), new(0.82f, 0.52f, -0.22f), 10f, 0f, -0.25f), new(0.2f, 1.3f, 0.3f), new(-0.15f, 1.2f, 0.25f)),
+                MidPose = E(Axe(new(-0.1f, 1.2f, 0.45f), Vector3.forward, -20f, 0f, -0.25f), new(0.05f, 1.1f, 0.3f), new(-0.25f, 1.05f, 0.2f)),
+                EndPose = E(Axe(new(-0.22f, 1.03f, 0.42f), new(-0.8f, -0.05f, 0.6f), -40f, 8f, -0.25f), new(-0.03f, 1f, 0.3f), new(-0.3f, 0.95f, 0f)),
+                Return = new()
+                {
+                    Via(78, left, 0.5f),
+                    Via(90, PoseAt(new(-0.25f, 1.1f, 0.35f), -60f, 50f, -35f, offHand: -0.3f, elbow: new(0.05f, 1.2f, 0.3f), offElbow: new(-0.25f, 0.95f, 0.1f))),
+                    Via(110, upright, 0.6f)
+                }
             };
             AttackDefinition back = new AttackDefinition
             {
-                Windup = 67.5f * Footage, Active = 9 * Footage, Recovery = 72.5f * Footage, Damage = 43, MoveMultiplier = 0.5f, Stagger = 0.3f, Launch = 1f,
+                Windup = 62 * Footage, Active = 9 * Footage, Recovery = 72 * Footage, Damage = 43, MoveMultiplier = 0.5f, Stagger = 0.3f, Launch = 1f,
                 Raise = new()
                 {
-                    Via(6, left, 0.6f),
-                    Via(26, Axe(new(-0.3f, 1.4f, 0.25f), new(-0.25f, 0.95f, -0.15f), -40f, 0f, -0.3f)),
-                    Via(44, Axe(new(-0.2f, 1.56f, 0.1f), new(-0.3f, 0.05f, -0.95f), -50f, 0f, -0.3f), 0.4f),
-                    Via(58, Axe(new(-0.22f, 1.56f, 0.06f), new(-0.4f, 0.05f, -0.92f), -58f, 0f, -0.3f), 0.5f)
+                    Via(12, PoseAt(new(-0.25f, 1.2f, 0.35f), -45f, 50f, -30f, offHand: -0.25f, elbow: new(0.1f, 1.2f, 0.3f), offElbow: new(-0.25f, 1f, 0.05f))),
+                    Via(21, PoseAt(new(-0.25f, 1.35f, 0.3f), -20f, 80f, -25f, offHand: -0.25f, elbow: new(0.15f, 1.3f, 0.05f), offElbow: new(-0.25f, 1.05f, 0.05f))),
+                    Via(36, PoseAt(new(-0.2f, 1.45f, 0.25f), -150f, 30f, -35f, offHand: -0.15f, elbow: new(0.35f, 1.4f, 0.15f), offElbow: new(-0.3f, 1.15f, -0.1f))),
+                    Via(48, PoseAt(new(-0.05f, 1.45f, 0.3f), -120f, 0f, -40f, offHand: -0.15f, elbow: new(0.2f, 1.3f, 0.1f), offElbow: new(-0.3f, 1.25f, -0.1f)), 0.4f),
+                    Via(58, PoseAt(new(-0.05f, 1.46f, 0.3f), -115f, 0f, -40f, offHand: -0.15f, elbow: new(0.2f, 1.3f, 0.1f), offElbow: new(-0.3f, 1.25f, -0.1f)), 0.5f)
                 },
-                WindupPose = Axe(new(-0.3f, 1.52f, 0.22f), new(-0.99f, 0.05f, 0.08f), -40f, 0f, -0.3f),
-                MidPose = Axe(new(0.22f, 1.5f, 0.5f), Vector3.forward, 10f),
-                EndPose = Axe(new(0.45f, 1.48f, 0.26f), new(0.75f, 0.1f, 0.65f), 50f, 0f, -0.25f),
+                WindupPose = E(Axe(new(0.05f, 1.45f, 0.45f), new(-0.99f, 0.05f, 0.08f), -15f, 0f, -0.15f), new(0.2f, 1.3f, 0.3f), new(-0.15f, 1.3f, 0.3f)),
+                MidPose = E(Axe(new(0.15f, 1.45f, 0.5f), Vector3.forward, 10f, 0f, -0.15f), new(0.25f, 1.38f, 0.3f), new(-0.05f, 1.35f, 0.3f)),
+                EndPose = E(Axe(new(0.3f, 1.4f, 0.32f), new(0.99f, 0.1f, 0.09f), 40f, 0f, -0.2f), new(0.35f, 1.3f, 0.3f), new(0.05f, 1.3f, 0.3f)),
                 Return = new()
                 {
-                    Via(81, Axe(new(0.5f, 1.47f, 0.05f), new(0.98f, 0.14f, -0.17f), 65f, 0f, -0.3f)), Via(91, right, 0.5f),
-                    Via(111, Axe(new(0.3f, 1.42f, 0.3f), new(0.62f, 0.76f, -0.05f), 35f), 0.8f)
+                    Via(77, right, 0.5f),
+                    Via(99, PoseAt(new(0.25f, 1.1f, 0.3f), 75f, 60f, 20f, offHand: -0.35f, elbow: new(0.25f, 1.05f, 0.05f), offElbow: new(-0.1f, 1f, 0.3f)), 0.6f)
                 },
                 After = cut
             };
             AttackDefinition chop = new AttackDefinition
             {
-                Windup = 77 * Footage, Active = 10 * Footage, Recovery = 69 * Footage, Damage = 50, MoveMultiplier = 0.4f, Stagger = 0.45f, Launch = 1f,
+                Windup = 67 * Footage, Active = 9 * Footage, Recovery = 70 * Footage, Damage = 50, MoveMultiplier = 0.4f, Stagger = 0.45f, Launch = 1f,
                 Raise = new()
                 {
-                    Via(10, right, 0.6f),
-                    Via(28, Axe(new(0.34f, 1.5f, 0.15f), new(0.3f, 0.93f, -0.2f), 40f)),
-                    Via(48, Axe(new(0.3f, 1.7f, -0.12f), new(0.2f, 0.08f, -0.97f), 40f, -4f, -0.25f), 0.4f),
-                    Via(68, Axe(new(0.26f, 1.8f, -0.1f), new(0.2f, 0.15f, -0.96f), 25f, -10f, -0.25f), 0.5f)
+                    Via(4, PoseAt(new(0.3f, 1.05f, 0.25f), 110f, 20f, 35f, offHand: -0.24f, elbow: new(0.3f, 1.05f, 0.05f), offElbow: new(-0.05f, 1.05f, 0.3f)), 0.6f),
+                    Via(15, PoseAt(new(0.25f, 1.2f, 0.3f), 80f, 60f, 20f, offHand: -0.3f, elbow: new(0.25f, 1.1f, 0.05f), offElbow: new(-0.05f, 1.1f, 0.3f))),
+                    Via(30, PoseAt(new(0.2f, 1.55f, 0.15f), 160f, 30f, 25f, offHand: -0.15f, elbow: new(0.3f, 1.3f, 0.05f), offElbow: new(0f, 1.3f, 0.3f))),
+                    Via(44, PoseAt(new(0.25f, 1.85f, 0f), 179f, 5f, 20f, offHand: -0.15f, elbow: new(0.4f, 1.5f, 0f), offElbow: new(0.05f, 1.45f, 0.3f)), 0.4f),
+                    Via(60, PoseAt(new(0.25f, 1.85f, 0f), 179f, 10f, 20f, offHand: -0.15f, elbow: new(0.4f, 1.5f, 0f), offElbow: new(0.05f, 1.45f, 0.3f)), 0.5f),
+                    Via(65, PoseAt(new(0.1f, 1.85f, 0.2f), 179f, 75f, 15f, offHand: -0.2f, elbow: new(0.25f, 1.55f, 0.15f), offElbow: new(0f, 1.5f, 0.35f)))
                 },
-                WindupPose = Axe(new(0.22f, 1.86f, 0.1f), new(0.25f, 0.5f, -0.83f), 12f, -12f),
-                MidPose = Axe(new(0.03f, 1.42f, 0.5f), Vector3.forward),
-                EndPose = Axe(new(0f, 1.12f, 0.38f), new(-0.05f, -0.3f, 0.95f), -4f, 14f),
-                Return = new()
-                {
-                    Via(97, Axe(new(-0.1f, 0.98f, 0.36f), new(-0.3f, -0.55f, 0.78f), -12f, 24f), 0.5f), Via(112, leftLow, 0.6f), Via(133, upright, 0.6f)
-                },
+                WindupPose = PoseAt(new(0.1f, 1.6f, 0.4f), 0f, 80f, 10f, offHand: -0.25f, elbow: new(0.2f, 1.4f, 0.3f), offElbow: new(-0.1f, 1.35f, 0.35f)),
+                MidPose = E(Axe(new(0.05f, 1.3f, 0.5f), Vector3.forward, 0f, 0f, -0.25f), new(0.15f, 1.3f, 0.3f), new(-0.15f, 1.15f, 0.3f)),
+                EndPose = PoseAt(new(0f, 1.02f, 0.38f), -30f, -50f, -20f, 25f, -0.25f, new(0.1f, 1f, 0.3f), new(-0.2f, 1f, 0.05f)),
+                Return = new() { Via(88, leftLow, 0.5f), Via(112, upright, 0.6f), Via(136, idle, 0.6f) },
                 After = back
             };
+            // From the haft held level across the shoulders, up behind the head, then straight down the middle.
             AttackDefinition riposte = new AttackDefinition
             {
-                Windup = 51 * Footage, Active = 8 * Footage, Recovery = 61 * Footage, Damage = 65, MoveMultiplier = 0.4f, Stagger = 0.45f, Launch = 1f,
+                Windup = 50 * Footage, Active = 7 * Footage, Recovery = 62 * Footage, Damage = 65, MoveMultiplier = 0.4f, Stagger = 0.45f, Launch = 1f,
                 Raise = new()
                 {
-                    Via(18, Axe(new(0.26f, 1.74f, 0.02f), new(0.9f, 0.12f, -0.4f), 20f, -4f), 0.8f),
-                    Via(38, Axe(new(0.16f, 1.92f, -0.14f), new(0.5f, -0.05f, -0.86f), 10f, -8f), 0.4f)
+                    Via(10, PoseAt(new(0.3f, 1.55f, 0.2f), 90f, 10f, 10f, offHand: -0.6f, elbow: new(0.35f, 1.3f, 0.05f), offElbow: new(-0.35f, 1.15f, 0.05f)), 0.8f),
+                    Via(18, PoseAt(new(0.28f, 1.7f, 0.05f), 120f, 30f, 10f, offHand: -0.5f, elbow: new(0.35f, 1.38f, 0.05f), offElbow: new(-0.3f, 1.3f, 0.05f))),
+                    Via(30, PoseAt(new(0.2f, 1.8f, -0.05f), 160f, 30f, 15f, offHand: -0.3f, elbow: new(0.4f, 1.6f, -0.05f), offElbow: new(-0.35f, 1.55f, -0.1f)), 0.4f),
+                    Via(44, PoseAt(new(0.2f, 1.8f, -0.05f), 160f, 30f, 15f, offHand: -0.3f, elbow: new(0.4f, 1.6f, -0.05f), offElbow: new(-0.35f, 1.55f, -0.1f)), 0.5f),
+                    Via(48, PoseAt(new(0.05f, 1.9f, 0.15f), 0f, 89f, 0f, offHand: -0.25f, elbow: new(0.4f, 1.65f, 0.05f), offElbow: new(-0.15f, 1.4f, 0.3f)))
                 },
-                WindupPose = Axe(new(0.1f, 1.72f, 0.3f), new(0.03f, 0.97f, -0.24f), 0f, -6f),
-                MidPose = Axe(new(0.03f, 1.42f, 0.5f), Vector3.forward),
-                EndPose = Axe(new(0f, 1.1f, 0.4f), new(0f, -0.35f, 0.94f), 0f, 16f),
+                WindupPose = PoseAt(new(0.03f, 1.7f, 0.35f), 0f, 60f, offHand: -0.25f, elbow: new(0.2f, 1.3f, 0.3f), offElbow: new(-0.15f, 1.3f, 0.3f)),
+                MidPose = E(Axe(new(0f, 1.4f, 0.5f), Vector3.forward, 0f, 0f, -0.25f), new(0.2f, 1.3f, 0.3f), new(-0.15f, 1.25f, 0.3f)),
+                EndPose = PoseAt(new(0f, 1.05f, 0.42f), 0f, -45f, 0f, 28f, -0.25f, new(0.15f, 1.1f, 0.3f), new(-0.15f, 1.05f, 0.3f)),
                 Return = new()
                 {
-                    Via(67, Axe(new(-0.02f, 0.96f, 0.38f), new(-0.08f, -0.72f, 0.69f), -4f, 28f), 0.5f), Via(84, leftLow, 0.6f), Via(101, upright, 0.6f)
+                    Via(64, PoseAt(new(0f, 1f, 0.36f), 0f, -60f, 0f, 30f, -0.25f, new(0.1f, 1f, 0.3f), new(-0.15f, 0.95f, 0.3f)), 0.5f),
+                    Via(80, PoseAt(new(-0.15f, 0.95f, 0.38f), -45f, -30f, -20f, 20f, -0.25f, new(0.1f, 1f, 0.3f), new(-0.25f, 0.95f, 0.05f)), 0.6f),
+                    Via(95, upright, 0.6f)
                 }
             };
             foreach (AttackDefinition attack in new[] { cut, back, chop, riposte })
@@ -649,10 +671,10 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockRecovery = 0.45f,
                 BlockAngle = 80f,
                 BlockMove = 0.5f,
-                // The haft is held out across the view, the head up by the right shoulder.
-                Block = Axe(new(0.14f, 1.84f, 0.39f), new(0.84f, 0.5f, -0.2f), pitch: -4f),
-                BlockHit = Axe(new(0.13f, 1.76f, 0.32f), new(0.86f, 0.45f, -0.25f), pitch: -7f),
-                BlockLowered = Axe(new(0.13f, 1.7f, 0.34f), new(0.86f, 0.42f, -0.2f), pitch: -4f),
+                // The haft held level across the shoulders, hands wide, the head to the right: where the riposte sets off.
+                Block = PoseAt(new(0.3f, 1.55f, 0.25f), 90f, 10f, 10f, offHand: -0.6f, elbow: new(0.35f, 1.3f, 0.05f), offElbow: new(-0.35f, 1.15f, 0.05f)),
+                BlockHit = PoseAt(new(0.28f, 1.5f, 0.2f), 90f, 10f, 10f, -5f, -0.6f, new(0.35f, 1.27f, 0.03f), new(-0.35f, 1.12f, 0.03f)),
+                BlockLowered = PoseAt(new(0.28f, 1.45f, 0.22f), 90f, 8f, 10f, offHand: -0.6f, elbow: new(0.35f, 1.25f, 0.03f), offElbow: new(-0.35f, 1.1f, 0.03f)),
                 DeflectPose = Axe(new(0.24f, 1.62f, 0.22f), new(0.35f, 0.9f, 0.1f), 15f, -8f),
                 BlockSocket = WeaponSocket.RightHand,
                 BlockBoxCenter = new Vector3(0f, 0f, 0.25f),
@@ -664,6 +686,11 @@ namespace Game.Scripts.Editor.Dungeon
         private static PoseKey Via(float frame, BodyPose pose, float slope = 1f)
         {
             return PoseKey.Flow(frame * Footage, pose, slope);
+        }
+
+        private static BodyPose E(BodyPose pose, Vector3 elbow, Vector3 offElbow)
+        {
+            return BattleAnimationLibrary.Elbows(pose, elbow, offElbow);
         }
 
         private static BodyPose Axe(Vector3 grip, Vector3 blade, float yaw = 0f, float pitch = 0f, float offHand = AxeGrip)
@@ -730,36 +757,120 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static WeaponDefinition CreateStaff()
         {
-            WeaponDefinition definition = BattleAnimationLibrary.CreateGreatsword();
-            definition.Prefix = Staff;
-            definition.DisplayName = "Magic Staff";
-            definition.BladeBase = 0.3f;
-            definition.BladeTip = 1.3f;
-            definition.Reach = 1.8f;
-            definition.Idle = BattleAnimationLibrary.TwoHanded(new(0.2f, 1.3f, 0.3f), new(0.3f, 0.9f, 0.3f), StaffGrip, 15f);
-            definition.Attacks = new[] { definition.Attacks[0], definition.Attacks[1] };
+            // Carried like a walking stick in the right hand, a third of the way down from the head; only the riposte
+            // takes it in both hands and strikes with the butt.
+            BodyPose idle = PoseAt(new(0.25f, 1.18f, 0.38f), 0f, 80f, elbow: new(0.2f, 1f, 0.05f));
+            BodyPose parry = PoseAt(new(0.2f, 1.45f, 0.38f), 75f, 40f, offHand: StaffHands, elbow: new(0.25f, 1.2f, 0.05f), offElbow: new(-0.2f, 1.05f, 0.05f));
 
-            // A staff is swung with the hands as far apart as it is carried.
-            Spread(ref definition.DeflectPose);
-
-            foreach (AttackDefinition attack in definition.Attacks)
+            AttackDefinition backhand = new AttackDefinition
             {
-                Spread(ref attack.WindupPose);
-                Spread(ref attack.MidPose);
-                Spread(ref attack.EndPose);
+                Windup = 34 * Footage, Active = 7 * Footage, Recovery = 55 * Footage, Damage = 29, MoveMultiplier = 0.5f, Stagger = 0.25f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(8, PoseAt(new(0.05f, 1.3f, 0.3f), -40f, 70f, -10f, elbow: new(0.2f, 1.15f, 0f))),
+                    Via(14, PoseAt(new(-0.1f, 1.38f, 0.12f), -150f, 30f, -20f, elbow: new(0.15f, 1.25f, 0.1f))),
+                    Via(20, PoseAt(new(-0.15f, 1.45f, 0.06f), -160f, 15f, -25f, offHand: 0.12f, elbow: new(0.1f, 1.4f, 0.28f), offElbow: new(-0.2f, 1.3f, 0.12f)), 0.4f),
+                    Via(30, PoseAt(new(-0.16f, 1.46f, 0.05f), -165f, 15f, -25f, offHand: 0.12f, elbow: new(0.1f, 1.4f, 0.28f), offElbow: new(-0.2f, 1.3f, 0.12f)), 0.5f)
+                },
+                WindupPose = PoseAt(new(-0.1f, 1.5f, 0.35f), -100f, 75f, -15f, elbow: new(0.15f, 1.45f, 0.25f)),
+                MidPose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.OneHanded(new(0.1f, 1.44f, 0.6f), Vector3.forward, 10f), new(0.15f, 1.45f, 0.3f)),
+                EndPose = PoseAt(new(0.42f, 1.42f, 0.55f), -10f, 15f, 15f, elbow: new(0.35f, 1.45f, 0.25f)),
+                Return = new()
+                {
+                    Via(44, PoseAt(new(0.45f, 1.43f, 0.55f), 0f, 10f, 15f, elbow: new(0.35f, 1.45f, 0.25f)), 0.5f), Via(70, PoseAt(new(0.45f, 1.43f, 0.53f), 0f, 12f, 10f, elbow: new(0.35f, 1.45f, 0.25f)), 0.5f),
+                    Via(80, PoseAt(new(0.38f, 1.3f, 0.48f), 0f, 20f, 8f, elbow: new(0.28f, 1.1f, 0.1f))), Via(88, PoseAt(new(0.36f, 1.24f, 0.42f), 0f, 55f, 5f, elbow: new(0.24f, 1.03f, 0.06f)))
+                }
+            };
+            AttackDefinition chop = new AttackDefinition
+            {
+                Windup = 55 * Footage, Active = 9 * Footage, Recovery = 58 * Footage, Damage = 32, MoveMultiplier = 0.5f, Stagger = 0.25f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(10, PoseAt(new(0.42f, 1.62f, 0.3f), 0f, 15f, 5f, elbow: new(0.38f, 1.45f, 0.15f))),
+                    Via(18, PoseAt(new(0.22f, 1.95f, 0.12f), -60f, 5f, elbow: new(0.4f, 1.65f, 0.12f))),
+                    Via(25, PoseAt(new(0.2f, 2f, 0.1f), -80f, -10f, elbow: new(0.45f, 1.68f, 0.2f)), 0.4f),
+                    Via(50, PoseAt(new(0.2f, 2f, 0.09f), -75f, -15f, elbow: new(0.45f, 1.68f, 0.2f)), 0.5f),
+                    Via(52.5f, PoseAt(new(0.2f, 1.98f, 0.12f), -75f, 30f, elbow: new(0.42f, 1.65f, 0.2f))), Via(54, PoseAt(new(0.16f, 1.82f, 0.26f), -50f, 70f, elbow: new(0.3f, 1.55f, 0.22f)))
+                },
+                WindupPose = PoseAt(new(0.12f, 1.62f, 0.42f), 0f, 80f, elbow: new(0.15f, 1.5f, 0.25f)),
+                MidPose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.OneHanded(new(0.12f, 1.44f, 0.5f), Vector3.forward), new(0.15f, 1.32f, 0.25f)),
+                EndPose = PoseAt(new(0.04f, 1.18f, 0.55f), 0f, 25f, elbow: new(0.1f, 1.2f, 0.25f)),
+                Return = new()
+                {
+                    Via(68, PoseAt(new(0.03f, 1.18f, 0.55f), -10f, 15f, elbow: new(0.1f, 1.2f, 0.25f)), 0.5f), Via(95, PoseAt(new(0.04f, 1.19f, 0.53f), -15f, 18f, elbow: new(0.1f, 1.2f, 0.25f)), 0.5f),
+                    Via(108, PoseAt(new(0.25f, 1.2f, 0.38f), 0f, 60f, elbow: new(0.15f, 1f, 0.05f)))
+                },
+                After = backhand
+            };
+            // The butt sweeps from the left through the crosshair to the right, driven by the torso turning to the right.
+            AttackDefinition riposte = new AttackDefinition
+            {
+                Windup = 22 * Footage, Active = 12 * Footage, Recovery = 47 * Footage, Damage = 44, MoveMultiplier = 0.4f, Stagger = 0.4f, Launch = 1f,
+                Strike = StaffButt,
+                Raise = new()
+                {
+                    Via(8, PoseAt(new(0.22f, 1.42f, 0.38f), 80f, 15f, -10f, offHand: StaffHands, elbow: new(0.25f, 1.2f, 0.05f), offElbow: new(-0.2f, 1.1f, 0.05f))),
+                    Via(16, PoseAt(new(0.2f, 1.55f, 0.38f), 90f, 0f, -20f, offHand: StaffHands, elbow: new(0.25f, 1.25f, 0.05f), offElbow: new(-0.2f, 1.25f, 0.05f)), 0.4f)
+                },
+                WindupPose = PoseAt(new(0.18f, 1.48f, 0.38f), 100f, -5f, -5f, offHand: StaffHands, elbow: new(0.25f, 1.05f, 0f), offElbow: new(-0.15f, 1.1f, 0.1f)),
+                MidPose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.TwoHanded(new(0.12f, 1.05f, 0.15f), Vector3.back, StaffHands, 50f), new(0.25f, 1f, -0.1f), new(-0.1f, 1.05f, 0.25f)),
+                EndPose = PoseAt(new(0.1f, 0.98f, -0.04f), -155f, -10f, 70f, offHand: StaffReach, elbow: new(0.15f, 1f, -0.2f), offElbow: new(-0.08f, 1.05f, 0.15f)),
+                Return = new()
+                {
+                    Via(38, PoseAt(new(0.1f, 0.98f, -0.05f), -165f, -5f, 75f, offHand: StaffReach, elbow: new(0.15f, 1f, -0.22f), offElbow: new(-0.08f, 1.05f, 0.15f)), 0.5f),
+                    Via(44, PoseAt(new(0.1f, 0.98f, -0.05f), -170f, -5f, 70f, offHand: StaffReach, elbow: new(0.15f, 1f, -0.22f), offElbow: new(-0.08f, 1.05f, 0.15f)), 0.5f),
+                    Via(52, PoseAt(new(0.12f, 1.1f, 0.25f), 150f, 30f, 45f, elbow: new(0.25f, 1f, 0.05f))),
+                    Via(64, PoseAt(new(0.18f, 1.15f, 0.33f), 160f, 50f, 30f, elbow: new(0.22f, 1.02f, 0.05f))), Via(72, PoseAt(new(0.25f, 1.2f, 0.38f), 20f, 75f, 10f, elbow: new(0.22f, 1.02f, 0.05f)))
+                }
+            };
+            foreach (AttackDefinition attack in new[] { backhand, chop, riposte })
+            {
+                attack.ComboStart = attack.Windup + attack.Active * 0.5f;
+                attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
             }
-            definition.Attacks[0].Damage = 29;
-            definition.Attacks[1].Damage = 32;
-            definition.BlockMitigation = 0.6f;
-            definition.BlockBoxCenter = new Vector3(0f, 0f, 0.6f);
-            definition.BlockBoxExtents = new Vector3(0.06f, 0.06f, 0.6f);
 
-            return definition;
+            return new WeaponDefinition
+            {
+                Prefix = Staff,
+                DisplayName = "Magic Staff",
+                Kind = WeaponKind.TwoHanded,
+                IsRound = true,
+                Reach = 1.3f,
+                DeflectDuration = 0.8f,
+                BladeBase = StaffButtEnd,
+                BladeTip = 0.4f,
+                Strike = 0.3f,
+                Idle = idle,
+                Attacks = new[] { backhand, chop },
+                Riposte = riposte,
+                CanBlock = true,
+                BlockRaise = 0.25f,
+                BlockMitigation = 0.6f,
+                BlockImpact = 0.3f,
+                BlockRecovery = 0.45f,
+                BlockAngle = 80f,
+                BlockMove = 0.5f,
+                // The parry hold the riposte sets off from: across the chest, head up to the right.
+                Block = parry,
+                BlockHit = PoseAt(new(0.19f, 1.4f, 0.33f), 75f, 40f, pitch: -5f, offHand: StaffHands, elbow: new(0.25f, 1.15f, 0.03f), offElbow: new(-0.2f, 1f, 0.03f)),
+                BlockLowered = PoseAt(new(0.2f, 1.35f, 0.36f), 75f, 30f, offHand: StaffHands, elbow: new(0.25f, 1.12f, 0.03f), offElbow: new(-0.2f, 1f, 0.03f)),
+                DeflectPose = PoseAt(new(0.3f, 1.55f, 0.15f), 20f, 75f, 15f, -8f),
+                BlockSocket = WeaponSocket.RightHand,
+                BlockBoxCenter = new Vector3(0f, 0f, (StaffButtEnd + 0.4f) * 0.5f),
+                BlockBoxExtents = new Vector3(0.05f, 0.05f, (0.4f - StaffButtEnd) * 0.5f)
+            };
         }
 
-        private static void Spread(ref BodyPose pose)
+        /// The weapon's head direction as yaw (+ to the right) and elevation in degrees; no off hand keeps it one-handed.
+        private static BodyPose PoseAt(Vector3 grip, float yaw, float elevation, float torso = 0f, float pitch = 0f, float offHand = 0f,
+            Vector3 elbow = default, Vector3 offElbow = default)
         {
-            pose.Off.Position = pose.Main.Position + pose.Main.Forward * StaffGrip;
+            Vector3 blade = Quaternion.Euler(-elevation, yaw, 0f) * Vector3.forward;
+            BodyPose pose = offHand == 0f
+                ? BattleAnimationLibrary.OneHanded(grip, blade, torso, pitch)
+                : BattleAnimationLibrary.TwoHanded(grip, blade, offHand, torso, pitch);
+
+            return BattleAnimationLibrary.Elbows(pose, elbow, offElbow);
         }
 
         private static WeaponDefinition CreateCrossbow()

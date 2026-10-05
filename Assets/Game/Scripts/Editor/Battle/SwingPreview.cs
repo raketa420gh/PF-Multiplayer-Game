@@ -25,6 +25,9 @@ namespace Game.Scripts.Editor.Battle
         private const float UnderWay = 0.4f;
         private const float MaxWrist = 90f;
         private const float MaxReachMiss = 0.02f;
+        // Humanoid muscles run -1..1 between the avatar's limits; the clip clamps past that, and the forearm twists.
+        private const float MaxTwist = 1f;
+        private const float MaxElbowMiss = 30f;
 
         private sealed class Motion
         {
@@ -95,15 +98,15 @@ namespace Game.Scripts.Editor.Battle
             Transform offSocket = rig.Sockets[(int)poses[0].OffSocket];
             Vector3[] strike = new Vector3[poses.Length];
             Quaternion[] rotations = new Quaternion[poses.Length];
-            float[] worst = new float[5];
-            int[] worstFrame = new int[5];
-            StringBuilder table = new StringBuilder("frame | grip x y z | blade yaw elev | strike point x y z | reach miss main off | wrist main off | roll\n");
+            float[] worst = new float[9];
+            int[] worstFrame = new int[9];
+            StringBuilder table = new StringBuilder("frame | grip x y z | blade yaw elev | strike point x y z | reach miss main off | wrist main off | roll | elbow main x y z | elbow off x y z | twist main off | muscles main arm fore off arm fore\n");
 
             for (int frame = 0; frame < poses.Length; frame++)
             {
                 rig.Apply(poses[frame], frame);
                 Vector3 blade = socket.forward;
-                strike[frame] = socket.position + blade * weapon.StrikePoint;
+                strike[frame] = socket.position + blade * weapon.StrikeOf(attack);
                 rotations[frame] = socket.rotation;
                 (socket.rotation * Quaternion.Inverse(rotations[Mathf.Max(frame - 1, 0)])).ToAngleAxis(out float angle, out Vector3 axis);
 
@@ -113,8 +116,14 @@ namespace Game.Scripts.Editor.Battle
                     Vector3.Angle(offSocket.up, Forearm(animator, HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand)),
                     frame == 0 ? 0f : Mathf.Abs(Mathf.DeltaAngle(0f, angle) * Vector3.Dot(axis, blade)),
                     Vector3.Distance(socket.position, poses[frame].Main.Position),
-                    Vector3.Distance(offSocket.position, poses[frame].Off.Position)
+                    Vector3.Distance(offSocket.position, poses[frame].Off.Position),
+                    Twist(rig, "Right"),
+                    Twist(rig, "Left"),
+                    ElbowMiss(animator, HumanBodyBones.RightUpperArm, HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand, poses[frame].Main),
+                    ElbowMiss(animator, HumanBodyBones.LeftUpperArm, HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand, poses[frame].Off)
                 };
+                Vector3 elbow = animator.GetBoneTransform(HumanBodyBones.RightLowerArm).position;
+                Vector3 offElbow = animator.GetBoneTransform(HumanBodyBones.LeftLowerArm).position;
 
                 for (int i = 0; i < values.Length; i++)
                 {
@@ -126,7 +135,7 @@ namespace Game.Scripts.Editor.Battle
                 }
 
                 table.AppendLine(FormattableString.Invariant(
-                    $"{frame,3} | {socket.position.x,5:0.00} {socket.position.y,5:0.00} {socket.position.z,5:0.00} | {Mathf.Atan2(blade.x, blade.z) * Mathf.Rad2Deg,5:0} {Mathf.Asin(blade.y) * Mathf.Rad2Deg,4:0} | {strike[frame].x,5:0.00} {strike[frame].y,5:0.00} {strike[frame].z,5:0.00} | {values[3]:0.00} {values[4]:0.00} | {values[0],3:0} {values[1],3:0} | {values[2],3:0}"));
+                    $"{frame,3} | {socket.position.x,5:0.00} {socket.position.y,5:0.00} {socket.position.z,5:0.00} | {Mathf.Atan2(blade.x, blade.z) * Mathf.Rad2Deg,5:0} {Mathf.Asin(blade.y) * Mathf.Rad2Deg,4:0} | {strike[frame].x,5:0.00} {strike[frame].y,5:0.00} {strike[frame].z,5:0.00} | {values[3]:0.00} {values[4]:0.00} | {values[0],3:0} {values[1],3:0} | {values[2],3:0} | {elbow.x,5:0.00} {elbow.y,5:0.00} {elbow.z,5:0.00} | {offElbow.x,5:0.00} {offElbow.y,5:0.00} {offElbow.z,5:0.00} | {values[5],4:0.00} {values[6],4:0.00} | {Signed(rig, "Right Arm Twist In-Out"),5:0.00} {Signed(rig, "Right Forearm Twist In-Out"),5:0.00} {Signed(rig, "Left Arm Twist In-Out"),5:0.00} {Signed(rig, "Left Forearm Twist In-Out"),5:0.00}"));
             }
 
             keyFrames = motion.Keys.Select(key => Mathf.RoundToInt(key.Time * FrameRate)).Distinct().ToArray();
@@ -140,7 +149,7 @@ namespace Game.Scripts.Editor.Battle
                     $", active {attack.Windup * FrameRate:0.#}-{(attack.Windup + attack.Active) * FrameRate:0.#}, peak {BattleAnimationLibrary.PeakTime(attack) * FrameRate:0}"));
                 Flag(summary, "peak misses the crosshair by", PeakMiss(weapon, attack, socket, rig, poses), MaxPeakMiss, -1, "0.000 m");
 
-                if (BattleAnimationLibrary.IsCut(weapon, attack) && !weapon.IsUnarmed)
+                if (BattleAnimationLibrary.IsCut(weapon, attack) && !weapon.IsUnarmed && !weapon.IsRound)
                     Flag(summary, "edge off the path of the cut by", Lean(attack, strike, rotations), MaxLean, -1, "0 deg");
             }
 
@@ -149,6 +158,10 @@ namespace Game.Scripts.Editor.Battle
             Flag(summary, "weapon spins within a frame", worst[2], MaxRoll, worstFrame[2], "0 deg");
             Flag(summary, "main hand short of its target by", worst[3], MaxReachMiss, worstFrame[3], "0.00 m");
             Flag(summary, "off hand short of its target by", worst[4], MaxReachMiss, worstFrame[4], "0.00 m");
+            Flag(summary, "main arm twist muscle at", worst[5], MaxTwist, worstFrame[5], "0.00");
+            Flag(summary, "off arm twist muscle at", worst[6], MaxTwist, worstFrame[6], "0.00");
+            Flag(summary, "main elbow off the authored one by", worst[7], MaxElbowMiss, worstFrame[7], "0 deg");
+            Flag(summary, "off elbow off the authored one by", worst[8], MaxElbowMiss, worstFrame[8], "0 deg");
 
             return summary.ToString();
         }
@@ -157,6 +170,37 @@ namespace Game.Scripts.Editor.Battle
         {
             string at = frame >= 0 ? $" at {frame}" : string.Empty;
             summary.Append($"\n  {(value > limit ? "FAIL" : "ok  ")} {what} {value.ToString(format, System.Globalization.CultureInfo.InvariantCulture)}{at}");
+        }
+
+        /// The larger of the arm's and the forearm's twist muscles, as the clip will store them: past 1 the avatar clamps
+        /// the roll and the forearm reads as wrung.
+        private static float Twist(BattlePoseRig rig, string side)
+        {
+            float[] muscles = rig.Capture().muscles;
+
+            return Mathf.Max(Mathf.Abs(muscles[Muscle($"{side} Forearm Twist In-Out")]), Mathf.Abs(muscles[Muscle($"{side} Arm Twist In-Out")]));
+        }
+
+        private static float Signed(BattlePoseRig rig, string muscle)
+        {
+            return rig.Capture().muscles[Muscle(muscle)];
+        }
+
+        private static int Muscle(string name)
+        {
+            return Array.IndexOf(HumanTrait.MuscleName, name);
+        }
+
+        /// How far round the swivel circle (about the shoulder-to-wrist line) the solved elbow is from the authored one:
+        /// the authored elbow need not be at arm's length, only on the right side.
+        private static float ElbowMiss(Animator animator, HumanBodyBones upperArm, HumanBodyBones lowerArm, HumanBodyBones hand, in HandPose pose)
+        {
+            Vector3 shoulder = animator.GetBoneTransform(upperArm).position;
+            Vector3 axis = animator.GetBoneTransform(hand).position - shoulder;
+            Vector3 authored = Vector3.ProjectOnPlane(pose.Elbow - shoulder, axis);
+            Vector3 solved = Vector3.ProjectOnPlane(animator.GetBoneTransform(lowerArm).position - shoulder, axis);
+
+            return pose.ElbowWeight > 0.99f && authored.sqrMagnitude > 1e-4f && solved.sqrMagnitude > 1e-4f ? Vector3.Angle(solved, authored) : 0f;
         }
 
         private static Vector3 Forearm(Animator animator, HumanBodyBones lowerArm, HumanBodyBones hand)
@@ -208,6 +252,13 @@ namespace Game.Scripts.Editor.Battle
 
         private static void Shoot(string prefix, string swing, string[] views, int[] frames, string folder, int size)
         {
+            // Renders of earlier keys would be picked up by footage.py as frames of this motion.
+            foreach (string view in views)
+            {
+                foreach (string stale in Directory.GetFiles(folder, $"g_{swing}_{view}_*.png"))
+                    File.Delete(stale);
+            }
+
             WeaponConfig config = AssetDatabase.LoadAssetAtPath<WeaponConfig>($"{BattleEditorUtility.ConfigsFolder}/{prefix}.asset");
             GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
             floor.transform.position = new Vector3(0f, -0.02f, 0f);

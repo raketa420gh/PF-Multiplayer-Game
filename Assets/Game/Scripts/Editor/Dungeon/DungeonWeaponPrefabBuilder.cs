@@ -264,14 +264,13 @@ namespace Game.Scripts.Editor.Dungeon
         public static GameObject BuildStaff()
         {
             const int steps = 16;
-            const float crystalZ = 1.05f;
+            const float crystalZ = 0.33f;
 
             Material wood = WeaponMaterials.DarkWood;
             Material crystal = BattleEditorUtility.GetUnlitMaterial("Crystal", new Color(0.5f, 0.75f, 1f, 0.9f));
             GameObject root = new GameObject("Staff");
-            // Gripped a third of the way up and tilted away from the face so the crystal sits at the upper right of the view.
+            // Gripped a third of the way down from the head, like a walking stick.
             Transform parent = BattleEditorUtility.CreateChild("Grip", root.transform, Vector3.zero).transform;
-            parent.localRotation = Quaternion.Euler(-35f, 25f, 0f);
             WeaponMesh mesh = new WeaponMesh();
             List<Vector3> path = new(steps + 1);
             List<Vector2> radii = new(steps + 1);
@@ -280,7 +279,7 @@ namespace Game.Scripts.Editor.Dungeon
             for (int i = 0; i <= steps; i++)
             {
                 float t = (float)i / steps;
-                float z = Mathf.Lerp(-0.48f, 0.95f, t);
+                float z = Mathf.Lerp(-1.2f, 0.23f, t);
                 float knot = 1f + 0.16f * Mathf.Max(0f, Mathf.Sin(t * 23f)) * Mathf.Max(0f, Mathf.Sin(t * 7f + 1f));
                 float radius = Mathf.Lerp(0.0165f, 0.021f, t * t) * knot;
                 float sway = Mathf.Clamp01((t - 0.42f) / 0.4f);
@@ -289,7 +288,7 @@ namespace Game.Scripts.Editor.Dungeon
             }
 
             mesh.Tube(wood, path, radii, 8, Vector3.up);
-            mesh.Revolve(WeaponMaterials.Iron, new[] { new Vector2(-0.52f, 0.008f), new Vector2(-0.5f, 0.018f), new Vector2(-0.45f, 0.0185f) }, 8);
+            mesh.Revolve(WeaponMaterials.Iron, new[] { new Vector2(-1.24f, 0.008f), new Vector2(-1.22f, 0.018f), new Vector2(-1.17f, 0.0185f) }, 8);
             WeaponParts.Grip(mesh, WeaponMaterials.DarkLeather, -0.07f, 0.09f, 0.019f, 0.03f, 0.96f);
 
             // Four roots of the head close around the crystal.

@@ -614,11 +614,11 @@ namespace Game.Scripts.Editor.Battle
                     Play(state, Mathf.Min(i / BattleAnimationBuilder.FrameRate, attack.Duration) / attack.Duration);
                     traceBase.Add(socket.TransformPoint(0f, 0f, weapon.BladeBase));
                     traceTip.Add(socket.TransformPoint(0f, 0f, weapon.BladeTip));
-                    strike[i] = socket.TransformPoint(0f, 0f, weapon.StrikePoint);
+                    strike[i] = socket.TransformPoint(0f, 0f, weapon.StrikeOf(attack));
                     rotations[i] = socket.rotation;
                 }
 
-                CheckSwing(state, attack, BattleAnimationLibrary.IsCut(weapon, attack) && !weapon.IsUnarmed, strike, rotations);
+                CheckSwing(state, attack, BattleAnimationLibrary.IsCut(weapon, attack) && !weapon.IsUnarmed && !weapon.IsRound, strike, rotations);
             }
 
             /// The weapon must not spin about its own axis between two frames, and while a cut is active and under way its
