@@ -104,7 +104,11 @@ namespace Game.Scripts.Dungeon
         public WeaponClass[] AllowedWeapons => _allowedWeapons;
         public ArmorType[] AllowedArmor => _allowedArmor;
         public const int SpellWheelSize = 5;
-        public const int DefaultSpellMask = (1 << SpellWheelSize) - 1;
+        /// The spell mask keeps a wheel in each half: bit i is spell i in wheel I, bit WheelBits + i is spell i in wheel II.
+        public const int WheelBits = 16;
+        public const int WheelCount = 2;
+        /// The first five spells in wheel I, the next five in wheel II.
+        public const int DefaultSpellMask = ((1 << SpellWheelSize) - 1) | (((1 << SpellWheelSize) - 1) << (SpellWheelSize + WheelBits));
 
         public bool CanCastBareHanded => _castFocus == CastFocus.BareHands;
         public CastFocus Focus => _castFocus;
@@ -147,6 +151,16 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private CastFocus _castFocus;
+
+        public static int WheelBit(int wheel, int spell)
+        {
+            return 1 << (wheel * WheelBits + spell);
+        }
+
+        public static bool IsInWheel(int mask, int wheel, int spell)
+        {
+            return (mask & WheelBit(wheel, spell)) != 0;
+        }
 
         public bool CanUseWeapon(WeaponClass weaponClass)
         {

@@ -7,6 +7,7 @@ namespace Game.Scripts.Battle
 {
     /// Writes clip edits into their clips: every 60 Hz frame of the untouched source is posed on a character, the edited bones
     /// are turned, and the human pose read back replaces the body muscles and the root of the clip. Finger curves stay as generated.
+    /// The character must come with its hand sockets at rest.
     public static class AnimationEditBaker
     {
         public const string ConfigPath = "Assets/Game/Configs/Battle/AnimationEdits.asset";
@@ -123,18 +124,25 @@ namespace Game.Scripts.Battle
             Vector3 headScale = head.localScale;
             head.localScale = Vector3.one;
 
-            // Holding grips move the weapon socket under the hand; its local pose goes into the clip as a transform curve.
-            List<HandGrip> holds = new List<HandGrip>();
+            // Socket tracks and holding grips move the weapon socket under the hand; its local pose goes into the clip as a
+            // transform curve. Both start from the socket at rest, so it is put back before every frame.
+            List<Transform> moved = new List<Transform>();
+            List<Pose> rests = new List<Pose>();
 
-            foreach (HandGrip grip in edit.Grips)
+            foreach (HumanBodyBones hand in new[] { HumanBodyBones.LeftHand, HumanBodyBones.RightHand })
             {
-                if (grip.IsHolding && HandGrip.GetSocket(animator, grip.Hand) != null)
-                    holds.Add(grip);
+                Transform socket = HandGrip.GetSocket(animator, hand);
+
+                if (socket == null || (edit.Find(hand, true) == null && edit.FindGrip(hand) is not { IsHolding: true }))
+                    continue;
+
+                moved.Add(socket);
+                rests.Add(new Pose(socket.localPosition, socket.localRotation));
             }
 
-            AnimationCurve[,] sockets = new AnimationCurve[holds.Count, s_socketCurves.Length];
+            AnimationCurve[,] sockets = new AnimationCurve[moved.Count, s_socketCurves.Length];
 
-            for (int i = 0; i < holds.Count; i++)
+            for (int i = 0; i < moved.Count; i++)
             {
                 for (int j = 0; j < s_socketCurves.Length; j++)
                     sockets[i, j] = new AnimationCurve();
@@ -142,7 +150,9 @@ namespace Game.Scripts.Battle
 
             using HumanPoseHandler handler = new HumanPoseHandler(animator.avatar, animator.transform);
             HumanPose pose = new HumanPose { muscles = new float[HumanTrait.MuscleCount] };
+            float[] reference = new float[HumanTrait.MuscleCount];
             Quaternion previous = Quaternion.identity;
+            Quaternion[] previousSockets = new Quaternion[moved.Count];
 
             for (int frame = 0; frame <= frames; frame++)
             {
@@ -153,9 +163,15 @@ namespace Game.Scripts.Battle
 
                 pose.bodyPosition = new Vector3(root[0].Evaluate(time), root[1].Evaluate(time), root[2].Evaluate(time));
                 pose.bodyRotation = new Quaternion(root[3].Evaluate(time), root[4].Evaluate(time), root[5].Evaluate(time), root[6].Evaluate(time)).normalized;
+                pose.muscles.CopyTo(reference, 0);
                 handler.SetHumanPose(ref pose);
+
+                for (int i = 0; i < moved.Count; i++)
+                    moved[i].SetLocalPositionAndRotation(rests[i].position, rests[i].rotation);
+
                 edit.Apply(animator, isLoop && frame == frames ? 0f : frame);
                 handler.GetHumanPose(ref pose);
+                JointLimits.Clamp(pose.muscles, reference);
 
                 Quaternion rotation = pose.bodyRotation;
 
@@ -172,11 +188,17 @@ namespace Game.Scripts.Battle
                 for (int i = 0; i < bakedRoot.Length; i++)
                     bakedRoot[i].AddKey(time, values[i]);
 
-                for (int i = 0; i < holds.Count; i++)
+                for (int i = 0; i < moved.Count; i++)
                 {
-                    Transform socket = HandGrip.GetSocket(animator, holds[i].Hand);
-                    Vector3 p = socket.localPosition;
-                    Quaternion q = socket.localRotation;
+                    Vector3 p = moved[i].localPosition;
+                    Quaternion q = moved[i].localRotation;
+
+                    // Same hemisphere as the frame before: a flipped sign is the same pose on a key, but the curves between
+                    // the keys would spin the weapon the long way round once the clip plays at the game's frame rate.
+                    if (frame > 0 && Quaternion.Dot(previousSockets[i], q) < 0f)
+                        q = new Quaternion(-q.x, -q.y, -q.z, -q.w);
+
+                    previousSockets[i] = q;
                     float[] local = { p.x, p.y, p.z, q.x, q.y, q.z, q.w };
 
                     for (int j = 0; j < local.Length; j++)
@@ -192,9 +214,10 @@ namespace Game.Scripts.Battle
             for (int i = 0; i < bakedRoot.Length; i++)
                 SetCurve(clip, s_rootCurves[i], bakedRoot[i]);
 
-            for (int i = 0; i < holds.Count; i++)
+            for (int i = 0; i < moved.Count; i++)
             {
-                string path = AnimationUtility.CalculateTransformPath(HandGrip.GetSocket(animator, holds[i].Hand), animator.transform);
+                moved[i].SetLocalPositionAndRotation(rests[i].position, rests[i].rotation);
+                string path = AnimationUtility.CalculateTransformPath(moved[i], animator.transform);
 
                 for (int j = 0; j < s_socketCurves.Length; j++)
                     SetCurve(clip, EditorCurveBinding.FloatCurve(path, typeof(Transform), s_socketCurves[j]), sockets[i, j]);

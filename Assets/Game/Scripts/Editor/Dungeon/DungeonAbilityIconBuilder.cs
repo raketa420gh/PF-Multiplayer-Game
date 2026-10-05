@@ -130,6 +130,34 @@ namespace Game.Scripts.Editor.Dungeon
                 new Layer(0.12f, p => Mathf.Min(Circle(Mirror(p), 0.25f, 0.12f, 0.17f), Polygon(p, new Vector2(-0.09f, -0.22f), new Vector2(0.09f, -0.22f), new Vector2(0f, -0.04f)))),
                 new Layer(0.12f, p => Mathf.Min(Box(p, 0f, -0.56f, 0.02f, 0.14f), Box(Mirror(p), 0.15f, -0.56f, 0.02f, 0.14f)))
             },
+            ["Lightning"] = new[]
+            {
+                new Layer(1f, p => Mathf.Min(Polygon(p, new Vector2(0.1f, 0.9f), new Vector2(-0.45f, -0.05f), new Vector2(0.05f, -0.05f)),
+                    Polygon(p, new Vector2(-0.1f, 0.12f), new Vector2(-0.12f, -0.9f), new Vector2(0.45f, 0.12f)))),
+                new Layer(1.7f, p => Segment(p, new Vector2(0.02f, 0.62f), new Vector2(-0.2f, 0.1f), 0.04f))
+            },
+            ["Flame"] = new[]
+            {
+                new Layer(1f, p => Mathf.Min(Drop(p, 0f, -0.18f, 1.05f), Mathf.Min(Drop(p, -0.36f, -0.1f, 0.55f), Drop(p, 0.38f, -0.06f, 0.5f)))),
+                new Layer(1.75f, p => Drop(p, 0f, -0.34f, 0.5f))
+            },
+            ["Snowflake"] = new[]
+            {
+                new Layer(1f, p =>
+                {
+                    float distance = Circle(p, 0f, 0f, 0.14f);
+
+                    for (int i = 0; i < 6; i++)
+                    {
+                        Vector2 arm = Rotate(p, i * 60f);
+                        distance = Mathf.Min(distance, Mathf.Min(Segment(arm, Vector2.zero, new Vector2(0f, 0.82f), 0.06f),
+                            Segment(Mirror(arm), new Vector2(0f, 0.48f), new Vector2(0.2f, 0.68f), 0.045f)));
+                    }
+
+                    return distance;
+                }),
+                new Layer(1.75f, p => Circle(p, 0f, 0f, 0.1f))
+            },
             ["Hourglass"] = new[]
             {
                 new Layer(1f, p => Mathf.Min(Polygon(p, new Vector2(-0.5f, 0.7f), new Vector2(0f, 0f), new Vector2(0.5f, 0.7f)),

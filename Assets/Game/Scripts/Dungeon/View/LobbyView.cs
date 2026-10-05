@@ -23,6 +23,9 @@ namespace Game.Scripts.Dungeon
         private MerchantsView _merchants;
 
         [SerializeField]
+        private StashPagesView _stashPages;
+
+        [SerializeField]
         private Button[] _tabs;
 
         [SerializeField, Tooltip("Indexed like the tabs")]
@@ -75,9 +78,7 @@ namespace Game.Scripts.Dungeon
             _home.Bind(session);
             _skills.Bind(session, _previewStats);
             _merchants.Bind(session);
-
-            if (session != null)
-                _inventory.SetOther(session.Stash, "Stash");
+            _stashPages.Bind(session);
         }
 
         private void SelectTab(int index)

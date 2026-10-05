@@ -59,7 +59,7 @@ namespace Game.Scripts.Dungeon
         private Button _wipeButton;
 
         [SerializeField]
-        private Button _classButton;
+        private Button _charactersButton;
 
         [SerializeField]
         private GameObject _resultRoot;
@@ -77,7 +77,7 @@ namespace Game.Scripts.Dungeon
             _startButton.onClick.AddListener(StartRun);
             _resetKitButton.onClick.AddListener(() => { Click(); _session?.RpcResetKit(); });
             _wipeButton.onClick.AddListener(Wipe);
-            _classButton.onClick.AddListener(NextClass);
+            _charactersButton.onClick.AddListener(ToCharacters);
             ShowDestination(0);
         }
 
@@ -159,16 +159,16 @@ namespace Game.Scripts.Dungeon
             SceneTravel.Load(_session.Runner, destination.Scene, destination.Title);
         }
 
-        private void NextClass()
+        /// Back to the character select; the class of a character is fixed when it is created.
+        private void ToCharacters()
         {
             Click();
 
             if (_session == null)
                 return;
 
-            ClassConfig[] classes = _context.Classes;
-            int index = Array.IndexOf(classes, _session.Class);
-            _session.RpcSelectClass(classes[(index + 1) % classes.Length].Id);
+            _session.SaveLocal();
+            SceneTravel.Load(_session.Runner, SceneTravel.CharacterSelectScene, SceneTravel.CharacterSelectTitle);
         }
 
         private void Wipe()

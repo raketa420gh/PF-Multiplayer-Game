@@ -19,6 +19,7 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonSceneBuilder.Build();
             BattleSceneBuilder.Build();
             LobbySceneBuilder.Build();
+            CharacterSelectSceneBuilder.Build();
         }
 
         [MenuItem("Tools/Game/Dungeon/Build Audio")]
@@ -64,6 +65,12 @@ namespace Game.Scripts.Editor.Dungeon
         public static void BuildLobbyScene()
         {
             LobbySceneBuilder.Build();
+        }
+
+        [MenuItem("Tools/Game/Dungeon/Build Character Select Scene")]
+        public static void BuildCharacterSelectScene()
+        {
+            CharacterSelectSceneBuilder.Build();
         }
     }
 }

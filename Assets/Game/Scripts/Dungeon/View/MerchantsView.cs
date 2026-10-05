@@ -211,7 +211,7 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
-            if (!_session.Stash.HasRoom(ware.Item))
+            if (!_session.HasRoomInStash(ware.Item))
             {
                 SetStatus("The stash is full", false);
 

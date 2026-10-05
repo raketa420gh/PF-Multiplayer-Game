@@ -106,6 +106,124 @@ namespace Game.Scripts.Editor.Dungeon
             return canvasObject;
         }
 
+        /// UI of the character select scene: the tavern backdrop with the slot list and the creation page on top.
+        public static GameObject BuildCharacterSelectScene(Inputs inputs, ClassConfig[] classes)
+        {
+            Vector2 center = new Vector2(0.5f, 0.5f);
+            GameObject canvasObject = BuildCanvas(inputs, out Canvas _);
+            Transform root = canvasObject.transform;
+
+            RawImage backdrop = CreateRect("Backdrop", root, center, Vector2.zero, Vector2.zero).gameObject.AddComponent<RawImage>();
+            Stretch(backdrop.rectTransform, 0f);
+            AspectRatioFitter fitter = backdrop.gameObject.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            fitter.aspectRatio = 16f / 9f;
+            CharacterPreviewView preview = BuildPreview(backdrop, inputs, 6, 1920, 1080, out Camera camera);
+            BuildTavern(camera, preview);
+            Image vignette = CreateImage("Vignette", root, center, Vector2.zero, Vector2.zero, Color.white);
+            vignette.sprite = DungeonUiSpriteBuilder.Load("Vignette");
+            Stretch(vignette.rectTransform, 0f);
+
+            RectTransform selectPage = CharacterPage(root, "Select", "Select Character", "Enter Tavern", "Delete",
+                out TMP_Text selectName, out Button enter, out Button delete);
+            Button[] slots = new Button[StashService.SlotCount];
+            TMP_Text[] slotTexts = new TMP_Text[slots.Length];
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                slots[i] = CharacterCard(selectPage, "Slot" + i, i, string.Empty);
+                slotTexts[i] = slots[i].GetComponentInChildren<TMP_Text>();
+            }
+
+            CharacterSelectView select = selectPage.gameObject.AddComponent<CharacterSelectView>();
+            SerializedObject so = new SerializedObject(select);
+            BattleEditorUtility.Set(so, "_classes", classes);
+            BattleEditorUtility.Set(so, "_preview", preview);
+            BattleEditorUtility.Set(so, "_slots", slots);
+            BattleEditorUtility.Set(so, "_slotTexts", slotTexts);
+            BattleEditorUtility.Set(so, "_nameText", selectName);
+            BattleEditorUtility.Set(so, "_enterButton", enter);
+            BattleEditorUtility.Set(so, "_deleteButton", delete);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            RectTransform createPage = CharacterPage(root, "Create", "Create Character", "Create", "Back",
+                out TMP_Text className, out Button create, out Button back);
+            Button[] classButtons = new Button[classes.Length];
+
+            for (int i = 0; i < classes.Length; i++)
+                classButtons[i] = CharacterCard(createPage, "Class" + classes[i].DisplayName, i, classes[i].DisplayName);
+
+            RectTransform info = CreateRect("Info", createPage, Vector2.one, new Vector2(-56f, -140f), new Vector2(520f, 240f));
+            CreateImage("Frame", info, center, Vector2.zero, Vector2.zero, s_frame).rectTransform.StretchFill();
+            Stretch(CreateImage("Back", info, center, Vector2.zero, Vector2.zero, s_panel).rectTransform, 2f);
+            TMP_Text description = CreateText("Text", info, center, Vector2.zero, Vector2.zero, 19f, TextAlignmentOptions.TopLeft);
+            Stretch(description.rectTransform, 22f);
+            description.color = s_text;
+
+            CharacterCreateView createView = createPage.gameObject.AddComponent<CharacterCreateView>();
+            so = new SerializedObject(createView);
+            BattleEditorUtility.Set(so, "_classes", classes);
+            BattleEditorUtility.Set(so, "_preview", preview);
+            BattleEditorUtility.Set(so, "_classButtons", classButtons);
+            BattleEditorUtility.Set(so, "_nameText", className);
+            BattleEditorUtility.Set(so, "_descriptionText", description);
+            BattleEditorUtility.Set(so, "_createButton", create);
+            BattleEditorUtility.Set(so, "_backButton", back);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            LoadingView loading = BuildLoading(root, SceneTravel.CharacterSelectTitle);
+            so = new SerializedObject(canvasObject.AddComponent<CharacterSelectUiRoot>());
+            BattleEditorUtility.Set(so, "_select", select);
+            BattleEditorUtility.Set(so, "_create", createView);
+            BattleEditorUtility.Set(so, "_loading", loading);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            // Only one page may bind the shared preview on the first frame.
+            createPage.gameObject.SetActive(false);
+            BattleEditorUtility.SetLayerRecursively(canvasObject, LayerMask.NameToLayer("UI"));
+
+            return canvasObject;
+        }
+
+        /// Full-screen page of the character screens: title top left, name under the top edge, the main button bottom middle
+        /// and the secondary one bottom left.
+        private static RectTransform CharacterPage(Transform root, string name, string title, string mainLabel, string secondLabel,
+            out TMP_Text nameText, out Button main, out Button second)
+        {
+            RectTransform page = CreateRect(name, root, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            Stretch(page, 0f);
+            TMP_Text titleText = CreateText("Title", page, new Vector2(0f, 1f), new Vector2(56f, -48f), new Vector2(600f, 60f), 34f, TextAlignmentOptions.MidlineLeft);
+            titleText.text = title;
+            titleText.color = s_gold;
+            titleText.fontStyle = FontStyles.Bold;
+            CreateImage("TitleRule", page, new Vector2(0f, 1f), new Vector2(56f, -112f), new Vector2(380f, 2f), s_frame);
+
+            nameText = CreateText("Name", page, new Vector2(0.5f, 1f), new Vector2(0f, -150f), new Vector2(900f, 60f), 36f, TextAlignmentOptions.Center);
+            nameText.color = s_text;
+            CreateImage("NameRule", page, new Vector2(0.5f, 1f), new Vector2(0f, -214f), new Vector2(260f, 2f), s_frame);
+
+            main = CreateButton(mainLabel, page, new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(360f, 86f), mainLabel);
+            main.image.color = new Color(0.17f, 0.16f, 0.15f, 0.97f);
+            main.GetComponentInChildren<TMP_Text>().fontSize = 32f;
+            second = CreateButton(secondLabel, page, Vector2.zero, new Vector2(56f, 40f), new Vector2(220f, 64f), secondLabel);
+            second.GetComponentInChildren<TMP_Text>().fontSize = 22f;
+
+            return page;
+        }
+
+        /// Row of the left column: a character slot or a class.
+        private static Button CharacterCard(RectTransform page, string name, int row, string label)
+        {
+            Button card = CreateButton(name, page, new Vector2(0f, 1f), new Vector2(56f, -140f - row * 108f), new Vector2(380f, 96f), label);
+            TMP_Text text = card.GetComponentInChildren<TMP_Text>();
+            text.fontSize = 24f;
+            text.alignment = TextAlignmentOptions.MidlineLeft;
+            text.margin = new Vector4(22f, 0f, 12f, 0f);
+            text.color = s_text;
+
+            return card;
+        }
+
         private static GameObject BuildCanvas(Inputs inputs, out Canvas canvas)
         {
             BattleEditorUtility.EnsureLayer(PreviewLayer);
@@ -773,6 +891,7 @@ namespace Game.Scripts.Editor.Dungeon
             inventoryRect.anchorMin = inventoryRect.anchorMax = inventoryRect.pivot = new Vector2(0.5f, 1f);
             inventoryRect.anchoredPosition = new Vector2(0f, -60f);
             inventory.transform.Find("Hints").gameObject.SetActive(false);
+            StashPagesView stashPages = BuildStashPages(inventory);
             MerchantsView merchants = BuildMerchants(panel);
 
             // Top bar: rank shield and the page tabs, each marked by a diamond tick on the rule.
@@ -815,8 +934,48 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_inventoryPreview", preview);
             BattleEditorUtility.Set(so, "_tabs", tabs);
             BattleEditorUtility.Set(so, "_merchants", merchants);
+            BattleEditorUtility.Set(so, "_stashPages", stashPages);
             BattleEditorUtility.Set(so, "_pages", new DisplayableView[] { home, skills, inventory, merchants });
             BattleEditorUtility.Set(so, "_rankText", rank);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            return view;
+        }
+
+        /// Stash page tabs under the stash grid and the sell counter below them.
+        private static StashPagesView BuildStashPages(InventoryView inventory)
+        {
+            Transform other = inventory.transform.Find("OtherPanel");
+            Vector2 topLeft = new Vector2(0f, 1f);
+            Button[] tabs = new Button[PlayerSessionComponent.StashPages];
+
+            for (int i = 0; i < tabs.Length; i++)
+            {
+                tabs[i] = CreateButton("Page" + (i + 1), other, topLeft, new Vector2(16f + i * 96f, -284f), new Vector2(88f, 34f), $"Page {i + 1}");
+                ((RectTransform)tabs[i].transform).pivot = topLeft;
+                tabs[i].gameObject.AddComponent<ItemDropZone>();
+            }
+
+            TMP_Text coins = CreateText("Coins", other, new Vector2(1f, 1f), new Vector2(-16f, -284f), new Vector2(240f, 34f), 18f, TextAlignmentOptions.MidlineRight);
+            coins.rectTransform.pivot = new Vector2(1f, 1f);
+            coins.color = s_gold;
+
+            Image counter = CreateImage("Sell", other, topLeft, new Vector2(16f, -334f), new Vector2(648f, 88f), new Color(0.12f, 0.09f, 0.05f, 0.95f));
+            counter.rectTransform.pivot = topLeft;
+            counter.raycastTarget = true;
+            ItemDropZone sellZone = counter.gameObject.AddComponent<ItemDropZone>();
+            CreateImage("Frame", counter.rectTransform, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(648f, 2f), s_frame).rectTransform.pivot = new Vector2(0.5f, 1f);
+            TMP_Text sellText = CreateText("Text", counter.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, 20f, TextAlignmentOptions.Center);
+            Stretch(sellText.rectTransform, 8f);
+            sellText.color = new Color(0.85f, 0.8f, 0.7f);
+
+            StashPagesView view = other.gameObject.AddComponent<StashPagesView>();
+            SerializedObject so = new SerializedObject(view);
+            BattleEditorUtility.Set(so, "_inventory", inventory);
+            BattleEditorUtility.Set(so, "_tabs", tabs);
+            BattleEditorUtility.Set(so, "_sellZone", sellZone);
+            BattleEditorUtility.Set(so, "_sellText", sellText);
+            BattleEditorUtility.Set(so, "_coinsText", coins);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;
@@ -909,7 +1068,7 @@ namespace Game.Scripts.Editor.Dungeon
                 return button;
             }
 
-            Button classButton = Tool("ChangeClass", "Change\nClass", "Cls", 0);
+            Button characters = Tool("Characters", "Change\nCharacter", "Chr", 0);
             Button wipe = Tool("Wipe", "Wipe\nSave", "Wipe", 1);
             Button reset = Tool("ResetKit", "Squire\nKit", "Kit", 2);
 
@@ -938,7 +1097,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_startButton", start);
             BattleEditorUtility.Set(so, "_resetKitButton", reset);
             BattleEditorUtility.Set(so, "_wipeButton", wipe);
-            BattleEditorUtility.Set(so, "_classButton", classButton);
+            BattleEditorUtility.Set(so, "_charactersButton", characters);
             BattleEditorUtility.Set(so, "_resultRoot", resultBack.gameObject);
             BattleEditorUtility.Set(so, "_resultText", result);
             so.FindProperty("_destinations").arraySize = destinations.Length;
@@ -1070,6 +1229,11 @@ namespace Game.Scripts.Editor.Dungeon
             RectTransform perks = Section("Perks", -28f);
             RectTransform skillRoot = Section("Skills", -336f);
             RectTransform spells = Section("Spells", -644f);
+            // Ten spells in two rows of five; the title tells how they go into the two wheels.
+            GridLayoutGroup spellLayout = spells.GetComponent<GridLayoutGroup>();
+            spellLayout.cellSize = new Vector2(84f, 84f);
+            spellLayout.spacing = new Vector2(10f, 12f);
+            pool.rectTransform.Find("SpellsTitle").GetComponent<TMP_Text>().text = "Spells  <size=70%>L Click wheel I · R Click wheel II</size>";
             AbilityIconView perkIcon = AbilityIcon("PerkIcon", page, center, Vector2.zero, "Diamond", 104f);
             AbilityIconView skillIcon = AbilityIcon("SkillIcon", page, center, Vector2.zero, "Square", 88f);
             perkIcon.gameObject.SetActive(false);

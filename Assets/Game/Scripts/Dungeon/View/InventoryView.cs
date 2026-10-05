@@ -70,6 +70,7 @@ namespace Game.Scripts.Dungeon
         private bool _allowWorldDrop;
         private ItemView _dragged;
         private ItemView _tooltipItem;
+        private ItemDropZone _hoveredZone;
         private readonly List<RaycastResult> _raycastResults = new();
 
         private void Awake()
@@ -168,6 +169,14 @@ namespace Game.Scripts.Dungeon
             foreach (EquipSlotView view in _slots)
                 view.SetHighlight(false, false);
 
+            ItemDropZone zone = FindDropZone(eventData);
+
+            if (zone != _hoveredZone)
+                _hoveredZone?.Preview(null);
+
+            _hoveredZone = zone;
+            zone?.Preview(_dragged);
+
             if (grid != null && grid.Inventory != null && grid.TryGetCell(eventData.position, _canvas.worldCamera, out int x, out int y))
             {
                 x -= _dragged.GrabCell.x;
@@ -190,10 +199,22 @@ namespace Game.Scripts.Dungeon
             foreach (EquipSlotView view in _slots)
                 view.SetHighlight(false, false);
 
+            _hoveredZone?.Preview(null);
+            _hoveredZone = null;
+
             if (_dragged != item || _actions == null)
                 return;
 
             _dragged = null;
+            ItemDropZone zone = FindDropZone(eventData);
+
+            if (zone != null)
+            {
+                zone.Drop(item);
+
+                return;
+            }
+
             ItemGridView grid = FindUnderPointer<ItemGridView>(eventData, out EquipSlotView slot);
 
             if (grid != null && grid.TryGetCell(eventData.position, _canvas.worldCamera, out int x, out int y))
@@ -369,6 +390,15 @@ namespace Game.Scripts.Dungeon
             }
 
             return null;
+        }
+
+        /// Only the topmost element counts: a zone hidden under another panel takes nothing.
+        private ItemDropZone FindDropZone(PointerEventData eventData)
+        {
+            _raycastResults.Clear();
+            EventSystem.current.RaycastAll(eventData, _raycastResults);
+
+            return _raycastResults.Count > 0 ? _raycastResults[0].gameObject.GetComponentInParent<ItemDropZone>() : null;
         }
 
         private bool IsPointerOverUi(PointerEventData eventData)

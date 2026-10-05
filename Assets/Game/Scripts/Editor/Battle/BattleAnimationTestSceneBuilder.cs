@@ -1,5 +1,6 @@
 using System.Linq;
 using Game.Scripts.Battle;
+using Game.Scripts.Dungeon;
 using Game.Scripts.Editor.Dungeon;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -56,6 +57,20 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_weapons", AssetDatabase.FindAssets($"t:{nameof(WeaponConfig)}", new[] { BattleEditorUtility.ConfigsFolder })
                 .Select(guid => AssetDatabase.LoadAssetAtPath<WeaponConfig>(AssetDatabase.GUIDToAssetPath(guid)))
                 .ToArray());
+
+            // Belt items the fighter carries in the hand instead of a weapon: drinks, bandages, throwables and tools.
+            ItemConfig[] items = AssetDatabase.FindAssets($"t:{nameof(ItemConfig)}", new[] { DungeonContentBuilder.ItemsFolder })
+                .Select(guid => AssetDatabase.LoadAssetAtPath<ItemConfig>(AssetDatabase.GUIDToAssetPath(guid)))
+                .Where(item => item.WorldModel != null && item.CanEquip(EquipSlot.Utility1))
+                .ToArray();
+            so.FindProperty("_items").arraySize = items.Length;
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                BattleEditorUtility.Set(so, $"_items.Array.data[{i}]._prefab", items[i].WorldModel);
+                BattleEditorUtility.Set(so, $"_items.Array.data[{i}]._isDrink", items[i] is ConsumableItemConfig { IsDrink: true });
+            }
+
             so.ApplyModifiedPropertiesWithoutUndo();
 
             SerializedObject editor = new SerializedObject(system.AddComponent<AnimationEditorView>());

@@ -57,9 +57,6 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private ContainerComponent[] _containers;
 
-        [SerializeField, Tooltip("Class of every adventurer on the test ground")]
-        private byte _classId;
-
         [SerializeField]
         private float _respawnDelay = 4f;
 
@@ -200,7 +197,7 @@ namespace Game.Scripts.Dungeon
             SpawnAdventurer(session);
         }
 
-        /// Everyone enters naked; gear comes from the table, corpses and monster drops.
+        /// Everyone enters naked in the class picked in the tavern; gear comes from the table, corpses and monster drops.
         private void SpawnAdventurer(PlayerSessionComponent session)
         {
             // Scene objects (chests) are surely spawned once the first profile has arrived.
@@ -211,7 +208,7 @@ namespace Game.Scripts.Dungeon
             Transform point = _playerSpawns[player.AsIndex % _playerSpawns.Length];
 
             NetworkObject adventurer = _runner.Spawn(_adventurerPrefab, point.position, point.rotation, player,
-                (_, obj) => obj.GetComponent<AdventurerComponent>().Setup(_classId, session));
+                (_, obj) => obj.GetComponent<AdventurerComponent>().Setup(session.ClassId, session));
 
             session.OnAdventurerSpawned(adventurer.GetComponent<AdventurerComponent>());
         }

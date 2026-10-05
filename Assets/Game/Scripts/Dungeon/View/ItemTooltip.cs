@@ -73,7 +73,7 @@ namespace Game.Scripts.Dungeon
             if (!string.IsNullOrEmpty(config.Description))
                 s_builder.AppendLine($"<i><size=80%>{config.Description}</size></i>");
 
-            s_builder.Append($"<size=80%>Value {config.Value}g   {config.Width}x{config.Height}</size>");
+            s_builder.Append($"<size=80%>Value {config.Value}g   Sells for {DungeonFormulas.SellPrice(config, stack)}g   {config.Width}x{config.Height}</size>");
 
             return s_builder.ToString();
         }

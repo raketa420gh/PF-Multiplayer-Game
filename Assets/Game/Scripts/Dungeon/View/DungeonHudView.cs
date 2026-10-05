@@ -350,7 +350,7 @@ namespace Game.Scripts.Dungeon
             }
 
             if (adventurer.IsResting)
-                _builder.AppendLine("Resting...");
+                _builder.AppendLine(adventurer.IsRecoveringSpells ? "Resting by the fire: spells recover" : "Resting...");
 
             _effectsText.text = _builder.ToString();
         }

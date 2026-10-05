@@ -1093,14 +1093,18 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject root = new GameObject("PlayerSession");
             root.AddComponent<NetworkObject>();
             InventoryComponent kit = AddInventory(root, database, 10, 4, true, "Kit");
-            InventoryComponent stash = AddInventory(root, database, 12, 5, false, "Stash");
+            InventoryComponent[] stashes = new InventoryComponent[PlayerSessionComponent.StashPages];
+
+            for (int i = 0; i < stashes.Length; i++)
+                stashes[i] = AddInventory(root, database, 12, 5, false, i == 0 ? "Stash" : "Stash" + (i + 1));
+
             InventoryActionsComponent actions = root.AddComponent<InventoryActionsComponent>();
             BattleEditorUtility.Set(actions, "_inventory", kit);
 
             PlayerSessionComponent session = root.AddComponent<PlayerSessionComponent>();
             SerializedObject so = new SerializedObject(session);
             BattleEditorUtility.Set(so, "_kit", kit);
-            BattleEditorUtility.Set(so, "_stash", stash);
+            BattleEditorUtility.Set(so, "_stashes", stashes);
             BattleEditorUtility.Set(so, "_actions", actions);
             BattleEditorUtility.Set(so, "_classes", classes);
             BattleEditorUtility.Set(so, "_config", config);

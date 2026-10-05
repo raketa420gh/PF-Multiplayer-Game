@@ -59,7 +59,19 @@ namespace Game.Scripts.Dungeon
 
         private void Update()
         {
-            if (_rig == null || _inventory == null || _inventory.Object == null || !_inventory.Object.IsValid)
+            if (_rig == null)
+                return;
+
+            // Bound to a class only (character select): the bare body in the relaxed idle.
+            if (_inventory == null)
+            {
+                if (_animator != null)
+                    _animator.SetLayerWeight(1, 0f);
+
+                return;
+            }
+
+            if (_inventory.Object == null || !_inventory.Object.IsValid)
                 return;
 
             _rig.transform.Rotate(0f, _turnSpeed * Time.deltaTime, 0f, Space.Self);
@@ -81,6 +93,11 @@ namespace Game.Scripts.Dungeon
 
             if (_model != null && config != null)
                 _model.SetBodyColor(config.BodyColor);
+        }
+
+        public void SetCharacterShown(bool isShown)
+        {
+            _stage.gameObject.SetActive(isShown);
         }
 
         private void EnsureRig()

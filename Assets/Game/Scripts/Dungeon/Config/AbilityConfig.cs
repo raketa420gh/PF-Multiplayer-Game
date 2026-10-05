@@ -16,7 +16,17 @@ namespace Game.Scripts.Dungeon
         Shapeshift,
         Taunt,
         Spawn,
-        RestoreCharges
+        RestoreCharges,
+        /// Fire or frost on the weapon of the adventurer under the crosshair, or on the caster when the aim misses.
+        WeaponEnchant,
+        /// Hitscan bolt that jumps to the nearest bodies around the struck one.
+        ChainLightning,
+        /// Hitscan: a struck body is hit by lightning from the sky.
+        LightningStrike,
+        /// Very fast dash along the view that stops at the first obstacle.
+        Blink,
+        /// The next spell is cast instantly.
+        QuickCast
     }
 
     public enum ShapeshiftForm : byte
@@ -58,6 +68,8 @@ namespace Game.Scripts.Dungeon
         public Fusion.NetworkObject SpawnPrefab => _spawnPrefab;
         public float StaggerDuration => _staggerDuration;
         public bool IsCooldownBased => _charges >= 99;
+        /// Spell memory: the spell wheel (0 or 1) this skill opens.
+        public int Wheel => Mathf.RoundToInt(_magnitude);
 
         [SerializeField]
         private string _displayName;

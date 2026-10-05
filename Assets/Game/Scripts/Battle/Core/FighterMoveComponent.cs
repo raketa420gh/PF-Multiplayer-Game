@@ -18,6 +18,8 @@ namespace Game.Scripts.Battle
         [Networked]
         public float CrouchAmount { get; private set; }
 
+        public bool IsDashing => !_dashTimer.ExpiredOrNotRunning(Runner);
+
         [SerializeField]
         private MovementConfig _config;
 
@@ -32,6 +34,12 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private LayerMask _groundMask = 1;
+
+        [Networked]
+        private TickTimer _dashTimer { get; set; }
+
+        [Networked]
+        private Vector3 _dashVelocity { get; set; }
 
         private const float SnapDistance = 0.35f;
 
@@ -56,6 +64,13 @@ namespace Game.Scripts.Battle
             CrouchAmount = Mathf.MoveTowards(CrouchAmount, crouchTarget, Runner.DeltaTime / _config.CrouchTransitionTime);
             UpdateCollider();
 
+            if (IsDashing)
+            {
+                SimulateDash();
+
+                return;
+            }
+
             if (isJump && CrouchAmount < 0.5f)
                 _controller.Jump();
 
@@ -79,6 +94,13 @@ namespace Game.Scripts.Battle
             _controller.Teleport(position, Quaternion.Euler(0f, yaw, 0f));
         }
 
+        /// Moves the body at a fixed velocity for a moment, ignoring input; the first wall or body in the way ends it.
+        public void Dash(Vector3 velocity, float duration)
+        {
+            _dashVelocity = velocity;
+            _dashTimer = TickTimer.CreateFromSeconds(Runner, duration);
+        }
+
         public void SetBlocking(bool isBlocking)
         {
             if (_blocker != null)
@@ -88,6 +110,16 @@ namespace Game.Scripts.Battle
         public void AddImpulse(Vector3 impulse)
         {
             _controller.Velocity += impulse;
+        }
+
+        private void SimulateDash()
+        {
+            _controller.Velocity = Vector3.zero;
+
+            if ((_collider.Move(_dashVelocity * Runner.DeltaTime) & CollisionFlags.Sides) != 0)
+                _dashTimer = TickTimer.None;
+
+            SnapToGround();
         }
 
         /// Walking down stairs and ramps the capsule would leave the ground on every tick; this keeps the feet on it.

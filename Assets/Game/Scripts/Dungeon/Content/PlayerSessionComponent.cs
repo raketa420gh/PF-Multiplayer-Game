@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
@@ -17,19 +18,34 @@ namespace Game.Scripts.Dungeon
     public sealed class PlayerSessionComponent : NetworkBehaviour, InventoryActionsComponent.IOwner
     {
         public const byte LoadKit = 0;
+        /// Stash pages load as kinds LoadStash … LoadStash + StashPages - 1.
         public const byte LoadStash = 1;
+        public const int StashPages = 4;
 
         public event Action OnStateChanged;
 
         public InventoryComponent Kit => _kit;
-        public InventoryComponent Stash => _stash;
+        public InventoryComponent Stash => _stashes[0];
+        public IReadOnlyList<InventoryComponent> Stashes => _stashes;
         public InventoryActionsComponent Actions => _actions;
         public string DisplayName => Name.ToString();
         public ClassConfig Class => FindClass(ClassId);
         public MerchantConfig[] Merchants => _merchants;
         public ItemConfig Currency => _currency;
-        /// Coins the player can pay with: the stash and the kit bag together.
-        public int Coins => _stash.CountOf(_currency.Id) + _kit.CountOf(_currency.Id);
+        /// Coins the player can pay with: every stash page and the kit bag together.
+        public int Coins
+        {
+            get
+            {
+                int coins = _kit.CountOf(_currency.Id);
+
+                foreach (InventoryComponent stash in _stashes)
+                    coins += stash.CountOf(_currency.Id);
+
+                return coins;
+            }
+        }
+
         public AdventurerComponent Adventurer => Runner != null && Runner.TryFindBehaviour(AdventurerId, out NetworkBehaviour b) ? b as AdventurerComponent : null;
 
         [Networked]
@@ -78,7 +94,7 @@ namespace Game.Scripts.Dungeon
         private InventoryComponent _kit;
 
         [SerializeField]
-        private InventoryComponent _stash;
+        private InventoryComponent[] _stashes = Array.Empty<InventoryComponent>();
 
         [SerializeField]
         private InventoryActionsComponent _actions;
@@ -98,13 +114,13 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Coins a player without a single one finds in the stash on entering a scene")]
         private int _pityCoins = 10;
 
-        private readonly byte[][][] _loadChunks = new byte[2][][];
+        private readonly byte[][][] _loadChunks = new byte[LoadStash + StashPages][][];
         private readonly byte[] _loadBuffer = new byte[InventoryComponent.Capacity * ItemStack.ByteSize * 2];
         private int _loadedChunks;
         private int _loadTarget;
         private SessionState _renderedState;
         private int _savedKitVersion = -1;
-        private int _savedStashVersion = -1;
+        private readonly int[] _savedStashVersions = { -1, -1, -1, -1 };
 
         public override void Spawned()
         {
@@ -126,7 +142,9 @@ namespace Game.Scripts.Dungeon
             RpcSetProfile(StashService.LoadLevel(), StashService.LoadExperience(), StashService.LoadClass(), StashService.LoadName());
             RpcSetBuild(StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask(), StashService.LoadSpellMask());
             SendInventory(LoadKit, StashService.LoadKit());
-            SendInventory(LoadStash, StashService.LoadStash());
+
+            for (int page = 0; page < StashPages; page++)
+                SendInventory((byte)(LoadStash + page), StashService.LoadStash(page));
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -160,10 +178,13 @@ namespace Game.Scripts.Dungeon
                 StashService.SaveKit(_kit);
             }
 
-            if (_savedStashVersion != _stash.Version)
+            for (int page = 0; page < _stashes.Length; page++)
             {
-                _savedStashVersion = _stash.Version;
-                StashService.SaveStash(_stash);
+                if (_savedStashVersions[page] == _stashes[page].Version)
+                    continue;
+
+                _savedStashVersions[page] = _stashes[page].Version;
+                StashService.SaveStash(page, _stashes[page]);
             }
 
             StashService.SaveProfile(Level, Experience, ClassId, DisplayName);
@@ -226,7 +247,7 @@ namespace Game.Scripts.Dungeon
             SkillB = 1;
             PerkMask = 1;
             SpellMask = ClassConfig.DefaultSpellMask;
-            _stash.TakeAllFrom(_kit);
+            StoreKit();
             GiveDefaultKit();
         }
 
@@ -273,19 +294,21 @@ namespace Game.Scripts.Dungeon
             PerkMask |= bit;
         }
 
-        /// Toggles a spell in the spell wheel; the wheel holds at most SpellWheelSize spells.
+        /// Toggles a spell in one of the two spell wheels; a wheel holds at most SpellWheelSize spells and a spell sits in one wheel only.
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        public void RpcToggleSpell(byte index)
+        public void RpcToggleSpell(byte wheel, byte index)
         {
-            if (State != SessionState.Lobby || index >= Class.Spells.Length)
+            if (State != SessionState.Lobby || index >= Class.Spells.Length || wheel >= ClassConfig.WheelCount)
                 return;
 
-            int bit = 1 << index;
+            int bit = ClassConfig.WheelBit(wheel, index);
+            int other = ClassConfig.WheelBit(1 - wheel, index);
+            int wheelMask = ((1 << ClassConfig.WheelBits) - 1) << (wheel * ClassConfig.WheelBits);
 
-            if ((SpellMask & bit) == 0 && CountBits(SpellMask) >= ClassConfig.SpellWheelSize)
+            if ((SpellMask & bit) == 0 && CountBits(SpellMask & wheelMask) >= ClassConfig.SpellWheelSize)
                 return;
 
-            SpellMask ^= bit;
+            SpellMask = (SpellMask ^ bit) & ~other;
         }
 
         /// Buys one ware (a full stack of stackables) into the stash; coins leave the stash first, then the kit bag.
@@ -296,12 +319,97 @@ namespace Game.Scripts.Dungeon
                 return;
 
             MerchantConfig merchant = _merchants[merchantIndex];
-            ItemConfig item = _stash.Database.Get(itemId);
+            ItemConfig item = _kit.Database.Get(itemId);
 
-            if (item == null || !merchant.Sells(item) || Coins < merchant.Price || !_stash.TryAdd(ItemStack.Create(item, item.MaxStack, merchant.Rarity)))
+            if (item == null || !merchant.Sells(item) || Coins < merchant.Price || !AddToStash(ItemStack.Create(item, item.MaxStack, merchant.Rarity)))
                 return;
 
-            _kit.Remove(_currency.Id, merchant.Price - _stash.Remove(_currency.Id, merchant.Price));
+            int left = merchant.Price;
+
+            foreach (InventoryComponent stash in _stashes)
+                left -= stash.Remove(_currency.Id, left);
+
+            _kit.Remove(_currency.Id, left);
+        }
+
+        /// Sells a bag item of the kit or of a stash page to the merchants; the coins go into the stash.
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcSell(NetworkBehaviourId source, int index)
+        {
+            if (State != SessionState.Lobby || !Runner.TryFindBehaviour(source, out NetworkBehaviour behaviour) || behaviour is not InventoryComponent from
+                || (from != _kit && Array.IndexOf(_stashes, from) < 0))
+                return;
+
+            ItemStack stack = from.Bag[index];
+
+            if (CanSell(stack) && (from != _kit || HasRoomInStash(_currency)))
+                GiveCoins(DungeonFormulas.SellPrice(from.GetConfig(from.RemoveAt(index)), stack));
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcSellEquipped(EquipSlot slot)
+        {
+            ItemStack stack = _kit.GetEquipped(slot);
+
+            if (State != SessionState.Lobby || !CanSell(stack) || !HasRoomInStash(_currency))
+                return;
+
+            _kit.SetEquipment(slot, default);
+            GiveCoins(DungeonFormulas.SellPrice(_kit.GetConfig(stack), stack));
+        }
+
+        /// Coins themselves are not for sale.
+        public bool CanSell(in ItemStack stack)
+        {
+            return !stack.IsEmpty && !stack.IsHidden && stack.ItemId != _currency.Id && _kit.GetConfig(stack) != null;
+        }
+
+        public bool HasRoomInStash(ItemConfig item)
+        {
+            return Array.Exists(_stashes, stash => stash.HasRoom(item));
+        }
+
+        /// Puts a stack on the first page with a free spot for it, so a stack is never split over pages.
+        public bool AddToStash(ItemStack stack)
+        {
+            ItemConfig config = _kit.GetConfig(stack);
+
+            foreach (InventoryComponent stash in _stashes)
+            {
+                if (config != null && stash.HasRoom(config) && stash.TryAdd(stack))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void GiveCoins(int amount)
+        {
+            while (amount > 0)
+            {
+                int count = Mathf.Min(amount, _currency.MaxStack);
+
+                if (!AddToStash(ItemStack.Create(_currency, count, _currency.BaseRarity)))
+                    return;
+
+                amount -= count;
+            }
+        }
+
+        /// Everything the kit carries goes into the stash pages, grid positions of the kit ignored.
+        private void StoreKit()
+        {
+            for (int i = 0; i < InventoryComponent.Capacity; i++)
+            {
+                if (!_kit.Bag[i].IsEmpty)
+                    AddToStash(_kit.Bag[i]);
+            }
+
+            for (int i = 0; i < InventoryComponent.EquipmentCapacity; i++)
+            {
+                if (!_kit.Equipment[i].IsEmpty)
+                    AddToStash(_kit.Equipment[i]);
+            }
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
@@ -318,11 +426,8 @@ namespace Game.Scripts.Dungeon
         {
             int count = 0;
 
-            while (value != 0)
-            {
-                count += value & 1;
-                value >>= 1;
-            }
+            for (uint bits = (uint)value; bits != 0; bits >>= 1)
+                count += (int)(bits & 1);
 
             return count;
         }
@@ -398,7 +503,7 @@ namespace Game.Scripts.Dungeon
 
         bool InventoryActionsComponent.IOwner.CanAccess(InventoryComponent other)
         {
-            return other == _stash && State == SessionState.Lobby;
+            return Array.IndexOf(_stashes, other) >= 0 && State == SessionState.Lobby;
         }
 
         void InventoryActionsComponent.IOwner.OnUseItem(InventoryComponent source, int bagIndex, EquipSlot slot)
@@ -407,12 +512,12 @@ namespace Game.Scripts.Dungeon
 
         void InventoryActionsComponent.IOwner.OnDropItem(ItemStack stack)
         {
-            _stash.TryAdd(stack);
+            AddToStash(stack);
         }
 
         void InventoryActionsComponent.IOwner.OnLoadChunk(byte kind, byte chunk, byte chunkCount, byte[] data)
         {
-            if (kind > LoadStash)
+            if (kind >= LoadStash + _stashes.Length)
                 return;
 
             if (_loadTarget != kind || _loadChunks[kind] == null || _loadChunks[kind].Length != chunkCount)
@@ -438,7 +543,7 @@ namespace Game.Scripts.Dungeon
                 offset += part.Length;
             }
 
-            InventoryComponent target = kind == LoadKit ? _kit : _stash;
+            InventoryComponent target = kind == LoadKit ? _kit : _stashes[kind - LoadStash];
             StashService.Deserialize(target, _loadBuffer, offset);
             _loadChunks[kind] = null;
 
@@ -449,10 +554,10 @@ namespace Game.Scripts.Dungeon
                 else
                     HasLoadedKit = true;
             }
-            else if (Coins == 0)
+            else if (kind == LoadStash + _stashes.Length - 1 && Coins == 0)
             {
-                // The stash arrives after the kit: a broke player still gets a few coins for the merchants.
-                _stash.TryAdd(ItemStack.Create(_currency, _pityCoins, _currency.BaseRarity));
+                // The stash pages arrive after the kit, the last one last: a broke player still gets a few coins for the merchants.
+                AddToStash(ItemStack.Create(_currency, _pityCoins, _currency.BaseRarity));
             }
         }
     }

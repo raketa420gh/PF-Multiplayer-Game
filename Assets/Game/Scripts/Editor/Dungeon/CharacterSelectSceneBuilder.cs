@@ -1,5 +1,4 @@
-using Fusion;
-using Game.Scripts.Battle;
+using System.Linq;
 using Game.Scripts.Dungeon;
 using Game.Scripts.Editor.Battle;
 using UnityEditor;
@@ -9,12 +8,11 @@ using UnityEngine.SceneManagement;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Assembles LobbyScene: the tavern with the lobby, skills and stash pages. It runs a local single-player session
-    /// that only carries the player's kit and stash; the Start button travels to the chosen gameplay scene.
-    internal static class LobbySceneBuilder
+    /// Assembles CharacterSelectScene, where the game starts: the account's character slots and the creation page in front
+    /// of the tavern backdrop. No network session runs here; Enter travels to LobbyScene with the picked slot.
+    internal static class CharacterSelectSceneBuilder
     {
-        public const string ScenePath = "Assets/Game/Scenes/LobbyScene.unity";
-        public const string Title = SceneTravel.LobbyTitle;
+        public const string ScenePath = "Assets/Game/Scenes/CharacterSelectScene.unity";
 
         public static void Build()
         {
@@ -28,43 +26,41 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonSceneBuilder.BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/LobbyVolume.asset", 0.6f);
             Camera camera = DungeonSceneBuilder.BuildCamera();
             GameObject system = new GameObject("[System]");
-            NetworkEvents events = system.AddComponent<NetworkEvents>();
-            SerializedObject so = new SerializedObject(system.AddComponent<BattleBootstrapper>());
-            BattleEditorUtility.Set(so, "_gameMode", GameMode.Single);
-            BattleEditorUtility.Set(so, "_sessionName", "Lobby");
-            BattleEditorUtility.Set(so, "_playerCount", 1);
-            so.ApplyModifiedPropertiesWithoutUndo();
-
+            ClassConfig[] classes = DungeonSceneBuilder.LoadClasses();
             ItemDatabase database = AssetDatabase.LoadAssetAtPath<ItemDatabase>(DungeonContentBuilder.DatabasePath);
+
             DungeonContext context = system.AddComponent<DungeonContext>();
-            so = new SerializedObject(context);
+            SerializedObject so = new SerializedObject(context);
             BattleEditorUtility.Set(so, "_items", database);
-            BattleEditorUtility.Set(so, "_classes", DungeonSceneBuilder.LoadClasses());
+            BattleEditorUtility.Set(so, "_classes", classes);
             BattleEditorUtility.Set(so, "_config", AssetDatabase.LoadAssetAtPath<DungeonConfig>(DungeonContentBuilder.DungeonConfigPath));
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            so = new SerializedObject(system.AddComponent<LobbyDirector>());
-            BattleEditorUtility.Set(so, "_networkEvents", events);
-            BattleEditorUtility.Set(so, "_sessionPrefab", DungeonSceneBuilder.LoadNetworkObject("PlayerSession"));
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            DungeonUiBuilder.BuildLobbyScene(new DungeonUiBuilder.Inputs
+            DungeonUiBuilder.BuildCharacterSelectScene(new DungeonUiBuilder.Inputs
             {
                 Context = context,
                 Database = database,
                 Camera = camera,
                 PreviewRig = AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("PreviewRig")),
                 PieceSet = AssetDatabase.LoadAssetAtPath<ArmorPieceSetConfig>($"{DungeonContentBuilder.ConfigsFolder}/ArmorPieces.asset"),
-                FloorMaps = new[] { AssetDatabase.LoadAssetAtPath<Texture2D>($"{DungeonMinimapBuilder.Folder}/Floor1.png") },
+                FloorMaps = new Texture2D[0],
                 ModuleNames = new string[0],
-                Title = Title
-            });
+                Title = SceneTravel.CharacterSelectTitle
+            }, classes);
             DungeonSceneBuilder.BuildAudio(system, context);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
-            CharacterSelectSceneBuilder.OrderBuildSettings();
-            Debug.Log($"[{nameof(LobbySceneBuilder)}] Scene built: {ScenePath}");
+            OrderBuildSettings();
+            Debug.Log($"[{nameof(CharacterSelectSceneBuilder)}] Scene built: {ScenePath}");
+        }
+
+        /// The game starts at the character select, the tavern comes right after it.
+        internal static void OrderBuildSettings()
+        {
+            string[] first = new[] { ScenePath, LobbySceneBuilder.ScenePath }.Where(path => AssetDatabase.LoadAssetAtPath<SceneAsset>(path) != null).ToArray();
+            EditorBuildSettings.scenes = first.Select(path => new EditorBuildSettingsScene(path, true))
+                .Concat(EditorBuildSettings.scenes.Where(scene => !first.Contains(scene.path))).ToArray();
         }
     }
 }

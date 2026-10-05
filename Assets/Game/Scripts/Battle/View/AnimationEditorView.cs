@@ -10,6 +10,7 @@ namespace Game.Scripts.Battle
     /// is keyed on the current frame of the clip under edit. Edited clips play from their untouched source with the keys turned on
     /// top; Save bakes the keys into the clip and keeps them in AnimationEditConfig, so the next animation rebuild puts them back.
     /// Grip points mark where hands take hold of the current weapon; a hand snapped to a point stays on it while the point moves.
+    /// The weapon or item in a hand is posed like a bone: its keys move the hand socket that carries it.
     [DefaultExecutionOrder(-100)]
     public sealed class AnimationEditorView : MonoBehaviour
     {
@@ -56,6 +57,11 @@ namespace Game.Scripts.Battle
         private const float PointScale = 0.3f;
         private const float PointReach = 0.8f;
         private const float PointSide = 0.2f;
+        private const float PropMargin = 0.03f;
+        private const float PasteTolerance = 0.05f;
+        private const float RayLength = 3f;
+        private const float RayStep = 0.25f;
+        private const float RayTick = 0.015f;
         private const HumanBodyBones NoBone = HumanBodyBones.LastBone;
 
         private static readonly Vector3[] s_axes = { Vector3.right, Vector3.up, Vector3.forward };
@@ -65,16 +71,19 @@ namespace Game.Scripts.Battle
         private static readonly Color s_trackColor = new(0.55f, 0.85f, 1f);
         private static readonly Color s_cursorColor = new(1f, 0.3f, 0.3f);
         private static readonly Color s_gripColor = new(1f, 0.35f, 1f);
+        private static readonly Color s_rayColor = new(0.2f, 1f, 0.8f);
         private static readonly Color s_rangeColor = new(0.3f, 0.8f, 1f, 0.2f);
         private static readonly Color s_rowColor = new(1f, 1f, 1f, 0.03f);
         private static readonly string[] s_layerNames = { "Legs", "Upper body" };
 
         private static readonly string[] s_help =
         {
-            "LMB joint / grip point — select,  empty space or Esc — deselect", "Drag a ring — rotate (E),  drag an arrow — move (W)",
+            "LMB joint / weapon / grip point — select,  empty space or Esc — deselect",
+            "Shift+LMB — add a joint to the selection,  B — add the bones below", "Drag a ring — rotate (E),  drag an arrow — move (W)",
             "RMB — orbit,  wheel — zoom", "Space — play / pause,  , .  — frame,  [ ]  — previous / next key",
-            "K — key bone,  Shift+K — key pose", "X / Del — delete key,  with Shift — the whole pose",
-            "R — reset bone (or point rotation)", "C / V — copy / paste pose", "G — snap the selected hand to the nearest grip point",
+            "K — key selection,  Shift+K — key pose", "X / Del — delete key,  with Shift — the whole pose",
+            "R — reset selection (or point rotation)", "C / V — copy / paste the selection (the whole pose if none)",
+            "G — snap the selected hand to the nearest grip point",
             "Shift+drag the timeline — range,  I — in-betweens", "Z — undo,  Shift+Z — redo,  Tab — hide the editor"
         };
 
@@ -90,7 +99,10 @@ namespace Game.Scripts.Battle
         private readonly HashSet<AnimationClip> _dirty = new();
         private readonly List<ClipEdit> _undo = new();
         private readonly List<ClipEdit> _redo = new();
-        private readonly Dictionary<HumanBodyBones, BoneKey> _clipboard = new();
+        /// Bones as local poses, sockets as their keys.
+        private readonly List<(HumanBodyBones Bone, bool IsSocket, Pose Pose)> _clipboard = new();
+        /// Every selected bone; _bone is the one that carries the gizmo.
+        private readonly HashSet<HumanBodyBones> _selection = new();
         private readonly List<HumanBodyBones> _bones = new();
         private readonly Dictionary<HumanBodyBones, HumanBodyBones> _parents = new();
         private readonly Dictionary<HumanBodyBones, int> _depths = new();
@@ -101,10 +113,13 @@ namespace Game.Scripts.Battle
         private AnimatorOverrideController _overrides;
         private Material _material;
         private AnimationEditorSkin _skin;
+        private JointLimits _limits;
         private ClipEdit _edit;
         private WeaponGrips _grips;
         private GripPoint _point;
         private HumanBodyBones _bone = NoBone;
+        /// Hand whose socket is selected: the weapon or item in it is posed instead of a bone.
+        private HumanBodyBones _prop = NoBone;
         private HumanBodyBones _carrier = NoBone;
         private Rect _headerRect;
         private Rect _timelineRect;
@@ -138,6 +153,7 @@ namespace Game.Scripts.Battle
         private bool _isMoving;
         private bool _isSkeletonVisible = true;
         private bool _arePointsVisible = true;
+        private bool _isRayVisible = true;
         private bool _arePointsDirty;
         private bool _isHelpVisible;
         private bool _isSelectingRange;
@@ -157,6 +173,7 @@ namespace Game.Scripts.Battle
                 Override(edit);
 
             CollectBones();
+            _limits = new JointLimits(_animator);
 
             foreach (HumanBodyBones hand in new[] { HumanBodyBones.LeftHand, HumanBodyBones.RightHand })
             {
@@ -181,6 +198,7 @@ namespace Game.Scripts.Battle
         {
             Destroy(_material);
             _skin?.Dispose();
+            _limits?.Dispose();
         }
 
         private void Update()
@@ -200,7 +218,13 @@ namespace Game.Scripts.Battle
             if (_test.Layer != _testLayer)
                 _editLayer = (_testLayer = _test.Layer) == BaseLayer ? BaseLayer : UpperLayer;
 
-            _edit = GetEdit(Resolve(_test.GetClip(_editLayer)));
+            ClipEdit edit = GetEdit(Resolve(_test.GetClip(_editLayer)));
+
+            // A range belongs to the clip it was dragged over.
+            if (edit?.Clip != _edit?.Clip)
+                _rangeStart = _rangeEnd = -1;
+
+            _edit = edit;
             _frameCount = Mathf.Max(1, Mathf.RoundToInt(_test.GetLength(_editLayer) * FrameRate));
             _framePosition = _test.GetTime(_editLayer) * FrameRate;
             _frame = Mathf.RoundToInt(_framePosition);
@@ -208,7 +232,10 @@ namespace Game.Scripts.Battle
             _carrier = _grips.GetCarrier();
 
             if (_bone != NoBone && !IsLayerBone(_bone))
-                _bone = NoBone;
+                Select(NoBone);
+
+            if (_prop != NoBone && !IsHolding(_prop))
+                _prop = NoBone;
 
             if (_point != null && (!HasPoints() || _grips.Find(_point.Name) != _point))
                 _point = null;
@@ -225,20 +252,17 @@ namespace Game.Scripts.Battle
                 return;
 
             UpdateGizmo(mouse, _test.IsOverViewport(point) && !isOverGui);
-            UpdateShortcuts();
+
+            // A drag in progress keeps its mode and its undo step.
+            if (!Input.GetMouseButton(0))
+                UpdateShortcuts();
         }
 
         /// Runs before AnimationTestView bends the spine for the look pitch and places the camera.
         private void LateUpdate()
         {
-            if (_isShowingBaked)
-                return;
-
-            foreach (KeyValuePair<HumanBodyBones, Pose> rest in _socketRests)
-                HandGrip.GetSocket(_animator, rest.Key).SetLocalPositionAndRotation(rest.Value.position, rest.Value.rotation);
-
-            for (int layer = BaseLayer; layer <= UpperLayer; layer++)
-                GetEdit(Resolve(_test.GetClip(layer)))?.Apply(_animator, _test.GetTime(layer) * FrameRate);
+            if (!_isShowingBaked)
+                ApplyEdits();
         }
 
         private void OnGUI()
@@ -353,23 +377,119 @@ namespace Game.Scripts.Battle
             return _animator.GetBoneTransform(bone);
         }
 
-        private BoneKey Evaluate(HumanBodyBones bone)
+        private void ResetSockets()
         {
-            return _edit.Find(bone)?.Evaluate(_frame) ?? new BoneKey(_frame, Quaternion.identity, Vector3.zero);
+            foreach (KeyValuePair<HumanBodyBones, Pose> rest in _socketRests)
+                HandGrip.GetSocket(_animator, rest.Key).SetLocalPositionAndRotation(rest.Value.position, rest.Value.rotation);
         }
 
-        private void Select(HumanBodyBones bone)
+        /// The edits of both layers on top of the pose the animator has just written, held inside the joint limits as baking does.
+        private void ApplyEdits(bool hasHolds = true)
         {
+            ResetSockets();
+            _limits.Capture();
+
+            for (int layer = BaseLayer; layer <= UpperLayer; layer++)
+                GetEdit(Resolve(_test.GetClip(layer)))?.Apply(_animator, _test.GetTime(layer) * FrameRate, hasHolds);
+
+            _limits.Restrict();
+        }
+
+        /// The clip alone on the current frame: the animator writes it now, the edits come on top in LateUpdate.
+        private void SampleClip()
+        {
+            SetFrame(_frame);
+            _animator.Update(0f);
+        }
+
+        private BoneKey Evaluate(HumanBodyBones bone, bool isSocket = false)
+        {
+            return _edit.Find(bone, isSocket)?.Evaluate(_frame) ?? new BoneKey(_frame, Quaternion.identity, Vector3.zero);
+        }
+
+        private bool HasTarget()
+        {
+            return _bone != NoBone || _prop != NoBone || _point != null;
+        }
+
+        /// What the key commands work on: the selected weapon socket or the selected bones.
+        private bool IsSelected(BoneTrack track)
+        {
+            return track.IsSocket ? track.Bone == _prop : _selection.Contains(track.Bone);
+        }
+
+        private List<BoneTrack> GetSelectedTracks()
+        {
+            List<BoneTrack> tracks = new();
+
+            if (_prop != NoBone)
+                tracks.Add(_edit.GetOrAdd(_prop, true));
+
+            foreach (HumanBodyBones bone in _selection)
+                tracks.Add(_edit.GetOrAdd(bone));
+
+            return tracks;
+        }
+
+        private string GetSelectionName()
+        {
+            return _prop != NoBone ? GetPropName(_prop) : _bone == NoBone ? "—" : _selection.Count > 1 ? $"{_names[_bone]}  +{_selection.Count - 1}" : _names[_bone];
+        }
+
+        private string GetPropName(HumanBodyBones hand)
+        {
+            return HandGrip.GetSocket(_animator, hand).GetChild(0).name.Replace("(Clone)", string.Empty);
+        }
+
+        /// Adding a bone that is already selected takes it out; the last one added carries the gizmo.
+        private void Select(HumanBodyBones bone, bool isAdding = false)
+        {
+            if (!isAdding || bone == NoBone)
+                _selection.Clear();
+
+            if (bone != NoBone && !_selection.Add(bone))
+            {
+                _selection.Remove(bone);
+                bone = NoBone;
+
+                foreach (HumanBodyBones other in _selection)
+                    bone = other;
+            }
+
             _bone = bone;
+            _prop = NoBone;
             _point = null;
             _tab = bone != NoBone ? BonesTab : _tab;
         }
 
         private void Select(GripPoint point)
         {
+            Select(NoBone);
             _point = point;
-            _bone = NoBone;
             _tab = PointsTab;
+        }
+
+        private void SelectProp(HumanBodyBones hand)
+        {
+            Select(NoBone);
+            _prop = hand;
+            _tab = BonesTab;
+        }
+
+        /// Every bone below the selected ones joins them: a shoulder takes the whole arm.
+        private void SelectBranch()
+        {
+            // The list is depth-first, so a parent is always decided before its children.
+            foreach (HumanBodyBones bone in _bones)
+            {
+                if (IsLayerBone(bone) && _selection.Contains(_parents[bone]))
+                    _selection.Add(bone);
+            }
+        }
+
+        private static bool IsAdding()
+        {
+            return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
         }
 
         private void SetFrame(int frame)
@@ -382,9 +502,11 @@ namespace Game.Scripts.Battle
         {
             int target = -1;
 
+            bool hasSelection = _bone != NoBone || _prop != NoBone;
+
             foreach (BoneTrack track in _edit.Tracks)
             {
-                if (_bone != NoBone && track.Bone != _bone)
+                if (hasSelection && !IsSelected(track))
                     continue;
 
                 foreach (BoneKey key in track.Keys)
@@ -447,6 +569,9 @@ namespace Game.Scripts.Battle
             if (Input.GetKeyDown(KeyCode.G))
                 SnapToNearest();
 
+            if (Input.GetKeyDown(KeyCode.B))
+                SelectBranch();
+
             if (Input.GetKeyDown(KeyCode.I))
                 GenerateInBetweens();
 
@@ -479,8 +604,7 @@ namespace Game.Scripts.Battle
                 return;
             }
 
-            bool hasTarget = _bone != NoBone || _point != null;
-            _hoverAxis = !isOverView || !hasTarget ? -1 : !_isMoving ? PickAxis(mouse) : CanMove() ? PickMoveAxis(mouse) : -1;
+            _hoverAxis = !isOverView || !HasTarget() ? -1 : !_isMoving ? PickAxis(mouse) : CanMove() ? PickMoveAxis(mouse) : -1;
 
             if (!isOverView || !Input.GetMouseButtonDown(0))
                 return;
@@ -497,15 +621,15 @@ namespace Game.Scripts.Battle
             _moveTarget = GetTarget().position;
         }
 
-        /// World pose the gizmo works on: the selected grip point or bone.
+        /// World pose the gizmo works on: the selected grip point, weapon socket or bone.
         private Pose GetTarget()
         {
             if (_point != null)
                 return GetPointPose(_point);
 
-            Transform bone = GetBone(_bone);
+            Transform target = _prop != NoBone ? HandGrip.GetSocket(_animator, _prop) : GetBone(_bone);
 
-            return new Pose(bone.position, bone.rotation);
+            return new Pose(target.position, target.rotation);
         }
 
         private void Rotate(Vector2 delta)
@@ -521,7 +645,9 @@ namespace Game.Scripts.Battle
                 return;
             }
 
-            HandGrip grip = GetActiveGrip(_bone);
+            bool isProp = _prop != NoBone;
+            HumanBodyBones bone = isProp ? _prop : _bone;
+            HandGrip grip = isProp ? null : GetActiveGrip(_bone);
 
             if (grip != null)
             {
@@ -538,12 +664,13 @@ namespace Game.Scripts.Battle
                 return;
             }
 
-            BoneKey key = Evaluate(_bone);
-            ChangeKey(_bone, new BoneKey(_frame, key.Rotation * turn, key.Position));
+            BoneKey key = Evaluate(bone, isProp);
+            ChangeKey(bone, new BoneKey(_frame, key.Rotation * turn, key.Position), isProp);
         }
 
-        /// A grip point slides over its weapon. The hips shift by themselves; any other joint is pulled by turning the bones above
-        /// it, and the change is keyed as rotations of those bones. A hand or a foot bends its limb and keeps its own orientation.
+        /// A grip point slides over its weapon, a weapon shifts in its hand. The hips shift by themselves; any other joint is
+        /// pulled by turning the bones above it, and the change is keyed as rotations of those bones. A hand or a foot bends its
+        /// limb and keeps its own orientation.
         private void Move(Vector2 delta)
         {
             Transform camera = _camera.transform;
@@ -555,6 +682,18 @@ namespace Game.Scripts.Battle
             if (_point != null)
             {
                 SetPoint(GetCarrierSocket().InverseTransformPoint(_moveTarget), _point.Pose.rotation);
+
+                return;
+            }
+
+            if (_prop != NoBone)
+            {
+                // The key shifts the socket in the frame of the hand as the keys pose it; a hold moves the hand itself away from
+                // there, so that frame is taken back from the weapon.
+                Transform socket = HandGrip.GetSocket(_animator, _prop);
+                BoneKey prop = Evaluate(_prop, true);
+                Quaternion hand = socket.rotation * Quaternion.Inverse(_socketRests[_prop].rotation * prop.Rotation);
+                ChangeKey(_prop, new BoneKey(_frame, prop.Rotation, prop.Position + Quaternion.Inverse(hand) * (_moveTarget - socket.position)), true);
 
                 return;
             }
@@ -617,10 +756,10 @@ namespace Game.Scripts.Battle
             };
         }
 
-        /// Points always move; a bone only when every bone the move would key belongs to the edited layer.
+        /// Points and weapons always move; a bone only when every bone the move would key belongs to the edited layer.
         private bool CanMove()
         {
-            if (_point != null || _bone == HumanBodyBones.Hips)
+            if (_point != null || _prop != NoBone || _bone == HumanBodyBones.Hips)
                 return true;
 
             HumanBodyBones[] chain = GetMoveChain(_bone);
@@ -628,10 +767,10 @@ namespace Game.Scripts.Battle
             return chain.Length > 0 && Array.TrueForAll(chain, IsLayerBone);
         }
 
-        /// Character axes for bones, weapon axes for grip points (Z runs along the blade).
+        /// Character axes for bones, weapon axes for weapons and grip points (Z runs along the blade).
         private Vector3 GetMoveAxis(int axis)
         {
-            return (_point != null ? GetTarget().rotation : _animator.transform.rotation) * s_axes[axis];
+            return (_bone == NoBone ? GetTarget().rotation : _animator.transform.rotation) * s_axes[axis];
         }
 
         /// Axis arrows; the square in the middle moves in the view plane.
@@ -695,7 +834,8 @@ namespace Game.Scripts.Battle
             return axis;
         }
 
-        /// Joints of the edited layer and grip points of the weapon; clicking past all of them clears the selection.
+        /// Joints of the edited layer and grip points of the weapon, then the weapon itself; clicking past all of them clears
+        /// the selection.
         private void Pick(Vector2 mouse)
         {
             HumanBodyBones bone = NoBone;
@@ -717,10 +857,38 @@ namespace Game.Scripts.Battle
                 }
             }
 
+            HumanBodyBones prop = point == null && bone == NoBone ? PickProp(mouse) : NoBone;
+
             if (point != null)
                 Select(point);
-            else
-                Select(bone);
+            else if (prop != NoBone)
+                SelectProp(prop);
+            else if (bone != NoBone || !IsAdding())
+                Select(bone, IsAdding());
+        }
+
+        /// The hand whose weapon or item is under the mouse, by the boxes of its meshes.
+        private HumanBodyBones PickProp(Vector2 mouse)
+        {
+            Ray ray = _camera.ScreenPointToRay(mouse);
+
+            foreach (HumanBodyBones hand in _socketRests.Keys)
+            {
+                if (!IsHolding(hand))
+                    continue;
+
+                foreach (MeshRenderer renderer in HandGrip.GetSocket(_animator, hand).GetComponentsInChildren<MeshRenderer>())
+                {
+                    Transform mesh = renderer.transform;
+                    Bounds bounds = renderer.localBounds;
+                    bounds.Expand(PropMargin);
+
+                    if (bounds.IntersectRay(new Ray(mesh.InverseTransformPoint(ray.origin), mesh.InverseTransformVector(ray.direction))))
+                        return hand;
+                }
+            }
+
+            return NoBone;
         }
 
         private bool TryGetScreenDistance(Vector2 mouse, Vector3 position, float limit, out float distance)
@@ -759,7 +927,7 @@ namespace Game.Scripts.Battle
         /// Grip points need a weapon in a hand socket, and hands are posed on the upper body layer only.
         private bool HasPoints()
         {
-            return _carrier != NoBone && _editLayer == UpperLayer;
+            return _carrier != NoBone && _editLayer == UpperLayer && !_test.HasItem;
         }
 
         private bool ArePointsShown()
@@ -880,12 +1048,10 @@ namespace Game.Scripts.Battle
             _dirty.Add(_edit.Clip);
         }
 
-        /// The hand carries something in its weapon socket.
+        /// The hand carries something in its weapon socket, and the edited layer poses hands.
         private bool IsHolding(HumanBodyBones hand)
         {
-            Transform socket = HandGrip.GetSocket(_animator, hand);
-
-            return socket != null && socket.childCount > 0;
+            return _socketRests.ContainsKey(hand) && IsLayerBone(hand) && HandGrip.GetSocket(_animator, hand).childCount > 0;
         }
 
         /// Continuous edits (ring drags, sliders, key drags) take one undo step per mouse press.
@@ -922,44 +1088,44 @@ namespace Game.Scripts.Battle
                 _edit = snapshot;
         }
 
-        private void ChangeKey(HumanBodyBones bone, BoneKey key)
+        private void ChangeKey(HumanBodyBones bone, BoneKey key, bool isSocket = false)
         {
             BeginChange();
-            _edit.GetOrAdd(bone).SetKey(key);
+            _edit.GetOrAdd(bone, isSocket).SetKey(key);
             _dirty.Add(_edit.Clip);
         }
 
-        /// Pins the current pose of the selected bone, or of every animated bone, as keys on this frame.
+        /// Pins the current offset of the selection, or of every animated track, as keys on this frame.
         private void SetKeys(bool isPose)
         {
-            if (!isPose && _bone == NoBone)
+            if (!isPose && _bone == NoBone && _prop == NoBone)
                 return;
 
             PushUndo();
 
-            if (!isPose)
-                _edit.GetOrAdd(_bone).SetKey(Evaluate(_bone));
-            else
-                foreach (BoneTrack track in _edit.Tracks)
-                    track.SetKey(track.Evaluate(_frame));
+            foreach (BoneTrack track in isPose ? _edit.Tracks : GetSelectedTracks())
+                track.SetKey(track.Evaluate(_frame));
 
             _dirty.Add(_edit.Clip);
         }
 
         private void DeleteKeys(bool isPose)
         {
-            BoneTrack selected = _edit.Find(_bone);
+            List<BoneTrack> keyed = new();
 
-            if (isPose ? !_edit.HasKey(_frame) : selected == null || selected.IndexOf(_frame) < 0)
+            foreach (BoneTrack track in _edit.Tracks)
+            {
+                if ((isPose || IsSelected(track)) && track.IndexOf(_frame) >= 0)
+                    keyed.Add(track);
+            }
+
+            if (keyed.Count == 0)
                 return;
 
             PushUndo();
 
-            foreach (BoneTrack track in _edit.Tracks)
-            {
-                if (isPose || track == selected)
-                    track.RemoveKey(_frame);
-            }
+            foreach (BoneTrack track in keyed)
+                track.RemoveKey(_frame);
 
             _dirty.Add(_edit.Clip);
         }
@@ -987,10 +1153,10 @@ namespace Game.Scripts.Battle
 
         private bool IsMoved(BoneTrack track)
         {
-            return _isDraggingPose || track.Bone == _bone;
+            return _isDraggingPose || IsSelected(track);
         }
 
-        /// R: the selected bone back to the clip on this frame, or the selected grip point back to the hand's own orientation.
+        /// R: the selection back to the clip on this frame, or the selected grip point back to the hand's own orientation.
         private void ResetSelection()
         {
             if (_point != null)
@@ -1000,47 +1166,92 @@ namespace Game.Scripts.Battle
                 return;
             }
 
-            if (_bone == NoBone)
+            if (_bone == NoBone && _prop == NoBone)
                 return;
 
             PushUndo();
-            _edit.GetOrAdd(_bone).SetKey(new BoneKey(_frame, Quaternion.identity, Vector3.zero));
+
+            foreach (BoneTrack track in GetSelectedTracks())
+                track.SetKey(new BoneKey(_frame, Quaternion.identity, Vector3.zero));
+
             _dirty.Add(_edit.Clip);
         }
 
         private void ClearTrack()
         {
             PushUndo();
-            _edit.RemoveTrack(_bone);
+            _edit.RemoveTracks(IsSelected);
             _dirty.Add(_edit.Clip);
         }
 
+        /// Copies the selected bones, or the whole layer when none is selected, as they stand on this frame: keys and pins, but
+        /// not holds, which move the hand over the weapon on their own frames. A hand takes the keys of its weapon along; a
+        /// selected weapon is copied alone.
         private void CopyPose()
         {
             _clipboard.Clear();
 
-            foreach (BoneTrack track in _edit.Tracks)
-                _clipboard[track.Bone] = track.Evaluate(_frame);
+            if (_prop != NoBone)
+            {
+                CopySocket(_prop);
+
+                return;
+            }
+
+            SampleClip();
+            ApplyEdits(false);
+
+            foreach (HumanBodyBones bone in _bones)
+            {
+                if (!IsLayerBone(bone) || (_selection.Count > 0 && !_selection.Contains(bone)))
+                    continue;
+
+                Transform transform = GetBone(bone);
+                _clipboard.Add((bone, false, new Pose(transform.localPosition, transform.localRotation)));
+
+                if (_socketRests.ContainsKey(bone))
+                    CopySocket(bone);
+            }
         }
 
+        private void CopySocket(HumanBodyBones hand)
+        {
+            BoneKey key = Evaluate(hand, true);
+            _clipboard.Add((hand, true, new Pose(key.Position, key.Rotation)));
+        }
+
+        /// Puts the copied bones into the same pose on this frame, whatever the clip does here: each key is the turn from the
+        /// clip to the copy. Works across clips; bones that already stand as copied get no key.
         private void PastePose()
         {
             if (_clipboard.Count == 0)
                 return;
 
+            SampleClip();
             PushUndo();
 
-            foreach (KeyValuePair<HumanBodyBones, BoneKey> pair in _clipboard)
+            foreach ((HumanBodyBones bone, bool isSocket, Pose pose) in _clipboard)
             {
-                if (IsLayerBone(pair.Key))
-                    _edit.GetOrAdd(pair.Key).SetKey(new BoneKey(_frame, pair.Value.Rotation, pair.Value.Position));
+                if (!IsLayerBone(bone))
+                    continue;
+
+                Transform clip = GetBone(bone);
+                BoneKey current = Evaluate(bone, isSocket);
+                BoneKey key = isSocket
+                    ? new BoneKey(_frame, pose.rotation, pose.position)
+                    : new BoneKey(_frame, Quaternion.Inverse(clip.localRotation) * pose.rotation,
+                        bone == HumanBodyBones.Hips ? pose.position - clip.localPosition : current.Position);
+
+                if (Quaternion.Angle(key.Rotation, current.Rotation) > PasteTolerance || (key.Position - current.Position).sqrMagnitude > 1e-8f)
+                    _edit.GetOrAdd(bone, isSocket).SetKey(key);
             }
 
             _dirty.Add(_edit.Clip);
         }
 
         /// Replaces the motion inside the selected range with a smooth blend between the full poses (clip x key) at its ends: every
-        /// moving bone of the layer gets a key on every frame of the range. Ease stops at the ends, otherwise the speed outside carries in.
+        /// moving bone of the layer and every keyed weapon socket gets a key on every frame of the range. Ease stops at the ends,
+        /// otherwise the speed outside carries in.
         private void GenerateInBetweens()
         {
             int start = Mathf.Min(_rangeStart, _rangeEnd);
@@ -1052,8 +1263,16 @@ namespace Game.Scripts.Battle
             int first = Mathf.Max(0, start - 1);
             int last = Mathf.Min(_frameCount, end + 1);
             int frame = _frame;
-            List<HumanBodyBones> bones = _bones.FindAll(IsLayerBone);
-            Pose[,] clip = new Pose[last - first + 1, bones.Count];
+            List<(HumanBodyBones Bone, bool IsSocket)> targets = _bones.FindAll(IsLayerBone).ConvertAll(bone => (bone, false));
+
+            // A socket rests in its hand as far as the clip goes, so the blend of its keys is all the motion it gets.
+            foreach (HumanBodyBones hand in _socketRests.Keys)
+            {
+                if (IsLayerBone(hand))
+                    targets.Add((hand, true));
+            }
+
+            Pose[,] clip = new Pose[last - first + 1, targets.Count];
 
             // The clip alone: edits are applied in LateUpdate, after the animator has been sampled here.
             for (int f = first; f <= last; f++)
@@ -1061,10 +1280,10 @@ namespace Game.Scripts.Battle
                 SetFrame(f);
                 _animator.Update(0f);
 
-                for (int i = 0; i < bones.Count; i++)
+                for (int i = 0; i < targets.Count; i++)
                 {
-                    Transform bone = GetBone(bones[i]);
-                    clip[f - first, i] = new Pose(bone.localPosition, bone.localRotation);
+                    Transform bone = GetBone(targets[i].Bone);
+                    clip[f - first, i] = targets[i].IsSocket ? _socketRests[targets[i].Bone] : new Pose(bone.localPosition, bone.localRotation);
                 }
             }
 
@@ -1074,9 +1293,9 @@ namespace Game.Scripts.Battle
 
             int[] ends = { first, start, end, last };
 
-            for (int i = 0; i < bones.Count; i++)
+            for (int i = 0; i < targets.Count; i++)
             {
-                BoneTrack track = _edit.Find(bones[i]);
+                BoneTrack track = _edit.Find(targets[i].Bone, targets[i].IsSocket);
                 float[][] values = new float[ends.Length][];
                 Quaternion previous = Quaternion.identity;
 
@@ -1118,7 +1337,7 @@ namespace Game.Scripts.Battle
                 if (isStill)
                     continue;
 
-                track = _edit.GetOrAdd(bones[i]);
+                track = _edit.GetOrAdd(targets[i].Bone, targets[i].IsSocket);
 
                 foreach (BoneKey key in keys)
                     track.SetKey(key);
@@ -1140,6 +1359,7 @@ namespace Game.Scripts.Battle
         {
 #if UNITY_EDITOR
             Replay();
+            ResetSockets();
 
             foreach (AnimationClip clip in _dirty)
             {
@@ -1169,7 +1389,10 @@ namespace Game.Scripts.Battle
         /// the current state is put back whenever it gets dropped. Called before the change, while the clip length is still right.
         private void Replay()
         {
-            _replayTime = Mathf.Clamp01(_frame / FrameRate / _test.GetLength(_editLayer));
+            // A replay still under way keeps its frame: until the state is back the animator reports the start of the clip.
+            if (Time.unscaledTime >= _replayEnd)
+                _replayTime = Mathf.Clamp01(_frame / FrameRate / _test.GetLength(_editLayer));
+
             _replayEnd = Time.unscaledTime + ReplayWindow;
             _test.Seek(_editLayer, _replayTime);
         }
@@ -1267,6 +1490,7 @@ namespace Game.Scripts.Battle
 
             GUI.enabled = true;
             GUILayout.FlexibleSpace();
+            _isRayVisible = _skin.Toggle(_isRayVisible, "Aim ray", 72f);
             _isSkeletonVisible = _skin.Toggle(_isSkeletonVisible, "Skeleton", 80f);
             GUI.enabled = HasPoints();
             _arePointsVisible = _skin.Toggle(_arePointsVisible, "Grip points", 92f);
@@ -1280,7 +1504,7 @@ namespace Game.Scripts.Battle
             GUI.enabled = !_isShowingBaked;
             GUILayout.BeginHorizontal();
 
-            if (_skin.Button("Key bone  K"))
+            if (_skin.Button("Key  K"))
                 SetKeys(false);
 
             if (_skin.Button("Key pose  Shift+K"))
@@ -1292,11 +1516,15 @@ namespace Game.Scripts.Battle
             if (_skin.Button("Delete pose  Shift+X"))
                 DeleteKeys(true);
 
-            if (_skin.Button("Copy pose  C"))
+            if (_skin.Button(_bone == NoBone && _prop == NoBone ? "Copy pose  C" : "Copy selection  C"))
                 CopyPose();
 
-            if (_skin.Button("Paste pose  V"))
+            GUI.enabled = !_isShowingBaked && _clipboard.Count > 0;
+
+            if (_skin.Button("Paste  V"))
                 PastePose();
+
+            GUI.enabled = !_isShowingBaked;
 
             GUILayout.FlexibleSpace();
             int start = Mathf.Min(_rangeStart, _rangeEnd);
@@ -1315,7 +1543,7 @@ namespace Game.Scripts.Battle
             DrawTimeline(GUILayoutUtility.GetRect(0f, RulerHeight + RowHeight * 2f, GUILayout.ExpandWidth(true)));
         }
 
-        /// Ruler, a row with the keys of every bone and a row with the keys of the selected one. Dragging a key retimes it, dragging
+        /// Ruler, a row with the keys of every track and a row with the keys of the selection. Dragging a key retimes it, dragging
         /// anywhere else scrubs.
         private void DrawTimeline(Rect area)
         {
@@ -1338,8 +1566,8 @@ namespace Game.Scripts.Battle
                     GUI.Label(new Rect(x + 2f, area.y, 40f, RulerHeight), frame.ToString(), _skin.Hint);
             }
 
-            GUI.Label(new Rect(poseRow.x + 4f, poseRow.y, TrackLabelWidth, RowHeight), "All bones", _skin.Label);
-            GUI.Label(new Rect(boneRow.x + 4f, boneRow.y, TrackLabelWidth, RowHeight), _bone == NoBone ? "—" : _names[_bone], _skin.Label);
+            GUI.Label(new Rect(poseRow.x + 4f, poseRow.y, TrackLabelWidth, RowHeight), "All tracks", _skin.Label);
+            GUI.Label(new Rect(boneRow.x + 4f, boneRow.y, TrackLabelWidth - 8f, RowHeight), GetSelectionName(), _skin.Label);
 
             HandGrip grip = _bone == NoBone ? null : _edit.FindGrip(_bone);
 
@@ -1357,7 +1585,7 @@ namespace Game.Scripts.Battle
                 {
                     DrawKey(track, poseRow, key.Frame, key.Frame == _frame ? s_keyColor : s_trackColor);
 
-                    if (boneTrack.Bone == _bone)
+                    if (IsSelected(boneTrack))
                         DrawKey(track, boneRow, key.Frame, key.Frame == _frame ? s_keyColor : s_activeColor);
                 }
             }
@@ -1479,30 +1707,34 @@ namespace Game.Scripts.Battle
                 if (!IsLayerBone(bone))
                     continue;
 
-                BoneTrack track = _edit.Find(bone);
-                bool isKeyed = track != null && track.Keys.Count > 0;
-                bool isKey = isKeyed && track.IndexOf(_frame) >= 0;
-                string tag = (isKey ? "KEY" : isKeyed ? "anim" : string.Empty) + (_edit.FindGrip(bone) != null ? "  grip" : string.Empty);
+                if (DrawRow(_names[bone], _selection.Contains(bone), _depths[bone], _edit.Find(bone), _edit.FindGrip(bone) != null))
+                    Select(bone, IsAdding());
 
-                if (_skin.Row(_names[bone], bone == _bone, _depths[bone] * 10f, tag, isKey ? s_keyColor : isKeyed ? s_trackColor : s_gripColor))
-                    Select(bone);
+                // The weapon or item in a hand is listed under it.
+                if (IsHolding(bone) && DrawRow(GetPropName(bone), bone == _prop, _depths[bone] + 1, _edit.Find(bone, true), false))
+                    SelectProp(bone);
             }
 
             GUILayout.EndScrollView();
 
-            if (_bone == NoBone || _isShowingBaked)
+            bool isProp = _prop != NoBone;
+            HumanBodyBones target = isProp ? _prop : _bone;
+
+            if (target == NoBone || _isShowingBaked)
                 return;
 
             _skin.Separator();
-            GUILayout.Label($"{_names[_bone]}  ·  frame {_frame}", _skin.Header);
+            GUILayout.Label($"{GetSelectionName()}  ·  frame {_frame}", _skin.Header);
 
-            if (_socketRests.ContainsKey(_bone))
+            if (isProp)
+                GUILayout.Label("Moves and turns in the hand. A regripped hand follows it, a pinned hand stays on it.", _skin.Hint);
+            else if (_socketRests.ContainsKey(_bone))
                 DrawGrip();
 
-            if (GetActiveGrip(_bone) != null)
+            if (!isProp && GetActiveGrip(_bone) != null)
                 return;
 
-            BoneKey key = Evaluate(_bone);
+            BoneKey key = Evaluate(target, isProp);
             Vector3 euler = ToSigned(key.Rotation.eulerAngles);
             Vector3 position = key.Position;
             GUI.changed = false;
@@ -1510,7 +1742,7 @@ namespace Game.Scripts.Battle
             euler.y = _skin.Slider("Rotate Y", euler.y, -180f, 180f);
             euler.z = _skin.Slider("Rotate Z", euler.z, -180f, 180f);
 
-            if (_bone == HumanBodyBones.Hips)
+            if (isProp || _bone == HumanBodyBones.Hips)
             {
                 position.x = _skin.Slider("Move X", position.x, -0.5f, 0.5f, "F3");
                 position.y = _skin.Slider("Move Y", position.y, -0.5f, 0.5f, "F3");
@@ -1518,7 +1750,7 @@ namespace Game.Scripts.Battle
             }
 
             if (GUI.changed)
-                ChangeKey(_bone, new BoneKey(_frame, Quaternion.Euler(euler), position));
+                ChangeKey(target, new BoneKey(_frame, Quaternion.Euler(euler), position), isProp);
 
             GUILayout.BeginHorizontal();
 
@@ -1535,6 +1767,19 @@ namespace Game.Scripts.Battle
                 ClearTrack();
 
             GUILayout.EndHorizontal();
+
+            if (!isProp && _skin.Button("Add the bones below to the selection  B"))
+                SelectBranch();
+        }
+
+        /// List entry of a track: KEY — a key on this frame, anim — keys elsewhere, grip — the hand is on a weapon.
+        private bool DrawRow(string text, bool isOn, int depth, BoneTrack track, bool hasGrip)
+        {
+            bool isKeyed = track != null && track.Keys.Count > 0;
+            bool isKey = isKeyed && track.IndexOf(_frame) >= 0;
+            string tag = (isKey ? "KEY" : isKeyed ? "anim" : string.Empty) + (hasGrip ? "  grip" : string.Empty);
+
+            return _skin.Row(text, isOn, depth * 10f, tag, isKey ? s_keyColor : isKeyed ? s_trackColor : s_gripColor);
         }
 
         private void DrawGrip()
@@ -1743,7 +1988,7 @@ namespace Game.Scripts.Battle
 
         private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
         {
-            if (!_isOpen || _edit == null || _isShowingBaked || camera != _camera)
+            if (!_isOpen || camera != _camera)
                 return;
 
             _material.SetPass(0);
@@ -1752,6 +1997,35 @@ namespace Game.Scripts.Battle
             GL.modelview = camera.worldToCameraMatrix;
             GL.Begin(GL.LINES);
 
+            if (_isRayVisible)
+                DrawEyeRay();
+
+            if (_edit != null && !_isShowingBaked)
+                DrawEdit(camera.transform);
+
+            GL.End();
+            GL.PopMatrix();
+        }
+
+        /// The line the crosshair lies on, with a cross every quarter of a metre: seen through the eye they stack into the
+        /// crosshair itself.
+        private void DrawEyeRay()
+        {
+            Ray ray = _test.GetEyeRay();
+            Vector3 right = _animator.transform.right * RayTick;
+            Vector3 up = Vector3.Cross(ray.direction, right);
+            DrawLine(ray.origin, ray.GetPoint(RayLength), s_rayColor);
+
+            for (int i = 1; i * RayStep <= RayLength; i++)
+            {
+                Vector3 point = ray.GetPoint(i * RayStep);
+                DrawLine(point - right, point + right, s_rayColor);
+                DrawLine(point - up, point + up, s_rayColor);
+            }
+        }
+
+        private void DrawEdit(Transform camera)
+        {
             foreach (HumanBodyBones bone in _bones)
             {
                 if (!_isSkeletonVisible || !IsLayerBone(bone))
@@ -1759,13 +2033,13 @@ namespace Game.Scripts.Battle
 
                 Vector3 position = GetBone(bone).position;
                 BoneTrack track = _edit.Find(bone);
-                Color color = bone == _bone ? s_activeColor : track == null || track.Keys.Count == 0 ? Color.white : track.IndexOf(_frame) >= 0
+                Color color = _selection.Contains(bone) ? s_activeColor : track == null || track.Keys.Count == 0 ? Color.white : track.IndexOf(_frame) >= 0
                     ? s_keyColor : s_trackColor;
 
                 if (_parents[bone] != NoBone)
                     DrawLine(GetBone(_parents[bone]).position, position, new Color(1f, 1f, 1f, 0.5f));
 
-                DrawDiamond(position, camera.transform, GetRingRadius(position, 0) * JointScale * 2f, color);
+                DrawDiamond(position, camera, GetRingRadius(position, 0) * JointScale * 2f, color);
             }
 
             foreach (HandGrip grip in _edit.Grips)
@@ -1777,14 +2051,14 @@ namespace Game.Scripts.Battle
             if (ArePointsShown())
             {
                 foreach (GripPoint point in _grips.Points)
-                    DrawPoint(GetPointPose(point), camera.transform, point == _point ? s_activeColor : s_gripColor);
+                    DrawPoint(GetPointPose(point), camera, point == _point ? s_activeColor : s_gripColor);
             }
 
             int active = _dragAxis >= 0 ? _dragAxis : _hoverAxis;
 
-            if ((_bone != NoBone || _point != null) && _isMoving && CanMove())
-                DrawMoveGizmo(GetTarget().position, camera.transform, active);
-            else if ((_bone != NoBone || _point != null) && !_isMoving)
+            if (HasTarget() && _isMoving && CanMove())
+                DrawMoveGizmo(GetTarget().position, camera, active);
+            else if (HasTarget() && !_isMoving)
             {
                 Pose target = GetTarget();
 
@@ -1796,9 +2070,6 @@ namespace Game.Scripts.Battle
                         DrawLine(_ring[i], _ring[i + 1], axis == active ? s_activeColor : s_axisColors[axis]);
                 }
             }
-
-            GL.End();
-            GL.PopMatrix();
         }
 
         /// Diamond on the point with its handle axis (Z, blue) and palm up axis (Y, green).

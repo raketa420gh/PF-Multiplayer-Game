@@ -35,8 +35,6 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private Color[] _formTints = { Color.white, new(0.45f, 0.3f, 0.18f), new(0.12f, 0.1f, 0.12f), new(0.45f, 0.42f, 0.4f) };
 
-        private static readonly Vector3 s_drinkPosition = new(0.13f, -0.085f, -0.07f);
-
         private readonly List<Renderer> _renderers = new();
         private ArmorDresser _dresser;
         private int _shownVersion = -1;
@@ -44,7 +42,6 @@ namespace Game.Scripts.Dungeon
         private bool _wasInvisible;
         private ShapeshiftForm _shownForm;
         private Color _classColor;
-        private Transform _handItemRoot;
         private GameObject _handItem;
         private short _shownHandItem;
         private FighterAnimComponent _anim;
@@ -56,7 +53,6 @@ namespace Game.Scripts.Dungeon
             _model.SetBodyColor(_classColor);
             _dresser = new ArmorDresser(_animator, _pieceSet, gameObject.layer);
             _renderers.AddRange(GetComponentsInChildren<Renderer>(true));
-            _handItemRoot = _animator.GetBoneTransform(HumanBodyBones.RightHand);
         }
 
         public override void Render()
@@ -94,13 +90,7 @@ namespace Game.Scripts.Dungeon
             if (config == null || config.WorldModel == null)
                 return;
 
-            _handItem = Instantiate(config.WorldModel, _handItemRoot, false);
-
-            // A drink stands upright in the palm, mouth to the thumb; anything else lies on the hand.
-            if (config is ConsumableItemConfig { Effect: not ConsumableEffect.HealInstant })
-                _handItem.transform.SetLocalPositionAndRotation(s_drinkPosition, Quaternion.Euler(90f, 0f, 0f));
-            else
-                _handItem.transform.localPosition = new Vector3(0f, -0.04f, 0.08f);
+            _handItem = HandItem.Create(config.WorldModel, _animator, config is ConsumableItemConfig { IsDrink: true });
 
             foreach (Collider collider in _handItem.GetComponentsInChildren<Collider>())
                 Destroy(collider);

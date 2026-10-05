@@ -1,11 +1,15 @@
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Placed campfire: adventurers nearby who rest (hold F) regain health over time; burns out after a while.
+    /// Placed campfire: adventurers nearby who rest (hold F) regain health over time, spells come back to those who sit by it
+    /// (rest key); burns out after a while.
     public sealed class CampfireComponent : InteractableComponent
     {
+        public const float WarmRadius = 3.5f;
+
         public override string Prompt => "Rest at campfire";
         public override float HoldTime => _restTime;
         public override bool IsAvailable => _lifetime.ExpiredOrNotRunning(Runner) == false;
@@ -28,12 +32,26 @@ namespace Game.Scripts.Dungeon
         [Networked]
         private TickTimer _lifetime { get; set; }
 
+        private static readonly List<CampfireComponent> s_all = new();
         private float _flicker;
 
         public override void Spawned()
         {
+            s_all.Add(this);
+
             if (HasStateAuthority)
                 _lifetime = TickTimer.CreateFromSeconds(Runner, _burnTime);
+        }
+
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            s_all.Remove(this);
+        }
+
+        /// A lit campfire burns within reach of the point.
+        public static bool IsWarming(Vector3 position)
+        {
+            return s_all.Exists(fire => fire.IsAvailable && (fire.transform.position - position).sqrMagnitude < WarmRadius * WarmRadius);
         }
 
         public override void Render()
@@ -55,7 +73,6 @@ namespace Game.Scripts.Dungeon
         {
             float amount = adventurer.Fighter.Health.MaxHealth * _healPercent / 100f;
             adventurer.Effects.Add(StatusEffectKind.HealOverTime, amount, _healDuration);
-            adventurer.RestoreCharges();
         }
     }
 }

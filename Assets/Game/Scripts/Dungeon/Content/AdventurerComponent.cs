@@ -40,6 +40,14 @@ namespace Game.Scripts.Dungeon
         private const float ContainerRange = 5f;
         private const float CastPadding = 0.15f;
         private const float RootTurnLimit = 90f;
+        private const float QuickCastTime = 0.05f;
+        /// Reach of the hitscan spells and of weapon enchants cast on an ally.
+        private const float SpellRange = 25f;
+        private const float ChainFalloff = 0.7f;
+        private const float StrikeHeight = 14f;
+        private const float EnchantBurnTime = 3f;
+        private const float EnchantSlow = 25f;
+        private const float EnchantSlowTime = 1.5f;
 
         public FighterComponent Fighter => _fighter;
         public InventoryComponent Inventory => _inventory;
@@ -51,6 +59,8 @@ namespace Game.Scripts.Dungeon
         public IReadOnlyList<AbilityConfig> Abilities => _abilities;
         public InteractableComponent LookTarget => _lookTarget;
         public bool IsInvisible => _effects.Has(StatusEffectKind.Invisible);
+        /// Sitting by a lit campfire brings spell charges back.
+        public bool IsRecoveringSpells => IsResting && CampfireComponent.IsWarming(transform.position);
         public ContainerComponent OpenedContainer => Runner != null && Runner.TryFindBehaviour(OpenContainerId, out NetworkBehaviour b) ? b as ContainerComponent : null;
 
         [Networked]
@@ -187,6 +197,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _restHealInterval = 2f;
 
+        [SerializeField, Tooltip("Seconds per spell charge regained by the campfire, at neutral Insight")]
+        private float _spellRecoverInterval = 2f;
+
         [Networked, Capacity(AbilityCapacity)]
         private NetworkArray<TickTimer> _cooldowns => default;
 
@@ -207,6 +220,9 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         private TickTimer _restTimer { get; set; }
+
+        [Networked]
+        private TickTimer _spellTimer { get; set; }
 
         [Networked]
         private TickTimer _removeTimer { get; set; }
@@ -232,6 +248,8 @@ namespace Game.Scripts.Dungeon
         [Networked]
         private int _searchEndTick { get; set; }
 
+        private static readonly List<LagCompensatedHit> s_hits = new(16);
+        private static readonly List<DamageReceiverComponent> s_struck = new();
         private readonly List<AbilityConfig> _abilities = new();
         private readonly AbilityConfig[] _skills = new AbilityConfig[2];
         private int _skillCount;
@@ -453,12 +471,24 @@ namespace Game.Scripts.Dungeon
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcReadySpell(byte spellIndex)
         {
-            ReadiedSpell = spellIndex < _class.Spells.Length && IsSpellInWheel(spellIndex) ? spellIndex : NoSpell;
+            ReadiedSpell = spellIndex < _class.Spells.Length && IsSpellMemorized(spellIndex) ? spellIndex : NoSpell;
         }
 
-        public bool IsSpellInWheel(int spellIndex)
+        public bool IsSpellInWheel(int spellIndex, int wheel)
         {
-            return (SpellMask & (1 << spellIndex)) != 0;
+            return ClassConfig.IsInWheel(SpellMask, wheel, spellIndex);
+        }
+
+        /// A spell can be readied when it sits in the wheel of an equipped spell memory.
+        public bool IsSpellMemorized(int spellIndex)
+        {
+            foreach (AbilityConfig skill in _skills)
+            {
+                if (skill != null && skill.Kind == AbilityKind.SpellMemory && IsSpellInWheel(spellIndex, skill.Wheel))
+                    return true;
+            }
+
+            return false;
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
@@ -733,10 +763,14 @@ namespace Game.Scripts.Dungeon
             if (!_cooldowns[index].ExpiredOrNotRunning(Runner) || (!spell.IsCooldownBased && _charges[index] == 0))
                 return;
 
-            float duration = Mathf.Max(0.1f, spell.CastTime / _stats.CastSpeed);
+            bool isQuick = _effects.Has(StatusEffectKind.QuickCast);
+            float duration = isQuick ? QuickCastTime : Mathf.Max(0.1f, spell.CastTime / _stats.CastSpeed);
 
             if (!_fighter.Combat.StartBusy(duration + CastPadding, BusyCast))
                 return;
+
+            if (isQuick)
+                _effects.Remove(StatusEffectKind.QuickCast);
 
             Pending = PendingAction.Ability;
             _pendingIndex = (byte)index;
@@ -865,6 +899,21 @@ namespace Game.Scripts.Dungeon
                 case AbilityKind.RestoreCharges:
                     RestoreCharges();
                     break;
+                case AbilityKind.WeaponEnchant:
+                    FindAlly().Effects.Add(ability.Effect, combat.ScaleDamage(Mathf.RoundToInt(ability.Magnitude), DamageType.Magical), buffDuration);
+                    break;
+                case AbilityKind.ChainLightning:
+                    ChainLightning(ability, combat);
+                    break;
+                case AbilityKind.LightningStrike:
+                    LightningStrike(ability, combat);
+                    break;
+                case AbilityKind.Blink:
+                    Blink(ability);
+                    break;
+                case AbilityKind.QuickCast:
+                    _effects.Add(StatusEffectKind.QuickCast, 1f, buffDuration);
+                    break;
             }
 
             if (ability.IsSpell && !ability.IsCooldownBased)
@@ -896,6 +945,132 @@ namespace Game.Scripts.Dungeon
                 combat.Projectiles.Fire(origin, direction * ability.ProjectileSpeed, ability.ProjectileGravity, damage, ability.StaggerDuration,
                     ability.DamageType, ability.ProjectileKind, ability.Radius, (byte)ability.Effect, ability.EffectMagnitude, ability.EffectDuration, ability.LifeSteal);
             }
+        }
+
+        /// The adventurer under the crosshair, or the caster when the aim misses.
+        private AdventurerComponent FindAlly()
+        {
+            DamageReceiverComponent receiver = AimReceiver(SpellRange, out _);
+
+            return receiver != null && receiver.TryGetComponent(out AdventurerComponent ally) && ally.State == AdventurerState.Alive ? ally : this;
+        }
+
+        /// First body on the crosshair ray, null when a wall or nothing comes first; the point is where the ray stops.
+        private DamageReceiverComponent AimReceiver(float range, out Vector3 point)
+        {
+            FighterBodyComponent body = _fighter.Body;
+            Vector3 origin = body.EyePosition;
+            point = origin + body.AimDirection * range;
+            Runner.RaycastAllSorted(origin, point, Object.InputAuthority, s_hits, _fighter.Combat.Projectiles.HitMask, HitOptions.IncludePhysX | HitOptions.SubtickAccuracy);
+
+            foreach (LagCompensatedHit hit in s_hits)
+            {
+                if (hit.Hitbox != null && (hit.Hitbox.Root == _fighter.Receiver.HitboxRoot || !ZoneHitbox.IsInsideShape(Runner, hit, Object.InputAuthority)))
+                    continue;
+
+                point = hit.Point;
+
+                return hit.Hitbox != null && hit.Hitbox.Root.TryGetComponent(out DamageReceiverComponent receiver) ? receiver : null;
+            }
+
+            return null;
+        }
+
+        /// The bolt leaves the casting hand, a little below and in front of the eyes.
+        private Vector3 HandPoint => _fighter.Body.EyePosition + _fighter.Body.AimDirection * 0.5f - Vector3.up * 0.25f;
+
+        private static Vector3 BodyPoint(DamageReceiverComponent receiver)
+        {
+            return receiver.transform.position + Vector3.up * 1.2f;
+        }
+
+        private void ChainLightning(AbilityConfig ability, CombatComponent combat)
+        {
+            DamageReceiverComponent target = AimReceiver(SpellRange, out Vector3 point);
+            float damage = combat.ScaleDamage(Mathf.RoundToInt(ability.Magnitude), ability.DamageType);
+            Vector3 from = HandPoint;
+            RpcBolt(from, target != null ? BodyPoint(target) : point, false);
+            s_struck.Clear();
+
+            for (int jump = 0; target != null && jump <= ability.ProjectileCount; jump++)
+            {
+                if (target.CanBeHitBy(_fighter.Receiver))
+                    SpellHit(target, Mathf.RoundToInt(damage), ability, from);
+
+                s_struck.Add(target);
+                from = BodyPoint(target);
+                target = FindChainTarget(from, ability.Radius);
+                damage *= ChainFalloff;
+
+                if (target != null)
+                    RpcBolt(from, BodyPoint(target), false);
+            }
+        }
+
+        private DamageReceiverComponent FindChainTarget(Vector3 from, float radius)
+        {
+            DamageReceiverComponent best = null;
+            float bestDistance = radius * radius;
+
+            foreach (DamageReceiverComponent receiver in DamageReceiverComponent.All)
+            {
+                float distance = (BodyPoint(receiver) - from).sqrMagnitude;
+
+                if (receiver == _fighter.Receiver || s_struck.Contains(receiver) || !receiver.CanBeHitBy(_fighter.Receiver) || distance > bestDistance)
+                    continue;
+
+                best = receiver;
+                bestDistance = distance;
+            }
+
+            return best;
+        }
+
+        private void LightningStrike(AbilityConfig ability, CombatComponent combat)
+        {
+            DamageReceiverComponent target = AimReceiver(SpellRange, out Vector3 point);
+            RpcBolt(HandPoint, point, false);
+
+            if (target == null || !target.CanBeHitBy(_fighter.Receiver))
+                return;
+
+            Vector3 ground = target.transform.position;
+            RpcBolt(ground + Vector3.up * StrikeHeight, ground, true);
+            SpellHit(target, combat.ScaleDamage(Mathf.RoundToInt(ability.Magnitude), ability.DamageType), ability, ground + Vector3.up * StrikeHeight);
+        }
+
+        private void SpellHit(DamageReceiverComponent target, int damage, AbilityConfig ability, Vector3 from)
+        {
+            Vector3 point = BodyPoint(target);
+            target.ApplyHit(new HitRequest
+            {
+                BaseDamage = damage,
+                BodyRays = 1,
+                Zone = HitZone.Torso,
+                Point = point,
+                Normal = (from - point).normalized,
+                AttackerPosition = from,
+                StaggerDuration = ability.StaggerDuration,
+                DamageType = ability.DamageType,
+                Attacker = _fighter.Receiver
+            });
+        }
+
+        /// Along the view, flattened: Magnitude metres in Duration seconds.
+        private void Blink(AbilityConfig ability)
+        {
+            Vector3 direction = Vector3.ProjectOnPlane(_fighter.Body.AimDirection, Vector3.up);
+
+            if (direction.sqrMagnitude < 0.01f)
+                direction = transform.forward;
+
+            _fighter.Move.Dash(direction.normalized * (ability.Magnitude / Mathf.Max(0.05f, ability.Duration)), ability.Duration);
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+        private void RpcBolt(Vector3 from, Vector3 to, NetworkBool isStrike)
+        {
+            LightningBoltEffect.Play(from, to, isStrike);
         }
 
         private void AreaDamage(AbilityConfig ability, CombatComponent combat)
@@ -942,16 +1117,45 @@ namespace Game.Scripts.Dungeon
             effects.Add((StatusEffectKind)data.Effect, data.EffectMagnitude, data.EffectDuration);
         }
 
-        /// Rupture-style buffs: every melee hit while active opens a bleed on the victim.
-        private void OnHitDealt(DamageReceiverComponent victim, HitResult result, int damage)
+        /// Rupture-style buffs: every melee hit while active opens a bleed on the victim. Weapon enchants add magical damage to
+        /// every weapon hit and burn or chill the victim; spells and the enchant's own damage do not trigger them.
+        private void OnHitDealt(DamageReceiverComponent victim, HitResult result, int damage, DamageType type)
         {
-            if (result != HitResult.Hit || !HasStateAuthority)
+            if (result != HitResult.Hit || !HasStateAuthority || type != DamageType.Physical)
                 return;
 
             float rupture = _effects.GetMagnitude(StatusEffectKind.Rupture);
+            float fire = _effects.GetMagnitude(StatusEffectKind.FireWeapon);
+            float frost = _effects.GetMagnitude(StatusEffectKind.FrostWeapon);
+            victim.TryGetComponent(out StatusEffectComponent effects);
 
-            if (rupture > 0f && victim.TryGetComponent(out StatusEffectComponent effects))
+            if (rupture > 0f && effects != null)
                 effects.Add(StatusEffectKind.Burn, rupture, 5f);
+
+            if (fire > 0f)
+                Enchant(victim, fire, effects, StatusEffectKind.Burn, fire, EnchantBurnTime);
+
+            if (frost > 0f)
+                Enchant(victim, frost, effects, StatusEffectKind.Slow, EnchantSlow, EnchantSlowTime);
+        }
+
+        private void Enchant(DamageReceiverComponent victim, float damage, StatusEffectComponent effects, StatusEffectKind effect, float magnitude, float duration)
+        {
+            Vector3 point = BodyPoint(victim);
+            victim.ApplyHit(new HitRequest
+            {
+                BaseDamage = Mathf.RoundToInt(damage),
+                BodyRays = 1,
+                Zone = HitZone.Torso,
+                Point = point,
+                Normal = (transform.position - victim.transform.position).normalized,
+                AttackerPosition = transform.position,
+                DamageType = DamageType.Magical,
+                Attacker = _fighter.Receiver
+            });
+
+            if (effects != null && victim.IsAlive)
+                effects.Add(effect, magnitude, duration);
         }
 
         private void ApplyConsumable(EquipSlot slot)
@@ -1019,6 +1223,8 @@ namespace Game.Scripts.Dungeon
 
         private void SimulateRest()
         {
+            SimulateSpellRecovery();
+
             if (!IsResting || _fighter.Move.Velocity.sqrMagnitude > 0.05f)
             {
                 _restTimer = TickTimer.None;
@@ -1034,6 +1240,52 @@ namespace Game.Scripts.Dungeon
                 _fighter.Health.Restore(1);
                 _restTimer = TickTimer.CreateFromSeconds(Runner, RestHealInterval());
             }
+        }
+
+        /// As in Dark and Darker, spells come back only by the fire: one charge at a time, the most spent spell first; Insight
+        /// sets the pace. The free cast of Resonance 30 returns with the last charge.
+        private void SimulateSpellRecovery()
+        {
+            int spell = IsRecoveringSpells ? FindSpentSpell() : -1;
+
+            if (spell < 0)
+            {
+                _spellTimer = TickTimer.None;
+
+                return;
+            }
+
+            if (!_spellTimer.IsRunning)
+                _spellTimer = TickTimer.CreateFromSeconds(Runner, _spellRecoverInterval / _stats.CooldownSpeed);
+
+            if (!_spellTimer.Expired(Runner))
+                return;
+
+            _charges.Set(spell, (byte)(_charges[spell] + 1));
+            _spellTimer = TickTimer.None;
+
+            if (FindSpentSpell() < 0)
+                _isAttuned = true;
+        }
+
+        private int FindSpentSpell()
+        {
+            int found = -1;
+            float lowest = 1f;
+
+            for (int i = _skillCount; i < _abilities.Count; i++)
+            {
+                int max = GetMaxCharges(i);
+                float share = _charges[i] / (float)max;
+
+                if (_abilities[i].IsCooldownBased || _charges[i] >= max || share >= lowest)
+                    continue;
+
+                found = i;
+                lowest = share;
+            }
+
+            return found;
         }
 
         /// Flesh 30 rests twice as fast.

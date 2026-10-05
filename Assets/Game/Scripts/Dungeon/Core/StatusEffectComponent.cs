@@ -20,7 +20,12 @@ namespace Game.Scripts.Dungeon
         Fortify,
         Rupture,
         Taunt,
-        ArmorPenetration
+        ArmorPenetration,
+        /// Weapon enchants: every weapon hit adds magical damage and burns or chills the victim.
+        FireWeapon,
+        FrostWeapon,
+        /// The next spell is cast instantly.
+        QuickCast
     }
 
     public struct StatusEffect : INetworkStruct
@@ -117,6 +122,14 @@ namespace Game.Scripts.Dungeon
                 slot = 0;
 
             _effects.Set(slot, new StatusEffect { Kind = kind, Magnitude = magnitude, Remaining = duration, Duration = duration });
+        }
+
+        public void Remove(StatusEffectKind kind)
+        {
+            int index = Find(kind);
+
+            if (index >= 0)
+                _effects.Set(index, default);
         }
 
         public void ClearAll()

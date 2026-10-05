@@ -5,7 +5,8 @@ using UnityEngine;
 namespace Game.Scripts.Battle
 {
     /// Hand-made corrections on top of generated clips: per-bone keys of a local rotation (and a hips offset) turned after the
-    /// clip has posed the body. Baked into the clip on save and again after every animation rebuild, so they outlive the generators.
+    /// clip has posed the body, and keys of the hand sockets that move the weapon or item carried in them. Baked into the clip
+    /// on save and again after every animation rebuild, so they outlive the generators.
     [CreateAssetMenu(menuName = "Game/Battle/Animation Edit Config")]
     public sealed class AnimationEditConfig : ScriptableObject
     {
@@ -159,19 +160,19 @@ namespace Game.Scripts.Battle
 
         public void SetSource(AnimationClip source) => _source = source;
 
-        public BoneTrack Find(HumanBodyBones bone)
+        public BoneTrack Find(HumanBodyBones bone, bool isSocket = false)
         {
-            return _tracks.Find(track => track.Bone == bone);
+            return _tracks.Find(track => track.Bone == bone && track.IsSocket == isSocket);
         }
 
-        public BoneTrack GetOrAdd(HumanBodyBones bone)
+        public BoneTrack GetOrAdd(HumanBodyBones bone, bool isSocket = false)
         {
-            BoneTrack track = Find(bone);
+            BoneTrack track = Find(bone, isSocket);
 
             if (track != null)
                 return track;
 
-            track = new BoneTrack(bone);
+            track = new BoneTrack(bone, isSocket);
             _tracks.Add(track);
 
             return track;
@@ -193,14 +194,14 @@ namespace Game.Scripts.Battle
             _grips.RemoveAll(grip => grip.Hand == hand);
         }
 
-        public void RemoveTrack(HumanBodyBones bone)
+        public void RemoveTracks(Predicate<BoneTrack> match)
         {
-            _tracks.RemoveAll(track => track.Bone == bone);
+            _tracks.RemoveAll(match);
         }
 
         public void RemoveEmpty()
         {
-            _tracks.RemoveAll(track => track.Keys.Count == 0);
+            RemoveTracks(track => track.Keys.Count == 0);
         }
 
         public bool HasKey(int frame)
@@ -208,20 +209,22 @@ namespace Game.Scripts.Battle
             return _tracks.Exists(track => track.IndexOf(frame) >= 0);
         }
 
-        public void Apply(Animator animator, float frame)
+        /// Expects the hand sockets at rest: socket tracks and holds move them from there. Without holds the hands stay where
+        /// the keys and pins put them; the weapon is the same either way.
+        public void Apply(Animator animator, float frame, bool hasHolds = true)
         {
             foreach (BoneTrack track in _tracks)
             {
-                Transform bone = animator.GetBoneTransform(track.Bone);
+                Transform target = track.IsSocket ? HandGrip.GetSocket(animator, track.Bone) : animator.GetBoneTransform(track.Bone);
 
-                if (bone != null)
-                    track.Apply(bone, frame);
+                if (target != null)
+                    track.Apply(target, frame);
             }
 
             // Grips go last, holds before pins: a pinned hand follows the weapon where the holding hand finally carries it.
             foreach (HandGrip grip in _grips)
             {
-                if (grip.IsHolding)
+                if (grip.IsHolding && hasHolds)
                     grip.Apply(animator, frame);
             }
 
@@ -246,14 +249,20 @@ namespace Game.Scripts.Battle
         }
     }
 
+    /// Keys of a bone, or of the weapon socket under a hand: the socket is shifted and turned in the hand, and whatever it
+    /// carries (a weapon, a potion) goes with it.
     [Serializable]
     public sealed class BoneTrack
     {
         public HumanBodyBones Bone => _bone;
+        public bool IsSocket => _isSocket;
         public IReadOnlyList<BoneKey> Keys => _keys;
 
         [SerializeField]
         private HumanBodyBones _bone;
+
+        [SerializeField]
+        private bool _isSocket;
 
         [SerializeField]
         private List<BoneKey> _keys = new();
@@ -262,7 +271,11 @@ namespace Game.Scripts.Battle
         [NonSerialized]
         private AnimationCurve[] _curves;
 
-        public BoneTrack(HumanBodyBones bone) => _bone = bone;
+        public BoneTrack(HumanBodyBones bone, bool isSocket = false)
+        {
+            _bone = bone;
+            _isSocket = isSocket;
+        }
 
         public int IndexOf(int frame)
         {
@@ -335,7 +348,7 @@ namespace Game.Scripts.Battle
 
         public BoneTrack Clone()
         {
-            BoneTrack clone = new BoneTrack(_bone);
+            BoneTrack clone = new BoneTrack(_bone, _isSocket);
             clone._keys.AddRange(_keys);
 
             return clone;
@@ -376,8 +389,9 @@ namespace Game.Scripts.Battle
     }
 
     /// Hand on a weapon. A pin keeps the hand in one pose on the weapon held by the other hand. A hold lets the hand that carries
-    /// the weapon slide over it: the weapon keeps its path, the hand is solved to the new grip and the socket takes the
-    /// difference, keyed into the clip. Within the frame range the grip is full, around it it blends back to the clip.
+    /// the weapon slide over it: the weapon keeps its path (the clip plus the socket track), the hand is solved to the new grip
+    /// and the socket takes the difference, keyed into the clip. Within the frame range the grip is full, around it it blends
+    /// back to the clip.
     [Serializable]
     public sealed class HandGrip
     {
@@ -523,11 +537,11 @@ namespace Game.Scripts.Battle
 
             if (_isHolding)
             {
-                // The weapon where the clip carries it, the hand placed so the socket reaches it with the new grip.
-                Vector3 position = Vector3.Lerp(_restPosition, _position, weight);
-                Quaternion local = Quaternion.Slerp(_restRotation, _rotation, weight);
-                Vector3 weapon = hand.TransformPoint(_restPosition);
-                rotation = hand.rotation * _restRotation * Quaternion.Inverse(local);
+                // The weapon stays where the socket has it now, the hand is placed so the socket reaches it with the new grip.
+                Vector3 position = Vector3.Lerp(socket.localPosition, _position, weight);
+                Quaternion local = Quaternion.Slerp(socket.localRotation, _rotation, weight);
+                Vector3 weapon = socket.position;
+                rotation = socket.rotation * Quaternion.Inverse(local);
                 target = weapon - rotation * position;
                 socket.SetLocalPositionAndRotation(position, local);
             }

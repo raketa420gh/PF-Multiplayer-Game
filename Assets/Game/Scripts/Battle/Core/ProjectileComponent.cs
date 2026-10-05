@@ -59,6 +59,7 @@ namespace Game.Scripts.Battle
         public event ProjectileHitHandler OnReceiverHit;
 
         public NetworkArray<ProjectileData> Projectiles => _projectiles;
+        public LayerMask HitMask => _hitMask;
 
         [SerializeField]
         private DamageReceiverComponent _ownReceiver;

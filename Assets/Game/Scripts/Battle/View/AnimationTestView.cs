@@ -17,6 +17,8 @@ namespace Game.Scripts.Battle
         public bool IsPaused => _isPaused;
         public bool IsCurrent => IsPlaying(_layer, out _);
         public WeaponConfig Weapon => _weapons[_weaponIndex];
+        /// A belt item is in the hand instead of the weapon.
+        public bool HasItem => _itemIndex >= 0;
 
         [SerializeField]
         private Animator _animator;
@@ -33,6 +35,9 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private WeaponConfig[] _weapons;
+
+        [SerializeField]
+        private HandItem[] _items;
 
         [SerializeField]
         private float _hitWeight = 0.7f;
@@ -74,6 +79,7 @@ namespace Game.Scripts.Battle
         private Vector2 _weaponScroll;
         private Vector2 _stateScroll;
         private int _weaponIndex;
+        private int _itemIndex = -1;
         private int _layer = UpperLayer;
         private float _speed = 1f;
         private float _moveX;
@@ -109,7 +115,7 @@ namespace Game.Scripts.Battle
             _animator.SetFloat(FighterAnimComponent.MoveYParam, _moveY);
             _animator.SetFloat(FighterAnimComponent.CrouchParam, _crouch);
             _animator.SetFloat(FighterAnimComponent.ActionSpeedParam, 1f);
-            _animator.SetBool(FighterAnimComponent.MirrorParam, _weapons[_weaponIndex].IsMirrored && !_isEditing);
+            _animator.SetBool(FighterAnimComponent.MirrorParam, _weapons[_weaponIndex].IsMirrored && !_isEditing && !HasItem);
             _animator.SetLayerWeight(UpperLayer, _current[BaseLayer] == FighterAnimComponent.DeathState ? 0f : 1f);
             _animator.SetLayerWeight(HitLayer, IsPlaying(HitLayer, out AnimatorStateInfo hit) && hit.normalizedTime < 1f ? _hitWeight : 0f);
 
@@ -148,8 +154,7 @@ namespace Game.Scripts.Battle
             if (_isFirstPerson)
             {
                 _camera.fieldOfView = FirstPersonFieldOfView;
-                _camera.transform.SetPositionAndRotation(root.TransformPoint(_body.TransformPoint(_body.EyePoint, _pitch, _crouch)),
-                    root.rotation * Quaternion.Euler(_pitch, 0f, 0f));
+                _camera.transform.SetPositionAndRotation(GetEyeRay().origin, root.rotation * Quaternion.Euler(_pitch, 0f, 0f));
 
                 return;
             }
@@ -172,8 +177,17 @@ namespace Game.Scripts.Battle
 
             for (int i = 0; i < _weapons.Length; i++)
             {
-                if (Button(_weapons[i].name, i == _weaponIndex))
+                if (Button(_weapons[i].name, i == _weaponIndex && !HasItem))
                     SelectWeapon(i);
+            }
+
+            GUILayout.Space(Margin);
+            GUILayout.Label("Item in hand");
+
+            for (int i = 0; i < _items.Length; i++)
+            {
+                if (Button(_items[i].Prefab.name, i == _itemIndex))
+                    SelectItem(i);
             }
 
             GUILayout.EndScrollView();
@@ -245,6 +259,15 @@ namespace Game.Scripts.Battle
             return (info.loop ? Mathf.Repeat(info.normalizedTime, 1f) : Mathf.Clamp01(info.normalizedTime)) * GetLength(layer);
         }
 
+        /// The line of sight in first person: from the eye through the crosshair.
+        public Ray GetEyeRay()
+        {
+            Transform root = _animator.transform;
+
+            return new Ray(root.TransformPoint(_body.TransformPoint(_body.EyePoint, _pitch, _crouch)),
+                root.rotation * Quaternion.Euler(_pitch, 0f, 0f) * Vector3.forward);
+        }
+
         /// Point in GUI units (1080 high, y down) between the side panels.
         public bool IsOverViewport(Vector2 point)
         {
@@ -253,10 +276,7 @@ namespace Game.Scripts.Battle
 
         private void SelectWeapon(int index)
         {
-            foreach (GameObject attachment in _attachments)
-                Destroy(attachment);
-
-            _attachments.Clear();
+            ClearHands();
             _weaponStates.Clear();
             _weaponIndex = index;
             WeaponConfig weapon = _weapons[index];
@@ -279,6 +299,25 @@ namespace Game.Scripts.Battle
                 AddWeaponState(prefix + suffix);
 
             Play(UpperLayer, _weaponStates[0]);
+        }
+
+        /// A belt item takes the place of the weapon, as in the game, and the hand goes to the hold pose.
+        private void SelectItem(int index)
+        {
+            ClearHands();
+            _itemIndex = index;
+            _attachments.Add(_items[index].Create(_animator));
+            _layer = UpperLayer;
+            Play(UpperLayer, FighterAnimComponent.HoldState);
+        }
+
+        private void ClearHands()
+        {
+            foreach (GameObject attachment in _attachments)
+                Destroy(attachment);
+
+            _attachments.Clear();
+            _itemIndex = -1;
         }
 
         private void AddWeaponState(string state)

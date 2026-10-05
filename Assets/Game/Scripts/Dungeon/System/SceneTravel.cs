@@ -10,10 +10,12 @@ namespace Game.Scripts.Dungeon
     /// the loading screens of both scenes cover the trip.
     public static class SceneTravel
     {
+        public const string CharacterSelectScene = "CharacterSelectScene";
         public const string LobbyScene = "LobbyScene";
         public const string DungeonScene = "DungeonScene";
         public const string SandboxScene = "BattleScene";
         public const string LobbyTitle = "The Tavern";
+        public const string CharacterSelectTitle = "Characters";
 
         /// Destination title, status line and 0..1 progress of the trip, raised from the moment it starts.
         public static event Action<string, string, float> OnProgress;

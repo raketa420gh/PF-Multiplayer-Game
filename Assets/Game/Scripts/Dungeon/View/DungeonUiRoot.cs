@@ -143,7 +143,7 @@ namespace Game.Scripts.Dungeon
 
                 for (int i = 0; i < spells.Length; i++)
                 {
-                    if (!_adventurer.IsSpellInWheel(i))
+                    if (!_adventurer.IsSpellInWheel(i, skill.Wheel))
                         continue;
 
                     int index = _adventurer.SkillCount + i;

@@ -46,6 +46,7 @@ namespace Game.Scripts.Dungeon
         private const int NoPerk = -1;
 
         private static readonly string[] s_skillKeys = { "Q", "E" };
+        private static readonly string[] s_wheelBadges = { "I", "II" };
         private readonly List<AbilityIconView> _perkIcons = new();
         private readonly List<AbilityIconView> _skillIcons = new();
         private readonly List<AbilityIconView> _spellIcons = new();
@@ -219,7 +220,11 @@ namespace Game.Scripts.Dungeon
                 _perkIcons[i].SetSelected((_session.PerkMask & (1 << i)) != 0);
 
             for (int i = 0; i < _spellIcons.Count; i++)
-                _spellIcons[i].SetSelected((_session.SpellMask & (1 << i)) != 0);
+            {
+                int wheel = ClassConfig.IsInWheel(_session.SpellMask, 0, i) ? 0 : ClassConfig.IsInWheel(_session.SpellMask, 1, i) ? 1 : -1;
+                _spellIcons[i].SetSelected(wheel >= 0);
+                _spellIcons[i].SetBadge(wheel >= 0 ? s_wheelBadges[wheel] : string.Empty);
+            }
         }
 
         /// Perks that left the build free their slots; new ones take the slot they were dropped on, or the first free one.
@@ -332,7 +337,7 @@ namespace Game.Scripts.Dungeon
         private void OnSpellClicked(AbilityIconView icon, PointerEventData.InputButton button)
         {
             DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.5f);
-            _session?.RpcToggleSpell((byte)icon.Index);
+            _session?.RpcToggleSpell((byte)(button == PointerEventData.InputButton.Right ? 1 : 0), (byte)icon.Index);
         }
 
         private void OnSkillClicked(AbilityIconView icon, PointerEventData.InputButton button)
