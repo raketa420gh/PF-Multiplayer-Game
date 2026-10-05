@@ -164,6 +164,34 @@ namespace Game.Scripts.Editor.Dungeon
                     Polygon(p, new Vector2(0.5f, -0.7f), new Vector2(0f, 0f), new Vector2(-0.5f, -0.7f)))),
                 new Layer(1.6f, p => Polygon(p, new Vector2(0.3f, -0.64f), new Vector2(0f, -0.28f), new Vector2(-0.3f, -0.64f))),
                 new Layer(0.55f, p => Mathf.Min(Box(p, 0f, 0.76f, 0.62f, 0.075f, 0.03f), Box(p, 0f, -0.76f, 0.62f, 0.075f, 0.03f)))
+            },
+            ["Sword"] = new[]
+            {
+                new Layer(0.55f, p => Segment(Rotate(p, 45f), new Vector2(0f, -0.8f), new Vector2(0f, -0.5f), 0.06f)),
+                new Layer(0.8f, p => Mathf.Min(Box(Rotate(p, 45f), 0f, -0.45f, 0.3f, 0.06f, 0.03f), Circle(Rotate(p, 45f), 0f, -0.86f, 0.1f))),
+                new Layer(1.25f, p => Polygon(Rotate(p, 45f), new Vector2(-0.11f, -0.4f), new Vector2(0.11f, -0.4f), new Vector2(0.11f, 0.62f), new Vector2(0f, 0.92f),
+                    new Vector2(-0.11f, 0.62f))),
+                new Layer(1.7f, p => Segment(Rotate(p, 45f), new Vector2(0f, -0.3f), new Vector2(0f, 0.58f), 0.02f))
+            },
+            ["Mace"] = new[]
+            {
+                new Layer(0.55f, p => Segment(Rotate(p, 45f), new Vector2(0f, -0.85f), new Vector2(0f, 0.2f), 0.065f)),
+                new Layer(1.1f, p =>
+                {
+                    Vector2 head = Rotate(p, 45f) - new Vector2(0f, 0.42f);
+                    float distance = Circle(head, 0f, 0f, 0.3f);
+
+                    for (int i = 0; i < 8; i++)
+                        distance = Mathf.Min(distance, Polygon(Rotate(head, i * 45f), new Vector2(-0.1f, 0.24f), new Vector2(0.1f, 0.24f), new Vector2(0f, 0.5f)));
+
+                    return distance;
+                }),
+                new Layer(1.7f, p => Circle(Rotate(p, 45f), -0.08f, 0.5f, 0.09f))
+            },
+            ["Halo"] = new[]
+            {
+                new Layer(1f, p => Mathf.Abs(Circle(p, 0f, 0f, 0.66f)) - 0.1f),
+                new Layer(1.6f, p => Plus(p, 0.36f, 0.12f))
             }
         };
 
@@ -171,7 +199,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             return kind switch
             {
-                AbilityKind.Heal => "Cross",
+                AbilityKind.Heal or AbilityKind.AreaHeal => "Cross",
                 AbilityKind.Buff => "Chevrons",
                 AbilityKind.Projectile => "Bolt",
                 AbilityKind.AreaDamage => "Burst",

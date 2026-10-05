@@ -51,7 +51,8 @@ namespace Game.Scripts.Dungeon
     public enum ArmorType : byte
     {
         Cloth,
-        Leather
+        Leather,
+        Plate
     }
 
     public enum WeaponClass : byte
@@ -203,7 +204,17 @@ namespace Game.Scripts.Dungeon
         BerserkerChest,
         BerserkerHands,
         BerserkerLegs,
-        BerserkerFeet
+        BerserkerFeet,
+        IroncladHead,
+        IroncladChest,
+        IroncladHands,
+        IroncladLegs,
+        IroncladFeet,
+        DevoutHead,
+        DevoutChest,
+        DevoutHands,
+        DevoutLegs,
+        DevoutFeet
     }
 
     public enum ConsumableEffect : byte

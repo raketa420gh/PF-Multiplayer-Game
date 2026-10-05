@@ -139,6 +139,7 @@ namespace Game.Scripts.Editor.Dungeon
                         BattleEditorUtility.Set(so, "_moveSpeedPenalty", def.MovePenalty);
                         BattleEditorUtility.Set(so, "_damageType", DamageType.Physical);
                         BattleEditorUtility.Set(so, "_lightRange", def.LightRange);
+                        BattleEditorUtility.Set(so, "_isFocus", def.IsFocus);
                         BattleEditorUtility.Set(so, "_classes", LoadClasses(def));
                         break;
                     case ItemKind.Armor:
@@ -375,9 +376,9 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Spear", 0.5f, 1, 1), ("Longsword", 0.5f, 1, 1), ("Crossbow", 0.4f, 1, 1), ("Magic Staff", 0.5f, 1, 1), ("Battle Axe", 0.4f, 1, 1), ("Zweihander", 0.3f, 1, 1),
                 ("Ruby", 0.5f, 1, 1), ("Emerald", 0.5f, 1, 1), ("Sapphire", 0.5f, 1, 1), ("Gold Goblet", 0.5f, 1, 1),
                 ("Short Sword", 0.9f, 1, 1), ("Rapier", 0.5f, 1, 1), ("Viking Sword", 0.5f, 1, 1), ("Hatchet", 0.8f, 1, 1), ("Morning Star", 0.5f, 1, 1),
-                ("Castillon Dagger", 0.6f, 1, 1), ("Stiletto Dagger", 0.6f, 1, 1), ("Felling Axe", 0.5f, 1, 1), ("Halberd", 0.3f, 1, 1), ("Buckler", 0.6f, 1, 1), ("Horseman's Axe", 0.4f, 1, 1),
+                ("Castillon Dagger", 0.6f, 1, 1), ("Stiletto Dagger", 0.6f, 1, 1), ("Felling Axe", 0.5f, 1, 1), ("Halberd", 0.3f, 1, 1), ("Buckler", 0.6f, 1, 1), ("Horseman's Axe", 0.4f, 1, 1), ("Quarterstaff", 0.5f, 1, 1),
                 ("Potion of Invisibility", 0.6f, 1, 1), ("Silver Chalice", 0.6f, 1, 1), ("Gold Ore", 0.8f, 1, 3), ("Silver Ingot", 0.3f, 1, 1)
-            }.Concat(Pieces(0.9f, "Peasant")).Concat(Pieces(0.6f, "Ranger")).Concat(Pieces(0.3f, "Mystic", "Occultist", "Marauder", "Berserker")).ToArray();
+            }.Concat(Pieces(0.9f, "Peasant")).Concat(Pieces(0.6f, "Ranger")).Concat(Pieces(0.3f, "Mystic", "Occultist", "Marauder", "Berserker", "Ironclad", "Devout")).ToArray();
             (string name, float weight, int min, int max)[] ornate = new (string, float, int, int)[]
             {
                 ("Gold Coin Purse", 4f, 1, 2), ("Gold Coin Bag", 1f, 1, 1), ("Gold Coins", 3f, 10, 25), ("Diamond", 1.5f, 1, 2), ("Ruby", 2f, 1, 3), ("Emerald", 2f, 1, 3), ("Sapphire", 2f, 1, 3),
@@ -387,7 +388,7 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Fox Pendant", 0.6f, 1, 1), ("Ox Pendant", 0.6f, 1, 1), ("Bear Pendant", 0.6f, 1, 1), ("Owl Pendant", 0.6f, 1, 1),
                 ("Ring of Courage", 0.6f, 1, 1), ("Ring of Vitality", 0.6f, 1, 1), ("Ring of Finesse", 0.6f, 1, 1), ("Ring of Wisdom", 0.6f, 1, 1),
                 ("Troll's Blood", 1f, 1, 1), ("Potion of Invisibility", 1f, 1, 2), ("Gold Crown", 0.5f, 1, 1), ("Gold Ingot", 1f, 1, 2), ("Pearl Necklace", 1f, 1, 1)
-            }.Concat(Pieces(0.5f, "Ranger")).Concat(Pieces(0.7f, "Mystic", "Occultist", "Marauder", "Berserker")).ToArray();
+            }.Concat(Pieces(0.5f, "Ranger")).Concat(Pieces(0.7f, "Mystic", "Occultist", "Marauder", "Berserker", "Ironclad", "Devout")).ToArray();
             (string name, float weight, int min, int max)[] coffin =
             {
                 ("Gold Coins", 5f, 2, 10), ("Ruby", 1f, 1, 1), ("Sapphire", 1f, 1, 1), ("Gold Band", 0.8f, 1, 1), ("Gem Necklace", 0.6f, 1, 1), ("Ancient Scroll", 1f, 1, 1),
@@ -403,7 +404,7 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 ("Ancient Scroll", 4f, 1, 2), ("Potion of Protection", 2f, 1, 1), ("Potion of Healing", 2f, 1, 1), ("Gold Coins", 2f, 2, 8), ("Magic Staff", 0.5f, 1, 1), ("Sapphire", 1f, 1, 1),
                 ("Potion of Invisibility", 1.5f, 1, 1), ("Owl Pendant", 0.3f, 1, 1), ("Ring of Wisdom", 0.3f, 1, 1)
-            }.Concat(Pieces(0.4f, "Mystic", "Occultist")).ToArray();
+            }.Concat(Pieces(0.4f, "Mystic", "Occultist", "Devout")).ToArray();
             (string name, float weight, int min, int max)[] monster = new (string, float, int, int)[]
             {
                 ("Gold Coins", 5f, 1, 6), ("Bandage", 2f, 1, 1), ("Ruby", 0.5f, 1, 1), ("Rondel Dagger", 0.5f, 1, 1), ("Potion of Healing", 1f, 1, 1),

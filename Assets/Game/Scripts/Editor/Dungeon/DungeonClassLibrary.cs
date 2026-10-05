@@ -30,7 +30,9 @@ namespace Game.Scripts.Editor.Dungeon
                     Kit = new[] { ("Battle Axe", EquipSlot.Weapon1Main, 1, true), ("Zweihander", EquipSlot.Weapon2Main, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Francisca Axe", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 3, true) },
                     Weapons = new[] { WeaponClass.Axe, WeaponClass.Sword, WeaponClass.Mace, WeaponClass.Spear, WeaponClass.Dagger, WeaponClass.Torch }
                 },
-                CreateWizard()
+                CreateWizard(),
+                CreateSellsword(),
+                CreateChaplain()
             };
         }
 
@@ -81,7 +83,7 @@ namespace Game.Scripts.Editor.Dungeon
                         Name = "Blink", Description = "Rush 7m along your view in a blur; the first wall or body stops you.", Kind = AbilityKind.Blink, IsSpell = true,
                         Charges = 3, Cooldown = 1f, CastTime = 0.25f, Magnitude = 7f, Duration = 0.18f, Glyph = "Bl", Color = arcane, Icon = "Dash"
                     },
-                    Spell("Haste", "+20% move speed for 20s.", AbilityKind.Buff, 2, 0.8f, 20f, 20f, "Hs", new Color(0.6f, 1f, 0.6f), StatusEffectKind.Haste, icon: "Chevrons"),
+                    Spell("Haste", "+20% move speed for 20s for the ally you aim at (for you when you miss).", AbilityKind.Buff, 2, 0.8f, 20f, 20f, "Hs", new Color(0.6f, 1f, 0.6f), StatusEffectKind.Haste, icon: "Chevrons"),
                     Projectile("Magic Missile", "Five arcane darts in a fan, 7 magical damage each.", true, 5, 1f, 0.7f, 7f, 34f, 0f, ProjectileKind.Magic, DamageType.Magical,
                         5, 5f, "MM", arcane, stagger: 0.05f, icon: "Bolt"),
                     Spell("Invisibility", "Fade from sight for 8s.", AbilityKind.Invisibility, 1, 1.2f, 0f, 8f, "In", new Color(0.75f, 0.75f, 0.85f), icon: "Eye")
@@ -96,6 +98,94 @@ namespace Game.Scripts.Editor.Dungeon
                 Kit = new[] { ("Spellbook", EquipSlot.Weapon1Main, 1, true), ("Magic Staff", EquipSlot.Weapon2Main, 1, true), ("Peasant Hood", EquipSlot.Head, 1, true),
                     ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true), ("Bandage", EquipSlot.Utility2, 2, true) },
                 Weapons = new[] { WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.CrystalBall, WeaponClass.Dagger, WeaponClass.Sword },
+                Focus = CastFocus.Magic
+            };
+        }
+
+        /// Weapon generalist with no magic: every weapon but the magical foci, shields and the heaviest armour. Perks and gear
+        /// make a wall, a hard hitter or quick hands of him.
+        private static ClassDef CreateSellsword()
+        {
+            Color steel = new Color(0.62f, 0.72f, 0.86f);
+
+            return new ClassDef
+            {
+                Id = 2, Name = "Sellsword", Description = "Hired blade at home with any weapon but a magical one. Plate and a shield make a wall of him, perks a hard hitter or quick hands. No magic at all.",
+                Stats = new ClassStats(18, 18, 9, 10, 17, 18), Color = steel, Body = new Color(0.8f, 0.62f, 0.5f),
+                Skills = new[]
+                {
+                    new AbilityDef
+                    {
+                        Name = "Rally", Description = "Catch your breath: restore 40 health over 8s.", Kind = AbilityKind.Heal, Magnitude = 40f, Duration = 8f,
+                        Cooldown = 45f, CastTime = 0.3f, DamageType = DamageType.Physical, Glyph = "Ra", Color = new Color(0.9f, 0.3f, 0.3f), Icon = "Heart"
+                    },
+                    Skill("Onslaught", "+20% action speed for 8s.", AbilityKind.Buff, 20f, 8f, 35f, "On", steel, StatusEffectKind.ActionSpeed, 0.2f, icon: "Sword")
+                },
+                Perks = new[]
+                {
+                    new PerkDef("Bulwark", "+35 armor rating and +10% max health.", new StatModifier(StatType.ArmorRating, 35f), new StatModifier(StatType.MaxHealth, 10f)) { Icon = "Shield" },
+                    new PerkDef("Weapon Drill", "+6 physical power and +8% physical damage.", new StatModifier(StatType.PhysicalPower, 6f), new StatModifier(StatType.PhysicalDamageBonus, 0.08f)) { Icon = "Sword", Color = new Color(0.9f, 0.6f, 0.35f) },
+                    new PerkDef("Fleet Footwork", "+14 move speed: armour weighs less on the feet.", new StatModifier(StatType.MoveSpeed, 14f)) { Icon = "Dash", Color = new Color(0.6f, 0.9f, 0.6f) },
+                    new PerkDef("Quick Hands", "+10% action speed.", new StatModifier(StatType.ActionSpeed, 10f)) { Icon = "Bolt", Color = new Color(0.95f, 0.85f, 0.4f) }
+                },
+                Kit = new[] { ("Arming Sword", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Longsword", EquipSlot.Weapon2Main, 1, true),
+                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Bandage", EquipSlot.Utility1, 3, true) },
+                Weapons = new[] { WeaponClass.Sword, WeaponClass.Axe, WeaponClass.Mace, WeaponClass.Dagger, WeaponClass.Spear, WeaponClass.Bow, WeaponClass.Crossbow,
+                    WeaponClass.Staff, WeaponClass.Shield, WeaponClass.Torch }
+            };
+        }
+
+        /// War priest: blunt weapons, a shield and one wheel of prayers of light cast with a spellbook or a magic staff. Spirit
+        /// and cloth make a healer; a mace, some plate and the two weapon skills a slow front-liner who needs no prayer memory.
+        private static ClassDef CreateChaplain()
+        {
+            Color light = new Color(1f, 0.9f, 0.55f);
+            Color dawn = new Color(1f, 0.7f, 0.3f);
+            Color mending = new Color(0.6f, 1f, 0.65f);
+
+            return new ClassDef
+            {
+                Id = 3, Name = "Chaplain", Description = "War priest of the dawn: maces, a shield and prayers of light that heal, ward and smite. A frail healer in cloth or a slow wall in plate, as the build goes.",
+                Stats = new ClassStats(15, 14, 21, 16, 12, 12), Color = light, Body = new Color(0.8f, 0.64f, 0.52f),
+                Skills = new[]
+                {
+                    Memory("Prayer Memory", "Hold to open the prayer wheel and ready a prayer; hold RMB with a spellbook or a magic staff in hand and release to cast. The centre of the wheel returns RMB to the weapon.", "PM", light),
+                    new AbilityDef
+                    {
+                        Name = "Hallow Weapon", Description = "Light on your weapon, or on the weapon of the ally you aim at, for 12s: +8 magical damage per hit.",
+                        Kind = AbilityKind.WeaponEnchant, Cooldown = 35f, CastTime = 0.4f, Magnitude = 8f, Duration = 12f, Effect = StatusEffectKind.HolyWeapon,
+                        Glyph = "HW", Color = light, Icon = "Mace"
+                    },
+                    new AbilityDef
+                    {
+                        Name = "Rebuke", Description = "Burst of light: 25 magical damage and a stagger to everyone within 4.5m, allies too.", Kind = AbilityKind.AreaDamage,
+                        Cooldown = 30f, CastTime = 0.5f, Magnitude = 25f, Radius = 4.5f, Stagger = 0.5f, Glyph = "Rb", Color = dawn, Icon = "Burst"
+                    }
+                },
+                Spells = new[]
+                {
+                    Spell("Mending Prayer", "Heals the ally you aim at (yourself when you miss) for 22.", AbilityKind.Heal, 4, 1.2f, 22f, 0f, "MP", mending, icon: "Cross"),
+                    Spell("Aegis", "Shield of light on the ally you aim at (on you when you miss): absorbs 25 damage for 15s.", AbilityKind.Shield, 3, 0.8f, 25f, 15f, "Ae", light, icon: "Shield"),
+                    Spell("Benediction", "Blesses the ally you aim at (yourself when you miss): +5 Strength for 30s.", AbilityKind.Buff, 3, 0.8f, 5f, 30f, "Be", light,
+                        StatusEffectKind.Strength, icon: "Chevrons"),
+                    Projectile("Sunlance", "Lance of light: 22 magical damage and a stagger.", true, 4, 1f, 0.9f, 22f, 30f, 0f, ProjectileKind.Holy, DamageType.Magical,
+                        1, 0f, "SL", dawn, stagger: 0.25f, icon: "Bolt"),
+                    new AbilityDef
+                    {
+                        Name = "Circle of Dawn", Description = "Everyone within 5m, you included, heals 30 over 6s.", Kind = AbilityKind.AreaHeal, IsSpell = true,
+                        Charges = 2, Cooldown = 1f, CastTime = 1.5f, Magnitude = 30f, Duration = 6f, Radius = 5f, Glyph = "CD", Color = mending, Icon = "Halo"
+                    }
+                },
+                Perks = new[]
+                {
+                    new PerkDef("Devotion", "+6 Spirit: stronger prayers and healing.", new StatModifier(StatType.Spirit, 6f)) { Icon = "Halo" },
+                    new PerkDef("Litany", "+6 Knowledge: one more charge of every prayer, faster casting.", new StatModifier(StatType.Knowledge, 6f)) { Icon = "Book" },
+                    new PerkDef("Zealot", "+6 physical power and +8% physical damage.", new StatModifier(StatType.PhysicalPower, 6f), new StatModifier(StatType.PhysicalDamageBonus, 0.08f)) { Icon = "Mace", Color = new Color(0.9f, 0.6f, 0.35f) },
+                    new PerkDef("Iron Vow", "+20 armor rating and +15 magic resistance.", new StatModifier(StatType.ArmorRating, 20f), new StatModifier(StatType.MagicResistance, 15f)) { Icon = "Armor", Color = new Color(0.75f, 0.8f, 0.9f) }
+                },
+                Kit = new[] { ("Flanged Mace", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Spellbook", EquipSlot.Weapon2Main, 1, true),
+                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true), ("Bandage", EquipSlot.Utility2, 2, true) },
+                Weapons = new[] { WeaponClass.Mace, WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.Shield, WeaponClass.Torch },
                 Focus = CastFocus.Magic
             };
         }

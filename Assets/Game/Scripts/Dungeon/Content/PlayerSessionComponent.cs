@@ -298,7 +298,7 @@ namespace Game.Scripts.Dungeon
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcToggleSpell(byte wheel, byte index)
         {
-            if (State != SessionState.Lobby || index >= Class.Spells.Length || wheel >= ClassConfig.WheelCount)
+            if (State != SessionState.Lobby || index >= Class.Spells.Length || wheel >= ClassConfig.WheelCount || !Class.HasWheel(wheel))
                 return;
 
             int bit = ClassConfig.WheelBit(wheel, index);

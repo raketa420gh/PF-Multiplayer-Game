@@ -16,6 +16,8 @@ namespace Game.Scripts.Dungeon
         public float MoveSpeedPenalty => _moveSpeedPenalty;
         public DamageType DamageType => _damageType;
         public float LightRange => _lightRange;
+        /// Held to cast readied spells; a staff is a focus only when it is a magical one.
+        public bool IsFocus => _isFocus;
         /// Classes that may wield the weapon on top of its weapon class; empty means every class allowed that weapon class.
         public ClassConfig[] Classes => _classes;
 
@@ -42,6 +44,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private float _lightRange;
+
+        [SerializeField]
+        private bool _isFocus;
 
         [SerializeField]
         private ClassConfig[] _classes = Array.Empty<ClassConfig>();

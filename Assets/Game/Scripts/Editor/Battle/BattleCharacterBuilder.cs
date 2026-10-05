@@ -708,6 +708,13 @@ namespace Game.Scripts.Editor.Battle
             return TexturedMaterial(name, baseColor, PackTexture(outfit, $"T_{outfit}_Normal"), CreateMask(PackTexture(outfit, $"T_{outfit}_ORM"), true));
         }
 
+        /// Another mask for a cloth material: dyed looks may turn cloth into metal.
+        public static void SetMask(Material material, Texture2D mask)
+        {
+            material.SetTexture("_MetallicGlossMap", mask);
+            material.SetTexture("_OcclusionMap", mask);
+        }
+
         private static Material SkinMaterial(string gender)
         {
             string prefix = $"{OutfitsFolder}/Textures/Base/T_Regular_{gender}_";
@@ -763,7 +770,7 @@ namespace Game.Scripts.Editor.Battle
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
-        private static void SetLinear(string path)
+        internal static void SetLinear(string path)
         {
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
 

@@ -1,0 +1,102 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d988ee4bac2acf74b80699d6e83c0b70, type: 3}
+  m_Name: Chaplain
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
+  _id: 3
+  _displayName: Chaplain
+  _description: 'War priest of the dawn: maces, a shield and prayers of light that
+    heal, ward and smite. A frail healer in cloth or a slow wall in plate, as the
+    build goes.'
+  _baseStats:
+    Strength: 15
+    Vitality: 14
+    Spirit: 21
+    Knowledge: 16
+    Agility: 12
+    Dexterity: 12
+  _color: {r: 1, g: 0.9, b: 0.55, a: 1}
+  _bodyColor: {r: 0.8, g: 0.64, b: 0.52, a: 1}
+  _skills:
+  - {fileID: 11400000, guid: 04dd9acdaf9b83647b1df842bad90bfc, type: 2}
+  - {fileID: 11400000, guid: 900cf5e14259a2c47a946a2948ea28ac, type: 2}
+  - {fileID: 11400000, guid: e921553d1f4ca0641aaa09c58930580b, type: 2}
+  _spells:
+  - {fileID: 11400000, guid: e0acc4f9c609ebd42a8061993cd81707, type: 2}
+  - {fileID: 11400000, guid: be1fa89cf949d9146b3ca2ef09c915ae, type: 2}
+  - {fileID: 11400000, guid: b618e961dd503ad43b85473e3d879b5e, type: 2}
+  - {fileID: 11400000, guid: 0d79fce25b26a2a4cb81ab30a1fad508, type: 2}
+  - {fileID: 11400000, guid: 4182b1b2521badc44a99e54e09f7245a, type: 2}
+  _perks:
+  - _name: Devotion
+    _description: '+6 Spirit: stronger prayers and healing.'
+    _modifiers:
+    - Stat: 2
+      Value: 6
+    _icon: {fileID: 21300000, guid: 75076bb6d7a88c94e9bab60cd2a9899d, type: 3}
+  - _name: Litany
+    _description: '+6 Knowledge: one more charge of every prayer, faster casting.'
+    _modifiers:
+    - Stat: 3
+      Value: 6
+    _icon: {fileID: 21300000, guid: c6cc03c4ef3e4244e96123c0b1a6bb71, type: 3}
+  - _name: Zealot
+    _description: +6 physical power and +8% physical damage.
+    _modifiers:
+    - Stat: 10
+      Value: 6
+    - Stat: 13
+      Value: 0.08
+    _icon: {fileID: 21300000, guid: 32f9aab84e047b04d934949e8100b207, type: 3}
+  - _name: Iron Vow
+    _description: +20 armor rating and +15 magic resistance.
+    _modifiers:
+    - Stat: 7
+      Value: 20
+    - Stat: 8
+      Value: 15
+    _icon: {fileID: 21300000, guid: bbb5493b686a77a44bb7d7fb737d2091, type: 3}
+  _startingKit:
+  - _item: {fileID: 11400000, guid: 4cef8ba6992e9ef49ae289de8a2e48cf, type: 2}
+    _slot: 9
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: c52b74ed91a0f4844a83fc48c5717b79, type: 2}
+    _slot: 10
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 03db1738938f1ee419d7c1f8073365ba, type: 2}
+    _slot: 11
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: c402e9ed6fb1b394889c3f3a19f32561, type: 2}
+    _slot: 1
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: a6c7b4d014c8e5842a1bcf6a2bc1cfb7, type: 2}
+    _slot: 3
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 5ab24771d6d7b4f43995ba089005238b, type: 2}
+    _slot: 4
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 2cf24320bc8a42e4a86968714252f9f1, type: 2}
+    _slot: 13
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 1cf148bc8a302b84d87d1896014a5456, type: 2}
+    _slot: 14
+    _count: 2
+    _isEquipped: 1
+  _allowedWeapons: 02070a0809
+  _castFocus: 0

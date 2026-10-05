@@ -95,11 +95,13 @@
 |---|---|---|---|---|---|---|
 | Barbarian | 21 | 22 | 8 | 9 | 15 | 15 |
 | Wizard | 8 | 10 | 23 | 21 | 15 | 13 |
+| Sellsword | 18 | 18 | 9 | 10 | 17 | 18 |
+| Chaplain | 15 | 14 | 21 | 16 | 12 | 12 |
 
 - Barbarian: HP 152, физ. урон +18%, Move 300, Action Speed 0%, Physical Healing +11.7%, Handling +8.2%, Magical Interaction −29%.
 - Wizard: HP 107, маг. урон +24%, Cast Speed +14.4%, +1 заряд, Action Speed −3%, Magical Interaction +31%, Perception +8.2%.
 
-Комплекты одежды доводят профильный атрибут до порога 30: Marauder (+9 Сила), Berserker (+8 Живучесть), Mystic (+7 Дух), Occultist (+9 Знание); Ranger — Ловкость и Проворство.
+Комплекты одежды доводят профильный атрибут до порога 30: Marauder (+9 Сила), Berserker (+8 Живучесть), Mystic (+7 Дух), Occultist (+9 Знание), Devout (+9 Дух, Chaplain); Ranger — Ловкость и Проворство.
 
 ## Код
 

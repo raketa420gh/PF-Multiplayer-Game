@@ -25,6 +25,9 @@ namespace Game.Scripts.Dungeon
                     int damage = weapon.Weapon != null && weapon.Weapon.Attacks.Length > 0 ? weapon.Weapon.Attacks[0].Damage : weapon.Weapon != null ? weapon.Weapon.Ranged.MaxDamage : 0;
                     s_builder.AppendLine($"{(weapon.IsTwoHanded ? "Two-handed" : weapon.IsOffHand ? "Off-hand" : "One-handed")} {weapon.WeaponClass}");
 
+                    if (weapon.Classes.Length > 0)
+                        s_builder.AppendLine($"Class: {string.Join(", ", System.Array.ConvertAll(weapon.Classes, c => c.DisplayName))}");
+
                     if (damage > 0)
                         s_builder.AppendLine($"Damage {damage + tier}  ({weapon.DamageType})");
 

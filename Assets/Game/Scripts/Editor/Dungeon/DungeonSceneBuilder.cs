@@ -110,9 +110,9 @@ namespace Game.Scripts.Editor.Dungeon
 
         internal static ClassConfig[] LoadClasses()
         {
-            return AssetDatabase.FindAssets("t:ClassConfig", new[] { DungeonContentBuilder.ClassesFolder })
-                .Select(guid => AssetDatabase.LoadAssetAtPath<ClassConfig>(AssetDatabase.GUIDToAssetPath(guid)))
-                .OrderBy(c => c.Id)
+            // Only the classes of the library: the folder may still hold assets of removed ones.
+            return DungeonClassLibrary.CreateClasses()
+                .Select(def => AssetDatabase.LoadAssetAtPath<ClassConfig>($"{DungeonContentBuilder.ClassesFolder}/{def.Name}.asset"))
                 .ToArray();
         }
 

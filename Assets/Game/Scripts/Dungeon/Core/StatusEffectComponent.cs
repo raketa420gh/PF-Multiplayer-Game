@@ -25,7 +25,9 @@ namespace Game.Scripts.Dungeon
         FireWeapon,
         FrostWeapon,
         /// The next spell is cast instantly.
-        QuickCast
+        QuickCast,
+        /// Weapon enchant of light: every weapon hit adds magical damage, nothing else.
+        HolyWeapon
     }
 
     public struct StatusEffect : INetworkStruct

@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6 — 2026-10-05
+
+### Added
+- Sellsword class (Fighter analogue): every weapon but the magical ones, shields, skills Rally and Onslaught, perks Bulwark, Weapon Drill, Fleet Footwork, Quick Hands.
+- Chaplain class (Cleric analogue): blunt weapons, shields, one wheel of five prayers (Mending Prayer, Aegis, Benediction, Sunlance, Circle of Dawn), skills Prayer Memory, Hallow Weapon, Rebuke, perks Devotion, Litany, Zealot, Iron Vow.
+- Plate armor type and the Ironclad outfit (Sellsword; the Chaplain wears its cuirass, greaves and sabatons); Devout cloth outfit (Chaplain).
+- Heal, Shield and Buff spells target the adventurer under the crosshair, the caster on a miss.
+
+### Changed
+- Magic Staff is limited to Wizard and Chaplain.
+
 ## v0.5 — 2026-10-05
 
 ### Changed

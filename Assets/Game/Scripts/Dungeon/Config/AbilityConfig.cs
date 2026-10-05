@@ -26,7 +26,9 @@ namespace Game.Scripts.Dungeon
         /// Very fast dash along the view that stops at the first obstacle.
         Blink,
         /// The next spell is cast instantly.
-        QuickCast
+        QuickCast,
+        /// Heal over time for every living adventurer around the caster, the caster included.
+        AreaHeal
     }
 
     public enum ShapeshiftForm : byte

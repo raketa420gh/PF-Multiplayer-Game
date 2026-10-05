@@ -158,6 +158,12 @@ namespace Game.Scripts.Dungeon
             return (mask & WheelBit(wheel, spell)) != 0;
         }
 
+        /// A class has a spell wheel when one of its skills opens it.
+        public bool HasWheel(int wheel)
+        {
+            return Array.Exists(_skills, skill => skill.Kind == AbilityKind.SpellMemory && skill.Wheel == wheel);
+        }
+
         public bool CanUseWeapon(WeaponClass weaponClass)
         {
             return Array.IndexOf(_allowedWeapons, weaponClass) >= 0;
