@@ -116,6 +116,7 @@ namespace Game.Scripts.Battle
             _animator.SetFloat(FighterAnimComponent.CrouchParam, _crouch);
             _animator.SetFloat(FighterAnimComponent.ActionSpeedParam, 1f);
             _animator.SetBool(FighterAnimComponent.MirrorParam, _weapons[_weaponIndex].IsMirrored && !_isEditing && !HasItem);
+            _animator.SetBool(FighterAnimComponent.FlipParam, !_isEditing);
             _animator.SetLayerWeight(UpperLayer, _current[BaseLayer] == FighterAnimComponent.DeathState ? 0f : 1f);
             _animator.SetLayerWeight(HitLayer, IsPlaying(HitLayer, out AnimatorStateInfo hit) && hit.normalizedTime < 1f ? _hitWeight : 0f);
 
@@ -208,7 +209,7 @@ namespace Game.Scripts.Battle
             GUILayout.EndArea();
         }
 
-        /// Edits are made on the clip as authored, so the animation editor turns mirroring off while it is open.
+        /// Edits are made on the clip as authored, so the animation editor turns mirroring and off-hand flips off while it is open.
         public void SetEditing(bool isEditing) => _isEditing = isEditing;
 
         public void SetPaused(bool isPaused) => _isPaused = isPaused;

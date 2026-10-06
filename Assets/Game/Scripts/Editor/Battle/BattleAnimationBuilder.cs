@@ -107,6 +107,8 @@ namespace Game.Scripts.Editor.Battle
             controller.AddParameter(FighterAnimComponent.MoveYParam, AnimatorControllerParameterType.Float);
             controller.AddParameter(FighterAnimComponent.CrouchParam, AnimatorControllerParameterType.Float);
             controller.AddParameter(FighterAnimComponent.MirrorParam, AnimatorControllerParameterType.Bool);
+            controller.AddParameter(new AnimatorControllerParameter
+                { name = FighterAnimComponent.FlipParam, type = AnimatorControllerParameterType.Bool, defaultBool = true });
             controller.AddParameter(FighterAnimComponent.ActionSpeedParam, AnimatorControllerParameterType.Float);
             controller.AddLayer(UpperLayerName);
             controller.AddLayer(HitLayerName);
@@ -452,11 +454,10 @@ namespace Game.Scripts.Editor.Battle
             return Array.TrueForAll(curve.keys, key => key.value == curve[0].value) ? AnimationCurve.Constant(0f, duration, curve[0].value) : curve;
         }
 
-        /// The state plays its clip mirrored whichever hand the weapon is in.
+        /// The state plays its clip mirrored whichever hand the weapon is in, unless the animation editor turns the flip off.
         private static void Flip(AnimatorState state)
         {
-            state.mirrorParameterActive = false;
-            state.mirror = true;
+            state.mirrorParameter = FighterAnimComponent.FlipParam;
         }
 
         private static AnimationClip RecordWalk(BattlePoseRig rig, string name, float cycle, Vector2 direction, float stride,

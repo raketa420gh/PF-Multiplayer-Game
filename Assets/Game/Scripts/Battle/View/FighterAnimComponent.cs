@@ -25,6 +25,8 @@ namespace Game.Scripts.Battle
         public const string MoveYParam = "MoveY";
         public const string CrouchParam = "Crouch";
         public const string MirrorParam = "Mirror";
+        /// Off-hand swings play mirrored while it is on (its default); the animation editor turns it off to edit them as authored.
+        public const string FlipParam = "Flip";
         public const string ActionSpeedParam = "ActionSpeed";
         public const string CastState = "Cast";
         public const string UseState = "Use";
