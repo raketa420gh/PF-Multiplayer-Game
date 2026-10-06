@@ -81,6 +81,13 @@ namespace Game.Scripts.Editor.Dungeon
         public float LifeSteal;
         public string SpawnPrefab;
         public float Stagger;
+        /// Owning subclass, -1 for the whole class.
+        public int Subclass = -1;
+        public int ResourceCost;
+        public float StackBonus;
+        public bool OnAlly;
+        public float Cone;
+        public float Push;
     }
 
     internal sealed class PerkDef
@@ -92,6 +99,10 @@ namespace Game.Scripts.Editor.Dungeon
         public string Icon;
         /// Icon colour; the class colour when not set.
         public Color? Color;
+        /// Owning subclass, -1 for the whole class.
+        public int Subclass = -1;
+        /// The modifiers count once per stack of the subclass resource.
+        public bool PerStack;
 
         public PerkDef(string name, string description, params StatModifier[] modifiers)
         {
@@ -99,6 +110,17 @@ namespace Game.Scripts.Editor.Dungeon
             Description = description;
             Modifiers = modifiers;
         }
+    }
+
+    internal sealed class SubclassDef
+    {
+        public string Name;
+        public string Description;
+        public Color Color;
+        public string Resource;
+        public int ResourceMax;
+        public ResourceSource Sources;
+        public float Decay = 8f;
     }
 
     internal sealed class ClassDef
@@ -112,6 +134,7 @@ namespace Game.Scripts.Editor.Dungeon
         public AbilityDef[] Skills;
         public AbilityDef[] Spells = System.Array.Empty<AbilityDef>();
         public PerkDef[] Perks;
+        public SubclassDef[] Subclasses = System.Array.Empty<SubclassDef>();
         public (string item, EquipSlot slot, int count, bool equipped)[] Kit;
         public WeaponClass[] Weapons;
         public CastFocus Focus = CastFocus.Magic;
@@ -134,8 +157,8 @@ namespace Game.Scripts.Editor.Dungeon
 
         private const string Barbarian = "Barbarian";
         private const string Wizard = "Wizard";
-        private const string Sellsword = "Sellsword";
-        private const string Chaplain = "Chaplain";
+        private const string Warrior = "Warrior";
+        private const string Confessor = "Confessor";
 
         private static readonly Color s_steel = new(0.8f, 0.82f, 0.88f);
         private static readonly Color s_wood = new(0.65f, 0.45f, 0.25f);
@@ -165,7 +188,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Weapon("Rondel Dagger", DungeonWeaponLibrary.Dagger, WeaponClass.Dagger, 1, 2, 10f, "Dg", s_steel, 18, "Quick stabs. Weak, but barely slows you down."),
                 Weapon("Recurve Bow", DungeonWeaponLibrary.Bow, WeaponClass.Bow, 1, 3, 40f, "Bw", s_wood, 45, "Draw and release. Arrows fall with distance.", twoHanded: true),
                 Weapon("Crossbow", DungeonWeaponLibrary.Crossbow, WeaponClass.Crossbow, 2, 3, 50f, "Xb", s_wood, 55, "Hard-hitting bolt, slow reload.", twoHanded: true),
-                Weapon("Magic Staff", DungeonWeaponLibrary.Staff, WeaponClass.Staff, 1, 4, 20f, "St", new Color(0.5f, 0.7f, 1f), 50, "Caster focus. Also a decent club.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 4f) }, classes: new[] { Wizard, Chaplain }),
+                Weapon("Magic Staff", DungeonWeaponLibrary.Staff, WeaponClass.Staff, 1, 4, 20f, "St", new Color(0.5f, 0.7f, 1f), 50, "Caster focus. Also a decent club.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 4f) }, classes: new[] { Wizard, Confessor }),
                 Weapon("Torch", DungeonWeaponLibrary.Torch, WeaponClass.Torch, 1, 3, 5f, "Tr", new Color(1f, 0.6f, 0.2f), 2, "Lights the way. Can be swung in a pinch.", light: 9f),
                 Weapon("Round Shield", null, WeaponClass.Shield, 2, 3, 13f, "Sh", s_wood, 30, "Blocks with a one-handed weapon in the main hand.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 20f) }),
                 Weapon("Spellbook", DungeonWeaponLibrary.Spellbook, WeaponClass.Spellbook, 2, 2, 10f, "Bk", new Color(0.55f, 0.35f, 0.75f), 40, "Magical focus. Hold it to cast readied spells; it can bash in a pinch.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 2f) }),
@@ -240,7 +263,7 @@ namespace Game.Scripts.Editor.Dungeon
                 "Plain two-handed staff. Four swinging blows in a row, each a little harder than the last.", twoHanded: true));
             AddSecondOutfits(items);
             items.Add(Weapon("Bardiche", DungeonWeaponLibrary.Bardiche, WeaponClass.Axe, 1, 4, 45f, "Bd", s_steel, 70,
-                "Crescent axe blade on a long pole. Slow, wide and brutal.", twoHanded: true, classes: new[] { Sellsword, Barbarian }));
+                "Crescent axe blade on a long pole. Slow, wide and brutal.", twoHanded: true, classes: new[] { Warrior, Barbarian }));
 
             return items;
         }
@@ -306,11 +329,11 @@ namespace Game.Scripts.Editor.Dungeon
         /// Outfits of the classes that came after the first weapons were appended to the list.
         private static void AddSecondOutfits(List<ItemDef> items)
         {
-            // The Chaplain wears the body armour of the plate, but neither the coif nor the vambraces.
-            string[] plated = { Sellsword, Chaplain };
+            // The Confessor wears the body armour of the plate, but neither the coif nor the vambraces.
+            string[] plated = { Warrior, Confessor };
 
-            // Sellsword: the only plate there is. Twice the armour of leather and the slowest to walk in; Vitality +6 (18 -> 24).
-            AddOutfit(items, "Ironclad", new[] { Sellsword }, ArmorType.Plate, null, IroncladMaterial, new Color(0.72f, 0.76f, 0.84f),
+            // Warrior: the only plate there is. Twice the armour of leather and the slowest to walk in; Vitality +6 (18 -> 24).
+            AddOutfit(items, "Ironclad", new[] { Warrior }, ArmorType.Plate, null, IroncladMaterial, new Color(0.72f, 0.76f, 0.84f),
                 Piece("Ironclad Coif", s_hood, 42f, 3f, 60, 0f, new StatModifier(StatType.Vitality, 1f)),
                 For(plated, Piece("Ironclad Cuirass", new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt1, OutfitPart.RangerPauldron }, 115f, 11f, 120, 0f,
                     new StatModifier(StatType.Vitality, 2f))),
@@ -318,8 +341,8 @@ namespace Game.Scripts.Editor.Dungeon
                 For(plated, Piece("Ironclad Greaves", s_leggings, 78f, 7f, 80, 0f, new StatModifier(StatType.Vitality, 1f))),
                 For(plated, Piece("Ironclad Sabatons", s_boots, 38f, 2f, 60, 0f, new StatModifier(StatType.Vitality, 1f))));
 
-            // Chaplain, Spirit +9 (21 -> 30): magical power, stronger prayers and healing. White linen that stops next to nothing.
-            AddOutfit(items, "Devout", new[] { Chaplain }, ArmorType.Cloth, DevoutPeasantMaterial, DevoutRangerMaterial, new Color(0.95f, 0.88f, 0.6f),
+            // Confessor, Spirit +9 (21 -> 30): magical power, stronger prayers and healing. White linen that stops next to nothing.
+            AddOutfit(items, "Devout", new[] { Confessor }, ArmorType.Cloth, DevoutPeasantMaterial, DevoutRangerMaterial, new Color(0.95f, 0.88f, 0.6f),
                 Piece("Devout Cowl", s_hood, 14f, 1f, 30, 10f, new StatModifier(StatType.Spirit, 2f)),
                 Piece("Devout Vestments", s_shirt, 30f, 2f, 55, 20f, new StatModifier(StatType.Spirit, 3f)),
                 Piece("Devout Wraps", s_bracers, 10f, 0f, 26, 5f, new StatModifier(StatType.Spirit, 1f)),

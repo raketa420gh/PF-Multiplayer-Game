@@ -90,6 +90,9 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public int SpellMask { get; private set; } = ClassConfig.DefaultSpellMask;
 
+        [Networked]
+        public byte Subclass { get; private set; }
+
         [SerializeField]
         private InventoryComponent _kit;
 
@@ -140,7 +143,7 @@ namespace Game.Scripts.Dungeon
                 DungeonContext.Instance.SetLocalSession(this);
 
             RpcSetProfile(StashService.LoadLevel(), StashService.LoadExperience(), StashService.LoadClass(), StashService.LoadName());
-            RpcSetBuild(StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask(), StashService.LoadSpellMask());
+            RpcSetBuild(StashService.LoadSubclass(), StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask(), StashService.LoadSpellMask());
             SendInventory(LoadKit, StashService.LoadKit());
 
             for (int page = 0; page < StashPages; page++)
@@ -188,7 +191,7 @@ namespace Game.Scripts.Dungeon
             }
 
             StashService.SaveProfile(Level, Experience, ClassId, DisplayName);
-            StashService.SaveBuild(SkillA, SkillB, PerkMask, SpellMask);
+            StashService.SaveBuild(Subclass, SkillA, SkillB, PerkMask, SpellMask);
         }
 
         /// Nobody descends naked: an empty kit is replaced by the starting one.
@@ -243,18 +246,31 @@ namespace Game.Scripts.Dungeon
                 return;
 
             ClassId = classId;
+            Subclass = 0;
             SkillA = 0;
             SkillB = 1;
             PerkMask = 1;
             SpellMask = ClassConfig.DefaultSpellMask;
+            FitBuild();
             StoreKit();
             GiveDefaultKit();
+        }
+
+        /// Another specialisation between runs: what belonged to the old one leaves the build.
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcSelectSubclass(byte subclass)
+        {
+            if (State != SessionState.Lobby || subclass >= Class.Subclasses.Length || Subclass == subclass)
+                return;
+
+            Subclass = subclass;
+            FitBuild();
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcSelectSkill(byte slot, byte index)
         {
-            if (State != SessionState.Lobby || index >= Class.Skills.Length)
+            if (State != SessionState.Lobby || !Class.IsSkillAvailable(index, Subclass))
                 return;
 
             if (slot == 0)
@@ -276,7 +292,7 @@ namespace Game.Scripts.Dungeon
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcTogglePerk(byte index)
         {
-            if (State != SessionState.Lobby || index >= Class.Perks.Length)
+            if (State != SessionState.Lobby || index >= Class.Perks.Length || !ClassConfig.IsAvailable(Class.Perks[index].Subclass, Subclass))
                 return;
 
             int bit = 1 << index;
@@ -298,7 +314,8 @@ namespace Game.Scripts.Dungeon
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcToggleSpell(byte wheel, byte index)
         {
-            if (State != SessionState.Lobby || index >= Class.Spells.Length || wheel >= ClassConfig.WheelCount || !Class.HasWheel(wheel))
+            if (State != SessionState.Lobby || index >= Class.Spells.Length || wheel >= ClassConfig.WheelCount || !Class.HasWheel(wheel)
+                || !ClassConfig.IsAvailable(Class.Spells[index].Subclass, Subclass))
                 return;
 
             int bit = ClassConfig.WheelBit(wheel, index);
@@ -413,13 +430,41 @@ namespace Game.Scripts.Dungeon
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        private void RpcSetBuild(byte skillA, byte skillB, int perkMask, int spellMask)
+        private void RpcSetBuild(byte subclass, byte skillA, byte skillB, int perkMask, int spellMask)
         {
+            Subclass = subclass;
             SkillA = skillA;
             SkillB = skillB;
-            // A build saved for another class may name perks this one does not have; they would take up perk slots unseen.
-            PerkMask = perkMask & ((1 << Class.Perks.Length) - 1);
+            PerkMask = perkMask;
             SpellMask = spellMask;
+            FitBuild();
+        }
+
+        /// Keeps only what the class and its subclass offer: a build saved for another class or subclass may name perks that
+        /// would take up slots unseen; a skill slot left empty takes the first free skill there is.
+        private void FitBuild()
+        {
+            ClassConfig config = Class;
+            Subclass = (byte)Mathf.Clamp(Subclass, 0, Mathf.Max(0, config.Subclasses.Length - 1));
+            PerkMask &= config.AvailablePerkMask(Subclass);
+            SpellMask &= config.AvailableSpellMask(Subclass) & (config.HasWheel(1) ? -1 : (1 << ClassConfig.WheelBits) - 1);
+
+            if (!config.IsSkillAvailable(SkillA, Subclass))
+                SkillA = FreeSkill(config, SkillB);
+
+            if (!config.IsSkillAvailable(SkillB, Subclass) || SkillB == SkillA)
+                SkillB = FreeSkill(config, SkillA);
+        }
+
+        private byte FreeSkill(ClassConfig config, int taken)
+        {
+            for (int i = 0; i < config.Skills.Length; i++)
+            {
+                if (i != taken && config.IsSkillAvailable(i, Subclass))
+                    return (byte)i;
+            }
+
+            return 0;
         }
 
         private static int CountBits(int value)

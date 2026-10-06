@@ -28,7 +28,9 @@ namespace Game.Scripts.Dungeon
         /// The next spell is cast instantly.
         QuickCast,
         /// Heal over time for every living adventurer around the caster, the caster included.
-        AreaHeal
+        AreaHeal,
+        /// Status effect on the caster and every ally around.
+        AreaBuff
     }
 
     public enum ShapeshiftForm : byte
@@ -70,6 +72,20 @@ namespace Game.Scripts.Dungeon
         public Fusion.NetworkObject SpawnPrefab => _spawnPrefab;
         public float StaggerDuration => _staggerDuration;
         public bool IsCooldownBased => _charges >= 99;
+        /// Subclass the ability belongs to, -1 for the whole class.
+        public int Subclass => _subclass;
+        /// Stacks of the subclass resource needed to use it.
+        public int ResourceCost => _resourceCost;
+        /// Magnitude added per spent stack.
+        public float StackBonus => _stackBonus;
+        /// Uses up every stack of the subclass resource.
+        public bool SpendsResource => _resourceCost > 0 || _stackBonus > 0f;
+        /// A skill that goes to the ally under the crosshair like a support spell.
+        public bool IsOnAlly => _isOnAlly;
+        /// Area damage: half-angle of the cone in front of the user, 0 for a full circle.
+        public float ConeAngle => _coneAngle;
+        /// Area damage: speed the struck bodies are pushed away with.
+        public float Push => _push;
         /// Spell memory: the spell wheel (0 or 1) this skill opens.
         public int Wheel => Mathf.RoundToInt(_magnitude);
 
@@ -150,5 +166,23 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private float _staggerDuration;
+
+        [SerializeField]
+        private int _subclass = -1;
+
+        [SerializeField]
+        private int _resourceCost;
+
+        [SerializeField]
+        private float _stackBonus;
+
+        [SerializeField]
+        private bool _isOnAlly;
+
+        [SerializeField]
+        private float _coneAngle;
+
+        [SerializeField]
+        private float _push;
     }
 }

@@ -73,13 +73,13 @@ namespace Game.Scripts.Editor.Battle
                 new Dye(s_green, s_coloured, s_any, 0.58f, 0.22f, 1.7f),
                 new Dye(s_leather, s_coloured, s_any, 0.02f, 1f, 0.75f)
             }),
-            // Plate of the Sellsword: the cloth is steel, the straps under it blackened leather.
+            // Plate of the Warrior: the cloth is steel, the straps under it blackened leather.
             ("RangerIronclad", "Ranger", "T_Ranger_BaseColor", new[]
             {
                 new Dye(s_green, s_coloured, s_any, 0.6f, 0.14f, 1.75f, 0.9f),
                 new Dye(s_leather, s_coloured, s_any, 0.07f, 0.45f, 0.4f)
             }),
-            // Vestments of the Chaplain: white linen over ochre, pale hood and wraps on tan leather.
+            // Vestments of the Confessor: white linen over ochre, pale hood and wraps on tan leather.
             ("PeasantDevout", "Peasant", "T_Peasant_BaseColor", new[]
             {
                 new Dye(s_brown, s_pale, s_bright, 0.12f, 0.3f, 1.3f),

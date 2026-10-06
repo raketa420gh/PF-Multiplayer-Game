@@ -27,7 +27,19 @@ namespace Game.Scripts.Dungeon
         /// The next spell is cast instantly.
         QuickCast,
         /// Weapon enchant of light: every weapon hit adds magical damage, nothing else.
-        HolyWeapon
+        HolyWeapon,
+        /// Percent less damage taken from every hit.
+        Guard,
+        /// Percent of weapon damage dealt comes back as health.
+        Siphon,
+        /// No spells can be cast.
+        Silence,
+        /// The next weapon hit on a body adds the magnitude as physical damage.
+        Empower,
+        /// The next weapon hit, a blocked one too, adds the magnitude as physical damage past the block and staggers.
+        Sunder,
+        /// The next weapon hit on a body adds the magnitude as physical damage and silences the victim.
+        Verdict
     }
 
     public struct StatusEffect : INetworkStruct

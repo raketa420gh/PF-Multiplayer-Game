@@ -59,6 +59,9 @@ namespace Game.Scripts.Battle
         /// State authority only: this receiver's owner landed a hit on another receiver.
         public event Action<DamageReceiverComponent, HitResult, int, DamageType> OnHitDealt;
 
+        /// State authority only: this receiver was hit; the damage is what went through.
+        public event Action<HitResult, int> OnHitTaken;
+
         public HitboxRoot HitboxRoot => _hitboxRoot;
         public bool IsAlive => _health.IsAlive;
         public int Team => _team;
@@ -168,6 +171,7 @@ namespace Game.Scripts.Battle
             _eventCount++;
 
             _owner?.OnHitReceived(result, request.StaggerDuration, request.Impact);
+            OnHitTaken?.Invoke(result, damage);
 
             if (request.Attacker != null)
                 request.Attacker.OnHitDealt?.Invoke(this, result, damage, request.DamageType);

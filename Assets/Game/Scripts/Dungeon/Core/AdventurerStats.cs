@@ -60,9 +60,10 @@ namespace Game.Scripts.Dungeon
             };
         }
 
-        /// activeWeaponSet is -1 when the weapons are put away, heldBeltSlot is -1 when no belt item is in hand.
+        /// activeWeaponSet is -1 when the weapons are put away, heldBeltSlot is -1 when no belt item is in hand; stacks of the
+        /// subclass resource multiply the per-stack perks.
         public void Recalculate(ClassConfig config, InventoryComponent inventory, StatusEffectComponent effects, int activeWeaponSet, int perkCount,
-            ShapeshiftForm form = ShapeshiftForm.None, int perkMask = 0, int heldBeltSlot = -1)
+            ShapeshiftForm form = ShapeshiftForm.None, int perkMask = 0, int heldBeltSlot = -1, int stacks = 0)
         {
             System.Array.Clear(_flat, 0, _flat.Length);
             float armor = 0f;
@@ -107,9 +108,10 @@ namespace Game.Scripts.Dungeon
                     continue;
 
                 applied++;
+                PerkDefinition perk = config.Perks[i];
 
-                foreach (StatModifier modifier in config.Perks[i].Modifiers)
-                    Apply(modifier);
+                foreach (StatModifier modifier in perk.Modifiers)
+                    Apply(perk.IsPerStack ? new StatModifier(modifier.Stat, modifier.Value * stacks) : modifier);
             }
 
             float rage = Effect(effects, StatusEffectKind.Rage);

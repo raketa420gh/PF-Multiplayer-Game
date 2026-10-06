@@ -188,7 +188,8 @@ namespace Game.Scripts.Dungeon
             _healthFill.fillAmount = health.Progress;
             _healthText.text = $"{health.CurrentHealth} / {health.MaxHealth}";
             PlayerSessionComponent session = adventurer.Session;
-            _nameText.text = session != null ? $"{session.DisplayName}  ·  {adventurer.Class.DisplayName} {session.Level}" : adventurer.Class.DisplayName;
+            string className = adventurer.SubclassConfig != null ? $"{adventurer.SubclassConfig.Name} {adventurer.Class.DisplayName}" : adventurer.Class.DisplayName;
+            _nameText.text = session != null ? $"{session.DisplayName}  ·  {className} {session.Level}" : className;
             _killText.text = $"Kills {adventurer.Kills}   XP +{adventurer.RunExperience}";
 
             float danger = adventurer.IsInSwarm ? 0.55f : Mathf.Lerp(0.45f, 0f, health.Progress * 2f);
@@ -348,6 +349,11 @@ namespace Game.Scripts.Dungeon
 
                 _builder.AppendLine($"{effect.Kind} {Mathf.CeilToInt(effect.Remaining)}s");
             }
+
+            SubclassDefinition subclass = adventurer.SubclassConfig;
+
+            if (subclass != null && subclass.ResourceMax > 0)
+                _builder.AppendLine($"<color=#{ColorUtility.ToHtmlStringRGB(subclass.Color)}>{subclass.ResourceName} {adventurer.Resource}/{subclass.ResourceMax}</color>");
 
             if (adventurer.IsResting)
                 _builder.AppendLine(adventurer.IsRecoveringSpells ? "Resting by the fire: spells recover" : "Resting...");

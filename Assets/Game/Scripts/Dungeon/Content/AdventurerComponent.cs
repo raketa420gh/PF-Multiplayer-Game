@@ -49,6 +49,8 @@ namespace Game.Scripts.Dungeon
         private const float EnchantBurnTime = 3f;
         private const float EnchantSlow = 25f;
         private const float EnchantSlowTime = 1.5f;
+        private const float SunderStagger = 0.7f;
+        private const float VerdictSilence = 3f;
 
         public FighterComponent Fighter => _fighter;
         public InventoryComponent Inventory => _inventory;
@@ -60,6 +62,7 @@ namespace Game.Scripts.Dungeon
         public IReadOnlyList<AbilityConfig> Abilities => _abilities;
         public InteractableComponent LookTarget => _lookTarget;
         public bool IsInvisible => _effects.Has(StatusEffectKind.Invisible);
+        public SubclassDefinition SubclassConfig => _class != null ? _class.GetSubclass(Subclass) : null;
         /// Sitting by a lit campfire brings spell charges back.
         public bool IsRecoveringSpells => IsResting && CampfireComponent.IsWarming(transform.position);
         public ContainerComponent OpenedContainer => Runner != null && Runner.TryFindBehaviour(OpenContainerId, out NetworkBehaviour b) ? b as ContainerComponent : null;
@@ -105,6 +108,13 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         public int PerkMask { get; private set; }
+
+        [Networked]
+        public byte Subclass { get; private set; }
+
+        /// Stacks of the subclass resource.
+        [Networked]
+        public byte Resource { get; private set; }
 
         [Networked]
         public int SpellMask { get; private set; }
@@ -246,6 +256,9 @@ namespace Game.Scripts.Dungeon
         [Networked]
         private int _searchEndTick { get; set; }
 
+        [Networked]
+        private TickTimer _resourceTimer { get; set; }
+
         private static readonly List<LagCompensatedHit> s_hits = new(16);
         private static readonly List<DamageReceiverComponent> s_struck = new();
         private readonly List<AbilityConfig> _abilities = new();
@@ -261,7 +274,12 @@ namespace Game.Scripts.Dungeon
         private ShapeshiftForm _appliedForm;
         private byte _appliedBelt = NoBelt;
         private int _appliedWeaponSet = -1;
+        private int _appliedResource;
         private bool _wasAlive = true;
+        /// Stacks the ability being applied has spent; its magnitude grows with them.
+        private int _spentStacks;
+        /// A follow-up hit of an enchant or an empowered strike is under way: it triggers nothing itself.
+        private bool _isBonusHit;
 
         public override void Spawned()
         {
@@ -275,6 +293,7 @@ namespace Game.Scripts.Dungeon
             _actions.SetOwner(this);
             _fighter.Combat.Projectiles.OnReceiverHit += OnProjectileHit;
             _fighter.Receiver.OnHitDealt += OnHitDealt;
+            _fighter.Receiver.OnHitTaken += OnHitTaken;
             ResolveSession();
 
             if (HasInputAuthority && DungeonContext.Instance != null)
@@ -296,6 +315,7 @@ namespace Game.Scripts.Dungeon
             _fighter.OnSimulateInput -= OnSimulateInput;
             _fighter.Combat.Projectiles.OnReceiverHit -= OnProjectileHit;
             _fighter.Receiver.OnHitDealt -= OnHitDealt;
+            _fighter.Receiver.OnHitTaken -= OnHitTaken;
 
             if (DungeonContext.Instance != null && DungeonContext.Instance.LocalAdventurer == this)
                 DungeonContext.Instance.SetLocalAdventurer(null);
@@ -306,7 +326,7 @@ namespace Game.Scripts.Dungeon
             if (_session == null)
                 ResolveSession();
 
-            if (_appliedVersion != _inventory.Version || _appliedForm != Form || _appliedBelt != BeltSlot || _appliedWeaponSet != HeldWeaponSet || _appliedEffects != _effects.GetSignature())
+            if (IsStatsChanged || _appliedForm != Form)
                 RefreshStats(false);
 
             _fighter.Combat.SetBlockSuppressed((ReadiedSpell != NoSpell && HasFocus && State == AdventurerState.Alive) || HasBeltItemInHand);
@@ -329,6 +349,9 @@ namespace Game.Scripts.Dungeon
             if (HasBeltItemInHand && _inventory.GetEquipped((EquipSlot)BeltSlot).IsEmpty)
                 BeltSlot = NoBelt;
 
+            if (Resource > 0 && _resourceTimer.Expired(Runner))
+                Resource = 0;
+
             SimulateRest();
             SimulateSwarm();
             SimulateSearch();
@@ -336,7 +359,7 @@ namespace Game.Scripts.Dungeon
 
         public override void Render()
         {
-            if (_appliedVersion != _inventory.Version || _appliedBelt != BeltSlot || _appliedWeaponSet != HeldWeaponSet || _appliedEffects != _effects.GetSignature())
+            if (IsStatsChanged)
                 RefreshStats(false);
 
             if (HasInputAuthority)
@@ -351,6 +374,7 @@ namespace Game.Scripts.Dungeon
             SkillB = session.SkillB;
             PerkMask = session.PerkMask;
             SpellMask = session.SpellMask;
+            Subclass = session.Subclass;
             Floor = 1;
             State = AdventurerState.Alive;
         }
@@ -568,15 +592,19 @@ namespace Game.Scripts.Dungeon
             return _classes[0];
         }
 
+        private bool IsStatsChanged => _appliedVersion != _inventory.Version || _appliedBelt != BeltSlot || _appliedWeaponSet != HeldWeaponSet
+            || _appliedEffects != _effects.GetSignature() || _appliedResource != Resource;
+
         private void RefreshStats(bool fillHealth)
         {
             _appliedVersion = _inventory.Version;
+            _appliedResource = Resource;
             _appliedEffects = _effects.GetSignature();
             int level = _session != null ? _session.Level : 1;
             _appliedForm = Form;
             _appliedBelt = BeltSlot;
             _appliedWeaponSet = HeldWeaponSet;
-            _stats.Recalculate(_class, _inventory, _effects, _appliedWeaponSet, ClassConfig.PerkCountForLevel(level), Form, PerkMask, HasBeltItemInHand ? BeltSlot : -1);
+            _stats.Recalculate(_class, _inventory, _effects, _appliedWeaponSet, ClassConfig.PerkCountForLevel(level), Form, PerkMask, HasBeltItemInHand ? BeltSlot : -1, Resource);
 
             if (!HasStateAuthority)
                 return;
@@ -625,6 +653,9 @@ namespace Game.Scripts.Dungeon
                 return;
 
             CombatComponent combat = _fighter.Combat;
+
+            if (IsHoldingCast && _effects.Has(StatusEffectKind.Silence))
+                CancelPending();
 
             if (IsHoldingCast)
             {
@@ -760,7 +791,7 @@ namespace Game.Scripts.Dungeon
             if (spell == null)
                 return;
 
-            if (!HasFocus || _fighter.Health.CurrentHealth <= spell.HealthCost)
+            if (!HasFocus || !CanAfford(spell))
                 return;
 
             int index = _skillCount + ReadiedSpell;
@@ -807,7 +838,7 @@ namespace Game.Scripts.Dungeon
 
             AbilityConfig ability = _abilities[index];
 
-            if (!_cooldowns[index].ExpiredOrNotRunning(Runner) || (ability.IsSpell && !ability.IsCooldownBased && _charges[index] == 0))
+            if (!_cooldowns[index].ExpiredOrNotRunning(Runner) || (ability.IsSpell && !ability.IsCooldownBased && _charges[index] == 0) || !CanAfford(ability))
                 return;
 
             if (ability.HealthCost > 0)
@@ -864,11 +895,41 @@ namespace Game.Scripts.Dungeon
             _fighter.Combat.CancelBusy();
         }
 
+        /// Silence stops spells; health and subclass stacks pay for the abilities that cost them.
+        private bool CanAfford(AbilityConfig ability)
+        {
+            return (!ability.IsSpell || !_effects.Has(StatusEffectKind.Silence)) && _fighter.Health.CurrentHealth > ability.HealthCost && Resource >= ability.ResourceCost;
+        }
+
+        /// Magnitude of the ability being applied, grown by the stacks it spent.
+        private float Power(AbilityConfig ability)
+        {
+            return ability.Magnitude + _spentStacks * ability.StackBonus;
+        }
+
+        /// A stack of the subclass resource when the subclass earns it from this kind of event; every new stack restarts the decay.
+        private void GainResource(ResourceSource source)
+        {
+            SubclassDefinition subclass = SubclassConfig;
+
+            if (subclass == null || (subclass.ResourceSources & source) == 0 || State != AdventurerState.Alive)
+                return;
+
+            Resource = (byte)Mathf.Min(Resource + 1, subclass.ResourceMax);
+            _resourceTimer = TickTimer.CreateFromSeconds(Runner, subclass.ResourceDecay);
+        }
+
         private void ApplyAbility(int index)
         {
             AbilityConfig ability = _abilities[index];
             CombatComponent combat = _fighter.Combat;
             float buffDuration = ability.Duration;
+            _spentStacks = ability.SpendsResource ? Resource : 0;
+
+            if (ability.SpendsResource)
+                Resource = 0;
+            else if (ability.Kind is AbilityKind.Heal or AbilityKind.AreaHeal or AbilityKind.Shield || (ability.Kind == AbilityKind.Buff && (ability.IsSpell || ability.IsOnAlly)))
+                GainResource(ResourceSource.Support);
 
             switch (ability.Kind)
             {
@@ -879,10 +940,13 @@ namespace Game.Scripts.Dungeon
                     AreaHeal(ability);
                     break;
                 case AbilityKind.Buff:
-                    SupportTarget(ability)._effects.Add(ability.Effect, ability.Magnitude, buffDuration);
+                    SupportTarget(ability)._effects.Add(ability.Effect, Power(ability), buffDuration);
+                    break;
+                case AbilityKind.AreaBuff:
+                    AreaBuff(ability);
                     break;
                 case AbilityKind.Shield:
-                    SupportTarget(ability)._effects.Add(StatusEffectKind.Protection, ability.Magnitude, buffDuration);
+                    SupportTarget(ability)._effects.Add(StatusEffectKind.Protection, Power(ability), buffDuration);
                     break;
                 case AbilityKind.Invisibility:
                     _effects.Add(StatusEffectKind.Invisible, 1f, buffDuration);
@@ -897,7 +961,7 @@ namespace Game.Scripts.Dungeon
                     AreaDamage(ability, combat);
                     break;
                 case AbilityKind.Taunt:
-                    _effects.Add(StatusEffectKind.Taunt, ability.Magnitude, buffDuration);
+                    _effects.Add(StatusEffectKind.Taunt, Power(ability), buffDuration);
                     break;
                 case AbilityKind.Spawn:
                     if (ability.SpawnPrefab != null)
@@ -907,7 +971,7 @@ namespace Game.Scripts.Dungeon
                     RestoreCharges();
                     break;
                 case AbilityKind.WeaponEnchant:
-                    FindAlly().Effects.Add(ability.Effect, combat.ScaleDamage(Mathf.RoundToInt(ability.Magnitude), DamageType.Magical), buffDuration);
+                    SupportTarget(ability).Effects.Add(ability.Effect, combat.ScaleDamage(Mathf.RoundToInt(Power(ability)), DamageType.Magical), buffDuration);
                     break;
                 case AbilityKind.ChainLightning:
                     ChainLightning(ability, combat);
@@ -942,13 +1006,13 @@ namespace Game.Scripts.Dungeon
         /// A caught breath grows with physical healing, a prayer with magical power and magical healing; both are the healer's.
         private float HealAmount(AbilityConfig ability)
         {
-            return ability.Magnitude * (ability.DamageType == DamageType.Physical ? _stats.PhysicalHealing : HealScale() * _stats.MagicalHealing);
+            return Power(ability) * (ability.DamageType == DamageType.Physical ? _stats.PhysicalHealing : HealScale() * _stats.MagicalHealing);
         }
 
         /// Healing, shielding and blessing spells go to the adventurer under the crosshair, or to the caster when the aim misses; skills stay on their user.
         private AdventurerComponent SupportTarget(AbilityConfig ability)
         {
-            return ability.IsSpell ? FindAlly() : this;
+            return ability.IsSpell || ability.IsOnAlly ? FindAlly() : this;
         }
 
         private void Heal(AdventurerComponent target, AbilityConfig ability)
@@ -976,9 +1040,24 @@ namespace Game.Scripts.Dungeon
             RpcFlash(transform.position + Vector3.up, ability.Color, ability.Radius * 2f);
         }
 
+        /// The user and every adventurer of the user's party within the radius.
+        private void AreaBuff(AbilityConfig ability)
+        {
+            foreach (FighterComponent fighter in FighterComponent.All)
+            {
+                if ((fighter.transform.position - transform.position).sqrMagnitude > ability.Radius * ability.Radius
+                    || !fighter.TryGetComponent(out AdventurerComponent ally) || ally.State != AdventurerState.Alive || (ally != this && fighter.Receiver.CanBeHitBy(_fighter.Receiver)))
+                    continue;
+
+                ally._effects.Add(ability.Effect, Power(ability), ability.Duration);
+            }
+
+            RpcFlash(transform.position + Vector3.up, ability.Color, ability.Radius * 2f);
+        }
+
         private void FireSpell(AbilityConfig ability, CombatComponent combat)
         {
-            int damage = combat.ScaleDamage(Mathf.RoundToInt(ability.Magnitude), ability.DamageType);
+            int damage = combat.ScaleDamage(Mathf.RoundToInt(Power(ability)), ability.DamageType);
             Vector3 origin = combat.Body.EyePosition + combat.Body.AimDirection * 0.4f;
             Quaternion aim = combat.Body.AimRotation;
 
@@ -1031,7 +1110,7 @@ namespace Game.Scripts.Dungeon
         private void ChainLightning(AbilityConfig ability, CombatComponent combat)
         {
             DamageReceiverComponent target = AimReceiver(SpellRange, out Vector3 point);
-            float damage = combat.ScaleDamage(Mathf.RoundToInt(ability.Magnitude), ability.DamageType);
+            float damage = combat.ScaleDamage(Mathf.RoundToInt(Power(ability)), ability.DamageType);
             Vector3 from = HandPoint;
             RpcBolt(from, target != null ? BodyPoint(target) : point, false);
             s_struck.Clear();
@@ -1080,7 +1159,7 @@ namespace Game.Scripts.Dungeon
 
             Vector3 ground = target.transform.position;
             RpcBolt(ground + Vector3.up * StrikeHeight, ground, true);
-            SpellHit(target, combat.ScaleDamage(Mathf.RoundToInt(ability.Magnitude), ability.DamageType), ability, ground + Vector3.up * StrikeHeight);
+            SpellHit(target, combat.ScaleDamage(Mathf.RoundToInt(Power(ability)), ability.DamageType), ability, ground + Vector3.up * StrikeHeight);
         }
 
         private void SpellHit(DamageReceiverComponent target, int damage, AbilityConfig ability, Vector3 from)
@@ -1109,6 +1188,9 @@ namespace Game.Scripts.Dungeon
                 direction = transform.forward;
 
             _fighter.Move.Dash(direction.normalized * (ability.Magnitude / Mathf.Max(0.05f, ability.Duration)), ability.Duration);
+
+            if (ability.Effect != StatusEffectKind.None)
+                _effects.Add(ability.Effect, ability.EffectMagnitude + _spentStacks * ability.StackBonus, ability.EffectDuration);
         }
 
         [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
@@ -1123,18 +1205,23 @@ namespace Game.Scripts.Dungeon
             LightFlashEffect.Play(position, color, range);
         }
 
+        /// Everyone in reach, or in the cone in front of the user; a push throws the struck away from the user and a hit effect stays on them.
         private void AreaDamage(AbilityConfig ability, CombatComponent combat)
         {
-            int damage = combat.ScaleDamage(Mathf.RoundToInt(ability.Magnitude), ability.DamageType);
+            int damage = combat.ScaleDamage(Mathf.RoundToInt(Power(ability)), ability.DamageType);
             Vector3 center = transform.position + Vector3.up;
-            RpcFlash(center, ability.Color, ability.Radius * 2f);
+            Vector3 forward = Vector3.ProjectOnPlane(_fighter.Body.AimDirection, Vector3.up).normalized;
+            RpcFlash(ability.ConeAngle > 0f ? center + forward * ability.Radius * 0.5f : center, ability.Color, ability.Radius * 2f);
 
             s_struck.Clear();
 
             // Every body in reach, training dummies too; gathered first because a hit may take a body off the list.
             foreach (DamageReceiverComponent receiver in DamageReceiverComponent.All)
             {
-                if (receiver != _fighter.Receiver && receiver.CanBeHitBy(_fighter.Receiver) && (BodyPoint(receiver) - center).sqrMagnitude <= ability.Radius * ability.Radius)
+                Vector3 offset = BodyPoint(receiver) - center;
+
+                if (receiver != _fighter.Receiver && receiver.CanBeHitBy(_fighter.Receiver) && offset.sqrMagnitude <= ability.Radius * ability.Radius
+                    && (ability.ConeAngle <= 0f || Vector3.Angle(forward, Vector3.ProjectOnPlane(offset, Vector3.up)) <= ability.ConeAngle))
                     s_struck.Add(receiver);
             }
 
@@ -1153,6 +1240,12 @@ namespace Game.Scripts.Dungeon
                     DamageType = ability.DamageType,
                     Attacker = _fighter.Receiver
                 });
+
+                if (ability.Effect != StatusEffectKind.None && receiver.IsAlive && receiver.TryGetComponent(out StatusEffectComponent effects))
+                    effects.Add(ability.Effect, ability.EffectMagnitude, ability.EffectDuration);
+
+                if (ability.Push > 0f && receiver.TryGetComponent(out FighterComponent fighter))
+                    fighter.Move.AddImpulse(Vector3.ProjectOnPlane(point - center, Vector3.up).normalized * ability.Push + Vector3.up * 1.5f);
             }
         }
 
@@ -1168,11 +1261,44 @@ namespace Game.Scripts.Dungeon
         }
 
         /// Rupture-style buffs: every melee hit while active opens a bleed on the victim. Weapon enchants add magical damage to
-        /// every weapon hit and burn or chill the victim; spells and the enchant's own damage do not trigger them.
+        /// every weapon hit and burn or chill the victim; spells and the enchant's own damage do not trigger them. Hits earn
+        /// stacks of the subclass resource; empowered strikes go off on the next weapon hit.
         private void OnHitDealt(DamageReceiverComponent victim, HitResult result, int damage, DamageType type)
         {
-            if (result != HitResult.Hit || !HasStateAuthority || type != DamageType.Physical)
+            if (!HasStateAuthority || _isBonusHit)
                 return;
+
+            if (type != DamageType.Physical)
+            {
+                if (result == HitResult.Hit && damage > 0)
+                    GainResource(ResourceSource.SpellHit);
+
+                return;
+            }
+
+            float sunder = _effects.GetMagnitude(StatusEffectKind.Sunder);
+
+            if (sunder > 0f)
+            {
+                _effects.Remove(StatusEffectKind.Sunder);
+                BonusHit(victim, _fighter.Combat.ScaleDamage(Mathf.RoundToInt(sunder), DamageType.Physical), DamageType.Physical, SunderStagger);
+            }
+
+            if (result != HitResult.Hit)
+            {
+                GainResource(ResourceSource.HitOnBlock);
+
+                return;
+            }
+
+            GainResource(ResourceSource.WeaponHit);
+
+            if (_fighter.Combat.IsRiposte)
+                GainResource(ResourceSource.Riposte);
+
+            float empower = _effects.GetMagnitude(StatusEffectKind.Empower);
+            float verdict = _effects.GetMagnitude(StatusEffectKind.Verdict);
+            float siphon = _effects.GetMagnitude(StatusEffectKind.Siphon);
 
             float rupture = _effects.GetMagnitude(StatusEffectKind.Rupture);
             float fire = _effects.GetMagnitude(StatusEffectKind.FireWeapon);
@@ -1191,11 +1317,48 @@ namespace Game.Scripts.Dungeon
 
             if (holy > 0f)
                 Enchant(victim, holy, effects, StatusEffectKind.None, 0f, 0f);
+
+            if (siphon > 0f)
+                _fighter.Health.Restore(Mathf.Max(1, Mathf.RoundToInt(damage * siphon / 100f)));
+
+            if (empower > 0f)
+            {
+                _effects.Remove(StatusEffectKind.Empower);
+                BonusHit(victim, _fighter.Combat.ScaleDamage(Mathf.RoundToInt(empower), DamageType.Physical), DamageType.Physical, 0f);
+            }
+
+            if (verdict > 0f)
+            {
+                _effects.Remove(StatusEffectKind.Verdict);
+                BonusHit(victim, _fighter.Combat.ScaleDamage(Mathf.RoundToInt(verdict), DamageType.Physical), DamageType.Physical, 0f);
+
+                if (effects != null && victim.IsAlive)
+                    effects.Add(StatusEffectKind.Silence, 1f, VerdictSilence);
+            }
+        }
+
+        private void OnHitTaken(HitResult result, int damage)
+        {
+            if (HasStateAuthority)
+                GainResource(result == HitResult.Hit ? ResourceSource.DamageTaken : ResourceSource.BlockedHit);
         }
 
         private void Enchant(DamageReceiverComponent victim, float damage, StatusEffectComponent effects, StatusEffectKind effect, float magnitude, float duration)
         {
+            BonusHit(victim, damage, DamageType.Magical, 0f);
+
+            if (effect != StatusEffectKind.None && effects != null && victim.IsAlive)
+                effects.Add(effect, magnitude, duration);
+        }
+
+        /// Extra damage, already scaled, on top of a weapon hit; it lands on the body even when the weapon struck a block.
+        private void BonusHit(DamageReceiverComponent victim, float damage, DamageType type, float stagger)
+        {
+            if (!victim.IsAlive)
+                return;
+
             Vector3 point = BodyPoint(victim);
+            _isBonusHit = true;
             victim.ApplyHit(new HitRequest
             {
                 BaseDamage = Mathf.RoundToInt(damage),
@@ -1204,12 +1367,11 @@ namespace Game.Scripts.Dungeon
                 Point = point,
                 Normal = (transform.position - victim.transform.position).normalized,
                 AttackerPosition = transform.position,
-                DamageType = DamageType.Magical,
+                StaggerDuration = stagger,
+                DamageType = type,
                 Attacker = _fighter.Receiver
             });
-
-            if (effect != StatusEffectKind.None && effects != null && victim.IsAlive)
-                effects.Add(effect, magnitude, duration);
+            _isBonusHit = false;
         }
 
         private void ApplyConsumable(EquipSlot slot)
@@ -1554,8 +1716,9 @@ namespace Game.Scripts.Dungeon
         int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, DamageType type, HitZone zone)
         {
             int reduced = _stats.ModifyIncomingDamage(damage, type, zone);
+            float guard = Mathf.Clamp(_effects.GetMagnitude(StatusEffectKind.Guard), 0f, 80f);
 
-            return _effects.Absorb(reduced);
+            return _effects.Absorb(Mathf.RoundToInt(reduced * (1f - guard / 100f)));
         }
     }
 }

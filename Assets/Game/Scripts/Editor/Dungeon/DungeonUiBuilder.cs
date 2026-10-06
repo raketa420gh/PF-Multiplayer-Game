@@ -1188,9 +1188,14 @@ namespace Game.Scripts.Editor.Dungeon
             title.text = "Perks and Skills";
             title.color = s_gold;
             CreateImage("TitleRule", page, top, new Vector2(0f, -146f), new Vector2(620f, 2f), s_frame);
-            TMP_Text hint = CreateText("Hint", page, top, new Vector2(0f, -154f), new Vector2(760f, 22f), 13f, TextAlignmentOptions.Center);
-            hint.text = "Drag a perk or a skill onto a slot  ·  click a perk to equip or remove it  ·  LMB / RMB on a skill binds it to Q / E";
-            hint.color = s_textDim;
+            // Subclass tabs under the title, the chosen one's description under them, right above the arch.
+            Button[] subclassTabs = new Button[3];
+
+            for (int i = 0; i < subclassTabs.Length; i++)
+                subclassTabs[i] = CreateButton("Subclass" + i, page, top, new Vector2((i - 1) * 196f, -156f), new Vector2(184f, 34f), string.Empty);
+
+            TMP_Text subclassText = CreateText("SubclassText", page, top, new Vector2(0f, -194f), new Vector2(900f, 24f), 13f, TextAlignmentOptions.Center);
+            subclassText.color = s_textDim;
 
             RawImage doll = CreateRect("Doll", page, top, new Vector2(0f, -262f), new Vector2(520f, 700f)).gameObject.AddComponent<RawImage>();
             CharacterPreviewView preview = BuildPreview(doll, inputs, 2, 520, 700, out Camera camera);
@@ -1234,6 +1239,9 @@ namespace Game.Scripts.Editor.Dungeon
             spellLayout.cellSize = new Vector2(84f, 84f);
             spellLayout.spacing = new Vector2(10f, 12f);
             pool.rectTransform.Find("SpellsTitle").GetComponent<TMP_Text>().text = "Spells  <size=70%>L Click wheel I · R Click wheel II</size>";
+            TMP_Text hint = CreateText("Hint", pool.rectTransform, top, new Vector2(0f, -918f), new Vector2(470f, 40f), 12f, TextAlignmentOptions.Center);
+            hint.text = "Drag a perk or a skill onto a slot  ·  click a perk to equip or remove it  ·  LMB / RMB on a skill binds it to Q / E";
+            hint.color = s_textDim;
             AbilityIconView perkIcon = AbilityIcon("PerkIcon", page, center, Vector2.zero, "Diamond", 104f);
             AbilityIconView skillIcon = AbilityIcon("SkillIcon", page, center, Vector2.zero, "Square", 88f);
             perkIcon.gameObject.SetActive(false);
@@ -1259,6 +1267,8 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_stats", stats);
             BattleEditorUtility.Set(so, "_tooltip", tooltip);
             BattleEditorUtility.Set(so, "_tooltipText", tooltipText);
+            BattleEditorUtility.Set(so, "_subclassTabs", subclassTabs);
+            BattleEditorUtility.Set(so, "_subclassText", subclassText);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;

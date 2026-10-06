@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// "Perks and Skills" page of the tavern: attribute sheet, the doll with the equipped perk and skill slots, the class pools to pick from.
-    /// Perks and skills are equipped by a click or by dragging them onto a slot of their kind.
+    /// "Perks and Skills" page of the tavern: attribute sheet, the subclass tabs, the doll with the equipped perk and skill slots, the
+    /// pools of the class and the chosen subclass to pick from. Perks and skills are equipped by a click or by dragging them onto a slot of their kind.
     public sealed class SkillsView : DisplayableView
     {
         [SerializeField]
@@ -43,6 +44,12 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private TMP_Text _tooltipText;
 
+        [SerializeField]
+        private Button[] _subclassTabs;
+
+        [SerializeField]
+        private TMP_Text _subclassText;
+
         private const int NoPerk = -1;
 
         private static readonly string[] s_skillKeys = { "Q", "E" };
@@ -52,6 +59,7 @@ namespace Game.Scripts.Dungeon
         private readonly List<AbilityIconView> _spellIcons = new();
         private PlayerSessionComponent _session;
         private int _shownClass = -1;
+        private int _shownSubclass = -1;
         private (byte, byte, int, int, int) _shownBuild;
         /// Which perk each slot shows. The session only knows the set of perks; their places around the doll are the page's own.
         private int[] _slotPerks;
@@ -80,6 +88,12 @@ namespace Game.Scripts.Dungeon
                 slot.OnDropped += OnDropped;
             }
 
+            for (int i = 0; i < _subclassTabs.Length; i++)
+            {
+                byte subclass = (byte)i;
+                _subclassTabs[i].onClick.AddListener(() => OnSubclassClicked(subclass));
+            }
+
             _perkGhost = CreateGhost(_perkIconPrefab);
             _skillGhost = CreateGhost(_skillIconPrefab);
             _tooltip.gameObject.SetActive(false);
@@ -95,10 +109,17 @@ namespace Game.Scripts.Dungeon
             if (_shownClass != config.Id)
             {
                 _shownClass = config.Id;
-                _shownBuild = default;
+                _shownSubclass = -1;
                 Array.Fill(_slotPerks, NoPerk);
                 _preview.Bind(_session.Kit, config);
+            }
+
+            if (_shownSubclass != _session.Subclass)
+            {
+                _shownSubclass = _session.Subclass;
+                _shownBuild = default;
                 BuildIcons(config);
+                ShowSubclasses(config);
             }
 
             (byte, byte, int, int, int) build = (_session.SkillA, _session.SkillB, _session.PerkMask, _session.Level, _session.SpellMask);
@@ -115,6 +136,7 @@ namespace Game.Scripts.Dungeon
             _session = session;
             _stats.Bind(stats);
             _shownClass = -1;
+            _shownSubclass = -1;
         }
 
         public override void Hide()
@@ -144,23 +166,48 @@ namespace Game.Scripts.Dungeon
             icon.OnDragEnded += OnDragEnded;
         }
 
+        /// Only what the class and the chosen subclass offer goes into the pools.
         private void BuildIcons(ClassConfig config)
         {
-            Fill(_perkIcons, _perkIconPrefab, _perksRoot, config.Perks.Length, OnPerkClicked);
-            Fill(_skillIcons, _skillIconPrefab, _skillsRoot, config.Skills.Length, OnSkillClicked);
-            Fill(_spellIcons, _skillIconPrefab, _spellsRoot, config.Spells.Length, OnSpellClicked);
+            int subclass = _session.Subclass;
+            Fill(_perkIcons, _perkIconPrefab, _perksRoot, config.Perks.Length, i => ClassConfig.IsAvailable(config.Perks[i].Subclass, subclass), OnPerkClicked);
+            Fill(_skillIcons, _skillIconPrefab, _skillsRoot, config.Skills.Length, i => config.IsSkillAvailable(i, subclass), OnSkillClicked);
+            Fill(_spellIcons, _skillIconPrefab, _spellsRoot, config.Spells.Length, i => ClassConfig.IsAvailable(config.Spells[i].Subclass, subclass), OnSpellClicked);
 
-            for (int i = 0; i < _perkIcons.Count; i++)
-                Show(_perkIcons[i], config, i);
+            foreach (AbilityIconView icon in _perkIcons)
+                Show(icon, config, icon.Index);
 
-            for (int i = 0; i < _skillIcons.Count; i++)
-                Show(_skillIcons[i], config.Skills, i);
+            foreach (AbilityIconView icon in _skillIcons)
+                Show(icon, config.Skills, icon.Index);
 
-            for (int i = 0; i < _spellIcons.Count; i++)
-                Show(_spellIcons[i], config.Spells, i);
+            foreach (AbilityIconView icon in _spellIcons)
+                Show(icon, config.Spells, icon.Index);
         }
 
-        private void Fill(List<AbilityIconView> icons, AbilityIconView prefab, RectTransform root, int count, Action<AbilityIconView, PointerEventData.InputButton> onClicked)
+        /// The tab of the chosen subclass is lit; the line under the tabs tells what it is about and what feeds its resource.
+        private void ShowSubclasses(ClassConfig config)
+        {
+            for (int i = 0; i < _subclassTabs.Length; i++)
+            {
+                SubclassDefinition subclass = i < config.Subclasses.Length ? config.Subclasses[i] : null;
+                _subclassTabs[i].gameObject.SetActive(subclass != null);
+
+                if (subclass == null)
+                    continue;
+
+                bool isChosen = i == _session.Subclass;
+                TMP_Text label = _subclassTabs[i].GetComponentInChildren<TMP_Text>();
+                label.text = subclass.Name;
+                label.color = isChosen ? subclass.Color : new Color(0.62f, 0.58f, 0.5f);
+                _subclassTabs[i].image.color = isChosen ? new Color(0.24f, 0.19f, 0.12f, 0.95f) : new Color(0.08f, 0.07f, 0.06f, 0.9f);
+            }
+
+            SubclassDefinition chosen = config.GetSubclass(_session.Subclass);
+            _subclassText.text = chosen != null ? chosen.Description : string.Empty;
+        }
+
+        private void Fill(List<AbilityIconView> icons, AbilityIconView prefab, RectTransform root, int count, Predicate<int> isShown,
+            Action<AbilityIconView, PointerEventData.InputButton> onClicked)
         {
             foreach (AbilityIconView icon in icons)
                 Destroy(icon.gameObject);
@@ -169,7 +216,11 @@ namespace Game.Scripts.Dungeon
 
             for (int i = 0; i < count; i++)
             {
+                if (!isShown(i))
+                    continue;
+
                 AbilityIconView icon = Instantiate(prefab, root);
+                icon.Set(i, null, string.Empty, Color.white, null);
                 icon.gameObject.SetActive(true);
                 icon.SetSelected(false);
                 icon.OnClicked += onClicked;
@@ -180,11 +231,11 @@ namespace Game.Scripts.Dungeon
 
         private void RefreshBuild(ClassConfig config)
         {
-            for (int i = 0; i < _skillIcons.Count; i++)
+            foreach (AbilityIconView icon in _skillIcons)
             {
-                int slot = i == _session.SkillA ? 0 : i == _session.SkillB ? 1 : -1;
-                _skillIcons[i].SetSelected(slot >= 0);
-                _skillIcons[i].SetBadge(slot >= 0 ? s_skillKeys[slot] : string.Empty);
+                int slot = icon.Index == _session.SkillA ? 0 : icon.Index == _session.SkillB ? 1 : -1;
+                icon.SetSelected(slot >= 0);
+                icon.SetBadge(slot >= 0 ? s_skillKeys[slot] : string.Empty);
             }
 
             for (int slot = 0; slot < _skillSlots.Length; slot++)
@@ -216,14 +267,14 @@ namespace Game.Scripts.Dungeon
                 _perkSlots[slot].SetBadge(slot < allowed ? string.Empty : $"Lv {ClassConfig.PerkSlotLevel(slot)}");
             }
 
-            for (int i = 0; i < _perkIcons.Count; i++)
-                _perkIcons[i].SetSelected((_session.PerkMask & (1 << i)) != 0);
+            foreach (AbilityIconView icon in _perkIcons)
+                icon.SetSelected((_session.PerkMask & (1 << icon.Index)) != 0);
 
-            for (int i = 0; i < _spellIcons.Count; i++)
+            foreach (AbilityIconView icon in _spellIcons)
             {
-                int wheel = ClassConfig.IsInWheel(_session.SpellMask, 0, i) ? 0 : ClassConfig.IsInWheel(_session.SpellMask, 1, i) ? 1 : -1;
-                _spellIcons[i].SetSelected(wheel >= 0);
-                _spellIcons[i].SetBadge(wheel >= 0 ? s_wheelBadges[wheel] : string.Empty);
+                int wheel = ClassConfig.IsInWheel(_session.SpellMask, 0, icon.Index) ? 0 : ClassConfig.IsInWheel(_session.SpellMask, 1, icon.Index) ? 1 : -1;
+                icon.SetSelected(wheel >= 0);
+                icon.SetBadge(wheel >= 0 ? s_wheelBadges[wheel] : string.Empty);
             }
         }
 
@@ -322,6 +373,12 @@ namespace Game.Scripts.Dungeon
             _ghost.gameObject.SetActive(false);
             // The slots get their own frame colours back with the next refresh.
             _shownBuild = default;
+        }
+
+        private void OnSubclassClicked(byte subclass)
+        {
+            DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.5f);
+            _session?.RpcSelectSubclass(subclass);
         }
 
         private void OnPerkClicked(AbilityIconView icon, PointerEventData.InputButton button)

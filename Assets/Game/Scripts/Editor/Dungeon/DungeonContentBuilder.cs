@@ -264,8 +264,15 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_glyph", def.Glyph);
             BattleEditorUtility.Set(so, "_icon", DungeonAbilityIconBuilder.Build(Sanitize(def.Name), def.Icon ?? DungeonAbilityIconBuilder.SymbolFor(def.Kind), def.Color));
 
-            if (def.Kind == AbilityKind.Projectile && def.HitEffect != StatusEffectKind.None)
+            if (def.Kind is AbilityKind.Projectile or AbilityKind.AreaDamage or AbilityKind.Blink && def.HitEffect != StatusEffectKind.None)
                 BattleEditorUtility.Set(so, "_effect", def.HitEffect);
+
+            BattleEditorUtility.Set(so, "_subclass", def.Subclass);
+            BattleEditorUtility.Set(so, "_resourceCost", def.ResourceCost);
+            BattleEditorUtility.Set(so, "_stackBonus", def.StackBonus);
+            BattleEditorUtility.Set(so, "_isOnAlly", def.OnAlly);
+            BattleEditorUtility.Set(so, "_coneAngle", def.Cone);
+            BattleEditorUtility.Set(so, "_push", def.Push);
 
             BattleEditorUtility.Set(so, "_healthCost", def.HealthCost);
             BattleEditorUtility.Set(so, "_lifeSteal", def.LifeSteal);
@@ -319,6 +326,8 @@ namespace Game.Scripts.Editor.Dungeon
                     SerializedProperty perk = perks.GetArrayElementAtIndex(p);
                     perk.FindPropertyRelative("_name").stringValue = def.Perks[p].Name;
                     perk.FindPropertyRelative("_description").stringValue = def.Perks[p].Description;
+                    perk.FindPropertyRelative("_subclass").intValue = def.Perks[p].Subclass;
+                    perk.FindPropertyRelative("_isPerStack").boolValue = def.Perks[p].PerStack;
                     string symbol = def.Perks[p].Icon ?? (def.Perks[p].Modifiers.Length > 0 ? DungeonAbilityIconBuilder.SymbolFor(def.Perks[p].Modifiers[0].Stat) : "Chevrons");
                     perk.FindPropertyRelative("_icon").objectReferenceValue = DungeonAbilityIconBuilder.Build(Sanitize(def.Perks[p].Name), symbol, def.Perks[p].Color ?? def.Color);
                     SerializedProperty modifiers = perk.FindPropertyRelative("_modifiers");
@@ -330,6 +339,22 @@ namespace Game.Scripts.Editor.Dungeon
                         element.FindPropertyRelative("Stat").intValue = (int)def.Perks[p].Modifiers[m].Stat;
                         element.FindPropertyRelative("Value").floatValue = def.Perks[p].Modifiers[m].Value;
                     }
+                }
+
+                SerializedProperty subclasses = so.FindProperty("_subclasses");
+                subclasses.arraySize = def.Subclasses.Length;
+
+                for (int s = 0; s < def.Subclasses.Length; s++)
+                {
+                    SubclassDef sub = def.Subclasses[s];
+                    SerializedProperty entry = subclasses.GetArrayElementAtIndex(s);
+                    entry.FindPropertyRelative("_name").stringValue = sub.Name;
+                    entry.FindPropertyRelative("_description").stringValue = sub.Description;
+                    entry.FindPropertyRelative("_color").colorValue = sub.Color;
+                    entry.FindPropertyRelative("_resourceName").stringValue = sub.Resource;
+                    entry.FindPropertyRelative("_resourceMax").intValue = sub.ResourceMax;
+                    entry.FindPropertyRelative("_resourceSources").intValue = (int)sub.Sources;
+                    entry.FindPropertyRelative("_resourceDecay").floatValue = sub.Decay;
                 }
 
                 SerializedProperty kit = so.FindProperty("_startingKit");

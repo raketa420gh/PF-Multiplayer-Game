@@ -142,7 +142,7 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateZweihander(),
                 BattleAnimationLibrary.CreateBow(),
                 CreateFists(),
-                CreateArmingSword(),
+                CreateArmingSword("Arming Sword", 0.12f, 0.9f, 1.4f, 27),
                 CreateFalchion(),
                 CreateLongsword(),
                 CreateBattleAxe(),
@@ -158,8 +158,8 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateBearClaws(),
                 CreatePantherClaws(),
                 CreateRatBite(),
-                OneHandedSword(ArmingSword, "Short Sword", 0.1f, 0.72f, 1.22f, 24, 0.4f, 0.2f, 0.5f),
-                OneHandedSword(ArmingSword, "Rapier", 0.12f, 1f, 1.5f, 25, 0.4f, 0.2f, 0.5f),
+                CreateArmingSword("Short Sword", 0.1f, 0.72f, 1.22f, 24),
+                CreateArmingSword("Rapier", 0.12f, 1f, 1.5f, 25),
                 OneHandedSword(Falchion, "Viking Sword", 0.12f, 0.92f, 1.42f, 36, 0.65f, 0.17f, 0.4f),
                 OneHandedSword(Hatchet, "Hatchet", 0.4f, 0.6f, 1.15f, 31, 0.65f, 0.17f, 0.4f),
                 CreateMorningStar(),
@@ -321,38 +321,6 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockBoxCenter = new Vector3(0f, 0f, 0.45f),
                 BlockBoxExtents = new Vector3(0.08f, 0.08f, 0.35f)
             };
-
-            BodyPose At(Vector3 grip, float yaw, float elevation, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean = 0f)
-            {
-                return Pose(grip, Quaternion.Euler(-elevation, yaw, 0f) * Vector3.forward, torso, pitch, elbow, offHand, lean);
-            }
-
-            BodyPose Peak(Vector3 grip, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean)
-            {
-                return Pose(grip, Vector3.forward, torso, pitch, elbow, offHand, lean);
-            }
-
-            // The empty hand swings free where the footage has it: half open, the thumb ahead, square to its forearm,
-            // which comes from an elbow that hangs out behind the left shoulder as it turns with the torso.
-            BodyPose Pose(Vector3 grip, Vector3 blade, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean)
-            {
-                const float upperArm = 0.3f;
-                const float forearm = 0.4f;
-
-                Vector3 shoulder = new Vector3(0f, 1.05f, 0f) + Quaternion.Euler(pitch, torso, 0f) * new Vector3(-0.17f, 0.42f, -0.06f);
-                Vector3 reach = offHand - shoulder;
-                float length = Mathf.Min(reach.magnitude, upperArm + forearm);
-                float near = (upperArm * upperArm - forearm * forearm + length * length) / (2f * length);
-                Vector3 bend = Vector3.ProjectOnPlane(new Vector3(-0.2f, -0.5f, -0.3f), reach).normalized;
-                Vector3 offElbow = shoulder + reach.normalized * near + bend * Mathf.Sqrt(Mathf.Max(upperArm * upperArm - near * near, 0f));
-
-                BodyPose pose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.OneHanded(grip, blade, torso, pitch), elbow);
-                pose.Off = new HandPose(offHand, Vector3.ProjectOnPlane(new Vector3(0.2f, 0f, 1f), offHand - offElbow), offHand - offElbow);
-                pose.OffOpen = 0.5f;
-                pose.Lean = lean;
-
-                return pose;
-            }
         }
 
         private static WeaponDefinition CreateDaggerVariant(string name, float bladeTip, float reach, int damage)
@@ -593,9 +561,176 @@ namespace Game.Scripts.Editor.Dungeon
             };
         }
 
-        private static WeaponDefinition CreateArmingSword()
+        /// The arming sword of Dark and Darker, carried upright before the right hip with the left hand hanging free. The
+        /// series is a forehand from behind the head over the right shoulder to the left hip, a backhand from beside the
+        /// face over the left shoulder down to the right, and a thrust from the arm held out to the right. A blocked hit is
+        /// answered from the low guard with an overhead cut from behind the head down the right side.
+        private static WeaponDefinition CreateArmingSword(string name, float bladeBase, float bladeTip, float reach, int damage)
         {
-            return OneHandedSword(ArmingSword, "Arming Sword", 0.12f, 0.9f, 1.4f, 27, 0.4f, 0.2f, 0.5f);
+            BodyPose idle = At(Cm(20f, 1.15f, 40f), 0f, 85f, 0f, 5f, Cm(25f, 1f, 10f), Cm(-25f, 1f, 5f));
+            BodyPose upright = At(Cm(20f, 1.1f, 35f), 0f, 78f, 0f, 5f, Cm(25f, 1f, 10f), Cm(-25f, 1f, 5f), 10f);
+            BodyPose levelLow = At(Cm(20f, 1f, 30f), 0f, 0f, 5f, 5f, Cm(25f, 1f, 5f), Cm(-25f, 1f, 5f), 30f);
+            // The arm hangs out to the right and back after a cut down the right side.
+            BodyPose outBack = At(Cm(48f, 1f, -25f), 115f, -15f, 30f, 10f, Cm(34f, 1.22f, -24f), Cm(-40f, 1f, 10f), 55f);
+            BodyPose lowForward = At(Cm(28f, 0.95f, 15f), 35f, -15f, 15f, 5f, Cm(28f, 1f, 0f), Cm(-30f, 1f, 5f), 30f);
+
+            // Cocked behind the head, round over the right shoulder and down across the body to the left hip.
+            AttackDefinition forehand = new AttackDefinition
+            {
+                Windup = 25 * Footage, Active = 11 * Footage, Recovery = 60 * Footage, Damage = damage, MoveMultiplier = 0.7f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(6, At(Cm(25f, 1.45f, 25f), -150f, 45f, 10f, 0f, Cm(40f, 1.2f, 10f), Cm(-35f, 1f, 5f))),
+                    Via(12, At(Cm(28f, 1.83f, 12f), -130f, 5f, 25f, -5f, Cm(45f, 1.5f, 0f), Cm(-40f, 1f, 10f)), 0.5f),
+                    Via(22, At(Cm(25f, 1.83f, 15f), 180f, 15f, 25f, -5f, Cm(45f, 1.5f, 0f), Cm(-40f, 1f, 10f)), 0.5f)
+                },
+                WindupPose = At(Cm(22f, 1.8f, 25f), 160f, 50f, 15f, 0f, Cm(38f, 1.5f, 10f), Cm(-35f, 1.05f, 0f)),
+                MidPose = Peak(Cm(10f, 1.44f, 45f), -25f, 10f, Cm(20f, 1.35f, 25f), Cm(-35f, 1.05f, -45f), 50f),
+                EndPose = At(Cm(-10f, 1f, 50f), -45f, -40f, -45f, 15f, Cm(5f, 1.15f, 25f), Cm(-38f, 1f, -35f), 60f),
+                Return = new()
+                {
+                    Via(42, At(Cm(-25f, 0.95f, 25f), -115f, -30f, -50f, 15f, Cm(-5f, 1.1f, 18f), Cm(-38f, 1f, -32f), 50f), 0.5f),
+                    Via(56, At(Cm(-25f, 0.97f, 25f), -120f, 45f, -45f, 10f, Cm(-5f, 1.1f, 15f), Cm(-30f, 1.05f, -10f), 20f)),
+                    Via(66, At(Cm(0f, 1f, 35f), -60f, 75f, -15f, 5f, Cm(10f, 1f, 15f), Cm(-25f, 1f, 0f))),
+                    Via(78, upright)
+                }
+            };
+            // Up the left side to beside the face, the blade level behind the head, then over the left shoulder down to the right.
+            AttackDefinition backhand = new AttackDefinition
+            {
+                Windup = 30 * Footage, Active = 8 * Footage, Recovery = 56 * Footage, Damage = damage, MoveMultiplier = 0.7f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(6, At(Cm(-22f, 0.95f, 25f), -90f, -20f, -40f, 10f, Cm(0f, 1.1f, 15f), Cm(-35f, 0.95f, -30f), 30f)),
+                    Via(10, At(Cm(-15f, 1.2f, 30f), -120f, 60f, -45f, 5f, Cm(0f, 1.1f, 20f), Cm(-35f, 1f, 0f))),
+                    Via(16, At(Cm(-20f, 1.55f, 25f), 180f, 5f, -70f, -5f, Cm(-5f, 1.38f, 18f), Cm(-50f, 0.95f, 5f)), 0.5f),
+                    Via(28, At(Cm(-20f, 1.57f, 25f), 180f, 10f, -70f, -5f, Cm(-5f, 1.38f, 18f), Cm(-50f, 0.95f, 5f)), 0.5f)
+                },
+                WindupPose = At(Cm(-15f, 1.57f, 25f), -160f, 15f, -65f, 0f, Cm(-5f, 1.38f, 18f), Cm(-50f, 0.95f, 5f)),
+                MidPose = Peak(Cm(12f, 1.44f, 45f), -15f, 5f, Cm(15f, 1.4f, 25f), Cm(-50f, 1f, 10f), 50f),
+                EndPose = At(Cm(30f, 1.05f, 35f), 60f, -45f, 20f, 10f, Cm(27f, 1.22f, 15f), Cm(-50f, 1f, 10f), 55f),
+                Return = new()
+                {
+                    Via(40, At(Cm(42f, 0.97f, 0f), 90f, -45f, 25f, 10f, Cm(34f, 1.2f, -10f), Cm(-48f, 1f, 10f), 65f), 0.5f),
+                    Via(56, outBack, 0.5f),
+                    Via(74, lowForward),
+                    Via(80, levelLow),
+                    Via(87, upright)
+                },
+                After = forehand
+            };
+            // The arm swings out level to the right with the blade turned forward, holds, and sweeps it in before the shoulder.
+            AttackDefinition thrust = new AttackDefinition
+            {
+                Windup = 43 * Footage, Active = 9 * Footage, Recovery = 56 * Footage, Damage = Mathf.RoundToInt(damage * 1.1f), MoveMultiplier = 0.6f, Stagger = 0.2f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(8, At(Cm(48f, 1.15f, -5f), 95f, -5f, 30f, 5f, Cm(36f, 1.28f, -10f), Cm(-35f, 1f, 5f), 50f)),
+                    Via(14, At(Cm(55f, 1.4f, 0f), 60f, 5f, 30f, 0f, Cm(35f, 1.38f, -8f), Cm(-25f, 1f, 0f), 35f)),
+                    Via(22, At(Cm(55f, 1.45f, 5f), 12f, 5f, 30f, 0f, Cm(35f, 1.38f, -8f), Cm(-20f, 1f, 0f)), 0.5f),
+                    Via(37, At(Cm(55f, 1.45f, 5f), 12f, 5f, 30f, 0f, Cm(35f, 1.45f, -5f), Cm(-20f, 1f, 0f)), 0.5f)
+                },
+                WindupPose = At(Cm(22f, 1.38f, 24f), -16f, 24f, 10f, 5f, Cm(25f, 1.15f, 0f), Cm(-22f, 1f, 0f), 55f),
+                MidPose = Peak(Cm(15f, 1.5f, 50f), -5f, 10f, Cm(18f, 1.42f, 25f), Cm(-25f, 0.95f, -10f), 60f),
+                EndPose = At(Cm(13f, 1.53f, 57f), -16f, 24f, -10f, 15f, Cm(16f, 1.32f, 33f), Cm(-25f, 0.95f, -15f), 65f),
+                Return = new()
+                {
+                    Via(70, At(Cm(14f, 1.47f, 52f), -14f, 26f, -5f, 10f, Cm(15f, 1.35f, 30f), Cm(-25f, 1f, -5f), 60f), 0.5f),
+                    Via(80, At(Cm(15f, 1.2f, 45f), 0f, 35f, 0f, 5f, Cm(20f, 1.2f, 20f), Cm(-25f, 1f, 5f), 40f)),
+                    Via(92, At(Cm(20f, 1.15f, 40f), 0f, 60f, 0f, 5f, Cm(25f, 1.05f, 15f), Cm(-25f, 1f, 5f), 15f))
+                },
+                After = backhand
+            };
+            // From the low guard up past the left of the face to behind the head, then over the top steeply down the right.
+            AttackDefinition riposte = new AttackDefinition
+            {
+                Windup = 25 * Footage, Active = 8 * Footage, Recovery = 56 * Footage, Damage = Mathf.RoundToInt(damage * 1.5f), MoveMultiplier = 0.5f, Stagger = 0.4f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(6, At(Cm(0f, 1.3f, 35f), -90f, 70f, -25f, 5f, Cm(15f, 1.1f, 15f), Cm(-20f, 1f, 5f))),
+                    Via(12, At(Cm(-10f, 1.6f, 30f), -160f, 40f, -40f, 0f, Cm(10f, 1.4f, 20f), Cm(-30f, 0.95f, 0f))),
+                    Via(18, At(Cm(-20f, 1.9f, 15f), -170f, 15f, -60f, -5f, Cm(10f, 1.62f, 5f), Cm(-30f, 0.95f, 0f)), 0.5f),
+                    Via(22, At(Cm(-18f, 1.9f, 18f), 180f, 20f, -55f, -5f, Cm(10f, 1.62f, 5f), Cm(-30f, 0.95f, 0f)), 0.5f)
+                },
+                WindupPose = At(Cm(0f, 1.75f, 28f), -130f, 55f, -40f, 0f, Cm(20f, 1.5f, 12f), Cm(-30f, 0.95f, 0f), 40f),
+                MidPose = Peak(Cm(12f, 1.44f, 45f), 0f, 10f, Cm(20f, 1.38f, 25f), Cm(-35f, 1f, 5f), 50f),
+                EndPose = At(Cm(25f, 1f, 35f), 30f, -70f, 20f, 15f, Cm(25f, 1.15f, 15f), Cm(-35f, 1f, 5f), 65f),
+                Return = new()
+                {
+                    Via(38, At(Cm(28f, 0.95f, 5f), 85f, -55f, 25f, 15f, Cm(26f, 1.18f, -10f), Cm(-40f, 1f, 5f), 65f), 0.5f),
+                    Via(50, outBack, 0.5f),
+                    Via(66, lowForward),
+                    Via(72, levelLow),
+                    Via(80, upright)
+                }
+            };
+
+            foreach (AttackDefinition attack in new[] { forehand, backhand, thrust, riposte })
+            {
+                attack.ComboStart = attack.Windup + attack.Active * 0.5f;
+                attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
+            }
+
+            return new WeaponDefinition
+            {
+                Prefix = ArmingSword,
+                DisplayName = name,
+                Kind = WeaponKind.OneHanded,
+                Reach = reach,
+                DeflectDuration = 0.6f,
+                BladeBase = bladeBase,
+                BladeTip = bladeTip,
+                Idle = idle,
+                Attacks = new[] { forehand, backhand, thrust },
+                Riposte = riposte,
+                CanBlock = true,
+                BlockRaise = 0.2f,
+                BlockMitigation = 0.7f,
+                BlockImpact = 0.28f,
+                BlockRecovery = 0.4f,
+                BlockAngle = 80f,
+                BlockMove = 0.6f,
+                // The first frame of the riposte in the footage: low before the belly, the blade across the body to the left.
+                Block = At(Cm(15f, 1.1f, 40f), -55f, 25f, -15f, 5f, Cm(25f, 1f, 10f), Cm(-20f, 1f, 5f)),
+                BlockHit = At(Cm(13f, 1.06f, 34f), -58f, 20f, -15f, 0f, Cm(25f, 0.98f, 5f), Cm(-20f, 1f, 3f)),
+                BlockLowered = At(Cm(14f, 1.05f, 36f), -50f, 15f, -12f, 5f, Cm(25f, 0.97f, 8f), Cm(-22f, 1f, 5f)),
+                DeflectPose = At(Cm(34f, 1.62f, 10f), 45f, 63f, 12f, -6f, Cm(42f, 1.35f, 0f), Cm(-25f, 1f, 5f)),
+                BlockSocket = WeaponSocket.RightHand,
+                BlockBoxCenter = new Vector3(0f, 0f, (bladeBase + bladeTip) * 0.5f),
+                BlockBoxExtents = new Vector3(0.08f, 0.08f, (bladeTip - bladeBase) * 0.5f)
+            };
+        }
+
+        private static BodyPose At(Vector3 grip, float yaw, float elevation, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean = 0f)
+        {
+            return Pose(grip, Quaternion.Euler(-elevation, yaw, 0f) * Vector3.forward, torso, pitch, elbow, offHand, lean);
+        }
+
+        private static BodyPose Peak(Vector3 grip, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean)
+        {
+            return Pose(grip, Vector3.forward, torso, pitch, elbow, offHand, lean);
+        }
+
+        // The empty hand swings free where the footage has it: half open, the thumb ahead, square to its forearm,
+        // which comes from an elbow that hangs out behind the left shoulder as it turns with the torso.
+        private static BodyPose Pose(Vector3 grip, Vector3 blade, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean)
+        {
+            const float upperArm = 0.3f;
+            const float forearm = 0.4f;
+
+            Vector3 shoulder = new Vector3(0f, 1.05f, 0f) + Quaternion.Euler(pitch, torso, 0f) * new Vector3(-0.17f, 0.42f, -0.06f);
+            Vector3 reach = offHand - shoulder;
+            float length = Mathf.Min(reach.magnitude, upperArm + forearm);
+            float near = (upperArm * upperArm - forearm * forearm + length * length) / (2f * length);
+            Vector3 bend = Vector3.ProjectOnPlane(new Vector3(-0.2f, -0.5f, -0.3f), reach).normalized;
+            Vector3 offElbow = shoulder + reach.normalized * near + bend * Mathf.Sqrt(Mathf.Max(upperArm * upperArm - near * near, 0f));
+
+            BodyPose pose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.OneHanded(grip, blade, torso, pitch), elbow);
+            pose.Off = new HandPose(offHand, Vector3.ProjectOnPlane(new Vector3(0.2f, 0f, 1f), offHand - offElbow), offHand - offElbow);
+            pose.OffOpen = 0.5f;
+            pose.Lean = lean;
+
+            return pose;
         }
 
         private static WeaponDefinition CreateFalchion()

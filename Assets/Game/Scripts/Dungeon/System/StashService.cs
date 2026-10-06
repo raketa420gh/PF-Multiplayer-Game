@@ -21,6 +21,7 @@ namespace Game.Scripts.Dungeon
         private const string SkillBKey = "skillB";
         private const string PerksKey = "perks";
         private const string SpellsKey = "spells";
+        private const string SubclassKey = "subclass";
         private const string ItemsKey = "dad.items";
         /// Version of the item list the saves refer to, see Migrate.
         private const int ItemsVersion = 2;
@@ -49,6 +50,7 @@ namespace Game.Scripts.Dungeon
         public static byte LoadSkillB() => (byte)PlayerPrefs.GetInt(Key(s_slot, SkillBKey), 1);
         public static int LoadPerkMask() => PlayerPrefs.GetInt(Key(s_slot, PerksKey), 1);
         public static int LoadSpellMask() => PlayerPrefs.GetInt(Key(s_slot, SpellsKey), ClassConfig.DefaultSpellMask);
+        public static byte LoadSubclass() => (byte)PlayerPrefs.GetInt(Key(s_slot, SubclassKey), 0);
 
         public static void SelectSlot(int slot)
         {
@@ -68,7 +70,7 @@ namespace Game.Scripts.Dungeon
 
         public static void DeleteCharacter(int slot)
         {
-            foreach (string name in new[] { KitKey, LevelKey, ExperienceKey, ClassKey, NameKey, SkillAKey, SkillBKey, PerksKey, SpellsKey })
+            foreach (string name in new[] { KitKey, LevelKey, ExperienceKey, ClassKey, NameKey, SkillAKey, SkillBKey, PerksKey, SpellsKey, SubclassKey })
                 PlayerPrefs.DeleteKey(Key(slot, name));
 
             for (int page = 0; page < PlayerSessionComponent.StashPages; page++)
@@ -77,8 +79,9 @@ namespace Game.Scripts.Dungeon
             PlayerPrefs.Save();
         }
 
-        public static void SaveBuild(int skillA, int skillB, int perkMask, int spellMask)
+        public static void SaveBuild(int subclass, int skillA, int skillB, int perkMask, int spellMask)
         {
+            PlayerPrefs.SetInt(Key(s_slot, SubclassKey), subclass);
             PlayerPrefs.SetInt(Key(s_slot, SkillAKey), skillA);
             PlayerPrefs.SetInt(Key(s_slot, SkillBKey), skillB);
             PlayerPrefs.SetInt(Key(s_slot, PerksKey), perkMask);
