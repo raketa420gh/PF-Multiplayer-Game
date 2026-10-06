@@ -8,8 +8,8 @@ using Object = UnityEngine.Object;
 
 namespace Game.Scripts.Editor.Battle
 {
-    /// Assembles the modular character from the Quaternius packs: the mannequin skeleton rebuilt with world-aligned bones,
-    /// the mannequins split into body regions and every outfit part rebound to that skeleton.
+    /// Assembles the modular character from the Quaternius packs: the base character skeleton rebuilt with world-aligned bones,
+    /// the base bodies split into body regions and every outfit part rebound to that skeleton.
     internal static class BattleCharacterBuilder
     {
         public const string AnimationsPath1 = PacksFolder + "/Universal Animation Library[Standard]/Unity/UAL1_Standard.fbx";
@@ -21,7 +21,9 @@ namespace Game.Scripts.Editor.Battle
         public const string WoodMaterial = "DummyWood";
 
         private const string PacksFolder = "Assets/SpecialFolder/3D Models";
-        private const string FemaleMannequinPath = PacksFolder + "/Universal Animation Library 2[Standard]/Female Mannequin/Unity/Mannequin_F.fbx";
+        private const string BaseFolder = PacksFolder + "/Universal Base Characters[Standard]/Base Characters";
+        private const string MaleBodyPath = BaseFolder + "/Unity/Superhero_Male_FullBody.fbx";
+        private const string FemaleBodyPath = BaseFolder + "/Unity/Superhero_Female_FullBody.fbx";
         private const string OutfitsFolder = PacksFolder + "/Modular Character Outfits - Fantasy[Standard]";
         public const string HeadMeshPath = MeshesFolder + "/Male_Head.asset";
         private const string MeshesFolder = BattleEditorUtility.ModelsFolder + "/Character";
@@ -113,25 +115,22 @@ namespace Game.Scripts.Editor.Battle
             ClothMaterial(PeasantAltMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_2_BaseColor"));
             ClothMaterial(RangerAltMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_3_BaseColor"));
             OutfitDyeBuilder.Build();
-            Material body = BattleEditorUtility.GetMaterial("FighterBody", new Color(0.86f, 0.64f, 0.5f));
-            Material joints = BattleEditorUtility.GetMaterial("FighterJoints", new Color(0.52f, 0.35f, 0.27f));
-
-            GameObject maleMannequin = LoadSource(AnimationsPath1);
-            GameObject femaleMannequin = LoadSource(FemaleMannequinPath);
+            GameObject maleSource = LoadSource(MaleBodyPath);
+            GameObject femaleSource = LoadSource(FemaleBodyPath);
             GameObject root = new GameObject("Character");
-            List<GameObject> sources = new() { maleMannequin, femaleMannequin };
+            List<GameObject> sources = new() { maleSource, femaleSource };
 
             try
             {
-                SkinnedMeshRenderer mannequin = maleMannequin.GetComponentInChildren<SkinnedMeshRenderer>();
-                Transform[] sourceBones = mannequin.bones;
+                SkinnedMeshRenderer maleSkin = BodySource(maleSource, "SuperHero_Male");
+                Transform[] sourceBones = maleSkin.bones;
                 float scale = HeadHeight / Array.Find(sourceBones, bone => bone.name == "Head").position.y;
                 Transform[] bones = CreateSkeleton(root.transform, sourceBones, scale);
 
                 Transform bodyRoot = BattleEditorUtility.CreateChild("Body", root.transform).transform;
                 Transform outfitRoot = BattleEditorUtility.CreateChild("Outfit", root.transform).transform;
-                Renderer[] maleBody = CreateBody(mannequin, "Male", bodyRoot, bones, scale, new[] { body, joints });
-                Renderer[] femaleBody = CreateBody(femaleMannequin.GetComponentInChildren<SkinnedMeshRenderer>(), "Female", bodyRoot, bones, scale, new[] { body, joints });
+                Renderer[] maleBody = CreateBody(maleSource, maleSkin, "Male", bodyRoot, bones, scale);
+                Renderer[] femaleBody = CreateBody(femaleSource, BodySource(femaleSource, "Superhero_Female"), "Female", bodyRoot, bones, scale);
                 Renderer[] maleParts = new Renderer[s_parts.Length];
                 Renderer[] femaleParts = new Renderer[s_parts.Length];
                 BodyRegion[] covers = new BodyRegion[s_parts.Length];
@@ -272,12 +271,13 @@ namespace Game.Scripts.Editor.Battle
         {
             SetupModel(AnimationsPath1, true);
             SetupModel(AnimationsPath2, true);
-            SetupModel(FemaleMannequinPath, false);
+            SetupModel(MaleBodyPath, false);
+            SetupModel(FemaleBodyPath, false);
 
             foreach (string guid in AssetDatabase.FindAssets("t:Model", new[] { OutfitsFolder + "/Exports/FBX (Unity)/Outfits" }))
                 SetupModel(AssetDatabase.GUIDToAssetPath(guid), false);
 
-            foreach (string guid in AssetDatabase.FindAssets("_Normal t:Texture2D", new[] { OutfitsFolder + "/Textures" }))
+            foreach (string guid in AssetDatabase.FindAssets("_Normal t:Texture2D", new[] { OutfitsFolder + "/Textures", BaseFolder + "/Textures/Normals Unity - Godot" }))
             {
                 TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GUIDToAssetPath(guid));
 
@@ -445,8 +445,15 @@ namespace Game.Scripts.Editor.Battle
             return false;
         }
 
-        private static Renderer[] CreateBody(SkinnedMeshRenderer source, string prefix, Transform parent, Transform[] bones, float scale, Material[] materials)
+        private static SkinnedMeshRenderer BodySource(GameObject source, string name)
         {
+            return Array.Find(source.GetComponentsInChildren<SkinnedMeshRenderer>(), renderer => renderer.name == name);
+        }
+
+        /// Body regions of a base character; its eyes and eyebrows ride on the head region.
+        private static Renderer[] CreateBody(GameObject character, SkinnedMeshRenderer source, string prefix, Transform parent, Transform[] bones, float scale)
+        {
+            Material[] materials = { BodyMaterial(prefix) };
             Mesh mesh = source.sharedMesh;
             Vector3[] vertices = mesh.vertices;
             BoneWeight[] weights = mesh.boneWeights;
@@ -458,13 +465,12 @@ namespace Game.Scripts.Editor.Battle
             List<int>[][] regions = new List<int>[renderers.Length][];
 
             for (int i = 0; i < regions.Length; i++)
-                regions[i] = new[] { new List<int>(), new List<int>() };
+                regions[i] = new[] { new List<int>() };
 
             float[] share = new float[regions.Length];
 
             for (int sub = 0; sub < mesh.subMeshCount; sub++)
             {
-                int slot = source.sharedMaterials[sub].name.Contains("Joints") ? 1 : 0;
                 int[] triangles = mesh.GetTriangles(sub);
 
                 for (int i = 0; i < triangles.Length; i += 3)
@@ -485,7 +491,7 @@ namespace Game.Scripts.Editor.Battle
                     if (region == calves && toWorld.MultiplyPoint3x4(vertices[triangles[i]]).y < BootTop)
                         region++;
 
-                    regions[region][slot].AddRange(new[] { triangles[i], triangles[i + 1], triangles[i + 2] });
+                    regions[region][0].AddRange(new[] { triangles[i], triangles[i + 1], triangles[i + 2] });
                 }
             }
 
@@ -493,6 +499,16 @@ namespace Game.Scripts.Editor.Battle
             {
                 string name = $"{prefix}_{(BodyRegion)(1 << i)}";
                 renderers[i] = CreateRenderer(name, parent, Extract(source, name, regions[i], bones, scale), bones, materials);
+            }
+
+            Transform head = renderers[RegionIndex("Head")].transform;
+
+            foreach ((string part, Material material) in new[] { ("Eyes", EyesMaterial()), ("Eyebrows", EyebrowsMaterial(prefix)) })
+            {
+                SkinnedMeshRenderer feature = BodySource(character, part);
+                string name = $"{prefix}_{part}";
+                List<int>[] triangles = { new(feature.sharedMesh.triangles) };
+                CreateRenderer(name, head, Extract(feature, name, triangles, bones, scale), bones, new[] { material });
             }
 
             return renderers;
@@ -713,6 +729,37 @@ namespace Game.Scripts.Editor.Battle
         {
             material.SetTexture("_MetallicGlossMap", mask);
             material.SetTexture("_OcclusionMap", mask);
+        }
+
+        private static Material BodyMaterial(string gender)
+        {
+            string color = gender == "Male" ? "T_Superhero_Male_Dark" : "T_Superhero_Female_Dark_BaseColor";
+            string normal = $"{BaseFolder}/Textures/Normals Unity - Godot/T_Superhero_{gender}_Normal.png";
+
+            return TexturedMaterial("Body" + gender, $"{BaseFolder}/Textures/{color}.png", normal,
+                CreateMask($"{BaseFolder}/Textures/T_Superhero_{gender}_Roughness.png", false));
+        }
+
+        private static Material EyesMaterial()
+        {
+            Material material = BattleEditorUtility.GetMaterial("BodyEyes", Color.white, 0f, 0.85f);
+            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{BaseFolder}/Textures/T_Eye_Brown.png"));
+
+            return material;
+        }
+
+        /// Hair cards: grey atlas tinted by the material, alpha-clipped and two-sided.
+        private static Material EyebrowsMaterial(string gender)
+        {
+            Material material = BattleEditorUtility.GetMaterial("BodyEyebrows" + gender, new Color(0.2f, 0.13f, 0.08f), 0f, 0.2f);
+            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{BaseFolder}/Textures/T_Hair_{(gender == "Male" ? 1 : 2)}_BaseColor.png"));
+            material.SetFloat("_AlphaClip", 1f);
+            material.SetFloat("_Cutoff", 0.5f);
+            material.SetFloat("_Cull", 0f);
+            material.EnableKeyword("_ALPHATEST_ON");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
+
+            return material;
         }
 
         private static Material SkinMaterial(string gender)

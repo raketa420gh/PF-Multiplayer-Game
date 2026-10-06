@@ -791,7 +791,7 @@ namespace Game.Scripts.Editor.Dungeon
             model.localScale = Vector3.one * scale;
             model.localPosition = -center * scale;
             DungeonPropBuilder.MeshObject("Skull", model, mesh, DungeonPropBuilder.Bone, default, default, false, false)
-                .GetComponent<MeshRenderer>().sharedMaterials = new[] { DungeonPropBuilder.Bone, DungeonPropBuilder.Bone };
+                .GetComponent<MeshRenderer>().sharedMaterials = new[] { DungeonPropBuilder.Bone };
 
             Material dark = BattleEditorUtility.GetMaterial("ArmorDark", new Color(0.12f, 0.1f, 0.08f), 0.1f, 0.3f);
             Material eye = DungeonPropBuilder.Emissive("HeadEye", new Color(0.45f, 1f, 0.6f), 6f);

@@ -14,7 +14,7 @@ namespace Game.Scripts.Editor.Dungeon
                 new ClassDef
                 {
                     Id = 0, Name = "Barbarian", Description = "Tough two-handed axe fighter. Shouts turn the tide, but he is slow and has only throwing axes at range.",
-                    Stats = new ClassStats(21, 22, 8, 9, 15, 15), Color = new Color(0.85f, 0.35f, 0.2f), Body = new Color(0.8f, 0.58f, 0.45f),
+                    Stats = new ClassStats(21, 22, 8, 9, 15, 15), Color = new Color(0.85f, 0.35f, 0.2f), Body = Color.white,
                     Skills = new[]
                     {
                         Skill("Battle Roar", "Berserk fury: +10 rage (power, speed, but less armor) for 10s.", AbilityKind.Buff, 10f, 10f, 35f, "BR", new Color(1f, 0.4f, 0.2f), StatusEffectKind.Rage, 0.4f, icon: "Maw"),
@@ -48,7 +48,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new ClassDef
             {
                 Id = 1, Name = "Wizard", Description = "Master of spells: frost, fire and lightning from two spell wheels. Spells run out and come back only by a campfire. Fragile in melee.",
-                Stats = new ClassStats(8, 10, 23, 21, 15, 13), Color = arcane, Body = new Color(0.78f, 0.66f, 0.56f),
+                Stats = new ClassStats(8, 10, 23, 21, 15, 13), Color = arcane, Body = Color.white,
                 Skills = new[]
                 {
                     Memory("Spell Memory I", "Hold to open the first spell wheel and ready a spell; hold RMB with a magical focus in hand and release to cast. The centre of the wheel returns RMB to the weapon.", "M1", arcane, 0),
@@ -111,7 +111,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new ClassDef
             {
                 Id = 2, Name = "Sellsword", Description = "Hired blade at home with any weapon but a magical one. Plate and a shield make a wall of him, perks a hard hitter or quick hands. No magic at all.",
-                Stats = new ClassStats(18, 18, 9, 10, 17, 18), Color = steel, Body = new Color(0.8f, 0.62f, 0.5f),
+                Stats = new ClassStats(18, 18, 9, 10, 17, 18), Color = steel, Body = Color.white,
                 Skills = new[]
                 {
                     new AbilityDef
@@ -146,7 +146,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new ClassDef
             {
                 Id = 3, Name = "Chaplain", Description = "War priest of the dawn: maces, a shield and prayers of light that heal, ward and smite. A frail healer in cloth or a slow wall in plate, as the build goes.",
-                Stats = new ClassStats(15, 14, 21, 16, 12, 12), Color = light, Body = new Color(0.8f, 0.64f, 0.52f),
+                Stats = new ClassStats(15, 14, 21, 16, 12, 12), Color = light, Body = Color.white,
                 Skills = new[]
                 {
                     Memory("Prayer Memory", "Hold to open the prayer wheel and ready a prayer; hold RMB with a spellbook or a magic staff in hand and release to cast. The centre of the wheel returns RMB to the weapon.", "PM", light),

@@ -34,7 +34,7 @@ namespace Game.Scripts.Battle
         RangerBoots
     }
 
-    /// Modular character: mannequin body regions and skinned outfit parts on one skeleton.
+    /// Modular character: base body regions and skinned outfit parts on one skeleton.
     /// A shown part hides the body regions it covers. Material slot 0 is the tintable one, slot 1 is skin or joints.
     public sealed class CharacterModelComponent : MonoBehaviour
     {
@@ -109,13 +109,16 @@ namespace Game.Scripts.Battle
                 SetColor(region, color);
         }
 
-        /// Replaces the mannequin surface and the bare skin of every part, e.g. bone or rotten flesh for monsters.
+        /// Replaces the body surface (eyes and eyebrows included) and the bare skin of every part, e.g. bone or rotten flesh for monsters.
         public void SetBodyMaterial(Material material)
         {
             foreach (Renderer[] renderers in new[] { _maleBody, _femaleBody })
             {
                 foreach (Renderer region in renderers)
-                    region.sharedMaterials = new[] { material, material };
+                {
+                    foreach (Renderer renderer in region.GetComponentsInChildren<Renderer>(true))
+                        renderer.sharedMaterials = Array.ConvertAll(renderer.sharedMaterials, _ => material);
+                }
             }
 
             foreach (Renderer[] renderers in new[] { _maleParts, _femaleParts })
