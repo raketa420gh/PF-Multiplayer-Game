@@ -31,7 +31,7 @@ Assets/
 ```text
 Assets/Game/
 ├── Animations, Audio, Configs, Materials, Meshes, Prefabs, Textures   # генерируются билдерами
-├── Scenes/            # LobbyScene, DungeonScene, BattleScene, SampleScene, AnimationTestScene (см. Animation_Test_Scene.md)
+├── Scenes/            # LobbyScene, DungeonScene, BattleScene, SampleScene, AnimationEditor (см. Animation_Test_Scene.md)
 └── Scripts/
     ├── Battle/ Dungeon/ Player/ GameObjects/ System/ Common/
     └── Editor/{Battle,Dungeon}/   # билдеры контента, меню Tools/Game/*

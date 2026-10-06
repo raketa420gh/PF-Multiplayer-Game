@@ -3,7 +3,7 @@
 Офлайн-просмотрщик анимаций бойца: любой стейт `Fighter.controller` на голом `Character.prefab` с любым оружием каталога,
 без сетевой сессии Fusion. Нужен, чтобы проверять сгенерированные клипы (позы, тайминги, вид от первого лица) без запуска игры.
 
-- Сцена: `Assets/Game/Scenes/AnimationTestScene.unity` (в Build Settings не входит)
+- Сцена: `Assets/Game/Scenes/AnimationEditor.unity` (в Build Settings не входит)
 - Сборка: `Tools/Game/Battle/Build Animation Test Scene`
 - Код: `Scripts/Battle/View/AnimationTestView.cs`, `Scripts/Battle/View/HandItem.cs`,
   `Scripts/Editor/Battle/BattleAnimationTestSceneBuilder.cs`
@@ -25,7 +25,7 @@
                 • FindAssets("t:WeaponConfig") → _weapons
                 • BattleEditorUtility.Set(...) → ссылки во вьюху
                                           ▼
-┌────────────────────────── AnimationTestScene.unity ───────────────────────────┐
+┌────────────────────────── AnimationEditor.unity ──────────────────────────────┐
 │ Directional Light · [Volume] · Ground · [Camera] · Character · [System]       │
 └────────────────────────────────────────────────────────────────────────────────┘
 

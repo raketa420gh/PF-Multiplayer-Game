@@ -15,7 +15,7 @@ namespace Game.Scripts.Editor.Battle
     /// Animation test ground: the bare character with the fighter controller and every weapon of the catalog, no network session.
     internal static class BattleAnimationTestSceneBuilder
     {
-        private const string ScenePath = "Assets/Game/Scenes/AnimationTestScene.unity";
+        private const string ScenePath = "Assets/Game/Scenes/AnimationEditor.unity";
 
         [MenuItem("Tools/Game/Battle/Build Animation Test Scene")]
         public static void Build()

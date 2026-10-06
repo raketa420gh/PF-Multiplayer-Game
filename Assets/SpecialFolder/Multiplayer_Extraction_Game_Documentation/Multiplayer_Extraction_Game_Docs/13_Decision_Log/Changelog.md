@@ -39,7 +39,7 @@
 - Loot search: loot is hidden until searched item by item (speed = Perception); monster corpses are containers.
 - Holster toggle: gear in weapon/shield/belt slots counts in stats only while in hands.
 - Generated weapon meshes with PBR textures, synthesized multi-take audio.
-- `AnimationTestScene`: offline browser of every fighter controller state with any catalog weapon (scrub, frame step, orbit / first-person camera), see `05_Technical/Animation_Test_Scene.md`.
+- `AnimationEditor`: offline browser of every fighter controller state with any catalog weapon (scrub, frame step, orbit / first-person camera), see `05_Technical/Animation_Test_Scene.md`.
 
 ### Changed
 - Swing peak of every melee attack lies on the screen crosshair (aimed hit always registers).
