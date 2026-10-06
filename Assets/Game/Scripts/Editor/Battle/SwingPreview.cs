@@ -113,7 +113,7 @@ namespace Game.Scripts.Editor.Battle
 
                 float[] values =
                 {
-                    Vector3.Angle(socket.up, Forearm(animator, HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand)),
+                    Vector3.Angle(Quaternion.AngleAxis(poses[frame].Lean, socket.right) * socket.up, Forearm(animator, HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand)),
                     Vector3.Angle(offSocket.up, Forearm(animator, HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand)),
                     frame == 0 ? 0f : Mathf.Abs(Mathf.DeltaAngle(0f, angle) * Vector3.Dot(axis, blade)),
                     Vector3.Distance(socket.position, poses[frame].Main.Position),

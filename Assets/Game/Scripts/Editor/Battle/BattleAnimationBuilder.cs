@@ -28,6 +28,7 @@ namespace Game.Scripts.Editor.Battle
         private const string HitLayerName = "Hit";
 
         private static readonly string[] s_rootCurves = { "RootT.x", "RootT.y", "RootT.z", "RootQ.x", "RootQ.y", "RootQ.z", "RootQ.w" };
+        private static readonly string[] s_socketCurves = { "m_LocalRotation.x", "m_LocalRotation.y", "m_LocalRotation.z", "m_LocalRotation.w" };
 
         [MenuItem("Tools/Game/Battle/Build Animations")]
         public static void Build()
@@ -537,6 +538,13 @@ namespace Game.Scripts.Editor.Battle
             for (int i = 0; i < root.Length; i++)
                 SetCurve(clip, s_rootCurves[i], root[i]);
 
+            // A weapon that leans in the hand turns its socket. The clip also plays mirrored, with the weapon in the other hand.
+            if (Array.Exists(poses, pose => pose.Lean != 0f))
+            {
+                SetSocketCurves(clip, rig, WeaponSocket.RightHand, poses, duration);
+                SetSocketCurves(clip, rig, WeaponSocket.LeftHand, poses, duration);
+            }
+
             AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
             settings.loopTime = isLoop;
             settings.loopBlendOrientation = true;
@@ -568,10 +576,32 @@ namespace Game.Scripts.Editor.Battle
 
         private static void SetCurve(AnimationClip clip, string property, AnimationCurve curve)
         {
+            SetCurve(clip, EditorCurveBinding.FloatCurve(string.Empty, typeof(Animator), property), curve);
+        }
+
+        private static void SetCurve(AnimationClip clip, EditorCurveBinding binding, AnimationCurve curve)
+        {
             for (int i = 0; i < curve.length; i++)
                 curve.SmoothTangents(i, 0f);
 
-            AnimationUtility.SetEditorCurve(clip, EditorCurveBinding.FloatCurve(string.Empty, typeof(Animator), property), curve);
+            AnimationUtility.SetEditorCurve(clip, binding, curve);
+        }
+
+        private static void SetSocketCurves(AnimationClip clip, BattlePoseRig rig, WeaponSocket socket, BodyPose[] poses, float duration)
+        {
+            string path = AnimationUtility.CalculateTransformPath(rig.Sockets[(int)socket], rig.Animator.transform);
+            AnimationCurve[] curves = { new(), new(), new(), new() };
+
+            for (int frame = 0; frame < poses.Length; frame++)
+            {
+                Quaternion rotation = rig.GetSocketRotation(socket, poses[frame].Lean);
+
+                for (int i = 0; i < curves.Length; i++)
+                    curves[i].AddKey(Mathf.Min(frame / FrameRate, duration), rotation[i]);
+            }
+
+            for (int i = 0; i < curves.Length; i++)
+                SetCurve(clip, EditorCurveBinding.FloatCurve(path, typeof(Transform), s_socketCurves[i]), curves[i]);
         }
     }
 }

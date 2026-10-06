@@ -624,6 +624,7 @@ namespace Game.Scripts.Editor.Battle
             pose.OffRoll = Mathf.LerpAngle(a.OffRoll, b.OffRoll, alpha);
             pose.MainOpen = Mathf.Lerp(a.MainOpen, b.MainOpen, alpha);
             pose.OffOpen = Mathf.Lerp(a.OffOpen, b.OffOpen, alpha);
+            pose.Lean = Mathf.Lerp(a.Lean, b.Lean, alpha);
 
             // A cut keeps its edge on the path of the strike point itself, not only on the keys.
             if (keys[next].Lead > 0f)

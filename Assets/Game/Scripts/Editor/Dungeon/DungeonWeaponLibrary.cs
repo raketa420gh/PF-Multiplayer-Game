@@ -76,7 +76,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             (Spellbook, Fists, "Spellbook"), (Lute, Fists, "Lute"), (RatBite, Fists, "Rat Bite"),
             (ShortSword, ArmingSword, "Short Sword"), (Rapier, ArmingSword, "Rapier"), (VikingSword, Falchion, "Viking Sword"),
-            (MorningStar, Mace, "Morning Star"), (CastillonDagger, Dagger, "Castillon Dagger"),
+            (CastillonDagger, Dagger, "Castillon Dagger"),
             (Stiletto, Dagger, "Stiletto Dagger"), (FellingAxe, BattleAxe, "Felling Axe"), (Halberd, Spear, "Halberd")
         };
 
@@ -174,13 +174,185 @@ namespace Game.Scripts.Editor.Dungeon
             };
         }
 
+        /// The morning star of Dark and Darker, swung in the right hand with the left one hanging free. It is carried
+        /// upright at the right side. The first and the third swing lay it level over the head, turn it round to the back
+        /// and bring it down from the right: the first almost straight, the third on a wider slant. Between them comes a
+        /// backhand, laid back over the left shoulder and whipped flat to the front. A blocked hit is answered with the
+        /// widest slant, straight from the guard before the forehead. Every swing stops dead ahead with the arm long and
+        /// the haft laid along it, sinks to the belly and comes back up into rest elbow first; the free arm is thrown
+        /// back behind the hip by it.
         private static WeaponDefinition CreateMorningStar()
         {
-            WeaponDefinition definition = OneHandedSword(Mace, "Morning Star", 0.1f, 0.7f, 1.25f, 34, 0.55f, 0.18f, 0.5f);
-            definition.Strike = MaceHead;
-            definition.Attacks[2].Stagger = 0.35f;
+            // The middle of the ball.
+            const float head = 0.7f;
+            const int damage = 34;
+            // How far the haft is laid over in the hand along a long arm.
+            const float along = 70f;
 
-            return definition;
+            BodyPose idle = At(Cm(22f, 1.2f, 35f), 0f, 82f, 0f, 0f, Cm(30f, 1f, 5f), Cm(-30f, 1f, 15f));
+            // Level over the head pointing left, the elbow out at shoulder height: the overhead swings turn it back from here.
+            BodyPose over = At(Cm(20f, 1.9f, 10f), -90f, 5f, 10f, 0f, Cm(40f, 1.5f, 5f), Cm(-40f, 0.95f, 0f), 15f);
+            // Where a swing sinks to after its stop, the arm still long.
+            BodyPose sunk = At(Cm(5f, 1.23f, 46f), -8f, -3f, -30f, 15f, Cm(26f, 1.17f, 20f), Cm(-38f, 0.95f, -25f), along);
+            BodyPose sunkLeft = At(Cm(-2f, 1.23f, 46f), -12f, -5f, -30f, 15f, Cm(22f, 1.16f, 18f), Cm(-38f, 0.95f, -25f), along);
+            // The way back to rest: the elbow goes out to the right, then the head comes up.
+            BodyPose elbowOut = At(Cm(12f, 1.18f, 40f), -20f, 22f, -15f, 8f, Cm(38f, 1.1f, 15f), Cm(-38f, 1f, -8f), 40f);
+            BodyPose rising = At(Cm(20f, 1.18f, 35f), -20f, 55f, -5f, 0f, Cm(32f, 1.02f, 8f), Cm(-33f, 1f, 10f), 15f);
+            BodyPose guard = At(Cm(15f, 1.72f, 28f), -50f, -20f, 0f, 0f, Cm(40f, 1.6f, 5f), Cm(-30f, 1f, 10f), 45f);
+
+            // Over the head to the left, round to the back, then down past the right of the head, 15 degrees off upright.
+            AttackDefinition chop = new AttackDefinition
+            {
+                Windup = 43 * Footage, Active = 10 * Footage, Recovery = 37 * Footage, Damage = damage, MoveMultiplier = 0.7f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(5, At(Cm(22f, 1.4f, 25f), -90f, 50f, 5f, 0f, Cm(38f, 1.15f, 5f), Cm(-35f, 0.95f, 10f), 25f)),
+                    Via(15, over),
+                    Via(25, At(Cm(18f, 1.95f, 10f), -115f, 0f, 15f, -5f, Cm(40f, 1.5f, 5f), Cm(-40f, 0.95f, 0f))),
+                    Via(35, At(Cm(15f, 1.95f, 10f), -160f, 0f, 15f, -5f, Cm(40f, 1.55f, 0f), Cm(-40f, 0.95f, 0f))),
+                    Via(40, At(Cm(12f, 1.95f, 20f), 165f, 20f, 5f, 0f, Cm(35f, 1.6f, 15f), Cm(-36f, 0.93f, -15f), 15f))
+                },
+                // The elbow comes forward under the hand first, the forearm upright.
+                WindupPose = At(Cm(10f, 1.78f, 40f), 135f, 80f, -15f, 10f, Cm(20f, 1.45f, 30f), Cm(-33f, 0.92f, -30f), 50f),
+                MidPose = Peak(Cm(2f, 1.44f, 59f), -38f, 20f, Cm(10f, 1.4f, 28f), Cm(-35f, 0.9f, -42f), 50f),
+                EndPose = At(Cm(0f, 1.28f, 60f), -6f, -4f, -45f, 22f, Cm(8f, 1.3f, 28f), Cm(-35f, 0.9f, -45f), along),
+                Return = new() { Via(63, sunk, 0.5f), Via(72, elbowOut), Via(82, rising) }
+            };
+            // The forearm folds across the throat to the left temple, the head hangs behind the left shoulder; the hand
+            // goes out ahead first and the head whips round after it, level, to stop dead ahead.
+            AttackDefinition backhand = new AttackDefinition
+            {
+                Windup = 48 * Footage, Active = 7 * Footage, Recovery = 35 * Footage, Damage = Mathf.RoundToInt(damage * 1.05f), MoveMultiplier = 0.7f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(5, At(Cm(0f, 1.22f, 40f), -25f, 0f, -28f, 10f, Cm(28f, 1.2f, 18f), Cm(-38f, 0.95f, -15f), along)),
+                    Via(12, At(Cm(-3f, 1.3f, 35f), -50f, 8f, -12f, 5f, Cm(28f, 1.28f, 15f), Cm(-36f, 0.95f, -10f), 55f)),
+                    Via(18, At(Cm(-15f, 1.42f, 28f), -100f, 5f, -15f, 0f, Cm(18f, 1.4f, 25f), Cm(-33f, 0.95f, -20f), 45f)),
+                    Via(24, At(Cm(-19f, 1.56f, 24f), -150f, -12f, -20f, 0f, Cm(10f, 1.45f, 30f), Cm(-32f, 0.93f, -30f), 30f)),
+                    Via(31, At(Cm(-20f, 1.69f, 18f), -160f, -25f, -20f, 0f, Cm(10f, 1.42f, 35f), Cm(-32f, 0.92f, -38f), 25f), 0.4f),
+                    Via(40, At(Cm(-19f, 1.7f, 20f), -156f, -20f, -20f, 2f, Cm(10f, 1.42f, 35f), Cm(-32f, 0.92f, -38f), 25f), 0.5f),
+                    Via(43, At(Cm(-12f, 1.66f, 28f), -135f, 0f, -21f, 5f, Cm(10f, 1.42f, 35f), Cm(-32f, 0.92f, -38f), 25f)),
+                    Via(46, At(Cm(0f, 1.6f, 42f), -95f, 25f, -25f, 8f, Cm(12f, 1.45f, 33f), Cm(-33f, 0.91f, -40f), 15f))
+                },
+                WindupPose = At(Cm(12f, 1.52f, 53f), -88f, 30f, -30f, 10f, Cm(12f, 1.43f, 28f), Cm(-34f, 0.9f, -42f), 5f),
+                MidPose = Peak(Cm(16f, 1.45f, 52f), -38f, 17f, Cm(16f, 1.4f, 24f), Cm(-35f, 0.9f, -45f), 55f),
+                EndPose = At(Cm(20f, 1.41f, 50f), 1f, 4f, -40f, 18f, Cm(20f, 1.37f, 20f), Cm(-35f, 0.9f, -45f), along),
+                Return = new()
+                {
+                    Via(66, At(Cm(20f, 1.28f, 42f), 0f, -3f, -30f, 12f, Cm(30f, 1.2f, 18f), Cm(-38f, 0.95f, -25f), along), 0.5f),
+                    Via(76, At(Cm(20f, 1.2f, 40f), -10f, 30f, -10f, 5f, Cm(32f, 1.05f, 10f), Cm(-35f, 1f, -5f), 25f)),
+                    Via(84, At(Cm(21f, 1.2f, 37f), -5f, 62f, -3f, 0f, Cm(31f, 1.02f, 7f), Cm(-31f, 1f, 12f), 10f))
+                },
+                After = chop
+            };
+            // The chop again out of the backhand's stop, coming out wider round the right: 30 degrees off upright.
+            AttackDefinition slant = new AttackDefinition
+            {
+                Windup = 46 * Footage, Active = 10 * Footage, Recovery = 34 * Footage, Damage = Mathf.RoundToInt(damage * 1.1f), MoveMultiplier = 0.6f, Stagger = 0.35f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(7, At(Cm(20f, 1.46f, 35f), -45f, 30f, -10f, 5f, Cm(38f, 1.2f, 10f), Cm(-37f, 0.95f, -15f), 50f)),
+                    Via(12, At(Cm(22f, 1.72f, 25f), -75f, 20f, 0f, 0f, Cm(40f, 1.38f, 5f), Cm(-39f, 0.95f, -5f), 40f)),
+                    Via(17, over),
+                    Via(27, At(Cm(18f, 1.95f, 10f), -120f, 0f, 15f, -5f, Cm(40f, 1.5f, 5f), Cm(-40f, 0.95f, 0f))),
+                    Via(37, At(Cm(15f, 1.95f, 10f), -170f, 0f, 15f, -5f, Cm(40f, 1.55f, 0f), Cm(-40f, 0.95f, 0f))),
+                    Via(42, At(Cm(15f, 1.95f, 15f), 175f, 10f, 10f, 0f, Cm(38f, 1.6f, 10f), Cm(-37f, 0.94f, -12f))),
+                    Via(44, At(Cm(15f, 1.9f, 25f), 140f, 45f, 5f, 5f, Cm(32f, 1.55f, 20f), Cm(-35f, 0.93f, -22f), 15f))
+                },
+                WindupPose = At(Cm(15f, 1.8f, 37f), 100f, 65f, -10f, 10f, Cm(25f, 1.48f, 28f), Cm(-33f, 0.92f, -30f), 30f),
+                MidPose = Peak(Cm(0f, 1.44f, 56f), -35f, 20f, Cm(10f, 1.4f, 27f), Cm(-35f, 0.9f, -42f), 50f),
+                EndPose = At(Cm(-8f, 1.3f, 55f), -10f, -7f, -45f, 22f, Cm(4f, 1.3f, 26f), Cm(-35f, 0.9f, -45f), along),
+                Return = new() { Via(64, sunkLeft, 0.5f), Via(74, elbowOut), Via(83, rising) },
+                After = backhand
+            };
+            // From the guard the head goes on up and round the back without a pause and comes down on the widest slant.
+            AttackDefinition riposte = new AttackDefinition
+            {
+                Windup = 30 * Footage, Active = 10 * Footage, Recovery = 32 * Footage, Damage = Mathf.RoundToInt(damage * 1.5f), MoveMultiplier = 0.5f, Stagger = 0.4f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(4, At(Cm(18f, 1.8f, 22f), -60f, -12f, 5f, 0f, Cm(40f, 1.6f, 5f), Cm(-30f, 1f, 10f), 30f)),
+                    Via(8, At(Cm(20f, 1.88f, 15f), -80f, -8f, 10f, 0f, Cm(40f, 1.55f, 5f), Cm(-35f, 0.95f, 5f), 15f)),
+                    Via(12, At(Cm(20f, 1.93f, 10f), -95f, -5f, 10f, 0f, Cm(40f, 1.55f, 5f), Cm(-38f, 0.95f, 0f), 5f)),
+                    Via(20, At(Cm(18f, 1.95f, 10f), -155f, 0f, 15f, -5f, Cm(40f, 1.55f, 0f), Cm(-40f, 0.95f, 0f))),
+                    Via(24, At(Cm(15f, 1.95f, 15f), 175f, 5f, 10f, 0f, Cm(38f, 1.6f, 10f), Cm(-38f, 0.95f, -8f))),
+                    Via(28, At(Cm(15f, 1.88f, 30f), 135f, 40f, 5f, 5f, Cm(32f, 1.55f, 20f), Cm(-35f, 0.93f, -22f), 20f))
+                },
+                // The hand stays high while the head comes round it, then the arm drops and straightens.
+                WindupPose = At(Cm(15f, 1.82f, 40f), 95f, 40f, -10f, 10f, Cm(25f, 1.5f, 28f), Cm(-33f, 0.92f, -30f), 35f),
+                MidPose = Peak(Cm(0f, 1.45f, 56f), -35f, 20f, Cm(10f, 1.4f, 27f), Cm(-35f, 0.9f, -42f), 50f),
+                EndPose = At(Cm(-8f, 1.28f, 55f), -15f, -7f, -45f, 22f, Cm(4f, 1.3f, 26f), Cm(-35f, 0.9f, -45f), along),
+                Return = new() { Via(48, sunkLeft, 0.5f), Via(56, elbowOut), Via(64, rising) }
+            };
+
+            foreach (AttackDefinition attack in new[] { chop, backhand, slant, riposte })
+            {
+                attack.ComboStart = attack.Windup + attack.Active * 0.5f;
+                attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
+            }
+
+            return new WeaponDefinition
+            {
+                Prefix = MorningStar,
+                DisplayName = "Morning Star",
+                Kind = WeaponKind.OneHanded,
+                IsRound = true,
+                Reach = 1.35f,
+                DeflectDuration = 0.6f,
+                BladeBase = 0.1f,
+                BladeTip = 0.8f,
+                Strike = head,
+                Idle = idle,
+                Attacks = new[] { chop, backhand, slant },
+                Riposte = riposte,
+                CanBlock = true,
+                BlockRaise = 0.2f,
+                BlockMitigation = 0.7f,
+                BlockImpact = 0.28f,
+                BlockRecovery = 0.4f,
+                BlockAngle = 80f,
+                BlockMove = 0.6f,
+                // The first frame of the riposte in the footage: the haft slanting down to the left before the forehead.
+                Block = guard,
+                BlockHit = At(Cm(14f, 1.64f, 21f), -55f, -14f, 0f, -5f, Cm(40f, 1.5f, 3f), Cm(-30f, 1f, 8f), 45f),
+                BlockLowered = At(Cm(14f, 1.6f, 25f), -50f, -18f, 0f, 0f, Cm(40f, 1.45f, 5f), Cm(-30f, 1f, 10f), 45f),
+                DeflectPose = At(Cm(34f, 1.62f, 10f), 45f, 63f, 12f, -6f, Cm(42f, 1.35f, 0f), Cm(-30f, 1f, 5f), 50f),
+                BlockSocket = WeaponSocket.RightHand,
+                BlockBoxCenter = new Vector3(0f, 0f, 0.45f),
+                BlockBoxExtents = new Vector3(0.08f, 0.08f, 0.35f)
+            };
+
+            BodyPose At(Vector3 grip, float yaw, float elevation, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean = 0f)
+            {
+                return Pose(grip, Quaternion.Euler(-elevation, yaw, 0f) * Vector3.forward, torso, pitch, elbow, offHand, lean);
+            }
+
+            BodyPose Peak(Vector3 grip, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean)
+            {
+                return Pose(grip, Vector3.forward, torso, pitch, elbow, offHand, lean);
+            }
+
+            // The empty hand swings free where the footage has it: half open, the thumb ahead, square to its forearm,
+            // which comes from an elbow that hangs out behind the left shoulder as it turns with the torso.
+            BodyPose Pose(Vector3 grip, Vector3 blade, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean)
+            {
+                const float upperArm = 0.3f;
+                const float forearm = 0.4f;
+
+                Vector3 shoulder = new Vector3(0f, 1.05f, 0f) + Quaternion.Euler(pitch, torso, 0f) * new Vector3(-0.17f, 0.42f, -0.06f);
+                Vector3 reach = offHand - shoulder;
+                float length = Mathf.Min(reach.magnitude, upperArm + forearm);
+                float near = (upperArm * upperArm - forearm * forearm + length * length) / (2f * length);
+                Vector3 bend = Vector3.ProjectOnPlane(new Vector3(-0.2f, -0.5f, -0.3f), reach).normalized;
+                Vector3 offElbow = shoulder + reach.normalized * near + bend * Mathf.Sqrt(Mathf.Max(upperArm * upperArm - near * near, 0f));
+
+                BodyPose pose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.OneHanded(grip, blade, torso, pitch), elbow);
+                pose.Off = new HandPose(offHand, Vector3.ProjectOnPlane(new Vector3(0.2f, 0f, 1f), offHand - offElbow), offHand - offElbow);
+                pose.OffOpen = 0.5f;
+                pose.Lean = lean;
+
+                return pose;
+            }
         }
 
         private static WeaponDefinition CreateDaggerVariant(string name, float bladeTip, float reach, int damage)

@@ -58,6 +58,9 @@ namespace Game.Scripts.Editor.Battle
         /// How far the fingers of the main and the off hand are open, 0..1: a hand that holds nothing is not always a fist.
         public float MainOpen;
         public float OffOpen;
+        /// How far the weapon is laid over in the main hand from square to the forearm toward its line, in degrees: at
+        /// a long reach the haft lies along the arm, which the wrist alone cannot give it.
+        public float Lean;
     }
 
     /// Poses a model instance with FK/IK in root space and converts the result to humanoid muscle curves.
@@ -131,6 +134,7 @@ namespace Game.Scripts.Editor.Battle
         private readonly Transform[] _bones;
         private readonly Pose[] _bind;
         private readonly Transform[] _sockets;
+        private readonly Quaternion[] _socketRests;
         private readonly Transform _hips;
         private readonly Transform[] _spine;
         private readonly Transform _neck;
@@ -154,6 +158,7 @@ namespace Game.Scripts.Editor.Battle
             _root.hideFlags = HideFlags.HideAndDontSave;
             _animator = _root.GetComponent<Animator>();
             _sockets = CreateSockets(_animator);
+            _socketRests = Array.ConvertAll(_sockets, socket => socket.localRotation);
             _handler = new HumanPoseHandler(_animator.avatar, _root.transform);
 
             _bones = _root.GetComponentsInChildren<Transform>();
@@ -193,6 +198,12 @@ namespace Game.Scripts.Editor.Battle
             return sockets;
         }
 
+        /// Local rotation of a hand socket whose weapon leans from square to the forearm toward the knuckles.
+        public Quaternion GetSocketRotation(WeaponSocket socket, float lean)
+        {
+            return _socketRests[(int)socket] * Quaternion.AngleAxis(-lean, Vector3.right);
+        }
+
         public Vector3 GetShoulderPosition(bool isRight)
         {
             return (isRight ? _rightArm : _leftArm).Upper.position;
@@ -221,8 +232,9 @@ namespace Game.Scripts.Editor.Battle
             {
                 // An off hand on the haft wraps it at whatever roll its forearm comes from: the haft turns in the lower hand, and
                 // a roll tied to the edge bent that wrist back on itself whenever the edge turned through a cut.
-                SolveArm(_rightArm, _sockets[(int)WeaponSocket.RightHand], pose.Main, pose.Edge, false);
-                SolveArm(_leftArm, _sockets[(int)pose.OffSocket], pose.Off, Vector3.zero, IsShared(pose));
+                _sockets[(int)WeaponSocket.RightHand].localRotation = GetSocketRotation(WeaponSocket.RightHand, pose.Lean);
+                SolveArm(_rightArm, _sockets[(int)WeaponSocket.RightHand], pose.Main, pose.Edge, false, pose.Lean * Mathf.Deg2Rad);
+                SolveArm(_leftArm, _sockets[(int)pose.OffSocket], pose.Off, Vector3.zero, IsShared(pose), 0f);
             }
             else
             {
@@ -365,7 +377,7 @@ namespace Game.Scripts.Editor.Battle
             leg.Foot.rotation = rotation * leg.FootRotation;
         }
 
-        private void SolveArm(in Arm arm, Transform socket, in HandPose pose, Vector3 edge, bool isOnHaft)
+        private void SolveArm(in Arm arm, Transform socket, in HandPose pose, Vector3 edge, bool isOnHaft, float lean)
         {
             Quaternion socketInverse = Quaternion.Inverse(socket.localRotation);
             Vector3 shoulderPosition = arm.Shoulder.position;
@@ -402,7 +414,7 @@ namespace Game.Scripts.Editor.Battle
                 if (!pose.IsAutoRoll)
                     break;
 
-                hint = FindElbow(arm, upperPosition, target, defaultHint, pose, edge, handRotation);
+                hint = FindElbow(arm, upperPosition, target, defaultHint, pose, edge, handRotation, lean);
                 forearm = target - hint;
             }
 
@@ -414,7 +426,7 @@ namespace Game.Scripts.Editor.Battle
         /// (natural grip, wrist deviation within limits) and behind the knuckles when the edge is given, while staying
         /// close to the relaxed down-and-out elbow, or to the authored one. In a planned motion the plan says where on the
         /// circle the elbow is.
-        private Vector3 FindElbow(in Arm arm, Vector3 upper, Vector3 wrist, Vector3 defaultHint, in HandPose pose, Vector3 edge, Quaternion hand)
+        private Vector3 FindElbow(in Arm arm, Vector3 upper, Vector3 wrist, Vector3 defaultHint, in HandPose pose, Vector3 edge, Quaternion hand, float lean)
         {
             Vector3 weaponAxis = pose.Forward;
             float a = Vector3.Distance(upper, arm.Lower.position);
@@ -432,6 +444,13 @@ namespace Game.Scripts.Editor.Battle
             float[] twists = TwistCosts(arm, upper, wrist, center, relaxed, side, radius, hand);
             // An authored elbow near the line from the shoulder to the wrist says little about which side it is on.
             float authoredWeight = pose.ElbowWeight * Mathf.InverseLerp(0.03f, 0.1f, authored.magnitude);
+            // The wrist is read in the axes of the hand. A weapon laid over in it leans from the thumb's side toward the
+            // knuckles; without an edge the roll follows the forearm, and the lean only moves where the grip is at ease.
+            bool isLaid = lean != 0f && edge != Vector3.zero;
+            Vector3 across = isLaid ? Vector3.ProjectOnPlane(edge, weaponAxis).normalized : edge;
+            Vector3 thumb = isLaid ? weaponAxis * Mathf.Cos(lean) - across * Mathf.Sin(lean) : weaponAxis;
+            Vector3 knuckles = isLaid ? across * Mathf.Cos(lean) + weaponAxis * Mathf.Sin(lean) : edge;
+            float grip = isLaid ? GripTilt : GripTilt + lean;
             int best = 0;
 
             for (int i = 0; i < SwivelSamples; i++)
@@ -440,8 +459,8 @@ namespace Game.Scripts.Editor.Battle
                 Vector3 place = relaxed * Mathf.Cos(angle) + side * Mathf.Sin(angle);
                 Vector3 elbow = center + place * radius;
                 Vector3 forearm = (wrist - elbow).normalized;
-                float tilt = Mathf.Asin(Mathf.Clamp(Vector3.Dot(forearm, weaponAxis), -1f, 1f));
-                float excess = Mathf.Max(0f, Mathf.Abs(tilt - GripTilt) - MaxWristDeviation);
+                float tilt = Mathf.Asin(Mathf.Clamp(Vector3.Dot(forearm, thumb), -1f, 1f));
+                float excess = Mathf.Max(0f, Mathf.Abs(tilt - grip) - MaxWristDeviation);
                 float rest = (1f - Mathf.Cos(angle)) * ElbowRest * (1f - authoredWeight);
                 // An elbow the footage shows is worth the wrist bend it takes.
                 float stiffness = WristStiffness * (1f - 0.5f * authoredWeight);
@@ -450,7 +469,7 @@ namespace Game.Scripts.Editor.Battle
 
                 if (edge != Vector3.zero)
                 {
-                    float flexion = Vector3.Angle(Vector3.ProjectOnPlane(forearm, weaponAxis), edge) * Mathf.Deg2Rad;
+                    float flexion = Vector3.Angle(Vector3.ProjectOnPlane(forearm, thumb), knuckles) * Mathf.Deg2Rad;
                     excess = Mathf.Max(0f, flexion - MaxWristFlexion);
                     float broken = Mathf.Max(0f, flexion - MaxWristBend);
                     cost += excess * excess * stiffness + broken * broken * BrokenWrist;
