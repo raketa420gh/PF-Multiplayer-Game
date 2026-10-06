@@ -13,16 +13,17 @@ MonoBehaviour:
   m_Name: WarCry
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: War Cry
-  _description: +15% max health for 12s.
-  _kind: 1
+  _description: 'Spends all Command: you and your party within 8m get +4 physical
+    power, +2 per Command, for 10s.'
+  _kind: 18
   _isSpell: 0
   _charges: 1
-  _cooldown: 28
-  _castTime: 0.3
-  _magnitude: 15
-  _duration: 12
-  _radius: 0
-  _effect: 11
+  _cooldown: 40
+  _castTime: 0.4
+  _magnitude: 4
+  _duration: 10
+  _radius: 8
+  _effect: 3
   _damageType: 1
   _projectileSpeed: 26
   _projectileGravity: 0
@@ -31,9 +32,16 @@ MonoBehaviour:
   _projectileKind: 1
   _effectMagnitude: 0
   _effectDuration: 0
-  _color: {r: 1, g: 0.8, b: 0.4, a: 1}
+  _color: {r: 1, g: 0.6, b: 0.25, a: 1}
   _glyph: WC
+  _icon: {fileID: 21300000, guid: 6d5d3fe50993ac64180afc605e1f269b, type: 3}
   _healthCost: 0
   _lifeSteal: 0
   _spawnPrefab: {fileID: 0}
   _staggerDuration: 0
+  _subclass: 2
+  _resourceCost: 0
+  _stackBonus: 2
+  _isOnAlly: 0
+  _coneAngle: 0
+  _push: 0

@@ -27,23 +27,15 @@ MonoBehaviour:
   _bodyColor: {r: 1, g: 1, b: 1, a: 1}
   _skills:
   - {fileID: 11400000, guid: 3aa96a418db989047b3642b4a6febfce, type: 2}
+  - {fileID: 11400000, guid: d5fb9fbc7454d6d40ae2911d2fa4f869, type: 2}
+  - {fileID: 11400000, guid: 89ee0ebec02c5ad4ab1fa9dca761b7dd, type: 2}
+  - {fileID: 11400000, guid: 4cad9760af1625d4ca34b02876f93e95, type: 2}
   - {fileID: 11400000, guid: 9f0d3c75b0c934c42a19a6de1154a8ec, type: 2}
+  - {fileID: 11400000, guid: 3ce0a1af2a980b844851ed86a1ac688f, type: 2}
+  - {fileID: 11400000, guid: 24a06cf2ba623e144b5bb13ac44d6924, type: 2}
+  - {fileID: 11400000, guid: 42d0aaf6d8d9d5e4dbf95dab87f0913e, type: 2}
   _spells: []
   _perks:
-  - _name: Thick Hide
-    _description: +20 armor rating and +10 magic resistance.
-    _modifiers:
-    - Stat: 7
-      Value: 20
-    - Stat: 8
-      Value: 10
-    _icon: {fileID: 21300000, guid: cfb8b64cf319f3d4e898ecdffdad8857, type: 3}
-  - _name: Giant's Constitution
-    _description: +20% max health.
-    _modifiers:
-    - Stat: 6
-      Value: 20
-    _icon: {fileID: 21300000, guid: fd3ec00958f29c34f8e498b7fb54f426, type: 3}
   - _name: Axe Mastery
     _description: +8 physical power and +10% physical damage.
     _modifiers:
@@ -52,12 +44,105 @@ MonoBehaviour:
     - Stat: 13
       Value: 0.1
     _icon: {fileID: 21300000, guid: a8edeb6ab407bf5498eefa34fe4bef21, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+  - _name: Giant's Constitution
+    _description: +20% max health.
+    _modifiers:
+    - Stat: 6
+      Value: 20
+    _icon: {fileID: 21300000, guid: fd3ec00958f29c34f8e498b7fb54f426, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+  - _name: Thick Hide
+    _description: +20 armor rating and +10 magic resistance.
+    _modifiers:
+    - Stat: 7
+      Value: 20
+    - Stat: 8
+      Value: 10
+    _icon: {fileID: 21300000, guid: cfb8b64cf319f3d4e898ecdffdad8857, type: 3}
+    _subclass: -1
+    _isPerStack: 0
   - _name: Bloodlust
-    _description: +12% action speed.
+    _description: +3% action speed per Fury.
     _modifiers:
     - Stat: 12
-      Value: 12
+      Value: 3
     _icon: {fileID: 21300000, guid: 0b369cf62f1d4624dba1911f3a318e63, type: 3}
+    _subclass: 0
+    _isPerStack: 1
+  - _name: Rage Within
+    _description: +12% physical damage, but -15 armor rating.
+    _modifiers:
+    - Stat: 13
+      Value: 0.12
+    - Stat: 7
+      Value: -15
+    _icon: {fileID: 21300000, guid: f8cc61738a2019d42b276105d15dfe48, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+  - _name: Iron Skin
+    _description: +6 armor rating per Grit.
+    _modifiers:
+    - Stat: 7
+      Value: 6
+    _icon: {fileID: 21300000, guid: 8629fc27168c0e34fac2abb5fad3d3d5, type: 3}
+    _subclass: 1
+    _isPerStack: 1
+  - _name: Colossus
+    _description: +15% max health, but -8 move speed.
+    _modifiers:
+    - Stat: 6
+      Value: 15
+    - Stat: 9
+      Value: -8
+    _icon: {fileID: 21300000, guid: a70fb6298aa3f90409eafc35be0cee86, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+  - _name: Commanding Presence
+    _description: +2 physical power per Command.
+    _modifiers:
+    - Stat: 10
+      Value: 2
+    _icon: {fileID: 21300000, guid: ec4aeb73dc44bb94b9c71ea1742bf888, type: 3}
+    _subclass: 2
+    _isPerStack: 1
+  - _name: Banner Bearer
+    _description: +10 armor rating and +15 magic resistance.
+    _modifiers:
+    - Stat: 7
+      Value: 10
+    - Stat: 8
+      Value: 15
+    _icon: {fileID: 21300000, guid: 0328750058cde8e409e70e4310968ed5, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+  _subclasses:
+  - _name: Berserker
+    _description: 'Reckless fury: every blow dealt or taken stokes Fury that quickens
+      the arms; spend it to drink the foe''s blood.'
+    _color: {r: 0.9, g: 0.25, b: 0.2, a: 1}
+    _resourceName: Fury
+    _resourceMax: 5
+    _resourceSources: 17
+    _resourceDecay: 6
+  - _name: Juggernaut
+    _description: 'Wall of muscle: hits taken and blocked build Grit that hardens
+      the skin; spend it on a shout that soaks a beating.'
+    _color: {r: 0.8, g: 0.68, b: 0.45, a: 1}
+    _resourceName: Grit
+    _resourceMax: 5
+    _resourceSources: 24
+    _resourceDecay: 10
+  - _name: Warchief
+    _description: 'Leader of the charge: landed blows build Command, a war cry spends
+      it to make the whole party hit harder.'
+    _color: {r: 1, g: 0.6, b: 0.25, a: 1}
+    _resourceName: Command
+    _resourceMax: 4
+    _resourceSources: 1
+    _resourceDecay: 10
   _startingKit:
   - _item: {fileID: 11400000, guid: c396e03d12b5a744c991cc25c0434fe8, type: 2}
     _slot: 9

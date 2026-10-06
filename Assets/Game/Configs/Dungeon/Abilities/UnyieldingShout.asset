@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: UnyieldingShout
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Unyielding Shout
-  _description: Absorb 50 damage for 8s.
+  _description: 'Spends all Grit: absorb 30 damage, +8 per Grit, for 8s.'
   _kind: 6
   _isSpell: 0
   _charges: 1
   _cooldown: 40
   _castTime: 0.4
-  _magnitude: 50
+  _magnitude: 30
   _duration: 8
   _radius: 0
   _effect: 0
@@ -31,10 +31,16 @@ MonoBehaviour:
   _projectileKind: 1
   _effectMagnitude: 0
   _effectDuration: 0
-  _color: {r: 0.9, g: 0.75, b: 0.4, a: 1}
+  _color: {r: 0.8, g: 0.68, b: 0.45, a: 1}
   _glyph: US
   _icon: {fileID: 21300000, guid: 70d0279913a486e4693d2768a1001b90, type: 3}
   _healthCost: 0
   _lifeSteal: 0
   _spawnPrefab: {fileID: 0}
   _staggerDuration: 0
+  _subclass: 1
+  _resourceCost: 0
+  _stackBonus: 8
+  _isOnAlly: 0
+  _coneAngle: 0
+  _push: 0

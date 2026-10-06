@@ -1,0 +1,186 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d988ee4bac2acf74b80699d6e83c0b70, type: 3}
+  m_Name: Confessor
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
+  _id: 3
+  _displayName: Confessor
+  _description: 'Warrior priest who goes below for the sins of the fallen: a mace,
+    a shield and prayers that move life between friend and foe. Half healer, half
+    fighter.'
+  _baseStats:
+    Strength: 15
+    Vitality: 14
+    Spirit: 21
+    Knowledge: 16
+    Agility: 12
+    Dexterity: 12
+  _color: {r: 1, g: 0.9, b: 0.55, a: 1}
+  _bodyColor: {r: 1, g: 1, b: 1, a: 1}
+  _skills:
+  - {fileID: 11400000, guid: 04dd9acdaf9b83647b1df842bad90bfc, type: 2}
+  - {fileID: 11400000, guid: 900cf5e14259a2c47a946a2948ea28ac, type: 2}
+  - {fileID: 11400000, guid: 0b961443ccabb594f8bde9f9a73a6c84, type: 2}
+  - {fileID: 11400000, guid: 6bee7b32cf5fe5f439bb54f280dfd989, type: 2}
+  - {fileID: 11400000, guid: d8f348119f8d43e40a7eb16a2c76597d, type: 2}
+  - {fileID: 11400000, guid: f8ca39852ecfb3544bb6aa054a5e959b, type: 2}
+  - {fileID: 11400000, guid: 1ba0c0ffad88cee44a8fc8fefd163815, type: 2}
+  - {fileID: 11400000, guid: 5c6a297aa8f91864fb9005e7aafde659, type: 2}
+  _spells:
+  - {fileID: 11400000, guid: e0acc4f9c609ebd42a8061993cd81707, type: 2}
+  - {fileID: 11400000, guid: be1fa89cf949d9146b3ca2ef09c915ae, type: 2}
+  - {fileID: 11400000, guid: 0d79fce25b26a2a4cb81ab30a1fad508, type: 2}
+  - {fileID: 11400000, guid: b618e961dd503ad43b85473e3d879b5e, type: 2}
+  - {fileID: 11400000, guid: 693eabe11678e1548b1f240e256ce8de, type: 2}
+  - {fileID: 11400000, guid: 4182b1b2521badc44a99e54e09f7245a, type: 2}
+  - {fileID: 11400000, guid: 0c20848c5da2f9f4d98e551bd4583b4b, type: 2}
+  - {fileID: 11400000, guid: 77af99e9054343c49aed1d2686a2603f, type: 2}
+  - {fileID: 11400000, guid: a817e442865e8904a952e7d3b7203b58, type: 2}
+  _perks:
+  - _name: Devotion
+    _description: '+6 Spirit: stronger prayers and healing.'
+    _modifiers:
+    - Stat: 2
+      Value: 6
+    _icon: {fileID: 21300000, guid: 75076bb6d7a88c94e9bab60cd2a9899d, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+  - _name: Litany
+    _description: '+6 Knowledge: one more charge of every prayer, faster casting.'
+    _modifiers:
+    - Stat: 3
+      Value: 6
+    _icon: {fileID: 21300000, guid: c6cc03c4ef3e4244e96123c0b1a6bb71, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+  - _name: Iron Vow
+    _description: +20 armor rating and +15 magic resistance.
+    _modifiers:
+    - Stat: 7
+      Value: 20
+    - Stat: 8
+      Value: 15
+    _icon: {fileID: 21300000, guid: bbb5493b686a77a44bb7d7fb737d2091, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+  - _name: Zealot
+    _description: +6 physical power and +8% physical damage.
+    _modifiers:
+    - Stat: 10
+      Value: 6
+    - Stat: 13
+      Value: 0.08
+    _icon: {fileID: 21300000, guid: 32f9aab84e047b04d934949e8100b207, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+  - _name: Righteous Fury
+    _description: +2 physical power per Conviction.
+    _modifiers:
+    - Stat: 10
+      Value: 2
+    _icon: {fileID: 21300000, guid: 98ea7e23559c93645a4314062d3f2db3, type: 3}
+    _subclass: 0
+    _isPerStack: 1
+  - _name: State of Grace
+    _description: +2 Spirit per Grace.
+    _modifiers:
+    - Stat: 2
+      Value: 2
+    _icon: {fileID: 21300000, guid: 0c645a3f2d710a34dbbb014b57fce615, type: 3}
+    _subclass: 1
+    _isPerStack: 1
+  - _name: Martyr's Resolve
+    _description: +10% max health and +10 magic resistance.
+    _modifiers:
+    - Stat: 6
+      Value: 10
+    - Stat: 8
+      Value: 10
+    _icon: {fileID: 21300000, guid: 5711514fcdab04b42b31f2c109361908, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+  - _name: Sigil Ward
+    _description: +6 magic resistance per Sigil.
+    _modifiers:
+    - Stat: 8
+      Value: 6
+    _icon: {fileID: 21300000, guid: 8a00edae8a0cd2544a36ac303d2f133b, type: 3}
+    _subclass: 2
+    _isPerStack: 1
+  - _name: Ritualist
+    _description: +6 magical power.
+    _modifiers:
+    - Stat: 11
+      Value: 6
+    _icon: {fileID: 21300000, guid: f286f250f737e3848bf0552e514fe1ea, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+  _subclasses:
+  - _name: Inquisitor
+    _description: 'Hunter of heretics and mages: mace hits build Conviction for a
+      verdict that silences the struck. Little healing.'
+    _color: {r: 0.95, g: 0.4, b: 0.3, a: 1}
+    _resourceName: Conviction
+    _resourceMax: 5
+    _resourceSources: 1
+    _resourceDecay: 8
+  - _name: Absolver
+    _description: 'Keeper of the flock: every heal, ward and blessing builds Grace
+      for a miracle that pulls an ally back from the brink.'
+    _color: {r: 0.6, g: 1, b: 0.65, a: 1}
+    _resourceName: Grace
+    _resourceMax: 5
+    _resourceSources: 64
+    _resourceDecay: 20
+  - _name: Exorcist
+    _description: 'Warden of the ritual ground: magical hits build Sigils that break
+      into a holy blast; seals slow whoever comes close.'
+    _color: {r: 0.7, g: 0.8, b: 1, a: 1}
+    _resourceName: Sigils
+    _resourceMax: 3
+    _resourceSources: 32
+    _resourceDecay: 12
+  _startingKit:
+  - _item: {fileID: 11400000, guid: 4cef8ba6992e9ef49ae289de8a2e48cf, type: 2}
+    _slot: 9
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: c52b74ed91a0f4844a83fc48c5717b79, type: 2}
+    _slot: 10
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 03db1738938f1ee419d7c1f8073365ba, type: 2}
+    _slot: 11
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: c402e9ed6fb1b394889c3f3a19f32561, type: 2}
+    _slot: 1
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: a6c7b4d014c8e5842a1bcf6a2bc1cfb7, type: 2}
+    _slot: 3
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 5ab24771d6d7b4f43995ba089005238b, type: 2}
+    _slot: 4
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 2cf24320bc8a42e4a86968714252f9f1, type: 2}
+    _slot: 13
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 1cf148bc8a302b84d87d1896014a5456, type: 2}
+    _slot: 14
+    _count: 2
+    _isEquipped: 1
+  _allowedWeapons: 02070a0809
+  _castFocus: 0
