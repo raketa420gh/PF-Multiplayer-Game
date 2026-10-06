@@ -624,12 +624,13 @@ namespace Game.Scripts.Editor.Battle
                     rotations[i] = socket.rotation;
                 }
 
-                CheckSwing(state, attack, BattleAnimationLibrary.IsCut(weapon, attack) && !weapon.IsUnarmed && !weapon.IsRound, strike, rotations);
+                CheckSwing(state, attack, BattleAnimationLibrary.IsCut(weapon, attack) && !weapon.IsUnarmed && !weapon.IsRound, strike, rotations,
+                    weapon.IsEdgeBack ? Vector3.down : Vector3.up);
             }
 
             /// The weapon must not spin about its own axis between two frames, and while a cut is active and under way its
             /// leading edge must face where the strike point travels.
-            private static void CheckSwing(string state, AttackDefinition attack, bool isCut, Vector3[] strike, Quaternion[] rotations)
+            private static void CheckSwing(string state, AttackDefinition attack, bool isCut, Vector3[] strike, Quaternion[] rotations, Vector3 edge)
             {
                 const float maxRoll = 25f;
                 const float maxLean = 15f;
@@ -651,7 +652,7 @@ namespace Game.Scripts.Editor.Battle
                     Vector3 across = Vector3.ProjectOnPlane(travel, blade);
 
                     if (isCut && IsActive(attack, i) && travel.magnitude > fastest * underWay && across.magnitude > travel.magnitude * 0.5f)
-                        lean = Mathf.Max(lean, Vector3.Angle(rotations[i] * Vector3.up, across));
+                        lean = Mathf.Max(lean, Vector3.Angle(rotations[i] * edge, across));
                 }
 
                 if (roll > maxRoll)

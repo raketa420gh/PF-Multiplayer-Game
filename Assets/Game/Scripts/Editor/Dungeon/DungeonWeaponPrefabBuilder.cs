@@ -318,7 +318,8 @@ namespace Game.Scripts.Editor.Dungeon
                 new Vector3(1.7f, 0.012f, 0.008f), new Vector3(1.76f, 0.018f, 0.008f), new Vector3(1.92f, 0.011f, 0.005f), new Vector3(2.02f, 0.005f, 0.0025f), new Vector3(2.05f, 0f, 0f)
             });
 
-            mesh.Attach(root.transform, "Halberd");
+            // The axe blade faces the heel of the butt hand (WeaponDefinition.IsEdgeBack).
+            mesh.Attach(root.transform, "Halberd").transform.localRotation = Quaternion.Euler(0f, 0f, 180f);
             root.AddComponent<WeaponVisual>();
 
             return Save(root);

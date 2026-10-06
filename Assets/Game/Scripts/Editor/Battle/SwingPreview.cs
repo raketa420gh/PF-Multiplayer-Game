@@ -151,7 +151,7 @@ namespace Game.Scripts.Editor.Battle
                 Flag(summary, "peak misses the crosshair by", PeakMiss(weapon, attack, socket, rig, poses), MaxPeakMiss, -1, "0.000 m");
 
                 if (BattleAnimationLibrary.IsCut(weapon, attack) && !weapon.IsUnarmed && !weapon.IsRound)
-                    Flag(summary, "edge off the path of the cut by", Lean(attack, strike, rotations), MaxLean, -1, "0 deg");
+                    Flag(summary, "edge off the path of the cut by", Lean(attack, strike, rotations, weapon.IsEdgeBack ? Vector3.down : Vector3.up), MaxLean, -1, "0 deg");
             }
 
             Flag(summary, "main wrist bent", worst[0], MaxWrist, worstFrame[0], "0 deg");
@@ -224,7 +224,7 @@ namespace Game.Scripts.Editor.Battle
 
         /// How far the leading edge is from the travel of the strike point while the cut is active and under way, as
         /// BattleContentBuilder.CheckSwing measures it.
-        private static float Lean(AttackDefinition attack, Vector3[] strike, Quaternion[] rotations)
+        private static float Lean(AttackDefinition attack, Vector3[] strike, Quaternion[] rotations, Vector3 edge)
         {
             float fastest = 0f;
             float lean = 0f;
@@ -238,7 +238,7 @@ namespace Game.Scripts.Editor.Battle
                 Vector3 across = Vector3.ProjectOnPlane(travel, rotations[i] * Vector3.forward);
 
                 if (IsActive(attack, i) && travel.magnitude > fastest * UnderWay && across.magnitude > travel.magnitude * 0.5f)
-                    lean = Mathf.Max(lean, Vector3.Angle(rotations[i] * Vector3.up, across));
+                    lean = Mathf.Max(lean, Vector3.Angle(rotations[i] * edge, across));
             }
 
             return lean;

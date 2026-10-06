@@ -88,6 +88,9 @@ namespace Game.Scripts.Editor.Battle
         public bool IsUnarmed;
         /// A round haft (staff): it has no edge to lead a cut with, so the hand keeps the roll the arm gives it.
         public bool IsRound;
+        /// The edge faces the heel of the main hand, away from its knuckles: the hand at the butt of a polearm, which
+        /// travels against the head, so the knuckles lead the hand's own way while the edge leads the head's.
+        public bool IsEdgeBack;
         public BodyPose Idle;
         /// Breathing at rest: the idle sinks into this pose and back once per cycle (seconds of clip); no cycle = a still pose.
         public BodyPose IdleBreath;
@@ -322,7 +325,8 @@ namespace Game.Scripts.Editor.Battle
         public static List<PoseKey> AttackKeys(WeaponDefinition weapon, AttackDefinition attack)
         {
             List<PoseKey> keys = SwingKeys(weapon, attack);
-            LeadWithEdge(keys, WindupIndex(attack), weapon.StrikeOf(attack), IsCut(weapon, attack), !weapon.IsUnarmed && !weapon.IsRound);
+            LeadWithEdge(keys, WindupIndex(attack), weapon.StrikeOf(attack), IsCut(weapon, attack), !weapon.IsUnarmed && !weapon.IsRound,
+                weapon.IsEdgeBack ? -1f : 1f);
 
             return keys;
         }
@@ -385,7 +389,7 @@ namespace Game.Scripts.Editor.Battle
         /// the active phase, and its follow-through keeps the roll the cut ended with, or turns from it toward the roll
         /// it comes with. A thrust has no path across the blade to face: the weapon keeps the roll it rests with. Needs
         /// the edge of the rest pose; without it the arm solve rolls the weapon.
-        private static void LeadWithEdge(List<PoseKey> keys, int windup, float strike, bool isCut, bool followsPath)
+        private static void LeadWithEdge(List<PoseKey> keys, int windup, float strike, bool isCut, bool followsPath, float side)
         {
             if (keys[0].Pose.Edge == Vector3.zero)
                 return;
@@ -406,7 +410,7 @@ namespace Game.Scripts.Editor.Battle
                     continue;
 
                 held = Hand(keys, time);
-                held.Up = Vector3.Cross(normal, held.Forward);
+                held.Up = Vector3.Cross(normal, held.Forward) * side;
                 break;
             }
 
@@ -417,7 +421,7 @@ namespace Game.Scripts.Editor.Battle
 
                 // Where the point runs along the blade, the weapon keeps the roll it had on the key before.
                 if (isCut && i > windup && i < follow && Across(keys, key.Time, strike, out Vector3 normal) >= ThrustShare)
-                    held = new HandPose(key.Pose.Main.Position, blade, Vector3.Cross(normal, blade));
+                    held = new HandPose(key.Pose.Main.Position, blade, Vector3.Cross(normal, blade) * side);
 
                 Vector3 edge = Carry(held.Forward, held.Up, blade);
 
@@ -428,7 +432,7 @@ namespace Game.Scripts.Editor.Battle
                     key.Pose.OffRoll = keys[0].Pose.OffRoll;
 
                 key.Pose.Edge = edge;
-                key.Lead = isCut && followsPath && (i == peak || i == end) ? strike : 0f;
+                key.Lead = isCut && followsPath && (i == peak || i == end) ? strike * side : 0f;
                 keys[i] = key;
             }
 
@@ -627,14 +631,16 @@ namespace Game.Scripts.Editor.Battle
             pose.Lean = Mathf.Lerp(a.Lean, b.Lean, alpha);
 
             // A cut keeps its edge on the path of the strike point itself, not only on the keys.
-            if (keys[next].Lead > 0f)
+            // A negative lead is an edge on the heel of the hand.
+            if (keys[next].Lead != 0f)
             {
-                float weight = Mathf.InverseLerp(ThrustShare * 0.5f, ThrustShare, Across(keys, time, keys[next].Lead, out Vector3 normal));
+                float weight = Mathf.InverseLerp(ThrustShare * 0.5f, ThrustShare, Across(keys, time, Mathf.Abs(keys[next].Lead), out Vector3 normal));
 
                 if (keys[next - 1].Lead == 0f)
                     weight *= Mathf.InverseLerp(0f, LeadIn, alpha);
 
-                pose.Edge = Vector3.Slerp(pose.Edge, Vector3.Cross(normal, pose.Main.Forward).normalized, Mathf.SmoothStep(0f, 1f, weight));
+                pose.Edge = Vector3.Slerp(pose.Edge, Vector3.Cross(normal, pose.Main.Forward).normalized * Mathf.Sign(keys[next].Lead),
+                    Mathf.SmoothStep(0f, 1f, weight));
             }
 
             if (!isFlow)
