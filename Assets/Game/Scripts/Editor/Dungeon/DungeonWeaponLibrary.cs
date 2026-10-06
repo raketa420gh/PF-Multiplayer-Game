@@ -41,6 +41,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const string Halberd = "Halberd";
         public const string HorsemansAxe = "HorsemansAxe";
         public const string Quarterstaff = "Quarterstaff";
+        public const string Bardiche = "Bardiche";
 
         private const float MaceHead = 0.6f;
         private const float AxeHead = 0.8f;
@@ -65,7 +66,7 @@ namespace Game.Scripts.Editor.Dungeon
             SwordShield, Greatsword, Bow, SwordShieldLeft, Fists, ArmingSword, Falchion, Longsword, BattleAxe, Spear, Mace, Dagger, Crossbow, Staff, Torch, MaceShield,
             Spellbook, Lute, BearClaws, PantherClaws, RatBite,
             ShortSword, Rapier, VikingSword, Hatchet, MorningStar, CastillonDagger, Stiletto, FellingAxe, WarMaul, Halberd,
-            HorsemansAxe, Quarterstaff
+            HorsemansAxe, Quarterstaff, Bardiche
         };
 
         /// Catalog entries that play another entry's clips (its prefix) with a model, reach and damage of their own.
@@ -88,7 +89,7 @@ namespace Game.Scripts.Editor.Dungeon
             ["Flanged Mace"] = (6, 3), ["Morning Star"] = (6, 3), ["Longsword"] = (5, 5), ["Spear"] = (4, 4), ["Magic Staff"] = (4, 4),
             ["Sword & Shield"] = (4, 7), ["Mace & Shield"] = (6, 7),
             ["Greatsword"] = (7, 5), ["Battle Axe"] = (7, 4), ["Felling Axe"] = (8, 4), ["Halberd"] = (7, 4),
-            ["War Maul"] = (9, 5), ["Horseman's Axe"] = (6, 3), ["Quarterstaff"] = (5, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2), ["Bear Claws"] = (7, 4)
+            ["War Maul"] = (9, 5), ["Horseman's Axe"] = (6, 3), ["Quarterstaff"] = (5, 4), ["Bardiche"] = (8, 5), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2), ["Bear Claws"] = (7, 4)
         };
 
         public static (int impact, int stability) Force(string displayName)
@@ -168,7 +169,8 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateWarMaul(),
                 CreateHalberd(),
                 CreateHorsemansAxe(),
-                CreateQuarterstaff()
+                CreateQuarterstaff(),
+                CreateBardiche()
             };
         }
 
@@ -975,6 +977,157 @@ namespace Game.Scripts.Editor.Dungeon
             BodyPose Peak(Vector3 grip, float torso, float pitch, float offHand, Vector3 elbow, Vector3 offElbow)
             {
                 return BattleAnimationLibrary.Elbows(BattleAnimationLibrary.TwoHanded(grip, Vector3.forward, offHand, torso, pitch), elbow, offElbow);
+            }
+        }
+
+        /// The bardiche of Dark and Darker: a crescent blade on a long pole, carried diagonally across the body, the head high out
+        /// past the right shoulder, the right hand upper on the haft and the left one 45 cm below it all the time. The series is
+        /// a chop from behind the right shoulder down to the low front left, a thrust from the right hip and a flat sweep from
+        /// right to left; the riposte is the same sweep with a short windup. The chop and the sweep hang the weapon back over
+        /// the right shoulder with the left forearm across the face, and every swing comes back up round the right into rest.
+        private static WeaponDefinition CreateBardiche()
+        {
+            const float hands = -0.45f;
+            // The tip of the top horn, what leads the thrust.
+            const float horn = 1.45f;
+
+            // The head stands in the top right corner of the first-person view, the right glove just at the bottom edge.
+            BodyPose idle = PoseAt(Cm(9f, 1.32f, 20f), 45f, 57f, 8f, 0f, hands, Cm(25f, 1.12f, -5f), Cm(-22f, 1.02f, 0f));
+            idle.Edge = new Vector3(-0.6f, 0f, 1f).normalized;
+            // Where the chop stops: the head low ahead on the left, both arms long.
+            BodyPose low = PoseAt(Cm(-10f, 0.95f, 35f), -15f, -35f, -20f, 20f, hands, Cm(15f, 1.05f, 15f), Cm(-25f, 1f, 10f));
+            BodyPose shoulder = PoseAt(Cm(20f, 1.5f, -5f), 175f, 15f, 35f, 0f, hands, Cm(40f, 1.5f, -15f), Cm(-5f, 1.35f, 15f));
+            BodyPose guard = PoseAt(Cm(20f, 1.45f, 22f), 90f, 32f, 12f, -3f, hands, Cm(35f, 1.25f, 0f), Cm(-22f, 1.2f, 10f));
+
+            AttackDefinition chop = new AttackDefinition
+            {
+                Windup = 53 * Footage, Active = 10 * Footage, Recovery = 77 * Footage, Damage = 46, MoveMultiplier = 0.45f, Stagger = 0.35f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(8, PoseAt(Cm(20f, 1.4f, 5f), 120f, 10f, 20f, 0f, hands, Cm(40f, 1.3f, -5f), Cm(-15f, 1.15f, 5f))),
+                    Via(16, PoseAt(Cm(20f, 1.55f, 0f), 160f, 25f, 25f, 0f, hands, Cm(40f, 1.45f, -10f), Cm(-5f, 1.3f, 10f))),
+                    // Hung over the right shoulder about level, so the left glove sits in the middle of the first-person view.
+                    Via(24, PoseAt(Cm(22f, 1.72f, -8f), 168f, 10f, 30f, -5f, hands, Cm(40f, 1.5f, -20f), Cm(-5f, 1.45f, 15f)), 0.4f),
+                    Via(48, PoseAt(Cm(22f, 1.74f, -8f), 165f, 14f, 30f, -5f, hands, Cm(40f, 1.5f, -20f), Cm(-5f, 1.47f, 15f)), 0.5f)
+                },
+                WindupPose = PoseAt(Cm(18f, 1.75f, 5f), 110f, 65f, 25f, 0f, hands, Cm(35f, 1.5f, -20f), Cm(5f, 1.45f, 10f)),
+                MidPose = Peak(Cm(5f, 1.45f, 35f), 0f, 10f, Cm(20f, 1.4f, 20f), Cm(-15f, 1.35f, 20f)),
+                EndPose = PoseAt(Cm(-7f, 1f, 38f), -12f, -18f, -18f, 20f, hands, Cm(15f, 1.1f, 18f), Cm(-22f, 1.02f, 15f)),
+                Return = new()
+                {
+                    Via(66, low, 0.5f), Via(106, low, 0.5f),
+                    Via(116, PoseAt(Cm(5f, 1.12f, 25f), 30f, 30f, -5f, 10f, hands, Cm(20f, 1.1f, 0f), Cm(-12f, 1f, 8f))),
+                    Via(128, PoseAt(Cm(15f, 1.3f, 17f), 55f, 48f, 10f, 0f, hands, Cm(25f, 1.12f, -5f), Cm(-22f, 1.02f, 0f)))
+                }
+            };
+            // Up out of the chop's low stop, the right hand drawn back to the hip, then driven straight ahead.
+            AttackDefinition thrust = new AttackDefinition
+            {
+                Windup = 33 * Footage, Active = 11 * Footage, Recovery = 64 * Footage, Damage = 40, MoveMultiplier = 0.5f, Strike = horn, Launch = 1f,
+                Raise = new()
+                {
+                    Via(6, low, 0.6f),
+                    Via(12, PoseAt(Cm(-5f, 1f, 20f), -10f, -10f, -10f, 10f, hands, Cm(15f, 1.05f, 0f), Cm(-22f, 1.05f, 15f))),
+                    Via(18, PoseAt(Cm(-10f, 1.05f, 12f), 3f, 18f, 15f, -5f, hands, Cm(15f, 1f, -5f), Cm(-18f, 1.05f, -10f)), 0.4f),
+                    Via(30, PoseAt(Cm(-10f, 1.06f, 10f), 3f, 20f, 15f, -5f, hands, Cm(15f, 1f, -5f), Cm(-18f, 1.05f, -10f)), 0.5f)
+                },
+                // The hands travel along the line the horn is aimed on at the peak, so the point runs straight ahead.
+                WindupPose = PoseAt(Cm(-12f, 1.1f, 19f), 4f, 22f, 10f, 0f, hands, Cm(15f, 1.05f, 0f), Cm(-20f, 1.1f, -5f)),
+                MidPose = Peak(Cm(-15f, 1.2f, 42f), 0f, 10f, Cm(8f, 1.15f, 20f), Cm(-22f, 1.2f, 10f)),
+                EndPose = PoseAt(Cm(-15f, 1.22f, 46f), 6f, 22f, -5f, 12f, hands, Cm(5f, 1.18f, 25f), Cm(-22f, 1.22f, 12f)),
+                Return = new()
+                {
+                    Via(60, PoseAt(Cm(-15f, 1.21f, 44f), 6f, 18f, -5f, 12f, hands, Cm(5f, 1.18f, 25f), Cm(-22f, 1.22f, 12f)), 0.5f),
+                    Via(72, PoseAt(Cm(-5f, 1.15f, 28f), 0f, 15f, 0f, 5f, hands, Cm(18f, 1.1f, 5f), Cm(-15f, 1.05f, 8f))),
+                    Via(92, PoseAt(Cm(10f, 1.3f, 15f), 40f, 40f, 5f, 0f, hands, Cm(25f, 1.15f, -5f), Cm(-15f, 1f, 5f)))
+                },
+                After = chop
+            };
+            // Up to vertical at the right side, back over the shoulder, held level pointing back right and swept flat to the left.
+            AttackDefinition sweep = new AttackDefinition
+            {
+                Windup = 65 * Footage, Active = 12 * Footage, Recovery = 62 * Footage, Damage = 48, MoveMultiplier = 0.45f, Stagger = 0.3f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(16, PoseAt(Cm(25f, 1.65f, 5f), 60f, 80f, 15f, 0f, hands, Cm(40f, 1.5f, 0f), Cm(-5f, 1.25f, 15f))),
+                    Via(28, PoseAt(Cm(20f, 1.6f, 0f), 150f, 60f, 25f, 0f, hands, Cm(40f, 1.55f, -10f), Cm(-5f, 1.3f, 15f))),
+                    Via(40, PoseAt(Cm(20f, 1.5f, -5f), 150f, 15f, 35f, 0f, hands, Cm(40f, 1.5f, -15f), Cm(-5f, 1.35f, 15f))),
+                    Via(46, PoseAt(Cm(10f, 1.35f, 20f), 120f, 0f, 35f, 0f, hands, Cm(35f, 1.3f, -5f), Cm(-20f, 1.25f, 10f)), 0.4f),
+                    Via(60, PoseAt(Cm(8f, 1.35f, 22f), 115f, 0f, 33f, 0f, hands, Cm(35f, 1.3f, -5f), Cm(-20f, 1.25f, 10f)), 0.5f)
+                },
+                WindupPose = PoseAt(Cm(0f, 1.35f, 30f), 90f, 0f, 15f, 0f, hands, Cm(25f, 1.3f, 10f), Cm(-25f, 1.25f, 10f)),
+                MidPose = Peak(Cm(-10f, 1.32f, 40f), 0f, 0f, Cm(10f, 1.3f, 30f), Cm(-30f, 1.2f, 5f)),
+                EndPose = PoseAt(Cm(-15f, 1.3f, 40f), -40f, -3f, -25f, 5f, hands, Cm(5f, 1.28f, 30f), Cm(-35f, 1.2f, 0f)),
+                Return = new()
+                {
+                    Via(80, PoseAt(Cm(-15f, 1.25f, 35f), -45f, -5f, -30f, 5f, hands, Cm(5f, 1.22f, 25f), Cm(-35f, 1.15f, -5f)), 0.5f),
+                    Via(88, PoseAt(Cm(-10f, 1.15f, 30f), -40f, 35f, -25f, 0f, hands, Cm(10f, 1.15f, 15f), Cm(-30f, 1.05f, 0f))),
+                    Via(100, PoseAt(Cm(-5f, 1.2f, 25f), -25f, 60f, -15f, 0f, hands, Cm(15f, 1.15f, 10f), Cm(-25f, 1.05f, 0f))),
+                    Via(112, PoseAt(Cm(0f, 1.3f, 25f), 0f, 85f, 0f, 0f, hands, Cm(20f, 1.15f, 5f), Cm(-20f, 1.05f, 0f)))
+                }
+            };
+            // From the guard straight back over the right shoulder, a short hang and the same flat sweep, stopping further ahead.
+            AttackDefinition riposte = new AttackDefinition
+            {
+                Windup = 45 * Footage, Active = 8 * Footage, Recovery = 74 * Footage, Damage = 62, MoveMultiplier = 0.4f, Stagger = 0.4f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(6, PoseAt(Cm(20f, 1.5f, 5f), 130f, 50f, 15f, 0f, hands, Cm(35f, 1.4f, -5f), Cm(-10f, 1.25f, 10f))),
+                    Via(10, PoseAt(Cm(20f, 1.6f, 0f), 150f, 75f, 25f, 0f, hands, Cm(40f, 1.5f, -10f), Cm(-5f, 1.3f, 15f))),
+                    Via(20, shoulder, 0.4f),
+                    Via(36, PoseAt(Cm(18f, 1.48f, -3f), 160f, 10f, 35f, 0f, hands, Cm(40f, 1.5f, -15f), Cm(-5f, 1.35f, 15f)), 0.5f),
+                    Via(42, PoseAt(Cm(5f, 1.38f, 25f), 90f, 8f, 20f, 0f, hands, Cm(30f, 1.3f, 0f), Cm(-25f, 1.25f, 10f)))
+                },
+                WindupPose = PoseAt(Cm(0f, 1.38f, 35f), 50f, 12f, 10f, 0f, hands, Cm(20f, 1.3f, 15f), Cm(-25f, 1.25f, 10f)),
+                MidPose = Peak(Cm(-8f, 1.38f, 45f), -5f, 5f, Cm(10f, 1.3f, 30f), Cm(-30f, 1.2f, 5f)),
+                EndPose = PoseAt(Cm(-10f, 1.33f, 45f), -18f, 13f, -15f, 10f, hands, Cm(10f, 1.25f, 30f), Cm(-30f, 1.18f, 0f)),
+                Return = new()
+                {
+                    Via(55, PoseAt(Cm(-10f, 1.2f, 42f), -22f, 0f, -15f, 10f, hands, Cm(10f, 1.18f, 25f), Cm(-30f, 1.1f, 0f)), 0.5f),
+                    Via(95, PoseAt(Cm(-10f, 1.1f, 40f), -15f, -10f, -15f, 10f, hands, Cm(10f, 1.15f, 20f), Cm(-30f, 1.05f, 0f)), 0.5f),
+                    Via(110, PoseAt(Cm(5f, 1.22f, 25f), 45f, 45f, 0f, 0f, hands, Cm(20f, 1.15f, 5f), Cm(-15f, 1.02f, 5f)))
+                }
+            };
+
+            foreach (AttackDefinition attack in new[] { chop, thrust, sweep, riposte })
+            {
+                attack.ComboStart = attack.Windup + attack.Active * 0.5f;
+                attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
+            }
+
+            return new WeaponDefinition
+            {
+                Prefix = Bardiche,
+                DisplayName = "Bardiche",
+                Kind = WeaponKind.TwoHanded,
+                Reach = 1.95f,
+                DeflectDuration = 0.9f,
+                BladeBase = 0.66f,
+                BladeTip = 1.58f,
+                Strike = 1.12f,
+                Idle = idle,
+                Attacks = new[] { chop, thrust, sweep },
+                Riposte = riposte,
+                CanBlock = true,
+                BlockRaise = 0.25f,
+                BlockMitigation = 0.7f,
+                BlockImpact = 0.3f,
+                BlockRecovery = 0.45f,
+                BlockAngle = 80f,
+                BlockMove = 0.5f,
+                // Not in the footage: the haft raised across the front, the head high on the right, where the riposte sets off.
+                Block = guard,
+                BlockHit = PoseAt(Cm(19f, 1.4f, 18f), 90f, 30f, 12f, -7f, hands, Cm(35f, 1.2f, -3f), Cm(-25f, 1.15f, 7f)),
+                BlockLowered = PoseAt(Cm(19f, 1.38f, 20f), 90f, 34f, 12f, -2f, hands, Cm(35f, 1.2f, 0f), Cm(-25f, 1.12f, 7f)),
+                DeflectPose = PoseAt(Cm(25f, 1.5f, 15f), 60f, 75f, 15f, -8f, hands, Cm(40f, 1.3f, 0f), Cm(-15f, 1.2f, 10f)),
+                BlockSocket = WeaponSocket.RightHand,
+                BlockBoxCenter = new Vector3(0f, 0f, 0.35f),
+                BlockBoxExtents = new Vector3(0.08f, 0.08f, 0.85f)
+            };
+
+            BodyPose Peak(Vector3 grip, float torso, float pitch, Vector3 elbow, Vector3 offElbow)
+            {
+                return BattleAnimationLibrary.Elbows(BattleAnimationLibrary.TwoHanded(grip, Vector3.forward, hands, torso, pitch), elbow, offElbow);
             }
         }
 

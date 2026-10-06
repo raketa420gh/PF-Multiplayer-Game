@@ -154,6 +154,33 @@ namespace Game.Scripts.Editor.Dungeon
             return Save(root);
         }
 
+        /// A pole axe held two-handed low on the haft: a long crescent blade nailed to the upper haft at two sockets, its top
+        /// horn running up past the haft's end, the edge facing the socket's +Y.
+        public static GameObject BuildBardiche()
+        {
+            Material iron = WeaponMaterials.Iron;
+            Material steel = WeaponMaterials.Steel;
+            GameObject root = new GameObject("Bardiche");
+            WeaponMesh mesh = new WeaponMesh();
+
+            Pole(mesh, 1.22f);
+            WeaponParts.Grip(mesh, WeaponMaterials.DarkLeather, -0.08f, 0.12f, 0.0175f, 0.03f, 0.96f);
+            WeaponParts.Grip(mesh, WeaponMaterials.DarkLeather, -0.43f, -0.29f, 0.0175f, 0.03f, 0.96f);
+            mesh.Revolve(iron, new[] { new Vector2(1.22f, 0.016f), new Vector2(1.235f, 0.011f), new Vector2(1.25f, 0f) }, 8);
+            WeaponParts.Band(mesh, iron, 0.72f, 0.0185f, 0.03f, 0.004f, 0.8f);
+            WeaponParts.Band(mesh, iron, 1.16f, 0.0185f, 0.03f, 0.004f, 0.8f);
+            mesh.Plate(steel, new Vector2[]
+            {
+                new(0.012f, 0.7f), new(0.012f, 1.2f), new(0.035f, 1.42f), new(0.07f, 1.58f), new(0.16f, 1.48f), new(0.23f, 1.3f),
+                new(0.26f, 1.1f), new(0.245f, 0.9f), new(0.19f, 0.74f), new(0.11f, 0.63f), new(0.05f, 0.67f)
+            }, new[] { 0.008f, 0.008f, 0.005f, 0.002f, 0f, 0f, 0f, 0f, 0f, 0f, 0.005f }, new Vector2(0.1f, 1.08f), 0.0065f);
+
+            mesh.Attach(root.transform, "Bardiche");
+            root.AddComponent<WeaponVisual>();
+
+            return Save(root);
+        }
+
         public static GameObject BuildMace()
         {
             const float head = 0.6f;

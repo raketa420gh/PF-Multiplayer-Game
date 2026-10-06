@@ -239,6 +239,8 @@ namespace Game.Scripts.Editor.Dungeon
             items.Add(Weapon("Quarterstaff", DungeonWeaponLibrary.Quarterstaff, WeaponClass.Staff, 1, 4, 30f, "Qs", s_wood, 30,
                 "Plain two-handed staff. Four swinging blows in a row, each a little harder than the last.", twoHanded: true));
             AddSecondOutfits(items);
+            items.Add(Weapon("Bardiche", DungeonWeaponLibrary.Bardiche, WeaponClass.Axe, 1, 4, 45f, "Bd", s_steel, 70,
+                "Crescent axe blade on a long pole. Slow, wide and brutal.", twoHanded: true, classes: new[] { Sellsword, Barbarian }));
 
             return items;
         }

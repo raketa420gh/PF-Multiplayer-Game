@@ -103,6 +103,7 @@ namespace Game.Scripts.Editor.Battle
             GameObject halberd = DungeonWeaponPrefabBuilder.BuildHalberd();
             GameObject horsemansAxe = DungeonWeaponPrefabBuilder.BuildHorsemansAxe();
             GameObject quarterstaff = DungeonWeaponPrefabBuilder.BuildQuarterstaff();
+            GameObject bardiche = DungeonWeaponPrefabBuilder.BuildBardiche();
             arrow = BattleWeaponPrefabBuilder.BuildArrow();
             magicOrb = DungeonWeaponPrefabBuilder.BuildMagicOrb();
 
@@ -141,7 +142,8 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.WarMaul] = new[] { (maul, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Halberd] = new[] { (halberd, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.HorsemansAxe] = new[] { (horsemansAxe, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Quarterstaff] = new[] { (quarterstaff, WeaponSocket.RightHand) }
+                [DungeonWeaponLibrary.Quarterstaff] = new[] { (quarterstaff, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Bardiche] = new[] { (bardiche, WeaponSocket.RightHand) }
             };
 
             string[] order = DungeonWeaponLibrary.CatalogOrder;

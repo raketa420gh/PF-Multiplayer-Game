@@ -277,7 +277,7 @@ MonoBehaviour:
   _move: {fileID: 7113524119536088389}
   _chestPoint: {x: 0, y: 1.35, z: 0}
   _upperHitboxes:
-  - {fileID: 5331983010147378407}
+  - {fileID: 6524519207243054391}
   - {fileID: 4107031207184038288}
   _lowerHitboxes:
   - {fileID: 8990579305066590623}
@@ -299,7 +299,7 @@ MonoBehaviour:
   Offset: {x: 0, y: 1, z: 0}
   GizmosColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   Hitboxes:
-  - {fileID: 1582179001617813786}
+  - {fileID: 6254363181078406078}
   - {fileID: 8503371568618107144}
   - {fileID: 177539468702652750}
   - {fileID: 3289450470149515985}
@@ -327,6 +327,7 @@ MonoBehaviour:
   - {fileID: 5814813047518349785}
   - {fileID: 4596860650471762640}
   - {fileID: 4019085588921987546}
+  - {fileID: 1062445282134239930}
   - {fileID: 1545459320187158847}
 --- !u!114 &2952021351674133295
 MonoBehaviour:
@@ -416,6 +417,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a77f4b3906d7bf24a82908260dcfdee8, type: 2}
   - {fileID: 11400000, guid: 3863c62d56264c84390afc1d2fcae2e2, type: 2}
   - {fileID: 11400000, guid: 452c87afb59e9784da2b831e696bfec8, type: 2}
+  - {fileID: 11400000, guid: a3472e7487f3a864ba652a98803d30c4, type: 2}
   _blockHitboxes:
   - {fileID: 2813458468780111844}
   - {fileID: 50021889673791912}
@@ -450,6 +452,7 @@ MonoBehaviour:
   - {fileID: 5814813047518349785}
   - {fileID: 4596860650471762640}
   - {fileID: 4019085588921987546}
+  - {fileID: 1062445282134239930}
   _hitMask:
     serializedVersion: 2
     m_Bits: 257
@@ -790,6 +793,7 @@ Transform:
   - {fileID: 4401195204990041180}
   - {fileID: 1692669299061997856}
   - {fileID: 8709899949515386101}
+  - {fileID: 2644412197841509433}
   m_Father: {fileID: 5477713730567647693}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1582849882013014453
@@ -1160,6 +1164,60 @@ MonoBehaviour:
   SphereRadius: 0
   CapsuleRadius: 0
   BoxExtents: {x: 0.038399998, y: 0.2189278, z: 1.04512}
+  CapsuleExtents: 0
+  Offset: {x: 0, y: 0, z: 0}
+  Root: {fileID: 2203736492562416928}
+  GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  _zone: 3
+  _isRound: 0
+--- !u!1 &2906878722685361960
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2644412197841509433}
+  - component: {fileID: 1062445282134239930}
+  m_Layer: 8
+  m_Name: Block33
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2644412197841509433
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2906878722685361960}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.07620273, z: 0.47500002}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4476871899811804128}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1062445282134239930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2906878722685361960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ad97ad4173f3fd4bad9efef1ae7ab7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Battle.ZoneHitbox
+  Type: 1
+  SphereRadius: 0
+  CapsuleRadius: 0
+  BoxExtents: {x: 0.0256, y: 0.12006051, z: 1.3119999}
   CapsuleExtents: 0
   Offset: {x: 0, y: 0, z: 0}
   Root: {fileID: 2203736492562416928}
@@ -1706,60 +1764,6 @@ MonoBehaviour:
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _zone: 0
   _isRound: 0
---- !u!1 &5574780369697142250
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5331983010147378407}
-  - component: {fileID: 1582179001617813786}
-  m_Layer: 8
-  m_Name: Head
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5331983010147378407
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5574780369697142250}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.74, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5209999430460670172}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1582179001617813786
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5574780369697142250}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5ad97ad4173f3fd4bad9efef1ae7ab7f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Battle.ZoneHitbox
-  Type: 2
-  SphereRadius: 0.14
-  CapsuleRadius: 0
-  BoxExtents: {x: 0, y: 0, z: 0}
-  CapsuleExtents: 0
-  Offset: {x: 0, y: 0, z: 0}
-  Root: {fileID: 2203736492562416928}
-  GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  _zone: 1
-  _isRound: 0
 --- !u!1 &5661508409951049604
 GameObject:
   m_ObjectHideFlags: 0
@@ -1813,6 +1817,60 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.048, y: 1.024, z: 3.84}
   m_Center: {x: 0, y: 0.512, z: -0.384}
+--- !u!1 &5787536472782260133
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6524519207243054391}
+  - component: {fileID: 6254363181078406078}
+  m_Layer: 8
+  m_Name: Head
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6524519207243054391
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5787536472782260133}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.74, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5209999430460670172}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6254363181078406078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5787536472782260133}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ad97ad4173f3fd4bad9efef1ae7ab7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Battle.ZoneHitbox
+  Type: 2
+  SphereRadius: 0.14
+  CapsuleRadius: 0
+  BoxExtents: {x: 0, y: 0, z: 0}
+  CapsuleExtents: 0
+  Offset: {x: 0, y: 0, z: 0}
+  Root: {fileID: 2203736492562416928}
+  GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  _zone: 1
+  _isRound: 0
 --- !u!1 &5788164876816012462
 GameObject:
   m_ObjectHideFlags: 0
@@ -2220,7 +2278,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5331983010147378407}
+  - {fileID: 6524519207243054391}
   - {fileID: 4107031207184038288}
   - {fileID: 8990579305066590623}
   - {fileID: 431247110508185966}

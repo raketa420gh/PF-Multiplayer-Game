@@ -376,7 +376,7 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Spear", 0.5f, 1, 1), ("Longsword", 0.5f, 1, 1), ("Crossbow", 0.4f, 1, 1), ("Magic Staff", 0.5f, 1, 1), ("Battle Axe", 0.4f, 1, 1), ("Zweihander", 0.3f, 1, 1),
                 ("Ruby", 0.5f, 1, 1), ("Emerald", 0.5f, 1, 1), ("Sapphire", 0.5f, 1, 1), ("Gold Goblet", 0.5f, 1, 1),
                 ("Short Sword", 0.9f, 1, 1), ("Rapier", 0.5f, 1, 1), ("Viking Sword", 0.5f, 1, 1), ("Hatchet", 0.8f, 1, 1), ("Morning Star", 0.5f, 1, 1),
-                ("Castillon Dagger", 0.6f, 1, 1), ("Stiletto Dagger", 0.6f, 1, 1), ("Felling Axe", 0.5f, 1, 1), ("Halberd", 0.3f, 1, 1), ("Buckler", 0.6f, 1, 1), ("Horseman's Axe", 0.4f, 1, 1), ("Quarterstaff", 0.5f, 1, 1),
+                ("Castillon Dagger", 0.6f, 1, 1), ("Stiletto Dagger", 0.6f, 1, 1), ("Felling Axe", 0.5f, 1, 1), ("Halberd", 0.3f, 1, 1), ("Buckler", 0.6f, 1, 1), ("Horseman's Axe", 0.4f, 1, 1), ("Quarterstaff", 0.5f, 1, 1), ("Bardiche", 0.3f, 1, 1),
                 ("Potion of Invisibility", 0.6f, 1, 1), ("Silver Chalice", 0.6f, 1, 1), ("Gold Ore", 0.8f, 1, 3), ("Silver Ingot", 0.3f, 1, 1)
             }.Concat(Pieces(0.9f, "Peasant")).Concat(Pieces(0.6f, "Ranger")).Concat(Pieces(0.3f, "Mystic", "Occultist", "Marauder", "Berserker", "Ironclad", "Devout")).ToArray();
             (string name, float weight, int min, int max)[] ornate = new (string, float, int, int)[]

@@ -106,6 +106,9 @@ namespace Game.Scripts.Editor.Battle
         // With the roll of the weapon given, the wrist also bends about the handle to bring the knuckles to the edge.
         private const float MaxWristFlexion = 40f * Mathf.Deg2Rad;
         private const float WristStiffness = 15f;
+        /// Past this the wrist reads as broken whatever the footage says about the elbow: the cost outweighs any authored one.
+        private const float MaxWristBend = 85f * Mathf.Deg2Rad;
+        private const float BrokenWrist = 400f;
         private const float ElbowRest = 1.5f;
         /// How far the arm's twist muscles go before it costs; the avatar clamps them at 1 and the forearm reads as wrung.
         private const float MaxTwistMuscle = 0.8f;
@@ -216,10 +219,10 @@ namespace Game.Scripts.Editor.Battle
 
             if (pose.HasHands)
             {
-                // An off hand on the axis of the weapon holds it too: its roll follows the edge.
-                SolveArm(_rightArm, _sockets[(int)WeaponSocket.RightHand], pose.Main, pose.Edge);
-                SolveArm(_leftArm, _sockets[(int)pose.OffSocket], pose.Off,
-                    IsShared(pose) ? Quaternion.AngleAxis(pose.OffRoll, pose.Main.Forward) * pose.Edge : Vector3.zero);
+                // An off hand on the haft wraps it at whatever roll its forearm comes from: the haft turns in the lower hand, and
+                // a roll tied to the edge bent that wrist back on itself whenever the edge turned through a cut.
+                SolveArm(_rightArm, _sockets[(int)WeaponSocket.RightHand], pose.Main, pose.Edge, false);
+                SolveArm(_leftArm, _sockets[(int)pose.OffSocket], pose.Off, Vector3.zero, IsShared(pose));
             }
             else
             {
@@ -362,7 +365,7 @@ namespace Game.Scripts.Editor.Battle
             leg.Foot.rotation = rotation * leg.FootRotation;
         }
 
-        private void SolveArm(in Arm arm, Transform socket, in HandPose pose, Vector3 edge)
+        private void SolveArm(in Arm arm, Transform socket, in HandPose pose, Vector3 edge, bool isOnHaft)
         {
             Quaternion socketInverse = Quaternion.Inverse(socket.localRotation);
             Vector3 shoulderPosition = arm.Shoulder.position;
@@ -374,9 +377,16 @@ namespace Game.Scripts.Editor.Battle
             arm.Shoulder.rotation = Quaternion.AngleAxis(turn * ShoulderAssist * Mathf.InverseLerp(180f, 120f, turn), Vector3.Cross(collar, reach)) *
                                     arm.Shoulder.rotation;
 
+            Vector3 upperPosition = arm.Upper.position;
+
+            // A hand on a haft turns its knuckles away from the shoulder: the wrist sits on the shoulder's side of the haft.
+            // Solving that roll from the forearm instead fed back through the wrist and did not settle, which bent the wrist
+            // back and threw the elbow about from frame to frame.
+            if (isOnHaft && pose.IsAutoRoll)
+                edge = Vector3.ProjectOnPlane(pose.Position - upperPosition, pose.Forward);
+
             // With an edge to face, the hand is given whole and only the elbow is searched; a free hand takes its roll from the forearm.
             bool isFree = pose.IsAutoRoll && edge == Vector3.zero;
-            Vector3 upperPosition = arm.Upper.position;
             Vector3 defaultHint = upperPosition + new Vector3(arm.Side * 0.2f, -0.5f, -0.3f);
             Vector3 forearm = isFree ? pose.Position - upperPosition : pose.IsAutoRoll ? edge : pose.Up;
             Quaternion handRotation = Quaternion.identity;
@@ -442,7 +452,8 @@ namespace Game.Scripts.Editor.Battle
                 {
                     float flexion = Vector3.Angle(Vector3.ProjectOnPlane(forearm, weaponAxis), edge) * Mathf.Deg2Rad;
                     excess = Mathf.Max(0f, flexion - MaxWristFlexion);
-                    cost += excess * excess * stiffness;
+                    float broken = Mathf.Max(0f, flexion - MaxWristBend);
+                    cost += excess * excess * stiffness + broken * broken * BrokenWrist;
                 }
 
                 s_swivelCosts[i] = cost;
