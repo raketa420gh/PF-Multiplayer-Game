@@ -41,7 +41,7 @@ namespace Game.Scripts.Dungeon
         };
 
         [SerializeField]
-        private float _escapePortalTime = 120f;
+        private float _escapePortalTime = 60f;
 
         [SerializeField]
         private float _descendPortalTime = 60f;

@@ -19,6 +19,8 @@ namespace Game.Scripts.Editor.Dungeon
 
             Write("StoneWall", StoneWall, 0.8f, EnvironmentSize, true);
             Write("Cobble", Cobble, 1f, EnvironmentSize, true);
+            Write("Ashlar", Ashlar, 1.2f, EnvironmentSize, true);
+            Write("Flagstone", Flagstone, 1.1f, EnvironmentSize, true);
             Write("WoodPlanks", WoodPlanks, 0.6f, EnvironmentSize, true);
             Write("DarkWood", DarkWood, 0.4f);
             Write("RustyMetal", RustyMetal, 0.35f);
@@ -313,6 +315,78 @@ namespace Game.Scripts.Editor.Dungeon
             Color mortar = new Color(0.3f, 0.28f, 0.25f) * (0.6f + grain * 0.7f);
 
             return Color.Lerp(mortar, stone, face);
+        }
+
+        /// Rough hewn blocks of a Dark and Darker hall, 10 x 6 per tile (0.4 x 0.67 m on a 4 m tile): wavy chipped edges,
+        /// pillowed faces, warm grey-brown stone in dark grimy mortar.
+        private static Color Ashlar(float u, float v, out float height)
+        {
+            const float joint = 0.0022f;
+            float wobble = (TileNoise(u + 0.13f, v + 0.71f, 18f, 3) - 0.5f) * 0.018f;
+            float edge = Blocks(u + wobble, v + wobble * 0.6f, 10, 6, 0.7f, out int id);
+            float grain = Grain(u, v, 60f, 2.8f);
+            float patches = Grain(u + 0.21f, v + 0.63f, 12f, 2.2f);
+            float chip = Grain(u + 0.7f, v + 0.2f, 26f, 3f);
+            float pit = Step(0.76f, 0.86f, Grain(u + 0.4f, v + 0.5f, 90f, 2.4f));
+            float face = Step(joint, joint + 0.003f + chip * chip * 0.014f, edge);
+            float pillow = Step(joint, joint + 0.03f, edge);
+            height = face * (0.45f + pillow * 0.25f + Hash(id, 5) * 0.12f + grain * 0.16f + patches * 0.08f - pit * 0.2f);
+
+            Color stone = Color.Lerp(new Color(0.4f, 0.37f, 0.33f), new Color(0.47f, 0.42f, 0.35f), Hash(id, 3));
+            stone *= (0.72f + Hash(id, 7) * 0.4f) * (0.7f + grain * 0.4f + patches * 0.18f) * (1f - pit * 0.4f);
+            stone *= Mathf.Lerp(0.55f, 1f, pillow);
+            Color mortar = new Color(0.13f, 0.11f, 0.09f) * (0.6f + grain * 0.7f);
+
+            return Color.Lerp(mortar, stone, face);
+        }
+
+        /// Worn metre-square flagstones, 4 x 4 per tile, a third of them split in two: chipped wavy edges, hollows,
+        /// the odd crack and grime in the joints.
+        private static Color Flagstone(float u, float v, out float height)
+        {
+            const int cells = 4;
+            const float joint = 0.0025f;
+            float x = (u + (TileNoise(u + 0.3f, v, 20f, 3) - 0.5f) * 0.014f) * cells;
+            float y = (v + (TileNoise(u, v + 0.6f, 20f, 3) - 0.5f) * 0.014f) * cells;
+            int cx = Mathf.FloorToInt(x);
+            int cy = Mathf.FloorToInt(y);
+            float fx = x - cx;
+            float fy = y - cy;
+            cx = Wrap(cx, cells);
+            cy = Wrap(cy, cells);
+            int id = cx + cy * 8;
+            float split = Hash(cx, cy + 40);
+            float edge = Mathf.Min(Mathf.Min(fx, 1f - fx), Mathf.Min(fy, 1f - fy));
+
+            if (split < 0.35f)
+            {
+                float part = Mathf.Repeat(fy, 0.5f);
+                edge = Mathf.Min(edge, Mathf.Min(part, 0.5f - part));
+                id += fy < 0.5f ? 100 : 200;
+            }
+            else if (split < 0.6f)
+            {
+                float part = Mathf.Repeat(fx, 0.5f);
+                edge = Mathf.Min(edge, Mathf.Min(part, 0.5f - part));
+                id += fx < 0.5f ? 300 : 400;
+            }
+
+            edge /= cells;
+            float grain = Grain(u, v, 64f, 2.8f);
+            float patches = Grain(u + 0.41f, v + 0.17f, 10f, 2.4f);
+            float chip = Grain(u + 0.6f, v + 0.9f, 28f, 3f);
+            float pit = Step(0.78f, 0.88f, Grain(u + 0.2f, v + 0.8f, 100f, 2.4f));
+            float crack = Hash(id, 9) < 0.22f ? Step(0.982f, 0.996f, 1f - Mathf.Abs(TileNoise(u + 0.5f, v + 0.2f, 7f, 4) - 0.5f) * 2f) : 0f;
+            float face = Step(joint, joint + 0.003f + chip * chip * 0.012f, edge);
+            float wear = Step(joint, joint + 0.04f, edge);
+            height = face * (0.5f + wear * 0.15f + Hash(id, 5) * 0.08f + grain * 0.12f + patches * 0.1f - pit * 0.15f - crack * 0.35f);
+
+            Color stone = Color.Lerp(new Color(0.37f, 0.34f, 0.3f), new Color(0.43f, 0.39f, 0.33f), Hash(id, 3));
+            stone *= (0.8f + Hash(id, 7) * 0.28f) * (0.72f + grain * 0.36f + patches * 0.22f) * (1f - pit * 0.35f) * (1f - crack * 0.6f);
+            stone *= Mathf.Lerp(0.6f, 1f, wear);
+            Color grime = new Color(0.1f, 0.085f, 0.07f) * (0.6f + grain * 0.7f);
+
+            return Color.Lerp(grime, stone, face);
         }
 
         /// Rounded cobbles bedded in dirt, 16 x 16 per tile: a quarter of a metre on a 4 m tile.

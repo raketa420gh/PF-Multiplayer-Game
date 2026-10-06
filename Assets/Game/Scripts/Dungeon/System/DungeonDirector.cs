@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace Game.Scripts.Dungeon
 {
@@ -15,13 +16,24 @@ namespace Game.Scripts.Dungeon
         {
             public Transform[] PlayerSpawns;
             public Transform[] MonsterSpawns;
+            /// Monsters that always stand at their points, unlike the random ones of MonsterSpawns.
+            public MonsterPlacement[] Monsters;
             public ContainerComponent[] Containers;
             public PortalComponent[] EscapePortals;
+            /// Half side of the square around Center where escape portals open at random; 0 keeps them in place.
+            public float EscapeArea;
             public PortalComponent DescendPortal;
             public Transform DescendDestination;
             public Transform BossSpawn;
             public Vector3 Center;
             public float Radius = 30f;
+        }
+
+        [Serializable]
+        public sealed class MonsterPlacement
+        {
+            public Transform Point;
+            public NetworkObject Prefab;
         }
 
         [Serializable]
@@ -63,6 +75,12 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private float _resetDelay = 8f;
+
+        [SerializeField, Tooltip("Distance from walls and obstacles a randomly placed escape portal keeps")]
+        private float _portalClearance = 1.2f;
+
+        [SerializeField]
+        private int _portalAttempts = 40;
 
         private readonly List<NetworkObject> _spawned = new();
         private readonly List<PlayerSessionComponent> _sessions = new();
@@ -281,14 +299,17 @@ namespace Game.Scripts.Dungeon
 
             foreach (Transform point in floor.MonsterSpawns)
             {
-                if (random.NextDouble() > _monsterSpawnChance)
-                    continue;
-
-                MonsterKind kind = Pick(_monsters, random, m => m.Weight);
-                NetworkObject monster = _runner.Spawn(kind.Prefab, point.position, point.rotation, PlayerRef.None,
-                    (_, obj) => obj.GetComponent<MonsterComponent>().Setup(level));
-                _spawned.Add(monster);
+                if (random.NextDouble() <= _monsterSpawnChance)
+                    SpawnMonster(Pick(_monsters, random, m => m.Weight).Prefab, point, level);
             }
+
+            foreach (MonsterPlacement placement in floor.Monsters)
+                SpawnMonster(placement.Prefab, placement.Point, level);
+        }
+
+        private void SpawnMonster(NetworkObject prefab, Transform point, byte level)
+        {
+            _spawned.Add(_runner.Spawn(prefab, point.position, point.rotation, PlayerRef.None, (_, obj) => obj.GetComponent<MonsterComponent>().Setup(level)));
         }
 
         private void SetDescendPortal(int floorIndex, bool isActive)
@@ -306,16 +327,36 @@ namespace Game.Scripts.Dungeon
 
         private void SetEscapePortals(int floorIndex, bool isActive)
         {
-            foreach (PortalComponent portal in _floors[floorIndex].EscapePortals)
+            FloorLayout floor = _floors[floorIndex];
+
+            foreach (PortalComponent portal in floor.EscapePortals)
             {
                 if (portal == null)
                     continue;
+
+                if (isActive && floor.EscapeArea > 0f)
+                    portal.GetComponent<NetworkTransform>().Teleport(RandomPortalPoint(floor, portal.transform.position), Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f));
 
                 if (isActive)
                     portal.Activate(null);
                 else
                     portal.Deactivate();
             }
+        }
+
+        /// Random walkable point of the floor square that keeps clear of walls and props.
+        private Vector3 RandomPortalPoint(FloorLayout floor, Vector3 fallback)
+        {
+            for (int i = 0; i < _portalAttempts; i++)
+            {
+                Vector3 point = floor.Center + new Vector3(UnityEngine.Random.Range(-1f, 1f), 0f, UnityEngine.Random.Range(-1f, 1f)) * floor.EscapeArea;
+
+                if (NavMesh.SamplePosition(point, out NavMeshHit hit, 1f, NavMesh.AllAreas)
+                    && NavMesh.FindClosestEdge(hit.position, out NavMeshHit edge, NavMesh.AllAreas) && edge.distance >= _portalClearance)
+                    return hit.position;
+            }
+
+            return fallback;
         }
 
         private void ResetDungeon()

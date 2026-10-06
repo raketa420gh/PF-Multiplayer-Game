@@ -1153,7 +1153,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void BuildPortal(string name, PortalKind kind, Material material, bool singleUse)
         {
-            GameObject root = DungeonPropBuilder.Portal(material);
+            GameObject root = DungeonPropBuilder.Portal(material, kind == PortalKind.Descend);
             root.name = name;
             root.AddComponent<NetworkObject>();
             root.AddComponent<NetworkTransform>();

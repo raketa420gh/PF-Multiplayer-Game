@@ -28,7 +28,8 @@ namespace Game.Scripts.Editor.Dungeon
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             EditorSceneManager.SaveScene(scene, ScenePath);
 
-            SetupLighting();
+            // Darker and hazier than the tavern: the hall is lit by its torches as in Dark and Darker.
+            SetupLighting(0.55f, 0.018f);
             BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/DungeonVolume.asset", 0.6f);
             Camera camera = BuildCamera();
             GameObject system = new GameObject("[System]");
@@ -214,16 +215,16 @@ namespace Game.Scripts.Editor.Dungeon
             return component;
         }
 
-        internal static void SetupLighting()
+        internal static void SetupLighting(float brightness = 1f, float fogDensity = 0.008f)
         {
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.4f, 0.4f, 0.46f);
-            RenderSettings.ambientEquatorColor = new Color(0.32f, 0.31f, 0.33f);
-            RenderSettings.ambientGroundColor = new Color(0.22f, 0.2f, 0.18f);
+            RenderSettings.ambientSkyColor = new Color(0.4f, 0.4f, 0.46f) * brightness;
+            RenderSettings.ambientEquatorColor = new Color(0.32f, 0.31f, 0.33f) * brightness;
+            RenderSettings.ambientGroundColor = new Color(0.22f, 0.2f, 0.18f) * brightness;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.fogColor = new Color(0.035f, 0.035f, 0.045f);
-            RenderSettings.fogDensity = 0.008f;
+            RenderSettings.fogDensity = fogDensity;
             RenderSettings.skybox = null;
             RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
             RenderSettings.customReflectionTexture = BuildReflection();
@@ -236,7 +237,7 @@ namespace Game.Scripts.Editor.Dungeon
             Light fill = new GameObject("[Fill Light]").AddComponent<Light>();
             fill.type = LightType.Directional;
             fill.color = new Color(0.72f, 0.8f, 1f);
-            fill.intensity = 0.45f;
+            fill.intensity = 0.45f * brightness;
             fill.shadows = LightShadows.None;
             fill.transform.rotation = Quaternion.Euler(52f, 35f, 0f);
         }

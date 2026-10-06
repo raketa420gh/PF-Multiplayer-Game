@@ -16,6 +16,8 @@ namespace Game.Scripts.Editor.Dungeon
 
         public static Material StoneWall => Textured("StoneWall", "StoneWall", 0.5f, 0.15f);
         public static Material Cobble => Textured("Cobble", "Cobble", 0.5f, 0.15f);
+        public static Material Ashlar => Textured("Ashlar", "Ashlar", 0.5f, 0.12f);
+        public static Material Flagstone => Textured("Flagstone", "Flagstone", 0.5f, 0.18f);
         public static Material WoodPlanks => Textured("WoodPlanks", "WoodPlanks", 0.5f, 0.25f);
         public static Material DarkWood => Textured("DarkWood", "DarkWood", 0.5f, 0.3f);
         public static Material RustyMetal => Textured("RustyMetal", "RustyMetal", 0.6f, 0.4f, 0.6f);
@@ -463,17 +465,23 @@ namespace Game.Scripts.Editor.Dungeon
             return root;
         }
 
-        public static GameObject Portal(Material material)
+        /// A pedestal portal stands in place; one without it is a bare floating ring that shows up out of nowhere.
+        public static GameObject Portal(Material material, bool hasPedestal)
         {
-            Mesh pedestal = new DungeonMeshBuilder(0.5f)
-                .Cylinder(new Vector3(0f, 0.15f, 0f), 0.9f, 0.3f, 12)
-                .Box(new Vector3(0f, 0.9f, -0.5f), new Vector3(0.8f, 1.5f, 0.3f))
-                .Save("PortalPedestal");
             Mesh ring = new DungeonMeshBuilder(1f).Cylinder(Vector3.zero, 0.95f, 0.08f, 24, 0.95f).Save("PortalRing");
             Mesh disc = new DungeonMeshBuilder(1f).Cylinder(Vector3.zero, 0.8f, 0.02f, 24).Save("PortalDisc");
             GameObject root = new GameObject("Portal");
-            MeshObject("Pedestal", root.transform, pedestal, StoneWall, default, default, true, false);
-            GameObject visual = BattleEditorUtility.CreateChild("Visual", root.transform, new Vector3(0f, 1.5f, 0f));
+
+            if (hasPedestal)
+            {
+                Mesh pedestal = new DungeonMeshBuilder(0.5f)
+                    .Cylinder(new Vector3(0f, 0.15f, 0f), 0.9f, 0.3f, 12)
+                    .Box(new Vector3(0f, 0.9f, -0.5f), new Vector3(0.8f, 1.5f, 0.3f))
+                    .Save("PortalPedestal");
+                MeshObject("Pedestal", root.transform, pedestal, StoneWall, default, default, true, false);
+            }
+
+            GameObject visual = BattleEditorUtility.CreateChild("Visual", root.transform, new Vector3(0f, hasPedestal ? 1.5f : 1.15f, 0f));
             visual.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             MeshObject("Ring", visual.transform, ring, material, default, default, false, false);
             MeshObject("Disc", visual.transform, disc, material, default, default, false, false);
