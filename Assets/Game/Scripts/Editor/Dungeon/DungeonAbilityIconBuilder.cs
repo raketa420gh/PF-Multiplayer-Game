@@ -192,6 +192,36 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 new Layer(1f, p => Mathf.Abs(Circle(p, 0f, 0f, 0.66f)) - 0.1f),
                 new Layer(1.6f, p => Plus(p, 0.36f, 0.12f))
+            },
+            ["Arrow"] = new[]
+            {
+                new Layer(0.8f, p => Shaft(Rotate(p, 45f))),
+                new Layer(1.5f, p => Arrowhead(Rotate(p, 45f)))
+            },
+            ["Volley"] = new[]
+            {
+                new Layer(0.8f, p => Mathf.Min(Shaft(Rotate(p, 25f) * 1.25f), Mathf.Min(Shaft(p * 1.25f), Shaft(Rotate(p, -25f) * 1.25f))) / 1.25f),
+                new Layer(1.5f, p => Mathf.Min(Arrowhead(Rotate(p, 25f) * 1.25f), Mathf.Min(Arrowhead(p * 1.25f), Arrowhead(Rotate(p, -25f) * 1.25f))) / 1.25f)
+            },
+            ["Crosshair"] = new[]
+            {
+                new Layer(1f, p => Mathf.Abs(Circle(p, 0f, 0f, 0.56f)) - 0.08f),
+                new Layer(1.2f, p => Mathf.Max(Plus(p, 0.86f, 0.06f), 0.24f - Mathf.Max(Mathf.Abs(p.x), Mathf.Abs(p.y)))),
+                new Layer(1.7f, p => Circle(p, 0f, 0f, 0.1f))
+            },
+            ["Trap"] = new[]
+            {
+                new Layer(0.7f, p => Mathf.Abs(Circle(p, 0f, 0f, 0.66f)) - 0.09f),
+                new Layer(1.4f, p =>
+                {
+                    float distance = float.MaxValue;
+
+                    for (int i = 0; i < 10; i++)
+                        distance = Mathf.Min(distance, Fang(Rotate(p, i * 36f), 0f, 0.6f, -0.34f));
+
+                    return distance;
+                }),
+                new Layer(1f, p => Circle(p, 0f, 0f, 0.14f))
             }
         };
 
@@ -225,6 +255,9 @@ namespace Game.Scripts.Editor.Dungeon
                 StatType.ActionSpeed or StatType.Dexterity => "Bolt",
                 StatType.MagicalPower or StatType.MagicalDamageBonus or StatType.Spirit => "Burst",
                 StatType.Knowledge => "Book",
+                StatType.RangedDamageBonus => "Arrow",
+                StatType.ReloadSpeed => "Hourglass",
+                StatType.HeadshotDamage => "Crosshair",
                 _ => "Chevrons"
             };
         }
@@ -388,6 +421,19 @@ namespace Game.Scripts.Editor.Dungeon
         private static float Plus(Vector2 p, float length, float width)
         {
             return Mathf.Min(Box(p, 0f, 0f, width, length, 0.05f), Box(p, 0f, 0f, length, width, 0.05f));
+        }
+
+        /// Arrow along the vertical: the shaft with its fletching, then the head on top.
+        private static float Shaft(Vector2 p)
+        {
+            float fletching = Polygon(Mirror(p), new Vector2(0f, -0.88f), new Vector2(0.2f, -0.98f), new Vector2(0.2f, -0.68f), new Vector2(0f, -0.52f));
+
+            return Mathf.Min(Segment(p, new Vector2(0f, -0.9f), new Vector2(0f, 0.55f), 0.05f), fletching);
+        }
+
+        private static float Arrowhead(Vector2 p)
+        {
+            return Polygon(p, new Vector2(0.18f, 0.5f), new Vector2(0f, 0.92f), new Vector2(-0.18f, 0.5f));
         }
 
         /// Arrowhead pointing up, its tip at the given height.

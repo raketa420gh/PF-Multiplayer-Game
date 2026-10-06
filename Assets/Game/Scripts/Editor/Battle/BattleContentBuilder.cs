@@ -77,33 +77,13 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.EnsureLayer(BattleEditorUtility.HitboxLayer);
 
             GameObject sword = BattleWeaponPrefabBuilder.BuildSword("Sword", 0.12f, 0.9f, 0.052f, 0.2f, 0.08f, SwordStyle.Arming);
-            GameObject falchion = BattleWeaponPrefabBuilder.BuildSword("Falchion", 0.12f, 0.95f, 0.062f, 0.16f, 0.08f, SwordStyle.Falchion);
-            GameObject longsword = BattleWeaponPrefabBuilder.BuildSword("Longsword", 0.18f, 1.05f, 0.05f, 0.26f, 0.18f, SwordStyle.Longsword);
-            GameObject greatsword = BattleWeaponPrefabBuilder.BuildSword("Greatsword", 0.18f, 1.35f, 0.056f, 0.34f, 0.22f, SwordStyle.Greatsword);
-            GameObject dagger = BattleWeaponPrefabBuilder.BuildSword("Dagger", 0.06f, 0.42f, 0.03f, 0.075f, 0.06f, SwordStyle.Rondel);
             GameObject axe = DungeonWeaponPrefabBuilder.BuildAxe("BattleAxe", 0.92f, 0.3f, AxeStyle.Battle);
-            GameObject mace = DungeonWeaponPrefabBuilder.BuildMace();
-            GameObject spear = DungeonWeaponPrefabBuilder.BuildSpear();
             GameObject staff = DungeonWeaponPrefabBuilder.BuildStaff();
-            GameObject torch = DungeonWeaponPrefabBuilder.BuildTorch();
             GameObject crossbow = DungeonWeaponPrefabBuilder.BuildCrossbow();
             GameObject shield = BattleWeaponPrefabBuilder.BuildShield();
             GameObject bow = BattleWeaponPrefabBuilder.BuildBow();
             GameObject book = DungeonWeaponPrefabBuilder.BuildBook();
-            GameObject lute = DungeonWeaponPrefabBuilder.BuildLute();
-            GameObject shortSword = BattleWeaponPrefabBuilder.BuildSword("ShortSword", 0.1f, 0.72f, 0.056f, 0.16f, 0.08f, SwordStyle.Short);
-            GameObject rapier = BattleWeaponPrefabBuilder.BuildSword("Rapier", 0.12f, 1f, 0.022f, 0.14f, 0.08f, SwordStyle.Rapier);
-            GameObject vikingSword = BattleWeaponPrefabBuilder.BuildSword("VikingSword", 0.12f, 0.92f, 0.058f, 0.11f, 0.09f, SwordStyle.Viking);
-            GameObject hatchet = DungeonWeaponPrefabBuilder.BuildAxe("Hatchet", 0.62f, 0.2f, AxeStyle.Hatchet);
             GameObject morningStar = DungeonWeaponPrefabBuilder.BuildMorningStar();
-            GameObject castillon = BattleWeaponPrefabBuilder.BuildSword("CastillonDagger", 0.06f, 0.5f, 0.046f, 0.1f, 0.06f, SwordStyle.Castillon);
-            GameObject stiletto = BattleWeaponPrefabBuilder.BuildSword("Stiletto", 0.06f, 0.46f, 0.014f, 0.07f, 0.06f, SwordStyle.Stiletto);
-            GameObject fellingAxe = DungeonWeaponPrefabBuilder.BuildAxe("FellingAxe", 0.94f, 0.24f, AxeStyle.Felling);
-            GameObject maul = DungeonWeaponPrefabBuilder.BuildMaul();
-            GameObject halberd = DungeonWeaponPrefabBuilder.BuildHalberd();
-            GameObject horsemansAxe = DungeonWeaponPrefabBuilder.BuildHorsemansAxe();
-            GameObject quarterstaff = DungeonWeaponPrefabBuilder.BuildQuarterstaff();
-            GameObject bardiche = DungeonWeaponPrefabBuilder.BuildBardiche();
             arrow = BattleWeaponPrefabBuilder.BuildArrow();
             magicOrb = DungeonWeaponPrefabBuilder.BuildMagicOrb();
 
@@ -111,39 +91,20 @@ namespace Game.Scripts.Editor.Battle
             Dictionary<string, (GameObject prefab, WeaponSocket socket)[]> attachments = new()
             {
                 [DungeonWeaponLibrary.SwordShield] = new[] { (sword, WeaponSocket.RightHand), (shield, WeaponSocket.LeftShield) },
-                [DungeonWeaponLibrary.Greatsword] = new[] { (greatsword, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Bow] = new[] { (bow, WeaponSocket.LeftHand) },
                 [DungeonWeaponLibrary.SwordShieldLeft] = new[] { (sword, WeaponSocket.LeftHand), (shield, WeaponSocket.RightShield) },
                 [DungeonWeaponLibrary.Fists] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.ArmingSword] = new[] { (sword, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Falchion] = new[] { (falchion, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Longsword] = new[] { (longsword, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.BattleAxe] = new[] { (axe, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Spear] = new[] { (spear, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Mace] = new[] { (mace, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Dagger] = new[] { (dagger, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Crossbow] = new[] { (crossbow, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Staff] = new[] { (staff, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Torch] = new[] { (torch, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.MaceShield] = new[] { (mace, WeaponSocket.RightHand), (shield, WeaponSocket.LeftShield) },
+                // The morning star is the only mace left, so it is the one carried with a shield.
+                [DungeonWeaponLibrary.MaceShield] = new[] { (morningStar, WeaponSocket.RightHand), (shield, WeaponSocket.LeftShield) },
                 [DungeonWeaponLibrary.Spellbook] = new[] { (book, WeaponSocket.LeftHand) },
-                [DungeonWeaponLibrary.Lute] = new[] { (lute, WeaponSocket.LeftHand) },
                 [DungeonWeaponLibrary.BearClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.PantherClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.RatBite] = Array.Empty<(GameObject, WeaponSocket)>(),
-                [DungeonWeaponLibrary.ShortSword] = new[] { (shortSword, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Rapier] = new[] { (rapier, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.VikingSword] = new[] { (vikingSword, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Hatchet] = new[] { (hatchet, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.MorningStar] = new[] { (morningStar, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.CastillonDagger] = new[] { (castillon, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Stiletto] = new[] { (stiletto, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.FellingAxe] = new[] { (fellingAxe, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.WarMaul] = new[] { (maul, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Halberd] = new[] { (halberd, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.HorsemansAxe] = new[] { (horsemansAxe, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Quarterstaff] = new[] { (quarterstaff, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.Bardiche] = new[] { (bardiche, WeaponSocket.RightHand) }
+                [DungeonWeaponLibrary.MorningStar] = new[] { (morningStar, WeaponSocket.RightHand) }
             };
 
             string[] order = DungeonWeaponLibrary.CatalogOrder;

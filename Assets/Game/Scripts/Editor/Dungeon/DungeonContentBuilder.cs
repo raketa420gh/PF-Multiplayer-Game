@@ -28,6 +28,8 @@ namespace Game.Scripts.Editor.Dungeon
 
         public static string Prefab(string name) => $"{DungeonPropBuilder.PrefabsFolder}/{name}.prefab";
 
+        private static int Catalog(string weapon) => System.Array.IndexOf(DungeonWeaponLibrary.CatalogOrder, weapon);
+
         public static void Build()
         {
             foreach (string folder in new[] { ConfigsFolder, ItemsFolder, AbilitiesFolder, ClassesFolder, LootFolder, MonstersFolder, MerchantsFolder, DungeonPropBuilder.PrefabsFolder, ArmorFolder })
@@ -45,6 +47,7 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonConfig config = BattleEditorUtility.LoadOrCreate<DungeonConfig>(DungeonConfigPath);
             BuildSwarmStages(config);
             BuildCaltrops();
+            BuildHuntingTrap();
             BuildSmokePot();
             ClassConfig[] classes = BuildClasses(database);
             Dictionary<string, LootTableConfig> loot = BuildLootTables(database);
@@ -57,13 +60,13 @@ namespace Game.Scripts.Editor.Dungeon
 
             BuildAdventurer(loadouts, arrow, orb, database, classes, config, weapons, worldItem, corpse, campfire, pieceSet);
             Color rags = new Color(0.25f, 0.22f, 0.16f);
-            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = 5, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
+            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.ArmingSword), Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
                 Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.PeasantChest, rags) } }, loadouts, arrow, orb, database, pieceSet);
-            BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = 2, Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
+            BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Bow), Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
                 Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.RangerHead, rags) } }, loadouts, arrow, orb, database, pieceSet);
             BuildFlyingHead(new MonsterDef { Name = "FlyingHead", DisplayName = "Flying Head", Health = 60, Damage = 1f, MoveSpeed = 230f, ActionSpeed = 1f, Aggro = 12f, Experience = 30, Loot = loot["Monster"], Scale = 1f,
                 Voice = DungeonSound.Screech, Charge = 900f }, arrow, orb, database);
-            BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 210f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = 15, Experience = 150, Loot = loot["Boss"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
+            BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 210f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.MaceShield), Experience = 150, Loot = loot["Boss"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
                 IsBoss = true, Lunge = 5f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.MarauderHead, Color.gray), (ArmorVisual.MarauderChest, Color.gray), (ArmorVisual.MarauderHands, Color.gray), (ArmorVisual.MarauderLegs, Color.gray), (ArmorVisual.MarauderFeet, Color.gray) } }, loadouts, arrow, orb, database, pieceSet);
 
             BuildFigures();
@@ -264,7 +267,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_glyph", def.Glyph);
             BattleEditorUtility.Set(so, "_icon", DungeonAbilityIconBuilder.Build(Sanitize(def.Name), def.Icon ?? DungeonAbilityIconBuilder.SymbolFor(def.Kind), def.Color));
 
-            if (def.Kind is AbilityKind.Projectile or AbilityKind.AreaDamage or AbilityKind.Blink && def.HitEffect != StatusEffectKind.None)
+            if (def.Kind is AbilityKind.Projectile or AbilityKind.AreaDamage or AbilityKind.Blink or AbilityKind.Dash && def.HitEffect != StatusEffectKind.None)
                 BattleEditorUtility.Set(so, "_effect", def.HitEffect);
 
             BattleEditorUtility.Set(so, "_subclass", def.Subclass);
@@ -396,34 +399,32 @@ namespace Game.Scripts.Editor.Dungeon
             (string name, float weight, int min, int max)[] common = new (string, float, int, int)[]
             {
                 ("Gold Coins", 8f, 3, 14), ("Bandage", 4f, 1, 3), ("Potion of Healing", 3f, 1, 2), ("Potion of Protection", 1.5f, 1, 1), ("Lockpick", 1.5f, 1, 2),
-                ("Ale", 1f, 1, 1), ("Throwing Knife", 1f, 1, 2), ("Francisca Axe", 0.8f, 1, 2), ("Torch", 1.5f, 1, 1), ("Campfire Kit", 0.6f, 1, 1),
-                ("Arming Sword", 1f, 1, 1), ("Falchion", 0.7f, 1, 1), ("Flanged Mace", 0.7f, 1, 1), ("Rondel Dagger", 1f, 1, 1), ("Recurve Bow", 0.6f, 1, 1), ("Round Shield", 0.8f, 1, 1),
-                ("Spear", 0.5f, 1, 1), ("Longsword", 0.5f, 1, 1), ("Crossbow", 0.4f, 1, 1), ("Magic Staff", 0.5f, 1, 1), ("Battle Axe", 0.4f, 1, 1), ("Zweihander", 0.3f, 1, 1),
+                ("Ale", 1f, 1, 1), ("Throwing Knife", 1f, 1, 2), ("Francisca Axe", 0.8f, 1, 2), ("Campfire Kit", 0.6f, 1, 1),
+                ("Arming Sword", 1f, 1, 1), ("Morning Star", 0.8f, 1, 1), ("Round Shield", 0.8f, 1, 1),
+                ("Crossbow", 0.4f, 1, 1), ("Magic Staff", 0.5f, 1, 1), ("Battle Axe", 0.4f, 1, 1),
                 ("Ruby", 0.5f, 1, 1), ("Emerald", 0.5f, 1, 1), ("Sapphire", 0.5f, 1, 1), ("Gold Goblet", 0.5f, 1, 1),
-                ("Short Sword", 0.9f, 1, 1), ("Rapier", 0.5f, 1, 1), ("Viking Sword", 0.5f, 1, 1), ("Hatchet", 0.8f, 1, 1), ("Morning Star", 0.5f, 1, 1),
-                ("Castillon Dagger", 0.6f, 1, 1), ("Stiletto Dagger", 0.6f, 1, 1), ("Felling Axe", 0.5f, 1, 1), ("Halberd", 0.3f, 1, 1), ("Buckler", 0.6f, 1, 1), ("Horseman's Axe", 0.4f, 1, 1), ("Quarterstaff", 0.5f, 1, 1), ("Bardiche", 0.3f, 1, 1),
                 ("Potion of Invisibility", 0.6f, 1, 1), ("Silver Chalice", 0.6f, 1, 1), ("Gold Ore", 0.8f, 1, 3), ("Silver Ingot", 0.3f, 1, 1)
-            }.Concat(Pieces(0.9f, "Peasant")).Concat(Pieces(0.6f, "Ranger")).Concat(Pieces(0.3f, "Mystic", "Occultist", "Marauder", "Berserker", "Ironclad", "Devout")).ToArray();
+            }.Concat(Pieces(0.9f, "Peasant")).Concat(Pieces(0.6f, "Ranger")).Concat(Pieces(0.3f, "Mystic", "Occultist", "Marauder", "Berserker", "Ironclad", "Devout", "Stalker")).ToArray();
             (string name, float weight, int min, int max)[] ornate = new (string, float, int, int)[]
             {
                 ("Gold Coin Purse", 4f, 1, 2), ("Gold Coin Bag", 1f, 1, 1), ("Gold Coins", 3f, 10, 25), ("Diamond", 1.5f, 1, 2), ("Ruby", 2f, 1, 3), ("Emerald", 2f, 1, 3), ("Sapphire", 2f, 1, 3),
                 ("Gold Candlestick", 2f, 1, 1), ("Gold Goblet", 2f, 1, 1), ("Ancient Scroll", 1.5f, 1, 1), ("Gem Necklace", 1f, 1, 1), ("Gold Band", 1f, 1, 1), ("Gem Ring", 1f, 1, 1),
-                ("Zweihander", 0.8f, 1, 1), ("Longsword", 1f, 1, 1), ("Battle Axe", 0.8f, 1, 1), ("Crossbow", 0.8f, 1, 1), ("Magic Staff", 0.8f, 1, 1), ("Surgical Kit", 1.5f, 1, 1),
-                ("War Maul", 0.8f, 1, 1), ("Halberd", 0.8f, 1, 1), ("Rapier", 0.8f, 1, 1), ("Viking Sword", 0.8f, 1, 1), ("Heater Shield", 0.8f, 1, 1),
+                ("Battle Axe", 0.8f, 1, 1), ("Crossbow", 0.8f, 1, 1), ("Magic Staff", 0.8f, 1, 1), ("Surgical Kit", 1.5f, 1, 1),
+                ("Morning Star", 0.8f, 1, 1), ("Arming Sword", 0.6f, 1, 1), ("Round Shield", 0.6f, 1, 1),
                 ("Fox Pendant", 0.6f, 1, 1), ("Ox Pendant", 0.6f, 1, 1), ("Bear Pendant", 0.6f, 1, 1), ("Owl Pendant", 0.6f, 1, 1),
                 ("Ring of Courage", 0.6f, 1, 1), ("Ring of Vitality", 0.6f, 1, 1), ("Ring of Finesse", 0.6f, 1, 1), ("Ring of Wisdom", 0.6f, 1, 1),
                 ("Troll's Blood", 1f, 1, 1), ("Potion of Invisibility", 1f, 1, 2), ("Gold Crown", 0.5f, 1, 1), ("Gold Ingot", 1f, 1, 2), ("Pearl Necklace", 1f, 1, 1)
-            }.Concat(Pieces(0.5f, "Ranger")).Concat(Pieces(0.7f, "Mystic", "Occultist", "Marauder", "Berserker", "Ironclad", "Devout")).ToArray();
+            }.Concat(Pieces(0.5f, "Ranger")).Concat(Pieces(0.7f, "Mystic", "Occultist", "Marauder", "Berserker", "Ironclad", "Devout", "Stalker")).ToArray();
             (string name, float weight, int min, int max)[] coffin =
             {
                 ("Gold Coins", 5f, 2, 10), ("Ruby", 1f, 1, 1), ("Sapphire", 1f, 1, 1), ("Gold Band", 0.8f, 1, 1), ("Gem Necklace", 0.6f, 1, 1), ("Ancient Scroll", 1f, 1, 1),
-                ("Rondel Dagger", 1f, 1, 1), ("Arming Sword", 0.8f, 1, 1), ("Peasant Hood", 0.8f, 1, 1), ("Bandage", 2f, 1, 2), ("Gold Goblet", 1f, 1, 1),
+                ("Arming Sword", 0.8f, 1, 1), ("Peasant Hood", 0.8f, 1, 1), ("Bandage", 2f, 1, 2), ("Gold Goblet", 1f, 1, 1),
                 ("Silver Chalice", 1f, 1, 1), ("Pearl Necklace", 0.5f, 1, 1), ("Ring of Vitality", 0.4f, 1, 1), ("Bear Pendant", 0.3f, 1, 1),
-                ("Stiletto Dagger", 0.6f, 1, 1), ("Ranger Hood", 0.5f, 1, 1), ("Troll's Blood", 0.4f, 1, 1)
+                ("Ranger Hood", 0.5f, 1, 1), ("Troll's Blood", 0.4f, 1, 1)
             };
             (string name, float weight, int min, int max)[] barrel =
             {
-                ("Gold Coins", 4f, 1, 6), ("Bandage", 3f, 1, 2), ("Potion of Healing", 2f, 1, 1), ("Ale", 2f, 1, 2), ("Torch", 2f, 1, 1), ("Throwing Knife", 1f, 1, 2), ("Lockpick", 1f, 1, 1)
+                ("Gold Coins", 4f, 1, 6), ("Bandage", 3f, 1, 2), ("Potion of Healing", 2f, 1, 1), ("Ale", 2f, 1, 2), ("Throwing Knife", 1f, 1, 2), ("Lockpick", 1f, 1, 1)
             };
             (string name, float weight, int min, int max)[] bookshelf = new (string, float, int, int)[]
             {
@@ -432,8 +433,8 @@ namespace Game.Scripts.Editor.Dungeon
             }.Concat(Pieces(0.4f, "Mystic", "Occultist", "Devout")).ToArray();
             (string name, float weight, int min, int max)[] monster = new (string, float, int, int)[]
             {
-                ("Gold Coins", 5f, 1, 6), ("Bandage", 2f, 1, 1), ("Ruby", 0.5f, 1, 1), ("Rondel Dagger", 0.5f, 1, 1), ("Potion of Healing", 1f, 1, 1),
-                ("Short Sword", 0.4f, 1, 1), ("Hatchet", 0.4f, 1, 1), ("Gold Ore", 0.6f, 1, 2), ("Silver Chalice", 0.3f, 1, 1)
+                ("Gold Coins", 5f, 1, 6), ("Bandage", 2f, 1, 1), ("Ruby", 0.5f, 1, 1), ("Potion of Healing", 1f, 1, 1),
+                ("Gold Ore", 0.6f, 1, 2), ("Silver Chalice", 0.3f, 1, 1)
             }.Concat(Pieces(0.4f, "Peasant")).ToArray();
 
             return new Dictionary<string, LootTableConfig>
@@ -1241,6 +1242,43 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_slowDuration", 2f);
             so.ApplyModifiedPropertiesWithoutUndo();
             BattleContentBuilder.SavePrefab(root, Prefab("Caltrops"));
+        }
+
+        /// Iron jaws on a plate: the teeth stand up when they snap shut on the first body that steps in. Skills set it 0.2 m
+        /// above the ground, so the model sits that much lower.
+        private static void BuildHuntingTrap()
+        {
+            Material steel = DungeonPropBuilder.RustyMetal;
+            GameObject root = new GameObject(DungeonClassLibrary.HuntingTrap);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Plate", root.transform, new Vector3(0f, -0.18f, 0f), Vector3.zero, new Vector3(0.55f, 0.02f, 0.55f), steel);
+            Transform jaws = BattleEditorUtility.CreateChild("Jaws", root.transform).transform;
+
+            for (int i = 0; i < 10; i++)
+            {
+                float angle = i * 36f;
+                Vector3 position = Quaternion.Euler(0f, angle, 0f) * new Vector3(0f, 0.08f, 0.24f);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Tooth" + i, jaws, position, new Vector3(-20f, angle, 0f), new Vector3(0.05f, 0.16f, 0.02f), steel);
+            }
+
+            root.AddComponent<NetworkObject>();
+            root.AddComponent<NetworkTransform>();
+            TrapComponent trap = root.AddComponent<TrapComponent>();
+            SerializedObject so = new SerializedObject(trap);
+            BattleEditorUtility.Set(so, "_kind", TrapKind.Spikes);
+            BattleEditorUtility.Set(so, "_damage", 15);
+            BattleEditorUtility.Set(so, "_activeTime", 1.2f);
+            BattleEditorUtility.Set(so, "_halfExtents", new Vector3(0.35f, 0.5f, 0.35f));
+            BattleEditorUtility.Set(so, "_center", new Vector3(0f, 0.2f, 0f));
+            BattleEditorUtility.Set(so, "_victimMask", (LayerMask)(1 << LayerMask.NameToLayer(BattleEditorUtility.CharacterLayer)));
+            BattleEditorUtility.Set(so, "_moving", jaws);
+            BattleEditorUtility.Set(so, "_restPosition", new Vector3(0f, -0.27f, 0f));
+            BattleEditorUtility.Set(so, "_activePosition", new Vector3(0f, -0.2f, 0f));
+            BattleEditorUtility.Set(so, "_lifetime", 60f);
+            BattleEditorUtility.Set(so, "_slowMagnitude", 70f);
+            BattleEditorUtility.Set(so, "_slowDuration", 3f);
+            BattleEditorUtility.Set(so, "_isSingleUse", true);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            BattleContentBuilder.SavePrefab(root, Prefab(DungeonClassLibrary.HuntingTrap));
         }
 
         private static void BuildSmokePot()

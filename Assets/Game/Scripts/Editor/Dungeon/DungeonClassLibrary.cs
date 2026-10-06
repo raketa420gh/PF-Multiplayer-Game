@@ -8,6 +8,9 @@ namespace Game.Scripts.Editor.Dungeon
     /// first in every pool, so the default build (skills 0 and 1) fits any subclass.
     internal static class DungeonClassLibrary
     {
+        /// Prefab the Huntsman's trap skill sets, built by DungeonContentBuilder.
+        public const string HuntingTrap = "HuntingTrap";
+
         public static ClassDef[] CreateClasses()
         {
             return new[]
@@ -15,7 +18,8 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateBarbarian(),
                 CreateWizard(),
                 CreateWarrior(),
-                CreateConfessor()
+                CreateConfessor(),
+                CreateHuntsman()
             };
         }
 
@@ -95,7 +99,7 @@ namespace Game.Scripts.Editor.Dungeon
                     new PerkDef("Commanding Presence", "+2 physical power per Command.", new StatModifier(StatType.PhysicalPower, 2f)) { Icon = "Chevrons", Color = command, Subclass = 2, PerStack = true },
                     new PerkDef("Banner Bearer", "+10 armor rating and +15 magic resistance.", new StatModifier(StatType.ArmorRating, 10f), new StatModifier(StatType.MagicResistance, 15f)) { Icon = "Shield", Color = command, Subclass = 2 }
                 },
-                Kit = new[] { ("Battle Axe", EquipSlot.Weapon1Main, 1, true), ("Zweihander", EquipSlot.Weapon2Main, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Francisca Axe", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 3, true) },
+                Kit = new[] { ("Battle Axe", EquipSlot.Weapon1Main, 1, true), ("Morning Star", EquipSlot.Weapon2Main, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Francisca Axe", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 3, true) },
                 Weapons = new[] { WeaponClass.Axe, WeaponClass.Sword, WeaponClass.Mace, WeaponClass.Spear, WeaponClass.Dagger, WeaponClass.Torch }
             };
         }
@@ -213,11 +217,11 @@ namespace Game.Scripts.Editor.Dungeon
                 Stats = new ClassStats(18, 18, 9, 10, 17, 18), Color = steel, Body = Color.white,
                 Subclasses = new[]
                 {
-                    Subclass("Duelist", "Fencer of the counter: blocks and ripostes build Tempo for a lunge and a flurry. Rapier, longsword or arming sword, no shield.",
+                    Subclass("Duelist", "Fencer of the counter: blocks and ripostes build Tempo for a lunge and a flurry. Arming sword, no shield.",
                         tempo, "Tempo", 3, ResourceSource.BlockedHit | ResourceSource.Riposte, 8f),
-                    Subclass("Guardian", "Holder of doorways: every blow stopped by the shield builds Resolve for a harder stance. Sword, mace or spear with a shield.",
+                    Subclass("Guardian", "Holder of doorways: every blow stopped by the shield builds Resolve for a harder stance. Arming sword or morning star with a shield.",
                         resolve, "Resolve", 5, ResourceSource.BlockedHit, 12f),
-                    Subclass("Ravager", "Breaker of guards: hits, blocked ones too, build Momentum for a blow that goes through any block. Two-handed axes and swords.",
+                    Subclass("Ravager", "Breaker of guards: hits, blocked ones too, build Momentum for a blow that goes through any block. The battle axe.",
                         momentum, "Momentum", 4, ResourceSource.WeaponHit | ResourceSource.HitOnBlock, 6f)
                 },
                 Skills = new[]
@@ -277,7 +281,7 @@ namespace Game.Scripts.Editor.Dungeon
                     new PerkDef("Rolling Strikes", "+3 physical power per Momentum.", new StatModifier(StatType.PhysicalPower, 3f)) { Icon = "Axe", Color = momentum, Subclass = 2, PerStack = true },
                     new PerkDef("Heavy Hands", "+12% physical damage, but -6% action speed.", new StatModifier(StatType.PhysicalDamageBonus, 0.12f), new StatModifier(StatType.ActionSpeed, -6f)) { Icon = "Mace", Color = momentum, Subclass = 2 }
                 },
-                Kit = new[] { ("Arming Sword", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Longsword", EquipSlot.Weapon2Main, 1, true),
+                Kit = new[] { ("Arming Sword", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Battle Axe", EquipSlot.Weapon2Main, 1, true),
                     ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Bandage", EquipSlot.Utility1, 3, true) },
                 Weapons = new[] { WeaponClass.Sword, WeaponClass.Axe, WeaponClass.Mace, WeaponClass.Dagger, WeaponClass.Spear, WeaponClass.Bow, WeaponClass.Crossbow,
                     WeaponClass.Staff, WeaponClass.Shield, WeaponClass.Torch }
@@ -388,10 +392,84 @@ namespace Game.Scripts.Editor.Dungeon
                     new PerkDef("Sigil Ward", "+6 magic resistance per Sigil.", new StatModifier(StatType.MagicResistance, 6f)) { Icon = "Shield", Color = seal, Subclass = 2, PerStack = true },
                     new PerkDef("Ritualist", "+6 magical power.", new StatModifier(StatType.MagicalPower, 6f)) { Icon = "Book", Color = seal, Subclass = 2 }
                 },
-                Kit = new[] { ("Flanged Mace", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Spellbook", EquipSlot.Weapon2Main, 1, true),
+                Kit = new[] { ("Morning Star", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Spellbook", EquipSlot.Weapon2Main, 1, true),
                     ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true), ("Bandage", EquipSlot.Utility2, 2, true) },
                 Weapons = new[] { WeaponClass.Mace, WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.Shield, WeaponClass.Torch },
                 Focus = CastFocus.Magic
+            };
+        }
+
+        /// Hunter of the depths who kills before the fight reaches him: crossbows and bows first, throwing weapons second, a
+        /// sword for when it goes wrong. No magic, light leather, the quickest hands and feet of all. The Marksman waits for the
+        /// one perfect bolt, the Trapper decides where the fight happens, the Skirmisher never stands where he was hit.
+        private static ClassDef CreateHuntsman()
+        {
+            Color hunt = new Color(0.45f, 0.72f, 0.35f);
+            Color focus = new Color(0.95f, 0.85f, 0.45f);
+            Color quarry = new Color(0.75f, 0.55f, 0.35f);
+            Color stride = new Color(0.5f, 0.85f, 0.9f);
+
+            return new ClassDef
+            {
+                Id = 4, Name = "Huntsman", Description = "Ranged hunter of the depths: crossbow and bow, throwing knives and axes, a sword for close calls. No magic and little health: strikes first, from afar, and never stands still.",
+                Stats = new ClassStats(12, 13, 8, 15, 21, 21), Color = hunt, Body = Color.white,
+                Subclasses = new[]
+                {
+                    Subclass("Marksman", "Patient shooter: every bolt or arrow that lands builds Focus, a headshot twice as much; Aimed Shot spends it on one devastating shot.",
+                        focus, "Focus", 5, ResourceSource.RangedHit | ResourceSource.Headshot, 12f),
+                    Subclass("Trapper", "Master of the ground: ranged hits mark Quarry that hardens every blow; hunting traps snap shut on whoever walks the wrong way.",
+                        quarry, "Quarry", 4, ResourceSource.RangedHit, 15f),
+                    Subclass("Skirmisher", "Hit and run: every hit, near or far, builds Stride that quickens the feet; Disengage spends it to leap back out of reach.",
+                        stride, "Stride", 4, ResourceSource.WeaponHit, 6f)
+                },
+                Skills = new[]
+                {
+                    new AbilityDef
+                    {
+                        Name = "Volley", Description = "Your next shot within 8s looses 3 projectiles in a fan, 70% damage each.", Kind = AbilityKind.Buff, Cooldown = 18f, CastTime = 0.15f,
+                        Magnitude = 3f, Duration = 8f, Effect = StatusEffectKind.Volley, Glyph = "Vo", Color = hunt, Icon = "Volley"
+                    },
+                    Skill("Rapid Reload", "Bows and crossbows reload 60% faster for 10s.", AbilityKind.Buff, 60f, 10f, 30f, "RR", focus, StatusEffectKind.QuickReload, 0.1f, icon: "Hourglass"),
+                    new AbilityDef
+                    {
+                        Name = "Field Ration", Description = "Eat on the move: restore 30 health over 10s.", Kind = AbilityKind.Heal, Magnitude = 30f, Duration = 10f,
+                        Cooldown = 40f, CastTime = 0.6f, DamageType = DamageType.Physical, Glyph = "FR", Color = new Color(0.9f, 0.3f, 0.3f), Icon = "Heart"
+                    },
+                    new AbilityDef
+                    {
+                        Name = "Aimed Shot", Description = "Needs 2 Focus, spends all: your next shot within 10s flies almost twice as fast and straight and deals +10 physical damage, +8 per Focus.",
+                        Kind = AbilityKind.Buff, Cooldown = 12f, CastTime = 0.2f, Magnitude = 10f, Duration = 10f, Effect = StatusEffectKind.AimedShot, ResourceCost = 2, StackBonus = 8f,
+                        Glyph = "AS", Color = focus, Icon = "Crosshair", Subclass = 0
+                    },
+                    new AbilityDef
+                    {
+                        Name = "Hunting Trap", Description = "Set a trap 1.5m ahead: the first one to step in takes 15 damage and is slowed by 70% for 3s. Never catches you; lasts 60s.",
+                        Kind = AbilityKind.Spawn, Cooldown = 20f, CastTime = 0.8f, SpawnPrefab = HuntingTrap, Radius = 1.5f, Glyph = "HT", Color = quarry, Icon = "Trap", Subclass = 1
+                    },
+                    new AbilityDef
+                    {
+                        Name = "Disengage", Description = "Spends all Stride: leap 5m back; +15% move speed, +10% per Stride, for 4s.", Kind = AbilityKind.Dash,
+                        Cooldown = 12f, CastTime = 0.05f, Magnitude = 5f, Duration = 0.25f, HitEffect = StatusEffectKind.Haste, HitMagnitude = 15f, HitDuration = 4f, StackBonus = 10f,
+                        Glyph = "Di", Color = stride, Icon = "Dash", Subclass = 2
+                    }
+                },
+                Perks = new[]
+                {
+                    new PerkDef("Fletcher", "+12% damage of arrows, bolts and thrown weapons.", new StatModifier(StatType.RangedDamageBonus, 0.12f)) { Icon = "Arrow" },
+                    new PerkDef("Practised Hands", "Bows and crossbows reload 25% faster.", new StatModifier(StatType.ReloadSpeed, 25f)) { Icon = "Hourglass" },
+                    new PerkDef("Light Tread", "+12 move speed.", new StatModifier(StatType.MoveSpeed, 12f)) { Icon = "Dash", Color = new Color(0.6f, 0.9f, 0.6f) },
+                    new PerkDef("Hawk Eye", "+20% damage of ranged headshots.", new StatModifier(StatType.HeadshotDamage, 0.2f)) { Icon = "Eye", Color = focus },
+                    new PerkDef("Steady Aim", "+3% ranged damage per Focus.", new StatModifier(StatType.RangedDamageBonus, 0.03f)) { Icon = "Crosshair", Color = focus, Subclass = 0, PerStack = true },
+                    new PerkDef("Deadeye", "+30% damage of ranged headshots, but -8 move speed.", new StatModifier(StatType.HeadshotDamage, 0.3f), new StatModifier(StatType.MoveSpeed, -8f)) { Icon = "Eye", Color = focus, Subclass = 0 },
+                    new PerkDef("Predator", "+2 physical power per Quarry.", new StatModifier(StatType.PhysicalPower, 2f)) { Icon = "Arrow", Color = quarry, Subclass = 1, PerStack = true },
+                    new PerkDef("Woodcraft", "+5 Agility and +5 Knowledge: quicker steps and searching.", new StatModifier(StatType.Agility, 5f), new StatModifier(StatType.Knowledge, 5f)) { Icon = "Trap", Color = quarry, Subclass = 1 },
+                    new PerkDef("Fleet Hunter", "+4 move speed per Stride.", new StatModifier(StatType.MoveSpeed, 4f)) { Icon = "Dash", Color = stride, Subclass = 2, PerStack = true },
+                    new PerkDef("Snap Shot", "+8% action speed and reloads 15% faster.", new StatModifier(StatType.ActionSpeed, 8f), new StatModifier(StatType.ReloadSpeed, 15f)) { Icon = "Bolt", Color = stride, Subclass = 2 }
+                },
+                Kit = new[] { ("Crossbow", EquipSlot.Weapon1Main, 1, true), ("Arming Sword", EquipSlot.Weapon2Main, 1, true), ("Peasant Hood", EquipSlot.Head, 1, true),
+                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true),
+                    ("Throwing Knife", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 2, true) },
+                Weapons = new[] { WeaponClass.Bow, WeaponClass.Crossbow, WeaponClass.Sword, WeaponClass.Dagger, WeaponClass.Spear, WeaponClass.Torch }
             };
         }
 

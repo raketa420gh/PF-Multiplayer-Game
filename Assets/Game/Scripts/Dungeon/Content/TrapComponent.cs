@@ -65,6 +65,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _slowDuration = 2f;
 
+        [SerializeField, Tooltip("Snaps shut once and is gone; a trap set by a player never catches that player")]
+        private bool _isSingleUse;
+
         [Networked]
         private TickTimer _lifetimeTimer { get; set; }
 
@@ -139,6 +142,13 @@ namespace Game.Scripts.Dungeon
             {
                 isActive = TriggerTick > 0 && Runner.SecondsSince(TriggerTick) < _activeTime;
 
+                if (_isSingleUse && TriggerTick > 0 && !isActive)
+                {
+                    Runner.Despawn(Object);
+
+                    return;
+                }
+
                 if (!isActive && _cooldown.ExpiredOrNotRunning(Runner) && Overlap(out _))
                 {
                     TriggerTick = Runner.Tick;
@@ -180,12 +190,24 @@ namespace Game.Scripts.Dungeon
             IsArmed = false;
         }
 
+        /// Bodies inside the trap, its owner left out.
         private bool Overlap(out int count)
         {
             count = Runner.GetPhysicsScene().OverlapBox(transform.TransformPoint(_center), _halfExtents, s_colliders,
                 transform.rotation, _victimMask, QueryTriggerInteraction.Ignore);
 
+            for (int i = count - 1; i >= 0; i--)
+            {
+                if (IsOwner(s_colliders[i].GetComponentInParent<DamageReceiverComponent>()))
+                    s_colliders[i] = s_colliders[--count];
+            }
+
             return count > 0;
+        }
+
+        private bool IsOwner(DamageReceiverComponent receiver)
+        {
+            return receiver != null && Object.InputAuthority != PlayerRef.None && receiver.Object.InputAuthority == Object.InputAuthority;
         }
     }
 }

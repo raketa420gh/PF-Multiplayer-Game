@@ -54,7 +54,7 @@ namespace Game.Scripts.Battle
         public const int Capacity = 8;
 
         /// Raised on the state authority when a projectile lands on a receiver (used for spell side effects).
-        public delegate void ProjectileHitHandler(in ProjectileData data, DamageReceiverComponent receiver);
+        public delegate void ProjectileHitHandler(in ProjectileData data, DamageReceiverComponent receiver, HitZone zone, HitResult result);
 
         public event ProjectileHitHandler OnReceiverHit;
 
@@ -161,7 +161,7 @@ namespace Game.Scripts.Battle
             HitZone zone = hit.Hitbox is ZoneHitbox zoneHitbox ? zoneHitbox.Zone : HitZone.Torso;
             bool isBlock = zone == HitZone.Block;
 
-            receiver.ApplyHit(new HitRequest
+            HitResult result = receiver.ApplyHit(new HitRequest
             {
                 BaseDamage = data.Damage,
                 BodyRays = isBlock ? 0 : 1,
@@ -176,7 +176,7 @@ namespace Game.Scripts.Battle
                 Attacker = _ownReceiver
             });
 
-            OnReceiverHit?.Invoke(data, receiver);
+            OnReceiverHit?.Invoke(data, receiver, isBlock ? HitZone.Block : zone, result);
         }
 
         private void Explode(in ProjectileData data, Vector3 point)
@@ -196,7 +196,7 @@ namespace Game.Scripts.Battle
                 float distance = Vector3.Distance(point, hit.Hitbox.Root.transform.position + Vector3.up);
                 float falloff = Mathf.Clamp01(1f - distance / (data.Radius * 1.5f));
 
-                receiver.ApplyHit(new HitRequest
+                HitResult result = receiver.ApplyHit(new HitRequest
                 {
                     BaseDamage = Mathf.RoundToInt(data.Damage * Mathf.Lerp(0.4f, 1f, falloff)),
                     BodyRays = 1,
@@ -210,7 +210,7 @@ namespace Game.Scripts.Battle
                     Attacker = _ownReceiver
                 });
 
-                OnReceiverHit?.Invoke(data, receiver);
+                OnReceiverHit?.Invoke(data, receiver, HitZone.Torso, result);
             }
         }
 

@@ -64,7 +64,11 @@ namespace Game.Scripts.Dungeon
         /// A spell or a magical skill deals damage.
         SpellHit = 32,
         /// A heal, a shield or a blessing is given.
-        Support = 64
+        Support = 64,
+        /// An arrow, a bolt or a thrown weapon lands on a body.
+        RangedHit = 128,
+        /// An arrow, a bolt or a thrown weapon lands on a head.
+        Headshot = 256
     }
 
     /// Specialisation of a class: its own skills, perks and spells on top of the shared ones, and a resource of stacks that

@@ -37,8 +37,28 @@ namespace Game.Scripts.Battle
         float MoveSpeedMultiplier { get; }
     }
 
+    /// One released shot of a ranged weapon; the shooter's class may change it before it flies.
+    public struct ShotRequest
+    {
+        public int Damage;
+        public float Speed;
+        public float Gravity;
+        public int Count;
+        public float Spread;
+        public float ReloadTime;
+        public byte Effect;
+        public float EffectMagnitude;
+        public float EffectDuration;
+    }
+
     public sealed class CombatComponent : NetworkBehaviour, DamageReceiverComponent.IOwner
     {
+        /// Optional: class perks and buffs of the shooter on every released shot.
+        public interface IShotModifier
+        {
+            void ModifyShot(ref ShotRequest shot);
+        }
+
         public const byte NoWeapon = 255;
 
         public event Action<Vector3, Vector3> OnWorldHit;
@@ -210,6 +230,7 @@ namespace Game.Scripts.Battle
         private static readonly List<Tally> s_tallies = new(8);
         private readonly List<HitboxRoot> _hitRoots = new(8);
         private ICombatStats _stats;
+        private IShotModifier _shotModifier;
         private bool _isBlockHeld;
         private bool _isBlockSuppressed;
         private bool _isAttackSuppressed;
@@ -242,6 +263,11 @@ namespace Game.Scripts.Battle
         public void SetStats(ICombatStats stats)
         {
             _stats = stats;
+        }
+
+        public void SetShotModifier(IShotModifier modifier)
+        {
+            _shotModifier = modifier;
         }
 
         /// While a spell is readied the secondary button casts instead of blocking.
@@ -469,12 +495,23 @@ namespace Game.Scripts.Battle
             }
 
             float power = ranged.GetPower(time);
-            Vector3 direction = _body.AimDirection;
-            int damage = ScaleDamage(ranged.GetDamage(power), Weapon.DamageType);
-            _projectiles.Fire(_body.EyePosition, direction * ranged.GetSpeed(power), ranged.Gravity, damage,
-                ranged.StaggerDuration, Weapon.DamageType, ProjectileKind.Arrow, impact: Weapon.Impact);
+            ShotRequest shot = new ShotRequest
+            {
+                Damage = ScaleDamage(ranged.GetDamage(power), Weapon.DamageType), Speed = ranged.GetSpeed(power), Gravity = ranged.Gravity, Count = 1,
+                ReloadTime = ranged.ReloadTime
+            };
+            _shotModifier?.ModifyShot(ref shot);
 
-            SetState(CombatState.Reload, ranged.ReloadTime);
+            // Extra projectiles of a volley fan out evenly to both sides of the crosshair.
+            for (int i = 0; i < shot.Count; i++)
+            {
+                float yaw = shot.Count > 1 ? Mathf.Lerp(-shot.Spread, shot.Spread, i / (shot.Count - 1f)) : 0f;
+                Vector3 direction = _body.AimRotation * Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+                _projectiles.Fire(_body.EyePosition, direction * shot.Speed, shot.Gravity, shot.Damage, ranged.StaggerDuration, Weapon.DamageType,
+                    ProjectileKind.Arrow, effect: shot.Effect, effectMagnitude: shot.EffectMagnitude, effectDuration: shot.EffectDuration, impact: Weapon.Impact);
+            }
+
+            SetState(CombatState.Reload, shot.ReloadTime);
         }
 
         public int ScaleDamage(int baseDamage, DamageType type)

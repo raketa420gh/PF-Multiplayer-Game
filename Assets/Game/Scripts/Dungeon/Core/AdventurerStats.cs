@@ -26,6 +26,10 @@ namespace Game.Scripts.Dungeon
         public float PhysicalHealing => _physicalHealing;
         public float MagicalHealing => _magicalHealing;
         public int BonusCharges => _bonusCharges;
+        /// Arrows, bolts and thrown weapons: damage on top of the physical one.
+        public float RangedDamageMultiplier => 1f + _flat[(int)StatType.RangedDamageBonus];
+        public float ReloadSpeed => Mathf.Max(0.4f, 1f + _flat[(int)StatType.ReloadSpeed] / 100f);
+        public float HeadshotBonus => _flat[(int)StatType.HeadshotDamage];
 
         private ClassStats _attributes;
         private int _maxHealth = 100;

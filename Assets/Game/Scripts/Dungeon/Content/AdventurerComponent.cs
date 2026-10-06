@@ -23,7 +23,7 @@ namespace Game.Scripts.Dungeon
     }
 
     /// The player's body inside the dungeon: class, inventory, interaction, abilities, death and extraction on top of the fighter.
-    public sealed class AdventurerComponent : NetworkBehaviour, InventoryActionsComponent.IOwner, DamageReceiverComponent.IHitModifier
+    public sealed class AdventurerComponent : NetworkBehaviour, InventoryActionsComponent.IOwner, DamageReceiverComponent.IHitModifier, CombatComponent.IShotModifier
     {
         public const int AbilityCapacity = 16;
         public const float InteractRange = 2.6f;
@@ -51,6 +51,12 @@ namespace Game.Scripts.Dungeon
         private const float EnchantSlowTime = 1.5f;
         private const float SunderStagger = 0.7f;
         private const float VerdictSilence = 3f;
+        /// Half-angle of a volley fan and the share of the shot's damage every projectile of it carries.
+        private const float VolleySpread = 6f;
+        private const float VolleyDamage = 0.7f;
+        /// An aimed shot flies this much faster and drops this much less.
+        private const float AimedSpeed = 1.8f;
+        private const float AimedGravity = 0.25f;
 
         public FighterComponent Fighter => _fighter;
         public InventoryComponent Inventory => _inventory;
@@ -288,6 +294,7 @@ namespace Game.Scripts.Dungeon
 
             _fighter.SetStats(_stats);
             _fighter.Receiver.SetModifier(this);
+            _fighter.Combat.SetShotModifier(this);
             _effects.SetResistance(_stats);
             _fighter.OnSimulateInput += OnSimulateInput;
             _actions.SetOwner(this);
@@ -394,6 +401,36 @@ namespace Game.Scripts.Dungeon
 
             _skillCount = _abilities.Count;
             _abilities.AddRange(_class.Spells);
+        }
+
+        /// Ranged perks speed up the reload and add damage; a volley splits the shot into a fan, an aimed shot flies straight and bites deeper.
+        public void ModifyShot(ref ShotRequest shot)
+        {
+            float volley = _effects.GetMagnitude(StatusEffectKind.Volley);
+            float aimed = _effects.GetMagnitude(StatusEffectKind.AimedShot);
+
+            if (volley > 0f)
+            {
+                shot.Count = Mathf.RoundToInt(volley);
+                shot.Spread = VolleySpread;
+                shot.Damage = Mathf.RoundToInt(shot.Damage * VolleyDamage);
+            }
+
+            if (aimed > 0f)
+            {
+                shot.Damage += _fighter.Combat.ScaleDamage(Mathf.RoundToInt(aimed), DamageType.Physical);
+                shot.Speed *= AimedSpeed;
+                shot.Gravity *= AimedGravity;
+            }
+
+            shot.Damage = Mathf.Max(1, Mathf.RoundToInt(shot.Damage * _stats.RangedDamageMultiplier));
+            shot.ReloadTime /= _stats.ReloadSpeed * (1f + _effects.GetMagnitude(StatusEffectKind.QuickReload) / 100f);
+
+            if (!HasStateAuthority)
+                return;
+
+            _effects.Remove(StatusEffectKind.Volley);
+            _effects.Remove(StatusEffectKind.AimedShot);
         }
 
         public AbilityConfig GetSkill(int slot)
@@ -952,7 +989,7 @@ namespace Game.Scripts.Dungeon
                     _effects.Add(StatusEffectKind.Invisible, 1f, buffDuration);
                     break;
                 case AbilityKind.Dash:
-                    _fighter.Move.AddImpulse(-transform.forward * ability.Magnitude + Vector3.up * 2f);
+                    Blink(ability, -1f);
                     break;
                 case AbilityKind.Projectile:
                     FireSpell(ability, combat);
@@ -965,7 +1002,8 @@ namespace Game.Scripts.Dungeon
                     break;
                 case AbilityKind.Spawn:
                     if (ability.SpawnPrefab != null)
-                        Runner.Spawn(ability.SpawnPrefab, transform.position + transform.forward * ability.Radius + Vector3.up * 0.2f, Quaternion.Euler(0f, transform.eulerAngles.y, 0f));
+                        Runner.Spawn(ability.SpawnPrefab, transform.position + transform.forward * ability.Radius + Vector3.up * 0.2f, Quaternion.Euler(0f, transform.eulerAngles.y, 0f),
+                            Object.InputAuthority);
                     break;
                 case AbilityKind.RestoreCharges:
                     RestoreCharges();
@@ -1179,15 +1217,15 @@ namespace Game.Scripts.Dungeon
             });
         }
 
-        /// Along the view, flattened: Magnitude metres in Duration seconds.
-        private void Blink(AbilityConfig ability)
+        /// Along the view (way 1) or away from it (way -1), flattened: Magnitude metres in Duration seconds.
+        private void Blink(AbilityConfig ability, float way = 1f)
         {
             Vector3 direction = Vector3.ProjectOnPlane(_fighter.Body.AimDirection, Vector3.up);
 
             if (direction.sqrMagnitude < 0.01f)
                 direction = transform.forward;
 
-            _fighter.Move.Dash(direction.normalized * (ability.Magnitude / Mathf.Max(0.05f, ability.Duration)), ability.Duration);
+            _fighter.Move.Dash(direction.normalized * (way * ability.Magnitude / Mathf.Max(0.05f, ability.Duration)), ability.Duration);
 
             if (ability.Effect != StatusEffectKind.None)
                 _effects.Add(ability.Effect, ability.EffectMagnitude + _spentStacks * ability.StackBonus, ability.EffectDuration);
@@ -1249,8 +1287,22 @@ namespace Game.Scripts.Dungeon
             }
         }
 
-        private void OnProjectileHit(in ProjectileData data, DamageReceiverComponent receiver)
+        /// Arrows, bolts and thrown weapons that land on a body earn ranged stacks; a headshot earns one more and the headshot bonus.
+        private void OnProjectileHit(in ProjectileData data, DamageReceiverComponent receiver, HitZone zone, HitResult result)
         {
+            if (data.KindValue is ProjectileKind.Arrow or ProjectileKind.Thrown && result == HitResult.Hit)
+            {
+                GainResource(ResourceSource.RangedHit);
+
+                if (zone == HitZone.Head)
+                {
+                    GainResource(ResourceSource.Headshot);
+
+                    if (_stats.HeadshotBonus > 0f)
+                        BonusHit(receiver, data.Damage * _stats.HeadshotBonus, DamageType.Physical, 0f);
+                }
+            }
+
             if (data.LifeSteal > 0f)
                 _fighter.Health.Restore(Mathf.RoundToInt(data.Damage * data.LifeSteal));
 
@@ -1423,7 +1475,7 @@ namespace Game.Scripts.Dungeon
                 case UtilityKind.ThrowingWeapon:
                     CombatComponent combat = _fighter.Combat;
                     combat.Projectiles.Fire(combat.Body.EyePosition, combat.Body.AimDirection * 16f, -9.81f,
-                        combat.ScaleDamage(item.Damage, DamageType.Physical), 0.2f, DamageType.Physical, ProjectileKind.Thrown);
+                        Mathf.RoundToInt(combat.ScaleDamage(item.Damage, DamageType.Physical) * _stats.RangedDamageMultiplier), 0.2f, DamageType.Physical, ProjectileKind.Thrown);
                     break;
                 default:
                     return;

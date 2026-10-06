@@ -12,7 +12,7 @@ using UnityEngine.SceneManagement;
 
 namespace Game.Scripts.Editor.Battle
 {
-    /// Animation test ground: the bare character with the fighter controller and every weapon of the catalog, no network session.
+    /// Animation test ground: the bare character with the fighter controller and every weapon a player can hold, no network session.
     internal static class BattleAnimationTestSceneBuilder
     {
         private const string ScenePath = "Assets/Game/Scenes/AnimationEditor.unity";
@@ -54,15 +54,17 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_camera", camera.GetComponent<Camera>());
             BattleEditorUtility.Set(so, "_body", AssetDatabase.LoadAssetAtPath<BodyConfig>($"{BattleEditorUtility.ConfigsFolder}/Body.asset"));
             BattleEditorUtility.Set(so, "_sockets", BattlePoseRig.CreateSockets(animator));
-            BattleEditorUtility.Set(so, "_weapons", AssetDatabase.FindAssets($"t:{nameof(WeaponConfig)}", new[] { BattleEditorUtility.ConfigsFolder })
-                .Select(guid => AssetDatabase.LoadAssetAtPath<WeaponConfig>(AssetDatabase.GUIDToAssetPath(guid)))
+            // Bare hands and the combat configs of the weapon items in the game, with and without a shield.
+            ItemDatabase database = AssetDatabase.LoadAssetAtPath<ItemDatabase>(DungeonContentBuilder.DatabasePath);
+            WeaponItemConfig[] weaponItems = database.Items.OfType<WeaponItemConfig>().ToArray();
+            BattleEditorUtility.Set(so, "_weapons", weaponItems.Select(item => item.Weapon).Concat(weaponItems.Select(item => item.WeaponWithShield))
+                .Prepend(AssetDatabase.LoadAssetAtPath<WeaponConfig>($"{BattleEditorUtility.ConfigsFolder}/{DungeonWeaponLibrary.Fists}.asset"))
+                .Where(weapon => weapon != null)
+                .Distinct()
                 .ToArray());
 
             // Belt items the fighter carries in the hand instead of a weapon: drinks, bandages, throwables and tools.
-            ItemConfig[] items = AssetDatabase.FindAssets($"t:{nameof(ItemConfig)}", new[] { DungeonContentBuilder.ItemsFolder })
-                .Select(guid => AssetDatabase.LoadAssetAtPath<ItemConfig>(AssetDatabase.GUIDToAssetPath(guid)))
-                .Where(item => item.WorldModel != null && item.CanEquip(EquipSlot.Utility1))
-                .ToArray();
+            ItemConfig[] items = database.Items.Where(item => item.WorldModel != null && item.CanEquip(EquipSlot.Utility1)).ToArray();
             so.FindProperty("_items").arraySize = items.Length;
 
             for (int i = 0; i < items.Length; i++)

@@ -89,6 +89,12 @@ namespace Game.Scripts.Editor.Battle
             {
                 new Dye(s_green, s_coloured, s_any, 0.13f, 0.16f, 2.1f),
                 new Dye(s_leather, s_coloured, s_any, 0.105f, 0.9f, 1.25f)
+            }),
+            // Hunting leathers of the Huntsman: deep forest green on soot-dark leather.
+            ("RangerStalker", "Ranger", "T_Ranger_BaseColor", new[]
+            {
+                new Dye(s_green, s_coloured, s_any, 0.3f, 0.85f, 0.6f),
+                new Dye(s_leather, s_coloured, s_any, 0.08f, 0.5f, 0.45f)
             })
         };
 

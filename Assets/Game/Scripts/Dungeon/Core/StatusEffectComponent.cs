@@ -39,7 +39,13 @@ namespace Game.Scripts.Dungeon
         /// The next weapon hit, a blocked one too, adds the magnitude as physical damage past the block and staggers.
         Sunder,
         /// The next weapon hit on a body adds the magnitude as physical damage and silences the victim.
-        Verdict
+        Verdict,
+        /// The next shot of a bow or a crossbow looses this many projectiles in a fan.
+        Volley,
+        /// Percent faster reloads of bows and crossbows.
+        QuickReload,
+        /// The next shot flies straight and fast and adds the magnitude as physical damage.
+        AimedShot
     }
 
     public struct StatusEffect : INetworkStruct

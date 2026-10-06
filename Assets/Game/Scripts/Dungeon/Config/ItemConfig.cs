@@ -90,6 +90,12 @@ namespace Game.Scripts.Dungeon
         PhysicalDamageBonus,
         MagicalDamageBonus,
         CooldownRecovery,
+        /// Arrows, bolts and thrown weapons: fraction of extra damage.
+        RangedDamageBonus,
+        /// Percent faster reloads of bows and crossbows.
+        ReloadSpeed,
+        /// Fraction of extra damage of ranged hits on the head.
+        HeadshotDamage,
         Count
     }
 
@@ -214,7 +220,12 @@ namespace Game.Scripts.Dungeon
         DevoutChest,
         DevoutHands,
         DevoutLegs,
-        DevoutFeet
+        DevoutFeet,
+        StalkerHead,
+        StalkerChest,
+        StalkerHands,
+        StalkerLegs,
+        StalkerFeet
     }
 
     public enum ConsumableEffect : byte

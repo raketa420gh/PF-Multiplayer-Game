@@ -24,9 +24,12 @@ namespace Game.Scripts.Dungeon
         private const string SubclassKey = "subclass";
         private const string ItemsKey = "dad.items";
         /// Version of the item list the saves refer to, see Migrate.
-        private const int ItemsVersion = 2;
+        private const int ItemsVersion = 3;
 
         public static int Slot => s_slot;
+
+        /// Version 2 ids of the removed weapons, in ascending order.
+        private static readonly int[] s_removedWeapons = { 2, 3, 4, 6, 7, 8, 9, 12, 15, 16, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50, 97, 98, 109 };
 
         private static readonly byte[] s_buffer = new byte[(InventoryComponent.Capacity + InventoryComponent.EquipmentCapacity) * ItemStack.ByteSize + 2];
         private static int s_slot = Mathf.Clamp(PlayerPrefs.GetInt(SlotKey, 0), 0, SlotCount - 1);
@@ -151,26 +154,28 @@ namespace Game.Scripts.Dungeon
             return Key(slot, page == 0 ? StashKey : StashKey + (page + 1));
         }
 
-        /// Item ids are positions in the item list. Version 2 cut the old clothes out of it and everything behind them moved up:
-        /// older saves get their ids shifted and lose the pieces that no longer exist.
+        /// Item ids are positions in the item list. Version 2 cut the old clothes out of it, version 3 every weapon but eight;
+        /// everything behind a cut moved up: older saves get their ids shifted and lose the items that no longer exist.
         private static void Migrate()
         {
-            if (PlayerPrefs.GetInt(ItemsKey, 1) >= ItemsVersion)
+            int version = PlayerPrefs.GetInt(ItemsKey, 1);
+
+            if (version >= ItemsVersion)
                 return;
 
             for (int slot = 0; slot < SlotCount; slot++)
             {
-                Migrate(Key(slot, KitKey));
+                Migrate(Key(slot, KitKey), version);
 
                 for (int page = 0; page < PlayerSessionComponent.StashPages; page++)
-                    Migrate(StashPageKey(slot, page));
+                    Migrate(StashPageKey(slot, page), version);
             }
 
             PlayerPrefs.SetInt(ItemsKey, ItemsVersion);
             PlayerPrefs.Save();
         }
 
-        private static void Migrate(string key)
+        private static void Migrate(string key, int version)
         {
             byte[] data = Load(key);
             int count = data.Length < 2 ? 0 : data[0] + data[1];
@@ -184,7 +189,10 @@ namespace Game.Scripts.Dungeon
             for (int i = 0; i < count; i++)
             {
                 int offset = 2 + i * size;
-                int id = MigrateId(data[offset] | (data[offset + 1] << 8));
+                int id = data[offset] | (data[offset + 1] << 8);
+
+                for (int step = version; step < ItemsVersion && id != 0; step++)
+                    id = step == 1 ? MigrateClothes(id) : MigrateWeapons(id);
 
                 if (id == 0)
                     continue;
@@ -199,7 +207,7 @@ namespace Game.Scripts.Dungeon
         }
 
         /// The removed clothes sat in three runs of the old list: 17-36, 59 and 72-97.
-        private static int MigrateId(int id)
+        private static int MigrateClothes(int id)
         {
             return id switch
             {
@@ -211,6 +219,13 @@ namespace Game.Scripts.Dungeon
                 <= 97 => 0,
                 _ => id - 47
             };
+        }
+
+        private static int MigrateWeapons(int id)
+        {
+            int index = Array.BinarySearch(s_removedWeapons, id);
+
+            return index >= 0 ? 0 : id + index + 1;
         }
 
         private static void Save(string key, InventoryComponent inventory)

@@ -154,11 +154,13 @@ namespace Game.Scripts.Editor.Dungeon
         private const string IroncladMaterial = OutfitDyeBuilder.Prefix + "RangerIronclad";
         private const string DevoutPeasantMaterial = OutfitDyeBuilder.Prefix + "PeasantDevout";
         private const string DevoutRangerMaterial = OutfitDyeBuilder.Prefix + "RangerDevout";
+        private const string StalkerMaterial = OutfitDyeBuilder.Prefix + "RangerStalker";
 
         private const string Barbarian = "Barbarian";
         private const string Wizard = "Wizard";
         private const string Warrior = "Warrior";
         private const string Confessor = "Confessor";
+        private const string Huntsman = "Huntsman";
 
         private static readonly Color s_steel = new(0.8f, 0.82f, 0.88f);
         private static readonly Color s_wood = new(0.65f, 0.45f, 0.25f);
@@ -179,21 +181,11 @@ namespace Game.Scripts.Editor.Dungeon
             List<ItemDef> items = new()
             {
                 Weapon("Arming Sword", DungeonWeaponLibrary.ArmingSword, WeaponClass.Sword, 1, 3, 20f, "Sw", s_steel, 25, "A reliable one-handed sword. Pairs with a shield.", shield: DungeonWeaponLibrary.SwordShield),
-                Weapon("Falchion", DungeonWeaponLibrary.Falchion, WeaponClass.Sword, 1, 3, 25f, "Sw", s_steel, 30, "Heavy curved blade with strong slashes."),
-                Weapon("Longsword", DungeonWeaponLibrary.Longsword, WeaponClass.Sword, 1, 4, 30f, "2H", s_steel, 45, "Two-handed sword with a fast three-hit chain.", twoHanded: true),
-                Weapon("Zweihander", DungeonWeaponLibrary.Greatsword, WeaponClass.Sword, 1, 4, 40f, "2H", s_steel, 60, "Massive greatsword. Slow, wide, devastating.", twoHanded: true),
                 Weapon("Battle Axe", DungeonWeaponLibrary.BattleAxe, WeaponClass.Axe, 2, 4, 30f, "Ax", s_steel, 50, "Two-handed double axe. A cut, a backswing and an overhead chop.", twoHanded: true),
-                Weapon("Spear", DungeonWeaponLibrary.Spear, WeaponClass.Spear, 1, 4, 40f, "Sp", s_wood, 40, "Long reach thrusts keep enemies at bay.", twoHanded: true),
-                Weapon("Flanged Mace", DungeonWeaponLibrary.Mace, WeaponClass.Mace, 1, 3, 20f, "Mc", s_steel, 28, "Blunt one-hander. Staggers on the third hit.", shield: DungeonWeaponLibrary.MaceShield),
-                Weapon("Rondel Dagger", DungeonWeaponLibrary.Dagger, WeaponClass.Dagger, 1, 2, 10f, "Dg", s_steel, 18, "Quick stabs. Weak, but barely slows you down."),
-                Weapon("Recurve Bow", DungeonWeaponLibrary.Bow, WeaponClass.Bow, 1, 3, 40f, "Bw", s_wood, 45, "Draw and release. Arrows fall with distance.", twoHanded: true),
                 Weapon("Crossbow", DungeonWeaponLibrary.Crossbow, WeaponClass.Crossbow, 2, 3, 50f, "Xb", s_wood, 55, "Hard-hitting bolt, slow reload.", twoHanded: true),
                 Weapon("Magic Staff", DungeonWeaponLibrary.Staff, WeaponClass.Staff, 1, 4, 20f, "St", new Color(0.5f, 0.7f, 1f), 50, "Caster focus. Also a decent club.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 4f) }, classes: new[] { Wizard, Confessor }),
-                Weapon("Torch", DungeonWeaponLibrary.Torch, WeaponClass.Torch, 1, 3, 5f, "Tr", new Color(1f, 0.6f, 0.2f), 2, "Lights the way. Can be swung in a pinch.", light: 9f),
                 Weapon("Round Shield", null, WeaponClass.Shield, 2, 3, 13f, "Sh", s_wood, 30, "Blocks with a one-handed weapon in the main hand.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 20f) }),
                 Weapon("Spellbook", DungeonWeaponLibrary.Spellbook, WeaponClass.Spellbook, 2, 2, 10f, "Bk", new Color(0.55f, 0.35f, 0.75f), 40, "Magical focus. Hold it to cast readied spells; it can bash in a pinch.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 2f) }),
-                Weapon("Crystal Ball", null, WeaponClass.CrystalBall, 2, 2, 15f, "Cb", new Color(0.6f, 0.85f, 1f), 45, "Off-hand magical focus. Cast with a one-handed weapon in the main hand.", offHand: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 5f) }),
-                Weapon("Lute", DungeonWeaponLibrary.Lute, WeaponClass.Instrument, 2, 3, 10f, "Lt", new Color(0.8f, 0.6f, 0.3f), 35, "Bard instrument. Songs are performed with it in hand.", twoHanded: true),
 
                 Jewelry("Gem Necklace", EquipSlot.Necklace, "Nk", 60, new StatModifier(StatType.Knowledge, 2f)),
                 Jewelry("Gold Band", EquipSlot.Ring1, "Rg", 45, new StatModifier(StatType.Strength, 1f)),
@@ -221,19 +213,8 @@ namespace Game.Scripts.Editor.Dungeon
                 Treasure("Gold Candlestick", 1, 1, 1, 50, "Cs", s_gold),
                 Treasure("Ancient Scroll", 1, 1, 3, 60, "Sc", new Color(0.85f, 0.75f, 0.5f), true),
 
-                // Second wave of Dark and Darker gear; the weapons play the clips of an older weapon with their own model and damage.
-                Weapon("Short Sword", DungeonWeaponLibrary.ShortSword, WeaponClass.Sword, 1, 2, 15f, "Sw", s_steel, 20, "Light blade. Easy on the feet, short on reach.", shield: DungeonWeaponLibrary.SwordShield),
-                Weapon("Rapier", DungeonWeaponLibrary.Rapier, WeaponClass.Sword, 1, 3, 18f, "Rp", s_steel, 34, "Long thin blade that outreaches heavier swords.", shield: DungeonWeaponLibrary.SwordShield, modifiers: new[] { new StatModifier(StatType.ActionSpeed, 2f) }),
-                Weapon("Viking Sword", DungeonWeaponLibrary.VikingSword, WeaponClass.Sword, 1, 3, 25f, "Sw", s_steel, 38, "Broad northern blade. Slow cuts that bite deep."),
-                Weapon("Hatchet", DungeonWeaponLibrary.Hatchet, WeaponClass.Axe, 1, 2, 18f, "Ax", s_wood, 22, "One-handed axe for close, ugly work."),
+                // Second wave of Dark and Darker gear.
                 Weapon("Morning Star", DungeonWeaponLibrary.MorningStar, WeaponClass.Mace, 1, 3, 23f, "Mc", s_steel, 36, "Spiked mace head. Staggers on the third hit.", shield: DungeonWeaponLibrary.MaceShield),
-                Weapon("Castillon Dagger", DungeonWeaponLibrary.CastillonDagger, WeaponClass.Dagger, 1, 2, 10f, "Dg", s_steel, 26, "Wide dagger with a longer blade."),
-                Weapon("Stiletto Dagger", DungeonWeaponLibrary.Stiletto, WeaponClass.Dagger, 1, 2, 8f, "Dg", s_steel, 24, "Needle point. Weak cuts, quick hands.", modifiers: new[] { new StatModifier(StatType.ActionSpeed, 3f) }),
-                Weapon("Felling Axe", DungeonWeaponLibrary.FellingAxe, WeaponClass.Axe, 2, 3, 26f, "Ax", s_wood, 34, "Woodcutter's axe. Lighter than a battle axe.", twoHanded: true),
-                Weapon("War Maul", DungeonWeaponLibrary.WarMaul, WeaponClass.Mace, 2, 4, 40f, "Ml", s_steel, 65, "Two-handed hammer. Slow, crushing, staggering.", twoHanded: true),
-                Weapon("Halberd", DungeonWeaponLibrary.Halberd, WeaponClass.Spear, 1, 4, 45f, "Hb", s_steel, 60, "Axe blade on a spear shaft. Long reach, heavy thrusts.", twoHanded: true),
-                Weapon("Buckler", null, WeaponClass.Shield, 2, 2, 6f, "Bk", s_steel, 22, "Small shield that barely slows you down.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 12f) }),
-                Weapon("Heater Shield", null, WeaponClass.Shield, 2, 3, 18f, "Sh", s_steel, 45, "Heavy knightly shield.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 30f) }),
 
                 Jewelry("Fox Pendant", EquipSlot.Necklace, "Nk", new Color(0.95f, 0.55f, 0.25f), 70, new StatModifier(StatType.Agility, 2f)),
                 Jewelry("Ox Pendant", EquipSlot.Necklace, "Nk", new Color(0.75f, 0.45f, 0.3f), 70, new StatModifier(StatType.Strength, 2f)),
@@ -257,13 +238,17 @@ namespace Game.Scripts.Editor.Dungeon
 
             // New items go to the end: item ids are list positions and saved stashes refer to them.
             AddOutfits(items);
-            items.Add(Weapon("Horseman's Axe", DungeonWeaponLibrary.HorsemansAxe, WeaponClass.Axe, 1, 3, 20f, "Ax", s_steel, 40,
-                "Long bearded axe for one hand. Wide chops round the head. Barbarians only.", classes: new[] { Barbarian }));
-            items.Add(Weapon("Quarterstaff", DungeonWeaponLibrary.Quarterstaff, WeaponClass.Staff, 1, 4, 30f, "Qs", s_wood, 30,
-                "Plain two-handed staff. Four swinging blows in a row, each a little harder than the last.", twoHanded: true));
             AddSecondOutfits(items);
-            items.Add(Weapon("Bardiche", DungeonWeaponLibrary.Bardiche, WeaponClass.Axe, 1, 4, 45f, "Bd", s_steel, 70,
-                "Crescent axe blade on a long pole. Slow, wide and brutal.", twoHanded: true, classes: new[] { Warrior, Barbarian }));
+
+            // Huntsman, Dexterity +9 (21 -> 30): quicker hands and reloads, and arrows that bite deeper. Ranger leather dyed
+            // to forest green and soot, light enough for the feet of a hunter.
+            AddOutfit(items, "Stalker", new[] { Huntsman }, ArmorType.Leather, null, StalkerMaterial, new Color(0.3f, 0.5f, 0.28f),
+                Piece("Stalker Hood", s_hood, 22f, 1f, 32, 0f, new StatModifier(StatType.Dexterity, 2f), new StatModifier(StatType.HeadshotDamage, 0.05f)),
+                Piece("Stalker Jerkin", new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt2, OutfitPart.RangerPauldron }, 46f, 3f, 62, 0f,
+                    new StatModifier(StatType.Dexterity, 3f), new StatModifier(StatType.RangedDamageBonus, 0.03f)),
+                Piece("Stalker Gloves", s_bracers, 16f, 0f, 30, 0f, new StatModifier(StatType.Dexterity, 1f), new StatModifier(StatType.ReloadSpeed, 6f)),
+                Piece("Stalker Leggings", s_leggings, 34f, 2f, 38, 0f, new StatModifier(StatType.Dexterity, 2f)),
+                Piece("Stalker Boots", s_boots, 18f, -8f, 30, 0f, new StatModifier(StatType.Dexterity, 1f), new StatModifier(StatType.Agility, 1f)));
 
             return items;
         }

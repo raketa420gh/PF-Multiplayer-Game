@@ -84,6 +84,9 @@ namespace Game.Scripts.Dungeon
                 StatType.PhysicalDamageBonus => $"Physical Damage {modifier.Value * 100f:+0.#;-0.#}%",
                 StatType.MagicalDamageBonus => $"Magical Damage {modifier.Value * 100f:+0.#;-0.#}%",
                 StatType.CooldownRecovery => $"Cooldown Recovery {modifier.Value:+0.#;-0.#}%",
+                StatType.RangedDamageBonus => $"Ranged Damage {modifier.Value * 100f:+0.#;-0.#}%",
+                StatType.ReloadSpeed => $"Reload Speed {modifier.Value:+0.#;-0.#}%",
+                StatType.HeadshotDamage => $"Headshot Damage {modifier.Value * 100f:+0.#;-0.#}%",
                 _ => $"{modifier.Stat} {modifier.Value:+0.#;-0.#}"
             };
         }

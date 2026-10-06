@@ -249,62 +249,6 @@ namespace Game.Scripts.Editor.Battle
             };
         }
 
-        public static WeaponDefinition CreateGreatsword()
-        {
-            return new WeaponDefinition
-            {
-                Prefix = "Greatsword",
-                DisplayName = "Greatsword",
-                Kind = WeaponKind.TwoHanded,
-                Reach = 1.95f,
-                DeflectDuration = 0.8f,
-                BladeBase = 0.18f,
-                BladeTip = 1.35f,
-                Idle = TwoHanded(new(0.14f, 1.2f, 0.36f), new(-0.08f, 0.78f, 0.62f), yaw: 12f),
-                Attacks = new[]
-                {
-                    new AttackDefinition
-                    {
-                        Windup = 0.6f, Active = 0.26f, Recovery = 0.7f, ComboStart = 0.75f, ComboEnd = 1.2f,
-                        Damage = 38, MoveMultiplier = 0.5f, Stagger = 0.25f,
-                        WindupPose = TwoHanded(new(0.3f, 1.4f, 0.1f), new(0.8f, 0.4f, -0.45f), yaw: 35f),
-                        MidPose = TwoHanded(new(-0.12f, 1.42f, 0.48f), Vector3.forward),
-                        EndPose = TwoHanded(new(-0.3f, 1.22f, 0.22f), new(-0.42f, 0.08f, 0.9f), yaw: -35f)
-                    },
-                    new AttackDefinition
-                    {
-                        Windup = 0.55f, Active = 0.26f, Recovery = 0.7f, ComboStart = 0.7f, ComboEnd = 1.15f,
-                        Damage = 38, MoveMultiplier = 0.5f, Stagger = 0.25f,
-                        WindupPose = TwoHanded(new(-0.2f, 1.4f, 0.18f), new(-0.8f, 0.4f, -0.4f), yaw: -30f),
-                        MidPose = TwoHanded(new(0.18f, 1.44f, 0.5f), Vector3.forward),
-                        EndPose = TwoHanded(new(0.42f, 1.3f, 0.12f), new(0.48f, -0.05f, 0.87f), yaw: 30f)
-                    },
-                    new AttackDefinition
-                    {
-                        Windup = 0.7f, Active = 0.26f, Recovery = 0.85f, ComboStart = 0.85f, ComboEnd = 1.3f,
-                        Damage = 52, MoveMultiplier = 0.4f, Stagger = 0.4f,
-                        WindupPose = TwoHanded(new(0.08f, 1.9f, 0.12f), new(0f, 0.55f, -0.83f), pitch: -12f),
-                        MidPose = TwoHanded(new(0.06f, 1.4f, 0.5f), Vector3.forward),
-                        EndPose = TwoHanded(new(0.06f, 1.1f, 0.38f), new(0f, -0.17f, 0.98f), pitch: 12f)
-                    }
-                },
-                CanBlock = true,
-                BlockRaise = 0.25f,
-                BlockMitigation = 0.75f,
-                BlockImpact = 0.3f,
-                BlockRecovery = 0.45f,
-                BlockAngle = 80f,
-                BlockMove = 0.5f,
-                Block = TwoHanded(new(0.4f, 1.42f, 0.34f), new(-0.9f, 0.35f, 0.05f), 0.6f),
-                BlockHit = TwoHanded(new(0.38f, 1.24f, 0.26f), new(-0.9f, 0.3f, -0.15f), 0.6f, pitch: -5f),
-                BlockLowered = TwoHanded(new(0.36f, 1.2f, 0.3f), new(-0.9f, 0.2f, 0f), 0.6f),
-                DeflectPose = TwoHanded(new(0.2f, 1.6f, 0.2f), new(0.3f, 0.9f, 0.2f), yaw: 15f, pitch: -8f),
-                BlockSocket = WeaponSocket.RightHand,
-                BlockBoxCenter = new Vector3(0f, 0f, 0.55f),
-                BlockBoxExtents = new Vector3(0.09f, 0.09f, 0.5f)
-            };
-        }
-
         public static WeaponDefinition CreateBow()
         {
             return new WeaponDefinition
