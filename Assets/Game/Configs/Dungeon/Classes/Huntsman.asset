@@ -1,0 +1,183 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d988ee4bac2acf74b80699d6e83c0b70, type: 3}
+  m_Name: Huntsman
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
+  _id: 4
+  _displayName: Huntsman
+  _description: 'Ranged hunter of the depths: crossbow and bow, throwing knives and
+    axes, a sword for close calls. No magic and little health: strikes first, from
+    afar, and never stands still.'
+  _baseStats:
+    Strength: 12
+    Vitality: 13
+    Spirit: 8
+    Knowledge: 15
+    Agility: 21
+    Dexterity: 21
+  _color: {r: 0.45, g: 0.72, b: 0.35, a: 1}
+  _bodyColor: {r: 1, g: 1, b: 1, a: 1}
+  _skills:
+  - {fileID: 11400000, guid: 2369366328b3c054aa0a2c491f96b3ce, type: 2}
+  - {fileID: 11400000, guid: 97e696afdb1d8394e912b022c4c8c53e, type: 2}
+  - {fileID: 11400000, guid: 3ddce03bb9a282b4d984fab4ed429841, type: 2}
+  - {fileID: 11400000, guid: 62637848513730e48a95d2fafc90ae2d, type: 2}
+  - {fileID: 11400000, guid: 99295b8f6eb12dd42bb080ba9775d66e, type: 2}
+  - {fileID: 11400000, guid: a25ad51815db15246a558ae5b96a2fe8, type: 2}
+  _spells: []
+  _perks:
+  - _name: Fletcher
+    _description: +12% damage of arrows, bolts and thrown weapons.
+    _modifiers:
+    - Stat: 16
+      Value: 0.12
+    _icon: {fileID: 21300000, guid: 6a85e45dd0b8ab64eb2d1c7f9bd29418, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+  - _name: Practised Hands
+    _description: Bows and crossbows reload 25% faster.
+    _modifiers:
+    - Stat: 17
+      Value: 25
+    _icon: {fileID: 21300000, guid: 52f7aa4677b5db64386dfdd4ff397b10, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+  - _name: Light Tread
+    _description: +12 move speed.
+    _modifiers:
+    - Stat: 9
+      Value: 12
+    _icon: {fileID: 21300000, guid: 4e65bdc7b2547544e87691b486b7f273, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+  - _name: Hawk Eye
+    _description: +20% damage of ranged headshots.
+    _modifiers:
+    - Stat: 18
+      Value: 0.2
+    _icon: {fileID: 21300000, guid: bf4b5ce9bf2445f4ea93b49f7e663a91, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+  - _name: Steady Aim
+    _description: +3% ranged damage per Focus.
+    _modifiers:
+    - Stat: 16
+      Value: 0.03
+    _icon: {fileID: 21300000, guid: c76a9c76544e9314aad8477ef7ab971d, type: 3}
+    _subclass: 0
+    _isPerStack: 1
+  - _name: Deadeye
+    _description: +30% damage of ranged headshots, but -8 move speed.
+    _modifiers:
+    - Stat: 18
+      Value: 0.3
+    - Stat: 9
+      Value: -8
+    _icon: {fileID: 21300000, guid: 837857cc87426c745a171dc8064b7c01, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+  - _name: Predator
+    _description: +2 physical power per Quarry.
+    _modifiers:
+    - Stat: 10
+      Value: 2
+    _icon: {fileID: 21300000, guid: 2f328e63ee89b66428965bceb81327c1, type: 3}
+    _subclass: 1
+    _isPerStack: 1
+  - _name: Woodcraft
+    _description: '+5 Agility and +5 Knowledge: quicker steps and searching.'
+    _modifiers:
+    - Stat: 4
+      Value: 5
+    - Stat: 3
+      Value: 5
+    _icon: {fileID: 21300000, guid: ca05363f995db4141a8bf378fc29f065, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+  - _name: Fleet Hunter
+    _description: +4 move speed per Stride.
+    _modifiers:
+    - Stat: 9
+      Value: 4
+    _icon: {fileID: 21300000, guid: 6ef16c0992884204db7b9a98ac5fbc92, type: 3}
+    _subclass: 2
+    _isPerStack: 1
+  - _name: Snap Shot
+    _description: +8% action speed and reloads 15% faster.
+    _modifiers:
+    - Stat: 12
+      Value: 8
+    - Stat: 17
+      Value: 15
+    _icon: {fileID: 21300000, guid: a57a436cd4a8fe3419e798a5e1e6a7e1, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+  _subclasses:
+  - _name: Marksman
+    _description: 'Patient shooter: every bolt or arrow that lands builds Focus,
+      a headshot twice as much; Aimed Shot spends it on one devastating shot.'
+    _color: {r: 0.95, g: 0.85, b: 0.45, a: 1}
+    _resourceName: Focus
+    _resourceMax: 5
+    _resourceSources: 384
+    _resourceDecay: 12
+  - _name: Trapper
+    _description: 'Master of the ground: ranged hits mark Quarry that hardens every
+      blow; hunting traps snap shut on whoever walks the wrong way.'
+    _color: {r: 0.75, g: 0.55, b: 0.35, a: 1}
+    _resourceName: Quarry
+    _resourceMax: 4
+    _resourceSources: 128
+    _resourceDecay: 15
+  - _name: Skirmisher
+    _description: 'Hit and run: every hit, near or far, builds Stride that quickens
+      the feet; Disengage spends it to leap back out of reach.'
+    _color: {r: 0.5, g: 0.85, b: 0.9, a: 1}
+    _resourceName: Stride
+    _resourceMax: 4
+    _resourceSources: 1
+    _resourceDecay: 6
+  _startingKit:
+  - _item: {fileID: 11400000, guid: dc24d3f2a48f2ba4d955f624c0660410, type: 2}
+    _slot: 9
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 81485b83cb38163419e5794205a7c787, type: 2}
+    _slot: 11
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: e208ce7ba798983479a2f2a919f71f20, type: 2}
+    _slot: 0
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: c402e9ed6fb1b394889c3f3a19f32561, type: 2}
+    _slot: 1
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: a6c7b4d014c8e5842a1bcf6a2bc1cfb7, type: 2}
+    _slot: 3
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 5ab24771d6d7b4f43995ba089005238b, type: 2}
+    _slot: 4
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 281bfe6e316403549a6634a2cefb629b, type: 2}
+    _slot: 13
+    _count: 2
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 1cf148bc8a302b84d87d1896014a5456, type: 2}
+    _slot: 14
+    _count: 2
+    _isEquipped: 1
+  _allowedWeapons: 050600030409
+  _castFocus: 0

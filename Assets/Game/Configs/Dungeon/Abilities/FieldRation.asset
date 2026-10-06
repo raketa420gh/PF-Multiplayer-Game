@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: FieldRation
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Field Ration
-  _description: Eat for 40 health.
+  _description: 'Eat on the move: restore 30 health over 10s.'
   _kind: 0
   _isSpell: 0
   _charges: 1
-  _cooldown: 24
-  _castTime: 0.3
-  _magnitude: 40
-  _duration: 0
+  _cooldown: 40
+  _castTime: 0.6
+  _magnitude: 30
+  _duration: 10
   _radius: 0
   _effect: 0
-  _damageType: 1
+  _damageType: 0
   _projectileSpeed: 26
   _projectileGravity: 0
   _projectileCount: 1
@@ -31,9 +31,16 @@ MonoBehaviour:
   _projectileKind: 1
   _effectMagnitude: 0
   _effectDuration: 0
-  _color: {r: 0.9, g: 0.7, b: 0.4, a: 1}
+  _color: {r: 0.9, g: 0.3, b: 0.3, a: 1}
   _glyph: FR
+  _icon: {fileID: 21300000, guid: a1382a8921197f04eb1da397c9567eef, type: 3}
   _healthCost: 0
   _lifeSteal: 0
   _spawnPrefab: {fileID: 0}
   _staggerDuration: 0
+  _subclass: -1
+  _resourceCost: 0
+  _stackBonus: 0
+  _isOnAlly: 0
+  _coneAngle: 0
+  _push: 0
