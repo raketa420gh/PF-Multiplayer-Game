@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7 — 2026-10-06
+
+### Added
+- First dungeon structure: two floors (see `03_World/Map_Design.md`, DD-010).
+- Floor 1 "Cursed Village" (working name): fixed open 5×5 map — village, farm, graveyard, swamp.
+- Floor 2 "Tangled Tombs": 5×5 grid of premade square rooms placed at random (Forgotten Castle analogue), two doorways per side near the corners.
+- Floor transitions: graveyard tombs (stone door with a grate) and farm cellar (grate), both have to be opened.
+
 ## v0.6 — 2026-10-05
 
 ### Added
