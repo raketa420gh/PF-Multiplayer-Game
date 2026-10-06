@@ -20,7 +20,7 @@ namespace Game.Scripts.Battle
         public float CrouchHeight => _crouchHeight;
 
         [SerializeField]
-        private float _runSpeed = 4.2f;
+        private float _runSpeed = 3.36f;
 
         [SerializeField]
         private float _walkMultiplier = 0.4f;

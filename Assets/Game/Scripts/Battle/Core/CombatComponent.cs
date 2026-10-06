@@ -148,7 +148,7 @@ namespace Game.Scripts.Battle
         private float _equipTime = 0.35f;
 
         [SerializeField, Tooltip("Global tempo of attacks and blocks: clips and timings play at this speed before stats")]
-        private float _baseActionSpeed = 0.75f;
+        private float _baseActionSpeed = 0.525f;
 
         [SerializeField]
         private float _deflectedMoveMultiplier = 0.5f;

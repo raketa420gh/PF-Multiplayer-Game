@@ -162,7 +162,7 @@ namespace Game.Scripts.Editor.Battle
 
             MovementConfig movement = BattleEditorUtility.LoadOrCreate<MovementConfig>($"{BattleEditorUtility.ConfigsFolder}/Movement.asset");
             SerializedObject so = new SerializedObject(movement);
-            BattleEditorUtility.Set(so, "_runSpeed", 4.2f);
+            BattleEditorUtility.Set(so, "_runSpeed", 3.36f);
             BattleEditorUtility.Set(so, "_walkMultiplier", 0.4f);
             BattleEditorUtility.Set(so, "_crouchMultiplier", 0.65f);
             BattleEditorUtility.Set(so, "_backpedalMultiplier", 0.6f);
