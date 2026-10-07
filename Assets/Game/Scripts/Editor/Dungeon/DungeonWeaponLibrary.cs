@@ -61,7 +61,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// Impact of the weapon's hits and Stability of its block, 1..10: a hit with more Impact than the Stability breaks the block.
         private static readonly Dictionary<string, (int impact, int stability)> s_force = new()
         {
-            ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 1), ["Rat Bite"] = (1, 1), ["Arming Sword"] = (4, 3), ["Morning Star"] = (6, 3), ["Magic Staff"] = (4, 4),
+            ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 4), ["Rat Bite"] = (1, 1), ["Arming Sword"] = (4, 3), ["Morning Star"] = (6, 3), ["Magic Staff"] = (4, 4),
             ["Sword & Shield"] = (4, 7), ["Mace & Shield"] = (6, 7), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2),
             ["Bear Claws"] = (7, 4), ["Sword & Écu"] = (4, 8), ["Mace & Écu"] = (6, 8)
         };
