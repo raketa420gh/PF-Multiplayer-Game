@@ -288,10 +288,10 @@ namespace Game.Scripts.Editor.Dungeon
         private static WeaponDefinition CreateSpellbook()
         {
             Vector3 across = Vector3.left;
-            // Open on the palm of the book hand reached a little forward, pages up; the other hand hangs low, its elbow
-            // slightly bent. The book breathes up and down by a centimetre.
-            BodyPose idle = OpenBook(new(0.1f, 1.4f, 0.48f), -5f, 40f, new(0.27f, 1.12f, 0.2f), new(-0.24f, 0.9f, 0.12f));
-            BodyPose breath = OpenBook(new(0.1f, 1.41f, 0.48f), -5f, 42f, new(0.27f, 1.13f, 0.2f), new(-0.24f, 0.91f, 0.13f));
+            // Open on the palm of the book hand raised before the chest, the spine steep and the pages to the eye, its head
+            // just under the crosshair; the other hand rests low in the far corner of the view. The book breathes by a centimetre.
+            BodyPose idle = OpenBook(new(0.085f, 1.54f, 0.47f), -3f, 40f, -2f, new(0.24f, 1.2f, 0.22f), new(-0.2f, 1.45f, 0.46f));
+            BodyPose breath = OpenBook(new(0.085f, 1.55f, 0.47f), -3f, 42f, -2f, new(0.24f, 1.21f, 0.22f), new(-0.2f, 1.46f, 0.47f));
             BodyPose block = ShutBook(new(0.085f, 1.7f, 0.445f), across, Vector3.up, 0f);
             BodyPose held = ShutBook(new(0.076f, 1.52f, 0.445f), across, Vector3.up, 0f);
             held.Off = idle.Off;
@@ -370,13 +370,15 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         /// The book open on the palm of the book hand: the spine along the fingers at that yaw and elevation, the pages
-        /// facing up and back. The other hand hangs free.
-        private static BodyPose OpenBook(Vector3 hand, float yaw, float elevation, Vector3 elbow, Vector3 offHand)
+        /// facing up and back, rolled about the spine toward the outer board. The other hand is a loose fist, thumb up.
+        private static BodyPose OpenBook(Vector3 hand, float yaw, float elevation, float roll, Vector3 elbow, Vector3 offHand)
         {
-            Quaternion turn = Quaternion.Euler(-elevation, yaw, 0f);
+            Quaternion turn = Quaternion.Euler(-elevation, yaw, roll);
             Vector3 fingers = turn * Vector3.forward;
             BodyPose pose = Pose(hand, Vector3.Cross(turn * Vector3.up, fingers), 0f, 0f, elbow, offHand, 0f);
             pose.Edge = fingers;
+            pose.Off.Forward = Vector3.ProjectOnPlane(Vector3.up, pose.Off.Up);
+            pose.OffOpen = 0.3f;
 
             return pose;
         }
