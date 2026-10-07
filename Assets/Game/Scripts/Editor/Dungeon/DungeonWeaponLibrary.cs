@@ -332,7 +332,7 @@ namespace Game.Scripts.Editor.Dungeon
                             Via(42, ShutBook(new(0.085f, 2.05f, -0.03f), across, new(0f, 0.45f, -0.9f), -8f), 0.5f)
                         },
                         WindupPose = ShutBook(new(0.085f, 1.93f, 0.4f), across, new(0f, 0.6f, -0.8f), 0f),
-                        MidPose = ShutBook(new(0.06f, 1.695f, 0.5f), across, new(0f, 0.97f, -0.25f), 8f),
+                        MidPose = ShutBook(new(0.06f, 1.671f, 0.5f), across, new(0f, 0.97f, -0.25f), 8f),
                         EndPose = ShutBook(new(0.085f, 1.4f, 0.48f), across, new(0f, 0.85f, -0.5f), 8f),
                         Return = new()
                         {

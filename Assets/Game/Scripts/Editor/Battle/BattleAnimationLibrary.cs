@@ -156,8 +156,9 @@ namespace Game.Scripts.Editor.Battle
         private const float HeldOpen = 0.55f;
 
         /// Eye of the simulation body. The crosshair is the ray from it along +Z: the upper body bends with the look
-        /// pitch as one piece, so a swing keeps its place on the screen wherever the player looks.
-        public static readonly Vector3 Eye = new(0f, 1.755f, 0.115f);
+        /// pitch as one piece, so a swing keeps its place on the screen wherever the player looks. Its height is midway
+        /// between the eyes of the model.
+        public static readonly Vector3 Eye = new(0f, 1.731f, 0.115f);
 
         // Swing dynamics as slopes of the segment eases (1 = the average speed of the segment). The raise starts briskly
         // and settles into the windup, the strike accelerates through the peak and is still moving when the active phase
