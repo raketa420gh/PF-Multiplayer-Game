@@ -179,6 +179,8 @@ namespace Game.Scripts.Dungeon
         public const int WheelCount = 2;
         /// The first five spells in wheel I, the next five in wheel II.
         public const int DefaultSpellMask = ((1 << SpellWheelSize) - 1) | (((1 << SpellWheelSize) - 1) << (SpellWheelSize + WheelBits));
+        /// Subclasses are hidden from the player for now: only the shared skills, perks and spells are offered and no subclass resource is kept.
+        public static readonly bool AreSubclassesEnabled = false;
 
         public bool CanCastBareHanded => _castFocus == CastFocus.BareHands;
         public CastFocus Focus => _castFocus;
@@ -240,13 +242,13 @@ namespace Game.Scripts.Dungeon
 
         public SubclassDefinition GetSubclass(int subclass)
         {
-            return _subclasses.Length > 0 ? _subclasses[Mathf.Clamp(subclass, 0, _subclasses.Length - 1)] : null;
+            return AreSubclassesEnabled && _subclasses.Length > 0 ? _subclasses[Mathf.Clamp(subclass, 0, _subclasses.Length - 1)] : null;
         }
 
         /// Shared entries (-1) belong to every subclass.
         public static bool IsAvailable(int owner, int subclass)
         {
-            return owner < 0 || owner == subclass;
+            return owner < 0 || (AreSubclassesEnabled && owner == subclass);
         }
 
         public bool IsSkillAvailable(int index, int subclass)

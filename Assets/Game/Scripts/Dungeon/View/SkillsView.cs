@@ -7,8 +7,8 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// "Perks and Skills" page of the tavern: attribute sheet, the subclass tabs, the doll with the equipped perk and skill slots, the
-    /// pools of the class and the chosen subclass to pick from. Perks and skills are equipped by a click or by dragging them onto a slot of their kind.
+    /// "Perks and Skills" page of the tavern: attribute sheet, the subclass tabs (while subclasses are enabled), the doll with the equipped
+    /// perk and skill slots, the pools of the class and the chosen subclass to pick from. Perks and skills are equipped by a click or by dragging them onto a slot of their kind.
     public sealed class SkillsView : DisplayableView
     {
         [SerializeField]
@@ -25,9 +25,6 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private RectTransform _skillsRoot;
-
-        [SerializeField]
-        private RectTransform _spellsRoot;
 
         [SerializeField, Tooltip("Equipped perks around the doll")]
         private AbilityIconView[] _perkSlots;
@@ -53,14 +50,12 @@ namespace Game.Scripts.Dungeon
         private const int NoPerk = -1;
 
         private static readonly string[] s_skillKeys = { "Q", "E" };
-        private static readonly string[] s_wheelBadges = { "I", "II" };
         private readonly List<AbilityIconView> _perkIcons = new();
         private readonly List<AbilityIconView> _skillIcons = new();
-        private readonly List<AbilityIconView> _spellIcons = new();
         private PlayerSessionComponent _session;
         private int _shownClass = -1;
         private int _shownSubclass = -1;
-        private (byte, byte, int, int, int) _shownBuild;
+        private (byte, byte, int, int) _shownBuild;
         /// Which perk each slot shows. The session only knows the set of perks; their places around the doll are the page's own.
         private int[] _slotPerks;
         private int _dropSlot = NoPerk;
@@ -122,7 +117,7 @@ namespace Game.Scripts.Dungeon
                 ShowSubclasses(config);
             }
 
-            (byte, byte, int, int, int) build = (_session.SkillA, _session.SkillB, _session.PerkMask, _session.Level, _session.SpellMask);
+            (byte, byte, int, int) build = (_session.SkillA, _session.SkillB, _session.PerkMask, _session.Level);
 
             if (_shownBuild != build)
             {
@@ -172,24 +167,20 @@ namespace Game.Scripts.Dungeon
             int subclass = _session.Subclass;
             Fill(_perkIcons, _perkIconPrefab, _perksRoot, config.Perks.Length, i => ClassConfig.IsAvailable(config.Perks[i].Subclass, subclass), OnPerkClicked);
             Fill(_skillIcons, _skillIconPrefab, _skillsRoot, config.Skills.Length, i => config.IsSkillAvailable(i, subclass), OnSkillClicked);
-            Fill(_spellIcons, _skillIconPrefab, _spellsRoot, config.Spells.Length, i => ClassConfig.IsAvailable(config.Spells[i].Subclass, subclass), OnSpellClicked);
 
             foreach (AbilityIconView icon in _perkIcons)
                 Show(icon, config, icon.Index);
 
             foreach (AbilityIconView icon in _skillIcons)
-                Show(icon, config.Skills, icon.Index);
-
-            foreach (AbilityIconView icon in _spellIcons)
-                Show(icon, config.Spells, icon.Index);
+                icon.SetAbility(icon.Index, config.Skills[icon.Index]);
         }
 
-        /// The tab of the chosen subclass is lit; the line under the tabs tells what it is about and what feeds its resource.
+        /// The tab of the chosen subclass is lit (no tabs while subclasses are hidden); the line under the tabs tells what it is about and what feeds its resource.
         private void ShowSubclasses(ClassConfig config)
         {
             for (int i = 0; i < _subclassTabs.Length; i++)
             {
-                SubclassDefinition subclass = i < config.Subclasses.Length ? config.Subclasses[i] : null;
+                SubclassDefinition subclass = ClassConfig.AreSubclassesEnabled && i < config.Subclasses.Length ? config.Subclasses[i] : null;
                 _subclassTabs[i].gameObject.SetActive(subclass != null);
 
                 if (subclass == null)
@@ -243,7 +234,7 @@ namespace Game.Scripts.Dungeon
                 int index = slot == 0 ? _session.SkillA : _session.SkillB;
 
                 if (index < config.Skills.Length)
-                    Show(_skillSlots[slot], config.Skills, index);
+                    _skillSlots[slot].SetAbility(index, config.Skills[index]);
                 else
                     _skillSlots[slot].Clear();
 
@@ -269,13 +260,6 @@ namespace Game.Scripts.Dungeon
 
             foreach (AbilityIconView icon in _perkIcons)
                 icon.SetSelected((_session.PerkMask & (1 << icon.Index)) != 0);
-
-            foreach (AbilityIconView icon in _spellIcons)
-            {
-                int wheel = ClassConfig.IsInWheel(_session.SpellMask, 0, icon.Index) ? 0 : ClassConfig.IsInWheel(_session.SpellMask, 1, icon.Index) ? 1 : -1;
-                icon.SetSelected(wheel >= 0);
-                icon.SetBadge(wheel >= 0 ? s_wheelBadges[wheel] : string.Empty);
-            }
         }
 
         /// Perks that left the build free their slots; new ones take the slot they were dropped on, or the first free one.
@@ -311,14 +295,6 @@ namespace Game.Scripts.Dungeon
             string[] words = definition.Name.Split(' ');
             string glyph = words.Length > 1 ? $"{words[0][0]}{words[1][0]}" : definition.Name.Substring(0, Mathf.Min(2, definition.Name.Length));
             icon.Set(perk, definition.Icon, glyph, config.Color, $"<b>{definition.Name}</b>\n{definition.Description}");
-        }
-
-        private static void Show(AbilityIconView icon, AbilityConfig[] pool, int index)
-        {
-            AbilityConfig ability = pool[index];
-            string detail = ability.IsSpell && !ability.IsCooldownBased ? $"{ability.Charges} charges · cast {ability.CastTime:0.##}s"
-                : ability.Cooldown > 0f ? $"Cooldown {ability.Cooldown:0}s" : string.Empty;
-            icon.Set(index, ability.Icon, ability.Glyph, ability.Color, $"<b>{ability.DisplayName}</b>\n{ability.Description}\n<size=80%><color=#9a927f>{detail}</color></size>");
         }
 
         private bool IsPerk(AbilityIconView icon)
@@ -389,12 +365,6 @@ namespace Game.Scripts.Dungeon
             DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.5f);
             _dropSlot = NoPerk;
             _session?.RpcTogglePerk((byte)icon.Index);
-        }
-
-        private void OnSpellClicked(AbilityIconView icon, PointerEventData.InputButton button)
-        {
-            DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.5f);
-            _session?.RpcToggleSpell((byte)(button == PointerEventData.InputButton.Right ? 1 : 0), (byte)icon.Index);
         }
 
         private void OnSkillClicked(AbilityIconView icon, PointerEventData.InputButton button)

@@ -887,6 +887,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             LobbyHomeView home = BuildLobbyHome(panel, inputs);
             SkillsView skills = BuildSkills(panel, inputs);
+            SpellsView spells = BuildSpells(panel);
             InventoryView inventory = BuildInventory(panel, canvas, inputs, itemPrefab, cellPrefab, "Kit", false, 1, out CharacterPreviewView preview);
             RectTransform inventoryRect = (RectTransform)inventory.transform;
             inventoryRect.anchorMin = inventoryRect.anchorMax = inventoryRect.pivot = new Vector2(0.5f, 1f);
@@ -904,7 +905,7 @@ namespace Game.Scripts.Editor.Dungeon
             rule.anchorMin = Vector2.zero;
             rule.anchorMax = new Vector2(1f, 0f);
 
-            string[] names = { "Lobby", "Skills", "Stash", "Merchants" };
+            string[] names = { "Lobby", "Skills", "Spells", "Stash", "Merchants" };
             Button[] tabs = new Button[names.Length];
 
             for (int i = 0; i < names.Length; i++)
@@ -931,12 +932,13 @@ namespace Game.Scripts.Editor.Dungeon
             SerializedObject so = new SerializedObject(view);
             BattleEditorUtility.Set(so, "_home", home);
             BattleEditorUtility.Set(so, "_skills", skills);
+            BattleEditorUtility.Set(so, "_spells", spells);
             BattleEditorUtility.Set(so, "_inventory", inventory);
             BattleEditorUtility.Set(so, "_inventoryPreview", preview);
             BattleEditorUtility.Set(so, "_tabs", tabs);
             BattleEditorUtility.Set(so, "_merchants", merchants);
             BattleEditorUtility.Set(so, "_stashPages", stashPages);
-            BattleEditorUtility.Set(so, "_pages", new DisplayableView[] { home, skills, inventory, merchants });
+            BattleEditorUtility.Set(so, "_pages", new DisplayableView[] { home, skills, spells, inventory, merchants });
             BattleEditorUtility.Set(so, "_rankText", rank);
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -1012,7 +1014,7 @@ namespace Game.Scripts.Editor.Dungeon
             helpTitle.text = "Need help?";
             helpTitle.color = s_gold;
             TMP_Text helpText = CreateText("Text", help, top, new Vector2(0f, -40f), new Vector2(250f, 100f), 15f, TextAlignmentOptions.Top);
-            helpText.text = "Press <b>H</b> to see the controls.\nPick perks and skills on the <b>Skills</b> tab, pack the kit in the <b>Stash</b>.";
+            helpText.text = "Press <b>H</b> to see the controls.\nPick perks and skills on the <b>Skills</b> tab, fill the wheels on <b>Spells</b>, pack the kit in the <b>Stash</b>.";
             helpText.color = s_text;
             CreateImage("RuleBottom", help, bottom, Vector2.zero, new Vector2(250f, 2f), s_frame);
 
@@ -1256,12 +1258,6 @@ namespace Game.Scripts.Editor.Dungeon
 
             RectTransform perks = Section("Perks", -28f);
             RectTransform skillRoot = Section("Skills", -336f);
-            RectTransform spells = Section("Spells", -644f);
-            // Ten spells in two rows of five; the title tells how they go into the two wheels.
-            GridLayoutGroup spellLayout = spells.GetComponent<GridLayoutGroup>();
-            spellLayout.cellSize = new Vector2(84f, 84f);
-            spellLayout.spacing = new Vector2(10f, 12f);
-            pool.rectTransform.Find("SpellsTitle").GetComponent<TMP_Text>().text = "Spells  <size=70%>L Click wheel I · R Click wheel II</size>";
             TMP_Text hint = CreateText("Hint", pool.rectTransform, top, new Vector2(0f, -918f), new Vector2(470f, 40f), 12f, TextAlignmentOptions.Center);
             hint.text = "Drag a perk or a skill onto a slot  ·  click a perk to equip or remove it  ·  LMB / RMB on a skill binds it to Q / E";
             hint.color = s_textDim;
@@ -1284,7 +1280,6 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_skillIconPrefab", skillIcon);
             BattleEditorUtility.Set(so, "_perksRoot", perks);
             BattleEditorUtility.Set(so, "_skillsRoot", skillRoot);
-            BattleEditorUtility.Set(so, "_spellsRoot", spells);
             BattleEditorUtility.Set(so, "_perkSlots", perkSlots);
             BattleEditorUtility.Set(so, "_skillSlots", skillSlots);
             BattleEditorUtility.Set(so, "_stats", stats);
@@ -1292,6 +1287,102 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_tooltipText", tooltipText);
             BattleEditorUtility.Set(so, "_subclassTabs", subclassTabs);
             BattleEditorUtility.Set(so, "_subclassText", subclassText);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            return view;
+        }
+
+        /// "Spells" page in the look of the skills page: the wheels as rings of square slots around a hub on the left, the class spells
+        /// in a panel on the right.
+        private static SpellsView BuildSpells(RectTransform lobby)
+        {
+            Vector2 center = new Vector2(0.5f, 0.5f);
+            Vector2 top = new Vector2(0.5f, 1f);
+            Color line = new Color(0.6f, 0.57f, 0.5f);
+            Sprite disc = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+            Sprite circle = DungeonUiSpriteBuilder.Load("Circle");
+            RectTransform page = CreateRect("Spells", lobby, center, Vector2.zero, Vector2.zero);
+            Stretch(page, 0f);
+            // The wheels share the room left of the pool panel.
+            const float room = -275f;
+
+            TMP_Text title = CreateText("Title", page, top, new Vector2(room, -104f), new Vector2(620f, 34f), 23f, TextAlignmentOptions.Center);
+            title.text = "Spell Wheels";
+            title.color = s_gold;
+            CreateImage("TitleRule", page, top, new Vector2(room, -146f), new Vector2(620f, 2f), s_frame);
+            TMP_Text info = CreateText("Info", page, top, new Vector2(room, -156f), new Vector2(900f, 24f), 13f, TextAlignmentOptions.Center);
+            info.text = $"Each wheel holds {ClassConfig.SpellWheelSize} spells and opens with its memory skill on Q or E";
+            info.color = s_textDim;
+
+            GameObject[] wheels = new GameObject[ClassConfig.WheelCount];
+            TMP_Text[] wheelTitles = new TMP_Text[ClassConfig.WheelCount];
+            AbilityIconView[] slots = new AbilityIconView[ClassConfig.WheelCount * ClassConfig.SpellWheelSize];
+
+            for (int wheel = 0; wheel < wheels.Length; wheel++)
+            {
+                RectTransform ring = CreateRect("Wheel" + (wheel + 1), page, top, new Vector2(room + (wheel * 2 - 1) * 290f, -560f), new Vector2(520f, 520f));
+                ring.pivot = center;
+                CreateImage("Disc", ring, center, Vector2.zero, new Vector2(500f, 500f), new Color(0f, 0f, 0f, 0.45f)).sprite = disc;
+                CreateImage("Rim", ring, center, Vector2.zero, new Vector2(500f, 500f), new Color(line.r, line.g, line.b, 0.5f)).sprite = circle;
+                CreateImage("Track", ring, center, Vector2.zero, new Vector2(340f, 340f), new Color(line.r, line.g, line.b, 0.15f)).sprite = circle;
+                CreateImage("Hub", ring, center, Vector2.zero, new Vector2(150f, 150f), new Color(0.08f, 0.07f, 0.06f, 0.95f)).sprite = disc;
+                CreateImage("HubRim", ring, center, Vector2.zero, new Vector2(150f, 150f), line).sprite = circle;
+                TMP_Text numeral = CreateText("Numeral", ring, center, new Vector2(0f, 16f), new Vector2(140f, 50f), 38f, TextAlignmentOptions.Center);
+                numeral.text = wheel == 0 ? "I" : "II";
+                numeral.color = s_gold;
+                numeral.fontStyle = FontStyles.Bold;
+                wheelTitles[wheel] = CreateText("Title", ring, center, new Vector2(0f, -26f), new Vector2(130f, 36f), 13f, TextAlignmentOptions.Center);
+                wheelTitles[wheel].color = s_text;
+
+                // Slots go clockwise from the top.
+                for (int i = 0; i < ClassConfig.SpellWheelSize; i++)
+                {
+                    float angle = Mathf.PI * 0.5f - i * 2f * Mathf.PI / ClassConfig.SpellWheelSize;
+                    Vector2 position = 170f * new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                    slots[wheel * ClassConfig.SpellWheelSize + i] = AbilityIcon("Slot" + i, ring, center, position, "Square", 88f);
+                }
+
+                wheels[wheel] = ring.gameObject;
+            }
+
+            TMP_Text empty = CreateText("Empty", page, top, new Vector2(room, -540f), new Vector2(700f, 60f), 22f, TextAlignmentOptions.Center);
+            empty.text = "This class casts no spells";
+            empty.color = s_textDim;
+
+            TMP_Text hint = CreateText("Hint", page, top, new Vector2(room, -900f), new Vector2(900f, 40f), 13f, TextAlignmentOptions.Center);
+            hint.text = "Drag a spell onto a wheel slot  ·  click a slot or drag it off to remove the spell  ·  LMB / RMB on a spell puts it into wheel I / II";
+            hint.color = s_textDim;
+
+            Image pool = CreateImage("Pool", page, Vector2.one, new Vector2(-20f, -96f), new Vector2(530f, 964f), Color.white);
+            pool.sprite = DungeonUiSpriteBuilder.Load("Panel");
+            CreateImage("SpellsBand", pool.rectTransform, top, new Vector2(0f, -28f), new Vector2(470f, 38f), new Color(0f, 0f, 0f, 0.35f));
+            TMP_Text header = CreateText("SpellsTitle", pool.rectTransform, top, new Vector2(0f, -28f), new Vector2(470f, 38f), 22f, TextAlignmentOptions.Center);
+            header.text = "Spells";
+            header.color = s_text;
+            RectTransform grid = CreateRect("SpellsGrid", pool.rectTransform, top, new Vector2(0f, -76f), new Vector2(470f, 840f));
+            GridLayoutGroup layout = grid.gameObject.AddComponent<GridLayoutGroup>();
+            layout.cellSize = new Vector2(104f, 104f);
+            layout.spacing = new Vector2(18f, 14f);
+            layout.childAlignment = TextAnchor.UpperCenter;
+            AbilityIconView spellIcon = AbilityIcon("SpellIcon", page, center, Vector2.zero, "Square", 88f);
+            spellIcon.gameObject.SetActive(false);
+
+            RectTransform tooltip = CreateRect("Tooltip", page, center, Vector2.zero, new Vector2(340f, 112f));
+            CreateImage("Back", tooltip, center, Vector2.zero, Vector2.zero, new Color(0.03f, 0.03f, 0.03f, 0.96f)).rectTransform.StretchFill();
+            CreateImage("Frame", tooltip, top, Vector2.zero, new Vector2(340f, 3f), s_frame);
+            TMP_Text tooltipText = CreateText("Text", tooltip, center, Vector2.zero, Vector2.zero, 15f, TextAlignmentOptions.TopLeft);
+            Stretch(tooltipText.rectTransform, 12f);
+
+            SpellsView view = page.gameObject.AddComponent<SpellsView>();
+            SerializedObject so = new SerializedObject(view);
+            BattleEditorUtility.Set(so, "_spellIconPrefab", spellIcon);
+            BattleEditorUtility.Set(so, "_spellsRoot", grid);
+            BattleEditorUtility.Set(so, "_wheels", wheels);
+            BattleEditorUtility.Set(so, "_wheelSlots", slots);
+            BattleEditorUtility.Set(so, "_wheelTitles", wheelTitles);
+            BattleEditorUtility.Set(so, "_emptyRoot", empty.gameObject);
+            BattleEditorUtility.Set(so, "_tooltip", tooltip);
+            BattleEditorUtility.Set(so, "_tooltipText", tooltipText);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;
