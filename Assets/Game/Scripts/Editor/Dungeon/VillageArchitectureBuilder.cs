@@ -17,6 +17,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const float CellarHalfWidth = 1.3f;
         public const float CellarLength = 7.4f;
         public const float CellarDepth = 3.2f;
+        public const float FenceModule = DungeonVillageKitBuilder.Module;
 
         private const float Storey = DungeonVillageKitBuilder.Storey;
         private const float Module = DungeonVillageKitBuilder.Module;
@@ -53,9 +54,9 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static readonly Dictionary<int, int[]> s_roofLengths = new() { [4] = new[] { 4, 6, 8 }, [6] = new[] { 6, 8, 10, 12, 14 }, [8] = new[] { 8, 10, 12, 14 } };
 
+        public static Material Stone => DungeonVillageKitBuilder.Surface("MI_UnevenBrick");
         private static Material Planks => DungeonPropBuilder.WoodPlanks;
         private static Material DarkWood => DungeonPropBuilder.DarkWood;
-        private static Material Stone => DungeonVillageKitBuilder.Surface("MI_UnevenBrick");
         private static Material Tiles => DungeonVillageKitBuilder.Surface("MI_RoundTiles");
 
         /// Grave markers, haystacks and the plaza well, saved once as prefabs.

@@ -14,8 +14,11 @@ namespace Game.Scripts.Editor.Dungeon
     /// (graveyard and swamp) lead down to floor 2 once half the floor's time has run out.
     internal static class VillageMapBuilder
     {
-        private const int MaxVillageHouses = 34;
+        private const int MaxVillageHouses = 66;
         private const int HouseSpots = 3;
+
+        private static readonly List<(Vector2 from, Vector2 to)> s_hedges = new();
+        private static readonly List<Vector2> s_graveyard = new();
 
         public sealed class Result
         {
@@ -27,11 +30,13 @@ namespace Game.Scripts.Editor.Dungeon
             public readonly List<PortalComponent> Cellars = new();
             public readonly List<PortalComponent> EscapePortals = new();
             public readonly List<NavMeshBuildSource> Sources = new();
+            /// Places in the points of interest where monsters may stand.
+            public readonly List<Vector3> MonsterSpots = new();
             public Texture2D Map;
         }
 
         /// A building planned on the map: where it stands, what it is and the pad it needs.
-        private sealed class Plan
+        internal sealed class Plan
         {
             public string Kind;
             public Vector2 Position;
@@ -46,11 +51,13 @@ namespace Game.Scripts.Editor.Dungeon
         {
             Result result = new Result();
             VillageGround ground = new VillageGround();
+            s_hedges.Clear();
             VillageTerrainBuilder.Clearings clearings = new VillageTerrainBuilder.Clearings();
             List<Plan> plans = new();
 
             PlanFarm(plans);
             PlanGraveyard(plans);
+            VillagePointsBuilder.Plan(plans);
             PlanVillage(plans, ground);
 
             foreach (Plan plan in plans)
@@ -96,8 +103,11 @@ namespace Game.Scripts.Editor.Dungeon
             BuildBridges(dressing, ground);
             DressFarm(dressing, ground, result);
             DressVillage(dressing, ground, result);
+            Clutter(BattleEditorUtility.CreateChild("Yards", dressing).transform, ground, plans, VillageLayout.Village, 100f, 90, new System.Random(45));
+            Clutter(BattleEditorUtility.CreateChild("Farmyards", dressing).transform, ground, plans, VillageLayout.Farm, 90f, 36, new System.Random(46));
             DressGraveyard(dressing, ground, result, plans);
             DressSwamp(dressing, ground, result);
+            VillagePointsBuilder.Dress(dressing, ground, result);
             DressWilds(dressing, ground);
             Moon(floor);
 
@@ -121,24 +131,25 @@ namespace Game.Scripts.Editor.Dungeon
             return result;
         }
 
+        /// Farm houses stand round the yard loop, each at its own distance and turned its own way, never on a circle.
         private static void PlanFarm(List<Plan> plans)
         {
-            (float angle, string kind, HouseSpec spec)[] farm =
+            (float angle, float setback, float turn, string kind, HouseSpec spec)[] farm =
             {
-                (60f, "Barn", new HouseSpec { Width = 8, Length = 12 }),
-                (12f, "House", new HouseSpec { Width = 6, Length = 8, Storeys = 2, Style = Style.Timber, IsLit = true, Seed = 1 }),
-                (-62f, "House", new HouseSpec { Width = 6, Length = 10, Style = Style.Plaster, Seed = 2 }),
-                (150f, "House", new HouseSpec { Width = 6, Length = 8, Style = Style.Brick, Seed = 3 }),
-                (200f, "House", new HouseSpec { Width = 8, Length = 10, Storeys = 2, Style = Style.Timber, IsLit = true, Seed = 4 }),
-                (240f, "House", new HouseSpec { Width = 4, Length = 6, Style = Style.Plaster, HasChimney = false, Seed = 5 }),
-                (110f, "House", new HouseSpec { Width = 4, Length = 4, Style = Style.Brick, HasChimney = false, Seed = 6 })
+                (64f, 4f, -9f, "Barn", new HouseSpec { Width = 8, Length = 12 }),
+                (16f, 1.5f, 12f, "House", new HouseSpec { Width = 6, Length = 8, Storeys = 2, Style = Style.Timber, IsLit = true, Seed = 1 }),
+                (-58f, 6f, -14f, "House", new HouseSpec { Width = 6, Length = 10, Style = Style.Plaster, Seed = 2 }),
+                (146f, 2f, 18f, "House", new HouseSpec { Width = 6, Length = 8, Style = Style.Brick, Seed = 3 }),
+                (226f, 5f, -6f, "House", new HouseSpec { Width = 8, Length = 10, Storeys = 2, Style = Style.Timber, IsLit = true, Seed = 4 }),
+                (264f, 0.5f, 22f, "House", new HouseSpec { Width = 4, Length = 6, Style = Style.Plaster, HasChimney = false, Seed = 5 }),
+                (106f, 3f, -25f, "House", new HouseSpec { Width = 4, Length = 4, Style = Style.Brick, HasChimney = false, Seed = 6 })
             };
 
-            foreach ((float angle, string kind, HouseSpec spec) in farm)
+            foreach ((float angle, float setback, float turn, string kind, HouseSpec spec) in farm)
             {
                 Vector2 direction = new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
-                Vector2 position = VillageLayout.FarmCenter + direction * (36f + 2.5f + spec.Length * 0.5f);
-                plans.Add(new Plan { Kind = kind, Position = position, Yaw = Facing(-direction), Spec = spec, HalfSize = new Vector2(spec.Width, spec.Length) * 0.5f });
+                Vector2 position = VillageLayout.FarmCenter + direction * (38f + setback + spec.Length * 0.5f);
+                plans.Add(new Plan { Kind = kind, Position = position, Yaw = Facing(-direction) + turn, Spec = spec, HalfSize = new Vector2(spec.Width, spec.Length) * 0.5f });
             }
 
             plans.Add(new Plan { Kind = "Windmill", Position = new Vector2(-150f, 230f), Yaw = 160f, HalfSize = Vector2.one * 3.8f });
@@ -151,7 +162,7 @@ namespace Game.Scripts.Editor.Dungeon
             foreach ((Vector2 position, float yaw) in new[] { (new Vector2(108f, 216f), 90f), (new Vector2(102f, 150f), 90f), (new Vector2(216f, 172f), -90f), (new Vector2(170f, 116f), 0f) })
                 plans.Add(new Plan { Kind = "Crypt", Position = position, Yaw = yaw, Spec = new HouseSpec { Width = 4, Length = 6, Style = Style.Brick, IsWindowless = true, HasChimney = false, IsFurnished = false, Seed = (int)position.x }, HalfSize = new Vector2(2f, 3f) });
 
-            plans.Add(new Plan { Kind = "House", Position = new Vector2(98f, 110f), Yaw = 45f, Spec = new HouseSpec { Width = 4, Length = 6, Style = Style.Plaster, IsLit = true, Seed = 31 }, HalfSize = new Vector2(2f, 3f) });
+            plans.Add(new Plan { Kind = "House", Position = new Vector2(106f, 118f), Yaw = 45f, Spec = new HouseSpec { Width = 4, Length = 6, Style = Style.Plaster, IsLit = true, Seed = 31 }, HalfSize = new Vector2(2f, 3f) });
 
             for (int i = 0; i < VillageLayout.StiltHuts.Length; i++)
             {
@@ -171,7 +182,7 @@ namespace Game.Scripts.Editor.Dungeon
             foreach (int street in streets)
             {
                 VillageLayout.Road road = VillageLayout.Roads[street];
-                List<Vector2> line = VillageLayout.Smooth(road.Points, 1f);
+                List<Vector2> line = VillageLayout.RoadLine(road, 1f);
 
                 foreach (float side in new[] { -1f, 1f })
                 {
@@ -188,8 +199,8 @@ namespace Game.Scripts.Editor.Dungeon
                         HouseSpec spec = RandomHouse(random);
                         Vector2 tangent = (line[i] - line[i - 1]).normalized;
                         Vector2 normal = new Vector2(-tangent.y, tangent.x) * side;
-                        Vector2 center = line[i] + normal * (road.Width * 0.5f + 2.5f + spec.Length * 0.5f);
-                        Plan plan = new Plan { Kind = "House", Position = center, Yaw = Facing(-normal), Spec = spec, HalfSize = new Vector2(spec.Width, spec.Length) * 0.5f };
+                        Vector2 center = line[i] + normal * (road.Width * 0.5f + 2.2f + (float)random.NextDouble() * 2.4f + spec.Length * 0.5f);
+                        Plan plan = new Plan { Kind = "House", Position = center, Yaw = Facing(-normal) + Rand(random, 7f), Spec = spec, HalfSize = new Vector2(spec.Width, spec.Length) * 0.5f };
 
                         if (!Fits(plan, plans, ground))
                         {
@@ -217,10 +228,9 @@ namespace Game.Scripts.Editor.Dungeon
         private static bool Fits(Plan plan, List<Plan> plans, VillageGround ground)
         {
             Vector2 p = plan.Position;
-            float fromCenter = (p - VillageLayout.VillageCenter).magnitude;
             float fromPlaza = (p - VillageLayout.Plaza).magnitude;
 
-            if (fromCenter > VillageLayout.VillageRadius - plan.Radius || fromPlaza < VillageLayout.PlazaRadius + plan.Radius + 4f || ground.WaterDistance(p.x, p.y) < plan.Radius + 9f)
+            if (VillageLayout.Village.Distance(p.x, p.y) > -plan.Radius - 3f || fromPlaza < VillageLayout.PlazaRadius + plan.Radius + 4f || ground.WaterDistance(p.x, p.y) < plan.Radius + 9f)
                 return false;
 
             foreach (Plan other in plans)
@@ -262,6 +272,11 @@ namespace Game.Scripts.Editor.Dungeon
                     break;
                 case "Chapel":
                     VillageArchitectureBuilder.Chapel(parent, position, plan.Yaw, site);
+                    break;
+                case "Tower":
+                    VillagePointsBuilder.Tower(parent, position, plan.Yaw, site);
+                    break;
+                case "Pad":
                     break;
                 case "Crypt":
                     Transform crypt = VillageArchitectureBuilder.House(parent, "Crypt", position, plan.Yaw, plan.Spec, site);
@@ -328,8 +343,12 @@ namespace Game.Scripts.Editor.Dungeon
                 Put(root, ground, DungeonKitBuilder.Load("Dummy"), center + Rotate(new Vector2(size.x * 0.2f, 0f), yaw), random.Next(360));
             }
 
-            foreach (float angle in new[] { 30f, 130f, 250f, 330f })
-                LampPost(root, ground, c + new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad)) * 33f, angle + 180f);
+            foreach ((float angle, float radius) in new[] { (34f, 31f), (122f, 36f), (243f, 29f), (318f, 38f) })
+                LampPost(root, ground, c + new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad)) * radius, angle + 180f + random.Next(-20, 20));
+
+            Hedge(root, ground, new Vector2(-172f, 148f), new Vector2(-171f, 168f), random);
+            Hedge(root, ground, new Vector2(-94f, 148f), new Vector2(-80f, 166f), random);
+            Hedge(root, ground, new Vector2(-196f, 176f), new Vector2(-190f, 198f), random);
 
             for (int i = 0; i < 8; i++)
             {
@@ -361,12 +380,23 @@ namespace Game.Scripts.Editor.Dungeon
 
             foreach (int street in new[] { 0, 1, 2, 3, 4 })
             {
-                List<Vector2> line = VillageLayout.Smooth(VillageLayout.Roads[street].Points, 1f);
+                List<Vector2> line = VillageLayout.RoadLine(VillageLayout.Roads[street], 1f);
                 float half = VillageLayout.Roads[street].Width * 0.5f + 1f;
+                bool wasInside = VillageLayout.Village.Distance(line[0].x, line[0].y) < -10f;
 
-                for (int i = 18; i < line.Count; i += 32)
+                for (int i = 1; i < line.Count; i++)
                 {
-                    if ((line[i] - VillageLayout.VillageCenter).magnitude > VillageLayout.VillageRadius)
+                    bool isInside = VillageLayout.Village.Distance(line[i].x, line[i].y) < -10f;
+
+                    if (isInside != wasInside)
+                        VillagePointsBuilder.GateArch(root, ground, line[i], Facing(line[i] - line[i - 1]), VillageLayout.Roads[street].Width + 1.6f);
+
+                    wasInside = isInside;
+                }
+
+                for (int i = 18 + random.Next(10); i < line.Count; i += 26 + random.Next(16))
+                {
+                    if (VillageLayout.Village.Distance(line[i].x, line[i].y) > -4f)
                         continue;
 
                     Vector2 tangent = (line[i] - line[i - 1]).normalized;
@@ -385,24 +415,44 @@ namespace Game.Scripts.Editor.Dungeon
             Transform root = BattleEditorUtility.CreateChild("Graveyard", parent).transform;
             Rect r = VillageLayout.Graveyard;
             System.Random random = new System.Random(47);
-            (float from, float to)[] south = { (r.xMin, 117f), (126f, 219f), (228f, r.xMax) };
-            (float from, float to)[] west = { (r.yMin, 195f), (204f, r.yMax) };
+            List<Vector2> wall = GraveyardWall(random);
+            Vector2 gateStart = Vector2.zero;
+            Vector2 runStart = Vector2.zero;
+            bool isOpen = true;
 
-            foreach ((float from, float to) in south)
-                VillageArchitectureBuilder.StoneWall(root, ground, new Vector2(from, r.yMin), new Vector2(to, r.yMin));
-
-            foreach ((float from, float to) in west)
-                VillageArchitectureBuilder.StoneWall(root, ground, new Vector2(r.xMin, from), new Vector2(r.xMin, to));
-
-            VillageArchitectureBuilder.StoneWall(root, ground, new Vector2(r.xMax, r.yMin), new Vector2(r.xMax, r.yMax));
-            VillageArchitectureBuilder.StoneWall(root, ground, new Vector2(r.xMin, r.yMax), new Vector2(r.xMax, r.yMax));
-
-            foreach ((Vector2 gate, float yaw) in new[] { (new Vector2(121.5f, r.yMin), 0f), (new Vector2(223.5f, r.yMin), 0f), (new Vector2(r.xMin, 199.5f), 90f) })
+            // Pieces of 3 m round the ragged outline; where a road crosses, the wall breaks off into a gate with a lamp.
+            for (int i = 0; i < wall.Count; i++)
             {
-                Vector2 across = Rotate(new Vector2(3.4f, 0f), yaw);
-                LampPost(root, ground, gate + across + Rotate(new Vector2(0f, -1.2f), yaw), yaw + 180f);
-                Put(root, ground, DungeonVillageKitBuilder.Load("Prop_MetalFence_Ornament"), gate - across * 0.62f + Rotate(new Vector2(0f, 0.9f), yaw), yaw + 70f);
+                Vector2 a = wall[i];
+                Vector2 b = wall[(i + 1) % wall.Count];
+                int pieces = Mathf.Max(1, Mathf.CeilToInt((b - a).magnitude / 3f));
+
+                for (int k = 0; k <= pieces; k++)
+                {
+                    Vector2 point = Vector2.Lerp(a, b, k / (float)pieces);
+                    bool isGate = ground.RoadDistance(point.x, point.y) < 3.2f || Near(plans, point, 1.5f);
+
+                    if (isGate && !isOpen)
+                    {
+                        VillageArchitectureBuilder.StoneWall(root, ground, runStart, point);
+                        gateStart = point;
+                        Vector2 inward = (r.center - point).normalized;
+                        LampPost(root, ground, point - inward * 1.2f, Facing(-inward));
+                    }
+                    else if (!isGate && isOpen)
+                    {
+                        runStart = point;
+
+                        if (gateStart != Vector2.zero)
+                            Put(root, ground, DungeonVillageKitBuilder.Load("Prop_MetalFence_Ornament"), point + (r.center - point).normalized * 1f, Facing(point - gateStart) + 70f);
+                    }
+
+                    isOpen = isGate;
+                }
             }
+
+            if (!isOpen)
+                VillageArchitectureBuilder.StoneWall(root, ground, runStart, wall[0]);
 
             List<Vector2> graves = new();
 
@@ -413,7 +463,7 @@ namespace Game.Scripts.Editor.Dungeon
                     Vector2 point = new Vector2(x + Rand(random, 0.3f), z + Rand(random, 0.3f));
                     float plot = DungeonTextureBuilder.Noise(x / 540f + 4f, z / 540f + 2f, 24f, 2);
 
-                    if (plot < 0.45f || random.NextDouble() < 0.25 || ground.RoadDistance(point.x, point.y) < 2f || Near(plans, point, 3f) || Near(VillageLayout.Cellars[0].position, point, 12f))
+                    if (plot < 0.45f || random.NextDouble() < 0.25 || !Inside(s_graveyard, point, 2.5f) || ground.RoadDistance(point.x, point.y) < 2f || Near(plans, point, 3f) || Near(VillageLayout.Cellars[0].position, point, 12f) || IsHedged(point))
                         continue;
 
                     graves.Add(point);
@@ -445,6 +495,10 @@ namespace Game.Scripts.Editor.Dungeon
 
             foreach (Vector2 candle in new[] { new Vector2(196f, 206f), new Vector2(196f, 222f), new Vector2(150f, 160f), new Vector2(120f, 190f) })
                 Put(root, ground, DungeonKitBuilder.Load("CandleStick_Stand"), candle, 0f);
+
+            foreach ((Vector2 from, Vector2 to) in new[] { (new Vector2(86f, 168f), new Vector2(146f, 173f)), (new Vector2(161f, 99f), new Vector2(156f, 142f)),
+                         (new Vector2(188f, 148f), new Vector2(234f, 153f)), (new Vector2(132f, 236f), new Vector2(127f, 202f)), (new Vector2(194f, 116f), new Vector2(207f, 136f)) })
+                Hedge(root, ground, from, to, random);
         }
 
         /// Boardwalks over the mire with lanterns on posts, rotting logs and stumps.
@@ -476,30 +530,208 @@ namespace Game.Scripts.Editor.Dungeon
             }
         }
 
-        /// Boulders in the woods and cliffs along the hills at the map's edge.
+        /// Rock faces on the steep flanks of the ridges and the hills at the map's edge (they also hide the stretched terrain
+        /// texture there), boulders in the woods, and inside the open places boulders, logs and stumps a fighter can hide behind.
         private static void DressWilds(Transform parent, VillageGround ground)
         {
             Transform root = BattleEditorUtility.CreateChild("Wilds", parent).transform;
             System.Random random = new System.Random(59);
+            int cliffs = 0;
+            int cover = 0;
 
-            for (int i = 0; i < 260; i++)
+            for (int i = 0; i < 9000 && (cliffs < 420 || cover < 110); i++)
             {
                 Vector2 point = new Vector2(Rand(random, VillageLayout.Half - 8f), Rand(random, VillageLayout.Half - 8f));
-                float edge = VillageLayout.EdgeDistance(point.x, point.y);
-                bool isCliff = edge < 30f;
-                float forest = VillageTerrainBuilder.Forest(point.x, point.y);
+                float open = ground.Open(point);
+                float slope = ground.Slope(point.x, point.y);
 
-                if (!isCliff && forest < 0.5f || ground.RoadDistance(point.x, point.y) < 3f || ground.PadMask(point.x, point.y) > 0f || ground.WaterDistance(point.x, point.y) < 5f)
+                if (ground.RoadDistance(point.x, point.y) < 3f || ground.PadMask(point.x, point.y) > 0f || ground.WaterDistance(point.x, point.y) < 4f
+                    || ground.Height(point) < VillageLayout.WaterLevel + 0.1f || VillageLayout.Graveyard.Contains(point))
                     continue;
 
-                string name = isCliff ? $"Cliff{random.Next(2)}" : random.NextDouble() < 0.6 ? $"Boulder{random.Next(4)}" : $"Stone{random.Next(4)}";
-                GameObject rock = Put(root, ground, DungeonVegetationBuilder.Load(name), point, random.Next(360));
-                float scale = 0.8f + (float)random.NextDouble() * 0.6f;
-                // Sunk by the slope under it, so no side of the stone hangs over the ground.
-                float slope = Mathf.Tan(ground.Slope(point.x, point.y) * Mathf.Deg2Rad) * (isCliff ? 6f : 1.2f) * scale;
-                rock.transform.localPosition += Vector3.down * ((isCliff ? 2.5f : 0.4f) + slope);
-                rock.transform.localScale = Vector3.one * scale;
+                bool isCliff = slope > 26f && open > -1f && open < 16f || VillageLayout.EdgeDistance(point.x, point.y) < 30f && random.NextDouble() < 0.1;
+                bool isCover = open < -5f && VillageLayout.Village.Distance(point.x, point.y) > 0f && !VillageTerrainBuilder.InField(point.x, point.y, 3f) && random.NextDouble() < 0.06;
+
+                if (isCliff && cliffs < 420)
+                {
+                    GameObject rock = Put(root, ground, DungeonVegetationBuilder.Load(random.NextDouble() < 0.7 ? $"Cliff{random.Next(2)}" : $"Boulder{2 + random.Next(2)}"), point, random.Next(360));
+                    float scale = 0.45f + (float)random.NextDouble() * 0.6f;
+                    // Sunk by the slope under it, so no side of the stone hangs over the ground.
+                    rock.transform.localPosition += Vector3.down * (1.2f * scale + Mathf.Tan(Mathf.Min(slope, 60f) * Mathf.Deg2Rad) * 4f * scale);
+                    rock.transform.localRotation = Quaternion.Euler(Rand(random, 12f), random.Next(360), Rand(random, 12f));
+                    rock.transform.localScale = new Vector3(scale, scale * (0.8f + (float)random.NextDouble() * 0.5f), scale);
+                    cliffs++;
+                }
+                else if (isCover && cover < 110)
+                {
+                    double kind = random.NextDouble();
+                    string name = kind < 0.5 ? $"Boulder{random.Next(4)}" : kind < 0.8 ? "Log" : "Stump";
+                    GameObject rock = Put(root, ground, DungeonVegetationBuilder.Load(name), point, random.Next(360));
+                    rock.transform.localPosition += Vector3.down * 0.25f;
+                    cover++;
+                }
             }
+        }
+
+        /// A row of clipped yew between two points with a gap wherever a path runs through, one collider per stretch.
+        private static void Hedge(Transform parent, VillageGround ground, Vector2 from, Vector2 to, System.Random random)
+        {
+            Transform hedge = BattleEditorUtility.CreateChild("Hedge", parent).transform;
+            Vector2 delta = to - from;
+            int count = Mathf.CeilToInt(delta.magnitude / 1.5f);
+            Vector2 start = from;
+            float yaw = Facing(delta);
+            s_hedges.Add((from, to));
+
+            for (int i = 0; i <= count + 1; i++)
+            {
+                Vector2 point = from + delta * Mathf.Min(i / (float)count, 1f);
+                bool isGap = i > count || ground.RoadDistance(point.x, point.y) < 2.5f;
+
+                if (!isGap)
+                {
+                    GameObject bush = Put(hedge, ground, DungeonVegetationBuilder.Load($"Bush{random.Next(DungeonVegetationBuilder.Variants)}"), point + new Vector2(Rand(random, 0.25f), Rand(random, 0.25f)), random.Next(360));
+                    bush.transform.localScale = new Vector3(1.3f, 1.5f + (float)random.NextDouble() * 0.5f, 1.3f);
+                    continue;
+                }
+
+                Vector2 end = from + delta * Mathf.Min((i - 1) / (float)count, 1f);
+
+                if ((end - start).magnitude > 1f)
+                {
+                    Vector2 middle = (start + end) * 0.5f;
+                    GameObject blocker = BattleEditorUtility.CreateChild("Blocker", hedge, Ground(ground, middle) + Vector3.up * 1.2f);
+                    blocker.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+                    blocker.AddComponent<BoxCollider>().size = new Vector3(1.4f, 2.6f, (end - start).magnitude + 1.2f);
+                    blocker.isStatic = true;
+                }
+
+                start = from + delta * Mathf.Min((i + 1) / (float)count, 1f);
+            }
+        }
+
+        /// The graveyard wall follows the yard's own ragged outline six metres inside it: rays from the centre, each searched
+        /// for the point where the rim is that far away.
+        private static List<Vector2> GraveyardWall(System.Random random)
+        {
+            const int corners = 34;
+            VillageLayout.Zone yard = VillageLayout.Yard;
+            s_graveyard.Clear();
+
+            for (int i = 0; i < corners; i++)
+            {
+                float angle = (i + Rand(random, 0.25f)) / corners * Mathf.PI * 2f;
+                Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                float inside = 0f;
+                float outside = 160f;
+
+                for (int k = 0; k < 24; k++)
+                {
+                    float middle = (inside + outside) * 0.5f;
+                    Vector2 point = yard.Center + direction * middle;
+
+                    if (yard.Distance(point.x, point.y) < -6f)
+                        inside = middle;
+                    else
+                        outside = middle;
+                }
+
+                s_graveyard.Add(yard.Center + direction * inside);
+            }
+
+            return s_graveyard;
+        }
+
+        private static bool Inside(List<Vector2> polygon, Vector2 point, float margin)
+        {
+            bool isInside = false;
+
+            for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
+            {
+                Vector2 a = polygon[i];
+                Vector2 b = polygon[j];
+
+                if (a.y > point.y != b.y > point.y && point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x)
+                    isInside = !isInside;
+
+                Vector2 segment = b - a;
+                float t = Mathf.Clamp01(Vector2.Dot(point - a, segment) / segment.sqrMagnitude);
+
+                if ((a + segment * t - point).magnitude < margin)
+                    return false;
+            }
+
+            return isInside;
+        }
+
+        /// Yards between the houses: fences, woodpiles, haystacks, carts, crates and old trees, so no street or meadow of a
+        /// settlement stays a long open sight line.
+        private static void Clutter(Transform root, VillageGround ground, List<Plan> plans, VillageLayout.Zone zone, float reach, int count, System.Random random)
+        {
+            for (int i = 0, placed = 0; i < count * 30 && placed < count; i++)
+            {
+                Vector2 point = zone.Center + new Vector2(Rand(random, reach), Rand(random, reach));
+
+                if (zone.Distance(point.x, point.y) > -6f || ground.RoadDistance(point.x, point.y) < 3f || ground.PadMask(point.x, point.y) > 0.02f || Near(plans, point, 3f)
+                    || (point - VillageLayout.Plaza).magnitude < VillageLayout.PlazaRadius + 5f || VillageTerrainBuilder.InField(point.x, point.y, 2f) || (point - VillageLayout.Pond).magnitude < VillageLayout.PondRadius + 3f)
+                    continue;
+
+                float yaw = random.Next(360);
+                double kind = random.NextDouble();
+                placed++;
+
+                if (kind < 0.26)
+                {
+                    GameObject tree = Put(root, ground, DungeonVegetationBuilder.Load(random.NextDouble() < 0.6 ? $"Broadleaf{random.Next(DungeonVegetationBuilder.Variants)}" : $"DeadTree{random.Next(DungeonVegetationBuilder.Variants)}"), point, yaw);
+                    tree.transform.localScale = Vector3.one * (0.75f + (float)random.NextDouble() * 0.4f);
+                }
+                else if (kind < 0.48)
+                {
+                    int pieces = 3 + random.Next(4);
+
+                    for (int k = 0; k < pieces; k++)
+                    {
+                        if (random.NextDouble() < 0.15)
+                            continue;
+
+                        Vector2 piece = point + Rotate(new Vector2(0f, k * VillageArchitectureBuilder.FenceModule), yaw);
+                        GameObject fence = Put(root, ground, DungeonVillageKitBuilder.Load(k % 3 == 2 ? "Prop_WoodenFence_Extension1" : "Prop_WoodenFence_Single"), piece, yaw + 90f + Rand(random, 4f));
+                        fence.transform.localPosition += Vector3.down * 0.03f;
+                    }
+                }
+                else if (kind < 0.62)
+                {
+                    VillagePointsBuilder.LogPile(root, ground, point, yaw);
+                }
+                else if (kind < 0.74)
+                {
+                    Put(root, ground, VillageArchitectureBuilder.Piece(random.NextDouble() < 0.5 ? "Haystack" : "HayBale"), point, yaw);
+                }
+                else if (kind < 0.84)
+                {
+                    Put(root, ground, random.NextDouble() < 0.6 ? DungeonVillageKitBuilder.Load("Prop_Wagon") : DungeonKitBuilder.Load("Stall_Cart_Empty"), point, yaw);
+                }
+                else
+                {
+                    Put(root, ground, DungeonVillageKitBuilder.Load("Prop_Crate"), point, yaw);
+                    Put(root, ground, DungeonVillageKitBuilder.Load("Prop_Crate"), point + Rotate(new Vector2(1.1f, 0.2f), yaw), yaw + Rand(random, 20f));
+                    Put(root, ground, DungeonKitBuilder.Load("Barrel"), point + Rotate(new Vector2(0.3f, 1.2f), yaw), 0f);
+                }
+            }
+        }
+
+        private static bool IsHedged(Vector2 point)
+        {
+            foreach ((Vector2 from, Vector2 to) in s_hedges)
+            {
+                Vector2 segment = to - from;
+                float t = Mathf.Clamp01(Vector2.Dot(point - from, segment) / segment.sqrMagnitude);
+
+                if ((from + segment * t - point).magnitude < 2f)
+                    return true;
+            }
+
+            return false;
         }
 
         /// Pale moonlight through the haze: the only sun of the floor, with shadows, so roofs keep the rooms dark.
@@ -507,8 +739,8 @@ namespace Game.Scripts.Editor.Dungeon
         {
             Light moon = BattleEditorUtility.CreateChild("[Moon]", floor).AddComponent<Light>();
             moon.type = LightType.Directional;
-            moon.color = new Color(0.62f, 0.68f, 0.85f);
-            moon.intensity = 0.32f;
+            moon.color = new Color(0.58f, 0.7f, 0.88f);
+            moon.intensity = 0.5f;
             moon.shadows = LightShadows.Soft;
             moon.shadowStrength = 0.85f;
             moon.transform.rotation = Quaternion.Euler(38f, -35f, 0f);
@@ -542,13 +774,19 @@ namespace Game.Scripts.Editor.Dungeon
                 }
             }
 
-            for (int i = 0; i < 6; i++)
+            for (int i = 0, placed = 0; i < 200 && placed < 6; i++)
             {
                 Vector2 point = new Vector2(Mathf.Lerp(VillageLayout.Graveyard.xMin + 10f, VillageLayout.Graveyard.xMax - 10f, (float)random.NextDouble()),
                     Mathf.Lerp(VillageLayout.Graveyard.yMin + 10f, VillageLayout.Graveyard.yMax - 20f, (float)random.NextDouble()));
+
+                if (!Inside(s_graveyard, point, 4f))
+                    continue;
+
                 spots.Add(new Vector3(point.x, ground.Height(point), point.y));
+                placed++;
             }
 
+            spots.AddRange(result.MonsterSpots);
             spots.Add(Ground(ground, VillageLayout.Plaza + new Vector2(6f, 6f)));
             spots.Add(Ground(ground, VillageLayout.Plaza + new Vector2(-7f, -5f)));
 
@@ -571,7 +809,7 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         /// A wooden post with a lantern hanging from its arm.
-        private static void LampPost(Transform parent, VillageGround ground, Vector2 point, float yaw, float height = float.NaN)
+        internal static void LampPost(Transform parent, VillageGround ground, Vector2 point, float yaw, float height = float.NaN)
         {
             float y = float.IsNaN(height) ? ground.Height(point) : height;
             Transform post = BattleEditorUtility.CreateChild("Lamp Post", parent, new Vector3(point.x, y, point.y)).transform;
@@ -580,17 +818,17 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonMapBuilder.Place(DungeonKitBuilder.Load("Lantern_Wall"), post, new Vector3(0f, 2.3f, 0.06f), 0f);
         }
 
-        private static GameObject Put(Transform parent, VillageGround ground, GameObject prefab, Vector2 point, float yaw)
+        internal static GameObject Put(Transform parent, VillageGround ground, GameObject prefab, Vector2 point, float yaw)
         {
             return DungeonMapBuilder.Place(prefab, parent, Ground(ground, point), yaw, prefab.GetComponent<Fusion.NetworkObject>() == null);
         }
 
-        private static ContainerComponent PutContainer(Transform parent, VillageGround ground, string name, Vector2 point, float yaw)
+        internal static ContainerComponent PutContainer(Transform parent, VillageGround ground, string name, Vector2 point, float yaw)
         {
             return DungeonMapBuilder.Place(DungeonMapBuilder.Load(name), parent, Ground(ground, point), yaw, false).GetComponent<ContainerComponent>();
         }
 
-        private static Vector3 Ground(VillageGround ground, Vector2 point)
+        internal static Vector3 Ground(VillageGround ground, Vector2 point)
         {
             return new Vector3(point.x, ground.Height(point), point.y);
         }
@@ -600,7 +838,10 @@ namespace Game.Scripts.Editor.Dungeon
             List<(Vector2, Vector2, float)> footprints = new();
 
             foreach (Plan plan in plans)
-                footprints.Add((plan.Position, plan.HalfSize, plan.Yaw));
+            {
+                if (plan.Kind != "Pad")
+                    footprints.Add((plan.Position, plan.HalfSize, plan.Yaw));
+            }
 
             return footprints;
         }
@@ -625,10 +866,10 @@ namespace Game.Scripts.Editor.Dungeon
         private static bool Near(Vector2 a, Vector2 b, float distance) => (a - b).magnitude < distance;
 
         /// Yaw that turns local +Z towards the direction.
-        private static float Facing(Vector2 direction) => Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
+        internal static float Facing(Vector2 direction) => Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
 
         /// Rotates a local (x, z) offset by a yaw, as Quaternion.Euler(0, yaw, 0) would.
-        private static Vector2 Rotate(Vector2 local, float yaw)
+        internal static Vector2 Rotate(Vector2 local, float yaw)
         {
             Vector3 turned = Quaternion.Euler(0f, yaw, 0f) * new Vector3(local.x, 0f, local.y);
 

@@ -5,7 +5,8 @@ using UnityEngine;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Procedural plants and stones for the cursed village: spruces, broadleaf trees, dead trees, bushes, boulders, stumps and logs.
+    /// Procedural plants and stones for the cursed village: spruces, broadleaf trees, dead trees, drowned swamp trees, bushes,
+    /// boulders, standing stones, stumps and logs.
     /// Trees are terrain tree prototypes (mesh + material on the root, a capsule around the trunk); foliage is alpha-tested cards
     /// with normals pointing out of the crown, so a clump is shaded like one volume.
     internal static class DungeonVegetationBuilder
@@ -119,6 +120,8 @@ namespace Game.Scripts.Editor.Dungeon
                 SaveTree($"Broadleaf{i}", Broadleaf(i), Leaves, 0.32f);
                 SaveTree($"DeadTree{i}", DeadTree(i), null, 0.25f);
                 SaveTree($"Bush{i}", Bush(i), Leaves, 0f);
+                SaveTree($"SwampTree{i}", SwampTree(i), null, 0.45f);
+                SaveRock($"Menhir{i}", i + 40, new Vector3(1.3f, 4.4f + i * 0.5f, 0.9f));
                 SaveRock($"Boulder{i}", i, new Vector3(2.2f, 1.4f, 1.8f) * (1f + i * 0.35f));
                 SaveRock($"Stone{i}", i + 10, new Vector3(0.7f, 0.45f, 0.6f) * (1f + i * 0.3f));
             }
@@ -231,6 +234,44 @@ namespace Game.Scripts.Editor.Dungeon
             return mesh.Save($"DeadTree{seed}");
         }
 
+        /// Huge drowned tree of the bog: a thick leaning trunk on a flare of arching roots, broken top, long crooked bare limbs.
+        private static Mesh SwampTree(int seed)
+        {
+            System.Random random = new System.Random(500 + seed);
+            PlantMesh mesh = new PlantMesh();
+            float trunk = 5f + seed * 1.1f;
+            float radius = 0.5f + seed * 0.08f;
+            Vector3 lean = new Vector3(Rand(random, 1.4f), 0f, Rand(random, 1.4f));
+            Vector3 middle = Vector3.up * trunk * 0.5f + lean * 0.35f + new Vector3(Rand(random, 0.4f), 0f, Rand(random, 0.4f));
+            Vector3 top = Vector3.up * trunk + lean;
+            mesh.Tube(new[] { Vector3.down * 0.4f, Vector3.up * 1.2f, middle, top, top + Vector3.up * 1.2f + lean * 0.2f }, new[] { radius * 1.6f, radius * 1.15f, radius, radius * 0.75f, radius * 0.35f }, 10);
+            int roots = 6 + random.Next(3);
+
+            for (int i = 0; i < roots; i++)
+            {
+                float yaw = i * 360f / roots + Rand(random, 20f);
+                Vector3 out1 = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+                float reach = 1.6f + (float)random.NextDouble() * 1.6f;
+                Vector3 start = Vector3.up * (0.9f + (float)random.NextDouble() * 0.7f) + out1 * radius * 0.7f;
+                Vector3 arch = out1 * reach * 0.55f + Vector3.up * (0.5f + (float)random.NextDouble() * 0.4f);
+                Vector3 end = out1 * reach + Vector3.down * 0.6f;
+                mesh.Tube(new[] { start, arch, end }, new[] { radius * 0.38f, radius * 0.28f, radius * 0.12f }, 6);
+            }
+
+            List<(Vector3, Vector3)> tips = new();
+            int limbs = 4 + random.Next(3);
+
+            for (int i = 0; i < limbs; i++)
+            {
+                float t = 0.55f + i / (float)limbs * 0.45f;
+                Vector3 from = Vector3.Lerp(middle, top, (t - 0.5f) * 2f);
+                Vector3 direction = Quaternion.Euler(-12f - (float)random.NextDouble() * 40f, i * 360f / limbs + Rand(random, 40f), 0f) * Vector3.forward;
+                Branch(mesh, random, from, direction, 4f + (float)random.NextDouble() * 3.5f, radius * 0.45f, 3, tips);
+            }
+
+            return mesh.Save($"SwampTree{seed}");
+        }
+
         private static Mesh Bush(int seed)
         {
             System.Random random = new System.Random(400 + seed);
@@ -287,7 +328,9 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject root = new GameObject(name);
             root.AddComponent<MeshFilter>().sharedMesh = mesh;
             MeshRenderer renderer = root.AddComponent<MeshRenderer>();
-            renderer.sharedMaterials = foliage != null ? new[] { Bark, foliage } : new[] { Bark };
+            Material bark = Bark;
+            bark.enableInstancing = true;
+            renderer.sharedMaterials = foliage != null ? new[] { bark, foliage } : new[] { bark };
             renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
             // A LOD group lets the terrain draw a plain mesh tree (no Nature shader, no billboard) and drop it when tiny.
             root.AddComponent<LODGroup>().SetLODs(new[] { new LOD(0.012f, new Renderer[] { renderer }) });
@@ -311,7 +354,9 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject root = new GameObject(name);
             root.AddComponent<MeshFilter>().sharedMesh = mesh;
             MeshRenderer renderer = root.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = RockMaterial;
+            Material rock = RockMaterial;
+            rock.enableInstancing = true;
+            renderer.sharedMaterial = rock;
             renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
             root.AddComponent<MeshCollider>().sharedMesh = mesh;
             PrefabUtility.SaveAsPrefabAsset(root, $"{PrefabsFolder}/{name}.prefab");

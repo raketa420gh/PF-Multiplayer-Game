@@ -97,9 +97,11 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_floors", new[] { village, hall });
             SerializedProperty atmospheres = so.FindProperty("_atmospheres");
             atmospheres.arraySize = 2;
-            // Night over the village: cold moonlit haze; the hall keeps the torch-lit gloom of the dungeon.
-            SetAtmosphere(atmospheres.GetArrayElementAtIndex(0), new Color(0.2f, 0.23f, 0.32f), new Color(0.14f, 0.15f, 0.18f), new Color(0.07f, 0.065f, 0.06f),
-                new Color(0.055f, 0.065f, 0.085f), 0.012f, 190f, BuildReflection(NightReflectionPath, new Color(0.06f, 0.07f, 0.095f), new Color(0.045f, 0.05f, 0.06f), new Color(0.012f, 0.012f, 0.01f)));
+            // Night over the village: cold moonlit mist that swallows everything past ~100 m (no long sight lines, nothing far
+            // to draw); the hall keeps the torch-lit gloom of the dungeon.
+            SetAtmosphere(atmospheres.GetArrayElementAtIndex(0), new Color(0.3f, 0.36f, 0.42f), new Color(0.19f, 0.22f, 0.25f), new Color(0.08f, 0.08f, 0.075f),
+                new Color(0.19f, 0.235f, 0.26f), 0.021f, 140f, BuildReflection(NightReflectionPath, new Color(0.07f, 0.085f, 0.11f), new Color(0.04f, 0.048f, 0.055f), new Color(0.01f, 0.011f, 0.01f)));
+            BuildVillageVolume(village);
             SetAtmosphere(atmospheres.GetArrayElementAtIndex(1), new Color(0.4f, 0.4f, 0.46f) * 0.55f, new Color(0.32f, 0.31f, 0.33f) * 0.55f, new Color(0.22f, 0.2f, 0.18f) * 0.55f,
                 new Color(0.035f, 0.035f, 0.045f), 0.018f, 120f, RenderSettings.customReflectionTexture as Cubemap);
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -242,6 +244,47 @@ namespace Game.Scripts.Editor.Dungeon
 
             Volume volume = new GameObject("[Volume]").AddComponent<Volume>();
             volume.isGlobal = true;
+            volume.sharedProfile = profile;
+        }
+
+        /// The village's own grade on top of the shared one: cold shadows, warm lantern light blooming in the mist.
+        /// A child of floor 1, so the floor view switches it off below.
+        private static void BuildVillageVolume(Transform village)
+        {
+            string path = $"{DungeonContentBuilder.ConfigsFolder}/VillageVolume.asset";
+            VolumeProfile profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                AssetDatabase.CreateAsset(profile, path);
+            }
+
+            foreach (VolumeComponent component in profile.components)
+                Object.DestroyImmediate(component, true);
+
+            profile.components.Clear();
+            Bloom bloom = Add<Bloom>(profile);
+            bloom.threshold.value = 0.85f;
+            bloom.intensity.value = 0.65f;
+            bloom.scatter.value = 0.72f;
+            bloom.tint.value = new Color(1f, 0.85f, 0.7f);
+            ShadowsMidtonesHighlights grade = Add<ShadowsMidtonesHighlights>(profile);
+            grade.shadows.value = new Vector4(0.86f, 0.97f, 1.1f, 0f);
+            grade.highlights.value = new Vector4(1.08f, 1f, 0.9f, 0f);
+            Vignette vignette = Add<Vignette>(profile);
+            vignette.intensity.value = 0.28f;
+            vignette.smoothness.value = 0.5f;
+            ColorAdjustments color = Add<ColorAdjustments>(profile);
+            color.postExposure.value = 0.75f;
+            color.contrast.value = 12f;
+            color.saturation.value = -12f;
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+
+            Volume volume = BattleEditorUtility.CreateChild("[Village Volume]", village).AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 1f;
             volume.sharedProfile = profile;
         }
 

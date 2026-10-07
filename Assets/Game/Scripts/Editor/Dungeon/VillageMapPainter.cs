@@ -13,7 +13,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static readonly Color s_parchment = new(0.8f, 0.71f, 0.52f);
         private static readonly Color s_ink = new(0.2f, 0.13f, 0.07f);
-        private static readonly Color s_wood = new(0.5f, 0.47f, 0.32f);
+        private static readonly Color s_wood = new(0.3f, 0.31f, 0.2f);
         private static readonly Color s_water = new(0.38f, 0.42f, 0.4f);
         private static readonly Color s_road = new(0.88f, 0.8f, 0.6f);
         private static readonly Color s_field = new(0.72f, 0.6f, 0.38f);
@@ -36,18 +36,19 @@ namespace Game.Scripts.Editor.Dungeon
                     float grain = DungeonTextureBuilder.Noise(wx / 540f + 3f, wz / 540f + 1f, 120f, 2);
                     Color color = s_parchment * (0.92f + grain * 0.12f + shade);
 
-                    float forest = VillageTerrainBuilder.Forest(wx, wz);
+                    float forest = VillageTerrainBuilder.Forest(ground, wx, wz);
 
                     if (forest > 0.5f)
                     {
+                        // Crowns of trees: a stipple of round blobs, darker towards the deep woods.
                         float stipple = DungeonTextureBuilder.Noise(wx / 540f, wz / 540f, 260f, 1);
-                        color = Color.Lerp(color, s_wood * (0.85f + shade), 0.55f + (stipple > 0.62f ? 0.3f : 0f));
+                        color = Color.Lerp(color, s_wood * (0.85f + shade + (stipple - 0.5f) * 0.5f), 0.7f + (stipple > 0.6f ? 0.2f : 0f));
                     }
 
                     if (VillageTerrainBuilder.InField(wx, wz, 0f))
                         color = Color.Lerp(color, s_field, Mathf.Repeat(wx + wz, 3f) < 1f ? 0.7f : 0.35f);
 
-                    if (VillageLayout.Graveyard.Contains(new Vector2(wx, wz)))
+                    if (VillageLayout.Graveyard.Contains(new Vector2(wx, wz)) && ground.Open(wx, wz) < 0f)
                         color = Color.Lerp(color, new Color(0.6f, 0.58f, 0.5f), 0.35f);
 
                     float road = ground.RoadDistance(wx, wz);

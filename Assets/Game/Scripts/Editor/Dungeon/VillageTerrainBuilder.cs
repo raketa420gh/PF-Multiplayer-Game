@@ -6,16 +6,20 @@ using UnityEngine.AI;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// The village floor's land: a Unity terrain painted with grass, road dirt, swamp mud, forest litter, cliff rock and cobbles,
-    /// grass, reeds and dead crops as details, forests of spruces and broadleaves, dead trees in the swamp and the graveyard,
-    /// boulders, murky water in every hollow below the water level, invisible walls along the banks and round the map.
+    /// The village floor's land: a Unity terrain painted with grass, road dirt, swamp mud, forest litter, cliff rock, cobbles and
+    /// puddles, grass, reeds and dead crops as details, closed land under dense forest with a rim of thicket round every open
+    /// place, copses inside the wild ones, dead trees in the swamp and the graveyard, murky water in every hollow below the water
+    /// level, invisible walls along the banks, round the open ground and round the map; the closed land is cut out of the NavMesh.
     internal static class VillageTerrainBuilder
     {
         public const string DataPath = "Assets/Game/Scenes/DungeonScene/VillageTerrain.asset";
         private const string LayersFolder = DungeonContentBuilder.ConfigsFolder + "/Terrain";
         private const int AlphaResolution = 1024;
         private const int DetailResolution = 1024;
-        private const float TreeStep = 5.5f;
+        private const float TreeStep = 4.6f;
+        private const float ThicketStep = 2.6f;
+        private const float RimCell = 2f;
+        private const float NavCell = 8f;
 
         private enum Layer
         {
@@ -24,7 +28,8 @@ namespace Game.Scripts.Editor.Dungeon
             Mud,
             Forest,
             Rock,
-            Cobble
+            Cobble,
+            Puddle
         }
 
         /// Areas the terrain leaves open: building plots and their yards, holes for the cellar pits.
@@ -51,11 +56,11 @@ namespace Game.Scripts.Editor.Dungeon
             data.alphamapResolution = AlphaResolution;
             data.terrainLayers = new[]
             {
-                TerrainLayer("Grass", 0.05f), TerrainLayer("Dirt", 0.1f), TerrainLayer("Mud", 0.2f), TerrainLayer("ForestFloor", 0.08f),
-                TerrainLayer("Rock", 0.12f), TerrainLayer("Cobble", 0.15f)
+                TerrainLayer("Grass", "Grass", 0.08f), TerrainLayer("Dirt", "Dirt", 0.3f), TerrainLayer("Mud", "Mud", 0.55f), TerrainLayer("ForestFloor", "ForestFloor", 0.1f),
+                TerrainLayer("Rock", "Rock", 0.18f), TerrainLayer("Cobble", "Cobble", 0.4f), TerrainLayer("Puddle", "Mud", 0.93f, 0.35f, 0.25f)
             };
             Paint(data, ground);
-            Holes(data, ground, clearings);
+            Holes(data, clearings);
             Details(data, ground, clearings);
             Trees(data, ground, clearings, sources);
             EditorUtility.SetDirty(data);
@@ -67,25 +72,50 @@ namespace Game.Scripts.Editor.Dungeon
             go.isStatic = true;
             Terrain terrain = go.GetComponent<Terrain>();
             terrain.materialTemplate = TerrainMaterial();
-            terrain.heightmapPixelError = 4f;
-            terrain.basemapDistance = 160f;
-            terrain.treeDistance = 240f;
-            terrain.treeBillboardDistance = 240f;
-            terrain.treeMaximumFullLODCount = 2000;
-            terrain.detailObjectDistance = 70f;
+            // The mist swallows everything past ~110 m: nothing beyond it is drawn.
+            terrain.heightmapPixelError = 5f;
+            terrain.basemapDistance = 120f;
+            terrain.treeDistance = 130f;
+            terrain.treeBillboardDistance = 130f;
+            terrain.treeMaximumFullLODCount = 4000;
+            terrain.detailObjectDistance = 65f;
             terrain.detailObjectDensity = 1f;
             terrain.drawInstanced = true;
             terrain.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
 
             Water(parent, ground, clearings);
             Walls(parent, ground);
+            CloseNavMesh(ground, sources);
 
             return terrain;
         }
 
-        private static TerrainLayer TerrainLayer(string texture, float smoothness)
+        /// 1 in the closed land and its thicket rim, copses in the open wild places (not the village streets or the graveyard).
+        public static float Forest(VillageGround ground, float x, float z)
         {
-            string path = $"{LayersFolder}/{texture}.terrainlayer";
+            float closed = DungeonTextureBuilder.Step(-4f, 2f, ground.Open(x, z));
+            float copse = DungeonTextureBuilder.Step(0.6f, 0.68f, DungeonTextureBuilder.Noise(x / 540f + 8f, z / 540f + 8f, 16f, 3));
+            bool isSettled = VillageLayout.Village.Distance(x, z) < 6f || VillageLayout.Graveyard.Contains(new Vector2(x, z)) || InField(x, z, 6f);
+
+            return Mathf.Max(closed, isSettled ? 0f : copse * 0.85f);
+        }
+
+        public static bool InField(float x, float z, float margin)
+        {
+            foreach ((Vector2 center, Vector2 size, float yaw) in VillageLayout.Fields)
+            {
+                Vector3 local = Quaternion.Euler(0f, -yaw, 0f) * new Vector3(x - center.x, 0f, z - center.y);
+
+                if (Mathf.Abs(local.x) < size.x * 0.5f + margin && Mathf.Abs(local.z) < size.y * 0.5f + margin)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static TerrainLayer TerrainLayer(string name, string texture, float smoothness, float tint = 1f, float normalScale = 1f)
+        {
+            string path = $"{LayersFolder}/{name}.terrainlayer";
             TerrainLayer layer = AssetDatabase.LoadAssetAtPath<TerrainLayer>(path);
 
             if (layer == null)
@@ -96,7 +126,9 @@ namespace Game.Scripts.Editor.Dungeon
 
             layer.diffuseTexture = DungeonTextureBuilder.Load(texture, false);
             layer.normalMapTexture = DungeonTextureBuilder.Load(texture, true);
-            layer.normalScale = 1f;
+            layer.normalScale = normalScale;
+            layer.diffuseRemapMin = Vector4.zero;
+            layer.diffuseRemapMax = new Vector4(tint, tint, tint * 1.08f, 1f);
             layer.tileSize = new Vector2(4f, 4f);
             layer.smoothness = smoothness;
             layer.metallic = 0f;
@@ -117,13 +149,14 @@ namespace Game.Scripts.Editor.Dungeon
             }
 
             material.EnableKeyword("_NORMALMAP");
+            material.enableInstancing = true;
             EditorUtility.SetDirty(material);
 
             return material;
         }
 
         /// Layer weights from what the ground is: rock on steep slopes and hills, mud by the water and in the swamp, dirt on roads
-        /// and round buildings, cobbles on the square, forest litter in the woods, grass elsewhere.
+        /// and round buildings with puddles in the ruts, cobbles on the square, forest litter in the woods, grass elsewhere.
         private static void Paint(TerrainData data, VillageGround ground)
         {
             int layers = data.terrainLayers.Length;
@@ -139,15 +172,17 @@ namespace Game.Scripts.Editor.Dungeon
                     float wz = (z + 0.5f) * step - VillageLayout.Half;
                     float height = ground.Height(wx, wz);
                     float noise = DungeonTextureBuilder.Noise(wx / 540f + 2f, wz / 540f + 4f, 40f, 3);
+                    float fine = DungeonTextureBuilder.Noise(wx / 540f + 9f, wz / 540f + 6f, 140f, 2);
                     float swamp = VillageLayout.SwampShare(wx, wz);
                     float slope = ground.Slope(wx, wz);
                     float road = DungeonTextureBuilder.Step(0.8f + noise * 1.6f, -0.6f, ground.RoadDistance(wx, wz));
                     float pad = ground.PadMask(wx, wz);
                     float wet = DungeonTextureBuilder.Step(VillageLayout.WaterLevel + 0.6f, VillageLayout.WaterLevel + 0.05f, height);
-                    float rock = Mathf.Max(DungeonTextureBuilder.Step(28f, 38f, slope), DungeonTextureBuilder.Step(14f, 4f, VillageLayout.EdgeDistance(wx, wz)));
-                    float forest = Forest(wx, wz) * (0.6f + noise * 0.6f);
-                    float plaza = DungeonTextureBuilder.Step(VillageLayout.PlazaRadius + 1f, VillageLayout.PlazaRadius - 1f, (new Vector2(wx, wz) - VillageLayout.Plaza).magnitude);
+                    float rock = Mathf.Max(DungeonTextureBuilder.Step(24f, 34f, slope + (noise - 0.5f) * 8f), DungeonTextureBuilder.Step(14f, 4f, VillageLayout.EdgeDistance(wx, wz)));
+                    float forest = Forest(ground, wx, wz) * (0.6f + noise * 0.6f);
+                    float plaza = DungeonTextureBuilder.Step(VillageLayout.PlazaRadius + 1f + fine * 3f, VillageLayout.PlazaRadius - 1f, (new Vector2(wx, wz) - VillageLayout.Plaza).magnitude);
                     float field = InField(wx, wz, 0f) ? 1f : 0f;
+                    float puddle = DungeonTextureBuilder.Step(0.6f, 0.68f, fine) * Mathf.Max(road, pad * 0.6f, wet * 0.8f) * (1f - plaza);
 
                     System.Array.Clear(weights, 0, layers);
                     weights[(int)Layer.Grass] = 1f;
@@ -156,6 +191,7 @@ namespace Game.Scripts.Editor.Dungeon
                     weights[(int)Layer.Dirt] = Mathf.Max(road * 3f, pad * (0.6f + noise * 0.8f), field * 1.2f);
                     weights[(int)Layer.Cobble] = plaza * 4f;
                     weights[(int)Layer.Rock] = rock * 5f;
+                    weights[(int)Layer.Puddle] = puddle * 6f;
                     float total = 0f;
 
                     foreach (float weight in weights)
@@ -169,7 +205,7 @@ namespace Game.Scripts.Editor.Dungeon
             data.SetAlphamaps(0, 0, maps);
         }
 
-        private static void Holes(TerrainData data, VillageGround ground, Clearings clearings)
+        private static void Holes(TerrainData data, Clearings clearings)
         {
             int resolution = data.holesResolution;
             bool[,] solid = new bool[resolution, resolution];
@@ -211,15 +247,16 @@ namespace Game.Scripts.Editor.Dungeon
             data.SetHoles(0, 0, solid);
         }
 
-        /// Grass on meadows and forest edges, reeds where the ground meets the water, dead crops in rows on the fields.
+        /// Grass on meadows and forest edges, thick and tall along the thicket rims, reeds where the ground meets the water,
+        /// dead crops in rows on the fields.
         private static void Details(TerrainData data, VillageGround ground, Clearings clearings)
         {
             data.SetDetailResolution(DetailResolution, 16);
             data.detailPrototypes = new[]
             {
-                Detail("GrassBlades", 0.7f, 1.1f, 0.35f, 0.6f, new Color(0.75f, 0.8f, 0.6f), new Color(0.85f, 0.75f, 0.55f)),
-                Detail("Reeds", 0.9f, 1.4f, 1.1f, 1.8f, new Color(0.8f, 0.8f, 0.65f), new Color(0.75f, 0.65f, 0.5f)),
-                Detail("DeadCrops", 0.6f, 0.9f, 0.8f, 1.2f, new Color(0.9f, 0.85f, 0.7f), new Color(0.8f, 0.7f, 0.55f))
+                Detail("GrassBlades", 0.7f, 1.2f, 0.4f, 0.8f, new Color(0.62f, 0.72f, 0.5f), new Color(0.8f, 0.72f, 0.5f)),
+                Detail("Reeds", 0.9f, 1.4f, 1.1f, 1.9f, new Color(0.7f, 0.74f, 0.6f), new Color(0.7f, 0.62f, 0.46f)),
+                Detail("DeadCrops", 0.6f, 0.9f, 0.8f, 1.3f, new Color(0.85f, 0.8f, 0.62f), new Color(0.75f, 0.66f, 0.5f))
             };
             int[][,] layers = { new int[DetailResolution, DetailResolution], new int[DetailResolution, DetailResolution], new int[DetailResolution, DetailResolution] };
             float step = VillageLayout.Size / DetailResolution;
@@ -233,11 +270,13 @@ namespace Game.Scripts.Editor.Dungeon
                     float wz = (z + 0.5f) * step - VillageLayout.Half;
                     float height = ground.Height(wx, wz);
 
-                    if (height < VillageLayout.WaterLevel - 0.25f || ground.PadMask(wx, wz) > 0.2f || ground.RoadDistance(wx, wz) < 0.5f || IsCleared(clearings, wx, wz))
+                    if (height < VillageLayout.WaterLevel - 0.25f || ground.PadMask(wx, wz) > 0.2f || ground.RoadDistance(wx, wz) < 0.3f || IsCleared(clearings, wx, wz)
+                        || ground.Slope(wx, wz) > 34f)
                         continue;
 
                     float noise = DungeonTextureBuilder.Noise(wx / 540f + 6f, wz / 540f + 1f, 50f, 3);
                     float shore = DungeonTextureBuilder.Step(VillageLayout.WaterLevel + 0.7f, VillageLayout.WaterLevel - 0.1f, height);
+                    float open = ground.Open(wx, wz);
 
                     if (InField(wx, wz, -1f))
                     {
@@ -246,18 +285,21 @@ namespace Game.Scripts.Editor.Dungeon
                         continue;
                     }
 
-                    if (shore > 0.3f && noise > 0.35f)
+                    if (shore > 0.3f && noise > 0.3f)
                     {
-                        layers[1][z, x] = 1 + random.Next(4);
+                        layers[1][z, x] = 1 + random.Next(5);
                         continue;
                     }
 
-                    float density = (1f - Forest(wx, wz) * 0.6f) * DungeonTextureBuilder.Step(0.35f, 0.7f, noise) * (1f - VillageLayout.SwampShare(wx, wz) * 0.5f);
+                    // The rim of the thicket and the road verges grow tall; the trodden middle of a place stays short.
+                    float rim = DungeonTextureBuilder.Step(-8f, -1f, open) * DungeonTextureBuilder.Step(6f, 1f, open);
+                    float verge = DungeonTextureBuilder.Step(0.3f, 1.5f, ground.RoadDistance(wx, wz)) * DungeonTextureBuilder.Step(5f, 1.5f, ground.RoadDistance(wx, wz));
+                    float density = Mathf.Max(DungeonTextureBuilder.Step(0.3f, 0.62f, noise), rim, verge * 0.8f) * (1f - VillageLayout.SwampShare(wx, wz) * 0.5f) * (1f - Forest(ground, wx, wz) * 0.45f);
 
                     if (VillageLayout.Graveyard.Contains(new Vector2(wx, wz)))
-                        density *= 0.6f;
+                        density *= 0.7f;
 
-                    layers[0][z, x] = Mathf.RoundToInt(density * 5f * (float)random.NextDouble());
+                    layers[0][z, x] = Mathf.RoundToInt(density * 6f * (0.4f + (float)random.NextDouble() * 0.6f));
                 }
             }
 
@@ -283,8 +325,9 @@ namespace Game.Scripts.Editor.Dungeon
             };
         }
 
-        /// Forests fill everything outside the settled places; the swamp and the graveyard get dead trees, the farm and the
-        /// village a few old broadleaves. Every trunk is also a NavMesh obstacle.
+        /// Dense forest over the closed land (dead trees and bushes over the bog), a thicket rim of bushes and young trees round
+        /// every open place, copses inside the wild ones, a few old trees in the settled places. Trunks near the open ground are
+        /// NavMesh obstacles; deeper ones lie in the cut-out closed land anyway.
         private static void Trees(TerrainData data, VillageGround ground, Clearings clearings, List<NavMeshBuildSource> sources)
         {
             List<TreePrototype> prototypes = new();
@@ -292,6 +335,7 @@ namespace Game.Scripts.Editor.Dungeon
             int[] broadleaf = new int[DungeonVegetationBuilder.Variants];
             int[] dead = new int[DungeonVegetationBuilder.Variants];
             int[] bush = new int[DungeonVegetationBuilder.Variants];
+            int[] swampTree = new int[DungeonVegetationBuilder.Variants];
 
             for (int i = 0; i < DungeonVegetationBuilder.Variants; i++)
             {
@@ -299,11 +343,13 @@ namespace Game.Scripts.Editor.Dungeon
                 broadleaf[i] = Prototype(prototypes, $"Broadleaf{i}");
                 dead[i] = Prototype(prototypes, $"DeadTree{i}");
                 bush[i] = Prototype(prototypes, $"Bush{i}");
+                swampTree[i] = Prototype(prototypes, $"SwampTree{i}");
             }
 
             data.treePrototypes = prototypes.ToArray();
             List<TreeInstance> trees = new();
             System.Random random = new System.Random(11);
+            int Pick(int[] kinds) => kinds[random.Next(kinds.Length)];
 
             for (float wz = -VillageLayout.Half + 4f; wz < VillageLayout.Half - 4f; wz += TreeStep)
             {
@@ -313,78 +359,120 @@ namespace Game.Scripts.Editor.Dungeon
                     float z = wz + ((float)random.NextDouble() - 0.5f) * TreeStep * 0.9f;
                     float roll = (float)random.NextDouble();
                     float height = ground.Height(x, z);
-                    float forest = Forest(x, z);
+                    float open = ground.Open(x, z);
                     float swamp = VillageLayout.SwampShare(x, z);
                     bool isWet = height < VillageLayout.WaterLevel + 0.15f;
 
                     if (ground.RoadDistance(x, z) < 2.5f || ground.PadMask(x, z) > 0.05f || IsCleared(clearings, x, z) || InField(x, z, 4f)
-                        || ground.WaterDistance(x, z) < 6f || VillageLayout.EdgeDistance(x, z) < 6f)
+                        || ground.WaterDistance(x, z) < (swamp > 0.5f ? 2f : 5f) || VillageLayout.EdgeDistance(x, z) < 6f)
                         continue;
 
                     int prototype;
 
                     if (swamp > 0.5f)
                     {
-                        if (roll > 0.07f + forest * 0.25f)
-                            continue;
+                        if (open > VillageLayout.WallLine)
+                        {
+                            if (roll > 0.5f)
+                                continue;
 
-                        prototype = isWet || random.NextDouble() < 0.55 ? dead[random.Next(dead.Length)] : random.NextDouble() < 0.5 ? broadleaf[random.Next(broadleaf.Length)] : bush[random.Next(bush.Length)];
+                            double kind = random.NextDouble();
+                            prototype = kind < 0.45 ? Pick(swampTree) : kind < 0.75 ? Pick(dead) : kind < 0.88 ? Pick(bush) : Pick(broadleaf);
+                        }
+                        else
+                        {
+                            if (roll > (open > -5f ? 0.35f : 0.06f))
+                                continue;
+
+                            prototype = isWet || random.NextDouble() < 0.6 ? Pick(random.NextDouble() < 0.5 ? swampTree : dead) : Pick(bush);
+                        }
                     }
                     else if (isWet)
                     {
                         continue;
+                    }
+                    else if (open > VillageLayout.WallLine)
+                    {
+                        if (roll > 0.86f)
+                            continue;
+
+                        double kind = random.NextDouble();
+                        prototype = kind < 0.5 ? Pick(spruce) : kind < 0.8 ? Pick(broadleaf) : kind < 0.9 ? Pick(bush) : Pick(dead);
                     }
                     else if (VillageLayout.Graveyard.Contains(new Vector2(x, z)))
                     {
                         if (roll > 0.03f)
                             continue;
 
-                        prototype = dead[random.Next(dead.Length)];
+                        prototype = Pick(dead);
                     }
-                    else if (forest > 0.5f)
+                    else if (Forest(ground, x, z) > 0.5f)
                     {
-                        if (roll > 0.42f + forest * 0.35f)
+                        if (roll > 0.55f)
                             continue;
 
                         double kind = random.NextDouble();
-                        prototype = kind < 0.62 ? spruce[random.Next(spruce.Length)] : kind < 0.84 ? broadleaf[random.Next(broadleaf.Length)] : kind < 0.93 ? bush[random.Next(bush.Length)] : dead[random.Next(dead.Length)];
+                        prototype = kind < 0.4 ? Pick(spruce) : kind < 0.75 ? Pick(broadleaf) : kind < 0.92 ? Pick(bush) : Pick(dead);
                     }
                     else
                     {
-                        if (roll > 0.035f)
+                        if (roll > 0.03f)
                             continue;
 
-                        prototype = random.NextDouble() < 0.5 ? broadleaf[random.Next(broadleaf.Length)] : bush[random.Next(bush.Length)];
+                        prototype = random.NextDouble() < 0.6 ? Pick(broadleaf) : Pick(dead);
                     }
 
-                    float scale = 0.8f + (float)random.NextDouble() * 0.45f;
-                    trees.Add(new TreeInstance
-                    {
-                        prototypeIndex = prototype,
-                        position = new Vector3((x + VillageLayout.Half) / VillageLayout.Size, (height - VillageGround.Bottom) / VillageGround.Depth, (z + VillageLayout.Half) / VillageLayout.Size),
-                        widthScale = scale,
-                        heightScale = scale * (0.9f + (float)random.NextDouble() * 0.2f),
-                        rotation = (float)random.NextDouble() * Mathf.PI * 2f,
-                        color = Color.Lerp(Color.white, new Color(0.8f, 0.78f, 0.7f), (float)random.NextDouble()),
-                        lightmapColor = Color.white
-                    });
+                    AddTree(trees, prototypes, sources, random, prototype, x, z, height, open < 4f);
+                }
+            }
 
-                    CapsuleCollider capsule = prototypes[prototype].prefab.GetComponent<CapsuleCollider>();
+            // The thicket rim: bushes shoulder to shoulder along the edge of the open ground, so the closed land reads as a wall.
+            for (float wz = -VillageLayout.Half + 4f; wz < VillageLayout.Half - 4f; wz += ThicketStep)
+            {
+                for (float wx = -VillageLayout.Half + 4f; wx < VillageLayout.Half - 4f; wx += ThicketStep)
+                {
+                    float x = wx + ((float)random.NextDouble() - 0.5f) * ThicketStep;
+                    float z = wz + ((float)random.NextDouble() - 0.5f) * ThicketStep;
+                    float open = ground.Open(x, z);
 
-                    if (capsule != null)
-                    {
-                        sources.Add(new NavMeshBuildSource
-                        {
-                            shape = NavMeshBuildSourceShape.Capsule,
-                            transform = Matrix4x4.TRS(new Vector3(x, height + 2.5f, z), Quaternion.identity, Vector3.one),
-                            size = new Vector3(capsule.radius * 2f * scale, 6f, capsule.radius * 2f * scale),
-                            area = 1
-                        });
-                    }
+                    if (open < -1.5f || open > 5f || random.NextDouble() > 0.6 || ground.RoadDistance(x, z) < 2.5f || ground.PadMask(x, z) > 0.05f || IsCleared(clearings, x, z)
+                        || ground.WaterDistance(x, z) < 3f || VillageLayout.EdgeDistance(x, z) < 6f || ground.Height(x, z) < VillageLayout.WaterLevel - 0.3f)
+                        continue;
+
+                    AddTree(trees, prototypes, sources, random, Pick(bush), x, z, ground.Height(x, z), false);
                 }
             }
 
             data.SetTreeInstances(trees.ToArray(), false);
+        }
+
+        private static void AddTree(List<TreeInstance> trees, List<TreePrototype> prototypes, List<NavMeshBuildSource> sources, System.Random random, int prototype, float x, float z, float height,
+            bool isObstacle)
+        {
+            float scale = 0.8f + (float)random.NextDouble() * 0.45f;
+            trees.Add(new TreeInstance
+            {
+                prototypeIndex = prototype,
+                position = new Vector3((x + VillageLayout.Half) / VillageLayout.Size, (height - VillageGround.Bottom) / VillageGround.Depth, (z + VillageLayout.Half) / VillageLayout.Size),
+                widthScale = scale,
+                heightScale = scale * (0.9f + (float)random.NextDouble() * 0.2f),
+                rotation = (float)random.NextDouble() * Mathf.PI * 2f,
+                color = Color.Lerp(Color.white, new Color(0.78f, 0.76f, 0.68f), (float)random.NextDouble()),
+                lightmapColor = Color.white
+            });
+
+            CapsuleCollider capsule = prototypes[prototype].prefab.GetComponent<CapsuleCollider>();
+
+            if (!isObstacle || capsule == null)
+                return;
+
+            sources.Add(new NavMeshBuildSource
+            {
+                shape = NavMeshBuildSourceShape.Capsule,
+                transform = Matrix4x4.TRS(new Vector3(x, height + 2.5f, z), Quaternion.identity, Vector3.one),
+                size = new Vector3(capsule.radius * 2f * scale, 6f, capsule.radius * 2f * scale),
+                area = 1
+            });
         }
 
         private static int Prototype(List<TreePrototype> prototypes, string name)
@@ -392,33 +480,6 @@ namespace Game.Scripts.Editor.Dungeon
             prototypes.Add(new TreePrototype { prefab = DungeonVegetationBuilder.Load(name), bendFactor = 0f });
 
             return prototypes.Count - 1;
-        }
-
-        /// 1 deep in the woods, 0 in the settled places (farm, village, graveyard, chapel), the swamp counts its own way.
-        public static float Forest(float x, float z)
-        {
-            Vector2 p = new Vector2(x, z);
-            float farm = DungeonTextureBuilder.Step(VillageLayout.FarmRadius - 12f, VillageLayout.FarmRadius + 4f, (p - VillageLayout.FarmCenter).magnitude);
-            float village = DungeonTextureBuilder.Step(VillageLayout.VillageRadius - 14f, VillageLayout.VillageRadius + 2f, (p - VillageLayout.VillageCenter).magnitude);
-            Rect yard = VillageLayout.Graveyard;
-            float outside = new Vector2(Mathf.Max(yard.xMin - x, x - yard.xMax, 0f), Mathf.Max(yard.yMin - z, z - yard.yMax, 0f)).magnitude;
-            float graveyard = DungeonTextureBuilder.Step(2f, 14f, outside);
-            float clumps = DungeonTextureBuilder.Step(0.24f, 0.4f, DungeonTextureBuilder.Noise(x / 540f + 8f, z / 540f + 8f, 10f, 3));
-
-            return farm * village * graveyard * Mathf.Max(clumps, DungeonTextureBuilder.Step(60f, 30f, VillageLayout.EdgeDistance(x, z)));
-        }
-
-        public static bool InField(float x, float z, float margin)
-        {
-            foreach ((Vector2 center, Vector2 size, float yaw) in VillageLayout.Fields)
-            {
-                Vector3 local = Quaternion.Euler(0f, -yaw, 0f) * new Vector3(x - center.x, 0f, z - center.y);
-
-                if (Mathf.Abs(local.x) < size.x * 0.5f + margin && Mathf.Abs(local.z) < size.y * 0.5f + margin)
-                    return true;
-            }
-
-            return false;
         }
 
         private static bool IsCleared(Clearings clearings, float x, float z)
@@ -484,6 +545,7 @@ namespace Game.Scripts.Editor.Dungeon
             return false;
         }
 
+        /// Black still water that mirrors the moonlit sky; the mud normals give it a slow ripple.
         private static Material WaterMaterial()
         {
             string path = $"{DungeonPropBuilder.MaterialsFolder}/VillageWater.mat";
@@ -495,20 +557,24 @@ namespace Game.Scripts.Editor.Dungeon
                 AssetDatabase.CreateAsset(material, path);
             }
 
-            material.SetColor("_BaseColor", new Color(0.02f, 0.026f, 0.022f));
-            material.SetFloat("_Smoothness", 0.9f);
+            material.SetColor("_BaseColor", new Color(0.012f, 0.02f, 0.022f));
+            material.SetFloat("_Smoothness", 0.92f);
             material.SetFloat("_Metallic", 0f);
+            material.SetFloat("_SpecularHighlights", 1f);
+            material.SetFloat("_EnvironmentReflections", 1f);
             material.SetTexture("_BumpMap", DungeonTextureBuilder.Load("Mud", true));
-            material.SetFloat("_BumpScale", 0.15f);
+            material.SetFloat("_BumpScale", 0.22f);
             material.EnableKeyword("_NORMALMAP");
-            material.SetTextureScale("_BaseMap", Vector2.one * 0.5f);
+            material.SetTextureScale("_BaseMap", Vector2.one * 0.35f);
+            material.enableInstancing = true;
             EditorUtility.SetDirty(material);
 
             return material;
         }
 
         /// The river and the stream cannot be waded: invisible walls follow both banks at the waterline, open under the bridges
-        /// and where the water spreads into the swamp. The map ends in walls at the foot of the hills.
+        /// and where the water spreads into the swamp. The open ground is fenced off from the closed land along its rim, and
+        /// the map ends in walls at the foot of the hills.
         private static void Walls(Transform parent, VillageGround ground)
         {
             Transform root = BattleEditorUtility.CreateChild("Invisible Walls", parent).transform;
@@ -522,6 +588,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             BankWalls(root, ground, ground.River, VillageLayout.RiverWidth, bridges);
             BankWalls(root, ground, ground.Stream, VillageLayout.StreamWidth, bridges);
+            RimWalls(root, ground);
 
             for (int i = 0; i < 4; i++)
             {
@@ -551,11 +618,134 @@ namespace Game.Scripts.Editor.Dungeon
                 foreach (float side in new[] { -1f, 1f })
                 {
                     Vector2 point = middle + normal * offset * side;
+
+                    // Banks inside the closed land are behind the rim walls already.
+                    if (ground.Open(point) > VillageLayout.WallLine + 2f)
+                        continue;
+
                     float height = ground.Height(point);
                     GameObject wall = BattleEditorUtility.CreateChild("Bank", root, new Vector3(point.x, height + 1f, point.y));
                     wall.transform.localRotation = Quaternion.LookRotation(new Vector3(direction.x, 0f, direction.y));
                     wall.AddComponent<BoxCollider>().size = new Vector3(0.4f, 5f, (b - a).magnitude + 0.3f);
                     wall.isStatic = true;
+                }
+            }
+        }
+
+        /// Marching squares over the open field at the wall line: one vertical collider strip per map module, ten metres tall
+        /// from under the ground, so nothing walks or jumps into the closed land.
+        private static void RimWalls(Transform root, VillageGround ground)
+        {
+            int cells = Mathf.RoundToInt(VillageLayout.Size / RimCell);
+            int perModule = cells / VillageLayout.Grid;
+            float[,] values = new float[cells + 1, cells + 1];
+
+            for (int z = 0; z <= cells; z++)
+            {
+                for (int x = 0; x <= cells; x++)
+                    values[z, x] = ground.Open(x * RimCell - VillageLayout.Half, z * RimCell - VillageLayout.Half) - VillageLayout.WallLine;
+            }
+
+            for (int mz = 0; mz < VillageLayout.Grid; mz++)
+            {
+                for (int mx = 0; mx < VillageLayout.Grid; mx++)
+                {
+                    List<Vector3> vertices = new();
+                    List<int> triangles = new();
+
+                    for (int z = mz * perModule; z < (mz + 1) * perModule; z++)
+                    {
+                        for (int x = mx * perModule; x < (mx + 1) * perModule; x++)
+                        {
+                            Vector2 origin = new Vector2(x * RimCell - VillageLayout.Half, z * RimCell - VillageLayout.Half);
+
+                            if (VillageLayout.EdgeDistance(origin.x + RimCell * 0.5f, origin.y + RimCell * 0.5f) < VillageLayout.Half - VillageLayout.Playable)
+                                continue;
+
+                            float[] corner = { values[z, x], values[z, x + 1], values[z + 1, x + 1], values[z + 1, x] };
+                            Vector2[] offsets = { Vector2.zero, new Vector2(RimCell, 0f), new Vector2(RimCell, RimCell), new Vector2(0f, RimCell) };
+                            List<Vector2> crossings = new();
+
+                            for (int e = 0; e < 4; e++)
+                            {
+                                float a = corner[e];
+                                float b = corner[(e + 1) % 4];
+
+                                if (a < 0f == b < 0f)
+                                    continue;
+
+                                crossings.Add(origin + Vector2.Lerp(offsets[e], offsets[(e + 1) % 4], a / (a - b)));
+                            }
+
+                            for (int i = 0; i + 1 < crossings.Count; i += 2)
+                                Strip(vertices, triangles, ground, crossings[i], crossings[i + 1]);
+                        }
+                    }
+
+                    if (vertices.Count == 0)
+                        continue;
+
+                    GameObject wall = BattleEditorUtility.CreateChild($"Rim{mx}{mz}", root);
+                    wall.isStatic = true;
+                    wall.AddComponent<MeshCollider>().sharedMesh = SaveMesh($"VillageRim{mx}{mz}", vertices, triangles);
+                }
+            }
+        }
+
+        private static void Strip(List<Vector3> vertices, List<int> triangles, VillageGround ground, Vector2 a, Vector2 b)
+        {
+            int start = vertices.Count;
+            float ha = Mathf.Max(ground.Height(a), VillageLayout.WaterLevel);
+            float hb = Mathf.Max(ground.Height(b), VillageLayout.WaterLevel);
+            vertices.Add(new Vector3(a.x, ha - 2f, a.y));
+            vertices.Add(new Vector3(a.x, ha + 8f, a.y));
+            vertices.Add(new Vector3(b.x, hb + 8f, b.y));
+            vertices.Add(new Vector3(b.x, hb - 2f, b.y));
+            // Both faces, so the collider stops movement from either side.
+            triangles.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3, start, start + 2, start + 1, start, start + 3, start + 2 });
+        }
+
+        private static Mesh SaveMesh(string name, List<Vector3> vertices, List<int> triangles)
+        {
+            string path = $"{DungeonMeshBuilder.Folder}/{name}.asset";
+            BattleEditorUtility.EnsureFolder(DungeonMeshBuilder.Folder);
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+
+            if (mesh == null)
+            {
+                mesh = new Mesh();
+                AssetDatabase.CreateAsset(mesh, path);
+            }
+
+            mesh.Clear();
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            mesh.name = name;
+            EditorUtility.SetDirty(mesh);
+
+            return mesh;
+        }
+
+        /// The closed land must hold no NavMesh, or escape portals and monsters could be put on a ridge top behind the rim walls.
+        private static void CloseNavMesh(VillageGround ground, List<NavMeshBuildSource> sources)
+        {
+            for (float z = -VillageLayout.Half + NavCell * 0.5f; z < VillageLayout.Half; z += NavCell)
+            {
+                for (float x = -VillageLayout.Half + NavCell * 0.5f; x < VillageLayout.Half; x += NavCell)
+                {
+                    if (ground.Open(x, z) < VillageLayout.WallLine + NavCell * 0.75f)
+                        continue;
+
+                    sources.Add(new NavMeshBuildSource
+                    {
+                        shape = NavMeshBuildSourceShape.ModifierBox,
+                        transform = Matrix4x4.Translate(new Vector3(x, 10f, z)),
+                        size = new Vector3(NavCell, 80f, NavCell),
+                        area = 1
+                    });
                 }
             }
         }

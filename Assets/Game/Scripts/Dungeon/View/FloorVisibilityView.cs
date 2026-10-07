@@ -4,8 +4,8 @@ using UnityEngine.Rendering;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Renders only the floor the local adventurer stands on: renderers, terrains and lights of other floors stay off until
-    /// a descent, and the floor's own air (ambient light, fog, view distance) is applied. Colliders are untouched, the host
+    /// Renders only the floor the local adventurer stands on: renderers, terrains, lights and volumes of other floors stay off
+    /// until a descent, and the floor's own air (ambient light, fog, view distance) is applied. Colliders are untouched, the host
     /// still simulates every floor.
     public sealed class FloorVisibilityView : MonoBehaviour
     {
@@ -36,6 +36,7 @@ namespace Game.Scripts.Dungeon
         private Renderer[][] _renderers;
         private Light[][] _lights;
         private Terrain[][] _terrains;
+        private Volume[][] _volumes;
         private int _shownFloor = -1;
 
         private void Awake()
@@ -43,12 +44,14 @@ namespace Game.Scripts.Dungeon
             _renderers = new Renderer[_floors.Length][];
             _lights = new Light[_floors.Length][];
             _terrains = new Terrain[_floors.Length][];
+            _volumes = new Volume[_floors.Length][];
 
             for (int i = 0; i < _floors.Length; i++)
             {
                 _renderers[i] = _floors[i].GetComponentsInChildren<Renderer>(true);
                 _lights[i] = _floors[i].GetComponentsInChildren<Light>(true);
                 _terrains[i] = _floors[i].GetComponentsInChildren<Terrain>(true);
+                _volumes[i] = _floors[i].GetComponentsInChildren<Volume>(true);
             }
         }
 
@@ -75,6 +78,9 @@ namespace Game.Scripts.Dungeon
 
                 foreach (Terrain terrain in _terrains[i])
                     terrain.enabled = isShown;
+
+                foreach (Volume volume in _volumes[i])
+                    volume.enabled = isShown;
             }
 
             if (floor < _atmospheres.Length)
