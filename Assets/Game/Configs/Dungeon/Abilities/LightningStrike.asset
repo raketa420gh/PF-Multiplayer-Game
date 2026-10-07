@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: LightningStrike
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Lightning Strike
-  _description: 'Hitscan: the body under the crosshair is struck by lightning from
-    the sky for 40 magical damage and a stagger.'
+  _description: 'Ground area (up to 20m): lightning from the sky hits everyone within
+    2.5m of the marked spot for 40 magical damage and a stagger. Careful, it hits
+    allies too.'
   _kind: 14
   _isSpell: 1
   _charges: 2
@@ -22,7 +23,7 @@ MonoBehaviour:
   _castTime: 1.4
   _magnitude: 40
   _duration: 0
-  _radius: 0
+  _radius: 2.5
   _effect: 0
   _damageType: 1
   _projectileSpeed: 26
@@ -45,3 +46,6 @@ MonoBehaviour:
   _isOnAlly: 0
   _coneAngle: 0
   _push: 0
+  _range: 20
+  _auraTime: 0
+  _isGround: 1

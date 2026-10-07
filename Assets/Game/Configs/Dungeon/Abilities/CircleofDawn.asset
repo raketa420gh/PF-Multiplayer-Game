@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: CircleofDawn
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Circle of Dawn
-  _description: Everyone within 5m, you included, heals 30 over 6s.
+  _description: 'Ground area (up to 20m): everyone within 5m of the marked spot heals
+    30 over 6s.'
   _kind: 17
   _isSpell: 1
   _charges: 2
@@ -44,3 +45,6 @@ MonoBehaviour:
   _isOnAlly: 0
   _coneAngle: 0
   _push: 0
+  _range: 20
+  _auraTime: 0
+  _isGround: 1
