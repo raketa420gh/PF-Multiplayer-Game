@@ -53,10 +53,14 @@ namespace Game.Scripts.Battle
 
     public sealed class CombatComponent : NetworkBehaviour, DamageReceiverComponent.IOwner
     {
-        /// Optional: class perks and buffs of the shooter on every released shot.
+        /// Optional: class perks and buffs of the shooter on every released shot, reload pace and the bolts of weapons loaded by hand.
         public interface IShotModifier
         {
+            float ReloadSpeed { get; }
+
             void ModifyShot(ref ShotRequest shot);
+            int CountAmmo(int slot);
+            void ConsumeAmmo(int slot);
         }
 
         public const byte NoWeapon = 255;
@@ -90,6 +94,8 @@ namespace Game.Scripts.Battle
         public ProjectileComponent Projectiles => _projectiles;
         public FighterBodyComponent Body => _body;
         public bool IsBlocking => State == CombatState.Block;
+        /// A weapon loaded by hand has a bolt on the string.
+        public bool IsLoaded => (_loadedSlots & (1 << WeaponSlot)) != 0;
 
         public AttackPhase Phase
         {
@@ -214,6 +220,9 @@ namespace Game.Scripts.Battle
 
         [Networked]
         private NetworkBool _slotsInitialized { get; set; }
+
+        [Networked]
+        private byte _loadedSlots { get; set; }
 
         private struct Tally
         {
@@ -363,13 +372,14 @@ namespace Game.Scripts.Battle
             bool isAttackPressed = buttons.WasPressed(previous, weapon.AttackButton) && !_isAttackSuppressed;
             bool isBlockHeld = buttons.IsSet(weapon.BlockButton) && weapon.Block.CanBlock && !_isBlockSuppressed;
             bool isBlockPressed = buttons.WasPressed(previous, weapon.BlockButton) && !_isBlockSuppressed;
+            bool isReloadPressed = buttons.WasPressed(previous, PlayerInputButtons.Reload);
             float time = StateTime;
             _isBlockHeld = isBlockHeld;
 
             switch (State)
             {
                 case CombatState.Idle:
-                    SimulateIdle(weapon, buttons, previous, isAttackHeld, isAttackPressed, isBlockHeld);
+                    SimulateIdle(weapon, buttons, previous, isAttackHeld, isAttackPressed, isBlockHeld, isReloadPressed);
                     break;
 
                 case CombatState.Equip:
@@ -384,8 +394,17 @@ namespace Game.Scripts.Battle
                     SimulateAttack(weapon, time, isAttackHeld);
                     break;
 
-                case CombatState.Deflected:
                 case CombatState.Reload:
+                    if (time < _stateDuration)
+                        break;
+
+                    if (weapon.Ranged.IsManualReload)
+                        LoadBolt();
+
+                    SetState(CombatState.Idle);
+                    break;
+
+                case CombatState.Deflected:
                 case CombatState.Stagger:
                 case CombatState.Busy:
                     if (time >= _stateDuration)
@@ -421,7 +440,7 @@ namespace Game.Scripts.Battle
         }
 
         private void SimulateIdle(WeaponConfig weapon, NetworkButtons buttons, NetworkButtons previous,
-            bool isAttackHeld, bool isAttackPressed, bool isBlockHeld)
+            bool isAttackHeld, bool isAttackPressed, bool isBlockHeld, bool isReloadPressed)
         {
             int slot = GetRequestedSlot(buttons, previous);
 
@@ -429,6 +448,13 @@ namespace Game.Scripts.Battle
             {
                 _pendingSlot = (byte)slot;
                 SetState(CombatState.Equip);
+            }
+            else if (weapon.IsRanged && weapon.Ranged.IsManualReload)
+            {
+                if (isAttackPressed && IsLoaded)
+                    Shoot(weapon.Ranged, 1f);
+                else if (isReloadPressed && !IsLoaded && HasAmmo())
+                    SetState(CombatState.Reload, GetReloadTime(weapon.Ranged));
             }
             else if (weapon.IsRanged)
             {
@@ -494,11 +520,16 @@ namespace Game.Scripts.Battle
                 return;
             }
 
-            float power = ranged.GetPower(time);
+            Shoot(ranged, ranged.GetPower(time));
+        }
+
+        /// A drawn bow goes on to its reload; a weapon loaded by hand is empty until the reload key loads it again.
+        private void Shoot(RangedConfig ranged, float power)
+        {
             ShotRequest shot = new ShotRequest
             {
                 Damage = ScaleDamage(ranged.GetDamage(power), Weapon.DamageType), Speed = ranged.GetSpeed(power), Gravity = ranged.Gravity, Count = 1,
-                ReloadTime = ranged.ReloadTime
+                ReloadTime = GetReloadTime(ranged)
             };
             _shotModifier?.ModifyShot(ref shot);
 
@@ -511,7 +542,37 @@ namespace Game.Scripts.Battle
                     ProjectileKind.Arrow, effect: shot.Effect, effectMagnitude: shot.EffectMagnitude, effectDuration: shot.EffectDuration, impact: Weapon.Impact);
             }
 
+            if (ranged.IsManualReload)
+            {
+                _loadedSlots &= (byte)~(1 << WeaponSlot);
+                SetState(CombatState.Idle);
+
+                return;
+            }
+
             SetState(CombatState.Reload, shot.ReloadTime);
+        }
+
+        /// The reload is over: a bolt is taken from the bag and put on the string.
+        private void LoadBolt()
+        {
+            if (!HasAmmo())
+                return;
+
+            if (HasStateAuthority)
+                _shotModifier?.ConsumeAmmo(WeaponSlot);
+
+            _loadedSlots |= (byte)(1 << WeaponSlot);
+        }
+
+        private bool HasAmmo()
+        {
+            return _shotModifier == null || _shotModifier.CountAmmo(WeaponSlot) > 0;
+        }
+
+        private float GetReloadTime(RangedConfig ranged)
+        {
+            return ranged.ReloadTime / (_shotModifier?.ReloadSpeed ?? 1f);
         }
 
         public int ScaleDamage(int baseDamage, DamageType type)

@@ -22,6 +22,19 @@ MonoBehaviour:
   _deflectDuration: 0
   _reach: 0
   _attacks: []
+  _hasRiposte: 0
+  _riposte:
+    _windupTime: 0.3
+    _activeTime: 0.2
+    _recoveryTime: 0.4
+    _comboWindowStart: 0.4
+    _comboWindowEnd: 0.75
+    _damage: 20
+    _moveMultiplier: 0.6
+    _staggerDuration: 0
+    _traceSampleRate: 60
+    _traceBase: []
+    _traceTip: []
   _block:
     _canBlock: 0
     _raiseTime: 0.2
@@ -36,6 +49,7 @@ MonoBehaviour:
     _minDrawTime: 0.35
     _fullDrawTime: 0.3
     _reloadTime: 1.8
+    _isManualReload: 1
     _minSpeed: 36
     _maxSpeed: 40
     _minDamage: 30

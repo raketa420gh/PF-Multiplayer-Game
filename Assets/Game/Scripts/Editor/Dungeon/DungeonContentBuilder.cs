@@ -38,6 +38,9 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.EnsureLayer(InteractableLayer);
             DungeonKitBuilder.Build();
             DungeonMedievalBuilder.Build();
+            DungeonVillageKitBuilder.Build();
+            DungeonVegetationBuilder.Build();
+            VillageArchitectureBuilder.BuildPieces();
             BattleContentBuilder.Loadout[] loadouts = BattleContentBuilder.BuildWeapons(out GameObject arrow, out GameObject orb);
             Dictionary<string, WeaponConfig> weapons = new();
 
@@ -79,6 +82,8 @@ namespace Game.Scripts.Editor.Dungeon
             BuildBookshelf(loot["Bookshelf"]);
             BuildDoor("Door", DungeonPropBuilder.DoorLeaf());
             BuildDoor("CellDoor", DungeonMedievalBuilder.CellDoorLeaf());
+            BuildDoor("HouseDoor", HouseDoorLeaf(), DungeonVillageKitBuilder.DoorHalf - 0.03f, DungeonVillageKitBuilder.DoorHalf * 2f);
+            BuildCellarGrate();
             BuildPortal("EscapePortal", PortalKind.Escape, DungeonPropBuilder.PortalBlue, config.EscapePortalTime > 0f);
             BuildPortal("DescendPortal", PortalKind.Descend, DungeonPropBuilder.PortalRed, false);
             BuildShrine(ShrineKind.Health, 100f, 0f);
@@ -168,6 +173,13 @@ namespace Game.Scripts.Editor.Dungeon
 
                 so.ApplyModifiedPropertiesWithoutUndo();
                 configs[i] = config;
+            }
+
+            // Ammunition may come later in the list than its weapon.
+            for (int i = 0; i < defs.Count; i++)
+            {
+                if (defs[i].Ammo != null)
+                    BattleEditorUtility.Set(configs[i], "_ammo", configs[defs.FindIndex(def => def.Name == defs[i].Ammo)]);
             }
 
             ItemDatabase database = BattleEditorUtility.LoadOrCreate<ItemDatabase>(DatabasePath);
@@ -399,7 +411,7 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Gold Coins", 8f, 3, 14), ("Bandage", 4f, 1, 3), ("Potion of Healing", 3f, 1, 2), ("Potion of Protection", 1.5f, 1, 1), ("Lockpick", 1.5f, 1, 2),
                 ("Ale", 1f, 1, 1), ("Throwing Knife", 1f, 1, 2), ("Francisca Axe", 0.8f, 1, 2), ("Campfire Kit", 0.6f, 1, 1),
                 ("Arming Sword", 1f, 1, 1), ("Morning Star", 0.8f, 1, 1), ("Round Shield", 0.8f, 1, 1),
-                ("Crossbow", 0.4f, 1, 1), ("Magic Staff", 0.5f, 1, 1), ("Battle Axe", 0.4f, 1, 1),
+                ("Crossbow", 0.4f, 1, 1), ("Crossbow Bolts", 1.2f, 4, 12), ("Magic Staff", 0.5f, 1, 1), ("Battle Axe", 0.4f, 1, 1),
                 ("Ruby", 0.5f, 1, 1), ("Emerald", 0.5f, 1, 1), ("Sapphire", 0.5f, 1, 1), ("Gold Goblet", 0.5f, 1, 1),
                 ("Potion of Invisibility", 0.6f, 1, 1), ("Silver Chalice", 0.6f, 1, 1), ("Gold Ore", 0.8f, 1, 3), ("Silver Ingot", 0.3f, 1, 1)
             }.Concat(Pieces(0.9f, "Peasant")).Concat(Pieces(0.6f, "Ranger")).Concat(Pieces(0.3f, "Mystic", "Occultist", "Marauder", "Berserker", "Ironclad", "Devout", "Stalker")).ToArray();
@@ -422,7 +434,8 @@ namespace Game.Scripts.Editor.Dungeon
             };
             (string name, float weight, int min, int max)[] barrel =
             {
-                ("Gold Coins", 4f, 1, 6), ("Bandage", 3f, 1, 2), ("Potion of Healing", 2f, 1, 1), ("Ale", 2f, 1, 2), ("Throwing Knife", 1f, 1, 2), ("Lockpick", 1f, 1, 1)
+                ("Gold Coins", 4f, 1, 6), ("Bandage", 3f, 1, 2), ("Potion of Healing", 2f, 1, 1), ("Ale", 2f, 1, 2), ("Throwing Knife", 1f, 1, 2), ("Lockpick", 1f, 1, 1),
+                ("Crossbow Bolts", 1.5f, 4, 10)
             };
             (string name, float weight, int min, int max)[] bookshelf = new (string, float, int, int)[]
             {
@@ -973,7 +986,7 @@ namespace Game.Scripts.Editor.Dungeon
             return BattleContentBuilder.SavePrefab(root, Prefab("Corpse"));
         }
 
-        /// Swarm stages shrink to fixed shares of the floor radius, so they follow the map size.
+        /// Swarm stages shrink to fixed shares of each floor's radius, so they follow the map size.
         private static void BuildSwarmStages(DungeonConfig config)
         {
             (float start, float share)[] stages = { (150f, 0.82f), (330f, 0.48f), (510f, 0.22f), (660f, 0f) };
@@ -985,8 +998,11 @@ namespace Game.Scripts.Editor.Dungeon
                 string path = $"_swarmStages.Array.data[{i}].";
                 BattleEditorUtility.Set(so, path + "StartTime", stages[i].start);
                 BattleEditorUtility.Set(so, path + "Duration", 60f);
-                BattleEditorUtility.Set(so, path + "Radius", DungeonMapBuilder.FloorRadius * stages[i].share);
+                BattleEditorUtility.Set(so, path + "Share", stages[i].share);
             }
+
+            // The ways down open halfway through a floor's clock.
+            BattleEditorUtility.Set(so, "_descendPortalTime", so.FindProperty("_matchDuration").floatValue * 0.5f);
 
             so.ApplyModifiedPropertiesWithoutUndo();
         }
@@ -1130,13 +1146,13 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.SavePrefab(root, Prefab("Bookshelf"));
         }
 
-        private static void BuildDoor(string name, GameObject leaf)
+        private static void BuildDoor(string name, GameObject leaf, float hingeX = -1.05f, float width = 2.2f)
         {
             GameObject root = new GameObject(name);
             root.AddComponent<NetworkObject>();
             // A closed leaf would cut the NavMesh in two; monsters shove doors open on their way instead.
             root.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
-            GameObject hinge = BattleEditorUtility.CreateChild("Hinge", root.transform, new Vector3(-1.05f, 0f, 0f));
+            GameObject hinge = BattleEditorUtility.CreateChild("Hinge", root.transform, new Vector3(hingeX, 0f, 0f));
             leaf.transform.SetParent(hinge.transform, false);
             leaf.isStatic = false;
 
@@ -1145,9 +1161,58 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_leaf", hinge.transform);
             BattleEditorUtility.Set(so, "_blocker", leaf.GetComponent<Collider>());
             so.ApplyModifiedPropertiesWithoutUndo();
-            AddInteractCollider(root, new Vector3(0f, 1.5f, 0f), new Vector3(2.2f, 3f, 0.6f));
+            AddInteractCollider(root, new Vector3(0f, 1.5f, 0f), new Vector3(width, 3f, 0.6f));
             BattleEditorUtility.Set(root.AddComponent<InteractableSoundComponent>(), "_door", door);
             BattleContentBuilder.SavePrefab(root, Prefab(name));
+        }
+
+        /// Village door leaf: the kit's planked door, stretched to fill the opening of the door walls, hinged on its right edge.
+        private static GameObject HouseDoorLeaf()
+        {
+            GameObject leaf = new GameObject("Leaf");
+            Transform model = DungeonVillageKitBuilder.Model("Door_2_Flat", leaf.transform).transform;
+            model.localScale = Vector3.Scale(model.localScale, new Vector3((DungeonVillageKitBuilder.DoorHalf * 2f - 0.06f) / 1.1f, DungeonVillageKitBuilder.DoorHeight / 2.14f, 1f));
+            Bounds bounds = DungeonKitBuilder.Bounds(leaf);
+            BoxCollider collider = leaf.AddComponent<BoxCollider>();
+            collider.center = bounds.center;
+            collider.size = new Vector3(bounds.size.x, bounds.size.y, 0.14f);
+
+            return leaf;
+        }
+
+        /// Iron grate at the bottom of a cellar: a way down that opens halfway through the floor's clock. Held open once,
+        /// it rises into the wall and stays up for everyone.
+        private static void BuildCellarGrate()
+        {
+            const float width = 1.7f;
+            const float height = 2.5f;
+            GameObject root = new GameObject("CellarGrate");
+            Transform gate = BattleEditorUtility.CreateChild("Gate", root.transform).transform;
+            DungeonMeshBuilder bars = new DungeonMeshBuilder(1f);
+
+            for (float x = -width * 0.5f + 0.06f; x < width * 0.5f; x += 0.16f)
+                bars.Box(new Vector3(x, height * 0.5f, 0f), new Vector3(0.045f, height, 0.045f));
+
+            foreach (float y in new[] { 0.08f, 0.9f, 1.75f, height - 0.08f })
+                bars.Box(new Vector3(0f, y, 0f), new Vector3(width, 0.07f, 0.07f));
+
+            GameObject model = DungeonPropBuilder.MeshObject("Bars", gate, bars.Save("CellarGrate"), DungeonPropBuilder.RustyMetal, default, default, false, false);
+            BoxCollider blocker = model.AddComponent<BoxCollider>();
+            blocker.center = new Vector3(0f, height * 0.5f, 0f);
+            blocker.size = new Vector3(width, height, 0.12f);
+
+            root.AddComponent<NetworkObject>();
+            root.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
+            PortalComponent portal = root.AddComponent<PortalComponent>();
+            SerializedObject so = new SerializedObject(portal);
+            BattleEditorUtility.Set(so, "_kind", PortalKind.Descend);
+            BattleEditorUtility.Set(so, "_activationTime", 3f);
+            BattleEditorUtility.Set(so, "_isSingleUse", false);
+            BattleEditorUtility.Set(so, "_gate", gate);
+            BattleEditorUtility.Set(so, "_gateLift", 1.95f);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            AddInteractCollider(root, new Vector3(0f, 1.2f, -0.35f), new Vector3(width + 0.2f, 2.4f, 0.7f));
+            BattleContentBuilder.SavePrefab(root, Prefab("CellarGrate"));
         }
 
         private static void BuildPortal(string name, PortalKind kind, Material material, bool singleUse)

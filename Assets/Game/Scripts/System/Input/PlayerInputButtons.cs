@@ -25,6 +25,7 @@ namespace Game.Scripts
         Spell4 = 18,
         Spell5 = 19,
         Holster = 20,
+        Reload = 21,
         Rest = 24
     }
 }

@@ -178,6 +178,7 @@ namespace Game.Scripts.Battle
         public float MinDrawTime => _minDrawTime;
         public float FullDrawTime => _fullDrawTime;
         public float ReloadTime => _reloadTime;
+        public bool IsManualReload => _isManualReload;
         public float MinSpeed => _minSpeed;
         public float MaxSpeed => _maxSpeed;
         public int MinDamage => _minDamage;
@@ -195,6 +196,9 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private float _reloadTime = 0.6f;
+
+        [SerializeField, Tooltip("Crossbows: a press looses the bolt at once, the reload key loads the next one")]
+        private bool _isManualReload;
 
         [SerializeField]
         private float _minSpeed = 14f;

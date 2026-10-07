@@ -119,6 +119,7 @@ namespace Game.Scripts.Editor.Battle
 
         public float DrawTime;
         public float ReloadTime;
+        public bool IsManualReload;
         public float ArrowMinSpeed;
         public float ArrowMaxSpeed;
         public int ArrowMinDamage;

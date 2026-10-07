@@ -159,6 +159,7 @@ namespace Game.Scripts.Dungeon
         /// Charge progress of the spell being held: 0 when not charging, 1 once it is kept ready until the button is let go.
         public float CastCharge => IsHoldingCast ? Mathf.InverseLerp(_fighter.Combat.StateTick, _pendingCompleteTick, Runner.Tick) : 0f;
         public bool IsHoldingCast => Pending == PendingAction.Ability && _isHoldingCast;
+        public float ReloadSpeed => _stats.ReloadSpeed * (1f + _effects.GetMagnitude(StatusEffectKind.QuickReload) / 100f);
 
         public const byte NoSpell = 255;
         public AbilityConfig ReadiedSpellConfig => _class != null && ReadiedSpell < _class.Spells.Length ? _class.Spells[ReadiedSpell] : null;
@@ -424,13 +425,28 @@ namespace Game.Scripts.Dungeon
             }
 
             shot.Damage = Mathf.Max(1, Mathf.RoundToInt(shot.Damage * _stats.RangedDamageMultiplier));
-            shot.ReloadTime /= _stats.ReloadSpeed * (1f + _effects.GetMagnitude(StatusEffectKind.QuickReload) / 100f);
 
             if (!HasStateAuthority)
                 return;
 
             _effects.Remove(StatusEffectKind.Volley);
             _effects.Remove(StatusEffectKind.AimedShot);
+        }
+
+        /// Bolts lie in the bag; a weapon without ammunition set never runs out.
+        public int CountAmmo(int slot)
+        {
+            ItemConfig ammo = GetAmmo(slot);
+
+            return ammo != null ? _inventory.CountOf(ammo.Id) : int.MaxValue;
+        }
+
+        public void ConsumeAmmo(int slot)
+        {
+            ItemConfig ammo = GetAmmo(slot);
+
+            if (ammo != null)
+                _inventory.Remove(ammo.Id, 1);
         }
 
         public AbilityConfig GetSkill(int slot)
@@ -490,7 +506,7 @@ namespace Game.Scripts.Dungeon
 
         public void Descend(Vector3 position, float yaw)
         {
-            Floor = 2;
+            Floor++;
             _fighter.Move.Teleport(position, yaw);
             _fighter.SetLook(new Vector2(0f, yaw));
             CloseContainer();
@@ -658,6 +674,13 @@ namespace Game.Scripts.Dungeon
             CombatComponent combat = _fighter.Combat;
             combat.SetSlotWeapon(0, ResolveWeaponIndex(0, EquipSlot.Weapon1Main, EquipSlot.Weapon1Off));
             combat.SetSlotWeapon(1, ResolveWeaponIndex(1, EquipSlot.Weapon2Main, EquipSlot.Weapon2Off));
+        }
+
+        private ItemConfig GetAmmo(int slot)
+        {
+            WeaponItemConfig weapon = _inventory.GetEquippedConfig<WeaponItemConfig>(slot == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main);
+
+            return weapon != null ? weapon.Ammo : null;
         }
 
         private int ResolveWeaponIndex(int set, EquipSlot mainSlot, EquipSlot offSlot)
@@ -1031,6 +1054,8 @@ namespace Game.Scripts.Dungeon
                     _isAttuned = false;
                 else
                     _charges.Set(index, (byte)Mathf.Max(0, _charges[index] - 1));
+
+                return;
             }
 
             _cooldowns.Set(index, TickTimer.CreateFromSeconds(Runner, GetCooldownDuration(index)));

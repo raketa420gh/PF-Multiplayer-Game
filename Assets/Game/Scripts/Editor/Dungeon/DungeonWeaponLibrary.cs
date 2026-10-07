@@ -896,6 +896,7 @@ namespace Game.Scripts.Editor.Dungeon
             definition.ReleasePose = BattleAnimationLibrary.TwoHanded(new(0.16f, 1.5f, 0.3f), new(0f, 0.08f, 1f), -0.3f, 4f);
             definition.DrawTime = 0.3f;
             definition.ReloadTime = 1.8f;
+            definition.IsManualReload = true;
             definition.ArrowMinSpeed = 36f;
             definition.ArrowMaxSpeed = 40f;
             definition.ArrowMinDamage = 30;

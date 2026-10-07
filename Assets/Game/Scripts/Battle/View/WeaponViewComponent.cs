@@ -46,7 +46,7 @@ namespace Game.Scripts.Battle
             CombatState state = _combat.State;
             bool isActivePhase = _combat.Phase == AttackPhase.Active;
             bool isDrawn = state == CombatState.Draw;
-            bool hasArrow = isDrawn || state == CombatState.Idle;
+            bool hasArrow = isDrawn || state == CombatState.Idle && (!weapon.Ranged.IsManualReload || _combat.IsLoaded);
             Vector3 drawHand = _sockets[(int)(weapon.IsMirrored ? WeaponSocket.LeftHand : WeaponSocket.RightHand)].position;
 
             foreach (WeaponVisual visual in _visuals[slot])

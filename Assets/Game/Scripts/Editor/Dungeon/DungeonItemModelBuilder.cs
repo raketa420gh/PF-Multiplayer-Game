@@ -194,6 +194,21 @@ namespace Game.Scripts.Editor.Dungeon
                 return;
             }
 
+            if (def.Name.Contains("Bolt"))
+            {
+                Material wood = BattleEditorUtility.GetMaterial("BowWood", new Color(0.4f, 0.26f, 0.13f));
+                Material steel = BattleEditorUtility.GetMaterial("Steel", new Color(0.75f, 0.77f, 0.8f), 0.9f, 0.7f);
+
+                for (int i = 0; i < 4; i++)
+                {
+                    Vector3 position = new Vector3((i - 1.5f) * 0.025f, 0.012f, 0f);
+                    BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Shaft" + i, parent, position, new Vector3(90f, 0f, 0f), new Vector3(0.012f, 0.1f, 0.012f), wood);
+                    BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Head" + i, parent, position + new Vector3(0f, 0f, 0.11f), new Vector3(0f, 45f, 0f), new Vector3(0.018f, 0.012f, 0.018f), steel);
+                }
+
+                return;
+            }
+
             if (def.Name.Contains("Candlestick"))
             {
                 BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Base", parent, new Vector3(0f, 0.01f, 0f), Vector3.zero, new Vector3(0.09f, 0.01f, 0.09f), gold);

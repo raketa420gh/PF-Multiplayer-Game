@@ -29,6 +29,7 @@ namespace Game.Scripts.Editor.Dungeon
         public float MovePenalty;
         public float LightRange;
         public bool IsFocus;
+        public string Ammo;
 
         public EquipSlot Slot;
         public ArmorType ArmorType;
@@ -161,6 +162,7 @@ namespace Game.Scripts.Editor.Dungeon
         private const string Warrior = "Warrior";
         private const string Confessor = "Confessor";
         private const string Huntsman = "Huntsman";
+        private const string Bolts = "Crossbow Bolts";
 
         private static readonly Color s_steel = new(0.8f, 0.82f, 0.88f);
         private static readonly Color s_wood = new(0.65f, 0.45f, 0.25f);
@@ -182,7 +184,7 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 Weapon("Arming Sword", DungeonWeaponLibrary.ArmingSword, WeaponClass.Sword, 1, 3, 20f, "Sw", s_steel, 25, "A reliable one-handed sword. Pairs with a shield.", shield: DungeonWeaponLibrary.SwordShield),
                 Weapon("Battle Axe", DungeonWeaponLibrary.BattleAxe, WeaponClass.Axe, 2, 4, 30f, "Ax", s_steel, 50, "Two-handed double axe. A cut, a backswing and an overhead chop.", twoHanded: true),
-                Weapon("Crossbow", DungeonWeaponLibrary.Crossbow, WeaponClass.Crossbow, 2, 3, 50f, "Xb", s_wood, 55, "Hard-hitting bolt, slow reload.", twoHanded: true),
+                Weapon("Crossbow", DungeonWeaponLibrary.Crossbow, WeaponClass.Crossbow, 2, 3, 50f, "Xb", s_wood, 55, "Hard-hitting bolt. Press R to load a bolt from the bag.", twoHanded: true, ammo: Bolts),
                 Weapon("Magic Staff", DungeonWeaponLibrary.Staff, WeaponClass.Staff, 1, 4, 20f, "St", new Color(0.5f, 0.7f, 1f), 50, "Caster focus. Also a decent club.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 4f) }, classes: new[] { Wizard, Confessor }),
                 Weapon("Round Shield", null, WeaponClass.Shield, 2, 3, 13f, "Sh", s_wood, 30, "Blocks with a one-handed weapon in the main hand.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 20f) }),
                 Weapon("Spellbook", DungeonWeaponLibrary.Spellbook, WeaponClass.Spellbook, 2, 2, 10f, "Bk", new Color(0.55f, 0.35f, 0.75f), 40, "Magical focus. Hold it to cast readied spells; it can bash in a pinch.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 2f) }),
@@ -249,6 +251,10 @@ namespace Game.Scripts.Editor.Dungeon
                 Piece("Stalker Gloves", s_bracers, 16f, 0f, 30, 0f, new StatModifier(StatType.Dexterity, 1f), new StatModifier(StatType.ReloadSpeed, 6f)),
                 Piece("Stalker Leggings", s_leggings, 34f, 2f, 38, 0f, new StatModifier(StatType.Dexterity, 2f)),
                 Piece("Stalker Boots", s_boots, 18f, -8f, 30, 0f, new StatModifier(StatType.Dexterity, 1f), new StatModifier(StatType.Agility, 1f)));
+
+            ItemDef bolts = Treasure(Bolts, 1, 1, 20, 1, "Bo", s_wood);
+            bolts.Description = "Crossbow ammunition: every reload takes one bolt from the bag.";
+            items.Add(bolts);
 
             return items;
         }
@@ -378,13 +384,13 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static ItemDef Weapon(string name, string prefix, WeaponClass weaponClass, int width, int height, float movePenalty, string glyph,
             Color color, int value, string description, bool twoHanded = false, bool offHand = false, float light = 0f, string shield = null,
-            StatModifier[] modifiers = null, string[] classes = null, bool focus = false)
+            StatModifier[] modifiers = null, string[] classes = null, bool focus = false, string ammo = null)
         {
             return new ItemDef
             {
                 Name = name, Kind = ItemKind.Weapon, Classes = classes, WeaponPrefix = prefix, ShieldPrefix = shield, WeaponClass = weaponClass, Width = width, Height = height,
                 MovePenalty = movePenalty, Glyph = glyph, Color = color, Value = value, Description = description, TwoHanded = twoHanded, OffHand = offHand,
-                LightRange = light, IsFocus = focus, RollsRarity = true, Modifiers = modifiers != null ? new List<StatModifier>(modifiers) : new List<StatModifier>()
+                LightRange = light, IsFocus = focus, Ammo = ammo, RollsRarity = true, Modifiers = modifiers != null ? new List<StatModifier>(modifiers) : new List<StatModifier>()
             };
         }
 

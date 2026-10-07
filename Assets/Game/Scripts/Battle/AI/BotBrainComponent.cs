@@ -239,6 +239,21 @@ namespace Game.Scripts.Battle
             float forward = distance < _rangedDistance.x ? -1f : distance > _rangedDistance.y ? 1f : 0f;
             input.MoveDirection = new Vector2(_strafe, forward);
 
+            if (ranged.IsManualReload)
+            {
+                bool isReady = combat.State == CombatState.Idle;
+                input.Buttons.Set(PlayerInputButtons.Reload, isReady && !combat.IsLoaded);
+                isAttackDown = isReady && combat.IsLoaded && !_wasAttackDown && time >= _nextAttackTime;
+
+                if (!isAttackDown)
+                    return;
+
+                _nextAttackTime = time + Random.Range(_attackPause.x, _attackPause.y);
+                _aimError = new Vector2(Random.Range(-_aimSpread.y, _aimSpread.y), Random.Range(-_aimSpread.x, _aimSpread.x));
+
+                return;
+            }
+
             if (combat.State == CombatState.Draw)
             {
                 if (combat.DrawPower < 1f)

@@ -20,6 +20,8 @@ namespace Game.Scripts.Dungeon
         public bool IsFocus => _isFocus;
         /// Classes that may wield the weapon on top of its weapon class; empty means every class allowed that weapon class.
         public ClassConfig[] Classes => _classes;
+        /// Bolts a crossbow loads from the bag; none means it never runs out.
+        public ItemConfig Ammo => _ammo;
 
         [SerializeField]
         private WeaponConfig _weapon;
@@ -50,6 +52,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private ClassConfig[] _classes = Array.Empty<ClassConfig>();
+
+        [SerializeField]
+        private ItemConfig _ammo;
 
         public override bool CanEquip(EquipSlot slot)
         {
