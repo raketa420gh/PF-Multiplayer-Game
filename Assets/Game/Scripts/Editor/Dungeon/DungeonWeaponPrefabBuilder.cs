@@ -16,6 +16,29 @@ namespace Game.Scripts.Editor.Dungeon
     /// Extra weapon visuals for the dungeon catalog, generated meshes like the battle weapons.
     internal static class DungeonWeaponPrefabBuilder
     {
+        /// The écu's frame in the shield socket: the fist takes the grip like a handle, its palm to the board and its back to
+        /// the bearer; the forearm slants up across the board from the lower left and comes in to it from behind.
+        public static readonly Quaternion EcuTurn = EcuSocket();
+        /// The fist on the écu's grip from the middle of its face, in the écu's frame.
+        public static readonly Vector3 EcuFist = new(-EcuCenter, EcuHeight * 0.5f - EcuTop, -EcuGap - EcuBend - EcuThickness);
+
+        /// The écu in its own frame, the fist at the origin: 48 by 60 cm, the top rim 13 cm above the fist, the middle
+        /// 5 cm to its left.
+        private const float EcuHalfWidth = 0.24f;
+        private const float EcuTop = 0.13f;
+        private const float EcuHeight = 0.6f;
+        private const float EcuCenter = -0.05f;
+        private const float EcuBend = 0.045f;
+        private const float EcuThickness = 0.014f;
+        /// From the shield socket, 7 cm off the back of the hand, through the fist to the board behind the edges.
+        private const float EcuGap = 0.07f;
+        /// The forearm across the board, in degrees up from its level, and in from behind it: an arm long enough to lie
+        /// flat on a board held before the eyes would not reach the grip.
+        private const float EcuSlant = 62f;
+        private const float EcuRise = 38f;
+        /// How far down the sides run straight before they curve in to the point.
+        private const float EcuShoulder = 0.3f;
+
         public static GameObject BuildAxe(string name, float handleLength, float headSize, AxeStyle style)
         {
             Material iron = WeaponMaterials.Iron;
@@ -257,6 +280,9 @@ namespace Game.Scripts.Editor.Dungeon
             return Save(root);
         }
 
+        /// The spellbook rides in the left hand socket (x = the back of the hand, y = the fingers, z = the thumb). Open, it
+        /// lies on the palm with its spine along the fingers and the pages up; closed, it stands between both hands, which
+        /// hold its top corners: the spine in the book hand, the fore-edge with the brass corners in the other, along z.
         public static GameObject BuildBook()
         {
             Material cover = WeaponMaterials.BookCover;
@@ -264,29 +290,152 @@ namespace Game.Scripts.Editor.Dungeon
             Material brass = WeaponMaterials.Brass;
             Material glow = BattleEditorUtility.GetUnlitMaterial("Crystal", new Color(0.5f, 0.75f, 1f, 0.9f));
             GameObject root = new GameObject("Book");
-            WeaponMesh mesh = new WeaponMesh();
+            WeaponMesh open = new WeaponMesh();
+            Matrix4x4 palm = Matrix4x4.TRS(new Vector3(-0.04f, -0.16f, 0f), Quaternion.LookRotation(Vector3.up, Vector3.left), Vector3.one);
 
-            // An open book: two boards hinged on the spine, each with its block of pages and brass corners.
+            // Two boards hinged on the spine, each with its block of pages and brass corners.
             for (int side = -1; side <= 1; side += 2)
             {
-                mesh.Matrix = Matrix4x4.TRS(new Vector3(0f, -0.012f, 0f), Quaternion.Euler(0f, 0f, side * 22f), Vector3.one);
-                WeaponParts.Box(mesh, cover, 0f, 0.24f, new Vector2(0.088f, 0.005f), new Vector2(0.088f, 0.005f), new Vector2(side * 0.092f, 0f), new Vector2(side * 0.092f, 0f));
-                WeaponParts.Box(mesh, pages, 0.008f, 0.232f, new Vector2(0.08f, 0.011f), new Vector2(0.08f, 0.011f), new Vector2(side * 0.086f, 0.016f), new Vector2(side * 0.086f, 0.016f), 0.5f);
+                open.Matrix = palm * Matrix4x4.TRS(new Vector3(0f, -0.012f, 0f), Quaternion.Euler(0f, 0f, side * 12f), Vector3.one);
+                WeaponParts.Box(open, cover, 0f, 0.24f, new Vector2(0.078f, 0.005f), new Vector2(0.078f, 0.005f), new Vector2(side * 0.082f, 0f), new Vector2(side * 0.082f, 0f));
+                WeaponParts.Box(open, pages, 0.008f, 0.232f, new Vector2(0.07f, 0.011f), new Vector2(0.07f, 0.011f), new Vector2(side * 0.076f, 0.016f), new Vector2(side * 0.076f, 0.016f), 0.5f);
 
                 foreach (float z in new[] { 0.004f, 0.212f })
-                    WeaponParts.Box(mesh, brass, z, z + 0.024f, new Vector2(0.014f, 0.0065f), new Vector2(0.014f, 0.0065f), new Vector2(side * 0.168f, 0f), new Vector2(side * 0.168f, 0f));
+                    WeaponParts.Box(open, brass, z, z + 0.024f, new Vector2(0.014f, 0.0065f), new Vector2(0.014f, 0.0065f), new Vector2(side * 0.148f, 0f), new Vector2(side * 0.148f, 0f));
             }
 
-            mesh.Matrix = Matrix4x4.identity;
-            WeaponParts.Shaft(mesh, cover, -0.002f, 0.242f, 0.012f, 0.012f, 8);
-            mesh.Loft(glow, new[]
+            open.Matrix = palm;
+            WeaponParts.Shaft(open, cover, -0.002f, 0.242f, 0.012f, 0.012f, 8);
+            open.Loft(glow, new[]
             {
                 WeaponMesh.Ellipse(new Vector3(0f, 0.035f, 0.12f), Vector3.right, Vector3.forward, 0.001f, 0.001f, 6),
                 WeaponMesh.Ellipse(new Vector3(0f, 0.06f, 0.12f), Vector3.right, Vector3.forward, 0.022f, 0.022f, 6),
                 WeaponMesh.Ellipse(new Vector3(0f, 0.095f, 0.12f), Vector3.right, Vector3.forward, 0.001f, 0.001f, 6)
             }, WeaponMesh.Hard);
 
-            mesh.Attach(root.transform, "Book");
+            // Shut, held from above at its top corners: the head of the book toward the back of the hand (+x), the front
+            // cover under the thumb (-y), the fingers round the back cover, the spine in this hand.
+            WeaponMesh closed = new WeaponMesh();
+            const float top = 0.06f;
+            const float bottom = -0.18f;
+            const float width = 0.17f;
+            Vector2 boards = new Vector2((top - bottom) * 0.5f, 0.004f);
+            Vector2 middle = new Vector2((top + bottom) * 0.5f, 0.01f);
+
+            foreach (float y in new[] { -0.013f, 0.033f })
+                WeaponParts.Box(closed, cover, 0f, width, boards, boards, new Vector2(middle.x, y), new Vector2(middle.x, y));
+
+            Vector2 block = new Vector2(boards.x - 0.006f, 0.019f);
+            WeaponParts.Box(closed, pages, 0.006f, width - 0.006f, block, block, middle, middle, 0.5f);
+            closed.Rod(cover, new Vector3(bottom, middle.y, 0.004f), new Vector3(top, middle.y, 0.004f), 0.026f, 0.026f, 10);
+
+            foreach (float x in new[] { bottom + 0.012f, top - 0.012f })
+            {
+                foreach (float y in new[] { -0.013f, 0.033f })
+                    WeaponParts.Box(closed, brass, width - 0.024f, width + 0.002f, new Vector2(0.014f, 0.0065f), new Vector2(0.014f, 0.0065f), new Vector2(x, y), new Vector2(x, y));
+            }
+
+            closed.Loft(glow, new[]
+            {
+                WeaponMesh.Ellipse(new Vector3(middle.x, -0.016f, width * 0.5f), Vector3.right, Vector3.forward, 0.001f, 0.001f, 6),
+                WeaponMesh.Ellipse(new Vector3(middle.x, -0.034f, width * 0.5f), Vector3.right, Vector3.forward, 0.022f, 0.022f, 6),
+                WeaponMesh.Ellipse(new Vector3(middle.x, -0.052f, width * 0.5f), Vector3.right, Vector3.forward, 0.001f, 0.001f, 6)
+            }, WeaponMesh.Hard);
+
+            WeaponVisual visual = root.AddComponent<WeaponVisual>();
+            BattleEditorUtility.Set(visual, "_bookOpen", open.Attach(root.transform, "Book", "Open"));
+            BattleEditorUtility.Set(visual, "_bookClosed", closed.Attach(root.transform, "BookClosed", "Closed"));
+            visual.SetClosed(false);
+
+            return Save(root);
+        }
+
+        /// The écu, a heater shield: a flat top, straight sides that curve in to a point, the board bent across, a brass
+        /// rim. It is drawn in its own frame (+Z the face, +Y the top, the fist at the origin, high under the top rim and
+        /// right of the middle) and turned in the shield socket (+X along the forearm, +Y the thumb), as the forearm lies
+        /// in it slanting from the lower left up to the fist.
+        public static GameObject BuildEcu()
+        {
+            Material brass = WeaponMaterials.Brass;
+            Material face = WeaponMaterials.EcuFace;
+            Material inside = WeaponMaterials.EcuInside;
+            GameObject root = new GameObject("Ecu");
+            WeaponMesh mesh = new WeaponMesh { Matrix = Matrix4x4.Rotate(EcuTurn) };
+            const int across = 14;
+            const int down = 18;
+
+            for (int side = 0; side < 2; side++)
+            {
+                bool isFront = side == 0;
+
+                for (int i = 0; i < across; i++)
+                {
+                    for (int j = 0; j < down; j++)
+                    {
+                        Vector3 a = EcuPoint((float)i / across, (float)j / down, isFront);
+                        Vector3 b = EcuPoint((i + 1f) / across, (float)j / down, isFront);
+                        Vector3 c = EcuPoint((i + 1f) / across, (j + 1f) / down, isFront);
+                        Vector3 d = EcuPoint((float)i / across, (j + 1f) / down, isFront);
+                        Vector2 ua = EcuUv((float)i / across, (float)j / down, isFront);
+                        Vector2 ub = EcuUv((i + 1f) / across, (float)j / down, isFront);
+                        Vector2 uc = EcuUv((i + 1f) / across, (j + 1f) / down, isFront);
+                        Vector2 ud = EcuUv((float)i / across, (j + 1f) / down, isFront);
+                        Vector3 outward = isFront ? Vector3.forward : Vector3.back;
+                        mesh.Triangle(isFront ? face : inside, a, b, c, ua, ub, uc, outward, WeaponMesh.Soft);
+                        mesh.Triangle(isFront ? face : inside, a, c, d, ua, uc, ud, outward, WeaponMesh.Soft);
+                    }
+                }
+            }
+
+            // The binding round the outline: down the left side to the point, up the right one and back along the top.
+            List<Vector3> rim = new();
+            List<Vector2> rimRadii = new();
+
+            for (int j = 0; j < down; j++)
+                rim.Add(EcuEdge(0f, (float)j / down));
+
+            for (int j = down; j > 0; j--)
+                rim.Add(EcuEdge(1f, (float)j / down));
+
+            for (int i = across; i > 0; i--)
+                rim.Add(EcuEdge((float)i / across, 0f));
+
+            foreach (Vector3 _ in rim)
+                rimRadii.Add(new Vector2(0.012f, 0.014f));
+
+            mesh.Tube(brass, rim, rimRadii, 6, Vector3.forward, WeaponMesh.Soft, true);
+
+            // Domed nails through the binding, on the face and on the inside: six along the top, three down each side.
+            for (int i = 1; i < 7; i++)
+            {
+                WeaponParts.Rivet(mesh, brass, EcuPoint(i / 7f, 0.03f, true), Vector3.forward, 0.007f);
+                WeaponParts.Rivet(mesh, brass, EcuPoint(i / 7f, 0.03f, false), Vector3.back, 0.007f);
+            }
+
+            for (int j = 1; j < 4; j++)
+            {
+                foreach (float u in new[] { 0.035f, 0.965f })
+                {
+                    WeaponParts.Rivet(mesh, brass, EcuPoint(u, j * 0.12f, true), Vector3.forward, 0.007f);
+                    WeaponParts.Rivet(mesh, brass, EcuPoint(u, j * 0.12f, false), Vector3.back, 0.007f);
+                }
+            }
+
+            // Inside: the leather pad under the line of the forearm and the strap the fist closes on, across it.
+            Vector3 slant = Quaternion.Euler(0f, 0f, EcuSlant) * Vector3.right;
+            Vector3 strapAcross = Vector3.Cross(Vector3.forward, slant);
+            Vector3 pad = slant * -0.17f;
+            mesh.Matrix = Matrix4x4.Rotate(EcuTurn) * Matrix4x4.TRS(new Vector3(pad.x, pad.y, EcuBack(pad.x) - 0.004f), Quaternion.LookRotation(slant, Vector3.forward), Vector3.one);
+            WeaponParts.Box(mesh, WeaponMaterials.Hide, -0.12f, 0.12f, new Vector2(0.055f, 0.004f), new Vector2(0.055f, 0.004f));
+            mesh.Matrix = Matrix4x4.Rotate(EcuTurn);
+            float strap = EcuBack(0f);
+            mesh.Tube(WeaponMaterials.Hide, new[]
+            {
+                strapAcross * -0.07f + Vector3.forward * (strap - 0.002f), strapAcross * -0.04f + Vector3.forward * (strap - 0.03f),
+                strapAcross * 0.04f + Vector3.forward * (strap - 0.03f), strapAcross * 0.07f + Vector3.forward * (strap - 0.002f)
+            }, new[] { new Vector2(0.016f, 0.003f), new Vector2(0.016f, 0.003f), new Vector2(0.016f, 0.003f), new Vector2(0.016f, 0.003f) }, 6, Vector3.back);
+
+            mesh.Attach(root.transform, "Ecu");
             root.AddComponent<WeaponVisual>();
 
             return Save(root);
@@ -323,6 +472,51 @@ namespace Game.Scripts.Editor.Dungeon
                 for (float z = from + 0.03f; z < to - 0.01f; z += 0.07f)
                     WeaponParts.Rivet(mesh, material, new Vector3(side * (offset + 0.0018f), 0f, z), Vector3.right * side, 0.0035f);
             }
+        }
+
+        /// The shield socket in the écu's frame, turned into the écu's frame in the socket: +x along the forearm toward the
+        /// fingers, +z the back of the hand, toward the bearer.
+        private static Quaternion EcuSocket()
+        {
+            Vector3 slant = Quaternion.Euler(0f, 0f, EcuSlant) * Vector3.right;
+            Vector3 forearm = slant * Mathf.Cos(EcuRise * Mathf.Deg2Rad) + Vector3.forward * Mathf.Sin(EcuRise * Mathf.Deg2Rad);
+            Vector3 back = Vector3.ProjectOnPlane(Vector3.back, forearm).normalized;
+
+            return Quaternion.Inverse(Quaternion.LookRotation(back, Vector3.Cross(back, forearm)));
+        }
+
+        /// A point of the écu's face (or of its back) at u across, v from the top to the point.
+        private static Vector3 EcuPoint(float u, float v, bool isFront)
+        {
+            Vector3 edge = EcuEdge(u, v);
+
+            return new Vector3(edge.x, edge.y, EcuBack(edge.x) + (isFront ? EcuThickness : 0f));
+        }
+
+        private static Vector3 EcuEdge(float u, float v)
+        {
+            float s = Mathf.Clamp01((v - EcuShoulder) / (1f - EcuShoulder));
+            float halfWidth = EcuHalfWidth * (1f - s * s);
+            float x = EcuCenter + (u * 2f - 1f) * halfWidth;
+
+            return new Vector3(x, EcuTop - v * EcuHeight, EcuBack(x) + EcuThickness * 0.5f);
+        }
+
+        /// The board is bent across: its middle stands out from the arm.
+        private static float EcuBack(float x)
+        {
+            float t = (x - EcuCenter) / EcuHalfWidth;
+
+            return EcuGap + EcuBend * (1f - t * t);
+        }
+
+        /// The painted face is stretched once over the shield's box; the back tiles with the wood.
+        private static Vector2 EcuUv(float u, float v, bool isFront)
+        {
+            Vector3 point = EcuEdge(u, v);
+            Vector2 box = new Vector2((point.x - EcuCenter) / (EcuHalfWidth * 2f) + 0.5f, (point.y - EcuTop) / EcuHeight + 1f);
+
+            return isFront ? box : new Vector2(point.x, point.y) / WeaponMesh.TileSize;
         }
 
         private static GameObject Save(GameObject root)

@@ -12,6 +12,7 @@ namespace Game.Scripts.Battle
         public const string RiposteLegsSuffix = AttackLegsSuffix + "Riposte";
         public const string BlockSuffix = "_Block";
         public const string BlockImpactSuffix = "_BlockImpact";
+        public const string BlockLowerSuffix = "_BlockLower";
         public const string DeflectSuffix = "_Deflect";
         public const string DrawSuffix = "_Draw";
         public const string ReleaseSuffix = "_Release";
@@ -144,6 +145,7 @@ namespace Game.Scripts.Battle
             public int Idle;
             public int Block;
             public int BlockImpact;
+            public int BlockLower;
             public int Deflect;
             public int Draw;
             public int Release;
@@ -163,6 +165,7 @@ namespace Game.Scripts.Battle
         private float _flinch;
         private float _hitTime;
         private float _upperWeight = 1f;
+        private float _lowerLeft;
         private float _landLeft;
         private bool _isHeadHidden;
         private bool _isKneeling;
@@ -254,6 +257,7 @@ namespace Game.Scripts.Battle
                 Idle = Animator.StringToHash(prefix + IdleSuffix),
                 Block = Animator.StringToHash(prefix + BlockSuffix),
                 BlockImpact = Animator.StringToHash(prefix + BlockImpactSuffix),
+                BlockLower = Animator.StringToHash(prefix + BlockLowerSuffix),
                 Deflect = Animator.StringToHash(prefix + DeflectSuffix),
                 Draw = Animator.StringToHash(prefix + DrawSuffix),
                 Release = Animator.StringToHash(prefix + ReleaseSuffix),
@@ -351,10 +355,12 @@ namespace Game.Scripts.Battle
                     break;
                 case CombatState.BlockRaise:
                     state = states.Block;
+                    _lowerLeft = weapon.Block.LowerTime;
                     break;
                 case CombatState.Block:
                     state = states.Block;
                     time += weapon.Block.RaiseTime;
+                    _lowerLeft = weapon.Block.LowerTime;
                     break;
                 case CombatState.BlockImpact:
                     state = states.BlockImpact;
@@ -388,7 +394,9 @@ namespace Game.Scripts.Battle
                     }
                     break;
                 default:
-                    state = _isHolding ? s_hold : states.Idle;
+                    // A let-go block brings the guard down along a clip of its own before the idle takes over.
+                    _lowerLeft = combat.State == CombatState.Idle && !_isHolding ? _lowerLeft - deltaTime : 0f;
+                    state = _lowerLeft > 0f ? states.BlockLower : _isHolding ? s_hold : states.Idle;
                     time = 0f;
                     break;
             }

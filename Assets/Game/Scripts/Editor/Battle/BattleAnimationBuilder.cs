@@ -356,6 +356,10 @@ namespace Game.Scripts.Editor.Battle
                     BattleAnimationLibrary.BlockKeys(weapon));
                 AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.BlockImpactSuffix, weapon.BlockImpact + weapon.BlockRecovery,
                     BattleAnimationLibrary.BlockImpactKeys(weapon));
+
+                if (weapon.BlockLower > 0f)
+                    AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.BlockLowerSuffix, weapon.BlockLower,
+                        BattleAnimationLibrary.BlockLowerKeys(weapon));
             }
 
             if (weapon.Attacks.Length > 0)
@@ -407,6 +411,9 @@ namespace Game.Scripts.Editor.Battle
                 SettleRoll(rig, attack.Raise);
                 SettleRoll(rig, attack.Return);
             }
+
+            SettleRoll(rig, weapon.BlockVia);
+            SettleRoll(rig, weapon.BlockLowerVia);
         }
 
         private static void SettleRoll(BattlePoseRig rig, ref BodyPose pose)

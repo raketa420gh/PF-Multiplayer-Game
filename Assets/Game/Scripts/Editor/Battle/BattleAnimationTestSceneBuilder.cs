@@ -57,7 +57,7 @@ namespace Game.Scripts.Editor.Battle
             // Bare hands and the combat configs of the weapon items in the game, with and without a shield.
             ItemDatabase database = AssetDatabase.LoadAssetAtPath<ItemDatabase>(DungeonContentBuilder.DatabasePath);
             WeaponItemConfig[] weaponItems = database.Items.OfType<WeaponItemConfig>().ToArray();
-            BattleEditorUtility.Set(so, "_weapons", weaponItems.Select(item => item.Weapon).Concat(weaponItems.Select(item => item.WeaponWithShield))
+            BattleEditorUtility.Set(so, "_weapons", weaponItems.Select(item => item.Weapon).Concat(weaponItems.SelectMany(item => item.WeaponsWithShield))
                 .Prepend(AssetDatabase.LoadAssetAtPath<WeaponConfig>($"{BattleEditorUtility.ConfigsFolder}/{DungeonWeaponLibrary.Fists}.asset"))
                 .Where(weapon => weapon != null)
                 .Distinct()

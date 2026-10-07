@@ -22,6 +22,8 @@ namespace Game.Scripts.Editor.Dungeon
         public const string PantherClaws = "PantherClaws";
         public const string RatBite = "RatBite";
         public const string MorningStar = "MorningStar";
+        public const string SwordEcu = "SwordEcu";
+        public const string MaceEcu = "MaceEcu";
 
         private const float MaceHead = 0.6f;
         private const float AxeHead = 0.8f;
@@ -35,20 +37,25 @@ namespace Game.Scripts.Editor.Dungeon
         private const float StaffReach = -0.62f;
         private const float StaffButt = -0.9f;
         private const float StaffButtEnd = -1.2f;
+        /// From the spine of the shut book to its fore-edge: one hand holds each.
+        private const float BookWidth = 0.17f;
 
         /// Catalog order = combat catalog index. Battle prefab slots 1-4 map to the first four entries; monsters find their
         /// weapon by name.
         public static readonly string[] CatalogOrder =
         {
-            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, BearClaws, PantherClaws, RatBite, MorningStar
+            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, BearClaws, PantherClaws, RatBite, MorningStar, SwordEcu, MaceEcu
         };
+
+        /// The entry whose shield is the model of a shield item, by its ShieldIndex: the round shield, the écu.
+        public static readonly string[] ShieldModels = { SwordShield, SwordEcu };
 
         /// Catalog entries that play another entry's clips (its prefix) with a model, reach and damage of their own.
         /// Their definitions keep the timings of the source, otherwise the shared clips would not match, and their blade
         /// has to cover the strike point of the source, which is what the clips bring to the crosshair.
         private static readonly (string name, string source, string displayName)[] s_variants =
         {
-            (Spellbook, Fists, "Spellbook"), (RatBite, Fists, "Rat Bite")
+            (RatBite, Fists, "Rat Bite")
         };
 
         /// Impact of the weapon's hits and Stability of its block, 1..10: a hit with more Impact than the Stability breaks the block.
@@ -56,7 +63,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 1), ["Rat Bite"] = (1, 1), ["Arming Sword"] = (4, 3), ["Morning Star"] = (6, 3), ["Magic Staff"] = (4, 4),
             ["Sword & Shield"] = (4, 7), ["Mace & Shield"] = (6, 7), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2),
-            ["Bear Claws"] = (7, 4)
+            ["Bear Claws"] = (7, 4), ["Sword & Écu"] = (4, 8), ["Mace & Écu"] = (6, 8)
         };
 
         public static (int impact, int stability) Force(string displayName)
@@ -117,7 +124,9 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateBearClaws(),
                 CreatePantherClaws(),
                 CreateRatBite(),
-                CreateMorningStar()
+                CreateMorningStar(),
+                CreateEcu(BattleAnimationLibrary.CreateSwordShield(), SwordEcu, "Sword & Écu"),
+                CreateEcu(CreateMaceShield(), MaceEcu, "Mace & Écu")
             };
         }
 
@@ -270,14 +279,98 @@ namespace Game.Scripts.Editor.Dungeon
             };
         }
 
+        /// The spellbook of Dark and Darker, authored in the right hand and played mirrored: in the game it is the left
+        /// hand's. At rest it lies open on the palm, low in the view, its spine running ahead and the pages up. To block,
+        /// the book hand stands it up shut before the eyes and the other hand takes its fore-edge. The one strike of the
+        /// series takes it shut in both hands past the face to over the head, holds it there and slams it down on the
+        /// crosshair, the top edge first; the book hand alone brings it back and opens it.
         private static WeaponDefinition CreateSpellbook()
         {
-            WeaponDefinition definition = CreateFists();
-            definition.DisplayName = "Spellbook";
-            definition.Attacks[0].Damage = 18;
-            definition.Attacks[1].Damage = 18;
+            Vector3 across = Vector3.left;
+            BodyPose idle = OpenBook(new(0.27f, 1.54f, 0.52f), -5f, 30f, new(0.3f, 1.22f, 0.24f), new(-0.2f, 1.05f, 0.15f));
+            BodyPose block = ShutBook(new(0.085f, 1.81f, 0.47f), across, Vector3.up, 0f, new(0.3f, 1.42f, 0.25f), new(-0.3f, 1.42f, 0.25f));
 
-            return definition;
+            return new WeaponDefinition
+            {
+                Prefix = Spellbook,
+                DisplayName = "Spellbook",
+                Kind = WeaponKind.TwoHanded,
+                Reach = 1f,
+                DeflectDuration = 0.4f,
+                BladeBase = 0f,
+                BladeTip = BookWidth,
+                Strike = BookWidth * 0.5f,
+                IsHeldAcross = true,
+                Idle = idle,
+                Attacks = new[]
+                {
+                    new AttackDefinition
+                    {
+                        Windup = 42 * Footage, Active = 8 * Footage, Recovery = 45 * Footage,
+                        // The strikes of the footage are single ones: the next may only start as this one is back at the open book.
+                        ComboStart = 85 * Footage, ComboEnd = 95 * Footage,
+                        Damage = 18, MoveMultiplier = 0.7f, Stagger = 0.15f,
+                        Raise = new()
+                        {
+                            // Shut and taken in both hands before the chest, then up past the face to over the head, where it waits.
+                            Via(8, ShutBook(new(0.085f, 1.52f, 0.42f), across, Vector3.up, 0f, new(0.24f, 1.2f, 0.2f), new(-0.24f, 1.2f, 0.2f))),
+                            Via(12, ShutBook(new(-0.055f, 1.9f, 0.38f), across, new(0f, 0.9f, -0.44f), -5f, new(0.22f, 1.55f, 0.18f), new(-0.32f, 1.55f, 0.15f))),
+                            Via(17, ShutBook(new(0.085f, 2.05f, 0.05f), across, new(0f, 0.2f, -1f), -8f, new(0.28f, 1.75f, 0f), new(-0.28f, 1.75f, 0f)), 0.4f),
+                            Via(38, ShutBook(new(0.085f, 2.05f, -0.02f), across, new(0f, 0.45f, -0.9f), -8f, new(0.28f, 1.75f, -0.02f), new(-0.28f, 1.75f, -0.02f)), 0.5f)
+                        },
+                        WindupPose = ShutBook(new(0.085f, 2f, 0.25f), across, new(0f, 0.95f, -0.3f), -5f, new(0.28f, 1.7f, 0.15f), new(-0.28f, 1.7f, 0.15f)),
+                        MidPose = ShutBook(new(0.085f, 1.755f, 0.48f), across, new(0f, 0.6f, 0.8f), 10f, new(0.24f, 1.45f, 0.28f), new(-0.24f, 1.45f, 0.28f)),
+                        EndPose = ShutBook(new(0.085f, 1.3f, 0.5f), across, new(0f, -0.3f, 0.95f), 10f, new(0.22f, 1.15f, 0.25f), new(-0.22f, 1.15f, 0.25f)),
+                        Return = new()
+                        {
+                            Via(68, OpenBook(new(0.22f, 1.45f, 0.46f), -5f, 15f, new(0.28f, 1.18f, 0.2f), new(-0.2f, 1.05f, 0.15f)), 0.6f),
+                            Via(89, idle, 0.6f)
+                        },
+                        Launch = 1f
+                    }
+                },
+                CanBlock = true,
+                BlockRaise = 14 * Footage,
+                BlockLower = 18 * Footage,
+                BlockMitigation = 0.5f,
+                BlockImpact = 0.25f,
+                BlockRecovery = 0.3f,
+                BlockAngle = 80f,
+                BlockMove = 0.6f,
+                Block = block,
+                BlockHit = ShutBook(new(0.085f, 1.83f, 0.43f), across, new(0f, 1f, -0.12f), -4f, new(0.3f, 1.44f, 0.22f), new(-0.3f, 1.44f, 0.22f)),
+                BlockLowered = ShutBook(new(0.085f, 1.79f, 0.46f), across, Vector3.up, 0f, new(0.3f, 1.4f, 0.24f), new(-0.3f, 1.4f, 0.24f)),
+                DeflectPose = ShutBook(new(0.085f, 1.65f, 0.42f), across, new(0f, 1f, -0.2f), -4f, new(0.25f, 1.4f, 0.25f), new(-0.25f, 1.4f, 0.25f)),
+                BlockSocket = WeaponSocket.RightHand,
+                BlockBoxCenter = new Vector3(0f, -0.03f, BookWidth * 0.5f),
+                BlockBoxExtents = new Vector3(0.04f, 0.13f, BookWidth * 0.5f)
+            };
+        }
+
+        /// The book open on the palm of the book hand: the spine along the fingers at that yaw and elevation, the pages
+        /// facing up and back. The other hand hangs free.
+        private static BodyPose OpenBook(Vector3 hand, float yaw, float elevation, Vector3 elbow, Vector3 offHand)
+        {
+            Quaternion turn = Quaternion.Euler(-elevation, yaw, 0f);
+            Vector3 fingers = turn * Vector3.forward;
+            BodyPose pose = Pose(hand, Vector3.Cross(turn * Vector3.up, fingers), 0f, 0f, elbow, offHand, 0f);
+            pose.Edge = fingers;
+
+            return pose;
+        }
+
+        /// The shut book between both hands at its top corners, the book hand on the spine and the other one on the
+        /// fore-edge 'across' from it, the head of the book toward 'top': thumbs on the front cover, the fingers round the
+        /// back one, so a hand's knuckles point where the back cover faces.
+        private static BodyPose ShutBook(Vector3 hand, Vector3 across, Vector3 top, float pitch, Vector3 elbow, Vector3 offElbow)
+        {
+            Vector3 back = Vector3.Cross(top, across).normalized;
+            BodyPose pose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.TwoHanded(hand, across, BookWidth, 0f, pitch), elbow, offElbow);
+            pose.Edge = back;
+            pose.Off.Forward = -across.normalized;
+            pose.Off.Up = back;
+
+            return pose;
         }
 
         private static WeaponDefinition CreateRatBite()
@@ -585,6 +678,97 @@ namespace Game.Scripts.Editor.Dungeon
             pose.Lean = lean;
 
             return pose;
+        }
+
+        /// The écu of Dark and Darker on the arm of a one-handed weapon: the swings are the weapon's with the round shield,
+        /// the block is the écu's own.
+        /// The footage carries a mace: at rest it stands upright before the right chest with the écu low at the left, its
+        /// top just in the corner of the view. The block lifts the écu in a straight line to cover the face up to the eyes,
+        /// face ahead and point down, while the weapon drops out of the view by the right hip; let go, it comes down the
+        /// same way, slower, sinks a little below rest and settles.
+        private static WeaponDefinition CreateEcu(WeaponDefinition definition, string prefix, string displayName)
+        {
+            Vector3 restShield = new(-0.3f, 1.33f, 0.52f);
+            Vector3 restNormal = new(-0.14f, 0f, 0.99f);
+            Vector3 restTop = new(-0.09f, 1f, 0f);
+            Vector3 rightElbow = new(0.25f, 1.15f, 0.1f);
+            Vector3 dropped = new(0.26f, 1f, 0.12f);
+            Vector3 droppedBlade = new(0.1f, 0.97f, 0.12f);
+            Vector3 face = new(0f, 0.09f, 1f);
+            Vector3 top = new(0f, 1f, -0.09f);
+            bool isMace = prefix == MaceEcu;
+
+            definition.Prefix = prefix;
+            definition.DisplayName = displayName;
+            OnEcu(ref definition.Idle);
+            OnEcu(ref definition.IdleBreath);
+            // The swings keep the shield hand of the round shield: the écu is behind the arm then, out of the view, and
+            // turned on the arm like at rest it bent the wrist past 130 degrees.
+            OnEcu(ref definition.DeflectPose);
+
+            BodyPose idle = definition.Idle;
+            definition.Idle = isMace
+                ? EcuPose(new(0.12f, 1.38f, 0.42f), new(0.06f, 0.99f, 0.15f), restShield, restNormal, restTop, rightElbow)
+                : EcuPose(idle.Main.Position, idle.Main.Forward, restShield, restNormal, restTop, idle.Main.Elbow);
+            definition.BlockRaise = 12 * Footage;
+            definition.BlockVia = new()
+            {
+                new(2 * Footage, EcuPose(new(0.2f, 1.25f, 0.36f), new(0.1f, 0.95f, 0.3f), new(-0.21f, 1.4f, 0.53f), face, top, rightElbow), Ease.Linear),
+                new(4 * Footage, EcuPose(new(0.23f, 1.12f, 0.27f), new(0f, 0.9f, 0.43f), new(-0.15f, 1.44f, 0.53f), face, top, new(0.27f, 1.12f, 0.03f)), Ease.Linear),
+                new(6 * Footage, EcuPose(dropped, droppedBlade, new(-0.07f, 1.46f, 0.53f), face, top, new(0.28f, 1.15f, 0f)), Ease.Linear)
+            };
+            definition.Block = EcuPose(dropped, droppedBlade, new(0.02f, 1.49f, 0.56f), face, top, new(0.28f, 1.15f, 0f));
+            definition.BlockHit = EcuPose(dropped, droppedBlade, new(0.02f, 1.48f, 0.52f), new(0f, 0.2f, 1f), new(0f, 1f, -0.2f), new(0.28f, 1.15f, 0f));
+            definition.BlockLowered = EcuPose(dropped, droppedBlade, new(0.02f, 1.46f, 0.54f), face, top, new(0.28f, 1.15f, 0f));
+            definition.BlockLower = 30 * Footage;
+            definition.BlockLowerVia = new()
+            {
+                new(9 * Footage, EcuPose(new(0.18f, 1.2f, 0.3f), new(-0.26f, 0.95f, 0.2f), new(-0.21f, 1.36f, 0.53f), face, top, rightElbow), Ease.Linear),
+                new(14 * Footage, EcuPose(new(0.14f, 1.33f, 0.4f), new(-0.2f, 0.96f, 0.15f), new(-0.3f, 1.31f, 0.52f), restNormal, restTop, rightElbow)),
+                new(20 * Footage, EcuPose(new(0.13f, 1.36f, 0.41f), new(-0.05f, 0.99f, 0.15f), new(-0.27f, 1.35f, 0.52f), restNormal, restTop, rightElbow))
+            };
+
+            if (!isMace)
+            {
+                // The sword drops out of the view the same way; only the way back up ends in its own rest.
+                for (int i = 0; i < definition.BlockLowerVia.Count; i++)
+                {
+                    PoseKey key = definition.BlockLowerVia[i];
+                    key.Pose.Main = i == 0 ? key.Pose.Main : definition.Idle.Main;
+                    definition.BlockLowerVia[i] = key;
+                }
+            }
+
+            return definition;
+        }
+
+        /// The off hand on the écu's grip with its board's middle at 'shield', the face toward 'normal' and its top toward
+        /// 'top'. The straps set the forearm, so the elbow is where they put it.
+        private static BodyPose EcuPose(Vector3 grip, Vector3 blade, Vector3 shield, Vector3 normal, Vector3 top, Vector3 elbow)
+        {
+            const float forearm = 0.3f;
+            const float backOfHand = 0.07f;
+            Quaternion board = Quaternion.LookRotation(normal, top);
+            Quaternion socket = board * Quaternion.Inverse(DungeonWeaponPrefabBuilder.EcuTurn);
+            Vector3 fist = shield + board * DungeonWeaponPrefabBuilder.EcuFist;
+            BodyPose pose = BattleAnimationLibrary.SwordShield(grip, blade, shield, normal);
+            pose = BattleAnimationLibrary.Elbows(pose, elbow, fist - socket * (Vector3.forward * backOfHand + Vector3.right * forearm));
+            pose.Off.Position = fist;
+            pose.Off.Forward = socket * Vector3.forward;
+            pose.Off.Up = socket * Vector3.up;
+
+            return pose;
+        }
+
+        /// A pose of the round shield with the écu on the arm instead: what was the thumb of the shield hand is the écu's top.
+        private static void OnEcu(ref BodyPose pose)
+        {
+            if (!pose.HasHands || pose.OffSocket != WeaponSocket.LeftShield)
+                return;
+
+            Quaternion socket = Quaternion.LookRotation(pose.Off.Forward, pose.Off.Up) * Quaternion.Inverse(DungeonWeaponPrefabBuilder.EcuTurn);
+            pose.Off.Forward = socket * Vector3.forward;
+            pose.Off.Up = socket * Vector3.up;
         }
 
         private static WeaponDefinition CreateMaceShield()

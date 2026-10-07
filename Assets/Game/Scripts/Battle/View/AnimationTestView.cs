@@ -150,6 +150,8 @@ namespace Game.Scripts.Battle
 
                 visual.SetTrailActive(isActive);
                 visual.SetDraw(isDrawn, drawHand, hasArrow);
+                visual.SetClosed(upper.Contains(FighterAnimComponent.AttackSuffix) || upper.Contains(FighterAnimComponent.BlockSuffix) ||
+                                 upper.EndsWith(FighterAnimComponent.DeflectSuffix));
             }
 
             if (_isFirstPerson)
@@ -297,7 +299,7 @@ namespace Game.Scripts.Battle
 
             foreach (string suffix in new[]
                      {
-                         FighterAnimComponent.BlockSuffix, FighterAnimComponent.BlockImpactSuffix, FighterAnimComponent.DeflectSuffix,
+                         FighterAnimComponent.BlockSuffix, FighterAnimComponent.BlockImpactSuffix, FighterAnimComponent.BlockLowerSuffix, FighterAnimComponent.DeflectSuffix,
                          FighterAnimComponent.DrawSuffix, FighterAnimComponent.ReleaseSuffix
                      })
                 AddWeaponState(prefix + suffix);

@@ -142,6 +142,8 @@ namespace Game.Scripts.Battle
         public float BreakDuration => _breakDuration;
         public float AngleTolerance => _angleTolerance;
         public float MoveMultiplier => _moveMultiplier;
+        /// Seconds of the clip that brings the guard down after the block is let go; 0 = none, a crossfade does it.
+        public float LowerTime => _lowerTime;
 
         [SerializeField]
         private bool _canBlock = true;
@@ -170,6 +172,9 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private float _moveMultiplier = 0.55f;
+
+        [SerializeField]
+        private float _lowerTime;
     }
 
     [Serializable]
@@ -249,11 +254,11 @@ namespace Game.Scripts.Battle
         public DamageType DamageType => _damageType;
         public int Impact => _impact;
 
-        public PlayerInputButtons AttackButton =>
-            _mainHand == HandSide.Right ? PlayerInputButtons.Primary : PlayerInputButtons.Secondary;
+        /// A weapon in the left hand alone strikes with the right button; one held in both hands (the mirrored spellbook) keeps the left.
+        public PlayerInputButtons AttackButton => IsLeftButtonAttack ? PlayerInputButtons.Primary : PlayerInputButtons.Secondary;
+        public PlayerInputButtons BlockButton => IsLeftButtonAttack ? PlayerInputButtons.Secondary : PlayerInputButtons.Primary;
 
-        public PlayerInputButtons BlockButton =>
-            _mainHand == HandSide.Right ? PlayerInputButtons.Secondary : PlayerInputButtons.Primary;
+        private bool IsLeftButtonAttack => _mainHand == HandSide.Right || _kind == WeaponKind.TwoHanded;
 
         [SerializeField]
         private string _displayName;

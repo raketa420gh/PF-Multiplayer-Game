@@ -19,6 +19,8 @@ namespace Game.Scripts.Editor.Battle
         public static Material Rags => Get("Rags", WeaponTextureBuilder.Cloth, new Color(0.2f, 0.16f, 0.12f), 0f);
         public static Material String => Get("String", WeaponTextureBuilder.Cloth, new Color(0.9f, 0.86f, 0.72f), 0f);
         public static Material ShieldFace => Get("ShieldFace", WeaponTextureBuilder.ShieldFace, Color.white, 0f);
+        public static Material EcuFace => Get("EcuFace", WeaponTextureBuilder.EcuFace, Color.white, 0f);
+        public static Material EcuInside => Get("EcuInside", WeaponTextureBuilder.Wood, new Color(0.22f, 0.42f, 0.4f), 0f);
         public static Material Feather => Get("Feather", WeaponTextureBuilder.Feather, new Color(0.75f, 0.2f, 0.16f), 0f);
         public static Material Horn => Get("Horn", WeaponTextureBuilder.Hide, new Color(1f, 1f, 1f), 0f, 1.6f);
 

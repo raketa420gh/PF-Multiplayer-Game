@@ -84,6 +84,7 @@ namespace Game.Scripts.Editor.Battle
             GameObject bow = BattleWeaponPrefabBuilder.BuildBow();
             GameObject book = DungeonWeaponPrefabBuilder.BuildBook();
             GameObject morningStar = DungeonWeaponPrefabBuilder.BuildMorningStar();
+            GameObject ecu = DungeonWeaponPrefabBuilder.BuildEcu();
             arrow = BattleWeaponPrefabBuilder.BuildArrow();
             magicOrb = DungeonWeaponPrefabBuilder.BuildMagicOrb();
 
@@ -104,7 +105,9 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.BearClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.PantherClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.RatBite] = Array.Empty<(GameObject, WeaponSocket)>(),
-                [DungeonWeaponLibrary.MorningStar] = new[] { (morningStar, WeaponSocket.RightHand) }
+                [DungeonWeaponLibrary.MorningStar] = new[] { (morningStar, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.SwordEcu] = new[] { (sword, WeaponSocket.RightHand), (ecu, WeaponSocket.LeftShield) },
+                [DungeonWeaponLibrary.MaceEcu] = new[] { (morningStar, WeaponSocket.RightHand), (ecu, WeaponSocket.LeftShield) }
             };
 
             string[] order = DungeonWeaponLibrary.CatalogOrder;
@@ -115,7 +118,7 @@ namespace Game.Scripts.Editor.Battle
                 for (int i = 0; i < order.Length; i++)
                 {
                     string name = order[i];
-                    bool isLeft = name == DungeonWeaponLibrary.SwordShieldLeft;
+                    bool isLeft = name is DungeonWeaponLibrary.SwordShieldLeft or DungeonWeaponLibrary.Spellbook;
                     WeaponDefinition definition = FindDefinition(definitions, name);
                     loadouts[i] = CreateWeapon(sampler, name, definition, isLeft ? HandSide.Left : HandSide.Right, attachments[name]);
                 }
@@ -155,7 +158,7 @@ namespace Game.Scripts.Editor.Battle
             SerializedObject so = new SerializedObject(config);
             bool isMirrored = mainHand == HandSide.Left;
 
-            BattleEditorUtility.Set(so, "_displayName", isMirrored ? definition.DisplayName + " (left hand)" : definition.DisplayName);
+            BattleEditorUtility.Set(so, "_displayName", assetName == DungeonWeaponLibrary.SwordShieldLeft ? definition.DisplayName + " (left hand)" : definition.DisplayName);
             BattleEditorUtility.Set(so, "_kind", definition.Kind);
             BattleEditorUtility.Set(so, "_mainHand", mainHand);
             BattleEditorUtility.Set(so, "_animationPrefix", definition.Prefix);
@@ -194,6 +197,7 @@ namespace Game.Scripts.Editor.Battle
                 BattleEditorUtility.Set(so, "_block._recoveryDuration", definition.BlockRecovery);
                 BattleEditorUtility.Set(so, "_block._angleTolerance", definition.BlockAngle);
                 BattleEditorUtility.Set(so, "_block._moveMultiplier", definition.BlockMove);
+                BattleEditorUtility.Set(so, "_block._lowerTime", definition.BlockLower);
             }
 
             BattleEditorUtility.Set(so, "_ranged._fullDrawTime", definition.DrawTime > 0f ? definition.DrawTime : BattleAnimationLibrary.FullDrawTime);
@@ -586,13 +590,13 @@ namespace Game.Scripts.Editor.Battle
                     rotations[i] = socket.rotation;
                 }
 
-                CheckSwing(state, attack, BattleAnimationLibrary.IsCut(weapon, attack) && !weapon.IsUnarmed && !weapon.IsRound, strike, rotations,
-                    weapon.IsEdgeBack ? Vector3.down : Vector3.up);
+                CheckSwing(state, attack, BattleAnimationLibrary.IsCut(weapon, attack) && !weapon.IsUnarmed && !weapon.IsRound, !weapon.IsHeldAcross, strike,
+                    rotations, weapon.IsEdgeBack ? Vector3.down : Vector3.up);
             }
 
             /// The weapon must not spin about its own axis between two frames, and while a cut is active and under way its
             /// leading edge must face where the strike point travels.
-            private static void CheckSwing(string state, AttackDefinition attack, bool isCut, Vector3[] strike, Quaternion[] rotations, Vector3 edge)
+            private static void CheckSwing(string state, AttackDefinition attack, bool isCut, bool isRollChecked, Vector3[] strike, Quaternion[] rotations, Vector3 edge)
             {
                 const float maxRoll = 25f;
                 const float maxLean = 15f;
@@ -617,7 +621,7 @@ namespace Game.Scripts.Editor.Battle
                         lean = Mathf.Max(lean, Vector3.Angle(rotations[i] * edge, across));
                 }
 
-                if (roll > maxRoll)
+                if (isRollChecked && roll > maxRoll)
                     Debug.LogError($"[{nameof(BattleContentBuilder)}] {state}: the weapon spins {roll:0} degrees about its axis within a frame");
 
                 if (lean > maxLean)

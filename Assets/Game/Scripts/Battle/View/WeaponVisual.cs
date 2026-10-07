@@ -23,10 +23,27 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private Transform _arrow;
 
+        [Header("Book")]
+        [SerializeField]
+        private GameObject _bookOpen;
+
+        [SerializeField]
+        private GameObject _bookClosed;
+
         public void SetTrailActive(bool isActive)
         {
             if (_trail != null && _trail.emitting != isActive)
                 _trail.emitting = isActive;
+        }
+
+        /// A book is shut to block and to strike with, open in the palm otherwise.
+        public void SetClosed(bool isClosed)
+        {
+            if (_bookOpen == null)
+                return;
+
+            _bookOpen.SetActive(!isClosed);
+            _bookClosed.SetActive(isClosed);
         }
 
         public void SetDraw(bool isDrawn, Vector3 handPosition, bool hasArrow)

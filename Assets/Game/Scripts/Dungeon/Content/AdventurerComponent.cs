@@ -699,12 +699,7 @@ namespace Game.Scripts.Dungeon
             if (main == null)
                 return Mathf.Max(0, combat.FindCatalogIndex(off != null && off.Weapon != null ? off.Weapon : _fistsWeapon));
 
-            WeaponConfig config = main.Weapon;
-
-            if (off != null && off.WeaponClass == WeaponClass.Shield && main.WeaponWithShield != null)
-                config = main.WeaponWithShield;
-
-            return Mathf.Max(0, combat.FindCatalogIndex(config));
+            return Mathf.Max(0, combat.FindCatalogIndex(main.GetWeapon(off)));
         }
 
         private void OnSimulateInput(NetworkButtons buttons, NetworkButtons previous)

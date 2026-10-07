@@ -9,7 +9,10 @@ namespace Game.Scripts.Dungeon
     {
         public override ItemKind Kind => ItemKind.Weapon;
         public WeaponConfig Weapon => _weapon;
-        public WeaponConfig WeaponWithShield => _weaponWithShield;
+        /// Combat configs of the weapon with a shield in the off hand, indexed by the shield's ShieldIndex; null = none.
+        public WeaponConfig[] WeaponsWithShield => _weaponsWithShield;
+        /// Which entry of the main weapon's WeaponsWithShield a shield selects: shields differ in model and block.
+        public int ShieldIndex => _shieldIndex;
         public WeaponClass WeaponClass => _weaponClass;
         public bool IsTwoHanded => _isTwoHanded;
         public bool IsOffHand => _isOffHand;
@@ -27,7 +30,10 @@ namespace Game.Scripts.Dungeon
         private WeaponConfig _weapon;
 
         [SerializeField]
-        private WeaponConfig _weaponWithShield;
+        private WeaponConfig[] _weaponsWithShield = Array.Empty<WeaponConfig>();
+
+        [SerializeField]
+        private int _shieldIndex;
 
         [SerializeField]
         private WeaponClass _weaponClass;
@@ -62,6 +68,14 @@ namespace Game.Scripts.Dungeon
             bool isOff = slot is EquipSlot.Weapon1Off or EquipSlot.Weapon2Off;
 
             return _isOffHand ? isOff : isMain;
+        }
+
+        /// The combat config the weapon fights with when the off hand holds that item.
+        public WeaponConfig GetWeapon(WeaponItemConfig off)
+        {
+            bool hasShield = off != null && off.WeaponClass == WeaponClass.Shield && off.ShieldIndex < _weaponsWithShield.Length;
+
+            return hasShield && _weaponsWithShield[off.ShieldIndex] != null ? _weaponsWithShield[off.ShieldIndex] : _weapon;
         }
 
         public bool Fits(ClassConfig config)

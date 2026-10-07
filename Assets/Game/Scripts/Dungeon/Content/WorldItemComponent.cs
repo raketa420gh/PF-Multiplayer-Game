@@ -71,7 +71,9 @@ namespace Game.Scripts.Dungeon
             };
             _model.transform.localRotation = weaponClass switch
             {
-                null or WeaponClass.Spellbook => Quaternion.identity,
+                null => Quaternion.identity,
+                // The book's pages face away from the back of the hand that holds it: -x.
+                WeaponClass.Spellbook => Quaternion.Euler(0f, 0f, -90f),
                 WeaponClass.Shield => Quaternion.Euler(-90f, 0f, 0f),
                 _ => Quaternion.Euler(0f, 0f, 90f)
             };

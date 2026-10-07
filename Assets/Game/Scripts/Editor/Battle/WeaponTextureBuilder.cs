@@ -17,6 +17,7 @@ namespace Game.Scripts.Editor.Battle
         public const string Cloth = "Cloth";
         public const string ShieldFace = "ShieldFace";
         public const string Feather = "Feather";
+        public const string EcuFace = "EcuFace";
 
         private const int Size = 512;
         private const int OcclusionRadius = 5;
@@ -47,6 +48,7 @@ namespace Game.Scripts.Editor.Battle
             Write(Cloth, SampleCloth, 1.2f);
             Write(ShieldFace, SampleShieldFace, 1f);
             Write(Feather, SampleFeather, 0.8f);
+            Write(EcuFace, SampleEcuFace, 1f);
 
             s_scratches = null;
             AssetDatabase.Refresh();
@@ -55,7 +57,7 @@ namespace Game.Scripts.Editor.Battle
 
         public static void EnsureBuilt()
         {
-            if (Load(Feather, "_m") == null)
+            if (Load(EcuFace, "_m") == null)
                 Build();
         }
 
@@ -415,6 +417,40 @@ namespace Game.Scripts.Editor.Battle
             bool isStripe = Mathf.Abs(u - 0.5f) < 0.11f;
             Color paint = (isStripe ? new Color(0.78f, 0.72f, 0.58f) : new Color(0.17f, 0.27f, 0.46f)) * (0.82f + fibre * 0.22f + chip * 0.12f);
             Color color = Color.Lerp(paint, wood, bare) * Mathf.Lerp(0.3f, 1f, gap) * Mathf.Lerp(1f, 0.72f, Step(0.7f, 1f, radius));
+
+            return new Surface
+            {
+                Albedo = color,
+                Height = gap * (0.5f + fibre * 0.18f - lines * 0.06f + (1f - bare) * 0.07f) - scratch * 0.15f,
+                Metallic = 0f,
+                Smoothness = Mathf.Lerp(0.34f, 0.18f, bare) * gap
+            };
+        }
+
+        /// Face of the écu, stretched once over its box: upright planks under worn teal paint, a pale chevron with a
+        /// cross above it, the paint rubbed off toward the rim.
+        private static Surface SampleEcuFace(float u, float v)
+        {
+            const int planks = 6;
+            float across = u * planks;
+            int index = Mathf.FloorToInt(across);
+            float fx = across - index;
+            float gap = Step(0.01f, 0.04f, Mathf.Min(fx, 1f - fx));
+            float warp = Noise(u, v, 3, 4, 3, 91 + index);
+            float lines = Mathf.Abs(Mathf.Sin((fx * 2.4f + warp * 3f) * Mathf.PI));
+            float fibre = Noise(u, v, 6, 160, 2, 92);
+            float chip = Noise(u, v, 14, 14, 4, 93);
+            float scratch = Scratch(u, v);
+            float rim = Mathf.Max(Mathf.Abs(u - 0.5f) * 2f, 1f - v);
+            float bare = Mathf.Clamp01(Step(0.58f, 0.72f, chip + (1f - gap) * 0.25f + Step(0.85f, 1f, rim) * 0.2f) + scratch * 0.9f);
+
+            // v runs from the point (0) to the top (1): the chevron points up, the cross sits above it.
+            float chevron = Mathf.Abs(v - 0.42f - (0.5f - Mathf.Abs(u - 0.5f)) * 0.55f);
+            bool isChevron = chevron < 0.055f && v < 0.8f;
+            bool isCross = Mathf.Abs(u - 0.5f) < 0.035f && v > 0.66f && v < 0.92f || Mathf.Abs(v - 0.82f) < 0.035f && Mathf.Abs(u - 0.5f) < 0.11f;
+            Color wood = Color.Lerp(new Color(0.55f, 0.4f, 0.24f), new Color(0.3f, 0.2f, 0.11f), lines * 0.5f + fibre * 0.5f) * (0.8f + Hash(index, 5, 94) * 0.3f);
+            Color paint = (isChevron || isCross ? new Color(0.82f, 0.74f, 0.5f) : new Color(0.1f, 0.3f, 0.29f)) * (0.82f + fibre * 0.22f + chip * 0.12f);
+            Color color = Color.Lerp(paint, wood, bare) * Mathf.Lerp(0.3f, 1f, gap) * Mathf.Lerp(1f, 0.75f, Step(0.75f, 1f, rim));
 
             return new Surface
             {

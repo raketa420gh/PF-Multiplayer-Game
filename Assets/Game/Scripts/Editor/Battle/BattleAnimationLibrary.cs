@@ -86,6 +86,9 @@ namespace Game.Scripts.Editor.Battle
         /// Bare hands and claws: the strike point sits in the hand, too close for its path to steer the roll frame by
         /// frame. The knuckles still lead a punch, turning from key to key.
         public bool IsUnarmed;
+        /// A slab held at its two side edges, the 'blade' running across it from one hand to the other (a book): at the peak it
+        /// lies flat across the view, and the wrists turn it over about that line as they whip it, which is no spin in the hand.
+        public bool IsHeldAcross;
         /// A round haft (staff): it has no edge to lead a cut with, so the hand keeps the roll the arm gives it.
         public bool IsRound;
         /// The edge faces the heel of the main hand, away from its knuckles: the hand at the butt of a polearm, which
@@ -107,6 +110,11 @@ namespace Game.Scripts.Editor.Battle
         public float BlockAngle;
         public float BlockMove;
         public BodyPose Block;
+        /// Poses the block passes on its way up, at seconds from its start; none = straight from idle with an ease-out.
+        public List<PoseKey> BlockVia = new();
+        /// Seconds the guard takes to come down when the block is let go, through BlockLowerVia (seconds from the release); 0 = a crossfade.
+        public float BlockLower;
+        public List<PoseKey> BlockLowerVia = new();
         public BodyPose BlockHit;
         public BodyPose BlockLowered;
         public BodyPose DeflectPose;
@@ -454,12 +462,21 @@ namespace Game.Scripts.Editor.Battle
 
         public static List<PoseKey> BlockKeys(WeaponDefinition weapon)
         {
-            return new List<PoseKey>
-            {
-                new(0f, weapon.Idle),
-                new(weapon.BlockRaise, weapon.Block, Ease.Out),
-                new(weapon.BlockRaise + 0.1f, weapon.Block)
-            };
+            List<PoseKey> keys = new() { new(0f, weapon.Idle) };
+            keys.AddRange(weapon.BlockVia);
+            keys.Add(new(weapon.BlockRaise, weapon.Block, Ease.Out));
+            keys.Add(new(weapon.BlockRaise + 0.1f, weapon.Block));
+
+            return keys;
+        }
+
+        public static List<PoseKey> BlockLowerKeys(WeaponDefinition weapon)
+        {
+            List<PoseKey> keys = new() { new(0f, weapon.Block) };
+            keys.AddRange(weapon.BlockLowerVia);
+            keys.Add(new(weapon.BlockLower, weapon.Idle, Ease.Out));
+
+            return keys;
         }
 
         public static List<PoseKey> BlockImpactKeys(WeaponDefinition weapon)
@@ -517,7 +534,7 @@ namespace Game.Scripts.Editor.Battle
         {
             BodyPose pose = attack.MidPose;
             float strike = weapon.StrikeOf(attack);
-            Vector2 offset = Vector2.ClampMagnitude(pose.Main.Position - Eye, Mathf.Abs(strike) * (weapon.IsUnarmed ? MaxFistOffset : MaxAimOffset));
+            Vector2 offset = Vector2.ClampMagnitude(pose.Main.Position - Eye, Mathf.Abs(strike) * (weapon.IsUnarmed ? MaxFistOffset : weapon.IsHeldAcross ? 1f : MaxAimOffset));
             Vector3 grip = new Vector3(Eye.x + offset.x, Eye.y + offset.y, pose.Main.Position.z);
             Vector3 blade = Aim(grip, Mathf.Abs(strike)).normalized * Mathf.Sign(strike);
 

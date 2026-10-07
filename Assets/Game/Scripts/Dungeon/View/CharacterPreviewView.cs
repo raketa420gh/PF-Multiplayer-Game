@@ -142,7 +142,7 @@ namespace Game.Scripts.Dungeon
 
             WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(EquipSlot.Weapon1Main);
             WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(EquipSlot.Weapon1Off);
-            WeaponConfig config = main != null && !_isUnarmed ? (off != null && off.WeaponClass == WeaponClass.Shield && main.WeaponWithShield != null ? main.WeaponWithShield : main.Weapon) : null;
+            WeaponConfig config = main != null && !_isUnarmed ? main.GetWeapon(off) : null;
 
             // Unarmed, the whole body stands in the relaxed library idle instead of the fist guard.
             if (_animator != null)

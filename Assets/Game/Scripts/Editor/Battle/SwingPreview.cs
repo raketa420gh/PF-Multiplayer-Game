@@ -74,6 +74,7 @@ namespace Game.Scripts.Editor.Battle
                 "block" => BattleAnimationLibrary.BlockKeys(weapon),
                 "impact" => BattleAnimationLibrary.BlockImpactKeys(weapon),
                 "deflect" => BattleAnimationLibrary.DeflectKeys(weapon),
+                "lower" => BattleAnimationLibrary.BlockLowerKeys(weapon),
                 _ => BattleAnimationLibrary.AttackKeys(weapon, attack ?? throw new ArgumentException($"'{prefix}' has no swing '{swing}'"))
             };
             float duration = keys[^1].Time;
@@ -156,7 +157,7 @@ namespace Game.Scripts.Editor.Battle
 
             Flag(summary, "main wrist bent", worst[0], MaxWrist, worstFrame[0], "0 deg");
             Flag(summary, "off wrist bent", worst[1], MaxWrist, worstFrame[1], "0 deg");
-            Flag(summary, "weapon spins within a frame", worst[2], MaxRoll, worstFrame[2], "0 deg");
+            Flag(summary, "weapon spins within a frame", weapon.IsHeldAcross ? 0f : worst[2], MaxRoll, worstFrame[2], "0 deg");
             Flag(summary, "main hand short of its target by", worst[3], MaxReachMiss, worstFrame[3], "0.00 m");
             Flag(summary, "off hand short of its target by", worst[4], MaxReachMiss, worstFrame[4], "0.00 m");
             Flag(summary, "main arm twist muscle at", worst[5], MaxTwist, worstFrame[5], "0.00");
@@ -165,6 +166,17 @@ namespace Game.Scripts.Editor.Battle
             Flag(summary, "off elbow off the authored one by", worst[8], MaxElbowMiss, worstFrame[8], "0 deg");
 
             return summary.ToString();
+        }
+
+        private static WeaponSocket Mirror(WeaponSocket socket)
+        {
+            return socket switch
+            {
+                WeaponSocket.RightHand => WeaponSocket.LeftHand,
+                WeaponSocket.LeftHand => WeaponSocket.RightHand,
+                WeaponSocket.RightShield => WeaponSocket.LeftShield,
+                _ => WeaponSocket.RightShield
+            };
         }
 
         private static void Flag(StringBuilder summary, string what, float value, float limit, int frame, string format)
@@ -291,8 +303,17 @@ namespace Game.Scripts.Editor.Battle
                     rig.Plan(poses, false);
                     rig.Apply(poses[index], index);
 
+                    // The clips are authored right-handed: a weapon the game plays mirrored is shown in the other hand, mirrored with it.
                     foreach (WeaponAttachment attachment in config != null ? config.Attachments : Array.Empty<WeaponAttachment>())
-                        Object.Instantiate(attachment.Prefab, rig.Sockets[(int)attachment.Socket], false).hideFlags = HideFlags.HideAndDontSave;
+                    {
+                        bool isMirrored = config.IsMirrored;
+                        GameObject instance = Object.Instantiate(attachment.Prefab, rig.Sockets[(int)(isMirrored ? Mirror(attachment.Socket) : attachment.Socket)], false);
+                        instance.hideFlags = HideFlags.HideAndDontSave;
+                        instance.transform.localScale = new Vector3(isMirrored ? -1f : 1f, 1f, 1f);
+
+                        if (instance.TryGetComponent(out WeaponVisual visual))
+                            visual.SetClosed(swing != "idle");
+                    }
 
                     foreach (Transform child in rig.Animator.GetComponentsInChildren<Transform>(true))
                         child.gameObject.layer = Layer;
