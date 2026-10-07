@@ -11,7 +11,8 @@
 | Projectile | TBD | TBD | TBD | TBD | |
 | Door | TBD | open/closed | TBD | TBD | |
 | Trap | TBD | state | TBD | TBD | |
-| Extraction | TBD | state/timer | TBD | TBD | |
+| Extraction | Yes | active, opened | Server | No | Escape portal: pedestal rises (map mark), hold F opens it; descend portal: cellar grate lifts by itself. Stepping into an open portal's zone goes through |
+| Player Session | Yes | state (incl. Descending), next floor, carried health and charges | Server | No | Queue/depart RPCs for the party; arrival RPC carries the state from the floor above |
 
 ## Combat Synchronization Requirements
 - Weapon configuration must be identical for all clients.

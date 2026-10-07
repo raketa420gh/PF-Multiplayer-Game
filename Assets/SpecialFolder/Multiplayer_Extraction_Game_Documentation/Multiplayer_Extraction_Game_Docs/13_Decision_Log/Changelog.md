@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.8 — 2026-10-07
+
+### Added
+- Dedicated server topology: matchmaking for Solo (up to 8) and Trio (up to 12) queues, server allocation, Host fallback without a server build (see `04_Multiplayer/Matchmaking.md`, DD-011).
+- Parties: tavern party by four-digit code (up to 3), the leader registers everyone; a party of two may queue for Trio.
+- Late-join window: 180 s after the first player the dungeon closes for new registrations.
+- House spawns: every team starts in its own village house, teammates together.
+- Dedicated server build (`Tools/Game/Network/Build Dedicated Server`), ParrelSync clone accounts (`clone<N>.` save prefix).
+- Huntsman class (Marksman, Trapper, Skirmisher), Stalker outfit, single-use hunting trap.
+- Crossbow with manual reload: fires on press, R loads a Crossbow Bolt from the bag.
+- Spellbook as its own weapon (open on the palm, shut for block and a two-handed slam); Écu heater shield with Sword & Écu / Mace & Écu combos — the combo is picked by the shield in the off hand; block lowering clip.
+- Floor 1 "Cursed Village": 540 m terrain from the reference map, zone-based layout (village, farmstead, graveyard, swamp, wild POIs) with ridges and rim walls, misty night look.
+- Medieval props and Stylized Skeleton bodies for skeleton enemies.
+- Spell marker: ground circle where an area spell will land while it is cast.
+
+### Changed
+- Every floor is its own session: descending transfers the adventurer to the next floor's session with health, spell charges, kills and XP (DD-012).
+- Portals: escape portal rises on a pedestal at 60 s, is marked on the map and opens after holding F; the cellar grate opens by itself at half the clock (360 s); an open portal takes whoever steps in.
+- Dark Swarm starts in the second half of the floor clock (360 s), 3 dmg/s instead of 6, drawn on the map and minimap (DD-013).
+- One set of animations for first and third person; generated clips keep arms within human joint ranges (DD-014).
+- Charge-based spells no longer start a cooldown after a cast.
+
+### Removed
+- Every weapon except eight: Arming Sword, Morning Star, Battle Axe, Crossbow, Spellbook, Magic Staff, Round Shield, Écu (Halberd included); saved item ids migrated.
+- Skeleton Champion boss.
+
 ## v0.7 — 2026-10-06
 
 ### Added
