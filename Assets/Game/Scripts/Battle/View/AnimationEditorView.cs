@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -187,6 +188,7 @@ namespace Game.Scripts.Battle
         private void OnEnable()
         {
             RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
+            StartCoroutine(ResetSocketsEachFrame());
         }
 
         private void OnDisable()
@@ -384,9 +386,10 @@ namespace Game.Scripts.Battle
         }
 
         /// The edits of both layers on top of the pose the animator has just written, held inside the joint limits as baking does.
+        /// The sockets are not reset here: a generated clip keys them, and resetting them after the animator dropped the turn
+        /// of the weapon in the hand that the clip carries there.
         private void ApplyEdits(bool hasHolds = true)
         {
-            ResetSockets();
             _limits.Capture();
 
             for (int layer = BaseLayer; layer <= UpperLayer; layer++)
@@ -398,8 +401,22 @@ namespace Game.Scripts.Battle
         /// The clip alone on the current frame: the animator writes it now, the edits come on top in LateUpdate.
         private void SampleClip()
         {
+            ResetSockets();
             SetFrame(_frame);
             _animator.Update(0f);
+        }
+
+        /// Puts the sockets back at rest once the frame is drawn, before the animator writes the next one: a clip that keys
+        /// them overwrites the rest, one that does not keeps it, and the edits never pile up on last frame's.
+        private IEnumerator ResetSocketsEachFrame()
+        {
+            WaitForEndOfFrame end = new WaitForEndOfFrame();
+
+            while (true)
+            {
+                yield return end;
+                ResetSockets();
+            }
         }
 
         private BoneKey Evaluate(HumanBodyBones bone, bool isSocket = false)

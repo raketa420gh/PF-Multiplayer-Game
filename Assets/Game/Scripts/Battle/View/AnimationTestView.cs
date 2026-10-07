@@ -94,6 +94,7 @@ namespace Game.Scripts.Battle
         private bool _hasFootwork = true;
         private bool _isFirstPerson;
         private bool _isEditing;
+        private bool _isAuthoredSide;
         private bool _isViewportBlocked;
 
         private void Awake()
@@ -128,6 +129,11 @@ namespace Game.Scripts.Battle
 
         private void LateUpdate()
         {
+            bool isAuthoredSide = _weapons[_weaponIndex].IsMirrored && _isEditing && !HasItem;
+
+            if (isAuthoredSide != _isAuthoredSide)
+                PlaceAttachments(isAuthoredSide);
+
             if (_weapons[_weaponIndex].IsMirrored && !_isEditing && !HasItem)
                 SocketMirror.Apply(_sockets);
 
@@ -292,6 +298,8 @@ namespace Game.Scripts.Battle
             foreach (WeaponAttachment attachment in weapon.Attachments)
                 _attachments.Add(Instantiate(attachment.Prefab, _sockets[(int)attachment.Socket], false));
 
+            _isAuthoredSide = false;
+
             _layer = UpperLayer;
             AddWeaponState(prefix + FighterAnimComponent.IdleSuffix);
 
@@ -319,6 +327,22 @@ namespace Game.Scripts.Battle
             _attachments.Add(_items[index].Create(_animator));
             _layer = UpperLayer;
             Play(UpperLayer, FighterAnimComponent.HoldState);
+        }
+
+        /// While edited, a weapon the game plays mirrored shows its clip as authored, right-handed: its attachments go to
+        /// the sockets of the other side, mirrored with them, as the game's mirrored clip and sockets would put them.
+        private void PlaceAttachments(bool isAuthoredSide)
+        {
+            WeaponAttachment[] attachments = _weapons[_weaponIndex].Attachments;
+
+            for (int i = 0; i < attachments.Length && i < _attachments.Count; i++)
+            {
+                WeaponSocket socket = isAuthoredSide ? SocketMirror.Mirror(attachments[i].Socket) : attachments[i].Socket;
+                _attachments[i].transform.SetParent(_sockets[(int)socket], false);
+                _attachments[i].transform.localScale = new Vector3(isAuthoredSide ? -1f : 1f, 1f, 1f);
+            }
+
+            _isAuthoredSide = isAuthoredSide;
         }
 
         private void ClearHands()

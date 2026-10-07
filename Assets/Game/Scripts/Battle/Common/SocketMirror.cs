@@ -14,6 +14,18 @@ namespace Game.Scripts.Battle
             Swap(sockets[(int)WeaponSocket.RightShield], sockets[(int)WeaponSocket.LeftShield]);
         }
 
+        /// The same socket on the other side of the body.
+        public static WeaponSocket Mirror(WeaponSocket socket)
+        {
+            return socket switch
+            {
+                WeaponSocket.RightHand => WeaponSocket.LeftHand,
+                WeaponSocket.LeftHand => WeaponSocket.RightHand,
+                WeaponSocket.RightShield => WeaponSocket.LeftShield,
+                _ => WeaponSocket.RightShield
+            };
+        }
+
         private static void Swap(Transform right, Transform left)
         {
             if (right == null || left == null)
