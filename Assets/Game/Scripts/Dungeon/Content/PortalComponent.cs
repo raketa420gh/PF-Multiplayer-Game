@@ -9,11 +9,12 @@ namespace Game.Scripts.Dungeon
         Descend
     }
 
-    /// Blue portal escapes the dungeon; red portal teleports to the lower floor.
+    /// Blue portal escapes the dungeon; red portal teleports to the lower floor. A way down with a gate (a cellar grate)
+    /// stays shut until it is opened once, after that it is a quick climb down for everyone.
     public sealed class PortalComponent : InteractableComponent
     {
-        public override string Prompt => Kind == PortalKind.Escape ? "Escape the dungeon" : "Descend deeper";
-        public override float HoldTime => _activationTime;
+        public override string Prompt => Kind == PortalKind.Escape ? "Escape the dungeon" : _gate == null ? "Descend deeper" : IsOpened ? "Descend into the cellar" : "Open the grate";
+        public override float HoldTime => _gate != null && IsOpened ? _openedTime : _activationTime;
         public override bool IsAvailable => IsActive && !IsUsed;
         /// Opened like a door (standing still, hands busy), but at Magical Interaction speed like an altar.
         public override bool IsMagical => true;
@@ -26,6 +27,9 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         public NetworkBool IsUsed { get; private set; }
+
+        [Networked]
+        public NetworkBool IsOpened { get; private set; }
 
         [SerializeField]
         private PortalKind _kind;
@@ -45,6 +49,20 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _spinSpeed = 40f;
 
+        [SerializeField]
+        private Transform _gate;
+
+        [SerializeField]
+        private float _gateLift = 2.2f;
+
+        [SerializeField]
+        private float _gateSpeed = 1.5f;
+
+        [SerializeField]
+        private float _openedTime = 1f;
+
+        private float _gateHeight;
+
         public override void Spawned()
         {
             UpdateVisual();
@@ -56,6 +74,12 @@ namespace Game.Scripts.Dungeon
 
             if (_visual != null && IsAvailable)
                 _visual.transform.Rotate(0f, 0f, _spinSpeed * Time.deltaTime, Space.Self);
+
+            if (_gate == null)
+                return;
+
+            _gateHeight = Mathf.MoveTowards(_gateHeight, IsOpened ? _gateLift : 0f, _gateSpeed * Time.deltaTime);
+            _gate.localPosition = Vector3.up * _gateHeight;
         }
 
         public void Activate(Transform destination)
@@ -68,6 +92,7 @@ namespace Game.Scripts.Dungeon
         public void Deactivate()
         {
             IsActive = false;
+            IsOpened = false;
         }
 
         public override void Complete(AdventurerComponent adventurer)
@@ -81,6 +106,7 @@ namespace Game.Scripts.Dungeon
                 adventurer.Descend(_destination.position, _destination.eulerAngles.y);
 
             IsUsed = _isSingleUse;
+            IsOpened = true;
         }
 
         private void UpdateVisual()

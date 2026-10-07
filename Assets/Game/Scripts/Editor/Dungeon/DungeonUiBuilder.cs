@@ -505,10 +505,9 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(mso, "_moduleText", moduleText);
             BattleEditorUtility.Set(mso, "_floorMaps", inputs.FloorMaps);
             BattleEditorUtility.Set(mso, "_floorModuleNames", inputs.ModuleNames);
-            BattleEditorUtility.Set(mso, "_worldSize", DungeonMapBuilder.WorldSize);
             BattleEditorUtility.Set(mso, "_floorSizes", DungeonMapBuilder.FloorSizes);
+            BattleEditorUtility.Set(mso, "_windowSizes", DungeonMapBuilder.WindowSizes);
             BattleEditorUtility.Set(mso, "_floorGrids", DungeonMapBuilder.FloorGrids);
-            BattleEditorUtility.Set(mso, "_windowSize", DungeonMapBuilder.WorldSize);
             mso.ApplyModifiedPropertiesWithoutUndo();
 
             // Top corners.
@@ -1079,7 +1078,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             (string title, string info, Texture picture, string scene)[] destinations =
             {
-                (DungeonSceneBuilder.Title, "The Great Hall · chests, skeletons and a flying head · the portal opens after a minute", inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null, SceneTravel.DungeonScene),
+                (DungeonSceneBuilder.Title, "Floor 1 · the Cursed Village: farm, village, graveyard, swamp · cellars to the Great Hall open halfway through the clock", inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null, SceneTravel.DungeonScene),
                 ("Training Grounds", "Test scene · weapon table, dummies, dev spawns", DungeonTextureBuilder.Load("Cobble", false), SceneTravel.SandboxScene)
             };
 
@@ -1790,7 +1789,6 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_moduleLabels", labels);
             BattleEditorUtility.Set(so, "_floorMaps", inputs.FloorMaps);
             BattleEditorUtility.Set(so, "_floorModuleNames", inputs.ModuleNames);
-            BattleEditorUtility.Set(so, "_worldSize", DungeonMapBuilder.WorldSize);
             BattleEditorUtility.Set(so, "_floorSizes", DungeonMapBuilder.FloorSizes);
             BattleEditorUtility.Set(so, "_floorGrids", DungeonMapBuilder.FloorGrids);
             so.ApplyModifiedPropertiesWithoutUndo();

@@ -48,6 +48,9 @@ namespace Game.Scripts.Editor.Dungeon
         {
             DungeonKitBuilder.Build();
             DungeonMedievalBuilder.Build();
+            DungeonVillageKitBuilder.Build();
+            DungeonVegetationBuilder.Build();
+            VillageArchitectureBuilder.BuildPieces();
         }
 
         [MenuItem("Tools/Game/Dungeon/Build Content")]

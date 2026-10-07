@@ -15,7 +15,7 @@ namespace Game.Scripts.Dungeon
     /// arrives, and its circle closes in stages from the whole floor towards a random point.
     public sealed class MatchComponent : NetworkBehaviour
     {
-        public const int FloorCount = 1;
+        public const int FloorCount = 2;
 
         public DungeonConfig Config => _config;
         public float Elapsed => State == MatchState.Running ? Runner.SecondsSince(StartTick) : 0f;
@@ -113,9 +113,9 @@ namespace Game.Scripts.Dungeon
                     return previous;
 
                 if (elapsed < stage.StartTime + stage.Duration)
-                    return Mathf.Lerp(previous, stage.Radius, (elapsed - stage.StartTime) / stage.Duration);
+                    return Mathf.Lerp(previous, radius * stage.Share, (elapsed - stage.StartTime) / stage.Duration);
 
-                previous = stage.Radius;
+                previous = radius * stage.Share;
             }
 
             return previous;

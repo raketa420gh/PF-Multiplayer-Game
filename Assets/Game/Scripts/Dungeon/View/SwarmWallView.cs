@@ -18,10 +18,10 @@ namespace Game.Scripts.Dungeon
         private int _segments = 72;
 
         [SerializeField]
-        private float _height = 6f;
+        private float _height = 14f;
 
-        [SerializeField]
-        private float _floorDrop = -26f;
+        [SerializeField, Tooltip("How far below the adventurer the ring starts: hilly floors need it to reach the ground in the valleys")]
+        private float _sink = 5f;
 
         private Mesh _mesh;
         private float _shownRadius = -1f;
@@ -48,7 +48,7 @@ namespace Game.Scripts.Dungeon
             int floor = adventurer.Floor;
             float radius = match.GetSafeRadius(floor);
             Vector3 center = match.GetSwarmCenter(floor);
-            center.y = floor == 1 ? 0f : _floorDrop;
+            center.y = adventurer.transform.position.y - _sink;
             transform.position = center;
 
             if (!Mathf.Approximately(_shownRadius, radius))

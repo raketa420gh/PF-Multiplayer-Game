@@ -22,8 +22,10 @@ namespace Game.Scripts.Dungeon
             public PortalComponent[] EscapePortals;
             /// Half side of the square around Center where escape portals open at random; 0 keeps them in place.
             public float EscapeArea;
-            public PortalComponent DescendPortal;
-            public Transform DescendDestination;
+            /// Ways down, opened halfway through the floor's clock; each leads to the arrival of the same index on the next floor.
+            public PortalComponent[] DescendPortals;
+            /// Where adventurers coming down from the floor above appear.
+            public Transform[] Arrivals;
             public Transform BossSpawn;
             public Vector3 Center;
             public float Radius = 30f;
@@ -80,7 +82,13 @@ namespace Game.Scripts.Dungeon
         private float _portalClearance = 1.2f;
 
         [SerializeField]
-        private int _portalAttempts = 40;
+        private int _portalAttempts = 60;
+
+        [SerializeField, Tooltip("Vertical reach when snapping a random escape portal point to the NavMesh; floors may be hilly")]
+        private float _portalSnap = 6f;
+
+        [SerializeField, Tooltip("A spawn point closer than this to an adventurer counts as taken")]
+        private float _spawnSpacing = 12f;
 
         private readonly List<NetworkObject> _spawned = new();
         private readonly List<PlayerSessionComponent> _sessions = new();
@@ -146,8 +154,7 @@ namespace Game.Scripts.Dungeon
 
             session.EnsureKit();
 
-            FloorLayout floor = _floors[0];
-            Transform point = floor.PlayerSpawns[session.Object.InputAuthority.AsIndex % floor.PlayerSpawns.Length];
+            Transform point = TakeSpawn(_floors[0]);
             PlayerRef player = session.Object.InputAuthority;
 
             NetworkObject adventurer = _runner.Spawn(_adventurerPrefab, point.position, point.rotation, player, (_, obj) =>
@@ -158,6 +165,34 @@ namespace Game.Scripts.Dungeon
             });
 
             session.OnAdventurerSpawned(adventurer.GetComponent<AdventurerComponent>());
+        }
+
+        /// A random spawn point of the floor that no adventurer stands near yet; any if all are taken.
+        private Transform TakeSpawn(FloorLayout floor)
+        {
+            List<Transform> free = new();
+
+            foreach (Transform point in floor.PlayerSpawns)
+            {
+                if (!IsTaken(point.position))
+                    free.Add(point);
+            }
+
+            if (free.Count == 0)
+                free.AddRange(floor.PlayerSpawns);
+
+            return free[UnityEngine.Random.Range(0, free.Count)];
+        }
+
+        private bool IsTaken(Vector3 point)
+        {
+            foreach (PlayerSessionComponent session in _sessions)
+            {
+                if (session != null && session.Adventurer != null && (session.Adventurer.transform.position - point).sqrMagnitude < _spawnSpacing * _spawnSpacing)
+                    return true;
+            }
+
+            return false;
         }
 
         private void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
@@ -314,15 +349,22 @@ namespace Game.Scripts.Dungeon
 
         private void SetDescendPortal(int floorIndex, bool isActive)
         {
-            PortalComponent portal = _floors[floorIndex].DescendPortal;
-
-            if (portal == null || floorIndex + 1 >= _floors.Length)
+            if (floorIndex + 1 >= _floors.Length)
                 return;
 
-            if (isActive)
-                portal.Activate(_floors[floorIndex + 1].DescendDestination);
-            else
-                portal.Deactivate();
+            PortalComponent[] portals = _floors[floorIndex].DescendPortals;
+            Transform[] arrivals = _floors[floorIndex + 1].Arrivals;
+
+            for (int i = 0; i < portals.Length; i++)
+            {
+                if (portals[i] == null)
+                    continue;
+
+                if (isActive)
+                    portals[i].Activate(arrivals[i % arrivals.Length]);
+                else
+                    portals[i].Deactivate();
+            }
         }
 
         private void SetEscapePortals(int floorIndex, bool isActive)
@@ -351,7 +393,7 @@ namespace Game.Scripts.Dungeon
             {
                 Vector3 point = floor.Center + new Vector3(UnityEngine.Random.Range(-1f, 1f), 0f, UnityEngine.Random.Range(-1f, 1f)) * floor.EscapeArea;
 
-                if (NavMesh.SamplePosition(point, out NavMeshHit hit, 1f, NavMesh.AllAreas)
+                if (NavMesh.SamplePosition(point, out NavMeshHit hit, _portalSnap, NavMesh.AllAreas) && Mathf.Abs(hit.position.x - point.x) + Mathf.Abs(hit.position.z - point.z) < 1f
                     && NavMesh.FindClosestEdge(hit.position, out NavMeshHit edge, NavMesh.AllAreas) && edge.distance >= _portalClearance)
                     return hit.position;
             }

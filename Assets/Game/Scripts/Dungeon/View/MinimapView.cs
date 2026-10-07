@@ -25,15 +25,12 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private string[] _floorModuleNames;
 
-        [SerializeField]
-        private float _worldSize = 42f;
-
-        [SerializeField]
-        private float _windowSize = 22f;
-
-        [Tooltip("Side of every floor and the number of modules along it")]
+        [Tooltip("Side of every floor, the part of it the window shows and the number of modules along it")]
         [SerializeField]
         private float[] _floorSizes;
+
+        [SerializeField]
+        private float[] _windowSizes;
 
         [SerializeField]
         private int[] _floorGrids;
@@ -51,9 +48,10 @@ namespace Game.Scripts.Dungeon
                 _map.texture = _floorMaps[floor];
 
             Vector3 position = adventurer.transform.position;
-            float u = (position.x + _worldSize * 0.5f) / _worldSize;
-            float v = (position.z + _worldSize * 0.5f) / _worldSize;
-            float window = _windowSize / _worldSize;
+            float size = _floorSizes[floor];
+            float u = (position.x + size * 0.5f) / size;
+            float v = (position.z + size * 0.5f) / size;
+            float window = _windowSizes[floor] / size;
             _map.uvRect = new Rect(u - window * 0.5f, v - window * 0.5f, window, window);
             _arrow.localRotation = Quaternion.Euler(0f, 0f, -adventurer.transform.eulerAngles.y);
 

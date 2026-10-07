@@ -19,6 +19,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const string ScenePath = "Assets/Game/Scenes/DungeonScene.unity";
         public const string Title = "The Dungeon";
         private const string ReflectionPath = DungeonTextureBuilder.Folder + "/Reflection.cubemap";
+        private const string NightReflectionPath = DungeonTextureBuilder.Folder + "/NightReflection.cubemap";
 
         public static void Build()
         {
@@ -29,7 +30,7 @@ namespace Game.Scripts.Editor.Dungeon
             EditorSceneManager.SaveScene(scene, ScenePath);
 
             // Darker and hazier than the tavern: the hall is lit by its torches as in Dark and Darker.
-            SetupLighting(0.55f, 0.018f);
+            Light fill = SetupLighting(0.55f, 0.018f);
             BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/DungeonVolume.asset", 0.6f);
             Camera camera = BuildCamera();
             GameObject system = new GameObject("[System]");
@@ -84,10 +85,22 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
 
             Transform dungeon = DungeonMapBuilder.Build(director, out Texture2D[] floorMaps);
+            Transform village = dungeon.Find("Floor1");
+            Transform hall = dungeon.Find("Floor2");
+            fill.transform.SetParent(hall, true);
             so = new SerializedObject(dungeon.gameObject.AddComponent<FloorVisibilityView>());
             BattleEditorUtility.Set(so, "_context", context);
-            BattleEditorUtility.Set(so, "_floors", new[] { dungeon.Find("Floor1") });
+            BattleEditorUtility.Set(so, "_camera", camera);
+            BattleEditorUtility.Set(so, "_floors", new[] { village, hall });
+            SerializedProperty atmospheres = so.FindProperty("_atmospheres");
+            atmospheres.arraySize = 2;
+            // Night over the village: cold moonlit haze; the hall keeps the torch-lit gloom of the dungeon.
+            SetAtmosphere(atmospheres.GetArrayElementAtIndex(0), new Color(0.2f, 0.23f, 0.32f), new Color(0.14f, 0.15f, 0.18f), new Color(0.07f, 0.065f, 0.06f),
+                new Color(0.055f, 0.065f, 0.085f), 0.012f, 190f, BuildReflection(NightReflectionPath, new Color(0.06f, 0.07f, 0.095f), new Color(0.045f, 0.05f, 0.06f), new Color(0.012f, 0.012f, 0.01f)));
+            SetAtmosphere(atmospheres.GetArrayElementAtIndex(1), new Color(0.4f, 0.4f, 0.46f) * 0.55f, new Color(0.32f, 0.31f, 0.33f) * 0.55f, new Color(0.22f, 0.2f, 0.18f) * 0.55f,
+                new Color(0.035f, 0.035f, 0.045f), 0.018f, 120f, RenderSettings.customReflectionTexture as Cubemap);
             so.ApplyModifiedPropertiesWithoutUndo();
+            ApplyAtmosphere(atmospheres.GetArrayElementAtIndex(0), camera);
             DungeonUiBuilder.Build(new DungeonUiBuilder.Inputs
             {
                 Context = context,
@@ -106,6 +119,30 @@ namespace Game.Scripts.Editor.Dungeon
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings();
             Debug.Log($"[{nameof(DungeonSceneBuilder)}] Scene built: {ScenePath}");
+        }
+
+        private static void SetAtmosphere(SerializedProperty property, Color sky, Color equator, Color ground, Color fog, float density, float distance, Cubemap reflection)
+        {
+            property.FindPropertyRelative("Sky").colorValue = sky;
+            property.FindPropertyRelative("Equator").colorValue = equator;
+            property.FindPropertyRelative("Ground").colorValue = ground;
+            property.FindPropertyRelative("Fog").colorValue = fog;
+            property.FindPropertyRelative("FogDensity").floatValue = density;
+            property.FindPropertyRelative("ViewDistance").floatValue = distance;
+            property.FindPropertyRelative("Reflection").objectReferenceValue = reflection;
+        }
+
+        /// The scene opens on floor 1: its air is the saved default until the view takes over.
+        private static void ApplyAtmosphere(SerializedProperty property, Camera camera)
+        {
+            RenderSettings.ambientSkyColor = property.FindPropertyRelative("Sky").colorValue;
+            RenderSettings.ambientEquatorColor = property.FindPropertyRelative("Equator").colorValue;
+            RenderSettings.ambientGroundColor = property.FindPropertyRelative("Ground").colorValue;
+            RenderSettings.fogColor = property.FindPropertyRelative("Fog").colorValue;
+            RenderSettings.fogDensity = property.FindPropertyRelative("FogDensity").floatValue;
+            RenderSettings.customReflectionTexture = property.FindPropertyRelative("Reflection").objectReferenceValue as Cubemap;
+            camera.backgroundColor = RenderSettings.fogColor;
+            camera.farClipPlane = property.FindPropertyRelative("ViewDistance").floatValue;
         }
 
         internal static ClassConfig[] LoadClasses()
@@ -158,7 +195,6 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_context", context);
             BattleEditorUtility.Set(so, "_filter", filter);
             BattleEditorUtility.Set(so, "_renderer", renderer);
-            BattleEditorUtility.Set(so, "_floorDrop", DungeonMapBuilder.FloorDrop);
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -214,7 +250,7 @@ namespace Game.Scripts.Editor.Dungeon
             return component;
         }
 
-        internal static void SetupLighting(float brightness = 1f, float fogDensity = 0.008f)
+        internal static Light SetupLighting(float brightness = 1f, float fogDensity = 0.008f)
         {
             RenderSettings.ambientMode = AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = new Color(0.4f, 0.4f, 0.46f) * brightness;
@@ -226,7 +262,7 @@ namespace Game.Scripts.Editor.Dungeon
             RenderSettings.fogDensity = fogDensity;
             RenderSettings.skybox = null;
             RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
-            RenderSettings.customReflectionTexture = BuildReflection();
+            RenderSettings.customReflectionTexture = BuildReflection(ReflectionPath, new Color(0.52f, 0.47f, 0.4f), new Color(0.36f, 0.34f, 0.33f), new Color(0.17f, 0.16f, 0.15f));
             RenderSettings.reflectionIntensity = 1f;
             Lightmapping.bakedGI = false;
             Lightmapping.realtimeGI = false;
@@ -239,22 +275,21 @@ namespace Game.Scripts.Editor.Dungeon
             fill.intensity = 0.45f * brightness;
             fill.shadows = LightShadows.None;
             fill.transform.rotation = Quaternion.Euler(52f, 35f, 0f);
+
+            return fill;
         }
 
         /// There is no sky underground and metal would mirror blackness: a plain torch-lit gradient gives blades and plate
         /// something to reflect.
-        private static Cubemap BuildReflection()
+        private static Cubemap BuildReflection(string path, Color top, Color horizon, Color bottom)
         {
             const int size = 32;
-            Color top = new Color(0.52f, 0.47f, 0.4f);
-            Color horizon = new Color(0.36f, 0.34f, 0.33f);
-            Color bottom = new Color(0.17f, 0.16f, 0.15f);
-            Cubemap cubemap = AssetDatabase.LoadAssetAtPath<Cubemap>(ReflectionPath);
+            Cubemap cubemap = AssetDatabase.LoadAssetAtPath<Cubemap>(path);
 
             if (cubemap == null)
             {
                 cubemap = new Cubemap(size, TextureFormat.RGBA32, true);
-                AssetDatabase.CreateAsset(cubemap, ReflectionPath);
+                AssetDatabase.CreateAsset(cubemap, path);
             }
 
             Color[] pixels = new Color[size * size];

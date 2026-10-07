@@ -8,7 +8,8 @@ namespace Game.Scripts.Dungeon
     {
         public float StartTime;
         public float Duration;
-        public float Radius;
+        /// Safe radius at the end of the stage as a share of the floor radius.
+        public float Share;
     }
 
     [CreateAssetMenu(menuName = "Game/Dungeon/Dungeon Config")]
@@ -34,10 +35,10 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private SwarmStage[] _swarmStages =
         {
-            new() { StartTime = 150f, Duration = 60f, Radius = 26f },
-            new() { StartTime = 330f, Duration = 60f, Radius = 15f },
-            new() { StartTime = 510f, Duration = 60f, Radius = 7f },
-            new() { StartTime = 660f, Duration = 60f, Radius = 0f }
+            new() { StartTime = 150f, Duration = 60f, Share = 0.82f },
+            new() { StartTime = 330f, Duration = 60f, Share = 0.48f },
+            new() { StartTime = 510f, Duration = 60f, Share = 0.22f },
+            new() { StartTime = 660f, Duration = 60f, Share = 0f }
         };
 
         [SerializeField]

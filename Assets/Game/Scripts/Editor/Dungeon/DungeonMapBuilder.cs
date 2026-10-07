@@ -13,6 +13,8 @@ namespace Game.Scripts.Editor.Dungeon
     /// The hall around it is dressed with the Medieval Assets Pack, one purpose per stretch: an execution corner (north-west),
     /// a prison cell (north-east), a library (west), an armoury (east), the guards' mess (south-west) and a store (south-east).
     /// Skeletons and a flying head guard it; the escape portal opens at a random spot. Then the NavMesh and the map.
+    /// Since the cursed village (VillageMapBuilder) became floor 1, the hall is floor 2, sunk below it; adventurers arrive
+    /// by its north-west and south-east doors from the graveyard and the swamp cellars.
     internal static class DungeonMapBuilder
     {
         /// Wall to wall in ten seconds at 300 move speed (run speed 3.36 m/s).
@@ -20,16 +22,18 @@ namespace Game.Scripts.Editor.Dungeon
         /// Side of the floor; its map is drawn to this scale.
         public const float WorldSize = RoomSize + 2f;
         public const float FloorRadius = WorldSize * 0.75f;
-        /// Height step between floors, should there be more than one.
-        public const float FloorDrop = -26f;
+        /// Depth of the hall below the village, well under the deepest riverbed.
+        public const float FloorDrop = -60f;
         public const float AgentRadius = 0.35f;
         public const string NavMeshPath = "Assets/Game/Scenes/DungeonScene/NavMesh.asset";
+        public const string VillageNavMeshPath = "Assets/Game/Scenes/DungeonScene/VillageNavMesh.asset";
 
-        public static readonly float[] FloorSizes = { WorldSize };
-        public static readonly int[] FloorGrids = { 1 };
-        public static readonly string[] ModuleNames = { "Great Hall" };
+        public static readonly float[] FloorSizes = { VillageLayout.Size, WorldSize };
+        public static readonly int[] FloorGrids = { VillageLayout.Grid, 1 };
+        /// How much of each floor the minimap window shows.
+        public static readonly float[] WindowSizes = { 110f, WorldSize };
+        public static readonly string[] ModuleNames = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Append(VillageLayout.ModuleNames, "Great Hall"));
 
-        private const int PlayerSpawnCount = 6;
         private const float WallThickness = DungeonPropBuilder.WallThickness;
         private const float Height = 6f;
         private const float Half = RoomSize * 0.5f;
@@ -45,8 +49,10 @@ namespace Game.Scripts.Editor.Dungeon
         {
             BuildPieces();
             Transform root = new GameObject("[Dungeon]").transform;
-            Transform floor = BattleEditorUtility.CreateChild("Floor1", root).transform;
+            Transform village = BattleEditorUtility.CreateChild("Floor1", root).transform;
+            Transform floor = BattleEditorUtility.CreateChild("Floor2", root, Vector3.up * FloorDrop).transform;
             Transform spawns = new GameObject("[Spawns]").transform;
+            VillageMapBuilder.Result upper = VillageMapBuilder.Build(village, spawns);
             Vector3 slab = new Vector3(RoomSize + WallThickness * 2f, WallThickness, RoomSize + WallThickness * 2f);
             List<ContainerComponent> containers = new();
 
@@ -97,28 +103,60 @@ namespace Game.Scripts.Editor.Dungeon
             BuildMess(floor, containers);
             BuildStore(floor, containers);
 
-            List<Transform> players = new();
-
-            for (int i = 0; i < PlayerSpawnCount; i++)
-                players.Add(BattleEditorUtility.CreateChild("Player" + i, spawns, new Vector3((i - (PlayerSpawnCount - 1) * 0.5f) * 2f, 0f, 3f - Half)).transform);
+            Transform[] arrivals =
+            {
+                BattleEditorUtility.CreateChild("Arrival Graveyard", spawns, floor.TransformPoint(new Vector3(-DoorOffset, 0f, Half - 1.6f))).transform,
+                BattleEditorUtility.CreateChild("Arrival Swamp", spawns, floor.TransformPoint(new Vector3(DoorOffset, 0f, 1.6f - Half))).transform
+            };
+            arrivals[0].rotation = Quaternion.Euler(0f, 180f, 0f);
 
             DungeonDirector.MonsterPlacement[] monsters =
             {
-                Monster(spawns, "SkeletonArcher", new Vector3(0f, 0f, Half - 4f), 180f),
-                Monster(spawns, "SkeletonSwordsman", new Vector3(-9.5f, 0f, 0f), -90f),
-                Monster(spawns, "FlyingHead", new Vector3(Half - 4.5f, 0f, -3f), -90f)
+                Monster(spawns, "SkeletonArcher", floor.TransformPoint(new Vector3(0f, 0f, Half - 4f)), 180f),
+                Monster(spawns, "SkeletonSwordsman", floor.TransformPoint(new Vector3(-9.5f, 0f, 0f)), -90f),
+                Monster(spawns, "FlyingHead", floor.TransformPoint(new Vector3(Half - 4.5f, 0f, -3f)), -90f)
             };
 
             // Parked out of the way and invisible until it opens; the director then moves it to a random free spot.
             PortalComponent portal = Place(Load("EscapePortal"), floor, new Vector3(0f, 0f, -Half * 0.5f), 0f, false).GetComponent<PortalComponent>();
 
-            BakeNavMesh(root.gameObject, NavMeshPath);
+            BakeNavMesh(village.gameObject, VillageNavMeshPath, 0.2f, upper.Sources);
+            BakeNavMesh(floor.gameObject, NavMeshPath, 0.12f, null);
 
             SerializedObject so = new SerializedObject(director);
-            so.FindProperty("_floors").arraySize = 1;
-            const string layout = "_floors.Array.data[0].";
-            BattleEditorUtility.Set(so, layout + "PlayerSpawns", players);
+            so.FindProperty("_floors").arraySize = 2;
+            const string first = "_floors.Array.data[0].";
+            BattleEditorUtility.Set(so, first + "PlayerSpawns", upper.PlayerSpawns);
+            BattleEditorUtility.Set(so, first + "MonsterSpawns", upper.MonsterSpawns);
+            SetMonsters(so, first, upper.Monsters.ToArray());
+            BattleEditorUtility.Set(so, first + "Containers", upper.Containers);
+            BattleEditorUtility.Set(so, first + "EscapePortals", upper.EscapePortals);
+            BattleEditorUtility.Set(so, first + "EscapeArea", VillageLayout.Playable - 12f);
+            BattleEditorUtility.Set(so, first + "DescendPortals", upper.Cellars);
+            BattleEditorUtility.Set(so, first + "Arrivals", new Transform[0]);
+            BattleEditorUtility.Set(so, first + "Center", Vector3.up * 2f);
+            // The circle starts wide enough to cover the corners of the square map.
+            BattleEditorUtility.Set(so, first + "Radius", VillageLayout.Half * 1.45f);
+
+            const string layout = "_floors.Array.data[1].";
+            BattleEditorUtility.Set(so, layout + "PlayerSpawns", new Transform[0]);
             BattleEditorUtility.Set(so, layout + "MonsterSpawns", new Transform[0]);
+            SetMonsters(so, layout, monsters);
+            BattleEditorUtility.Set(so, layout + "Containers", containers);
+            BattleEditorUtility.Set(so, layout + "EscapePortals", new[] { portal });
+            BattleEditorUtility.Set(so, layout + "EscapeArea", Half);
+            BattleEditorUtility.Set(so, layout + "DescendPortals", new PortalComponent[0]);
+            BattleEditorUtility.Set(so, layout + "Arrivals", arrivals);
+            BattleEditorUtility.Set(so, layout + "Center", Vector3.up * FloorDrop);
+            BattleEditorUtility.Set(so, layout + "Radius", FloorRadius);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            floorMaps = new[] { upper.Map, DungeonMinimapBuilder.Render(floor, FloorDrop, "Floor2") };
+
+            return root;
+        }
+
+        private static void SetMonsters(SerializedObject so, string layout, DungeonDirector.MonsterPlacement[] monsters)
+        {
             SerializedProperty placements = so.FindProperty(layout + "Monsters");
             placements.arraySize = monsters.Length;
 
@@ -127,16 +165,6 @@ namespace Game.Scripts.Editor.Dungeon
                 placements.GetArrayElementAtIndex(i).FindPropertyRelative("Point").objectReferenceValue = monsters[i].Point;
                 placements.GetArrayElementAtIndex(i).FindPropertyRelative("Prefab").objectReferenceValue = monsters[i].Prefab;
             }
-
-            BattleEditorUtility.Set(so, layout + "Containers", containers);
-            BattleEditorUtility.Set(so, layout + "EscapePortals", new[] { portal });
-            BattleEditorUtility.Set(so, layout + "EscapeArea", Half);
-            BattleEditorUtility.Set(so, layout + "Center", Vector3.zero);
-            BattleEditorUtility.Set(so, layout + "Radius", FloorRadius);
-            so.ApplyModifiedPropertiesWithoutUndo();
-            floorMaps = new[] { DungeonMinimapBuilder.Render(floor, 0f, "Floor1") };
-
-            return root;
         }
 
         internal static GameObject Place(GameObject prefab, Transform parent, Vector3 localPosition, float yaw, bool isStatic = true)
@@ -154,14 +182,14 @@ namespace Game.Scripts.Editor.Dungeon
             return instance;
         }
 
-        internal static void BakeNavMesh(GameObject root, string path)
+        internal static void BakeNavMesh(GameObject root, string path, float voxelSize = 0.12f, List<NavMeshBuildSource> extra = null)
         {
             NavMeshSurface surface = root.AddComponent<NavMeshSurface>();
             surface.collectObjects = CollectObjects.All;
             surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             surface.layerMask = 1;
             surface.overrideVoxelSize = true;
-            surface.voxelSize = 0.12f;
+            surface.voxelSize = voxelSize;
 
             // Paths are walked by character controllers 0.3 wide: the stock agent would not fit through narrow doorways.
             NavMeshBuildSettings settings = surface.GetBuildSettings();
@@ -177,6 +205,9 @@ namespace Game.Scripts.Editor.Dungeon
                 bounds.Encapsulate(collider.bounds);
 
             UnityEngine.AI.NavMeshBuilder.CollectSources(null, surface.layerMask, surface.useGeometry, surface.defaultArea, markups, sources);
+
+            if (extra != null)
+                sources.AddRange(extra);
             bounds.center -= root.transform.position;
             NavMeshData data = UnityEngine.AI.NavMeshBuilder.BuildNavMeshData(settings, sources, bounds, root.transform.position, Quaternion.identity);
 

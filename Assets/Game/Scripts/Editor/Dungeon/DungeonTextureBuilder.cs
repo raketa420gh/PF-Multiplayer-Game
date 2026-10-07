@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Game.Scripts.Editor.Dungeon
 {
     /// Procedural albedo + normal textures for the crypt: stone, flagstones, wood, metal, bone, flesh and cloth.
-    internal static class DungeonTextureBuilder
+    internal static partial class DungeonTextureBuilder
     {
         public const string Folder = "Assets/Game/Textures/Dungeon";
         public const int Size = 512;
@@ -27,6 +27,7 @@ namespace Game.Scripts.Editor.Dungeon
             Write("Bone", Bone, 0.5f);
             Write("Gold", Gold, 0.3f);
             WriteFlame();
+            BuildOutdoor();
 
             AssetDatabase.Refresh();
             Debug.Log($"[{nameof(DungeonTextureBuilder)}] Textures built in {Folder}");

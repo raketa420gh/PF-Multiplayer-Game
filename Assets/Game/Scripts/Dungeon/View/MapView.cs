@@ -31,9 +31,6 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private string[] _floorModuleNames;
 
-        [SerializeField]
-        private float _worldSize = 42f;
-
         [Tooltip("Side of every floor and the number of modules along it")]
         [SerializeField]
         private float[] _floorSizes;
@@ -57,7 +54,8 @@ namespace Game.Scripts.Dungeon
 
             Vector3 position = adventurer.transform.position;
             Vector2 size = _map.rectTransform.rect.size;
-            _arrow.anchoredPosition = new Vector2(position.x / _worldSize * size.x, position.z / _worldSize * size.y);
+            float world = _floorSizes[floor];
+            _arrow.anchoredPosition = new Vector2(position.x / world * size.x, position.z / world * size.y);
             _arrow.localRotation = Quaternion.Euler(0f, 0f, -adventurer.transform.eulerAngles.y);
         }
 
@@ -68,7 +66,7 @@ namespace Game.Scripts.Dungeon
             _title.text = $"Floor {floor + 1}";
 
             int grid = _floorGrids[floor];
-            Vector2 module = _map.rectTransform.rect.size * (_floorSizes[floor] / grid / _worldSize);
+            Vector2 module = _map.rectTransform.rect.size / grid;
             int first = 0;
 
             for (int i = 0; i < floor; i++)
