@@ -288,7 +288,10 @@ namespace Game.Scripts.Editor.Dungeon
         private static WeaponDefinition CreateSpellbook()
         {
             Vector3 across = Vector3.left;
-            BodyPose idle = OpenBook(new(0.08f, 1.6f, 0.4f), -5f, 45f, new(0.28f, 1.28f, 0.15f), new(-0.2f, 1.05f, 0.15f));
+            // Open on the palm of the book hand reached a little forward, pages up; the other hand hangs low, its elbow
+            // slightly bent. The book breathes up and down by a centimetre.
+            BodyPose idle = OpenBook(new(0.1f, 1.4f, 0.48f), -5f, 40f, new(0.27f, 1.12f, 0.2f), new(-0.24f, 0.9f, 0.12f));
+            BodyPose breath = OpenBook(new(0.1f, 1.41f, 0.48f), -5f, 42f, new(0.27f, 1.13f, 0.2f), new(-0.24f, 0.91f, 0.13f));
             BodyPose block = ShutBook(new(0.085f, 1.7f, 0.445f), across, Vector3.up, 0f);
             BodyPose held = ShutBook(new(0.076f, 1.52f, 0.445f), across, Vector3.up, 0f);
             held.Off = idle.Off;
@@ -308,6 +311,8 @@ namespace Game.Scripts.Editor.Dungeon
                 // A book has no edge to lead a cut with: it keeps the turn of the footage.
                 IsRound = true,
                 Idle = idle,
+                IdleBreath = breath,
+                IdleCycle = 160 * Footage,
                 Attacks = new[]
                 {
                     new AttackDefinition

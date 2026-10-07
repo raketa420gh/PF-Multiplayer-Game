@@ -331,7 +331,9 @@ namespace Game.Scripts.Editor.Dungeon
 
             Vector2 block = new Vector2(boards.x - 0.006f, 0.019f);
             WeaponParts.Box(closed, pages, 0.006f, width - 0.006f, block, block, middle, middle, 0.5f);
-            closed.Rod(cover, new Vector3(bottom, middle.y, 0.004f), new Vector3(top, middle.y, 0.004f), 0.026f, 0.026f, 10);
+            // The spine sits nearly flush with the boards: one standing out by its radius showed its round side to the eye in
+            // the block and read as a book turned sideways.
+            closed.Rod(cover, new Vector3(bottom, middle.y, 0.02f), new Vector3(top, middle.y, 0.02f), 0.024f, 0.024f, 10);
 
             foreach (float x in new[] { bottom + 0.012f, top - 0.012f })
             {
