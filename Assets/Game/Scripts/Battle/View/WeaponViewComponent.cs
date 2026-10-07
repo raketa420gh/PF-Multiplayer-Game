@@ -49,13 +49,14 @@ namespace Game.Scripts.Battle
             bool hasArrow = isDrawn || state == CombatState.Idle && (!weapon.Ranged.IsManualReload || _combat.IsLoaded);
             Vector3 drawHand = _sockets[(int)(weapon.IsMirrored ? WeaponSocket.LeftHand : WeaponSocket.RightHand)].position;
 
-            bool isClosed = state is CombatState.Attack or CombatState.BlockRaise or CombatState.Block or CombatState.BlockImpact or CombatState.Deflected;
+            bool isClosed = state is CombatState.BlockRaise or CombatState.Block or CombatState.BlockImpact or CombatState.Deflected;
+            bool isAttack = state == CombatState.Attack;
 
             foreach (WeaponVisual visual in _visuals[slot])
             {
                 visual.SetTrailActive(isActivePhase);
                 visual.SetDraw(isDrawn, drawHand, hasArrow);
-                visual.SetClosed(isClosed);
+                visual.SetClosed(isClosed || isAttack && visual.IsShutInAttack(_combat.StateTime));
             }
 
             if (isActivePhase && !_wasActivePhase && BattleContext.Instance != null)

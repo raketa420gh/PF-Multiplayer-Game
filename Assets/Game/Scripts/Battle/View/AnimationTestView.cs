@@ -153,7 +153,8 @@ namespace Game.Scripts.Battle
 
                 visual.SetTrailActive(isActive);
                 visual.SetDraw(isDrawn, drawHand, hasArrow);
-                visual.SetClosed(upper.Contains(FighterAnimComponent.AttackSuffix) || upper.Contains(FighterAnimComponent.BlockSuffix) ||
+                visual.SetClosed(upper.Contains(FighterAnimComponent.AttackSuffix) && visual.IsShutInAttack(GetTime(UpperLayer)) ||
+                                 upper.Contains(FighterAnimComponent.BlockSuffix) ||
                                  upper.EndsWith(FighterAnimComponent.DeflectSuffix));
             }
 

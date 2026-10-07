@@ -21,6 +21,9 @@ namespace Game.Scripts.Editor.Dungeon
         public static readonly Quaternion EcuTurn = EcuSocket();
         /// The fist on the écu's grip from the middle of its face, in the écu's frame.
         public static readonly Vector3 EcuFist = new(-EcuCenter, EcuHeight * 0.5f - EcuTop, -EcuGap - EcuBend - EcuThickness);
+        /// How far the thumb on the shut book points up from across it, in degrees: the hands pinch its sides with the
+        /// thumbs slanting up and in over the front cover.
+        public const float BookThumb = 45f;
 
         /// The écu in its own frame, the fist at the origin: 48 by 60 cm, the top rim 13 cm above the fist, the middle
         /// 5 cm to its left.
@@ -282,7 +285,8 @@ namespace Game.Scripts.Editor.Dungeon
 
         /// The spellbook rides in the left hand socket (x = the back of the hand, y = the fingers, z = the thumb). Open, it
         /// lies on the palm with its spine along the fingers and the pages up; closed, it stands between both hands, which
-        /// hold its top corners: the spine in the book hand, the fore-edge with the brass corners in the other, along z.
+        /// pinch its sides below the middle: the spine in the book hand, the fore-edge with the brass corners in the other,
+        /// across the book from the thumb turned BookThumb down.
         public static GameObject BuildBook()
         {
             Material cover = WeaponMaterials.BookCover;
@@ -313,11 +317,11 @@ namespace Game.Scripts.Editor.Dungeon
                 WeaponMesh.Ellipse(new Vector3(0f, 0.095f, 0.12f), Vector3.right, Vector3.forward, 0.001f, 0.001f, 6)
             }, WeaponMesh.Hard);
 
-            // Shut, held from above at its top corners: the head of the book toward the back of the hand (+x), the front
-            // cover under the thumb (-y), the fingers round the back cover, the spine in this hand.
-            WeaponMesh closed = new WeaponMesh();
-            const float top = 0.06f;
-            const float bottom = -0.18f;
+            // Shut, pinched at its side a quarter of the way up: the head of the book toward +x, the front cover under the
+            // thumb (-y), the fingers round the back cover, the spine in this hand.
+            WeaponMesh closed = new WeaponMesh { Matrix = Matrix4x4.Rotate(Quaternion.Euler(0f, -BookThumb, 0f)) };
+            const float top = 0.15f;
+            const float bottom = -0.05f;
             const float width = 0.17f;
             Vector2 boards = new Vector2((top - bottom) * 0.5f, 0.004f);
             Vector2 middle = new Vector2((top + bottom) * 0.5f, 0.01f);
@@ -345,6 +349,8 @@ namespace Game.Scripts.Editor.Dungeon
             WeaponVisual visual = root.AddComponent<WeaponVisual>();
             BattleEditorUtility.Set(visual, "_bookOpen", open.Attach(root.transform, "Book", "Open"));
             BattleEditorUtility.Set(visual, "_bookClosed", closed.Attach(root.transform, "BookClosed", "Closed"));
+            // The strike of the footage folds the book shut by video frame 7 and opens it again from frame 90 (clip = x0.75).
+            BattleEditorUtility.Set(visual, "_attackShut", new Vector2(7f, 90f) * 0.75f / BattleAnimationBuilder.FrameRate);
             visual.SetClosed(false);
 
             return Save(root);

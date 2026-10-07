@@ -281,14 +281,18 @@ namespace Game.Scripts.Editor.Dungeon
 
         /// The spellbook of Dark and Darker, authored in the right hand and played mirrored: in the game it is the left
         /// hand's. At rest it lies open on the palm, low in the view, its spine running ahead and the pages up. To block,
-        /// the book hand stands it up shut before the eyes and the other hand takes its fore-edge. The one strike of the
-        /// series takes it shut in both hands past the face to over the head, holds it there and slams it down on the
-        /// crosshair, the top edge first; the book hand alone brings it back and opens it.
+        /// the other hand folds it shut and both stand it up before the eyes, pinching its sides, the forearms rising from
+        /// the bottom corners of the view. The one strike of the series takes it shut in both hands past the face to over
+        /// the head, holds it there and brings it down upright on the crosshair at arm's length; the book hand alone brings
+        /// it back and opens it.
         private static WeaponDefinition CreateSpellbook()
         {
             Vector3 across = Vector3.left;
-            BodyPose idle = OpenBook(new(0.27f, 1.54f, 0.52f), -5f, 30f, new(0.3f, 1.22f, 0.24f), new(-0.2f, 1.05f, 0.15f));
-            BodyPose block = ShutBook(new(0.085f, 1.81f, 0.47f), across, Vector3.up, 0f, new(0.3f, 1.42f, 0.25f), new(-0.3f, 1.42f, 0.25f));
+            BodyPose idle = OpenBook(new(0.08f, 1.6f, 0.4f), -5f, 45f, new(0.28f, 1.28f, 0.15f), new(-0.2f, 1.05f, 0.15f));
+            BodyPose block = ShutBook(new(0.085f, 1.7f, 0.445f), across, Vector3.up, 0f);
+            BodyPose held = ShutBook(new(0.076f, 1.52f, 0.445f), across, Vector3.up, 0f);
+            held.Off = idle.Off;
+            held.OffOpen = idle.OffOpen;
 
             return new WeaponDefinition
             {
@@ -301,36 +305,49 @@ namespace Game.Scripts.Editor.Dungeon
                 BladeTip = BookWidth,
                 Strike = BookWidth * 0.5f,
                 IsHeldAcross = true,
+                // A book has no edge to lead a cut with: it keeps the turn of the footage.
+                IsRound = true,
                 Idle = idle,
                 Attacks = new[]
                 {
                     new AttackDefinition
                     {
-                        Windup = 42 * Footage, Active = 8 * Footage, Recovery = 45 * Footage,
+                        Windup = 47 * Footage, Active = 7 * Footage, Recovery = 47 * Footage,
                         // The strikes of the footage are single ones: the next may only start as this one is back at the open book.
-                        ComboStart = 85 * Footage, ComboEnd = 95 * Footage,
+                        ComboStart = 94 * Footage, ComboEnd = 101 * Footage,
                         Damage = 18, MoveMultiplier = 0.7f, Stagger = 0.15f,
                         Raise = new()
                         {
-                            // Shut and taken in both hands before the chest, then up past the face to over the head, where it waits.
-                            Via(8, ShutBook(new(0.085f, 1.52f, 0.42f), across, Vector3.up, 0f, new(0.24f, 1.2f, 0.2f), new(-0.24f, 1.2f, 0.2f))),
-                            Via(12, ShutBook(new(-0.055f, 1.9f, 0.38f), across, new(0f, 0.9f, -0.44f), -5f, new(0.22f, 1.55f, 0.18f), new(-0.32f, 1.55f, 0.15f))),
-                            Via(17, ShutBook(new(0.085f, 2.05f, 0.05f), across, new(0f, 0.2f, -1f), -8f, new(0.28f, 1.75f, 0f), new(-0.28f, 1.75f, 0f)), 0.4f),
-                            Via(38, ShutBook(new(0.085f, 2.05f, -0.02f), across, new(0f, 0.45f, -0.9f), -8f, new(0.28f, 1.75f, -0.02f), new(-0.28f, 1.75f, -0.02f)), 0.5f)
+                            // Folded shut low before the chest, swung to the other side as both hands take it, then up past the
+                            // face to over the head, where it waits.
+                            Via(10, ShutBook(new(0.05f, 1.45f, 0.45f), across, Vector3.up, 0f)),
+                            Via(14, ShutBook(new(0f, 1.52f, 0.42f), across, Vector3.up, 0f)),
+                            Via(18, ShutBook(new(0.03f, 1.72f, 0.32f), across, new(0f, 0.95f, -0.3f), 0f)),
+                            Via(22, ShutBook(new(0.085f, 2f, 0.1f), across, new(0f, 0.5f, -0.87f), -5f), 0.5f),
+                            Via(42, ShutBook(new(0.085f, 2.05f, -0.03f), across, new(0f, 0.45f, -0.9f), -8f), 0.5f)
                         },
-                        WindupPose = ShutBook(new(0.085f, 2f, 0.25f), across, new(0f, 0.95f, -0.3f), -5f, new(0.28f, 1.7f, 0.15f), new(-0.28f, 1.7f, 0.15f)),
-                        MidPose = ShutBook(new(0.085f, 1.755f, 0.48f), across, new(0f, 0.6f, 0.8f), 10f, new(0.24f, 1.45f, 0.28f), new(-0.24f, 1.45f, 0.28f)),
-                        EndPose = ShutBook(new(0.085f, 1.3f, 0.5f), across, new(0f, -0.3f, 0.95f), 10f, new(0.22f, 1.15f, 0.25f), new(-0.22f, 1.15f, 0.25f)),
+                        WindupPose = ShutBook(new(0.085f, 1.93f, 0.4f), across, new(0f, 0.6f, -0.8f), 0f),
+                        MidPose = ShutBook(new(0.06f, 1.695f, 0.5f), across, new(0f, 0.97f, -0.25f), 8f),
+                        EndPose = ShutBook(new(0.085f, 1.4f, 0.48f), across, new(0f, 0.85f, -0.5f), 8f),
                         Return = new()
                         {
-                            Via(68, OpenBook(new(0.22f, 1.45f, 0.46f), -5f, 15f, new(0.28f, 1.18f, 0.2f), new(-0.2f, 1.05f, 0.15f)), 0.6f),
-                            Via(89, idle, 0.6f)
+                            // Down out of the view, then back up shut in the book hand alone, held, and laid open on the palm.
+                            Via(62, ShutBook(new(0.085f, 1.22f, 0.42f), across, Vector3.up, 4f), 0.6f),
+                            Via(78, held, 0.5f),
+                            Via(86, held, 0.5f)
                         },
                         Launch = 1f
                     }
                 },
                 CanBlock = true,
-                BlockRaise = 14 * Footage,
+                BlockRaise = 16 * Footage,
+                BlockVia = new()
+                {
+                    // Folded shut low before the chest, then straight up past the hold, a little over it, and settled.
+                    new(5 * Footage, ShutBook(new(0.148f, 1.6f, 0.445f), across, Vector3.up, 0f), Ease.Linear),
+                    new(8 * Footage, ShutBook(new(0.12f, 1.665f, 0.445f), across, Vector3.up, 0f), Ease.Linear),
+                    new(11 * Footage, ShutBook(new(0.09f, 1.725f, 0.43f), across, Vector3.up, 0f), Ease.Out)
+                },
                 BlockLower = 18 * Footage,
                 BlockMitigation = 0.5f,
                 BlockImpact = 0.25f,
@@ -338,9 +355,9 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockAngle = 80f,
                 BlockMove = 0.6f,
                 Block = block,
-                BlockHit = ShutBook(new(0.085f, 1.83f, 0.43f), across, new(0f, 1f, -0.12f), -4f, new(0.3f, 1.44f, 0.22f), new(-0.3f, 1.44f, 0.22f)),
-                BlockLowered = ShutBook(new(0.085f, 1.79f, 0.46f), across, Vector3.up, 0f, new(0.3f, 1.4f, 0.24f), new(-0.3f, 1.4f, 0.24f)),
-                DeflectPose = ShutBook(new(0.085f, 1.65f, 0.42f), across, new(0f, 1f, -0.2f), -4f, new(0.25f, 1.4f, 0.25f), new(-0.25f, 1.4f, 0.25f)),
+                BlockHit = ShutBook(new(0.085f, 1.72f, 0.405f), across, new(0f, 1f, -0.12f), -4f),
+                BlockLowered = ShutBook(new(0.085f, 1.68f, 0.435f), across, Vector3.up, 0f),
+                DeflectPose = ShutBook(new(0.085f, 1.54f, 0.395f), across, new(0f, 1f, -0.2f), -4f),
                 BlockSocket = WeaponSocket.RightHand,
                 BlockBoxCenter = new Vector3(0f, -0.03f, BookWidth * 0.5f),
                 BlockBoxExtents = new Vector3(0.04f, 0.13f, BookWidth * 0.5f)
@@ -359,15 +376,24 @@ namespace Game.Scripts.Editor.Dungeon
             return pose;
         }
 
-        /// The shut book between both hands at its top corners, the book hand on the spine and the other one on the
-        /// fore-edge 'across' from it, the head of the book toward 'top': thumbs on the front cover, the fingers round the
-        /// back one, so a hand's knuckles point where the back cover faces.
-        private static BodyPose ShutBook(Vector3 hand, Vector3 across, Vector3 top, float pitch, Vector3 elbow, Vector3 offElbow)
+        /// The shut book between both hands pinching its sides, the book hand on the spine and the other one on the
+        /// fore-edge 'across' from it, the head of the book toward 'top': thumbs on the front cover slanting up and in, the
+        /// fingers round the back one, so a hand's knuckles point where the back cover faces.
+        private static BodyPose ShutBook(Vector3 hand, Vector3 across, Vector3 top, float pitch)
         {
             Vector3 back = Vector3.Cross(top, across).normalized;
-            BodyPose pose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.TwoHanded(hand, across, BookWidth, 0f, pitch), elbow, offElbow);
+            Vector3 side = across.normalized * Mathf.Cos(DungeonWeaponPrefabBuilder.BookThumb * Mathf.Deg2Rad);
+            Vector3 up = top.normalized * Mathf.Sin(DungeonWeaponPrefabBuilder.BookThumb * Mathf.Deg2Rad);
+            Vector3 offHand = hand + across.normalized * BookWidth;
+            // The forearms run on behind the knuckles, a little out and down, as the footage has them rise from the bottom
+            // corners of the view: an elbow out to the side bent the wrists past 85 degrees.
+            Vector3 drop = new Vector3(0f, -0.12f, 0f) - back * 0.24f - across.normalized * 0.1f;
+            BodyPose pose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.TwoHanded(hand, side + up, 0f, 0f, pitch), hand + drop,
+                offHand + Vector3.Reflect(drop, across.normalized));
             pose.Edge = back;
-            pose.Off.Forward = -across.normalized;
+            pose.Main.Up = back;
+            pose.Off.Position = offHand;
+            pose.Off.Forward = up - side;
             pose.Off.Up = back;
 
             return pose;

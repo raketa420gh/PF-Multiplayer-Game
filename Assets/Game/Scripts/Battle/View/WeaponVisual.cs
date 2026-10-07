@@ -30,6 +30,13 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private GameObject _bookClosed;
 
+        /// Clip seconds of the strike between which the book is shut: the other hand folds it first and it is opened again
+        /// in the palm before the strike is over.
+        [SerializeField]
+        private Vector2 _attackShut = new Vector2(0f, float.MaxValue);
+
+        public bool IsShutInAttack(float time) => time >= _attackShut.x && time < _attackShut.y;
+
         public void SetTrailActive(bool isActive)
         {
             if (_trail != null && _trail.emitting != isActive)
