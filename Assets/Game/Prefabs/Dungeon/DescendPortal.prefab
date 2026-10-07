@@ -330,7 +330,6 @@ Transform:
   m_Children:
   - {fileID: 4224049738119809606}
   - {fileID: 3064970470087533056}
-  - {fileID: 2619102818850636363}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8928128686195000212
@@ -411,20 +410,21 @@ MonoBehaviour:
   _holdTime: 1
   _IsActive:
     RawValue: 0
-  _IsUsed:
-    RawValue: 0
   _IsOpened:
     RawValue: 0
   _kind: 1
-  _activationTime: 2
-  _isSingleUse: 0
+  _activationTime: 3
   _visual: {fileID: 7414199775207022218}
   _destination: {fileID: 0}
   _spinSpeed: 40
   _gate: {fileID: 0}
   _gateLift: 2.2
   _gateSpeed: 1.5
-  _openedTime: 1
+  _pedestal: {fileID: 0}
+  _pedestalDepth: 1.6
+  _pedestalSpeed: 0.8
+  _zoneCenter: {x: 0, y: 1.5, z: 0}
+  _zoneSize: {x: 1.8, y: 2.4, z: 0.8}
 --- !u!82 &2626777380119162102
 AudioSource:
   m_ObjectHideFlags: 0
@@ -539,59 +539,6 @@ MonoBehaviour:
   _portal: {fileID: 8362527804626463693}
   _lever: {fileID: 0}
   _loop: {fileID: 2626777380119162102}
---- !u!1 &2338419583553999763
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2619102818850636363}
-  - component: {fileID: 2809946503572283698}
-  m_Layer: 6
-  m_Name: Interact
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2619102818850636363
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2338419583553999763}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2022439304657227142}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &2809946503572283698
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2338419583553999763}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2.2, y: 2.6, z: 2.2}
-  m_Center: {x: 0, y: 1.3, z: 0}
 --- !u!1 &3770887218107775097
 GameObject:
   m_ObjectHideFlags: 0
