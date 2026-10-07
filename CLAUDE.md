@@ -10,6 +10,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Fewer lines of code = better
 - Do not stop until task is complete
 - When fixing bugs: explain the problem in plain Russian, make minimal changes
+- Any question to the user must go through `AskUserQuestion` with options to pick from — never ask open-ended questions that require a typed answer
+
+## Token Economy
+
+- Context is re-read on every call — keep sessions short. When a task spans several unrelated items, finish one, then suggest `/clear` before the next
+- Locate code with `Grep` (`-C` context) and read only the needed range (`offset`/`limit`); read whole files only when editing most of them
+- Use Read/Grep/Glob, not `cd … && sed/cat/grep` in Bash
+- Batch independent tool calls in one message
+- Delegate broad exploration and self-contained sub-tasks to subagents — keep only their conclusions in the main context
+- Screenshots: at most 1–2 per verification, width ≤ 1280 px; prefer numeric checks via `execute_code` over images
+- Verify Unity changes with one `execute_code` call — `return Game.Scripts.Editor.RebuildVerify.Run("Verify");` (modes: `Verify`, `Battle`, `Dungeon`, `All`) — instead of refresh → read_console → execute_code loops. After a rebuild that recompiles, run `Verify` once more
 
 ## Code Style
 
