@@ -9,7 +9,8 @@ namespace Game.Scripts.Dungeon
     {
         Alive,
         Dead,
-        Extracted
+        Extracted,
+        Descended
     }
 
     public enum PendingAction : byte
@@ -287,6 +288,8 @@ namespace Game.Scripts.Dungeon
         private int _spentStacks;
         /// A follow-up hit of an enchant or an empowered strike is under way: it triggers nothing itself.
         private bool _isBonusHit;
+        /// Health and spell charges brought down from the floor above, restored on the first server tick.
+        private FloorTransfer.Carry _arrival;
 
         public override void Spawned()
         {
@@ -343,6 +346,9 @@ namespace Game.Scripts.Dungeon
             if (!HasStateAuthority)
                 return;
 
+            if (_arrival != null)
+                RestoreArrival();
+
             if (State == AdventurerState.Alive && _fighter.Health.IsDead)
                 Die();
 
@@ -385,6 +391,15 @@ namespace Game.Scripts.Dungeon
             Subclass = session.Subclass;
             Floor = 1;
             State = AdventurerState.Alive;
+        }
+
+        /// Spawn callback of an adventurer coming down from the floor above.
+        public void Arrive(FloorTransfer.Carry carry)
+        {
+            _arrival = carry;
+            Floor = carry.Floor;
+            Kills = carry.Kills;
+            RunExperience = carry.Experience;
         }
 
         /// Two chosen skills first (Q, E), then every spell of the class.
@@ -504,13 +519,18 @@ namespace Game.Scripts.Dungeon
             _removeTimer = TickTimer.CreateFromSeconds(Runner, 1.5f);
         }
 
-        public void Descend(Vector3 position, float yaw)
+        /// The next floor is another session: the adventurer leaves this one and its owner carries it down.
+        public void Descend()
         {
-            Floor++;
-            _fighter.Move.Teleport(position, yaw);
-            _fighter.SetLook(new Vector2(0f, yaw));
+            if (State != AdventurerState.Alive)
+                return;
+
+            State = AdventurerState.Descended;
+            Pending = PendingAction.None;
+            _fighter.SetInputBlocked(true);
             CloseContainer();
-            RpcTeleported(yaw);
+            _session?.OnDescended(this);
+            _removeTimer = TickTimer.CreateFromSeconds(Runner, 1.5f);
         }
 
         public void AddExperience(int amount)
@@ -527,13 +547,6 @@ namespace Game.Scripts.Dungeon
         public void ApplyDamageOverTime(float amount)
         {
             _fighter.Health.TakeDamage(Mathf.RoundToInt(amount));
-        }
-
-        [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
-        private void RpcTeleported(float yaw)
-        {
-            if (DungeonContext.Instance != null)
-                DungeonContext.Instance.Battle.Input.SetLook(new Vector2(0f, yaw));
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
@@ -1648,6 +1661,16 @@ namespace Game.Scripts.Dungeon
                 _swarmAccumulator -= tick;
                 _fighter.Health.TakeDamage(tick);
             }
+        }
+
+        private void RestoreArrival()
+        {
+            FloorTransfer.Carry carry = _arrival;
+            _arrival = null;
+            _fighter.Health.CurrentHealth = Mathf.Clamp(carry.Health, 1, _fighter.Health.MaxHealth);
+
+            for (int i = 0; i < _abilities.Count && i < carry.Charges.Length; i++)
+                _charges.Set(i, (byte)Mathf.Min(carry.Charges[i], GetMaxCharges(i)));
         }
 
         private void Die()

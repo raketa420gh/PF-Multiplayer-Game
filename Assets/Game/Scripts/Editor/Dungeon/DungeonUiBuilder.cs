@@ -482,6 +482,7 @@ namespace Game.Scripts.Editor.Dungeon
             mapImage.color = new Color(0.9f, 0.85f, 0.7f);
             mapImage.raycastTarget = false;
             minimapRoot.gameObject.AddComponent<RectMask2D>();
+            SwarmZoneGraphic minimapSwarm = CreateSwarmZone(mapImage.transform);
             Image arrow = CreateImage("Arrow", minimapRoot, center, Vector2.zero, new Vector2(14f, 14f), new Color(0.95f, 0.75f, 0.2f));
             arrow.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
             RectTransform arrowTip = CreateRect("Tip", arrow.rectTransform, center, new Vector2(0f, 9f), new Vector2(4f, 10f));
@@ -503,6 +504,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(mso, "_map", mapImage);
             BattleEditorUtility.Set(mso, "_arrow", arrow.rectTransform);
             BattleEditorUtility.Set(mso, "_moduleText", moduleText);
+            BattleEditorUtility.Set(mso, "_swarm", minimapSwarm);
             BattleEditorUtility.Set(mso, "_floorMaps", inputs.FloorMaps);
             BattleEditorUtility.Set(mso, "_floorModuleNames", inputs.ModuleNames);
             BattleEditorUtility.Set(mso, "_floorSizes", DungeonMapBuilder.FloorSizes);
@@ -1794,6 +1796,8 @@ namespace Game.Scripts.Editor.Dungeon
                 labels[i].fontStyle = FontStyles.Bold;
             }
 
+            mapImage.gameObject.AddComponent<RectMask2D>();
+            SwarmZoneGraphic swarm = CreateSwarmZone(mapImage.transform);
             Image portalMarker = CreateImage("PortalMarker", mapImage.transform, center, Vector2.zero, new Vector2(24f, 24f), Color.white);
             portalMarker.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
             portalMarker.raycastTarget = false;
@@ -1819,9 +1823,21 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_floorSizes", DungeonMapBuilder.FloorSizes);
             BattleEditorUtility.Set(so, "_floorGrids", DungeonMapBuilder.FloorGrids);
             BattleEditorUtility.Set(so, "_portalMarker", portalMarker);
+            BattleEditorUtility.Set(so, "_swarm", swarm);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;
+        }
+
+        private static SwarmZoneGraphic CreateSwarmZone(Transform parent)
+        {
+            GameObject zone = CreateRect("Swarm", parent, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero).gameObject;
+            zone.AddComponent<CanvasRenderer>();
+            SwarmZoneGraphic swarm = zone.AddComponent<SwarmZoneGraphic>();
+            swarm.color = new Color(0.75f, 0.3f, 1f, 0.95f);
+            swarm.raycastTarget = false;
+
+            return swarm;
         }
 
         private static HelpView BuildHelp(Transform root)

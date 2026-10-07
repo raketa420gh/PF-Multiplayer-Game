@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Parchment minimap of the current floor around the player, with the module name underneath.
+    /// Parchment minimap of the current floor around the player with the Dark Swarm, the module name underneath.
     public sealed class MinimapView : MonoBehaviour
     {
         [SerializeField]
@@ -18,6 +18,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private TMP_Text _moduleText;
+
+        [SerializeField]
+        private SwarmZoneGraphic _swarm;
 
         [SerializeField]
         private Texture2D[] _floorMaps;
@@ -54,6 +57,7 @@ namespace Game.Scripts.Dungeon
             float window = _windowSizes[floor] / size;
             _map.uvRect = new Rect(u - window * 0.5f, v - window * 0.5f, window, window);
             _arrow.localRotation = Quaternion.Euler(0f, 0f, -adventurer.transform.eulerAngles.y);
+            _swarm.Show(_context.Match, adventurer.Floor, position, _map.rectTransform.rect.width / _windowSizes[floor]);
 
             int grid = _floorGrids[floor];
             float module = _floorSizes[floor] / grid;

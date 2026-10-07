@@ -6,9 +6,12 @@ namespace Game.Scripts.Dungeon
 {
     /// Server side of a dungeon session: the queue and teams of the registered players and the late-join window. The window opens
     /// with the first player; until it closes the session stays listed for the queue, after it nobody else gets in. A dedicated
-    /// server whose closed dungeon has emptied quits (allocated) or opens a fresh one (long-lived).
+    /// server whose closed dungeon has emptied quits (allocated) or opens a fresh one (long-lived). The session holds one floor:
+    /// the first or a deeper one, which adventurers reach from the floor above.
     public sealed class DungeonAdmission : MonoBehaviour
     {
+        public int Floor => Mathf.Max(1, (int)_floor);
+
         [SerializeField]
         private NetworkEvents _networkEvents;
 
@@ -19,6 +22,7 @@ namespace Game.Scripts.Dungeon
         private NetworkRunner _runner;
         private QueueMode _mode = QueueMode.Any;
         private string _parties = ",";
+        private byte _floor = GameServer.Floor;
         private int _until;
         private float _startedAt;
         private bool _isClosed;
@@ -90,6 +94,9 @@ namespace Game.Scripts.Dungeon
 
             if (runner.SessionInfo.Properties.TryGetValue(GameServer.ModeProperty, out SessionProperty mode) && mode.PropertyValue is int value)
                 _mode = (QueueMode)value;
+
+            if (runner.SessionInfo.Properties.TryGetValue(GameServer.FloorProperty, out SessionProperty floor) && floor.PropertyValue is int number && number > 0)
+                _floor = (byte)number;
         }
 
         private void End()
@@ -110,7 +117,7 @@ namespace Game.Scripts.Dungeon
 
         private void Publish()
         {
-            _runner.SessionInfo.UpdateCustomProperties(ServerLaunch.Properties(_mode, _until, _parties));
+            _runner.SessionInfo.UpdateCustomProperties(ServerLaunch.Properties(_mode, _until, _parties, _floor));
         }
 
         private void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
@@ -121,11 +128,14 @@ namespace Game.Scripts.Dungeon
             if (_runner == null)
                 Bind(runner);
 
-            (QueueMode mode, int party, int _) = DungeonTicket.Read(player == runner.LocalPlayer ? NetworkLaunch.LocalToken : runner.GetPlayerConnectionToken(player));
+            (QueueMode mode, int party, int _, byte floor) = DungeonTicket.Read(player == runner.LocalPlayer ? NetworkLaunch.LocalToken : runner.GetPlayerConnectionToken(player));
             _teams[player] = mode == QueueMode.Trio && party != 0 ? party : -1 - player.PlayerId;
 
             if (_mode == QueueMode.Any)
                 _mode = mode;
+
+            if (_floor == 0)
+                _floor = floor;
 
             if (_until == 0)
                 _until = GameServer.Now + GameServer.LateJoinWindow;
@@ -134,7 +144,7 @@ namespace Game.Scripts.Dungeon
                 _parties += party + ",";
 
             Publish();
-            Debug.Log($"[{nameof(DungeonAdmission)}] {player} joined the {_mode} dungeon, team {_teams[player]}, window {_until - GameServer.Now} s");
+            Debug.Log($"[{nameof(DungeonAdmission)}] {player} joined the {_mode} dungeon, floor {Floor}, team {_teams[player]}, window {_until - GameServer.Now} s");
         }
 
         private void OnPlayerLeft(NetworkRunner runner, PlayerRef player)

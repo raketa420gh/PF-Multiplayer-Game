@@ -125,6 +125,7 @@ namespace Game.Scripts.Editor.Battle
         /// What it costs an elbow of a planned motion to move along its swivel circle within a frame.
         private const float SwivelInertia = 10f;
         private const int SwivelSmoothing = 8;
+        private const int ReachPasses = 4;
 
         private static readonly float[] s_swivelCosts = new float[SwivelSamples];
 
@@ -150,6 +151,7 @@ namespace Game.Scripts.Editor.Battle
         private HumanPose _humanPose;
         private SwivelCircle[][] _circles;
         private int _frame = -1;
+        private WeaponSocket _offSocket = WeaponSocket.LeftHand;
 
         public BattlePoseRig()
         {
@@ -234,6 +236,7 @@ namespace Game.Scripts.Editor.Battle
                 // a roll tied to the edge bent that wrist back on itself whenever the edge turned through a cut.
                 _sockets[(int)WeaponSocket.RightHand].localRotation = GetSocketRotation(WeaponSocket.RightHand, pose.Lean);
                 SolveArm(_rightArm, _sockets[(int)WeaponSocket.RightHand], pose.Main, pose.Edge, false, pose.Lean * Mathf.Deg2Rad);
+                _offSocket = pose.OffSocket;
                 SolveArm(_leftArm, _sockets[(int)pose.OffSocket], pose.Off, Vector3.zero, IsShared(pose), 0f);
             }
             else
@@ -311,6 +314,58 @@ namespace Game.Scripts.Editor.Battle
             _handler.GetHumanPose(ref _humanPose);
 
             return _humanPose;
+        }
+
+        /// The pose of the last Apply with every body muscle inside the avatar's range: the arms reach for where the hands were
+        /// with the shoulder and elbow range they have left, a hand that is too far away falls short.
+        public HumanPose CaptureWithinLimits(int bodyMuscleCount)
+        {
+            Transform rightGrip = _sockets[(int)WeaponSocket.RightHand];
+            Transform leftGrip = _sockets[(int)_offSocket];
+            Pose right = new Pose(rightGrip.position, _rightArm.Hand.rotation);
+            Pose left = new Pose(leftGrip.position, _leftArm.Hand.rotation);
+            HumanPose pose = Capture();
+
+            for (int pass = 0; pass < ReachPasses; pass++)
+            {
+                Game.Scripts.Battle.JointLimits.ClampBody(pose.muscles, bodyMuscleCount);
+                _handler.SetHumanPose(ref pose);
+                Reach(_rightArm, rightGrip, right);
+                Reach(_leftArm, leftGrip, left);
+                pose = Capture();
+            }
+
+            Game.Scripts.Battle.JointLimits.ClampBody(pose.muscles, bodyMuscleCount);
+
+            return pose;
+        }
+
+        /// Puts a pose (smoothed over time) on the rig and brings both grips back onto their points with the wrists left as they are.
+        public HumanPose ReachGrips(HumanPose pose, Vector3 rightGrip, Vector3 leftGrip, WeaponSocket offSocket, int bodyMuscleCount)
+        {
+            for (int pass = 0; pass < ReachPasses; pass++)
+            {
+                _handler.SetHumanPose(ref pose);
+                ReachGrip(_rightArm, _sockets[(int)WeaponSocket.RightHand], rightGrip);
+                ReachGrip(_leftArm, _sockets[(int)offSocket], leftGrip);
+                pose = Capture();
+                Game.Scripts.Battle.JointLimits.ClampBody(pose.muscles, bodyMuscleCount);
+            }
+
+            return pose;
+        }
+
+        private static void ReachGrip(Arm arm, Transform grip, Vector3 target)
+        {
+            TwoBoneIk.Solve(arm.Upper, arm.Lower, arm.Hand, target - (grip.position - arm.Hand.position));
+        }
+
+        /// Brings the grip (the socket in the palm) back onto its point with the wrist as the limits turned it, then lets the
+        /// hand turn back toward the solved roll; the next clamp keeps what the wrist can do.
+        private static void Reach(Arm arm, Transform grip, Pose target)
+        {
+            TwoBoneIk.Solve(arm.Upper, arm.Lower, arm.Hand, target.position - (grip.position - arm.Hand.position));
+            arm.Hand.rotation = target.rotation;
         }
 
         private static Transform CreateSocket(Animator animator, HumanBodyBones handBone, HumanBodyBones lowerArmBone, bool isShield)

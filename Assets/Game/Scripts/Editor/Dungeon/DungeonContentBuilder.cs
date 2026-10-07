@@ -987,23 +987,25 @@ namespace Game.Scripts.Editor.Dungeon
             return BattleContentBuilder.SavePrefab(root, Prefab("Corpse"));
         }
 
-        /// Swarm stages shrink to fixed shares of each floor's radius, so they follow the map size.
+        /// Swarm stages shrink to fixed shares of each floor's radius, so they follow the map size; the swarm only shows up
+        /// in the second half of a floor's clock.
         private static void BuildSwarmStages(DungeonConfig config)
         {
-            (float start, float share)[] stages = { (150f, 0.82f), (330f, 0.48f), (510f, 0.22f), (660f, 0f) };
+            (float start, float share)[] stages = { (0.5f, 0.82f), (0.625f, 0.48f), (0.75f, 0.22f), (0.875f, 0f) };
             SerializedObject so = new SerializedObject(config);
+            float duration = so.FindProperty("_matchDuration").floatValue;
             so.FindProperty("_swarmStages").arraySize = stages.Length;
 
             for (int i = 0; i < stages.Length; i++)
             {
                 string path = $"_swarmStages.Array.data[{i}].";
-                BattleEditorUtility.Set(so, path + "StartTime", stages[i].start);
+                BattleEditorUtility.Set(so, path + "StartTime", stages[i].start * duration);
                 BattleEditorUtility.Set(so, path + "Duration", 60f);
                 BattleEditorUtility.Set(so, path + "Share", stages[i].share);
             }
 
             // The ways down open halfway through a floor's clock.
-            BattleEditorUtility.Set(so, "_descendPortalTime", so.FindProperty("_matchDuration").floatValue * 0.5f);
+            BattleEditorUtility.Set(so, "_descendPortalTime", duration * 0.5f);
 
             so.ApplyModifiedPropertiesWithoutUndo();
         }

@@ -11,7 +11,9 @@ namespace Game.Scripts.Dungeon
         Lobby,
         InDungeon,
         Dead,
-        Extracted
+        Extracted,
+        /// Went down a way to the next floor: the owner leaves for that floor's session.
+        Descending
     }
 
     /// Per-player object of a scene session: class, level, kit and stash. The tavern edits them, the dungeon takes the kit
@@ -80,6 +82,15 @@ namespace Game.Scripts.Dungeon
         public NetworkBool HasLoadedKit { get; private set; }
 
         [Networked]
+        public byte NextFloor { get; private set; }
+
+        [Networked]
+        public int CarriedHealth { get; private set; }
+
+        /// What the adventurer brought from the floor above; null for a fresh run. Server only.
+        public FloorTransfer.Carry Arrival => _arrival;
+
+        [Networked]
         public byte SkillA { get; private set; }
 
         [Networked]
@@ -118,6 +129,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Coins a player without a single one finds in the stash on entering a scene")]
         private int _pityCoins = 10;
 
+        [Networked, Capacity(AdventurerComponent.AbilityCapacity)]
+        private NetworkArray<byte> _carriedCharges => default;
+
         private readonly byte[][][] _loadChunks = new byte[LoadStash + StashPages][][];
         private readonly byte[] _loadBuffer = new byte[InventoryComponent.Capacity * ItemStack.ByteSize * 2];
         private int _loadedChunks;
@@ -125,6 +139,8 @@ namespace Game.Scripts.Dungeon
         private SessionState _renderedState;
         private int _savedKitVersion = -1;
         private readonly int[] _savedStashVersions = { -1, -1, -1, -1 };
+        private FloorTransfer.Carry _arrival;
+        private bool _isDescending;
 
         public override void Spawned()
         {
@@ -142,6 +158,12 @@ namespace Game.Scripts.Dungeon
 
             if (DungeonContext.Instance != null)
                 DungeonContext.Instance.SetLocalSession(this);
+
+            FloorTransfer.Carry carry = FloorTransfer.Take();
+
+            // Ahead of the kit: the dungeon spawns the adventurer as soon as the kit is in, with what came from above.
+            if (carry != null)
+                RpcArrive(carry.Floor, carry.Health, carry.Kills, carry.Experience, carry.Charges);
 
             RpcSetProfile(StashService.LoadLevel(), StashService.LoadExperience(), StashService.LoadClass(), StashService.LoadName());
             RpcSetBuild(StashService.LoadSubclass(), StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask(), StashService.LoadSpellMask());
@@ -165,9 +187,20 @@ namespace Game.Scripts.Dungeon
                 OnStateChanged?.Invoke();
             }
 
-            // Inside the dungeon the kit is at stake: it is written back only when the run ends, emptied or extracted.
+            // Inside the dungeon the kit is at stake: it is written back only when the run ends, emptied, extracted or carried down.
             if (State != SessionState.InDungeon)
                 SaveLocal();
+
+            if (State != SessionState.Descending || !HasInputAuthority || _isDescending)
+                return;
+
+            _isDescending = true;
+            byte[] charges = new byte[_carriedCharges.Length];
+
+            for (int i = 0; i < charges.Length; i++)
+                charges[i] = _carriedCharges[i];
+
+            FloorTransfer.Descend(Runner, new FloorTransfer.Carry(NextFloor, CarriedHealth, LastRunKills, LastRunExperience, charges));
         }
 
         /// Stores the kit, stash, profile and build of the local player; they are what the next scene loads.
@@ -195,10 +228,10 @@ namespace Game.Scripts.Dungeon
             StashService.SaveBuild(Subclass, SkillA, SkillB, PerkMask, SpellMask);
         }
 
-        /// Nobody descends naked: an empty kit is replaced by the starting one.
+        /// Nobody descends naked: an empty kit is replaced by the starting one; what is carried down from above stays as it is.
         public void EnsureKit()
         {
-            if (_kit.CountItems() == 0 && _kit.GetEquipped(EquipSlot.Weapon1Main).IsEmpty)
+            if (_arrival == null && _kit.CountItems() == 0 && _kit.GetEquipped(EquipSlot.Weapon1Main).IsEmpty)
                 GiveDefaultKit();
         }
 
@@ -220,6 +253,22 @@ namespace Game.Scripts.Dungeon
             AddExperience(5);
             _kit.CopyFrom(adventurer.Inventory);
             State = SessionState.Extracted;
+            AdventurerId = default;
+        }
+
+        /// Down the way to the next floor: the kit is handed back like after an escape and the owner takes it to the deeper session.
+        public void OnDescended(AdventurerComponent adventurer)
+        {
+            LastRunKills = adventurer.Kills;
+            LastRunExperience = adventurer.RunExperience;
+            NextFloor = (byte)(adventurer.Floor + 1);
+            CarriedHealth = adventurer.Fighter.Health.CurrentHealth;
+
+            for (int i = 0; i < _carriedCharges.Length; i++)
+                _carriedCharges.Set(i, (byte)adventurer.GetCharges(i));
+
+            _kit.CopyFrom(adventurer.Inventory);
+            State = SessionState.Descending;
             AdventurerId = default;
         }
 
@@ -501,6 +550,13 @@ namespace Game.Scripts.Dungeon
                 return;
 
             GiveDefaultKit();
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RpcArrive(byte floor, int health, int kills, int experience, byte[] charges)
+        {
+            if (State == SessionState.Lobby)
+                _arrival = new FloorTransfer.Carry(floor, health, kills, experience, charges);
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]

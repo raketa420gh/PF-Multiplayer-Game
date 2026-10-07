@@ -128,6 +128,9 @@ namespace Game.Scripts.Battle
 
         private void LateUpdate()
         {
+            if (_weapons[_weaponIndex].IsMirrored && !_isEditing && !HasItem)
+                SocketMirror.Apply(_sockets);
+
             Transform root = _animator.transform;
             Quaternion step = Quaternion.AngleAxis(_pitch / _spineBones.Length, root.right);
 

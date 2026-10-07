@@ -215,6 +215,7 @@ namespace Game.Scripts.Dungeon
             switch (_session.State)
             {
                 case SessionState.Lobby:
+                case SessionState.Descending:
                     ShowLoading();
                     break;
                 case SessionState.InDungeon:

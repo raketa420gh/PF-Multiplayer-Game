@@ -584,6 +584,11 @@ namespace Game.Scripts.Editor.Battle
                 for (int i = 0; i <= samples; i++)
                 {
                     Play(state, Mathf.Min(i / BattleAnimationBuilder.FrameRate, attack.Duration) / attack.Duration);
+
+                    // An off-hand swing plays flipped, its socket curves follow it the way the fighter mirrors them.
+                    if (attack.IsOffHand)
+                        SocketMirror.Apply(_sockets);
+
                     traceBase.Add(socket.TransformPoint(0f, 0f, weapon.BladeBase));
                     traceTip.Add(socket.TransformPoint(0f, 0f, weapon.BladeTip));
                     strike[i] = socket.TransformPoint(0f, 0f, weapon.StrikeOf(attack));

@@ -37,7 +37,7 @@ namespace Game.Scripts.Dungeon
         {
             MatchComponent match = _context.Match;
             AdventurerComponent adventurer = _context.LocalAdventurer;
-            bool isVisible = match != null && match.IsRunning && adventurer != null && adventurer.Object != null && adventurer.Object.IsValid;
+            bool isVisible = match != null && adventurer != null && adventurer.Object != null && adventurer.Object.IsValid && match.IsSwarmActive(adventurer.Floor);
 
             if (_renderer.enabled != isVisible)
                 _renderer.enabled = isVisible;

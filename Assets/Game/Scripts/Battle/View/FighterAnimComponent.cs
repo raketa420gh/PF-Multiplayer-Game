@@ -99,13 +99,9 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private float _restFadeTime = 0.3f;
 
-        [SerializeField, Tooltip("The release gesture replaces the last moments of a cast for those who watch it")]
-        private float _castReleaseTime = 0.3f;
-
         private const int BaseLayer = 0;
         private const int UpperLayer = 1;
         private const int HitLayer = 2;
-        private const int CastKind = 0;
         private const float RestSpeed = 0.3f;
 
         private static readonly int s_moveX = Animator.StringToHash(MoveXParam);
@@ -122,7 +118,6 @@ namespace Game.Scripts.Battle
         private static readonly int s_hitChest = Animator.StringToHash(HitChestState);
         private static readonly int s_hitHead = Animator.StringToHash(HitHeadState);
         private static readonly int s_hitStagger = Animator.StringToHash(HitStaggerState);
-        private static readonly int s_castRelease = Animator.StringToHash(CastReleaseState);
         private static readonly int s_hold = Animator.StringToHash(HoldState);
 
         /// Indexed by CombatComponent.BusyKind.
@@ -134,6 +129,7 @@ namespace Game.Scripts.Battle
         };
 
         /// Own-eyes variants of the busy states whose library motion stays outside the first-person view; 0 = there is none.
+        /// Everyone plays them: a fighter moves the same in own eyes and for those who watch.
         private static readonly int[] s_busyFirstPerson =
         {
             Animator.StringToHash(CastFirstPersonState), Animator.StringToHash(UseFirstPersonState), 0, 0, 0, 0,
@@ -156,6 +152,7 @@ namespace Game.Scripts.Battle
         }
 
         private WeaponStates[] _weaponStates;
+        private Transform[] _sockets;
         private int _baseState;
         private int _baseToken;
         private int _upperState;
@@ -177,6 +174,14 @@ namespace Game.Scripts.Battle
         {
             if (_spineBones.Length > 0)
                 _spineHeight = transform.InverseTransformPoint(_spineBones[0].position).y;
+
+            Transform right = _animator.GetBoneTransform(HumanBodyBones.RightHand);
+            Transform left = _animator.GetBoneTransform(HumanBodyBones.LeftHand);
+            _sockets = new Transform[4];
+            _sockets[(int)WeaponSocket.RightHand] = right != null ? right.Find("RightHandSocket") : null;
+            _sockets[(int)WeaponSocket.LeftHand] = left != null ? left.Find("LeftHandSocket") : null;
+            _sockets[(int)WeaponSocket.RightShield] = right != null ? right.Find("RightHandShieldSocket") : null;
+            _sockets[(int)WeaponSocket.LeftShield] = left != null ? left.Find("LeftHandShieldSocket") : null;
         }
 
         public override void Spawned()
@@ -220,6 +225,9 @@ namespace Game.Scripts.Battle
 
         private void LateUpdate()
         {
+            if (Object != null && Object.IsValid && _fighter.Combat.Weapon.IsMirrored)
+                SocketMirror.Apply(_sockets);
+
             if (_spineBones.Length == 0)
                 return;
 
@@ -234,10 +242,9 @@ namespace Game.Scripts.Battle
             _spineBones[0].rotation = Quaternion.AngleAxis(-_flinch, axis) * _spineBones[0].rotation;
 
             if (_isHeadHidden)
-            {
                 _headBone.localScale = Vector3.zero;
-                HoldUpperBody();
-            }
+
+            HoldUpperBody();
         }
 
         private static WeaponStates CreateStates(WeaponConfig weapon)
@@ -384,14 +391,8 @@ namespace Game.Scripts.Battle
                     break;
                 case CombatState.Busy:
                     int kind = Mathf.Min(combat.BusyKind, s_busy.Length - 1);
-                    state = _isHeadHidden && s_busyFirstPerson[kind] != 0 ? s_busyFirstPerson[kind] : s_busy[kind];
+                    state = s_busyFirstPerson[kind] != 0 ? s_busyFirstPerson[kind] : s_busy[kind];
                     token = combat.StateTick;
-
-                    if (kind == CastKind && !_isHeadHidden && combat.BusyTimeLeft < _castReleaseTime)
-                    {
-                        state = s_castRelease;
-                        time = _castReleaseTime - combat.BusyTimeLeft;
-                    }
                     break;
                 default:
                     // A let-go block brings the guard down along a clip of its own before the idle takes over.
@@ -429,7 +430,7 @@ namespace Game.Scripts.Battle
         }
 
         /// The legs clips bob the hips (breath, crouch, push-off, landing), the eye follows the body model and does not:
-        /// in own eyes the upper body is held at the model's height, so the arms stay put on the screen.
+        /// the upper body is held at the model's height, so the arms stay put on the screen and others see the same motion.
         private void HoldUpperBody()
         {
             Transform spine = _spineBones[0];

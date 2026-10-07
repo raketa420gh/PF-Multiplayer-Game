@@ -42,9 +42,6 @@ namespace Game.Scripts.Dungeon
         private GameObject _visual;
 
         [SerializeField]
-        private Transform _destination;
-
-        [SerializeField]
         private float _spinSpeed = 40f;
 
         [SerializeField]
@@ -113,9 +110,8 @@ namespace Game.Scripts.Dungeon
         }
 
         /// A way down opens at once; an escape portal waits for someone at its pedestal.
-        public void Activate(Transform destination)
+        public void Activate()
         {
-            _destination = destination;
             IsActive = true;
             IsOpened = _kind == PortalKind.Descend;
         }
@@ -143,8 +139,8 @@ namespace Game.Scripts.Dungeon
         {
             if (_kind == PortalKind.Escape)
                 adventurer.Extract();
-            else if (_destination != null)
-                adventurer.Descend(_destination.position, _destination.eulerAngles.y);
+            else
+                adventurer.Descend();
         }
 
         private void UpdateVisual()

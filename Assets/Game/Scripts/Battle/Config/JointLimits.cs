@@ -6,10 +6,10 @@ namespace Game.Scripts.Battle
 {
     /// Keeps edited shoulders, arms, legs and feet inside the avatar's muscle ranges (±1 = the human limit of the joint), so a
     /// bone key cannot wrench a joint the way a real body cannot bend. A muscle the clip itself already drives past its range
-    /// may go as far as the clip does: generated swings stay as they are, edits only cannot push further.
+    /// may go as far as the clip does: edits only cannot push further. Generated clips are recorded inside the ranges (ClampBody).
     public sealed class JointLimits : IDisposable
     {
-        private static readonly string[] s_limbs = { "Shoulder", "Arm", "Forearm", "Upper Leg", "Lower Leg", "Foot" };
+        private static readonly string[] s_limbs = { "Shoulder", "Arm", "Forearm", "Hand", "Upper Leg", "Lower Leg", "Foot" };
         private static readonly int[] s_muscles = FindMuscles();
 
         private readonly Animator _animator;
@@ -42,6 +42,13 @@ namespace Game.Scripts.Battle
 
             if (Clamp(_pose.muscles, _reference))
                 _handler.SetHumanPose(ref _pose);
+        }
+
+        /// Keeps every body muscle (fingers aside) of a generated pose inside the human range of its joint.
+        public static void ClampBody(float[] muscles, int bodyMuscleCount)
+        {
+            for (int i = 0; i < bodyMuscleCount; i++)
+                muscles[i] = Mathf.Clamp(muscles[i], -1f, 1f);
         }
 
         /// True when a muscle had to be pulled back.

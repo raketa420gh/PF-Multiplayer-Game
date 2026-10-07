@@ -12,7 +12,7 @@ namespace Game.Scripts.Dungeon
     }
 
     /// Match state and the Dark Swarm. Every floor is a dungeon of its own: its clock starts when the first adventurer
-    /// arrives, and its circle closes in stages from the whole floor towards a random point.
+    /// arrives, and its circle closes in stages from the whole floor towards a random point in the second half of the clock.
     public sealed class MatchComponent : NetworkBehaviour
     {
         public const int FloorCount = 2;
@@ -51,7 +51,7 @@ namespace Game.Scripts.Dungeon
                 DungeonContext.Instance.SetMatch(this);
         }
 
-        public void Begin(Vector3[] floorCenters, float[] floorRadii, Vector3[] finalCenters)
+        public void Begin(Vector3[] floorCenters, float[] floorRadii, Vector3[] finalCenters, int firstFloor)
         {
             for (int i = 0; i < FloorCount; i++)
             {
@@ -64,7 +64,7 @@ namespace Game.Scripts.Dungeon
             StartTick = Runner.Tick;
             State = MatchState.Running;
             Round++;
-            BeginFloor(1);
+            BeginFloor(firstFloor);
         }
 
         /// Starts the clock of a floor; until then its swarm stays wide open.
@@ -100,6 +100,12 @@ namespace Game.Scripts.Dungeon
             return GetElapsed(floor) >= _config.MatchDuration;
         }
 
+        /// The swarm stays hidden and harmless until its first stage begins.
+        public bool IsSwarmActive(int floor)
+        {
+            return IsRunning && GetElapsed(floor) >= _config.SwarmStages[0].StartTime;
+        }
+
         /// Current safe radius for a floor; stages interpolate from the previous radius to the stage radius.
         public float GetSafeRadius(int floor)
         {
@@ -133,7 +139,7 @@ namespace Game.Scripts.Dungeon
 
         public float GetSwarmDamage(int floor, Vector3 position)
         {
-            if (State != MatchState.Running)
+            if (!IsSwarmActive(floor))
                 return 0f;
 
             if (GetTimeLeft(floor) < 60f)

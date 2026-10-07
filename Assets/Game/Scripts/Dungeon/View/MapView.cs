@@ -5,8 +5,8 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Full map of the current floor (M), Dark and Darker style: the whole floor, module names, the player's arrow and the portals
-    /// that have shown up (blue escapes, red ways down).
+    /// Full map of the current floor (M), Dark and Darker style: the whole floor, module names, the player's arrow, the portals
+    /// that have shown up (blue escapes, red ways down) and the Dark Swarm.
     public sealed class MapView : DisplayableView
     {
         public bool HasFloors => _floorMaps.Length > 0;
@@ -40,6 +40,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private int[] _floorGrids;
 
+        [SerializeField]
+        private SwarmZoneGraphic _swarm;
+
         [SerializeField, Tooltip("Template of a portal mark, cloned per portal")]
         private Image _portalMarker;
 
@@ -70,6 +73,7 @@ namespace Game.Scripts.Dungeon
             _arrow.anchoredPosition = new Vector2(position.x / world * size.x, position.z / world * size.y);
             _arrow.localRotation = Quaternion.Euler(0f, 0f, -adventurer.transform.eulerAngles.y);
             MarkPortals(floor, size, world);
+            _swarm.Show(_context.Match, adventurer.Floor, Vector3.zero, size.x / world);
         }
 
         private void MarkPortals(int floor, Vector2 size, float world)

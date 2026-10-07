@@ -58,7 +58,7 @@ namespace Game.Scripts.Editor.Dungeon
                     {
                         int a = start + i * (segments + 1) + s;
                         int b = a + segments + 1;
-                        _triangles[0].AddRange(new[] { a, b, a + 1, a + 1, b, b + 1 });
+                        _triangles[0].AddRange(new[] { a, a + 1, b, a + 1, b + 1, b });
                     }
                 }
             }

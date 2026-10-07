@@ -221,7 +221,7 @@ namespace Game.Scripts.Dungeon
 
             _swarmText.text = adventurer.IsInSwarm
                 ? $"<color=#f55>DARK SWARM  ·  safe zone {distance:0}m away</color>"
-                : next > 0f ? $"Swarm closes in {Mathf.CeilToInt(next)}s" : "Swarm is closing";
+                : next > 0f ? $"Swarm {(match.IsSwarmActive(adventurer.Floor) ? "closes" : "rises")} in {Mathf.CeilToInt(next)}s" : "Swarm is closing";
         }
 
         private void UpdateCombat(AdventurerComponent adventurer)

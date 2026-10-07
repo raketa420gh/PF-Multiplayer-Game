@@ -16,6 +16,7 @@ namespace Game.Scripts.Dungeon
         public const string ModeProperty = "mode";
         public const string UntilProperty = "until";
         public const string PartiesProperty = "parties";
+        public const string FloorProperty = "floor";
         public const string ServerTitle = "Dedicated Server";
         /// Seconds after the first player arrives during which later registrations still join the same dungeon.
         public const int LateJoinWindow = 180;
@@ -26,6 +27,8 @@ namespace Game.Scripts.Dungeon
         /// Session an orchestrator started this server for; such a server quits when its dungeon is over.
         public static string AllocatedSession => s_session;
         public static QueueMode Mode => s_mode;
+        /// Floor the server was allocated for; 0 = the floor of its first player.
+        public static byte Floor => s_floor;
         /// PlayerPrefs prefix of the account: ParrelSync clones and -account builds keep their own characters.
         public static string Account => s_account;
         public static int Now => (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -33,6 +36,7 @@ namespace Game.Scripts.Dungeon
         private static readonly bool s_isDedicated;
         private static readonly string s_session = string.Empty;
         private static readonly QueueMode s_mode = QueueMode.Any;
+        private static readonly byte s_floor;
         private static readonly string s_account = string.Empty;
 
         static GameServer()
@@ -53,6 +57,9 @@ namespace Game.Scripts.Dungeon
                         break;
                     case "-mode" when byte.TryParse(next, out byte mode):
                         s_mode = (QueueMode)mode;
+                        break;
+                    case "-floor" when byte.TryParse(next, out byte floor):
+                        s_floor = floor;
                         break;
                     case "-account":
                         s_account = next + ".";
@@ -94,7 +101,7 @@ namespace Game.Scripts.Dungeon
                 return;
 
             Application.targetFrameRate = 60;
-            Debug.Log($"[{nameof(GameServer)}] Dedicated server, session '{s_session}', queue {s_mode}");
+            Debug.Log($"[{nameof(GameServer)}] Dedicated server, session '{s_session}', queue {s_mode}, floor {s_floor}");
 
             if (SceneManager.GetActiveScene().name != SceneTravel.DungeonScene)
                 SceneTravel.Load(null, SceneTravel.DungeonScene, ServerTitle);

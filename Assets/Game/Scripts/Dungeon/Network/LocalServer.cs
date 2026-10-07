@@ -1,5 +1,7 @@
+using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -26,15 +28,15 @@ namespace Game.Scripts.Dungeon
             }
         }
 
-        public static bool TryLaunch(string session, QueueMode mode)
+        public static bool TryLaunch(string session, QueueMode mode, byte floor)
         {
             string path = ExecutablePath;
 
-            if (!File.Exists(path))
+            if (!File.Exists(path) || IsStale(path))
                 return false;
 
             string log = Path.Combine(Path.GetDirectoryName(path), $"{session}.log");
-            Process.Start(new ProcessStartInfo(path, $"-batchmode -nographics -dedicatedServer -session {session} -mode {(int)mode} -logFile \"{log}\"")
+            Process.Start(new ProcessStartInfo(path, $"-batchmode -nographics -dedicatedServer -session {session} -mode {(int)mode} -floor {floor} -logFile \"{log}\"")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -42,6 +44,26 @@ namespace Game.Scripts.Dungeon
             UnityEngine.Debug.Log($"[{nameof(LocalServer)}] Started a dungeon server for '{session}', log: {log}");
 
             return true;
+        }
+
+        /// A build older than the code or the scenes has other scene NetworkObjects (Fusion "Behaviour count mismatch"): host instead.
+        private static bool IsStale(string path)
+        {
+#if UNITY_EDITOR
+            DateTime built = File.GetLastWriteTime(path);
+            string stale = UnityEditor.EditorBuildSettings.scenes.Select(scene => scene.path)
+                .Append("Library/ScriptAssemblies/Assembly-CSharp.dll")
+                .FirstOrDefault(file => File.Exists(file) && File.GetLastWriteTime(file) > built);
+
+            if (stale == null)
+                return false;
+
+            UnityEngine.Debug.LogWarning($"[{nameof(LocalServer)}] The dedicated server build is older than {stale}, hosting instead. Rebuild: Tools/Game/Network/Build Dedicated Server");
+
+            return true;
+#else
+            return false;
+#endif
         }
     }
 }

@@ -45,7 +45,7 @@ namespace Game.Scripts.Dungeon
 
                 if (!_isFirst && _state == AdventurerState.Dead)
                     DungeonAudioComponent.Play(DungeonSound.Death, position, 1f);
-                else if (!_isFirst && _state == AdventurerState.Extracted && HasInputAuthority)
+                else if (!_isFirst && _state is AdventurerState.Extracted or AdventurerState.Descended && HasInputAuthority)
                     DungeonAudioComponent.PlayUi(DungeonSound.Extract, 0.8f);
             }
 

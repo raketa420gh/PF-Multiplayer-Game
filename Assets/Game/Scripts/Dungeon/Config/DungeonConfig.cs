@@ -30,15 +30,15 @@ namespace Game.Scripts.Dungeon
         private float _matchDuration = 720f;
 
         [SerializeField]
-        private float _swarmDamagePerSecond = 6f;
+        private float _swarmDamagePerSecond = 3f;
 
         [SerializeField]
         private SwarmStage[] _swarmStages =
         {
-            new() { StartTime = 150f, Duration = 60f, Share = 0.82f },
-            new() { StartTime = 330f, Duration = 60f, Share = 0.48f },
-            new() { StartTime = 510f, Duration = 60f, Share = 0.22f },
-            new() { StartTime = 660f, Duration = 60f, Share = 0f }
+            new() { StartTime = 360f, Duration = 60f, Share = 0.82f },
+            new() { StartTime = 450f, Duration = 60f, Share = 0.48f },
+            new() { StartTime = 540f, Duration = 60f, Share = 0.22f },
+            new() { StartTime = 630f, Duration = 60f, Share = 0f }
         };
 
         [SerializeField]

@@ -28,7 +28,13 @@ namespace Game.Scripts.Editor.Battle
         private const string HitLayerName = "Hit";
 
         private static readonly string[] s_rootCurves = { "RootT.x", "RootT.y", "RootT.z", "RootQ.x", "RootQ.y", "RootQ.z", "RootQ.w" };
-        private static readonly string[] s_socketCurves = { "m_LocalRotation.x", "m_LocalRotation.y", "m_LocalRotation.z", "m_LocalRotation.w" };
+        /// Weapon socket poses (model space, per frame and socket) the solve held for every clip recorded with hands, for BakeSockets.
+        private static readonly Dictionary<AnimationClip, Pose[,]> s_held = new();
+
+        private static readonly string[] s_socketCurves =
+        {
+            "m_LocalPosition.x", "m_LocalPosition.y", "m_LocalPosition.z", "m_LocalRotation.x", "m_LocalRotation.y", "m_LocalRotation.z", "m_LocalRotation.w"
+        };
 
         [MenuItem("Tools/Game/Battle/Build Animations")]
         public static void Build()
@@ -64,6 +70,7 @@ namespace Game.Scripts.Editor.Battle
             AddState(upper, FighterAnimComponent.BandageFirstPersonState, Record(rig, FighterAnimComponent.BandageFirstPersonState, BandageCycle, true,
                 time => BattleAnimationLibrary.Bandage(time / BandageCycle)));
             BuildHitReactions(controller.layers[2].stateMachine);
+            BakeSockets(upper);
             BakeEdits();
 
             EditorUtility.SetDirty(controller);
@@ -289,8 +296,9 @@ namespace Game.Scripts.Editor.Battle
             return side > 0f ? ("Sword_Regular_A", "Sword_Regular_A_Rec", 8f * LibraryFrame) : ("Sword_Regular_B", "Sword_Regular_B_Rec", 8f * LibraryFrame);
         }
 
-        /// Busy actions as others see them come from the library as is: spells and levers with the off hand, throws with the main
-        /// hand. Casting and drinking happen beside the head, so the player's own view keeps the generated in-view poses.
+        /// Busy actions come from the library as is: levers with the off hand, throws with the main hand. Casting, drinking and
+        /// bandaging play the generated in-view poses for everyone (FighterAnimComponent); their library states are only
+        /// kept for the animation test scene.
         private static void BuildActions(AnimatorStateMachine stateMachine)
         {
             AnimatorState cast = AddState(stateMachine, FighterAnimComponent.CastState, BattleEditorUtility.LoadLibraryClip("Spell_Simple_Enter"));
@@ -314,11 +322,20 @@ namespace Game.Scripts.Editor.Battle
             use.cycleOffset = 0.5f;
         }
 
+        /// The reactions leave what they do not animate to the layers below: written defaults would pull the weapon sockets back
+        /// to rest for as long as a reaction plays.
         private static void BuildHitReactions(AnimatorStateMachine stateMachine)
         {
-            stateMachine.AddState(FighterAnimComponent.HitChestState).motion = BattleEditorUtility.LoadLibraryClip("Hit_Chest");
-            stateMachine.AddState(FighterAnimComponent.HitHeadState).motion = BattleEditorUtility.LoadLibraryClip("Hit_Head");
-            stateMachine.AddState(FighterAnimComponent.HitStaggerState).motion = BattleEditorUtility.LoadLibraryClip("Idle_Shield_Break");
+            AddReaction(stateMachine, FighterAnimComponent.HitChestState, "Hit_Chest");
+            AddReaction(stateMachine, FighterAnimComponent.HitHeadState, "Hit_Head");
+            AddReaction(stateMachine, FighterAnimComponent.HitStaggerState, "Idle_Shield_Break");
+        }
+
+        private static void AddReaction(AnimatorStateMachine stateMachine, string name, string library)
+        {
+            AnimatorState state = stateMachine.AddState(name);
+            state.motion = BattleEditorUtility.LoadLibraryClip(library);
+            state.writeDefaultValues = false;
         }
 
         private static BlendTree CreateMoveTree(BlendTree parent, string name, float threshold)
@@ -478,29 +495,39 @@ namespace Game.Scripts.Editor.Battle
         private static AnimationClip Record(BattlePoseRig rig, string name, float duration, bool isLoop, Func<float, BodyPose> evaluate)
         {
             int frames = Mathf.Max(1, Mathf.CeilToInt(duration * FrameRate));
-            AnimationCurve[] muscles = new AnimationCurve[BodyMuscleCount];
+            float[,] muscles = new float[frames + 1, BodyMuscleCount];
             AnimationCurve[] root = new AnimationCurve[s_rootCurves.Length];
-
-            for (int i = 0; i < muscles.Length; i++)
-                muscles[i] = new AnimationCurve();
 
             for (int i = 0; i < root.Length; i++)
                 root[i] = new AnimationCurve();
 
             Quaternion previousRotation = Quaternion.identity;
             BodyPose[] poses = new BodyPose[frames + 1];
+            Transform[] sockets = rig.Sockets;
+            Pose[,] held = new Pose[frames + 1, sockets.Length];
+            Pose[] bodies = new Pose[frames + 1];
 
             // Keys sit on the simulation's 60 Hz grid, so the trace sampler and tick-aligned playback read authored poses, not blends.
             for (int frame = 0; frame <= frames; frame++)
                 poses[frame] = evaluate(isLoop && frame == frames ? 0f : Mathf.Min(frame / FrameRate, duration));
 
             rig.Plan(poses, isLoop);
+            bool hasHands = poses[0].HasHands;
 
             for (int frame = 0; frame <= frames; frame++)
             {
                 float time = Mathf.Min(frame / FrameRate, duration);
                 rig.Apply(poses[frame], frame);
-                HumanPose pose = rig.Capture();
+
+                // In the model's own space: sampling library legs moves the rig's root around.
+                Transform model = rig.Animator.transform;
+
+                for (int i = 0; i < sockets.Length; i++)
+                    held[frame, i] = new Pose(model.InverseTransformPoint(sockets[i].position), Quaternion.Inverse(model.rotation) * sockets[i].rotation);
+
+                // Anatomy first: no joint goes past the human range of the avatar, even when the hand then falls short of the
+                // weapon. The weapon keeps the solved path: BakeSockets moves its socket off the palm by as much as the hand was held back.
+                HumanPose pose = rig.CaptureWithinLimits(BodyMuscleCount);
 
                 Quaternion rotation = pose.bodyRotation;
 
@@ -508,9 +535,10 @@ namespace Game.Scripts.Editor.Battle
                     rotation = new Quaternion(-rotation.x, -rotation.y, -rotation.z, -rotation.w);
 
                 previousRotation = rotation;
+                bodies[frame] = new Pose(pose.bodyPosition, rotation);
 
-                for (int i = 0; i < muscles.Length; i++)
-                    muscles[i].AddKey(time, pose.muscles[i]);
+                for (int i = 0; i < BodyMuscleCount; i++)
+                    muscles[frame, i] = pose.muscles[i];
 
                 root[0].AddKey(time, pose.bodyPosition.x);
                 root[1].AddKey(time, pose.bodyPosition.y);
@@ -525,8 +553,18 @@ namespace Game.Scripts.Editor.Battle
             clip.ClearCurves();
             clip.frameRate = FrameRate;
 
-            for (int i = 0; i < muscles.Length; i++)
-                SetCurve(clip, HumanTrait.MuscleName[i], muscles[i]);
+            if (hasHands)
+                Steady(rig, muscles, bodies, held, poses);
+
+            for (int i = 0; i < BodyMuscleCount; i++)
+            {
+                AnimationCurve curve = new AnimationCurve();
+
+                for (int frame = 0; frame <= frames; frame++)
+                    curve.AddKey(Mathf.Min(frame / FrameRate, duration), muscles[frame, i]);
+
+                SetCurve(clip, HumanTrait.MuscleName[i], curve);
+            }
 
             // Hands that hold something close into a grip, free ones open as far as the poses say; the spread muscles stay neutral.
             AnimationCurve[] curls = { Curl(poses, duration, false), Curl(poses, duration, true) };
@@ -545,12 +583,10 @@ namespace Game.Scripts.Editor.Battle
             for (int i = 0; i < root.Length; i++)
                 SetCurve(clip, s_rootCurves[i], root[i]);
 
-            // A weapon that leans in the hand turns its socket. The clip also plays mirrored, with the weapon in the other hand.
-            if (Array.Exists(poses, pose => pose.Lean != 0f))
-            {
-                SetSocketCurves(clip, rig, WeaponSocket.RightHand, poses, duration);
-                SetSocketCurves(clip, rig, WeaponSocket.LeftHand, poses, duration);
-            }
+            if (hasHands)
+                s_held[clip] = held;
+            else
+                s_held.Remove(clip);
 
             AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
             settings.loopTime = isLoop;
@@ -565,6 +601,76 @@ namespace Game.Scripts.Editor.Battle
             EditorUtility.SetDirty(clip);
 
             return clip;
+        }
+
+        /// The arms may not snap: a twist or a wrist the solve flips across its range within a frame turns over several frames
+        /// instead (BakeSockets keeps the weapon on its path meanwhile). Forward and backward rate limits are averaged, so the
+        /// motion is not delayed.
+        private static void Steady(BattlePoseRig rig, float[,] muscles, Pose[] bodies, Pose[,] held, BodyPose[] poses)
+        {
+            Steady(muscles);
+            Transform model = rig.Animator.transform;
+
+            // The steadied wrists and twists moved the hands: the shoulders and elbows take the grips back where they can.
+            for (int frame = 0; frame < bodies.Length; frame++)
+            {
+                HumanPose pose = new HumanPose { bodyPosition = bodies[frame].position, bodyRotation = bodies[frame].rotation, muscles = new float[HumanTrait.MuscleCount] };
+
+                for (int i = 0; i < BodyMuscleCount; i++)
+                    pose.muscles[i] = muscles[frame, i];
+
+                WeaponSocket off = poses[frame].OffSocket;
+                pose = rig.ReachGrips(pose, model.TransformPoint(held[frame, (int)WeaponSocket.RightHand].position), model.TransformPoint(held[frame, (int)off].position), off,
+                    BodyMuscleCount);
+
+                for (int i = 0; i < BodyMuscleCount; i++)
+                    muscles[frame, i] = pose.muscles[i];
+            }
+
+            // Where a grip is out of reach the elbow may swing across: once more, so nothing snaps.
+            Steady(muscles);
+        }
+
+        private static void Steady(float[,] muscles)
+        {
+            int frames = muscles.GetLength(0);
+            float[] forward = new float[frames];
+            float[] backward = new float[frames];
+
+            for (int m = 0; m < BodyMuscleCount; m++)
+            {
+                float step = MaxMuscleStep(HumanTrait.MuscleName[m]);
+
+                if (step <= 0f)
+                    continue;
+
+                forward[0] = muscles[0, m];
+                backward[frames - 1] = muscles[frames - 1, m];
+
+                for (int i = 1; i < frames; i++)
+                    forward[i] = Mathf.Clamp(muscles[i, m], forward[i - 1] - step, forward[i - 1] + step);
+
+                for (int i = frames - 2; i >= 0; i--)
+                    backward[i] = Mathf.Clamp(muscles[i, m], backward[i + 1] - step, backward[i + 1] + step);
+
+                for (int i = 0; i < frames; i++)
+                    muscles[i, m] = (forward[i] + backward[i]) * 0.5f;
+            }
+        }
+
+        /// Largest change of an arm muscle within a 60 Hz frame; 0 = free.
+        private static float MaxMuscleStep(string muscle)
+        {
+            if (muscle.Contains(" Leg ") || muscle.Contains(" Foot ") || muscle.Contains(" Toes "))
+                return 0f;
+
+            if (muscle.Contains(" Twist ") && (muscle.Contains(" Arm ") || muscle.Contains(" Forearm ")))
+                return 0.15f;
+
+            if (muscle.Contains(" Hand "))
+                return 0.2f;
+
+            return muscle.Contains(" Shoulder ") || muscle.Contains(" Arm ") || muscle.Contains(" Forearm ") ? 0.3f : 0f;
         }
 
         private static AnimationClip GetClip(string name)
@@ -594,21 +700,86 @@ namespace Game.Scripts.Editor.Battle
             AnimationUtility.SetEditorCurve(clip, binding, curve);
         }
 
-        private static void SetSocketCurves(AnimationClip clip, BattlePoseRig rig, WeaponSocket socket, BodyPose[] poses, float duration)
+        /// Plays every upper state recorded with hands through the finished controller (layers and masks as at runtime, unmirrored)
+        /// and gives each weapon socket the local pose under the hand that puts it where the solve held it. The clamped arm falls
+        /// short of the weapon; this keeps the weapon's path as it was. Mirrored states swap the curves at runtime (SocketMirror).
+        private static void BakeSockets(AnimatorStateMachine upper)
         {
-            string path = AnimationUtility.CalculateTransformPath(rig.Sockets[(int)socket], rig.Animator.transform);
-            AnimationCurve[] curves = { new(), new(), new(), new() };
+            // Off-hand states play mirrored by a parameter the editor-time animator does not honour: unmirrored for the bake.
+            List<AnimatorState> flipped = upper.states.Select(child => child.state).Where(state => state.mirrorParameterActive).ToList();
 
-            for (int frame = 0; frame < poses.Length; frame++)
+            foreach (AnimatorState state in flipped)
+                state.mirrorParameterActive = false;
+
+            AssetDatabase.SaveAssets();
+            GameObject model = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath), Vector3.zero, Quaternion.identity);
+            Animator animator = model.GetComponent<Animator>();
+            Transform[] sockets = BattlePoseRig.CreateSockets(animator);
+            animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<AnimatorController>(BattleEditorUtility.ControllerPath);
+            animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            animator.Rebind();
+            animator.SetFloat(FighterAnimComponent.ActionSpeedParam, 1f);
+
+            foreach (ChildAnimatorState child in upper.states)
             {
-                Quaternion rotation = rig.GetSocketRotation(socket, poses[frame].Lean);
+                if (child.state.motion is not AnimationClip clip || !s_held.TryGetValue(clip, out Pose[,] held))
+                    continue;
 
-                for (int i = 0; i < curves.Length; i++)
-                    curves[i].AddKey(Mathf.Min(frame / FrameRate, duration), rotation[i]);
+                int frames = held.GetLength(0);
+                AnimationCurve[,] curves = new AnimationCurve[sockets.Length, s_socketCurves.Length];
+                Quaternion[] previous = new Quaternion[sockets.Length];
+
+                for (int i = 0; i < sockets.Length; i++)
+                {
+                    for (int j = 0; j < s_socketCurves.Length; j++)
+                        curves[i, j] = new AnimationCurve();
+                }
+
+                for (int frame = 0; frame < frames; frame++)
+                {
+                    float time = Mathf.Min(frame / FrameRate, clip.length);
+                    // Twice: the first evaluation after switching states still shows the state before.
+                    for (int pass = 0; pass < 2; pass++)
+                    {
+                        animator.Play(child.state.nameHash, 1, Mathf.Min(time / clip.length, 0.9999f));
+                        animator.Update(0f);
+                    }
+
+                    for (int i = 0; i < sockets.Length; i++)
+                    {
+                        Transform hand = sockets[i].parent;
+                        Vector3 position = hand.InverseTransformPoint(held[frame, i].position);
+                        Quaternion rotation = Quaternion.Inverse(hand.rotation) * held[frame, i].rotation;
+
+                        // The same hemisphere as the frame before, or the weapon spins the long way round between the keys.
+                        if (frame > 0 && Quaternion.Dot(previous[i], rotation) < 0f)
+                            rotation = new Quaternion(-rotation.x, -rotation.y, -rotation.z, -rotation.w);
+
+                        previous[i] = rotation;
+                        float[] values = { position.x, position.y, position.z, rotation.x, rotation.y, rotation.z, rotation.w };
+
+                        for (int j = 0; j < values.Length; j++)
+                            curves[i, j].AddKey(time, values[j]);
+                    }
+                }
+
+                for (int i = 0; i < sockets.Length; i++)
+                {
+                    string path = AnimationUtility.CalculateTransformPath(sockets[i], animator.transform);
+
+                    for (int j = 0; j < s_socketCurves.Length; j++)
+                        SetCurve(clip, EditorCurveBinding.FloatCurve(path, typeof(Transform), s_socketCurves[j]), curves[i, j]);
+                }
+
+                EditorUtility.SetDirty(clip);
             }
 
-            for (int i = 0; i < curves.Length; i++)
-                SetCurve(clip, EditorCurveBinding.FloatCurve(path, typeof(Transform), s_socketCurves[i]), curves[i]);
+            UnityEngine.Object.DestroyImmediate(model);
+            s_held.Clear();
+
+            foreach (AnimatorState state in flipped)
+                state.mirrorParameterActive = true;
         }
     }
 }

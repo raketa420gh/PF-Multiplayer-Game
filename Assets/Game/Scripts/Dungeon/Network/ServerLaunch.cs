@@ -5,7 +5,8 @@ using Fusion;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Dedicated server: hosts one dungeon session in the dungeon lobby, idle (queue Any) until its first player claims it.
+    /// Dedicated server: hosts one dungeon session in the dungeon lobby, idle (queue Any, floor 0 unless allocated for one)
+    /// until its first player claims it.
     public sealed class ServerLaunch : LaunchPlan
     {
         public override string Scene => SceneTravel.DungeonScene;
@@ -16,7 +17,7 @@ namespace Game.Scripts.Dungeon
             args.SessionName = string.IsNullOrEmpty(GameServer.AllocatedSession) ? NewSessionName() : GameServer.AllocatedSession;
             args.PlayerCount = GameServer.MaxCapacity;
             args.CustomLobbyName = GameServer.DungeonLobby;
-            args.SessionProperties = Properties(GameServer.Mode, 0, ",");
+            args.SessionProperties = Properties(GameServer.Mode, 0, ",", GameServer.Floor);
 
             return Run(runner, args);
         }
@@ -32,13 +33,14 @@ namespace Game.Scripts.Dungeon
             return "dungeon-" + Guid.NewGuid().ToString("N").Substring(0, 8);
         }
 
-        public static Dictionary<string, SessionProperty> Properties(QueueMode mode, int until, string parties)
+        public static Dictionary<string, SessionProperty> Properties(QueueMode mode, int until, string parties, int floor)
         {
             return new Dictionary<string, SessionProperty>
             {
                 [GameServer.ModeProperty] = (int)mode,
                 [GameServer.UntilProperty] = until,
-                [GameServer.PartiesProperty] = parties
+                [GameServer.PartiesProperty] = parties,
+                [GameServer.FloorProperty] = floor
             };
         }
     }

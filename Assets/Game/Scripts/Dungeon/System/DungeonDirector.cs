@@ -7,8 +7,9 @@ using UnityEngine.AI;
 namespace Game.Scripts.Dungeon
 {
     /// Host-side orchestration: sessions on join, adventurer spawns, dungeon population, portals and match reset.
-    /// Players arrive from the tavern scene and enter as soon as their kit is loaded. A floor is populated and its
-    /// clock starts only when the first adventurer reaches it.
+    /// A session holds one floor (DungeonAdmission.Floor): players arrive from the tavern on the first one and from the
+    /// floor above on deeper ones, and enter as soon as their kit is loaded. The floor is populated and its clock starts
+    /// when the first adventurer reaches it; its ways down hand adventurers over to the next floor's session.
     public sealed class DungeonDirector : MonoBehaviour
     {
         [Serializable]
@@ -24,9 +25,9 @@ namespace Game.Scripts.Dungeon
             public PortalComponent[] EscapePortals;
             /// Half side of the square around Center where escape portals open at random; 0 keeps them in place.
             public float EscapeArea;
-            /// Ways down, opened halfway through the floor's clock; each leads to the arrival of the same index on the next floor.
+            /// Ways down, opened halfway through the floor's clock; they hand adventurers over to the next floor's session.
             public PortalComponent[] DescendPortals;
-            /// Where adventurers coming down from the floor above appear.
+            /// Where adventurers coming down from the floor above appear (the spawns of a deeper floor's session).
             public Transform[] Arrivals;
             public Transform BossSpawn;
             public Vector3 Center;
@@ -149,7 +150,9 @@ namespace Game.Scripts.Dungeon
             if (_match.State == MatchState.Finished)
                 ResetDungeon();
 
-            if (!_populated[0])
+            int floor = Mathf.Clamp(_admission != null ? _admission.Floor : 1, 1, _floors.Length);
+
+            if (!_populated[floor - 1])
             {
                 _seed = Environment.TickCount;
 
@@ -159,16 +162,17 @@ namespace Game.Scripts.Dungeon
                     SetDescendPortal(i, false);
                 }
 
-                Populate(0);
+                Populate(floor - 1);
             }
 
             if (_match.State != MatchState.Running)
-                StartMatch();
+                StartMatch(floor);
 
             session.EnsureKit();
 
             PlayerRef player = session.Object.InputAuthority;
-            Transform point = TakeSpawn(_floors[0], _admission != null ? _admission.TeamOf(player) : -1 - player.PlayerId);
+            Transform point = TakeSpawn(_floors[floor - 1], _admission != null ? _admission.TeamOf(player) : -1 - player.PlayerId);
+            FloorTransfer.Carry arrival = session.Arrival != null && session.Arrival.Floor == floor ? session.Arrival : null;
 
             Vector3 position = NavMesh.SamplePosition(point.position, out NavMeshHit hit, _spawnSnap, NavMesh.AllAreas) ? hit.position : point.position;
 
@@ -177,6 +181,9 @@ namespace Game.Scripts.Dungeon
                 AdventurerComponent component = obj.GetComponent<AdventurerComponent>();
                 component.Setup(session.ClassId, session);
                 component.Inventory.CopyFrom(session.Kit);
+
+                if (arrival != null)
+                    component.Arrive(arrival);
             });
 
             session.OnAdventurerSpawned(adventurer.GetComponent<AdventurerComponent>());
@@ -226,19 +233,20 @@ namespace Game.Scripts.Dungeon
             return true;
         }
 
-        /// A random spawn point of the floor that no adventurer stands near yet; any if all are taken.
+        /// A random spawn point of the floor (its arrivals on a deeper floor) that no adventurer stands near yet; any if all are taken.
         private Transform TakeSpawn(FloorLayout floor)
         {
+            Transform[] points = floor.PlayerSpawns.Length > 0 ? floor.PlayerSpawns : floor.Arrivals;
             List<Transform> free = new();
 
-            foreach (Transform point in floor.PlayerSpawns)
+            foreach (Transform point in points)
             {
                 if (!IsTaken(point.position))
                     free.Add(point);
             }
 
             if (free.Count == 0)
-                free.AddRange(floor.PlayerSpawns);
+                free.AddRange(points);
 
             return free[UnityEngine.Random.Range(0, free.Count)];
         }
@@ -291,7 +299,7 @@ namespace Game.Scripts.Dungeon
                 SceneTravel.Load(runner, SceneTravel.LobbyScene, SceneTravel.LobbyTitle);
         }
 
-        private void StartMatch()
+        private void StartMatch(int firstFloor)
         {
             Array.Clear(_escapeOpened, 0, _escapeOpened.Length);
             Array.Clear(_descendOpened, 0, _descendOpened.Length);
@@ -309,7 +317,7 @@ namespace Game.Scripts.Dungeon
                 finals[i] = floor.Center + new Vector3(offset.x, 0f, offset.y);
             }
 
-            _match.Begin(centers, radii, finals);
+            _match.Begin(centers, radii, finals, firstFloor);
         }
 
         private void UpdateRunning()
@@ -411,18 +419,15 @@ namespace Game.Scripts.Dungeon
             if (floorIndex + 1 >= _floors.Length)
                 return;
 
-            PortalComponent[] portals = _floors[floorIndex].DescendPortals;
-            Transform[] arrivals = _floors[floorIndex + 1].Arrivals;
-
-            for (int i = 0; i < portals.Length; i++)
+            foreach (PortalComponent portal in _floors[floorIndex].DescendPortals)
             {
-                if (portals[i] == null)
+                if (portal == null)
                     continue;
 
                 if (isActive)
-                    portals[i].Activate(arrivals[i % arrivals.Length]);
+                    portal.Activate();
                 else
-                    portals[i].Deactivate();
+                    portal.Deactivate();
             }
         }
 
@@ -439,7 +444,7 @@ namespace Game.Scripts.Dungeon
                     portal.GetComponent<NetworkTransform>().Teleport(RandomPortalPoint(floor, portal.transform.position), Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f));
 
                 if (isActive)
-                    portal.Activate(null);
+                    portal.Activate();
                 else
                     portal.Deactivate();
             }
