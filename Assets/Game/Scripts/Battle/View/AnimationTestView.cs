@@ -19,6 +19,8 @@ namespace Game.Scripts.Battle
         public WeaponConfig Weapon => _weapons[_weaponIndex];
         /// A belt item is in the hand instead of the weapon.
         public bool HasItem => _itemIndex >= 0;
+        /// The game plays this clip mirrored now: every clip of a left-handed weapon, and the states flipped for good.
+        public bool IsMirrored(AnimationClip clip) => clip != null && (_flippedClips.Contains(clip) || Weapon.IsMirrored && !HasItem);
 
         [SerializeField]
         private Animator _animator;
@@ -72,6 +74,7 @@ namespace Game.Scripts.Battle
         };
 
         private readonly List<GameObject> _attachments = new();
+        private readonly HashSet<AnimationClip> _flippedClips = new();
         private readonly List<string> _weaponStates = new();
         private readonly string[] _current = { FighterAnimComponent.LocomotionState, string.Empty, string.Empty };
         private Transform[] _spineBones;
@@ -94,8 +97,6 @@ namespace Game.Scripts.Battle
         private bool _isRepeating = true;
         private bool _hasFootwork = true;
         private bool _isFirstPerson;
-        private bool _isEditing;
-        private bool _isAuthoredSide;
         private bool _isViewportBlocked;
 
         private void Awake()
@@ -110,6 +111,12 @@ namespace Game.Scripts.Battle
             SelectWeapon(0);
         }
 
+        /// After every Awake: the animation editor swaps the controller for an override of it in its own.
+        private void Start()
+        {
+            CollectFlippedClips();
+        }
+
         private void Update()
         {
             _animator.speed = _isPaused ? 0f : _speed;
@@ -117,8 +124,7 @@ namespace Game.Scripts.Battle
             _animator.SetFloat(FighterAnimComponent.MoveYParam, _moveY);
             _animator.SetFloat(FighterAnimComponent.CrouchParam, _crouch);
             _animator.SetFloat(FighterAnimComponent.ActionSpeedParam, 1f);
-            _animator.SetBool(FighterAnimComponent.MirrorParam, _weapons[_weaponIndex].IsMirrored && !_isEditing && !HasItem);
-            _animator.SetBool(FighterAnimComponent.FlipParam, !_isEditing);
+            _animator.SetBool(FighterAnimComponent.MirrorParam, _weapons[_weaponIndex].IsMirrored && !HasItem);
             _animator.SetLayerWeight(UpperLayer, _current[BaseLayer] == FighterAnimComponent.DeathState ? 0f : 1f);
             _animator.SetLayerWeight(HitLayer, IsPlaying(HitLayer, out AnimatorStateInfo hit) && hit.normalizedTime < 1f ? _hitWeight : 0f);
 
@@ -130,12 +136,7 @@ namespace Game.Scripts.Battle
 
         private void LateUpdate()
         {
-            bool isAuthoredSide = _weapons[_weaponIndex].IsMirrored && _isEditing && !HasItem;
-
-            if (isAuthoredSide != _isAuthoredSide)
-                PlaceAttachments(isAuthoredSide);
-
-            if (_weapons[_weaponIndex].IsMirrored && !_isEditing && !HasItem)
+            if (_weapons[_weaponIndex].IsMirrored && !HasItem)
                 SocketMirror.Apply(_sockets);
 
             Transform root = _animator.transform;
@@ -222,9 +223,6 @@ namespace Game.Scripts.Battle
             GUILayout.EndArea();
         }
 
-        /// Edits are made on the clip as authored, so the animation editor turns mirroring and off-hand flips off while it is open.
-        public void SetEditing(bool isEditing) => _isEditing = isEditing;
-
         public void SetPaused(bool isPaused) => _isPaused = isPaused;
 
         /// The mouse is over panels drawn on top of the viewport (the animation editor), so the wheel scrolls them, not the camera.
@@ -299,8 +297,6 @@ namespace Game.Scripts.Battle
             foreach (WeaponAttachment attachment in weapon.Attachments)
                 _attachments.Add(Instantiate(attachment.Prefab, _sockets[(int)attachment.Socket], false));
 
-            _isAuthoredSide = false;
-
             _layer = UpperLayer;
             AddWeaponState(prefix + FighterAnimComponent.IdleSuffix);
 
@@ -330,20 +326,27 @@ namespace Game.Scripts.Battle
             Play(UpperLayer, FighterAnimComponent.HoldState);
         }
 
-        /// While edited, a weapon the game plays mirrored shows its clip as authored, right-handed: its attachments go to
-        /// the sockets of the other side, mirrored with them, as the game's mirrored clip and sockets would put them.
-        private void PlaceAttachments(bool isAuthoredSide)
+        /// Clips of the states that play mirrored whatever the weapon (the Flip parameter, always on in the game).
+        private void CollectFlippedClips()
         {
-            WeaponAttachment[] attachments = _weapons[_weaponIndex].Attachments;
+#if UNITY_EDITOR
+            RuntimeAnimatorController runtime = _animator.runtimeAnimatorController;
 
-            for (int i = 0; i < attachments.Length && i < _attachments.Count; i++)
+            if (runtime is AnimatorOverrideController overrides)
+                runtime = overrides.runtimeAnimatorController;
+
+            if (runtime is not UnityEditor.Animations.AnimatorController controller)
+                return;
+
+            foreach (UnityEditor.Animations.AnimatorControllerLayer layer in controller.layers)
             {
-                WeaponSocket socket = isAuthoredSide ? SocketMirror.Mirror(attachments[i].Socket) : attachments[i].Socket;
-                _attachments[i].transform.SetParent(_sockets[(int)socket], false);
-                _attachments[i].transform.localScale = new Vector3(isAuthoredSide ? -1f : 1f, 1f, 1f);
+                foreach (UnityEditor.Animations.ChildAnimatorState child in layer.stateMachine.states)
+                {
+                    if (child.state.mirrorParameterActive && child.state.mirrorParameter == FighterAnimComponent.FlipParam && child.state.motion is AnimationClip clip)
+                        _flippedClips.Add(clip);
+                }
             }
-
-            _isAuthoredSide = isAuthoredSide;
+#endif
         }
 
         private void ClearHands()

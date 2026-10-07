@@ -151,6 +151,7 @@ namespace Game.Scripts.Battle
         private bool _isScrubbing;
         private bool _isDraggingPose;
         private bool _isShowingBaked;
+        private bool? _isWeaponMirrored;
         private bool _isMoving;
         private bool _isSkeletonVisible = true;
         private bool _arePointsVisible = true;
@@ -211,8 +212,8 @@ namespace Game.Scripts.Battle
             Vector2 mouse = Input.mousePosition;
             Vector2 point = new Vector2(mouse.x, Screen.height - mouse.y) * GuiHeight / Screen.height;
             bool isOverGui = _headerRect.Contains(point) || _timelineRect.Contains(point) || _inspectorRect.Contains(point) || _helpRect.Contains(point);
-            _test.SetEditing(_isOpen);
             _test.SetViewportBlocked(isOverGui);
+            UpdateMirroring();
 
             if (Time.unscaledTime < _replayEnd && !_test.IsCurrent)
                 _test.Seek(_editLayer, _replayTime);
@@ -349,7 +350,14 @@ namespace Game.Scripts.Battle
             if (edit.Clip == null || edit.Source == null)
                 return;
 
-            _overrides[edit.Clip] = _isShowingBaked ? null : edit.Source;
+            // A clip the game plays mirrored is shown baked: its edits cannot be laid on top of the mirrored pose.
+            AnimationClip shown = _isShowingBaked || _test.IsMirrored(edit.Clip) ? null : edit.Source;
+
+            // Every change rebinds the animator, which drops the state it plays for some frames. A clip without an override
+            // reads back as itself.
+            if (_overrides[edit.Clip] != (shown ?? edit.Clip))
+                _overrides[edit.Clip] = shown;
+
             _clips[edit.Source] = edit.Clip;
         }
 
@@ -360,7 +368,7 @@ namespace Game.Scripts.Battle
 
         private ClipEdit GetEdit(AnimationClip clip)
         {
-            if (clip == null || !IsEditable(clip))
+            if (clip == null || !IsEditable(clip) || _test.IsMirrored(clip))
                 return null;
 
             if (_edits.TryGetValue(clip, out ClipEdit edit))
@@ -1392,6 +1400,22 @@ namespace Game.Scripts.Battle
 #endif
         }
 
+        /// The editor shows what the game shows: switching to or from a left-handed weapon swaps which clips play baked. The
+        /// first frame sets the overrides once more, now that the test view knows the states flipped for good.
+        private void UpdateMirroring()
+        {
+            bool isMirrored = _test.Weapon.IsMirrored && !_test.HasItem;
+
+            if (isMirrored == _isWeaponMirrored)
+                return;
+
+            _isWeaponMirrored = isMirrored;
+            Replay();
+
+            foreach (ClipEdit edit in _config.Clips)
+                Override(edit);
+        }
+
         private void ToggleBaked()
         {
             Replay();
@@ -1424,7 +1448,7 @@ namespace Game.Scripts.Battle
 
             AnimationClip clip = _test.GetClip(_editLayer);
             GUILayout.Space(8f);
-            GUILayout.Label(_edit == null ? $"{(clip != null ? clip.name : "-")}  (read-only)" : _edit.Clip.name + (_dirty.Contains(_edit.Clip) ? "  *" : string.Empty),
+            GUILayout.Label(_edit == null ? $"{(clip != null ? clip.name : "-")}  ({(_test.IsMirrored(Resolve(clip)) ? "mirrored in the game, " : string.Empty)}read-only)" : _edit.Clip.name + (_dirty.Contains(_edit.Clip) ? "  *" : string.Empty),
                 _skin.Header, GUILayout.MinWidth(120f));
             GUILayout.Label($"frame {_frame} / {_frameCount}", _skin.Label, GUILayout.Width(110f));
             GUILayout.FlexibleSpace();

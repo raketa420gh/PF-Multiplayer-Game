@@ -253,8 +253,16 @@ Say this to the user when it helps; it is their recording.
   degrees off. Measure axes (`SwingPlayTest` "block", or transform the mesh vertices).
 - **"It looks crooked" with the numbers straight**: look for geometry the eye reads as a turn — a spine bulging past
   the boards showed its round side in the view and read as a book turned sideways.
-- **The animation editor matches the game** (sockets keyed by the clip, mirrored weapons on the authored side while
-  editing). If it does not, the editor is wrong, not the clip: compare one numeric pose in both before re-authoring.
+- **The animation editor shows exactly what the game shows**, mirrored weapons (Spellbook, SwordShieldLeft) and flipped
+  states (off-hand swings, Use) included: it plays them mirrored, baked, read-only ("mirrored in the game"). Unity's
+  humanoid mirror is exact for the body (1 mm) and `SocketMirror` for the weapon, but it is a muscle mirror, not a bone
+  reflection: edits made on a mirrored view cannot be carried back onto the authored clip, so do not try. If the editor
+  and the game still differ, the editor is wrong, not the clip: compare one numeric pose in both before re-authoring.
+- **"In the game it plays something else" on a block hit**: check `Impact` against the block's `Stability`
+  (`DungeonWeaponLibrary.s_force`). A hit with more Impact breaks the block — Stagger: the idle clip and the stagger
+  flinch, never `BlockImpact`. A book with Stability 1 never showed its impact clip against a weapon.
+- **Judge a mirrored weapon mirrored.** `SwingPreview`/`ClipPreview` render the authored (right-handed) side: compare with
+  `footage.py ... --mirror`; for "which hand, where on the screen" the play-test or animation-editor screenshot is the truth.
 - **Shared poses** (rest, the low stop on one side, upright on the other) are reused by several swings. When one
   swing needs it different (the head up at the start of the next swing rather than down at the end of the last),
   give that swing its own key instead of bending the shared pose.
