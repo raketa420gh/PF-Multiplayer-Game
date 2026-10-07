@@ -43,8 +43,10 @@ namespace Game.Scripts.Dungeon
         private const float CastReleaseTime = 0.35f;
         private const float RootTurnLimit = 90f;
         private const float QuickCastTime = 0.05f;
-        /// Reach of the hitscan spells and of weapon enchants cast on an ally.
-        private const float SpellRange = 25f;
+        /// Where the ground marker may stand above or below the aimed point, and how far a ray looks for the floor.
+        private const float GroundProbe = 3f;
+        private const int WorldMask = 1;
+        private const float AuraPulse = 0.5f;
         private const float ChainFalloff = 0.7f;
         private const float StrikeHeight = 14f;
         private const float EnchantBurnTime = 3f;
@@ -158,6 +160,20 @@ namespace Game.Scripts.Dungeon
             : Mathf.Clamp01((Runner.Tick - _searchStartTick) / (float)(_searchEndTick - _searchStartTick));
 
         /// Charge progress of the spell being held: 0 when not charging, 1 once it is kept ready until the button is let go.
+        /// Where a ground area lands: under the crosshair, held at the spell's range when the aim goes farther.
+        public Vector3 GetGroundPoint(float range)
+        {
+            FighterBodyComponent body = _fighter.Body;
+            Vector3 origin = body.EyePosition;
+            Vector3 point = Physics.Raycast(origin, body.AimDirection, out RaycastHit hit, range * 3f, WorldMask, QueryTriggerInteraction.Ignore) ? hit.point : origin + body.AimDirection * range * 3f;
+            Vector3 flat = Vector3.ProjectOnPlane(point - transform.position, Vector3.up);
+
+            if (flat.magnitude > range)
+                point = transform.position + flat.normalized * range;
+
+            return Physics.Raycast(point + Vector3.up * GroundProbe, Vector3.down, out hit, GroundProbe * 4f, WorldMask, QueryTriggerInteraction.Ignore) ? hit.point : point;
+        }
+
         public float CastCharge => IsHoldingCast ? Mathf.InverseLerp(_fighter.Combat.StateTick, _pendingCompleteTick, Runner.Tick) : 0f;
         public bool IsHoldingCast => Pending == PendingAction.Ability && _isHoldingCast;
         public float ReloadSpeed => _stats.ReloadSpeed * (1f + _effects.GetMagnitude(StatusEffectKind.QuickReload) / 100f);
@@ -269,6 +285,10 @@ namespace Game.Scripts.Dungeon
 
         private static readonly List<LagCompensatedHit> s_hits = new(16);
         private static readonly List<DamageReceiverComponent> s_struck = new();
+
+        private AbilityConfig _aura;
+        private int _auraEndTick;
+        private int _auraNextTick;
         private readonly List<AbilityConfig> _abilities = new();
         private readonly AbilityConfig[] _skills = new AbilityConfig[2];
         private int _skillCount;
@@ -366,6 +386,7 @@ namespace Game.Scripts.Dungeon
             if (Resource > 0 && _resourceTimer.Expired(Runner))
                 Resource = 0;
 
+            SimulateAura();
             SimulateRest();
             SimulateSwarm();
             SimulateSearch();
@@ -1005,13 +1026,13 @@ namespace Game.Scripts.Dungeon
                     Heal(SupportTarget(ability), ability);
                     break;
                 case AbilityKind.AreaHeal:
-                    AreaHeal(ability);
+                    AreaHeal(ability, AreaCenter(ability));
                     break;
                 case AbilityKind.Buff:
                     SupportTarget(ability)._effects.Add(ability.Effect, Power(ability), buffDuration);
                     break;
                 case AbilityKind.AreaBuff:
-                    AreaBuff(ability);
+                    StartAura(ability);
                     break;
                 case AbilityKind.Shield:
                     SupportTarget(ability)._effects.Add(StatusEffectKind.Protection, Power(ability), buffDuration);
@@ -1026,7 +1047,7 @@ namespace Game.Scripts.Dungeon
                     FireSpell(ability, combat);
                     break;
                 case AbilityKind.AreaDamage:
-                    AreaDamage(ability, combat);
+                    AreaDamage(ability, combat, AreaCenter(ability));
                     break;
                 case AbilityKind.Taunt:
                     _effects.Add(StatusEffectKind.Taunt, Power(ability), buffDuration);
@@ -1083,7 +1104,7 @@ namespace Game.Scripts.Dungeon
         /// Healing, shielding and blessing spells go to the adventurer under the crosshair, or to the caster when the aim misses; skills stay on their user.
         private AdventurerComponent SupportTarget(AbilityConfig ability)
         {
-            return ability.IsSpell || ability.IsOnAlly ? FindAlly() : this;
+            return ability.IsSpell || ability.IsOnAlly ? FindAlly(ability) : this;
         }
 
         private void Heal(AdventurerComponent target, AbilityConfig ability)
@@ -1097,22 +1118,60 @@ namespace Game.Scripts.Dungeon
                 RpcFlash(BodyPoint(target._fighter.Receiver), ability.Color, 5f);
         }
 
-        private void AreaHeal(AbilityConfig ability)
+        /// The caster for a burst or an aura, the marked spot for a ground area.
+        private Vector3 AreaCenter(AbilityConfig ability)
+        {
+            return ability.Targeting == AbilityTargeting.Ground ? GetGroundPoint(ability.Range) : transform.position;
+        }
+
+        private void AreaHeal(AbilityConfig ability, Vector3 center)
         {
             foreach (FighterComponent fighter in FighterComponent.All)
             {
-                if ((fighter.transform.position - transform.position).sqrMagnitude > ability.Radius * ability.Radius
+                if ((fighter.transform.position - center).sqrMagnitude > ability.Radius * ability.Radius
                     || !fighter.TryGetComponent(out AdventurerComponent ally) || ally.State != AdventurerState.Alive)
                     continue;
 
                 ally._effects.Add(StatusEffectKind.HealOverTime, HealAmount(ability), ability.Duration);
             }
 
-            RpcFlash(transform.position + Vector3.up, ability.Color, ability.Radius * 2f);
+            RpcFlash(center + Vector3.up, ability.Color, ability.Radius * 2f);
+        }
+
+        /// A burst buffs once; with an aura time the buff keeps being renewed on whoever stands in it, the caster moving it along.
+        private void StartAura(AbilityConfig ability)
+        {
+            AreaBuff(ability, ability.Duration);
+
+            if (ability.AuraTime <= 0f)
+                return;
+
+            _aura = ability;
+            _auraEndTick = Runner.Tick + Mathf.CeilToInt(ability.AuraTime / Runner.DeltaTime);
+            _auraNextTick = Runner.Tick + Mathf.CeilToInt(AuraPulse / Runner.DeltaTime);
+        }
+
+        private void SimulateAura()
+        {
+            if (_aura == null)
+                return;
+
+            if (State != AdventurerState.Alive || Runner.Tick >= _auraEndTick)
+            {
+                _aura = null;
+
+                return;
+            }
+
+            if (Runner.Tick < _auraNextTick)
+                return;
+
+            _auraNextTick = Runner.Tick + Mathf.CeilToInt(AuraPulse / Runner.DeltaTime);
+            AreaBuff(_aura, AuraPulse * 2f, false);
         }
 
         /// The user and every adventurer of the user's party within the radius.
-        private void AreaBuff(AbilityConfig ability)
+        private void AreaBuff(AbilityConfig ability, float duration, bool isFlash = true)
         {
             foreach (FighterComponent fighter in FighterComponent.All)
             {
@@ -1120,10 +1179,11 @@ namespace Game.Scripts.Dungeon
                     || !fighter.TryGetComponent(out AdventurerComponent ally) || ally.State != AdventurerState.Alive || (ally != this && fighter.Receiver.CanBeHitBy(_fighter.Receiver)))
                     continue;
 
-                ally._effects.Add(ability.Effect, Power(ability), ability.Duration);
+                ally._effects.Add(ability.Effect, Power(ability), duration);
             }
 
-            RpcFlash(transform.position + Vector3.up, ability.Color, ability.Radius * 2f);
+            if (isFlash)
+                RpcFlash(transform.position + Vector3.up, ability.Color, ability.Radius * 2f);
         }
 
         private void FireSpell(AbilityConfig ability, CombatComponent combat)
@@ -1137,14 +1197,14 @@ namespace Game.Scripts.Dungeon
                 float spread = ability.ProjectileCount > 1 ? Mathf.Lerp(-ability.ProjectileSpread, ability.ProjectileSpread, i / (ability.ProjectileCount - 1f)) : 0f;
                 Vector3 direction = aim * Quaternion.Euler(0f, spread, 0f) * Vector3.forward;
                 combat.Projectiles.Fire(origin, direction * ability.ProjectileSpeed, ability.ProjectileGravity, damage, ability.StaggerDuration,
-                    ability.DamageType, ability.ProjectileKind, ability.Radius, (byte)ability.Effect, ability.EffectMagnitude, ability.EffectDuration, ability.LifeSteal);
+                    ability.DamageType, ability.ProjectileKind, ability.Radius, (byte)ability.Effect, ability.EffectMagnitude, ability.EffectDuration, ability.LifeSteal, maxDistance: ability.Range);
             }
         }
 
         /// The adventurer under the crosshair, or the caster when the aim misses.
-        private AdventurerComponent FindAlly()
+        private AdventurerComponent FindAlly(AbilityConfig ability)
         {
-            DamageReceiverComponent receiver = AimReceiver(SpellRange, out _);
+            DamageReceiverComponent receiver = AimReceiver(ability.Range, out _);
 
             return receiver != null && receiver.TryGetComponent(out AdventurerComponent ally) && ally.State == AdventurerState.Alive ? ally : this;
         }
@@ -1180,7 +1240,7 @@ namespace Game.Scripts.Dungeon
 
         private void ChainLightning(AbilityConfig ability, CombatComponent combat)
         {
-            DamageReceiverComponent target = AimReceiver(SpellRange, out Vector3 point);
+            DamageReceiverComponent target = AimReceiver(ability.Range, out Vector3 point);
             float damage = combat.ScaleDamage(Mathf.RoundToInt(Power(ability)), ability.DamageType);
             Vector3 from = HandPoint;
             RpcBolt(from, target != null ? BodyPoint(target) : point, false);
@@ -1220,17 +1280,30 @@ namespace Game.Scripts.Dungeon
             return best;
         }
 
+        /// Lightning from the sky on the marked spot: every body within the radius is struck.
         private void LightningStrike(AbilityConfig ability, CombatComponent combat)
         {
-            DamageReceiverComponent target = AimReceiver(SpellRange, out Vector3 point);
-            RpcBolt(HandPoint, point, false);
+            Vector3 ground = GetGroundPoint(ability.Range);
+            Vector3 sky = ground + Vector3.up * StrikeHeight;
+            RpcBolt(HandPoint, sky, false);
+            RpcBolt(sky, ground, true);
+            GatherBodies(ground, ability.Radius);
+            int damage = combat.ScaleDamage(Mathf.RoundToInt(Power(ability)), ability.DamageType);
 
-            if (target == null || !target.CanBeHitBy(_fighter.Receiver))
-                return;
+            foreach (DamageReceiverComponent receiver in s_struck)
+                SpellHit(receiver, damage, ability, sky);
+        }
 
-            Vector3 ground = target.transform.position;
-            RpcBolt(ground + Vector3.up * StrikeHeight, ground, true);
-            SpellHit(target, combat.ScaleDamage(Mathf.RoundToInt(Power(ability)), ability.DamageType), ability, ground + Vector3.up * StrikeHeight);
+        /// Every body in reach of the point except the caster's own, training dummies too; gathered first because a hit may take a body off the list.
+        private void GatherBodies(Vector3 center, float radius)
+        {
+            s_struck.Clear();
+
+            foreach (DamageReceiverComponent receiver in DamageReceiverComponent.All)
+            {
+                if (receiver != _fighter.Receiver && receiver.CanBeHitBy(_fighter.Receiver) && (BodyPoint(receiver) - center).sqrMagnitude <= radius * radius)
+                    s_struck.Add(receiver);
+            }
         }
 
         private void SpellHit(DamageReceiverComponent target, int damage, AbilityConfig ability, Vector3 from)
@@ -1277,24 +1350,16 @@ namespace Game.Scripts.Dungeon
         }
 
         /// Everyone in reach, or in the cone in front of the user; a push throws the struck away from the user and a hit effect stays on them.
-        private void AreaDamage(AbilityConfig ability, CombatComponent combat)
+        private void AreaDamage(AbilityConfig ability, CombatComponent combat, Vector3 origin)
         {
             int damage = combat.ScaleDamage(Mathf.RoundToInt(Power(ability)), ability.DamageType);
-            Vector3 center = transform.position + Vector3.up;
+            Vector3 center = origin + Vector3.up;
             Vector3 forward = Vector3.ProjectOnPlane(_fighter.Body.AimDirection, Vector3.up).normalized;
             RpcFlash(ability.ConeAngle > 0f ? center + forward * ability.Radius * 0.5f : center, ability.Color, ability.Radius * 2f);
+            GatherBodies(center, ability.Radius);
 
-            s_struck.Clear();
-
-            // Every body in reach, training dummies too; gathered first because a hit may take a body off the list.
-            foreach (DamageReceiverComponent receiver in DamageReceiverComponent.All)
-            {
-                Vector3 offset = BodyPoint(receiver) - center;
-
-                if (receiver != _fighter.Receiver && receiver.CanBeHitBy(_fighter.Receiver) && offset.sqrMagnitude <= ability.Radius * ability.Radius
-                    && (ability.ConeAngle <= 0f || Vector3.Angle(forward, Vector3.ProjectOnPlane(offset, Vector3.up)) <= ability.ConeAngle))
-                    s_struck.Add(receiver);
-            }
+            if (ability.ConeAngle > 0f)
+                s_struck.RemoveAll(receiver => Vector3.Angle(forward, Vector3.ProjectOnPlane(BodyPoint(receiver) - center, Vector3.up)) > ability.ConeAngle);
 
             foreach (DamageReceiverComponent receiver in s_struck)
             {

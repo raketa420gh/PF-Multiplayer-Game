@@ -287,6 +287,9 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_isOnAlly", def.OnAlly);
             BattleEditorUtility.Set(so, "_coneAngle", def.Cone);
             BattleEditorUtility.Set(so, "_push", def.Push);
+            BattleEditorUtility.Set(so, "_range", def.Range);
+            BattleEditorUtility.Set(so, "_auraTime", def.AuraTime);
+            BattleEditorUtility.Set(so, "_isGround", def.Ground);
 
             BattleEditorUtility.Set(so, "_healthCost", def.HealthCost);
             BattleEditorUtility.Set(so, "_lifeSteal", def.LifeSteal);

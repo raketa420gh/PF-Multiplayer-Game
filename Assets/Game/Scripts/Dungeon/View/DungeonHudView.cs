@@ -111,6 +111,25 @@ namespace Game.Scripts.Dungeon
 
         private readonly StringBuilder _builder = new();
 
+        private SpellMarkerView _marker;
+
+        private void Awake()
+        {
+            _marker = SpellMarkerView.Create();
+        }
+
+        private void OnDisable()
+        {
+            if (_marker != null)
+                _marker.Hide();
+        }
+
+        private void OnDestroy()
+        {
+            if (_marker != null)
+                Destroy(_marker.gameObject);
+        }
+
         private void Update()
         {
             AdventurerComponent adventurer = _context.LocalAdventurer;
@@ -126,6 +145,7 @@ namespace Game.Scripts.Dungeon
             UpdateBelt(adventurer);
             UpdateEffects(adventurer);
             UpdateReadied(adventurer);
+            UpdateMarker(adventurer);
             UpdateBoss(adventurer);
         }
 
@@ -150,8 +170,37 @@ namespace Game.Scripts.Dungeon
             int index = adventurer.SkillCount + adventurer.ReadiedSpell;
             string charges = spell.IsCooldownBased ? $"{Mathf.CeilToInt(adventurer.GetCooldownLeft(index))}s" : $"{adventurer.GetCharges(index)}/{adventurer.GetMaxCharges(index)}";
             _readiedText.text = adventurer.HasFocus
-                ? $"<color=#{ColorUtility.ToHtmlStringRGB(spell.Color)}>{spell.DisplayName}</color>  [RMB] cast   {charges}"
+                ? $"<color=#{ColorUtility.ToHtmlStringRGB(spell.Color)}>{spell.DisplayName}</color>  [RMB] hold and release: {Describe(spell)}   {charges}"
                 : $"<color=#f66>{spell.DisplayName}: requires a {(adventurer.Class.Focus == CastFocus.Instrument ? "instrument" : "magical focus")} in hand</color>";
+        }
+
+        /// Area spells show their circle while the cast is held: around the caster for a burst or an aura, on the ground for a ground area.
+        private void UpdateMarker(AdventurerComponent adventurer)
+        {
+            AbilityConfig spell = adventurer.ReadiedSpellConfig;
+            AbilityTargeting targeting = spell != null ? spell.Targeting : AbilityTargeting.Self;
+
+            if (!adventurer.IsHoldingCast || targeting is not (AbilityTargeting.Ground or AbilityTargeting.Aura))
+            {
+                _marker.Hide();
+
+                return;
+            }
+
+            Vector3 center = targeting == AbilityTargeting.Ground ? adventurer.GetGroundPoint(spell.Range) : adventurer.transform.position;
+            _marker.Place(center, spell.Radius, spell.Color, adventurer.CastCharge >= 1f);
+        }
+
+        private static string Describe(AbilityConfig spell)
+        {
+            return spell.Targeting switch
+            {
+                AbilityTargeting.Hitscan => $"ray, {spell.Range:0}m",
+                AbilityTargeting.Ground => $"area on the ground, {spell.Range:0}m",
+                AbilityTargeting.Projectile => $"missile, {spell.Range:0}m",
+                AbilityTargeting.Aura => spell.AuraTime > 0f ? "aura around you" : "burst around you",
+                _ => "on you"
+            };
         }
 
         private void UpdateBoss(AdventurerComponent adventurer)

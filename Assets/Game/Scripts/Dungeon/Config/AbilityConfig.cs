@@ -33,6 +33,21 @@ namespace Game.Scripts.Dungeon
         AreaBuff
     }
 
+    /// How a spell finds what it affects.
+    public enum AbilityTargeting : byte
+    {
+        /// The caster only.
+        Self,
+        /// Instant ray from the crosshair: the body it strikes, the caster (or nothing) when it misses; reaches Range metres.
+        Hitscan,
+        /// A circle on the ground under the crosshair, held at Range metres when the aim goes farther.
+        Ground,
+        /// A missile that flies until it breaks or runs out of Range.
+        Projectile,
+        /// A burst or an aura around the caster.
+        Aura
+    }
+
     public enum ShapeshiftForm : byte
     {
         None,
@@ -86,6 +101,18 @@ namespace Game.Scripts.Dungeon
         public float ConeAngle => _coneAngle;
         /// Area damage: speed the struck bodies are pushed away with.
         public float Push => _push;
+        /// Hitscan reach, ground aim limit and projectile flight distance.
+        public float Range => _range;
+        /// Seconds the area effect around the caster keeps pulsing; 0 for a single burst.
+        public float AuraTime => _auraTime;
+        public AbilityTargeting Targeting => _isGround ? AbilityTargeting.Ground : _kind switch
+        {
+            AbilityKind.Projectile => AbilityTargeting.Projectile,
+            AbilityKind.ChainLightning or AbilityKind.LightningStrike => AbilityTargeting.Hitscan,
+            AbilityKind.Heal or AbilityKind.Buff or AbilityKind.Shield or AbilityKind.WeaponEnchant => _isSpell || _isOnAlly ? AbilityTargeting.Hitscan : AbilityTargeting.Self,
+            AbilityKind.AreaDamage or AbilityKind.AreaHeal or AbilityKind.AreaBuff => AbilityTargeting.Aura,
+            _ => AbilityTargeting.Self
+        };
         /// Spell memory: the spell wheel (0 or 1) this skill opens.
         public int Wheel => Mathf.RoundToInt(_magnitude);
 
@@ -184,5 +211,14 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private float _push;
+
+        [SerializeField]
+        private float _range = 20f;
+
+        [SerializeField]
+        private float _auraTime;
+
+        [SerializeField]
+        private bool _isGround;
     }
 }

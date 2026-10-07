@@ -28,6 +28,7 @@ namespace Game.Scripts.Battle
         public float EffectMagnitude;
         public float EffectDuration;
         public float LifeSteal;
+        public float MaxDistance;
         public short Damage;
         public byte Kind;
         public byte DamageType;
@@ -98,7 +99,7 @@ namespace Game.Scripts.Battle
 
         public void Fire(Vector3 origin, Vector3 velocity, float gravity, int damage, float staggerDuration,
             DamageType damageType = DamageType.Physical, ProjectileKind kind = ProjectileKind.Arrow,
-            float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f, float lifeSteal = 0f, int impact = 3)
+            float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f, float lifeSteal = 0f, int impact = 3, float maxDistance = 0f)
         {
             _projectiles.Set(_fireCount % Capacity, new ProjectileData
             {
@@ -115,7 +116,8 @@ namespace Game.Scripts.Battle
                 EffectMagnitude = effectMagnitude,
                 EffectDuration = effectDuration,
                 LifeSteal = lifeSteal,
-                Impact = (byte)impact
+                Impact = (byte)impact,
+                MaxDistance = maxDistance
             });
             _fireCount++;
         }
@@ -146,7 +148,7 @@ namespace Game.Scripts.Battle
                 return;
             }
 
-            if (time >= _lifetime)
+            if (time >= _lifetime || (data.MaxDistance > 0f && (to - data.Origin).sqrMagnitude >= data.MaxDistance * data.MaxDistance))
             {
                 data.FinishTick = Runner.Tick;
                 data.IsHidden = true;

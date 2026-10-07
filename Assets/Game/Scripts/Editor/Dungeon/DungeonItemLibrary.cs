@@ -91,6 +91,9 @@ namespace Game.Scripts.Editor.Dungeon
         public bool OnAlly;
         public float Cone;
         public float Push;
+        public float Range = 20f;
+        public float AuraTime;
+        public bool Ground;
     }
 
     internal sealed class PerkDef

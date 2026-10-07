@@ -177,8 +177,8 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Lightning Strike", Description = "Hitscan: the body under the crosshair is struck by lightning from the sky for 40 magical damage and a stagger.",
-                        Kind = AbilityKind.LightningStrike, IsSpell = true, Charges = 2, Cooldown = 1f, CastTime = 1.4f, Magnitude = 40f, Stagger = 0.6f, Glyph = "LS",
+                        Name = "Lightning Strike", Description = "Ground area (up to 20m): lightning from the sky hits everyone within 2.5m of the marked spot for 40 magical damage and a stagger. Careful, it hits allies too.",
+                        Kind = AbilityKind.LightningStrike, IsSpell = true, Charges = 2, Cooldown = 1f, CastTime = 1.4f, Magnitude = 40f, Radius = 2.5f, Ground = true, Stagger = 0.6f, Glyph = "LS",
                         Color = storm, Icon = "Lightning", Subclass = 2
                     }
                 },
@@ -367,13 +367,13 @@ namespace Game.Scripts.Editor.Dungeon
                         StatusEffectKind.Guard, icon: "Armor")),
                     new AbilityDef
                     {
-                        Name = "Circle of Dawn", Description = "Everyone within 5m, you included, heals 30 over 6s.", Kind = AbilityKind.AreaHeal, IsSpell = true,
+                        Name = "Circle of Dawn", Description = "Ground area (up to 20m): everyone within 5m of the marked spot heals 30 over 6s.", Kind = AbilityKind.AreaHeal, IsSpell = true, Ground = true,
                         Charges = 2, Cooldown = 1f, CastTime = 1.5f, Magnitude = 30f, Duration = 6f, Radius = 5f, Glyph = "CD", Color = mending, Icon = "Halo", Subclass = 1
                     },
                     For(1, Spell("Last Blessing", "The ally you aim at (you when you miss) heals 36 over 6s.", AbilityKind.Heal, 3, 1f, 36f, 6f, "LB", mending, icon: "Heart")),
                     new AbilityDef
                     {
-                        Name = "Circle of Penance", Description = "You and your party within 5m take 15% less damage for 10s.", Kind = AbilityKind.AreaBuff, IsSpell = true,
+                        Name = "Circle of Penance", Description = "Aura for 10s: you and your party within 5m take 15% less damage while inside it.", Kind = AbilityKind.AreaBuff, IsSpell = true, AuraTime = 10f,
                         Charges = 2, Cooldown = 1f, CastTime = 1.2f, Magnitude = 15f, Duration = 10f, Radius = 5f, Effect = StatusEffectKind.Guard,
                         Glyph = "CP", Color = seal, Icon = "Halo", Subclass = 2
                     },
