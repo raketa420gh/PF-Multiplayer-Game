@@ -31,6 +31,12 @@ namespace Game.Scripts.Editor.Battle
         /// Weapon socket poses (model space, per frame and socket) the solve held for every clip recorded with hands, for BakeSockets.
         private static readonly Dictionary<AnimationClip, Pose[,]> s_held = new();
 
+        private static readonly string[] s_firstPersonStates =
+        {
+            FighterAnimComponent.CastFirstPersonState, FighterAnimComponent.CastReleaseFirstPersonState, FighterAnimComponent.UseFirstPersonState,
+            FighterAnimComponent.HoldState, FighterAnimComponent.BandageFirstPersonState, FighterAnimComponent.InteractFirstPersonState
+        };
+
         private static readonly string[] s_socketCurves =
         {
             "m_LocalPosition.x", "m_LocalPosition.y", "m_LocalPosition.z", "m_LocalRotation.x", "m_LocalRotation.y", "m_LocalRotation.z", "m_LocalRotation.w"
@@ -40,6 +46,27 @@ namespace Game.Scripts.Editor.Battle
         public static void Build()
         {
             Build(Game.Scripts.Editor.Dungeon.DungeonWeaponLibrary.CreateAll());
+        }
+
+        /// Only the generated first-person busy states, onto the controller as it is: seconds instead of the minutes of a
+        /// full build while one of them is being authored. Hand edits of these clips are not re-applied.
+        [MenuItem("Tools/Game/Battle/Rebuild First Person Actions")]
+        public static void RebuildFirstPerson()
+        {
+            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(BattleEditorUtility.ControllerPath);
+            AnimatorStateMachine upper = controller.layers[1].stateMachine;
+
+            foreach (ChildAnimatorState child in upper.states.Where(child => s_firstPersonStates.Contains(child.state.name)).ToArray())
+                upper.RemoveState(child.state);
+
+            using BattlePoseRig rig = new BattlePoseRig();
+            s_held.Clear();
+            BuildFirstPerson(rig, upper);
+            BakeSockets(upper);
+
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets();
+            ReloadUsers();
         }
 
         public static void Build(WeaponDefinition[] weapons)
@@ -62,13 +89,7 @@ namespace Game.Scripts.Editor.Battle
             }
 
             BuildActions(upper);
-            AddKeyed(rig, upper, FighterAnimComponent.CastFirstPersonState, BattleAnimationLibrary.CastChargeTime, SettleRoll(rig, BattleAnimationLibrary.CastKeys()));
-            AddKeyed(rig, upper, FighterAnimComponent.CastReleaseFirstPersonState, BattleAnimationLibrary.CastReleaseTime, SettleRoll(rig, BattleAnimationLibrary.CastReleaseKeys()));
-            List<PoseKey> use = SettleRoll(rig, BattleAnimationLibrary.UseKeys());
-            AddKeyed(rig, upper, FighterAnimComponent.UseFirstPersonState, BattleAnimationLibrary.DrinkTime, use);
-            AddState(upper, FighterAnimComponent.HoldState, Record(rig, FighterAnimComponent.HoldState, 1f, true, _ => use[0].Pose));
-            AddState(upper, FighterAnimComponent.BandageFirstPersonState, Record(rig, FighterAnimComponent.BandageFirstPersonState, BandageCycle, true,
-                time => BattleAnimationLibrary.Bandage(time / BandageCycle)));
+            BuildFirstPerson(rig, upper);
             BuildHitReactions(controller.layers[2].stateMachine);
             BakeSockets(upper);
             BakeEdits();
@@ -490,6 +511,20 @@ namespace Game.Scripts.Editor.Battle
         {
             return Record(rig, name, cycle, true,
                 time => BattleAnimationLibrary.Walk(time / cycle, direction, stride, lift, drop, lean));
+        }
+
+        /// The busy states made of generated poses that stay in the first-person view; list a new one in s_firstPersonStates too.
+        private static void BuildFirstPerson(BattlePoseRig rig, AnimatorStateMachine upper)
+        {
+            AddKeyed(rig, upper, FighterAnimComponent.CastFirstPersonState, BattleAnimationLibrary.CastChargeTime, SettleRoll(rig, BattleAnimationLibrary.CastKeys()));
+            AddKeyed(rig, upper, FighterAnimComponent.CastReleaseFirstPersonState, BattleAnimationLibrary.CastReleaseTime, SettleRoll(rig, BattleAnimationLibrary.CastReleaseKeys()));
+            List<PoseKey> use = SettleRoll(rig, BattleAnimationLibrary.UseKeys());
+            AddKeyed(rig, upper, FighterAnimComponent.UseFirstPersonState, BattleAnimationLibrary.DrinkTime, use);
+            AddState(upper, FighterAnimComponent.HoldState, Record(rig, FighterAnimComponent.HoldState, 1f, true, _ => use[0].Pose));
+            AddState(upper, FighterAnimComponent.BandageFirstPersonState, Record(rig, FighterAnimComponent.BandageFirstPersonState, BandageCycle, true,
+                time => BattleAnimationLibrary.Bandage(time / BandageCycle)));
+            AddState(upper, FighterAnimComponent.InteractFirstPersonState, Record(rig, FighterAnimComponent.InteractFirstPersonState,
+                BattleAnimationLibrary.InteractCycle, true, time => BattleAnimationLibrary.Interact(time / BattleAnimationLibrary.InteractCycle)));
         }
 
         private static AnimationClip Record(BattlePoseRig rig, string name, float duration, bool isLoop, Func<float, BodyPose> evaluate)

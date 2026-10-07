@@ -13,7 +13,7 @@ namespace Game.Scripts.Editor.Battle
 {
     /// Poses a swing straight from the library, without building clips: the numbers the content builder would complain
     /// about and renders to set beside reference footage. Called from outside the editor while poses are being
-    /// authored (.claude/skills/video-to-animation).
+    /// authored.
     internal static class SwingPreview
     {
         private const int Layer = 31;
@@ -75,6 +75,7 @@ namespace Game.Scripts.Editor.Battle
                 "impact" => BattleAnimationLibrary.BlockImpactKeys(weapon),
                 "deflect" => BattleAnimationLibrary.DeflectKeys(weapon),
                 "lower" => BattleAnimationLibrary.BlockLowerKeys(weapon),
+                "interact" => Enumerable.Range(0, 37).Select(i => new PoseKey(i * BattleAnimationLibrary.InteractCycle / 36f, BattleAnimationLibrary.Interact(i / 36f), Ease.Linear)).ToList(),
                 _ => BattleAnimationLibrary.AttackKeys(weapon, attack ?? throw new ArgumentException($"'{prefix}' has no swing '{swing}'"))
             };
             float duration = keys[^1].Time;
@@ -335,7 +336,7 @@ namespace Game.Scripts.Editor.Battle
             }
         }
 
-        private static GameObject CreateLight(float intensity, float yaw)
+        internal static GameObject CreateLight(float intensity, float yaw)
         {
             GameObject item = new GameObject("Light");
             Light light = item.AddComponent<Light>();
@@ -373,7 +374,7 @@ namespace Game.Scripts.Editor.Battle
             }
         }
 
-        private static void Render(Camera camera, int width, int height, string path)
+        internal static void Render(Camera camera, int width, int height, string path)
         {
             RenderTexture texture = RenderTexture.GetTemporary(width, height, 24);
             camera.targetTexture = texture;

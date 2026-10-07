@@ -32,6 +32,7 @@ namespace Game.Scripts.Battle
         public const string CastState = "Cast";
         public const string UseState = "Use";
         public const string InteractState = "Interact";
+        public const string InteractFirstPersonState = "InteractFp";
         public const string CastFirstPersonState = "CastFp";
         public const string UseFirstPersonState = "UseFp";
         public const string HoldState = "Hold";
@@ -132,7 +133,7 @@ namespace Game.Scripts.Battle
         /// Everyone plays them: a fighter moves the same in own eyes and for those who watch.
         private static readonly int[] s_busyFirstPerson =
         {
-            Animator.StringToHash(CastFirstPersonState), Animator.StringToHash(UseFirstPersonState), 0, 0, 0, 0,
+            Animator.StringToHash(CastFirstPersonState), Animator.StringToHash(UseFirstPersonState), Animator.StringToHash(InteractFirstPersonState), 0, 0, 0,
             Animator.StringToHash(BandageFirstPersonState), Animator.StringToHash(CastReleaseFirstPersonState)
         };
 

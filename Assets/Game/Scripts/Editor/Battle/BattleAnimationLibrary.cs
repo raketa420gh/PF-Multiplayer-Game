@@ -152,6 +152,8 @@ namespace Game.Scripts.Editor.Battle
         public const float DrinkTime = 129f / BattleAnimationBuilder.FrameRate;
         public const float CastChargeTime = 1f;
         public const float CastReleaseTime = 0.5f;
+        /// One turn of each hand while searching, as in the Dark and Darker footage.
+        public const float InteractCycle = 0.9f;
         /// A belt item is no handle to close the fist on: the fingers lie around it.
         private const float HeldOpen = 0.55f;
 
@@ -780,6 +782,34 @@ namespace Game.Scripts.Editor.Battle
             pose.OffSocket = WeaponSocket.LeftHand;
 
             return pose;
+        }
+
+        /// Searching as in Dark and Darker: both hands low in the view with the fingers closed take turns, one reaching
+        /// up and out with the palm forward while the other pulls back in and down as a fist, knuckles first.
+        public static BodyPose Interact(float phase)
+        {
+            float lift = 0.5f - Mathf.Cos(phase * Mathf.PI * 2f) * 0.5f;
+            float offLift = 1f - lift;
+            HandPose main = Searching(new(0.03f, 1.66f, 0.43f), new(0.12f, 1.665f, 0.46f), 1f, lift);
+
+            BodyPose pose = Upper(0f, 4f);
+            pose.Main = new HandPose(main.Position, main.Forward);
+            pose.Edge = main.Up;
+            pose.Off = Searching(new(-0.025f, 1.675f, 0.43f), new(-0.13f, 1.7f, 0.46f), -1f, offLift);
+            pose.OffSocket = WeaponSocket.LeftHand;
+            pose.MainOpen = Mathf.Lerp(0.05f, 0.3f, lift);
+            pose.OffOpen = Mathf.Lerp(0.05f, 0.3f, offLift);
+
+            return pose;
+        }
+
+        /// A searching hand between the fist pulled back (lift 0) and the hand reaching up (lift 1); side +1 is the right.
+        private static HandPose Searching(Vector3 low, Vector3 high, float side, float lift)
+        {
+            Vector3 thumb = Vector3.Slerp(new Vector3(-0.9f * side, -0.2f, -0.44f).normalized, new Vector3(-side, 0f, -0.33f).normalized, lift);
+            Vector3 fingers = Vector3.Slerp(new Vector3(-0.45f * side, 0.6f, 0.65f).normalized, new Vector3(-0.1f * side, 0.95f, 0.3f).normalized, lift);
+
+            return new HandPose(Vector3.Lerp(low, high, lift), thumb, fingers);
         }
 
         public static BodyPose Walk(float phase, Vector2 direction, float stride, float lift, float drop, float lean = 0f)

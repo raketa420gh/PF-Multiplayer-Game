@@ -209,7 +209,8 @@ MonoBehaviour:
   _arrow: {fileID: 810561286915584370}
   _bookOpen: {fileID: 0}
   _bookClosed: {fileID: 0}
---- !u!1 &3425454898350072277
+  _attackShut: {x: 0, y: 3.4028235e+38}
+--- !u!1 &1894063885780156130
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -217,9 +218,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6371301188537312023}
-  - component: {fileID: 4749537785672857362}
-  - component: {fileID: 3602395902852745231}
+  - component: {fileID: 1275078218181697532}
+  - component: {fileID: 7862581834705454762}
+  - component: {fileID: 4991808925188633006}
   m_Layer: 0
   m_Name: Model
   m_TagString: Untagged
@@ -227,13 +228,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6371301188537312023
+--- !u!4 &1275078218181697532
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3425454898350072277}
+  m_GameObject: {fileID: 1894063885780156130}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -242,21 +243,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 810561286915584370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &4749537785672857362
+--- !u!33 &7862581834705454762
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3425454898350072277}
+  m_GameObject: {fileID: 1894063885780156130}
   m_Mesh: {fileID: 4300000, guid: 6d22ba1c108c0af4291deff1e189b7e5, type: 2}
---- !u!23 &3602395902852745231
+--- !u!23 &4991808925188633006
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3425454898350072277}
+  m_GameObject: {fileID: 1894063885780156130}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -332,7 +333,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6371301188537312023}
+  - {fileID: 1275078218181697532}
   m_Father: {fileID: 6112811656267418664}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7013198892076715372
