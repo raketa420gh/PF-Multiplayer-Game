@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Simple architecture: blocks, stairs, railings and iron bars, placed in the local space of the parent.
+    /// Simple architecture: blocks, stairs and railings, placed in the local space of the parent.
     internal static class DungeonStructureBuilder
     {
         public const float StepHeight = 0.2f;
@@ -83,19 +83,6 @@ namespace Game.Scripts.Editor.Dungeon
             collider.size = new Vector3(length, RailHeight, 0.14f);
 
             return rail;
-        }
-
-        public static DungeonMeshBuilder BarsMesh(DungeonMeshBuilder builder, float start, float length, float height)
-        {
-            int count = Mathf.Max(2, Mathf.RoundToInt(length / 0.2f));
-
-            for (int i = 0; i <= count; i++)
-                builder.Box(new Vector3(start + length * i / count, height * 0.5f, 0f), new Vector3(0.05f, height, 0.05f));
-
-            foreach (float y in new[] { 0.12f, height * 0.5f, height - 0.12f })
-                builder.Box(new Vector3(start + length * 0.5f, y, 0f), new Vector3(length, 0.07f, 0.09f));
-
-            return builder;
         }
 
         private static int StepCount(float height)

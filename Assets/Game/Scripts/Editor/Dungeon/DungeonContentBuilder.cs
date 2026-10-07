@@ -37,6 +37,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             BattleEditorUtility.EnsureLayer(InteractableLayer);
             DungeonKitBuilder.Build();
+            DungeonMedievalBuilder.Build();
             BattleContentBuilder.Loadout[] loadouts = BattleContentBuilder.BuildWeapons(out GameObject arrow, out GameObject orb);
             Dictionary<string, WeaponConfig> weapons = new();
 
@@ -59,28 +60,25 @@ namespace Game.Scripts.Editor.Dungeon
             BuildPreviewRig(pieceSet);
 
             BuildAdventurer(loadouts, arrow, orb, database, classes, config, weapons, worldItem, corpse, campfire, pieceSet);
-            Color rags = new Color(0.25f, 0.22f, 0.16f);
-            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.ArmingSword), Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
-                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.PeasantChest, rags) } }, loadouts, arrow, orb, database, pieceSet);
-            BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Bow), Experience = 25, Loot = loot["Monster"], Body = DungeonPropBuilder.Bone, Scale = 0.98f,
-                Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.Ribcage, Color.black), (ArmorVisual.RangerHead, rags) } }, loadouts, arrow, orb, database, pieceSet);
+            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.ArmingSword), Experience = 25, Loot = loot["Monster"], Body = DungeonSkeletonBuilder.Material("A"), Scale = 0.98f },
+                loadouts, arrow, orb, database, pieceSet);
+            BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Bow), Experience = 25, Loot = loot["Monster"], Body = DungeonSkeletonBuilder.Material("D"), Scale = 0.98f },
+                loadouts, arrow, orb, database, pieceSet);
             BuildFlyingHead(new MonsterDef { Name = "FlyingHead", DisplayName = "Flying Head", Health = 60, Damage = 1f, MoveSpeed = 230f, ActionSpeed = 1f, Aggro = 12f, Experience = 30, Loot = loot["Monster"], Scale = 1f,
                 Voice = DungeonSound.Screech, Charge = 900f }, arrow, orb, database);
-            BuildMonster(new MonsterDef { Name = "SkeletonChampion", DisplayName = "Skeleton Champion", Health = 525, Damage = 1.4f, MoveSpeed = 210f, ActionSpeed = 0.8f, Aggro = 13f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.MaceShield), Experience = 150, Loot = loot["Boss"], Body = DungeonPropBuilder.Bone, Scale = 1.28f,
-                IsBoss = true, Lunge = 5f, Attachments = new[] { (ArmorVisual.Skull, Color.black), (ArmorVisual.MarauderHead, Color.gray), (ArmorVisual.MarauderChest, Color.gray), (ArmorVisual.MarauderHands, Color.gray), (ArmorVisual.MarauderLegs, Color.gray), (ArmorVisual.MarauderFeet, Color.gray) } }, loadouts, arrow, orb, database, pieceSet);
 
             BuildFigures();
             BuildSession(database, classes, config, BuildMerchants(database));
             BuildMatch(config);
-            BuildContainer("SmallOakChest", "Small Oak Chest", loot["ChestCommon"], false);
-            BuildContainer("LargeOakChest", "Large Oak Chest", loot["ChestLarge"], false);
-            BuildContainer("GoldenChest", "Golden Chest", loot["ChestOrnate"], true);
+            BuildContainer("SmallOakChest", "Small Oak Chest", loot["ChestCommon"], "Small Chest", 0.37f);
+            BuildContainer("LargeOakChest", "Large Oak Chest", loot["ChestLarge"], "Big Chest", 0.6f);
+            BuildContainer("GoldenChest", "Golden Chest", loot["ChestOrnate"], "Treasure Chest", 0f);
             BuildCoffin(loot["Coffin"]);
             BuildBarrel(loot["Barrel"]);
             BuildCrate(loot["Barrel"]);
             BuildBookshelf(loot["Bookshelf"]);
             BuildDoor("Door", DungeonPropBuilder.DoorLeaf());
-            BuildDoor("CellDoor", DungeonPropBuilder.CellDoorLeaf());
+            BuildDoor("CellDoor", DungeonMedievalBuilder.CellDoorLeaf());
             BuildPortal("EscapePortal", PortalKind.Escape, DungeonPropBuilder.PortalBlue, config.EscapePortalTime > 0f);
             BuildPortal("DescendPortal", PortalKind.Descend, DungeonPropBuilder.PortalRed, false);
             BuildShrine(ShrineKind.Health, 100f, 0f);
@@ -753,8 +751,8 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(loadouts, arrow, orb, 1, def.Name);
             GameObject root = parts.Root;
             BattleEditorUtility.Set(parts.Fighter, "_respawnDelay", 0f);
-            parts.Model.SetBodyMaterial(def.Body);
             parts.Animator.transform.localScale = Vector3.one * def.Scale;
+            DungeonSkeletonBuilder.Attach(root, parts.Animator, def.Body);
 
             root.GetComponent<CharacterController>().radius = 0.3f * def.Scale;
             root.GetComponent<CharacterController>().height = 1.85f * def.Scale;
@@ -1091,12 +1089,12 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(root.AddComponent<InteractableSoundComponent>(), "_container", container);
         }
 
-        private static void BuildContainer(string name, string displayName, LootTableConfig table, bool isGolden)
+        private static void BuildContainer(string name, string displayName, LootTableConfig table, string model, float seam)
         {
-            float width = name.StartsWith("Large") || isGolden ? 1.5f : 1.1f;
-            GameObject root = DungeonPropBuilder.Chest(name, width, isGolden ? DungeonPropBuilder.Gold : null, out Transform lid);
+            GameObject root = DungeonMedievalBuilder.Chest(name, model, seam, out Transform lid);
+            BoxCollider body = root.GetComponent<BoxCollider>();
             SetupContainer(root, displayName, table, lid, new Vector3(-110f, 0f, 0f), false, 6, 4);
-            AddInteractCollider(root, new Vector3(0f, 0.4f, 0f), new Vector3(width + 0.2f, 0.9f, 0.9f));
+            AddInteractCollider(root, body.center, body.size + new Vector3(0.2f, 0.1f, 0.2f));
             BattleContentBuilder.SavePrefab(root, Prefab(name));
         }
 
@@ -1110,15 +1108,15 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void BuildBarrel(LootTableConfig table)
         {
-            GameObject root = DungeonPropBuilder.Barrel();
+            GameObject root = DungeonMedievalBuilder.Solid("Barrel", "Barrel", 0.75f);
             SetupContainer(root, "Barrel", table, null, Vector3.zero, false, 4, 2);
-            AddInteractCollider(root, new Vector3(0f, 0.45f, 0f), new Vector3(0.9f, 1f, 0.9f));
+            AddInteractCollider(root, new Vector3(0f, 0.5f, 0f), new Vector3(1f, 1.1f, 1f));
             BattleContentBuilder.SavePrefab(root, Prefab("Barrel"));
         }
 
         private static void BuildCrate(LootTableConfig table)
         {
-            GameObject root = DungeonPropBuilder.Crate();
+            GameObject root = DungeonMedievalBuilder.Solid("Crate", "Crate", 1f);
             SetupContainer(root, "Crate", table, null, Vector3.zero, false, 4, 2);
             AddInteractCollider(root, new Vector3(0f, 0.4f, 0f), new Vector3(1f, 0.9f, 1f));
             BattleContentBuilder.SavePrefab(root, Prefab("Crate"));
@@ -1126,9 +1124,9 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void BuildBookshelf(LootTableConfig table)
         {
-            GameObject root = DungeonPropBuilder.Bookshelf();
+            GameObject root = DungeonMedievalBuilder.Solid("Bookshelf", "Large Bookcase", 1f);
             SetupContainer(root, "Bookshelf", table, null, Vector3.zero, false, 5, 2);
-            AddInteractCollider(root, new Vector3(0f, 1.1f, 0.1f), new Vector3(1.7f, 2.2f, 0.7f));
+            AddInteractCollider(root, new Vector3(0f, 0.9f, 0.1f), new Vector3(1.4f, 1.9f, 0.8f));
             BattleContentBuilder.SavePrefab(root, Prefab("Bookshelf"));
         }
 
@@ -1145,7 +1143,7 @@ namespace Game.Scripts.Editor.Dungeon
             DoorComponent door = root.AddComponent<DoorComponent>();
             SerializedObject so = new SerializedObject(door);
             BattleEditorUtility.Set(so, "_leaf", hinge.transform);
-            BattleEditorUtility.Set(so, "_blocker", leaf.GetComponent<MeshCollider>());
+            BattleEditorUtility.Set(so, "_blocker", leaf.GetComponent<Collider>());
             so.ApplyModifiedPropertiesWithoutUndo();
             AddInteractCollider(root, new Vector3(0f, 1.5f, 0f), new Vector3(2.2f, 3f, 0.6f));
             BattleEditorUtility.Set(root.AddComponent<InteractableSoundComponent>(), "_door", door);

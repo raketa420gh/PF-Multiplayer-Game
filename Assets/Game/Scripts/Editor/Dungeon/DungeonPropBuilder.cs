@@ -257,30 +257,6 @@ namespace Game.Scripts.Editor.Dungeon
             return leaf;
         }
 
-        /// Chest of the props kit scaled to the width; the lid bone is closed here and opened by the container.
-        public static GameObject Chest(string name, float width, Material metal, out Transform lid)
-        {
-            const float modelWidth = 1.28f;
-            float scale = width / modelWidth;
-            GameObject root = new GameObject(name);
-            GameObject model = DungeonKitBuilder.Model("Chest_Wood", root.transform);
-            model.transform.localScale = Vector3.one * scale;
-            lid = model.transform.Find("Chest_Armature/Root/Chest_Bottom/Chest_Top");
-            lid.localRotation = Quaternion.identity;
-
-            if (metal != null)
-            {
-                foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>())
-                    renderer.sharedMaterials = System.Array.ConvertAll(renderer.sharedMaterials, material => material.name == "KitMetal" ? metal : material);
-            }
-
-            BoxCollider collider = root.AddComponent<BoxCollider>();
-            collider.center = new Vector3(0f, 0.36f, 0f) * scale;
-            collider.size = new Vector3(modelWidth, 0.72f, 0.76f) * scale;
-
-            return root;
-        }
-
         public static GameObject Coffin(out Transform lid)
         {
             Mesh body = new DungeonMeshBuilder(0.6f).Box(new Vector3(0f, 0.35f, 0f), new Vector3(0.9f, 0.7f, 2.2f)).Save("CoffinBody");
@@ -292,30 +268,6 @@ namespace Game.Scripts.Editor.Dungeon
             lidObject.transform.localPosition = new Vector3(0f, 0.7f, -1.1f);
             MeshObject("Lid", lidObject.transform, top, StoneWall, default, default, false, false);
             lid = lidObject.transform;
-
-            return root;
-        }
-
-        public static GameObject Barrel()
-        {
-            return Solid("Barrel", "Barrel");
-        }
-
-        public static GameObject Crate()
-        {
-            return Solid("Crate", "Crate_Wooden");
-        }
-
-        public static GameObject Bookshelf()
-        {
-            GameObject root = Solid("Bookshelf", "Bookcase_2");
-            float[] shelves = { 0.76f, 1.16f, 1.54f, 1.92f };
-
-            for (int i = 0; i < shelves.Length; i++)
-            {
-                DungeonKitBuilder.Model("BookGroup_Medium_" + (i % 3 + 1), root.transform).transform.localPosition = new Vector3(-0.12f, shelves[i], 0.03f);
-                DungeonKitBuilder.Model(i % 2 == 0 ? "Book_Stack_1" : "BookGroup_Small_2", root.transform).transform.localPosition = new Vector3(0.5f, shelves[i], 0.03f);
-            }
 
             return root;
         }
@@ -347,16 +299,6 @@ namespace Game.Scripts.Editor.Dungeon
         public static GameObject WallTorch()
         {
             return Wrap("WallTorch", "Torch_Metal", 1f);
-        }
-
-        /// Barred leaf of a cell door; same hinge and size as the wooden one.
-        public static GameObject CellDoorLeaf()
-        {
-            Mesh mesh = DungeonStructureBuilder.BarsMesh(new DungeonMeshBuilder(1f), 0.03f, 2.04f, 2.9f).Save("CellDoorLeaf");
-            GameObject leaf = MeshObject("Leaf", null, mesh, RustyMetal, default, default, true, false);
-            leaf.GetComponent<MeshCollider>().convex = true;
-
-            return leaf;
         }
 
         /// Kit prefab (with its fire and collider) under a root of the project's own name.

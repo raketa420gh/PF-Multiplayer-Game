@@ -239,7 +239,7 @@ namespace Game.Scripts.Editor.Dungeon
             return material;
         }
 
-        private static Texture2D Normal(string path)
+        public static Texture2D Normal(string path)
         {
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
 

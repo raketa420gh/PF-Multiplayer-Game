@@ -1079,7 +1079,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             (string title, string info, Texture picture, string scene)[] destinations =
             {
-                (DungeonSceneBuilder.Title, "The Great Hall · chests, an archer and a flying head · the portal opens after a minute", inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null, SceneTravel.DungeonScene),
+                (DungeonSceneBuilder.Title, "The Great Hall · chests, skeletons and a flying head · the portal opens after a minute", inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null, SceneTravel.DungeonScene),
                 ("Training Grounds", "Test scene · weapon table, dummies, dev spawns", DungeonTextureBuilder.Load("Cobble", false), SceneTravel.SandboxScene)
             };
 

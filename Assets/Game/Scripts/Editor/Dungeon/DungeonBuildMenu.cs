@@ -47,6 +47,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static void BuildKit()
         {
             DungeonKitBuilder.Build();
+            DungeonMedievalBuilder.Build();
         }
 
         [MenuItem("Tools/Game/Dungeon/Build Content")]
