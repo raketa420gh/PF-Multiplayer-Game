@@ -1,4 +1,5 @@
 using Fusion;
+using Game.Scripts.Battle;
 using UnityEngine;
 
 namespace Game.Scripts.Dungeon
@@ -9,24 +10,24 @@ namespace Game.Scripts.Dungeon
         Descend
     }
 
-    /// Blue portal escapes the dungeon; red portal teleports to the lower floor. A way down with a gate (a cellar grate)
-    /// stays shut until it is opened once, after that it is a quick climb down for everyone.
+    /// Blue portal escapes the dungeon, red portal leads to the lower floor; stepping into an open one takes the adventurer
+    /// through at once. A blue portal shows up as a pedestal rising out of the ground (marked on the map) and opens only after
+    /// someone holds F on the pedestal. A way down opens by itself: its gate (a cellar grate) lifts and the red glow behind waits.
     public sealed class PortalComponent : InteractableComponent
     {
-        public override string Prompt => Kind == PortalKind.Escape ? "Escape the dungeon" : _gate == null ? "Descend deeper" : IsOpened ? "Descend into the cellar" : "Open the grate";
-        public override float HoldTime => _gate != null && IsOpened ? _openedTime : _activationTime;
-        public override bool IsAvailable => IsActive && !IsUsed;
+        public override string Prompt => "Open the portal";
+        public override float HoldTime => _activationTime;
+        public override bool IsAvailable => IsActive && !IsOpened && _kind == PortalKind.Escape;
         /// Opened like a door (standing still, hands busy), but at Magical Interaction speed like an altar.
         public override bool IsMagical => true;
         public override bool IsRooting => true;
         public override bool IsHandsOccupied => true;
         public PortalKind Kind => _kind;
+        /// Open and passable: stepping into the zone goes through.
+        public bool IsOpen => IsActive && IsOpened;
 
         [Networked]
         public NetworkBool IsActive { get; private set; }
-
-        [Networked]
-        public NetworkBool IsUsed { get; private set; }
 
         [Networked]
         public NetworkBool IsOpened { get; private set; }
@@ -36,9 +37,6 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private float _activationTime = 3f;
-
-        [SerializeField]
-        private bool _isSingleUse = true;
 
         [SerializeField]
         private GameObject _visual;
@@ -58,35 +56,68 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _gateSpeed = 1.5f;
 
+        [SerializeField, Tooltip("Rises out of the ground when the portal shows up; holding F on it opens the portal")]
+        private Transform _pedestal;
+
         [SerializeField]
-        private float _openedTime = 1f;
+        private float _pedestalDepth = 1.6f;
+
+        [SerializeField]
+        private float _pedestalSpeed = 0.8f;
+
+        [SerializeField, Tooltip("Local box an adventurer steps into to go through")]
+        private Vector3 _zoneCenter = new(0f, 1.15f, 0f);
+
+        [SerializeField]
+        private Vector3 _zoneSize = new(1.8f, 2.4f, 0.8f);
 
         private float _gateHeight;
+        private float _pedestalHeight;
 
         public override void Spawned()
         {
+            _pedestalHeight = IsActive ? 0f : -_pedestalDepth;
             UpdateVisual();
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            if (!HasStateAuthority || !IsOpen)
+                return;
+
+            foreach (FighterComponent fighter in FighterComponent.All)
+            {
+                if (fighter != null && fighter.TryGetComponent(out AdventurerComponent adventurer) && adventurer.State == AdventurerState.Alive && IsInZone(adventurer.transform.position))
+                    Pass(adventurer);
+            }
         }
 
         public override void Render()
         {
             UpdateVisual();
 
-            if (_visual != null && IsAvailable)
+            if (_visual != null && IsOpen)
                 _visual.transform.Rotate(0f, 0f, _spinSpeed * Time.deltaTime, Space.Self);
+
+            if (_pedestal != null)
+            {
+                _pedestalHeight = Mathf.MoveTowards(_pedestalHeight, IsActive ? 0f : -_pedestalDepth, _pedestalSpeed * Time.deltaTime);
+                _pedestal.localPosition = Vector3.up * _pedestalHeight;
+            }
 
             if (_gate == null)
                 return;
 
-            _gateHeight = Mathf.MoveTowards(_gateHeight, IsOpened ? _gateLift : 0f, _gateSpeed * Time.deltaTime);
+            _gateHeight = Mathf.MoveTowards(_gateHeight, IsOpen ? _gateLift : 0f, _gateSpeed * Time.deltaTime);
             _gate.localPosition = Vector3.up * _gateHeight;
         }
 
+        /// A way down opens at once; an escape portal waits for someone at its pedestal.
         public void Activate(Transform destination)
         {
             _destination = destination;
             IsActive = true;
-            IsUsed = false;
+            IsOpened = _kind == PortalKind.Descend;
         }
 
         public void Deactivate()
@@ -97,22 +128,29 @@ namespace Game.Scripts.Dungeon
 
         public override void Complete(AdventurerComponent adventurer)
         {
-            if (!IsAvailable)
-                return;
+            if (IsAvailable)
+                IsOpened = true;
+        }
 
+        private bool IsInZone(Vector3 position)
+        {
+            Vector3 local = transform.InverseTransformPoint(position + Vector3.up * 0.9f) - _zoneCenter;
+
+            return Mathf.Abs(local.x) <= _zoneSize.x * 0.5f && Mathf.Abs(local.y) <= _zoneSize.y * 0.5f && Mathf.Abs(local.z) <= _zoneSize.z * 0.5f;
+        }
+
+        private void Pass(AdventurerComponent adventurer)
+        {
             if (_kind == PortalKind.Escape)
                 adventurer.Extract();
             else if (_destination != null)
                 adventurer.Descend(_destination.position, _destination.eulerAngles.y);
-
-            IsUsed = _isSingleUse;
-            IsOpened = true;
         }
 
         private void UpdateVisual()
         {
-            if (_visual != null && _visual.activeSelf != IsAvailable)
-                _visual.SetActive(IsAvailable);
+            if (_visual != null && _visual.activeSelf != IsOpen)
+                _visual.SetActive(IsOpen);
         }
     }
 }

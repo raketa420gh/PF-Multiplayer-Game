@@ -15,11 +15,12 @@ namespace Game.Scripts.Editor.Dungeon
     internal static class VillageMapBuilder
     {
         private const int MaxVillageHouses = 34;
-        private const int FarmSpawns = 12;
+        private const int HouseSpots = 3;
 
         public sealed class Result
         {
             public readonly List<Transform> PlayerSpawns = new();
+            public readonly List<Transform> SpawnHouses = new();
             public readonly List<Transform> MonsterSpawns = new();
             public readonly List<DungeonDirector.MonsterPlacement> Monsters = new();
             public readonly List<ContainerComponent> Containers = new();
@@ -513,28 +514,32 @@ namespace Game.Scripts.Editor.Dungeon
             moon.transform.rotation = Quaternion.Euler(38f, -35f, 0f);
         }
 
-        /// Farm spawns for adventurers; spots in houses, the graveyard, the chapel and the swamp for monsters, some always taken.
+        /// Every house of the farm and the village is a start for one team: a few spots beside the table, facing the door
+        /// (the director snaps them to the NavMesh around the furniture).
+        /// Monsters take the spots of the other buildings, the graveyard, the chapel and the swamp, some always.
         private static void Spawns(Transform spawns, VillageGround ground, Result result, List<Plan> plans, Dictionary<Plan, VillageArchitectureBuilder.Site> sites)
         {
             System.Random random = new System.Random(61);
-
-            for (int i = 0; i < FarmSpawns; i++)
-            {
-                float angle = (i * 30f + 15f) * Mathf.Deg2Rad;
-                Vector2 point = VillageLayout.FarmCenter + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * (i % 2 == 0 ? 22f : 30f);
-                Transform spawn = BattleEditorUtility.CreateChild("Player" + i, spawns, new Vector3(point.x, ground.Height(point) + 0.1f, point.y)).transform;
-                spawn.rotation = Quaternion.Euler(0f, Facing(VillageLayout.FarmCenter - point), 0f);
-                result.PlayerSpawns.Add(spawn);
-            }
-
             List<Vector3> spots = new();
 
             foreach (Plan plan in plans)
             {
-                bool isFarm = (plan.Position - VillageLayout.FarmCenter).magnitude < VillageLayout.FarmRadius;
-
-                if (!isFarm && random.NextDouble() < (plan.Kind == "House" ? 0.35 : 1.0))
+                if (plan.Kind != "House")
+                {
                     spots.AddRange(sites[plan].Spots);
+
+                    continue;
+                }
+
+                Vector3 middle = sites[plan].Spots[^1];
+                Transform house = BattleEditorUtility.CreateChild("House" + result.SpawnHouses.Count, spawns, middle + Vector3.up * 0.1f).transform;
+                house.rotation = Quaternion.Euler(0f, plan.Yaw, 0f);
+                result.SpawnHouses.Add(house);
+
+                for (int i = 0; i < HouseSpots; i++)
+                {
+                    result.PlayerSpawns.Add(BattleEditorUtility.CreateChild("Player" + i, house, new Vector3(-1f, 0f, (i - 1) * 0.8f)).transform);
+                }
             }
 
             for (int i = 0; i < 6; i++)

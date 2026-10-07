@@ -127,6 +127,7 @@ namespace Game.Scripts.Editor.Dungeon
             so.FindProperty("_floors").arraySize = 2;
             const string first = "_floors.Array.data[0].";
             BattleEditorUtility.Set(so, first + "PlayerSpawns", upper.PlayerSpawns);
+            BattleEditorUtility.Set(so, first + "SpawnHouses", upper.SpawnHouses);
             BattleEditorUtility.Set(so, first + "MonsterSpawns", upper.MonsterSpawns);
             SetMonsters(so, first, upper.Monsters.ToArray());
             BattleEditorUtility.Set(so, first + "Containers", upper.Containers);
@@ -140,6 +141,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             const string layout = "_floors.Array.data[1].";
             BattleEditorUtility.Set(so, layout + "PlayerSpawns", new Transform[0]);
+            BattleEditorUtility.Set(so, layout + "SpawnHouses", new Transform[0]);
             BattleEditorUtility.Set(so, layout + "MonsterSpawns", new Transform[0]);
             SetMonsters(so, layout, monsters);
             BattleEditorUtility.Set(so, layout + "Containers", containers);

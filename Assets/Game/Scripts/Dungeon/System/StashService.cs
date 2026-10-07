@@ -10,7 +10,6 @@ namespace Game.Scripts.Dungeon
     {
         public const int SlotCount = 3;
 
-        private const string SlotKey = "dad.slot";
         private const string KitKey = "kit";
         private const string StashKey = "stash";
         private const string LevelKey = "level";
@@ -22,11 +21,13 @@ namespace Game.Scripts.Dungeon
         private const string PerksKey = "perks";
         private const string SpellsKey = "spells";
         private const string SubclassKey = "subclass";
-        private const string ItemsKey = "dad.items";
         /// Version of the item list the saves refer to, see Migrate.
         private const int ItemsVersion = 3;
 
         public static int Slot => s_slot;
+
+        private static string SlotKey => GameServer.Account + "dad.slot";
+        private static string ItemsKey => GameServer.Account + "dad.items";
 
         /// Version 2 ids of the removed weapons, in ascending order.
         private static readonly int[] s_removedWeapons = { 2, 3, 4, 6, 7, 8, 9, 12, 15, 16, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50, 97, 98, 109 };
@@ -140,10 +141,10 @@ namespace Game.Scripts.Dungeon
             inventory.Deserialize(items, data[0], data[1]);
         }
 
-        /// The first slot keeps the keys of the single character the account used to have, so old saves load into it.
+        /// Every account (see GameServer.Account) has its own keys. The first slot keeps the keys of the single character the account used to have, so old saves load into it.
         private static string Key(int slot, string name)
         {
-            return slot == 0 ? "dad." + name : $"dad{slot + 1}.{name}";
+            return GameServer.Account + (slot == 0 ? "dad." + name : $"dad{slot + 1}.{name}");
         }
 
         private static string StashPageKey(int page) => StashPageKey(s_slot, page);

@@ -17,7 +17,7 @@ namespace Game.Scripts.Editor.Dungeon
     internal static class DungeonSceneBuilder
     {
         public const string ScenePath = "Assets/Game/Scenes/DungeonScene.unity";
-        public const string Title = "The Dungeon";
+        public const string Title = SceneTravel.DungeonTitle;
         private const string ReflectionPath = DungeonTextureBuilder.Folder + "/Reflection.cubemap";
         private const string NightReflectionPath = DungeonTextureBuilder.Folder + "/NightReflection.cubemap";
 
@@ -38,7 +38,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleBootstrapper bootstrapper = system.AddComponent<BattleBootstrapper>();
             SerializedObject so = new SerializedObject(bootstrapper);
             BattleEditorUtility.Set(so, "_sessionName", "Dungeon");
-            BattleEditorUtility.Set(so, "_playerCount", 6);
+            BattleEditorUtility.Set(so, "_playerCount", GameServer.MaxCapacity);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             BattleInputPolling input = system.AddComponent<BattleInputPolling>();
@@ -56,9 +56,12 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonConfig config = AssetDatabase.LoadAssetAtPath<DungeonConfig>(DungeonContentBuilder.DungeonConfigPath);
             ClassConfig[] classes = LoadClasses();
 
+            DungeonAdmission admission = system.AddComponent<DungeonAdmission>();
+            BattleEditorUtility.Set(admission, "_networkEvents", events);
             DungeonDirector director = system.AddComponent<DungeonDirector>();
             so = new SerializedObject(director);
             BattleEditorUtility.Set(so, "_networkEvents", events);
+            BattleEditorUtility.Set(so, "_admission", admission);
             BattleEditorUtility.Set(so, "_sessionPrefab", LoadNetworkObject("PlayerSession"));
             BattleEditorUtility.Set(so, "_adventurerPrefab", LoadNetworkObject("Adventurer"));
             BattleEditorUtility.Set(so, "_matchPrefab", LoadNetworkObject("Match"));

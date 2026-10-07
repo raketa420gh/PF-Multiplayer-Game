@@ -15,6 +15,7 @@ namespace Game.Scripts.Dungeon
         public const string DungeonScene = "DungeonScene";
         public const string SandboxScene = "BattleScene";
         public const string LobbyTitle = "The Tavern";
+        public const string DungeonTitle = "The Dungeon";
         public const string CharacterSelectTitle = "Characters";
 
         /// Destination title, status line and 0..1 progress of the trip, raised from the moment it starts.
@@ -23,6 +24,7 @@ namespace Game.Scripts.Dungeon
         public static bool IsTraveling => s_isTraveling;
 
         private static bool s_isTraveling;
+        private static string s_title = string.Empty;
 
         public static async void Load(NetworkRunner runner, string scene, string title)
         {
@@ -30,7 +32,8 @@ namespace Game.Scripts.Dungeon
                 return;
 
             s_isTraveling = true;
-            OnProgress?.Invoke(title, "Registering for the game...", 0f);
+            s_title = title;
+            OnProgress?.Invoke(title, "Loading...", 0f);
 
             try
             {
@@ -58,6 +61,12 @@ namespace Game.Scripts.Dungeon
             {
                 s_isTraveling = false;
             }
+        }
+
+        /// Status of the arrival scene's own start-up (matchmaking, connecting) on the loading screen of the trip.
+        public static void Report(string status, float progress)
+        {
+            OnProgress?.Invoke(s_title, status, progress);
         }
     }
 }

@@ -1181,8 +1181,8 @@ namespace Game.Scripts.Editor.Dungeon
             return leaf;
         }
 
-        /// Iron grate at the bottom of a cellar: a way down that opens halfway through the floor's clock. Held open once,
-        /// it rises into the wall and stays up for everyone.
+        /// Iron grate at the bottom of a cellar: a way down that opens by itself halfway through the floor's clock. The grate
+        /// rises into the wall and the red portal in the tunnel behind takes whoever steps into it straight down.
         private static void BuildCellarGrate()
         {
             const float width = 1.7f;
@@ -1206,30 +1206,47 @@ namespace Game.Scripts.Editor.Dungeon
             root.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
             PortalComponent portal = root.AddComponent<PortalComponent>();
             SerializedObject so = new SerializedObject(portal);
+            GameObject portalModel = DungeonPropBuilder.Portal(DungeonPropBuilder.PortalRed, false);
+            Transform visual = portalModel.transform.Find("Visual");
+            visual.SetParent(root.transform, false);
+            visual.localPosition = new Vector3(0f, 1.15f, 1.5f);
+            visual.localScale = Vector3.one * 0.8f;
+            Object.DestroyImmediate(portalModel);
             BattleEditorUtility.Set(so, "_kind", PortalKind.Descend);
-            BattleEditorUtility.Set(so, "_activationTime", 3f);
-            BattleEditorUtility.Set(so, "_isSingleUse", false);
+            BattleEditorUtility.Set(so, "_visual", visual.gameObject);
             BattleEditorUtility.Set(so, "_gate", gate);
             BattleEditorUtility.Set(so, "_gateLift", 1.95f);
+            BattleEditorUtility.Set(so, "_zoneCenter", new Vector3(0f, 1.2f, 1.5f));
+            BattleEditorUtility.Set(so, "_zoneSize", new Vector3(width, 2.4f, 1.1f));
             so.ApplyModifiedPropertiesWithoutUndo();
-            AddInteractCollider(root, new Vector3(0f, 1.2f, -0.35f), new Vector3(width + 0.2f, 2.4f, 0.7f));
             BattleContentBuilder.SavePrefab(root, Prefab("CellarGrate"));
         }
 
         private static void BuildPortal(string name, PortalKind kind, Material material, bool singleUse)
         {
-            GameObject root = DungeonPropBuilder.Portal(material, kind == PortalKind.Descend);
+            bool isEscape = kind == PortalKind.Escape;
+            GameObject root = DungeonPropBuilder.Portal(material, !isEscape);
             root.name = name;
             root.AddComponent<NetworkObject>();
             root.AddComponent<NetworkTransform>();
             PortalComponent portal = root.AddComponent<PortalComponent>();
+            Transform visual = root.transform.Find("Visual");
             SerializedObject so = new SerializedObject(portal);
             BattleEditorUtility.Set(so, "_kind", kind);
-            BattleEditorUtility.Set(so, "_activationTime", kind == PortalKind.Escape ? 3f : 2f);
-            BattleEditorUtility.Set(so, "_isSingleUse", kind == PortalKind.Escape);
-            BattleEditorUtility.Set(so, "_visual", root.transform.Find("Visual").gameObject);
+            BattleEditorUtility.Set(so, "_activationTime", 3f);
+            BattleEditorUtility.Set(so, "_visual", visual.gameObject);
+            BattleEditorUtility.Set(so, "_zoneCenter", visual.localPosition);
+
+            if (isEscape)
+            {
+                // The pedestal stands beside the ring, sunk into the ground until the portal shows up.
+                GameObject pedestal = DungeonPropBuilder.PortalPedestal(material, new Vector3(1.6f, 0f, 0f));
+                pedestal.transform.SetParent(root.transform, false);
+                AddInteractCollider(pedestal, new Vector3(1.6f, 0.75f, 0f), new Vector3(1.1f, 1.5f, 1.1f));
+                BattleEditorUtility.Set(so, "_pedestal", pedestal.transform);
+            }
+
             so.ApplyModifiedPropertiesWithoutUndo();
-            AddInteractCollider(root, new Vector3(0f, 1.3f, 0f), new Vector3(2.2f, 2.6f, 2.2f));
             AudioSource hum = root.AddComponent<AudioSource>();
             hum.clip = AssetDatabase.LoadAssetAtPath<AudioClip>(DungeonAudioBuilder.Path("Portal"));
             hum.loop = true;

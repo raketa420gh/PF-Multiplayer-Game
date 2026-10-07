@@ -15,6 +15,8 @@ namespace Game.Scripts.Dungeon
         public sealed class FloorLayout
         {
             public Transform[] PlayerSpawns;
+            /// Houses adventurers start in, their children are the spots: every team gets a house of its own.
+            public Transform[] SpawnHouses;
             public Transform[] MonsterSpawns;
             /// Monsters that always stand at their points, unlike the random ones of MonsterSpawns.
             public MonsterPlacement[] Monsters;
@@ -50,6 +52,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private NetworkEvents _networkEvents;
+
+        [SerializeField]
+        private DungeonAdmission _admission;
 
         [SerializeField]
         private NetworkObject _sessionPrefab;
@@ -90,8 +95,16 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("A spawn point closer than this to an adventurer counts as taken")]
         private float _spawnSpacing = 12f;
 
+        [SerializeField, Tooltip("Spawn spots inside furnished houses snap to the nearest walkable point within this distance")]
+        private float _spawnSnap = 1.5f;
+
+        [SerializeField, Tooltip("Teams start in houses at least this far apart while there are such houses left")]
+        private float _houseSpacing = 45f;
+
         private readonly List<NetworkObject> _spawned = new();
         private readonly List<PlayerSessionComponent> _sessions = new();
+        private readonly Dictionary<int, Transform> _teamHouses = new();
+        private readonly Dictionary<int, int> _teamSpawns = new();
         private readonly bool[] _populated = new bool[MatchComponent.FloorCount];
         private readonly bool[] _escapeOpened = new bool[MatchComponent.FloorCount];
         private readonly bool[] _descendOpened = new bool[MatchComponent.FloorCount];
@@ -154,10 +167,12 @@ namespace Game.Scripts.Dungeon
 
             session.EnsureKit();
 
-            Transform point = TakeSpawn(_floors[0]);
             PlayerRef player = session.Object.InputAuthority;
+            Transform point = TakeSpawn(_floors[0], _admission != null ? _admission.TeamOf(player) : -1 - player.PlayerId);
 
-            NetworkObject adventurer = _runner.Spawn(_adventurerPrefab, point.position, point.rotation, player, (_, obj) =>
+            Vector3 position = NavMesh.SamplePosition(point.position, out NavMeshHit hit, _spawnSnap, NavMesh.AllAreas) ? hit.position : point.position;
+
+            NetworkObject adventurer = _runner.Spawn(_adventurerPrefab, position, point.rotation, player, (_, obj) =>
             {
                 AdventurerComponent component = obj.GetComponent<AdventurerComponent>();
                 component.Setup(session.ClassId, session);
@@ -165,6 +180,50 @@ namespace Game.Scripts.Dungeon
             });
 
             session.OnAdventurerSpawned(adventurer.GetComponent<AdventurerComponent>());
+        }
+
+        /// Teammates share a house, every team gets its own one away from the others.
+        private Transform TakeSpawn(FloorLayout floor, int team)
+        {
+            if (floor.SpawnHouses == null || floor.SpawnHouses.Length == 0)
+                return TakeSpawn(floor);
+
+            if (!_teamHouses.TryGetValue(team, out Transform house))
+            {
+                List<Transform> free = new();
+                List<Transform> far = new();
+
+                foreach (Transform candidate in floor.SpawnHouses)
+                {
+                    if (_teamHouses.ContainsValue(candidate))
+                        continue;
+
+                    free.Add(candidate);
+
+                    if (IsFarFromTeams(candidate.position))
+                        far.Add(candidate);
+                }
+
+                List<Transform> pool = far.Count > 0 ? far : free.Count > 0 ? free : new List<Transform>(floor.SpawnHouses);
+                house = pool[UnityEngine.Random.Range(0, pool.Count)];
+                _teamHouses[team] = house;
+            }
+
+            _teamSpawns.TryGetValue(team, out int index);
+            _teamSpawns[team] = index + 1;
+
+            return house.childCount > 0 ? house.GetChild(index % house.childCount) : house;
+        }
+
+        private bool IsFarFromTeams(Vector3 position)
+        {
+            foreach (Transform taken in _teamHouses.Values)
+            {
+                if ((taken.position - position).sqrMagnitude < _houseSpacing * _houseSpacing)
+                    return false;
+            }
+
+            return true;
         }
 
         /// A random spawn point of the floor that no adventurer stands near yet; any if all are taken.
@@ -225,10 +284,10 @@ namespace Game.Scripts.Dungeon
             runner.Despawn(session);
         }
 
-        /// The host left: the run is over for everyone, back to the tavern with the kit the player came in with.
+        /// The server or host left: the run is over for everyone, back to the tavern with the kit the player came in with.
         private void OnShutdown(NetworkRunner runner, ShutdownReason reason)
         {
-            if (reason != ShutdownReason.Ok)
+            if (reason != ShutdownReason.Ok && _runner != null && !GameServer.IsDedicated)
                 SceneTravel.Load(runner, SceneTravel.LobbyScene, SceneTravel.LobbyTitle);
         }
 
@@ -410,6 +469,8 @@ namespace Game.Scripts.Dungeon
             }
 
             _spawned.Clear();
+            _teamHouses.Clear();
+            _teamSpawns.Clear();
             Array.Clear(_populated, 0, _populated.Length);
             _match.ResetMatch();
         }

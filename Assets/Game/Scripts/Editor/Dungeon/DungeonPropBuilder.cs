@@ -432,6 +432,23 @@ namespace Game.Scripts.Editor.Dungeon
             return root;
         }
 
+        /// Stone lectern with a glowing orb of the portal's colour: the thing to hold F on before an escape portal opens.
+        public static GameObject PortalPedestal(Material material, Vector3 offset)
+        {
+            Mesh stone = new DungeonMeshBuilder(0.5f)
+                .Cylinder(offset + new Vector3(0f, 0.1f, 0f), 0.5f, 0.2f, 12)
+                .Box(offset + new Vector3(0f, 0.65f, 0f), new Vector3(0.36f, 0.9f, 0.36f))
+                .Cylinder(offset + new Vector3(0f, 1.15f, 0f), 0.34f, 0.1f, 12)
+                .Save("PortalPedestalStone");
+            Mesh orb = new DungeonMeshBuilder(1f).Cylinder(offset + new Vector3(0f, 1.32f, 0f), 0.14f, 0.24f, 12, 0.06f).Save("PortalPedestalOrb");
+            GameObject root = new GameObject("Pedestal");
+            MeshObject("Stone", root.transform, stone, StoneWall, default, default, true, false);
+            MeshObject("Orb", root.transform, orb, material, default, default, false, false);
+            PointLight(root.transform, offset + new Vector3(0f, 1.5f, 0f), material.GetColor("_BaseColor"), 4f, 1.5f, true);
+
+            return root;
+        }
+
         public static GameObject Lever(out Transform handle)
         {
             Mesh baseMesh = new DungeonMeshBuilder(0.6f).Box(new Vector3(0f, 0.5f, 0f), new Vector3(0.4f, 1f, 0.4f)).Save("LeverBase");

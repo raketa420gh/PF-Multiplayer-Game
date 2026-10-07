@@ -1032,6 +1032,21 @@ namespace Game.Scripts.Editor.Dungeon
                 Stretch(partySlots[i].rectTransform, 14f);
             }
 
+            float partyBottom = -180f - partySlots.Length * 98f;
+            Button createParty = CreateButton("CreateParty", page, topRight, new Vector2(-56f, partyBottom), new Vector2(270f, 40f), "Create Party");
+            Button leaveParty = CreateButton("LeaveParty", page, topRight, new Vector2(-56f, partyBottom), new Vector2(270f, 40f), "Leave Party");
+            TMP_InputField partyCode = CreateInput("PartyCode", page, topRight, new Vector2(-196f, partyBottom - 50f), new Vector2(130f, 40f), "Code");
+            partyCode.contentType = TMP_InputField.ContentType.IntegerNumber;
+            partyCode.characterLimit = 4;
+            Button joinParty = CreateButton("JoinParty", page, topRight, new Vector2(-56f, partyBottom - 50f), new Vector2(130f, 40f), "Join Party");
+
+            Button queue = CreateButton("Queue", page, bottomLeft, new Vector2(24f, 356f), new Vector2(307f, 44f), string.Empty);
+            queue.image.color = s_panel;
+            TMP_Text queueText = queue.GetComponentInChildren<TMP_Text>();
+            queueText.fontSize = 20f;
+            TMP_Text notice = CreateText("Notice", page, bottom, new Vector2(0f, 66f), new Vector2(900f, 30f), 18f, TextAlignmentOptions.Center);
+            notice.color = new Color(1f, 0.78f, 0.45f);
+
             TMP_Text mapLabel = CreateText("MapLabel", page, bottomLeft, new Vector2(24f, 322f), new Vector2(307f, 26f), 17f, TextAlignmentOptions.Center);
             mapLabel.text = "Select Map";
             mapLabel.color = s_textDim;
@@ -1094,6 +1109,13 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_mapInfoText", mapInfo);
             BattleEditorUtility.Set(so, "_mapImage", mapImage);
             BattleEditorUtility.Set(so, "_startButton", start);
+            BattleEditorUtility.Set(so, "_queueButton", queue);
+            BattleEditorUtility.Set(so, "_queueText", queueText);
+            BattleEditorUtility.Set(so, "_createPartyButton", createParty);
+            BattleEditorUtility.Set(so, "_joinPartyButton", joinParty);
+            BattleEditorUtility.Set(so, "_partyCodeInput", partyCode);
+            BattleEditorUtility.Set(so, "_leavePartyButton", leaveParty);
+            BattleEditorUtility.Set(so, "_noticeText", notice);
             BattleEditorUtility.Set(so, "_resetKitButton", reset);
             BattleEditorUtility.Set(so, "_wipeButton", wipe);
             BattleEditorUtility.Set(so, "_charactersButton", characters);
@@ -1772,6 +1794,11 @@ namespace Game.Scripts.Editor.Dungeon
                 labels[i].fontStyle = FontStyles.Bold;
             }
 
+            Image portalMarker = CreateImage("PortalMarker", mapImage.transform, center, Vector2.zero, new Vector2(24f, 24f), Color.white);
+            portalMarker.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+            portalMarker.raycastTarget = false;
+            portalMarker.gameObject.AddComponent<Outline>().effectColor = new Color(0.1f, 0.06f, 0.03f);
+            portalMarker.gameObject.SetActive(false);
             Image arrow = CreateImage("Arrow", mapImage.transform, center, Vector2.zero, new Vector2(18f, 18f), new Color(0.95f, 0.75f, 0.2f));
             arrow.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
             CreateImage("Tip", arrow.transform, center, new Vector2(0f, 12f), new Vector2(5f, 12f), new Color(0.95f, 0.75f, 0.2f));
@@ -1791,6 +1818,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_floorModuleNames", inputs.ModuleNames);
             BattleEditorUtility.Set(so, "_floorSizes", DungeonMapBuilder.FloorSizes);
             BattleEditorUtility.Set(so, "_floorGrids", DungeonMapBuilder.FloorGrids);
+            BattleEditorUtility.Set(so, "_portalMarker", portalMarker);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;
@@ -1880,6 +1908,31 @@ namespace Game.Scripts.Editor.Dungeon
             text.richText = true;
 
             return text;
+        }
+
+        private static TMP_InputField CreateInput(string name, Transform parent, Vector2 anchor, Vector2 position, Vector2 size, string placeholder)
+        {
+            RectTransform rect = CreateRect(name, parent, anchor, position, size);
+            Image image = rect.gameObject.AddComponent<Image>();
+            image.color = new Color(0.05f, 0.04f, 0.035f, 0.96f);
+            TMP_InputField input = rect.gameObject.AddComponent<TMP_InputField>();
+            RectTransform area = CreateRect("Text Area", rect, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            Stretch(area, 6f);
+            area.gameObject.AddComponent<RectMask2D>();
+            TMP_Text hint = CreateText("Placeholder", area, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, 18f, TextAlignmentOptions.Center);
+            hint.rectTransform.StretchFill();
+            hint.text = placeholder;
+            hint.color = s_textDim;
+            hint.fontStyle = FontStyles.Italic;
+            TMP_Text text = CreateText("Text", area, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, 20f, TextAlignmentOptions.Center);
+            text.rectTransform.StretchFill();
+            text.color = s_text;
+            input.textViewport = area;
+            input.textComponent = text;
+            input.placeholder = hint;
+            input.targetGraphic = image;
+
+            return input;
         }
 
         private static Button CreateButton(string name, Transform parent, Vector2 anchor, Vector2 position, Vector2 size, string label)

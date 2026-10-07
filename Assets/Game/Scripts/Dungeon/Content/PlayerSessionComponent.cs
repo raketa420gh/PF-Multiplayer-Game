@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Fusion;
 using UnityEngine;
 
@@ -237,6 +238,22 @@ namespace Game.Scripts.Dungeon
                 Experience -= _config.ExperienceForLevel(Level);
                 Level++;
             }
+        }
+
+        /// The leader registers the party for a dungeon queue (alone it is a party of one); a solo queue takes nobody along.
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcQueue(QueueMode mode)
+        {
+            int size = Runner.ActivePlayers.Count();
+
+            if (Object.InputAuthority == Runner.LocalPlayer && (mode != QueueMode.Solo || size == 1))
+                RpcDepart(mode, (byte)size);
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+        private void RpcDepart(QueueMode mode, byte size)
+        {
+            PartyService.Depart(Runner, mode, size, HasInputAuthority);
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]

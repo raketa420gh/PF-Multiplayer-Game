@@ -1,10 +1,12 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Full map of the current floor (M), Dark and Darker style: the whole floor, module names and the player's arrow.
+    /// Full map of the current floor (M), Dark and Darker style: the whole floor, module names, the player's arrow and the portals
+    /// that have shown up (blue escapes, red ways down).
     public sealed class MapView : DisplayableView
     {
         public bool HasFloors => _floorMaps.Length > 0;
@@ -38,6 +40,16 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private int[] _floorGrids;
 
+        [SerializeField, Tooltip("Template of a portal mark, cloned per portal")]
+        private Image _portalMarker;
+
+        [SerializeField]
+        private Color _escapeColor = new(0.35f, 0.65f, 1f);
+
+        [SerializeField]
+        private Color _descendColor = new(1f, 0.3f, 0.2f);
+
+        private readonly List<Image> _markers = new();
         private int _shownFloor = -1;
 
         private void Update()
@@ -57,6 +69,44 @@ namespace Game.Scripts.Dungeon
             float world = _floorSizes[floor];
             _arrow.anchoredPosition = new Vector2(position.x / world * size.x, position.z / world * size.y);
             _arrow.localRotation = Quaternion.Euler(0f, 0f, -adventurer.transform.eulerAngles.y);
+            MarkPortals(floor, size, world);
+        }
+
+        private void MarkPortals(int floor, Vector2 size, float world)
+        {
+            int count = 0;
+            DungeonDirector director = _context.Director;
+
+            if (director != null && floor < director.Floors.Count)
+            {
+                DungeonDirector.FloorLayout layout = director.Floors[floor];
+
+                foreach (PortalComponent portal in layout.EscapePortals)
+                    count = Mark(portal, count, size, world);
+
+                foreach (PortalComponent portal in layout.DescendPortals)
+                    count = Mark(portal, count, size, world);
+            }
+
+            for (int i = count; i < _markers.Count; i++)
+                _markers[i].gameObject.SetActive(false);
+        }
+
+        private int Mark(PortalComponent portal, int index, Vector2 size, float world)
+        {
+            if (portal == null || portal.Object == null || !portal.Object.IsValid || !portal.IsActive)
+                return index;
+
+            if (index == _markers.Count)
+                _markers.Add(Instantiate(_portalMarker, _portalMarker.transform.parent));
+
+            Image marker = _markers[index];
+            Vector3 position = portal.transform.position;
+            marker.gameObject.SetActive(true);
+            marker.color = portal.Kind == PortalKind.Escape ? _escapeColor : _descendColor;
+            marker.rectTransform.anchoredPosition = new Vector2(position.x / world * size.x, position.z / world * size.y);
+
+            return index + 1;
         }
 
         private void ShowFloor(int floor)

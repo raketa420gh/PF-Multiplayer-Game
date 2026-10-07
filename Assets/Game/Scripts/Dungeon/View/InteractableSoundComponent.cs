@@ -45,9 +45,9 @@ namespace Game.Scripts.Dungeon
                     DungeonAudioComponent.Play(DungeonSound.ChestOpen, transform.position);
             }
 
-            if (_portal != null && _portal.IsAvailable != _portalActive)
+            if (_portal != null && _portal.IsOpen != _portalActive)
             {
-                _portalActive = _portal.IsAvailable;
+                _portalActive = _portal.IsOpen;
 
                 if (!_isFirst && _portalActive)
                     DungeonAudioComponent.Play(DungeonSound.PortalOpen, transform.position, 1f);

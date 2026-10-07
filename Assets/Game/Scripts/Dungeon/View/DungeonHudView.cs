@@ -190,7 +190,8 @@ namespace Game.Scripts.Dungeon
             PlayerSessionComponent session = adventurer.Session;
             string className = adventurer.SubclassConfig != null ? $"{adventurer.SubclassConfig.Name} {adventurer.Class.DisplayName}" : adventurer.Class.DisplayName;
             _nameText.text = session != null ? $"{session.DisplayName}  ·  {className} {session.Level}" : className;
-            _killText.text = $"Kills {adventurer.Kills}   XP +{adventurer.RunExperience}";
+            int window = DungeonAdmission.WindowLeft(adventurer.Runner);
+            _killText.text = $"Kills {adventurer.Kills}   XP +{adventurer.RunExperience}" + (window >= 0 ? $"\n<color=#9ab8d8>Late entry open {window / 60}:{window % 60:00}</color>" : string.Empty);
 
             float danger = adventurer.IsInSwarm ? 0.55f : Mathf.Lerp(0.45f, 0f, health.Progress * 2f);
             _vignette.color = new Color(adventurer.IsInSwarm ? 0.1f : 0.5f, 0f, adventurer.IsInSwarm ? 0.2f : 0f, danger);
