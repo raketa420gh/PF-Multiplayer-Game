@@ -1,6 +1,6 @@
 ---
 name: video-to-animation
-description: Turn reference video footage into this project's generated combat animations (weapon swings, riposte, block, idle and other keyed upper-body clips) so that they match the footage in timing, weapon path and the arms and torso that carry it. Use whenever the user gives a video file (mp4 and the like) and asks to make, redo or match an animation from it — "сделай анимацию как в видео", "реализуй анимации из видео", "сделай идентичные", a path like D:\something_animations.mp4 next to a weapon or action name — even if they do not say "skill". Also use when asked to compare an existing animation with footage.
+description: Turn reference video footage (usually Dark and Darker, first person) into this project's generated animations — weapon swings, riposte, block, idle, and first-person action clips (interacting/searching, drinking, bandaging, casting, picking up) — so that they match the footage in timing, weapon path, screen placement of the hands, finger shape and the arms and torso that carry it. Use whenever the user gives a video file (mp4 and the like) and asks to make, redo or match an animation from it — "сделай анимацию как в видео", "реализуй анимации из видео", "сделай идентичные", a path like D:\something_animations.mp4 next to a weapon or action name — even if they do not say "skill". Also use when asked to compare an existing animation with footage.
 ---
 
 # Video to animation
@@ -12,6 +12,27 @@ report in Russian. Animations here are generated from code, never keyed by hand 
 The weapon is half of it. A swing whose blade follows the footage but whose elbows the solver picks on its own
 reads as wrong: raised "chicken wing" elbows, hands tucked to the chest, forearms wrung. Grips, elbows, the off arm
 and the torso turn come from the footage too, in the same spec and the same review.
+
+## Which job
+
+- **A first-person action** (no weapon swing: interaction, search, drink, bandage, cast, pick up...) → follow
+  `references/fp-actions.md` alone, then step 7 here. Screen placement and finger shape are the whole job; the
+  footage-reader agent, `takes.json` and the full rebuild are not needed.
+- **Weapon motions** (attacks, riposte, block, idle of a weapon) → the steps below.
+
+The user records first-person footage only. For weapon motions that means the swing's 3D path is inferred from
+the screen, and the screen is the spec:
+
+- Brief the reader with the first-person variant in `references/footage-reader.md` (screen fractions, fingers).
+- Convert screen fractions to root space with the formula in `references/fp-actions.md` (our 75-degree vertical
+  view, not DaD's 90 horizontal); an object of known size (a book 0.17 m wide) gives the depth.
+- Compare with `footage.py fp VIDEO OUT f:render... --top 0 --mirror` (the mirror for weapons the game plays
+  mirrored, `--top 0` or v is off), renders from `SwingPreview` view `fp`. Those renders have flat fingers and no
+  HUD: hand shape and the final placement are judged on one play-test screenshot (step 6), never on the rig.
+- Elbows: on screen the forearms rising from the bottom corners mean elbows *behind* the hands along the knuckles,
+  not out to the sides — out to the sides reads as raised "chicken wings" and bends the wrists past 85.
+- When the user describes a body pose for a first-person motion (an idle "arm reached forward, other hand low"),
+  the pose that reads right from outside can leave the view; ask the trade-off once, with options, before authoring.
 
 ## Why the steps are shaped the way they are
 
@@ -88,7 +109,7 @@ contradict (damage, block numbers, the peak-on-crosshair rule).
   `(0.17, 1.47, -0.06)`; a peak grip at 0.79 m left the hand 15 cm short and the swing spinning. "Main hand short"
   in the preview is this.
 - A thrust: put the windup, the peak and the end grip on one line along the direction the strike point is aimed at
-  the peak (elevation = asin((1.755 - grip y) / strike), about 20 degrees for a chest-high grip and a 1.45 m point)
+  the peak (elevation = asin((1.731 - grip y) / strike), about 20 degrees for a chest-high grip and a 1.45 m point)
   and give the windup and end that elevation. Otherwise the point travels across the blade, the swing counts as a
   cut and its edge spins to follow it.
 - Around the peak of a cut keep the neighbouring keys at the peak's re-aimed elevation (read it in the report): a
@@ -160,9 +181,11 @@ Shield"`), then `Tools/Game/Dungeon/Build Content` if the item asset is new, the
 
 Play test in `BattleScene` (the sandbox never saves the player's kit): copy `$SKILL/assets/SwingPlayTest.cs` into
 `Assets/Game/Scripts/Editor/Battle/`, compile, open the scene, enter play mode, wait ~12 s for the session, call
-`SwingPlayTest.Begin("<Display Name>", "combo" | "riposte", "Temp/footage/<name>")` by reflection, wait for it to
-finish, read `play_<mode>.txt`. Stop play, delete the copied file and its `.meta`, compile again, reopen the scene
-that was open before.
+`SwingPlayTest.Begin("<Display Name>", "combo" | "riposte" | "block", "Temp/footage/<name>")` by reflection, wait for
+it to finish (`until [ -f play_<mode>.txt ]` in a shell, not sleeps), read `play_<mode>.txt`. "block" logs how each
+weapon part stands in the view — the answer to "it stands crooked" in numbers. Open the scene and enter play mode in
+two separate calls; "no local fighter yet" past ~20 s means the session never started: stop, enter again, retry.
+Stop play, delete the copied file and its `.meta`, compile again, reopen the scene that was open before.
 
 ### 7. Report (Russian, terse)
 
@@ -170,7 +193,20 @@ that was open before.
 - What you decided yourself (rules, numbers) and want confirmed.
 - What does not match the footage or looks wrong (failed-then-accepted limits, first-person visibility).
 - Anything of the user's you removed or overwrote, and where the old version is.
-- Nothing is committed unless asked.
+- How the user checks it: the clip asset and the state name in `Fighter.controller` to open in the animation editor.
+
+Then commit (the user asked for it): only the files this job changed — library/builder/view code, the new or
+re-recorded clips with their `.meta`, `Fighter.controller`, configs a rebuild changed. Leave what was dirty before
+step 1 alone (`git status` from the start). Use the `commit-push` skill's message style (`Area: what changed`) but do
+not push unless asked.
+
+- Add files by name or by a glob checked against `git status` first: `Animations/Battle/*.anim` swept the user's
+  untracked clip into a commit once.
+- A file the user had dirty before you (a shared library) gets only your hunks: write `git show HEAD:<file>` to
+  `Temp/`, apply your edit there with the same anchored patch, `git hash-object -w --no-filters` it and
+  `git update-index --cacheinfo 100644,<hash>,<file>`.
+- `Fighter.controller`, `Bow.prefab`, `Fighter.prefab` come out of every rebuild with fileID churn: leave them out
+  unless the job changed states.
 
 ## What makes the footage cheap to read
 
@@ -207,6 +243,18 @@ Say this to the user when it helps; it is their recording.
 - **Footage specs contradict themselves at times** (a palm "down" on a haft whose head is on the thumb's side, an
   elbow 10 cm from its hand). Where the pose cannot be held, keep the weapon and the elbow's side, and let the
   twist and wrist numbers say how far off it is.
+- **A non-blade held across** (a book, a board): set `WeaponDefinition.IsRound` or `LeadWithEdge` rolls it like a
+  blade and the peak lies flat; give the main hand `Main.Up` explicitly (as the off hand has) or the solver trades
+  the wrist for the roll and the elbow jumps 80 degrees off.
+- **A mirrored weapon's mesh axes.** The game hangs the prefab in the left socket with x-scale -1: turning a mesh in
+  the builder (`WeaponMesh.Matrix`) by +a shows as -a in the hand. Check the sign on the numbers of one vertex
+  transform before the first render; three render rounds went into guessing it.
+- **`Renderer.bounds` is not a shape.** It is the box around the turned local box: a straight book read as 45
+  degrees off. Measure axes (`SwingPlayTest` "block", or transform the mesh vertices).
+- **"It looks crooked" with the numbers straight**: look for geometry the eye reads as a turn — a spine bulging past
+  the boards showed its round side in the view and read as a book turned sideways.
+- **The animation editor matches the game** (sockets keyed by the clip, mirrored weapons on the authored side while
+  editing). If it does not, the editor is wrong, not the clip: compare one numeric pose in both before re-authoring.
 - **Shared poses** (rest, the low stop on one side, upright on the other) are reused by several swings. When one
   swing needs it different (the head up at the start of the next swing rather than down at the end of the last),
   give that swing its own key instead of bending the shared pose.

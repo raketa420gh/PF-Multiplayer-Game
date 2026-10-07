@@ -91,6 +91,23 @@ authored once.
 
 ---
 
+## First-person footage (replace "The frame of reference" and "Report this" with this)
+
+The footage is the player's own view, so report in **screen fractions** (u right, v down, 0..1, read off the
+`footage.py fp VIDEO OUT ROW... --top 0` 10% grid), not in body coordinates — the author converts them with the
+game's field of view. 3D guesses from DaD's 90-degree view come out wrong in ours; leave them out. Per key moment:
+
+```
+| frame | phase | weapon centre u,v | weapon size w,h | weapon: which face/edge to the camera, roll on screen (deg, 0 = upright), tilt toward/away | book/main hand u,v + what it holds, thumb, fingers, palm | other hand u,v + the same | forearms: from which screen edge, angle |
+```
+
+- Fingers per hand per distinct phase: where the thumb lies (on the near face / round the edge / behind), whether
+  the fingers are together, spread, curled, wrapped round an edge; which way the palm faces.
+- Say when a cut is not a cut: arms filling the screen read as one to the scan.
+- Note camera motion (pitch, lunge) separately so it is not taken for hand motion.
+- The same strike repeated: describe the cleanest one, give the start frames of the others.
+- The rest pose seen at the start of every video: describe it once.
+
 ## Review request (send later, same agent)
 
 > The poses are in. `<work folder>/cmp_<take>.jpg` puts video frames (top row of each pair, `v` = video frame) above

@@ -25,7 +25,7 @@ the source's strike point, or the peak check fails for the variant.
 Root space in metres: the character stands at the origin facing **+Z**, **+X is its right**, +Y up.
 Blade yaw = `atan2(x, z)` (0 forward, +90 to the right, 180 straight back), elevation = `asin(y)`.
 
-- Eye (the crosshair is the ray from it along +Z): `(0, 1.755, 0.115)`.
+- Eye (the crosshair is the ray from it along +Z): `(0, 1.731, 0.115)` (between the model's eyes).
 - Right shoulder about `(0.17, 1.47, -0.06)`; the wrist reaches 0.59 m from it, the grip is 0.14 m past the wrist.
 - The main hand is always the right one; a left-handed weapon or an off-hand punch is the same clip mirrored.
 
@@ -66,6 +66,12 @@ The reports do not flag a twist muscle that flips sign for a frame or two (a vis
 raised elbows, look for a frame-to-frame jump in the `muscles` columns of `report_<swing>.txt`.
 The roll of the weapon is worked out for you: in a cut the leading edge follows the path of the strike point. Give
 `pose.Edge` by hand only for a rest pose that needs a particular face of the weapon toward the viewer.
+
+Weapons held across both hands (`WeaponDefinition.IsHeldAcross`, the spellbook): the "blade" is the main hand's
+thumb axis and the strike point lies along it; `DungeonWeaponLibrary.ShutBook` is the example of a pose built from
+screen terms (grip, which way the top and the back face point) with the elbows derived behind the knuckles. A prop
+that changes shape inside a state (the book shut only for part of the strike) is a `WeaponVisual` window in clip
+seconds (`_attackShut`, set by the prefab builder), read by `WeaponViewComponent` and `AnimationTestView`.
 
 ## A swing
 
@@ -141,11 +147,11 @@ compare` never mixes in frames of an old key set.
 
 ## Other keyed clips
 
-First-person busy clips are plain key lists in `BattleAnimationLibrary`: `CastKeys`, `CastReleaseKeys`, `UseKeys`
-(with `DrinkTime` as the gameplay duration), `Hold`, `Bandage`. A changed keyed upper-body state does not need the
-full rebuild: load `Fighter.controller`, `RemoveState` the old one on `layers[1].stateMachine`, and call
-`BattleAnimationBuilder.AddKeyed(rig, upper, name, duration, SettleRoll(rig, keys))` by reflection on a fresh
-`BattlePoseRig`. `SwingPreview` does not know these; give it a case in `Sample` if one needs iterating.
+First-person busy clips live in `BattleAnimationLibrary`: key lists `CastKeys`, `CastReleaseKeys`, `UseKeys` (with
+`DrinkTime` as the gameplay duration), `Hold`, and phase functions `Bandage`, `Interact`. They are recorded in
+`BattleAnimationBuilder.BuildFirstPerson`; `BattleAnimationBuilder.RebuildFirstPerson()` re-records just those
+states in seconds. `ClipPreview.Run(clips, phases, folder)` renders built clips from the eye with fingers. Workflow:
+`references/fp-actions.md`.
 
 ## Unity MCP
 

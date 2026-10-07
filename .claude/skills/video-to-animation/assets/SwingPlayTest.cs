@@ -22,7 +22,11 @@ namespace Game.Scripts.Editor.Battle
         private static StringBuilder s_log;
 
         /// Mode "combo" holds the attack button for the whole series; "riposte" raises the block, takes a blocked hit
-        /// and strikes back. Writes play_{mode}.txt and screenshots into the folder; it is over after 9 seconds.
+        /// and strikes back; "block" holds the block for 4 seconds and logs how each visible weapon part stands in the
+        /// view (its axes in camera space: right, up, forward; the screen point of its middle). Writes play_{mode}.txt,
+        /// play_{mode}_idle.png (first second, at rest) and screenshots into the folder; it is over after 9 seconds.
+        /// "no local fighter yet" for more than ~20 s: the session did not start — stop play, enter it again in a
+        /// separate call (not in the call that opens the scene) and retry.
         public static string Begin(string weaponName, string mode, string folder)
         {
             FighterComponent fighter = BattleContext.Instance != null ? BattleContext.Instance.LocalFighter : null;
@@ -69,7 +73,18 @@ namespace Game.Scripts.Editor.Battle
             CombatComponent combat = fighter.Combat;
             int bits = 0;
 
-            if (s_mode == "combo")
+            if (time > 0.6f && s_lastShot == -100)
+            {
+                s_lastShot = -99;
+                ScreenCapture.CaptureScreenshot($"{s_folder}/play_{s_mode}_idle.png");
+            }
+
+            if (s_mode == "block")
+            {
+                if (time > 1f && time < 5f)
+                    bits |= 1 << (int)PlayerInputButtons.Secondary;
+            }
+            else if (s_mode == "combo")
             {
                 if (time > 1f && time < 7.5f)
                     bits |= 1 << (int)PlayerInputButtons.Primary;
@@ -101,11 +116,45 @@ namespace Game.Scripts.Editor.Battle
             int frame = Mathf.RoundToInt(combat.StateTime * 60f);
             s_log.AppendLine(FormattableString.Invariant($"{time:0.00} {combat.State} attack {combat.AttackIndex} riposte {combat.IsRiposte} frame {frame} {combat.Phase}"));
 
+            if (s_mode == "block" && combat.State == CombatState.Block)
+            {
+                LogWeapon(fighter);
+
+                if (frame - s_lastShot >= 60)
+                {
+                    s_lastShot = frame;
+                    ScreenCapture.CaptureScreenshot($"{s_folder}/play_block_{frame:000}.png");
+                }
+
+                return;
+            }
+
             if (combat.State != CombatState.Attack || Mathf.Abs(frame - s_lastShot) < 6)
                 return;
 
             s_lastShot = frame;
             ScreenCapture.CaptureScreenshot($"{s_folder}/play_{s_mode}_{(combat.IsRiposte ? "r" : combat.AttackIndex.ToString())}_{frame:000}.png");
+        }
+
+        /// Mesh axes only: a part whose mesh was turned when it was built (a book pinched at an angle) needs that turn
+        /// undone by hand. Never read a weapon's direction off Renderer.bounds — that is the box of the turned local box.
+        private static void LogWeapon(FighterComponent fighter)
+        {
+            Transform camera = Camera.main.transform;
+
+            foreach (WeaponVisual visual in fighter.GetComponentsInChildren<WeaponVisual>())
+            {
+                foreach (MeshRenderer part in visual.GetComponentsInChildren<MeshRenderer>())
+                {
+                    Transform t = part.transform;
+                    Vector3 right = camera.InverseTransformDirection(t.right);
+                    Vector3 up = camera.InverseTransformDirection(t.up);
+                    Vector3 forward = camera.InverseTransformDirection(t.forward);
+                    Vector3 view = Camera.main.WorldToViewportPoint(part.bounds.center);
+                    s_log.AppendLine(FormattableString.Invariant(
+                        $"  {part.name} right {right.x:0.00} {right.y:0.00} {right.z:0.00} up {up.x:0.00} {up.y:0.00} {up.z:0.00} forward {forward.x:0.00} {forward.y:0.00} {forward.z:0.00} view {view.x:0.00} {1f - view.y:0.00}"));
+                }
+            }
         }
     }
 }

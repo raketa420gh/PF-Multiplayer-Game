@@ -4,6 +4,8 @@
   sheet   VIDEO START END STEP OUT       contact sheet of video frames, numbered with the video frame
   compare TAKES.json TAKE VIEWS [FRAMES] video above game at matching moments -> cmp_TAKE.jpg beside TAKES.json
   strip   DIR TAKE VIEW [FRAMES]         game renders alone (first-person checks) -> DIR/strip_TAKE_VIEW.jpg
+  fp      VIDEO OUT ROW [ROW...]         first-person footage with a 10% screen grid; ROW = video frame, or
+                                         frame:render.png (ClipPreview shot) to set the game beside it
 
 FRAMES are clip frames, comma separated; left out = every g_TAKE_VIEW_*.png that SwingPreview rendered.
 A picture costs roughly width*height/750 tokens, so the defaults keep sheets small; raise --cell only to settle a doubt.
@@ -190,6 +192,33 @@ def strip(a):
     save(os.path.join(a.dir, 'strip_%s_%s.jpg' % (a.take, a.view)), grid(tiles, a.cols))
 
 
+def fp(a):
+    """Screen placement of first-person hands is read off the 10% grid in screen fractions (u right, v down)."""
+    cap = cv2.VideoCapture(a.video)
+    rows = []
+
+    for row in a.rows:
+        frame, _, render = row.partition(':')
+        tiles = [label(lift(fit(grab(cap, int(frame)), a.cell, a.cell * 9 // 16), a.gamma), frame)]
+
+        if render:
+            img = cv2.imread(render)
+            # A weapon the game plays mirrored is rendered as authored, right-handed: flip it to face the footage.
+            tiles.append(label(fit(cv2.flip(img, 1) if a.mirror else img, a.cell, a.cell * 9 // 16), os.path.basename(render)))
+
+        for img in tiles:
+            h, w = img.shape[:2]
+
+            for i in range(1, 10):
+                cv2.line(img, (w * i // 10, 0), (w * i // 10, h), (0, 255, 0), 1)
+                cv2.line(img, (0, h * i // 10), (w, h * i // 10), (0, 255, 0), 1)
+
+        rows.append(np.hstack(tiles)[int(a.top * a.cell * 9 // 16):])
+
+    width = max(r.shape[1] for r in rows)
+    save(a.out, np.vstack([np.hstack([r, np.zeros((r.shape[0], width - r.shape[1], 3), np.uint8)]) for r in rows]))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest='command', required=True)
@@ -233,6 +262,17 @@ def main():
     p.add_argument('--cols', type=int, default=6)
     p.add_argument('--cell', type=int, default=140)
     p.set_defaults(run=strip)
+
+    p = sub.add_parser('fp')
+    p.add_argument('video')
+    p.add_argument('out')
+    p.add_argument('rows', nargs='+')
+    p.add_argument('--cell', type=int, default=960)
+    p.add_argument('--top', type=float, default=0.35, help='screen fraction cut off the top: hands live low; 0 for weapons'
+                                                          ' (v is then read off the whole screen)')
+    p.add_argument('--mirror', action='store_true', help='flip the renders left-right (weapons the game plays mirrored)')
+    p.add_argument('--gamma', type=float, default=1.8)
+    p.set_defaults(run=fp)
 
     args = parser.parse_args()
     args.run(args)
