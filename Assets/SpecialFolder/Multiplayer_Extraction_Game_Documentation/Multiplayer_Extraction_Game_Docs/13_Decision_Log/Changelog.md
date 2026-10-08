@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — 2026-10-08
+
+### Changed
+- Floor 1 (DD-017): teams start in a random farm house (7 houses); the farm has two weak monsters and poor loot. The village is the high-risk centre: a monster in every other house, Iron Juggernaut with two archers and two swordsmen on the square, rich house loot and a golden chest on the square.
+- Ways down to floor 2 are red portals on stone-ring shrines behind the chapel and on Crimson Isle in the swamp (were stone cellars with grates); they still open halfway through the clock.
+- The Old Mill POI became the Abandoned Windmill: three storeys with inner stairs, a gallery round the middle floor with a ramp from the yard, monsters on every level, medium loot (best chest at the top).
+- Versioning (DD-018): `Major.Minor.Patch.Build` replaced by separate Game Version (`MAJOR.MINOR.PATCH`), Build number, Stage and Steam branch; roadmap phases mapped to stages and version ranges (see `05_Technical/Build_And_Release.md`, `12_Roadmap/README.md`).
+
+### Planned
+- Skeleton enemy roster: Swordsman, Archer, Crossbowman, Warrior (sword + shield), Mage (staff + spells), Flying Skull (charging head) — see `03_World/PvE.md`, DD-016.
+- Lore-based enemy loot: each enemy drops gear of its own kind (bows and arrows from archers, swords from swordsmen, staffs and spellbooks from mages) plus universal loot — coins, bandages, consumables, gear, jewelry (see `03_World/Loot.md`).
+
 ## v0.8 — 2026-10-07
 
 ### Added

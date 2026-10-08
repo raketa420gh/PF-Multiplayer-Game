@@ -32,7 +32,8 @@ Every floor is its own session. A descend portal hands the adventurer over to `D
 - `until`: unix time the late-join window closes (0 = no player yet).
 - `parties`: `,id,id,` — parties inside, for members and descending teammates.
 - `floor`: floor of the session (0 = idle server).
-- Version / Build / Ruleset: `[ ]`
+- Version / Build: клиент и сервер обязаны совпадать по `Game Version` и `Build` (`05_Technical/Build_And_Release.md`); проверка при подключении `[TBD]`.
+- Ruleset: `[ ]`
 
 ## Rules
 - Maximum players: Solo 8, Trio 12 (`GameServer.Capacity`).
