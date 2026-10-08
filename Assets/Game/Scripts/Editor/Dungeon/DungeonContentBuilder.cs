@@ -69,6 +69,8 @@ namespace Game.Scripts.Editor.Dungeon
                 loadouts, arrow, orb, database, pieceSet);
             BuildFlyingHead(new MonsterDef { Name = "FlyingHead", DisplayName = "Flying Head", Health = 60, Damage = 1f, MoveSpeed = 230f, ActionSpeed = 1f, Aggro = 12f, Experience = 30, Loot = loot["Monster"], Scale = 1f,
                 Voice = DungeonSound.Screech, Charge = 900f }, arrow, orb, database);
+            BuildJuggernaut(new MonsterDef { Name = "Juggernaut", DisplayName = "Iron Juggernaut", Health = 220, Damage = 1f, MoveSpeed = 190f, ActionSpeed = 0.8f, Aggro = 12f, Experience = 60, Loot = loot["Monster"], Scale = 1f,
+                Voice = DungeonSound.Growl }, arrow, orb, database);
 
             BuildFigures();
             BuildSession(database, classes, config, BuildMerchants(database));
@@ -860,35 +862,72 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.SavePrefab(root, Prefab(def.Name));
         }
 
+        /// An armoured brute on its own animator: the fighter stack keeps its simulation and body hitboxes, the humanoid rig and its views go away.
+        private static void BuildJuggernaut(MonsterDef def, GameObject arrow, GameObject orb, ItemDatabase database)
+        {
+            MonsterConfig config = BuildMonsterConfig(def);
+            BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(new[] { BuildFist() }, arrow, orb, 1, def.Name);
+            GameObject root = parts.Root;
+            Transform rig = parts.Animator.transform;
+            BattleEditorUtility.Set(parts.Fighter, "_respawnDelay", 0f);
+            Animator animator = DungeonJuggernautBuilder.Attach(rig.parent, rig.localPosition, rig.localRotation, rig.gameObject.layer);
+            Object.DestroyImmediate(root.GetComponent<FighterAnimComponent>());
+            Object.DestroyImmediate(root.GetComponent<WeaponViewComponent>());
+            Object.DestroyImmediate(rig.gameObject);
+            parts.Animator = null;
+            parts.HitboxRoot.InitHitboxes();
+            root.GetComponent<CharacterController>().radius = 0.4f;
+            parts.Move.Blocker.radius = 0.45f;
+
+            SerializedObject so = new SerializedObject(root.AddComponent<CreatureAnimComponent>());
+            BattleEditorUtility.Set(so, "_fighter", parts.Fighter);
+            BattleEditorUtility.Set(so, "_animator", animator);
+            BattleEditorUtility.Set(so, "_attackImpact", DungeonJuggernautBuilder.AttackImpact);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            AddMonsterLogic(parts, def, config, database, null, new Vector3(0f, 0.4f, -0.3f), new Vector3(1.6f, 0.8f, 3f));
+            BattleEditorUtility.Set(root.AddComponent<FootstepComponent>(), "_fighter", parts.Fighter);
+            BattleContentBuilder.SavePrefab(root, Prefab(def.Name));
+        }
+
         /// The ram is not a swing of an animated weapon: its trace is a short ray ahead of the head, authored here.
         private static BattleContentBuilder.Loadout BuildRam(float height)
         {
+            return BuildFixedAttack("HeadRam", "Ram", 6f, new Vector3(0f, height, 0.1f), new Vector3(0f, height, 0.8f), 0.7f, 0.4f, 0.8f, 24, 0.3f);
+        }
+
+        /// The juggernaut's punch: a straight ray from the right shoulder through the fist at full reach, timed to the punch clip.
+        private static BattleContentBuilder.Loadout BuildFist()
+        {
+            return BuildFixedAttack("JuggernautFist", "Fist", 1.6f, new Vector3(0.2f, 1.4f, 0.2f), new Vector3(0.1f, 1.45f, 1.3f), 0.85f, 0.2f, 0.95f, 32, 0.6f);
+        }
+
+        private static BattleContentBuilder.Loadout BuildFixedAttack(string name, string displayName, float reach, Vector3 from, Vector3 to, float windup, float active,
+            float recovery, int damage, float stagger)
+        {
             const string attack = "_attacks.Array.data[0].";
-            Vector3 from = new Vector3(0f, height, 0.1f);
-            Vector3 to = new Vector3(0f, height, 0.8f);
-            WeaponConfig config = BattleEditorUtility.LoadOrCreate<WeaponConfig>($"{ConfigsFolder}/HeadRam.asset");
+            WeaponConfig config = BattleEditorUtility.LoadOrCreate<WeaponConfig>($"{ConfigsFolder}/{name}.asset");
             SerializedObject so = new SerializedObject(config);
-            BattleEditorUtility.Set(so, "_displayName", "Ram");
-            BattleEditorUtility.Set(so, "_animationPrefix", "HeadRam");
+            BattleEditorUtility.Set(so, "_displayName", displayName);
+            BattleEditorUtility.Set(so, "_animationPrefix", name);
             BattleEditorUtility.Set(so, "_deflectDuration", 1.2f);
-            BattleEditorUtility.Set(so, "_reach", 6f);
+            BattleEditorUtility.Set(so, "_reach", reach);
             BattleEditorUtility.Set(so, "_impact", 6);
             so.FindProperty("_attacks").arraySize = 1;
-            BattleEditorUtility.Set(so, attack + "_windupTime", 0.7f);
-            BattleEditorUtility.Set(so, attack + "_activeTime", 0.4f);
-            BattleEditorUtility.Set(so, attack + "_recoveryTime", 0.8f);
+            BattleEditorUtility.Set(so, attack + "_windupTime", windup);
+            BattleEditorUtility.Set(so, attack + "_activeTime", active);
+            BattleEditorUtility.Set(so, attack + "_recoveryTime", recovery);
             BattleEditorUtility.Set(so, attack + "_comboWindowStart", 10f);
             BattleEditorUtility.Set(so, attack + "_comboWindowEnd", 10f);
-            BattleEditorUtility.Set(so, attack + "_damage", 24);
+            BattleEditorUtility.Set(so, attack + "_damage", damage);
             BattleEditorUtility.Set(so, attack + "_moveMultiplier", 1f);
-            BattleEditorUtility.Set(so, attack + "_staggerDuration", 0.3f);
+            BattleEditorUtility.Set(so, attack + "_staggerDuration", stagger);
             BattleEditorUtility.Set(so, attack + "_traceSampleRate", BattleAnimationBuilder.FrameRate);
             BattleEditorUtility.Set(so, attack + "_traceBase", new[] { from, from });
             BattleEditorUtility.Set(so, attack + "_traceTip", new[] { to, to });
             BattleEditorUtility.Set(so, "_block._canBlock", false);
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            return new BattleContentBuilder.Loadout { Name = "HeadRam", Config = config };
+            return new BattleContentBuilder.Loadout { Name = name, Config = config };
         }
 
         /// The dead body is the loot container: its trigger covers what is left on the floor and wakes up on death.

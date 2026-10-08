@@ -798,6 +798,7 @@ namespace Game.Scripts.Editor.Dungeon
             result.Monsters.Add(Monster(spawns, "SkeletonArcher", Ground(ground, VillageLayout.Chapel + new Vector2(0f, 6f)) + Vector3.up * 0.5f, 180f));
             result.Monsters.Add(Monster(spawns, "SkeletonSwordsman", Ground(ground, crypt + new Vector2(-4f, 0f)), -90f));
             result.Monsters.Add(Monster(spawns, "FlyingHead", Ground(ground, swamp + new Vector2(0f, 6f)) + Vector3.up * 0.3f, 0f));
+            result.Monsters.Add(Monster(spawns, "Juggernaut", Ground(ground, VillageLayout.Plaza + new Vector2(-3f, 5f)), 180f));
         }
 
         private static DungeonDirector.MonsterPlacement Monster(Transform parent, string name, Vector3 position, float yaw)
