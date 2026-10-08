@@ -25,6 +25,12 @@ namespace Game.Scripts.Editor.Battle
         private const string MaleBodyPath = BaseFolder + "/Unity/Superhero_Male_FullBody.fbx";
         private const string FemaleBodyPath = BaseFolder + "/Unity/Superhero_Female_FullBody.fbx";
         private const string OutfitsFolder = PacksFolder + "/Modular Character Outfits - Fantasy[Standard]";
+        // The male body is a Character Creator export; the base character above still gives the skeleton the outfits are cut for.
+        private const string ManFolder = PacksFolder + "/Man";
+        private const string ManPath = ManFolder + "/man.Fbx";
+        private const string ManHair = ManFolder + "/textures/Roger/Short_blowback/Short_blowback/Hair/Hair_Hair ";
+        private const string ManBeard = ManFolder + "/textures/Roger/Chin_Curtain_Sparse/Chin_Curtain_Sparse/Beard/Beard_Hair ";
+        private const string CcPrefix = "CC_Base_";
         public const string HeadMeshPath = MeshesFolder + "/Male_Head.asset";
         private const string MeshesFolder = BattleEditorUtility.ModelsFolder + "/Character";
         private const string TexturesFolder = "Assets/Game/Textures/Battle";
@@ -93,6 +99,27 @@ namespace Game.Scripts.Editor.Battle
 
         private static readonly string[] s_phalanges = { "Proximal", "Intermediate", "Distal" };
 
+        /// Character Creator bones by the skeleton bone they land on (side and phalanx added); bones missing here (twists, share
+        /// bones, face, toes, breasts) follow their closest listed ancestor.
+        private static readonly (string cc, string bone)[] s_manBones =
+        {
+            ("Hip", "pelvis"), ("Pelvis", "pelvis"), ("Waist", "spine_01"), ("Spine01", "spine_02"), ("Spine02", "spine_03"), ("NeckTwist01", "neck_01"),
+            ("Head", "Head"), ("Clavicle", "clavicle"), ("Upperarm", "upperarm"), ("Forearm", "lowerarm"), ("Hand", "hand"), ("Thigh", "thigh"),
+            ("Calf", "calf"), ("Foot", "foot"), ("ToeBase", "ball"), ("Thumb", "thumb"), ("Index", "index"), ("Mid", "middle"), ("Ring", "ring"),
+            ("Pinky", "pinky")
+        };
+
+        /// Bones whose skin is fitted to the authored joints, by the segment it is fitted along; the rest of the body keeps its surface.
+        private static readonly (string bone, string from, string to)[] s_manSegments =
+        {
+            ("upperarm", "upperarm", "lowerarm"), ("lowerarm", "lowerarm", "hand"), ("hand", "hand", "middle_01"),
+            ("thumb_01", "thumb_01", "thumb_02"), ("thumb_02", "thumb_02", "thumb_03"), ("thumb_03", "thumb_02", "thumb_03"),
+            ("index_01", "index_01", "index_02"), ("index_02", "index_02", "index_03"), ("index_03", "index_02", "index_03"),
+            ("middle_01", "middle_01", "middle_02"), ("middle_02", "middle_02", "middle_03"), ("middle_03", "middle_02", "middle_03"),
+            ("ring_01", "ring_01", "ring_02"), ("ring_02", "ring_02", "ring_03"), ("ring_03", "ring_02", "ring_03"),
+            ("pinky_01", "pinky_01", "pinky_02"), ("pinky_02", "pinky_02", "pinky_03"), ("pinky_03", "pinky_02", "pinky_03")
+        };
+
         /// Extra cuts of library takes (start and end are shares of the take): looped variants, the wind-up part of the throw,
         /// the take-off without its squat, the kneel between going down and getting up, the reload as hands wrapping a bandage.
         private static readonly (string name, string take, float start, float end, bool isLoop)[] s_cuts =
@@ -117,8 +144,9 @@ namespace Game.Scripts.Editor.Battle
             OutfitDyeBuilder.Build();
             GameObject maleSource = LoadSource(MaleBodyPath);
             GameObject femaleSource = LoadSource(FemaleBodyPath);
+            GameObject manSource = LoadSource(ManPath);
             GameObject root = new GameObject("Character");
-            List<GameObject> sources = new() { maleSource, femaleSource };
+            List<GameObject> sources = new() { maleSource, femaleSource, manSource };
 
             try
             {
@@ -129,7 +157,7 @@ namespace Game.Scripts.Editor.Battle
 
                 Transform bodyRoot = BattleEditorUtility.CreateChild("Body", root.transform).transform;
                 Transform outfitRoot = BattleEditorUtility.CreateChild("Outfit", root.transform).transform;
-                Renderer[] maleBody = CreateBody(maleSource, maleSkin, "Male", bodyRoot, bones, scale);
+                Renderer[] maleBody = CreateManBody(manSource, bodyRoot, bones);
                 Renderer[] femaleBody = CreateBody(femaleSource, BodySource(femaleSource, "Superhero_Female"), "Female", bodyRoot, bones, scale);
                 Renderer[] maleParts = new Renderer[s_parts.Length];
                 Renderer[] femaleParts = new Renderer[s_parts.Length];
@@ -273,6 +301,7 @@ namespace Game.Scripts.Editor.Battle
             SetupModel(AnimationsPath2, true);
             SetupModel(MaleBodyPath, false);
             SetupModel(FemaleBodyPath, false);
+            SetupModel(ManPath, false);
 
             foreach (string guid in AssetDatabase.FindAssets("t:Model", new[] { OutfitsFolder + "/Exports/FBX (Unity)/Outfits" }))
                 SetupModel(AssetDatabase.GUIDToAssetPath(guid), false);
@@ -386,7 +415,7 @@ namespace Game.Scripts.Editor.Battle
 
             foreach (Transform bone in source.GetComponentsInChildren<Transform>())
             {
-                if (bone.name == "hand_l" && bone.position.x > 0f)
+                if (bone.name is "hand_l" or CcPrefix + "L_Hand" && bone.position.x > 0f)
                     source.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
             }
 
@@ -453,24 +482,103 @@ namespace Game.Scripts.Editor.Battle
         /// Body regions of a base character; its eyes and eyebrows ride on the head region.
         private static Renderer[] CreateBody(GameObject character, SkinnedMeshRenderer source, string prefix, Transform parent, Transform[] bones, float scale)
         {
-            Material[] materials = { BodyMaterial(prefix) };
+            Renderer[] renderers = SplitBody(source, prefix, parent, bones, new[] { BodyMaterial(prefix) }, Bind(source, bones, scale), Array.ConvertAll(source.bones, bone => bone.name));
+            Transform head = renderers[RegionIndex("Head")].transform;
+
+            foreach ((string part, Material material) in new[] { ("Eyes", EyesMaterial()), ("Eyebrows", EyebrowsMaterial(prefix)) })
+            {
+                SkinnedMeshRenderer feature = BodySource(character, part);
+                string name = $"{prefix}_{part}";
+                List<int>[] triangles = { new(feature.sharedMesh.triangles) };
+                CreateRenderer(name, head, Extract(feature, name, triangles, bones, Bind(feature, bones, scale)), bones, new[] { material });
+            }
+
+            return renderers;
+        }
+
+        /// The Character Creator body: skin split into regions with its own materials, the eyes, teeth, hair and beard on the head,
+        /// the boxers on the thighs. Eyelashes, corneas, scalp and the eye occlusion cards are left out.
+        private static Renderer[] CreateManBody(GameObject man, Transform parent, Transform[] bones)
+        {
+            Transform[] skeleton = man.GetComponentsInChildren<Transform>();
+            float scale = HeadHeight / Array.Find(skeleton, bone => bone.name == CcPrefix + "Head").position.y;
+            Dictionary<string, Vector3> joints = new();
+
+            foreach (Transform bone in skeleton)
+            {
+                if (TryMapManBone(bone.name, out string name))
+                    joints.TryAdd(name, bone.position * scale);
+            }
+
+            SkinnedMeshRenderer body = BodySource(man, CcPrefix + "Body");
+            Material[] skin = Array.ConvertAll(body.sharedMaterials, material => material.name == "Std_Eyelash" ? null : ManSkinMaterial(material));
+            Renderer[] renderers = SplitBody(body, "Male", parent, bones, skin, BindMan(body, bones, scale, joints), Array.ConvertAll(body.bones, ManBone));
+            Material eye = ManEyeMaterial();
+            Material teeth = BattleEditorUtility.GetMaterial("ManTeeth", new Color(0.86f, 0.82f, 0.74f), 0f, 0.6f);
+            Material hair = HairMaterial("ManHair", ManHair, new Color(0.16f, 0.1f, 0.06f));
+            Material beard = HairMaterial("ManBeard", ManBeard, new Color(0.16f, 0.1f, 0.06f));
+            int head = RegionIndex("Head");
+
+            (string part, int region, Material[] materials)[] features =
+            {
+                (CcPrefix + "Eye", head, new[] { eye, null, eye, null }), (CcPrefix + "Teeth", head, new[] { teeth, teeth }),
+                (CcPrefix + "Tongue", head, new[] { ManSkinMaterial(BodySource(man, CcPrefix + "Tongue").sharedMaterial) }), ("Short_blowback", head, new[] { hair, null }),
+                ("Chin_Curtain_Sparse", head, new[] { beard }), ("Mustache_Horseshoe", head, new[] { beard }), ("Soul_Path_Thick", head, new[] { beard }),
+                ("Stubble_Neck", head, new[] { beard }),
+                ("Boxers", RegionIndex("thigh"), new[] { BattleEditorUtility.GetMaterial("ManBoxers", new Color(0.12f, 0.12f, 0.13f), 0f, 0.15f) })
+            };
+
+            foreach ((string part, int region, Material[] materials) in features)
+            {
+                SkinnedMeshRenderer feature = BodySource(man, part);
+                List<int>[] triangles = new List<int>[Array.FindAll(materials, material => material != null).Length];
+
+                for (int sub = 0, kept = 0; sub < materials.Length; sub++)
+                {
+                    if (materials[sub] != null)
+                        triangles[kept++] = new List<int>(feature.sharedMesh.GetTriangles(sub));
+                }
+
+                string name = "Male_" + part;
+                CreateRenderer(name, renderers[region].transform, Extract(feature, name, triangles, bones, BindMan(feature, bones, scale, joints)), bones,
+                    Array.FindAll(materials, material => material != null));
+            }
+
+            return renderers;
+        }
+
+        /// Splits a body into region renderers by the dominant bone of each triangle. Each material gets its own submesh (one material
+        /// merges them all); a null material drops its submesh.
+        private static Renderer[] SplitBody(SkinnedMeshRenderer source, string prefix, Transform parent, Transform[] bones, Material[] materials,
+            (int[] map, Matrix4x4[] bind) binding, string[] boneNames)
+        {
             Mesh mesh = source.sharedMesh;
             Vector3[] vertices = mesh.vertices;
             BoneWeight[] weights = mesh.boneWeights;
             Transform[] sourceBones = source.bones;
             Matrix4x4 toWorld = sourceBones[0].localToWorldMatrix * mesh.bindposes[0];
             int calves = RegionIndex("calf");
-            int[] boneRegions = Array.ConvertAll(sourceBones, bone => RegionIndex(bone.name));
+            int[] boneRegions = Array.ConvertAll(boneNames, RegionIndex);
+            Material[] kept = materials.Length == 1 ? materials : Array.FindAll(materials, material => material != null);
             Renderer[] renderers = new Renderer[CharacterModelComponent.RegionCount];
             List<int>[][] regions = new List<int>[renderers.Length][];
 
             for (int i = 0; i < regions.Length; i++)
-                regions[i] = new[] { new List<int>() };
+            {
+                regions[i] = new List<int>[kept.Length];
+
+                for (int sub = 0; sub < kept.Length; sub++)
+                    regions[i][sub] = new List<int>();
+            }
 
             float[] share = new float[regions.Length];
 
             for (int sub = 0; sub < mesh.subMeshCount; sub++)
             {
+                if (materials.Length > 1 && materials[sub] == null)
+                    continue;
+
+                int slot = materials.Length == 1 ? 0 : Array.IndexOf(kept, materials[sub]);
                 int[] triangles = mesh.GetTriangles(sub);
 
                 for (int i = 0; i < triangles.Length; i += 3)
@@ -491,24 +599,14 @@ namespace Game.Scripts.Editor.Battle
                     if (region == calves && toWorld.MultiplyPoint3x4(vertices[triangles[i]]).y < BootTop)
                         region++;
 
-                    regions[region][0].AddRange(new[] { triangles[i], triangles[i + 1], triangles[i + 2] });
+                    regions[region][slot].AddRange(new[] { triangles[i], triangles[i + 1], triangles[i + 2] });
                 }
             }
 
             for (int i = 0; i < renderers.Length; i++)
             {
                 string name = $"{prefix}_{(BodyRegion)(1 << i)}";
-                renderers[i] = CreateRenderer(name, parent, Extract(source, name, regions[i], bones, scale), bones, materials);
-            }
-
-            Transform head = renderers[RegionIndex("Head")].transform;
-
-            foreach ((string part, Material material) in new[] { ("Eyes", EyesMaterial()), ("Eyebrows", EyebrowsMaterial(prefix)) })
-            {
-                SkinnedMeshRenderer feature = BodySource(character, part);
-                string name = $"{prefix}_{part}";
-                List<int>[] triangles = { new(feature.sharedMesh.triangles) };
-                CreateRenderer(name, head, Extract(feature, name, triangles, bones, scale), bones, new[] { material });
+                renderers[i] = CreateRenderer(name, parent, Extract(source, name, regions[i], bones, binding), bones, kept);
             }
 
             return renderers;
@@ -543,7 +641,7 @@ namespace Game.Scripts.Editor.Battle
             }
 
             Material[] materials = submeshes.Length == 1 ? new[] { cloth } : new[] { cloth, skin };
-            Renderer renderer = CreateRenderer(name, parent, Extract(source, name, submeshes, bones, scale), bones, materials);
+            Renderer renderer = CreateRenderer(name, parent, Extract(source, name, submeshes, bones, Bind(source, bones, scale)), bones, materials);
             renderer.gameObject.SetActive(false);
 
             return renderer;
@@ -561,9 +659,8 @@ namespace Game.Scripts.Editor.Battle
             return renderer;
         }
 
-        /// Copies the listed triangles into a compact mesh bound to the target skeleton. Every vertex keeps its offset to its
-        /// own source joint, so parts made for other proportions follow the target joints instead of floating beside them.
-        private static Mesh Extract(SkinnedMeshRenderer source, string name, List<int>[] submeshes, Transform[] bones, float scale)
+        /// Copies the listed triangles into a compact mesh bound to the target skeleton by the given bone map and bind poses.
+        private static Mesh Extract(SkinnedMeshRenderer source, string name, List<int>[] submeshes, Transform[] bones, (int[] map, Matrix4x4[] bind) binding)
         {
             Mesh sourceMesh = source.sharedMesh;
             Vector3[] vertices = sourceMesh.vertices;
@@ -571,9 +668,7 @@ namespace Game.Scripts.Editor.Battle
             Vector4[] tangents = sourceMesh.tangents;
             Vector2[] uvs = sourceMesh.uv;
             BoneWeight[] weights = sourceMesh.boneWeights;
-            Matrix4x4[] sourceBind = sourceMesh.bindposes;
-            Transform[] sourceBones = source.bones;
-            int[] boneMap = Array.ConvertAll(sourceBones, bone => Array.FindIndex(bones, target => target.name == bone.name));
+            int[] boneMap = binding.map;
             int[] remap = new int[vertices.Length];
             List<Vector3> newVertices = new();
             List<Vector3> newNormals = new();
@@ -609,21 +704,6 @@ namespace Game.Scripts.Editor.Battle
                 }
             }
 
-            Matrix4x4[] bind = new Matrix4x4[bones.Length];
-
-            for (int i = 0; i < bind.Length; i++)
-                bind[i] = Matrix4x4.identity;
-
-            for (int i = 0; i < sourceBones.Length; i++)
-            {
-                // Pelvis and clavicles are pivots inside the torso: their skin stays where it is and only turns around the new pivot.
-                Matrix4x4 toWorld = sourceBones[i].localToWorldMatrix * sourceBind[i];
-                bool isPivot = sourceBones[i].name == "pelvis" || sourceBones[i].name.StartsWith("clavicle");
-                bind[boneMap[i]] = isPivot
-                    ? Matrix4x4.Translate(-bones[boneMap[i]].position) * Matrix4x4.Scale(Vector3.one * scale) * toWorld
-                    : Matrix4x4.Scale(Vector3.one * scale) * Matrix4x4.Translate(-sourceBones[i].position) * toWorld;
-            }
-
             Mesh mesh = GetMesh(name);
             mesh.SetVertices(newVertices);
             mesh.SetNormals(newNormals);
@@ -638,11 +718,130 @@ namespace Game.Scripts.Editor.Battle
                 mesh.SetTriangles(submeshes[i], i);
 
             mesh.boneWeights = newWeights.ToArray();
-            mesh.bindposes = bind;
+            mesh.bindposes = binding.bind;
             mesh.RecalculateBounds();
             EditorUtility.SetDirty(mesh);
 
             return mesh;
+        }
+
+        /// Same-named skeletons: every vertex keeps its offset to its own source joint, so parts made for other proportions follow
+        /// the target joints instead of floating beside them.
+        private static (int[] map, Matrix4x4[] bind) Bind(SkinnedMeshRenderer source, Transform[] bones, float scale)
+        {
+            Transform[] sourceBones = source.bones;
+            Matrix4x4[] sourceBind = source.sharedMesh.bindposes;
+            int[] boneMap = Array.ConvertAll(sourceBones, bone => Array.FindIndex(bones, target => target.name == bone.name));
+            Matrix4x4[] bind = IdentityBinds(bones.Length);
+
+            for (int i = 0; i < sourceBones.Length; i++)
+            {
+                // Pelvis and clavicles are pivots inside the torso: their skin stays where it is and only turns around the new pivot.
+                Matrix4x4 toWorld = sourceBones[i].localToWorldMatrix * sourceBind[i];
+                bool isPivot = sourceBones[i].name == "pelvis" || sourceBones[i].name.StartsWith("clavicle");
+                bind[boneMap[i]] = isPivot
+                    ? Matrix4x4.Translate(-bones[boneMap[i]].position) * Matrix4x4.Scale(Vector3.one * scale) * toWorld
+                    : Matrix4x4.Scale(Vector3.one * scale) * Matrix4x4.Translate(-sourceBones[i].position) * toWorld;
+            }
+
+            return (boneMap, bind);
+        }
+
+        /// Character Creator skin on the character skeleton: arms, hands and fingers are fitted segment by segment to the authored
+        /// joints (turned and stretched along the bone); torso, legs and head keep their surface and only turn around the new joints.
+        private static (int[] map, Matrix4x4[] bind) BindMan(SkinnedMeshRenderer source, Transform[] bones, float scale, Dictionary<string, Vector3> joints)
+        {
+            Transform[] sourceBones = source.bones;
+            Matrix4x4[] sourceBind = source.sharedMesh.bindposes;
+            int[] boneMap = new int[sourceBones.Length];
+            Matrix4x4[] bind = IdentityBinds(bones.Length);
+
+            for (int i = 0; i < sourceBones.Length; i++)
+            {
+                string name = ManBone(sourceBones[i]);
+                int target = boneMap[i] = Array.FindIndex(bones, bone => bone.name == name);
+                Matrix4x4 fit = Matrix4x4.identity;
+                string side = name.EndsWith("_l") || name.EndsWith("_r") ? name[^2..] : "";
+
+                foreach ((string bone, string from, string to) in s_manSegments)
+                {
+                    if (bone + side == name)
+                        fit = Fit(joints[from + side], joints[to + side], Find(bones, from + side), Find(bones, to + side));
+                }
+
+                bind[target] = Matrix4x4.Translate(-bones[target].position) * fit * Matrix4x4.Scale(Vector3.one * scale) * sourceBones[i].localToWorldMatrix * sourceBind[i];
+            }
+
+            return (boneMap, bind);
+        }
+
+        /// Maps a source segment onto a target segment: turned onto it and stretched along it, both starting at the same joint.
+        private static Matrix4x4 Fit(Vector3 sourceFrom, Vector3 sourceTo, Vector3 targetFrom, Vector3 targetTo)
+        {
+            Vector3 source = sourceTo - sourceFrom;
+            Vector3 target = targetTo - targetFrom;
+            Vector3 axis = source.normalized;
+            float stretch = target.magnitude / source.magnitude;
+            Matrix4x4 along = Matrix4x4.identity;
+
+            for (int row = 0; row < 3; row++)
+            {
+                for (int column = 0; column < 3; column++)
+                    along[row, column] += (stretch - 1f) * axis[row] * axis[column];
+            }
+
+            return Matrix4x4.Translate(targetFrom) * Matrix4x4.Rotate(Quaternion.FromToRotation(source, target)) * along * Matrix4x4.Translate(-sourceFrom);
+        }
+
+        private static Vector3 Find(Transform[] bones, string name)
+        {
+            return Array.Find(bones, bone => bone.name == name).position;
+        }
+
+        private static Matrix4x4[] IdentityBinds(int count)
+        {
+            Matrix4x4[] bind = new Matrix4x4[count];
+
+            for (int i = 0; i < count; i++)
+                bind[i] = Matrix4x4.identity;
+
+            return bind;
+        }
+
+        /// The skeleton bone a Character Creator bone lands on: its own if listed, else its closest listed ancestor's.
+        private static string ManBone(Transform bone)
+        {
+            for (Transform current = bone; current != null; current = current.parent)
+            {
+                if (TryMapManBone(current.name, out string name))
+                    return name;
+            }
+
+            return "pelvis";
+        }
+
+        /// CC_Base_[L_|R_]Key[1-3] → key bone [_0n][_l|_r]: Thumb1 → thumb_01, but Spine01 and NeckTwist01 are names of their own.
+        private static bool TryMapManBone(string cc, out string bone)
+        {
+            bone = null;
+
+            if (!cc.StartsWith(CcPrefix))
+                return false;
+
+            string key = cc.Substring(CcPrefix.Length);
+            string side = key.StartsWith("L_") ? "_l" : key.StartsWith("R_") ? "_r" : "";
+            key = side.Length > 0 ? key.Substring(2) : key;
+            bool isPhalanx = key.Length > 1 && key[^1] is >= '1' and <= '3' && !char.IsDigit(key[^2]);
+            string phalanx = isPhalanx ? "_0" + key[^1] : "";
+            key = isPhalanx ? key[..^1] : key;
+
+            foreach ((string name, string target) in s_manBones)
+            {
+                if (name == key)
+                    bone = target + phalanx + side;
+            }
+
+            return bone != null;
         }
 
         /// Mesh assets are refilled in place so references to them survive rebuilds.
@@ -740,6 +939,119 @@ namespace Game.Scripts.Editor.Battle
                 CreateMask($"{BaseFolder}/Textures/T_Superhero_{gender}_Roughness.png", false));
         }
 
+        /// A Character Creator material: its diffuse and normal map over a mask from the roughness map next to its other textures.
+        private static Material ManSkinMaterial(Material source)
+        {
+            string normal = AssetDatabase.GetAssetPath(source.GetTexture("_BumpMap"));
+            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(normal);
+
+            if (importer.textureType != TextureImporterType.NormalMap)
+            {
+                importer.textureType = TextureImporterType.NormalMap;
+                importer.SaveAndReimport();
+            }
+
+            string roughness = AssetDatabase.GUIDToAssetPath(AssetDatabase.FindAssets($"{source.name}_roughness t:Texture2D", new[] { ManFolder })[0]);
+            Material material = TexturedMaterial("Man" + source.name.Replace("Std_", ""), AssetDatabase.GetAssetPath(source.GetTexture("_BaseMap")), normal,
+                CreateMask(roughness, false));
+            material.SetFloat("_Metallic", 0f);
+            material.SetFloat("_Smoothness", 0.55f);
+
+            return material;
+        }
+
+        /// The export has no iris colour: a brown iris with a pupil is drawn into the middle of the eye's UV square.
+        private static Material ManEyeMaterial()
+        {
+            const int size = 256;
+            string path = $"{TexturesFolder}/ManEye.png";
+
+            if (AssetDatabase.LoadAssetAtPath<Texture2D>(path) == null)
+            {
+                Texture2D pixels = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                Color sclera = new Color(0.9f, 0.87f, 0.83f);
+                Color iris = new Color(0.3f, 0.18f, 0.08f);
+
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float radius = new Vector2(x + 0.5f - size * 0.5f, y + 0.5f - size * 0.5f).magnitude / size;
+                        float streak = 0.8f + 0.2f * Mathf.PerlinNoise(Mathf.Atan2(y - size * 0.5f, x - size * 0.5f) * 6f, radius * 20f);
+                        Color color = radius < 0.09f ? Color.black : radius < 0.22f ? iris * streak : radius < 0.24f ? iris * 0.4f : sclera;
+                        pixels.SetPixel(x, y, color);
+                    }
+                }
+
+                File.WriteAllBytes(path, pixels.EncodeToPNG());
+                Object.DestroyImmediate(pixels);
+                AssetDatabase.ImportAsset(path);
+            }
+
+            Material material = BattleEditorUtility.GetMaterial("ManEye", Color.white, 0f, 0.9f);
+            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(path));
+
+            return material;
+        }
+
+        /// The export has no opacity for its hair cards: coverage is whatever differs from the flat background of the root map,
+        /// the shade comes from the strand ids and darkens toward the roots. Alpha-clipped and two-sided.
+        private static Material HairMaterial(string name, string maps, Color color)
+        {
+            string path = $"{TexturesFolder}/{name}.png";
+
+            if (AssetDatabase.LoadAssetAtPath<Texture2D>(path) == null)
+            {
+                Color32[] roots = ReadPixels(maps + "Root Map.jpg");
+                Color32[] ids = ReadPixels(maps + "ID Map.png");
+                int background = roots[5 * MaskSize + 5].r;
+                Texture2D pixels = new Texture2D(MaskSize, MaskSize, TextureFormat.RGBA32, false);
+                Color32[] colors = new Color32[roots.Length];
+
+                for (int i = 0; i < colors.Length; i++)
+                {
+                    float shade = (0.55f + 0.45f * ids[i].r / 255f) * Mathf.Lerp(0.55f, 1f, roots[i].r / 255f);
+                    Color hair = color * shade;
+                    colors[i] = new Color(hair.r, hair.g, hair.b, Mathf.Abs(roots[i].r - background) > 10 ? 1f : 0f);
+                }
+
+                pixels.SetPixels32(colors);
+                File.WriteAllBytes(path, pixels.EncodeToPNG());
+                Object.DestroyImmediate(pixels);
+                AssetDatabase.ImportAsset(path);
+                TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                importer.alphaIsTransparency = true;
+                importer.SaveAndReimport();
+            }
+
+            Material material = BattleEditorUtility.GetMaterial(name, Color.white, 0f, 0.35f);
+            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(path));
+            material.SetFloat("_AlphaClip", 1f);
+            material.SetFloat("_Cutoff", 0.5f);
+            material.SetFloat("_Cull", 0f);
+            material.EnableKeyword("_ALPHATEST_ON");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
+
+            return material;
+        }
+
+        /// A texture read back at mask size through the GPU, so its import settings do not matter.
+        private static Color32[] ReadPixels(string sourcePath)
+        {
+            SetLinear(sourcePath);
+            RenderTexture target = RenderTexture.GetTemporary(MaskSize, MaskSize, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+            Graphics.Blit(AssetDatabase.LoadAssetAtPath<Texture2D>(sourcePath), target);
+            RenderTexture.active = target;
+            Texture2D pixels = new Texture2D(MaskSize, MaskSize, TextureFormat.RGBA32, false, true);
+            pixels.ReadPixels(new Rect(0f, 0f, MaskSize, MaskSize), 0, 0);
+            RenderTexture.active = null;
+            RenderTexture.ReleaseTemporary(target);
+            Color32[] colors = pixels.GetPixels32();
+            Object.DestroyImmediate(pixels);
+
+            return colors;
+        }
+
         private static Material EyesMaterial()
         {
             Material material = BattleEditorUtility.GetMaterial("BodyEyes", Color.white, 0f, 0.85f);
@@ -792,15 +1104,8 @@ namespace Game.Scripts.Editor.Battle
             if (mask != null)
                 return mask;
 
-            SetLinear(sourcePath);
-            RenderTexture target = RenderTexture.GetTemporary(MaskSize, MaskSize, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
-            Graphics.Blit(AssetDatabase.LoadAssetAtPath<Texture2D>(sourcePath), target);
-            RenderTexture.active = target;
+            Color32[] colors = ReadPixels(sourcePath);
             Texture2D pixels = new Texture2D(MaskSize, MaskSize, TextureFormat.RGBA32, false, true);
-            pixels.ReadPixels(new Rect(0f, 0f, MaskSize, MaskSize), 0, 0);
-            RenderTexture.active = null;
-            RenderTexture.ReleaseTemporary(target);
-            Color32[] colors = pixels.GetPixels32();
 
             for (int i = 0; i < colors.Length; i++)
             {
