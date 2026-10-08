@@ -8,6 +8,9 @@
 - The Old Mill POI became the Abandoned Windmill: three storeys with inner stairs, a gallery round the middle floor with a ramp from the yard, monsters on every level, medium loot (best chest at the top).
 - Versioning (DD-018): `Major.Minor.Patch.Build` replaced by separate Game Version (`MAJOR.MINOR.PATCH`), Build number, Stage and Steam branch; roadmap phases mapped to stages and version ranges (see `05_Technical/Build_And_Release.md`, `12_Roadmap/README.md`).
 
+### Added
+- Skeleton Warrior (DD-016): tank with arming sword and écu, blocks, 165 HP, light armour; body from the Zombie Warrior pack; guards the graveyard portal and spawns at random points (weight 0.5); drops swords, shields and Ironclad pieces on top of the common monster loot.
+
 ### Planned
 - Skeleton enemy roster: Swordsman, Archer, Crossbowman, Warrior (sword + shield), Mage (staff + spells), Flying Skull (charging head) — see `03_World/PvE.md`, DD-016.
 - Lore-based enemy loot: each enemy drops gear of its own kind (bows and arrows from archers, swords from swordsmen, staffs and spellbooks from mages) plus universal loot — coins, bandages, consumables, gear, jewelry (see `03_World/Loot.md`).
