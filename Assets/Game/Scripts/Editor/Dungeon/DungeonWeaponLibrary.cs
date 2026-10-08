@@ -33,6 +33,8 @@ namespace Game.Scripts.Editor.Dungeon
         /// A frame of 60 fps footage of Dark and Darker. A fight there runs at full pace and ours at the base action
         /// speed of the fighters, so a clip is that much shorter than what it is copied from.
         private const float Footage = 0.75f * Frame;
+        /// How much lower on the screen than in the footage the raised bare fists of the block are held.
+        private const float RaisedFistDrop = 0.15f;
         private const float StaffHands = -0.55f;
         private const float StaffReach = -0.62f;
         private const float StaffButt = -0.9f;
@@ -517,6 +519,11 @@ namespace Game.Scripts.Editor.Dungeon
                 BattleAnimationLibrary.Guard(new(0.22f, 1.49f, 0.4f), new(-0.7f, 0.7f, 0f), new(-0.25f, 0.35f, 0.9f), 0.1f, 12f),
                 new(0.33f, 1.17f, 0.28f), new(-0.33f, 1.17f, 0.28f));
             idle.Off.Position = new Vector3(-0.2f, 1.48f, 0.44f);
+            // The block of D:are_hands_start_block_hold_end.mp4: fists shut low, swing up to vertical fists (thumbs up, knuckles at
+            // the enemy) before the forehead, the forearms two columns from the bottom edge; let go, they drop and open on the way down.
+            Vector3 upThumb = new Vector3(-0.5f, 0.1f, -0.85f);
+            Vector3 upFingers = new Vector3(0f, 1f, 0.1f);
+            BodyPose hold = Fists2(0.565f, 0.05f, 0.4f, 0.09f, upThumb, upFingers, 0f, 0.185f);
             BodyPose breath = idle;
             breath.Main.Position += new Vector3(0f, -0.018f, -0.018f);
             breath.Off.Position += new Vector3(0f, -0.018f, -0.018f);
@@ -545,20 +552,68 @@ namespace Game.Scripts.Editor.Dungeon
                         new(-0.11f, 1.58f, 0.36f), 35f, -75f)
                 },
                 CanBlock = true,
-                BlockRaise = 0.15f,
+                BlockRaise = 16 * Footage,
+                BlockVia = new()
+                {
+                    new(2 * Footage, Fists2(0.63f, 0.84f, 0.38f, 0.84f, new(-1f, 0f, 0f), new(0f, 0.5f, 0.85f), 0f, 0.3f), Ease.Linear),
+                    new(4 * Footage, Fists2(0.6f, 0.7f, 0.37f, 0.72f, new(-0.6f, 0.4f, -0.6f), new(0f, 0.8f, 0.6f), 0f, 0.27f), Ease.Linear),
+                    new(6 * Footage, Fists2(0.57f, 0.31f, 0.4f, 0.3f, upThumb, upFingers, 0f, 0.22f), Ease.Linear),
+                    new(8 * Footage, Fists2(0.56f, 0.22f, 0.39f, 0.27f, upThumb, upFingers, 0f, 0.2f), Ease.Linear),
+                    new(10 * Footage, Fists2(0.55f, 0.13f, 0.39f, 0.17f, upThumb, upFingers, 0f, 0.19f), Ease.Linear),
+                    new(13 * Footage, Fists2(0.56f, 0.01f, 0.39f, 0.04f, upThumb, upFingers, 0f, 0.185f), Ease.Out)
+                },
+                BlockLower = 16 * Footage,
+                BlockLowerVia = new()
+                {
+                    new(4 * Footage, Fists2(0.56f, 0.34f, 0.4f, 0.34f, upThumb, upFingers, 0.1f, 0.21f), Ease.Linear),
+                    new(6 * Footage, Fists2(0.59f, 0.6f, 0.37f, 0.57f, new(-0.7f, 0.4f, -0.6f), new(0f, 0.8f, 0.6f), 0.2f, 0.25f), Ease.Linear),
+                    new(8 * Footage, Fists2(0.6f, 0.72f, 0.37f, 0.7f, new(-0.9f, 0.3f, -0.3f), new(0f, 0.6f, 0.8f), 0.3f, 0.28f), Ease.Linear),
+                    new(10 * Footage, Fists2(0.62f, 0.85f, 0.37f, 0.82f, new(-0.9f, 0.3f, -0.3f), new(-0.1f, 0.5f, 0.85f), 0.3f, 0.3f), Ease.Linear)
+                },
                 BlockMitigation = 0.4f,
                 BlockImpact = 0.25f,
                 BlockRecovery = 0.3f,
                 BlockAngle = 80f,
                 BlockMove = 0.7f,
-                Block = BattleAnimationLibrary.Guard(new(0.045f, 1.87f, 0.29f), new(1f, 0f, -0.2f), Vector3.up),
-                BlockHit = BattleAnimationLibrary.Guard(new(0.05f, 1.83f, 0.24f), new(1f, 0f, -0.2f), new(0f, 1f, -0.15f), pitch: -4f),
-                BlockLowered = BattleAnimationLibrary.Guard(new(0.05f, 1.81f, 0.27f), new(1f, 0f, -0.2f), Vector3.up),
+                Block = hold,
+                BlockHit = Shifted(hold, new(0f, -0.03f, -0.04f)),
+                BlockLowered = Shifted(hold, new(0f, -0.02f, -0.01f)),
                 DeflectPose = idle,
                 BlockSocket = WeaponSocket.LeftHand,
                 BlockBoxCenter = Vector3.zero,
                 BlockBoxExtents = new Vector3(0.14f, 0.14f, 0.08f)
             };
+        }
+
+        /// Both fists placed by their screen centres (u right, v down) that far before the eye; the grip sits 0.1 m past the
+        /// fist's centre along the fingers. The left hand mirrors the right one's hold.
+        private static BodyPose Fists2(float rightU, float rightV, float leftU, float leftV, Vector3 thumb, Vector3 fingers, float open, float depth)
+        {
+            // The game's view shows raised hands higher than the rig's eye: drop them, or the fists leave the top edge.
+            float drop = rightV < 0.5f ? RaisedFistDrop : 0f;
+            rightV += drop;
+            leftV += drop;
+            BodyPose pose = BattleAnimationLibrary.Guard(OnScreen(rightU, rightV, depth) + fingers.normalized * 0.1f, thumb, fingers, open);
+            pose.Off.Position = OnScreen(leftU, leftV, depth) + Vector3.Scale(fingers.normalized, new Vector3(-1f, 1f, 1f)) * 0.1f;
+            pose.Main.Up = fingers.normalized;
+
+            // Raised, the forearms stand upright side by side: the elbows tucked in under the fists.
+            return rightV < 0.5f
+                ? BattleAnimationLibrary.Elbows(pose, pose.Main.Position + new Vector3(0.08f, -0.36f, -0.14f), pose.Off.Position + new Vector3(-0.08f, -0.36f, -0.14f))
+                : pose;
+        }
+
+        private static Vector3 OnScreen(float u, float v, float depth)
+        {
+            return new Vector3((2f * u - 1f) * 1.364f * depth, 1.731f - (2f * v - 1f) * 0.767f * depth, 0.115f + depth);
+        }
+
+        private static BodyPose Shifted(BodyPose pose, Vector3 offset)
+        {
+            pose.Main.Position += offset;
+            pose.Off.Position += offset;
+
+            return pose;
         }
 
         /// A haymaker. The free hand reaches out open at the target while the fist swings out of view low on its side; the
