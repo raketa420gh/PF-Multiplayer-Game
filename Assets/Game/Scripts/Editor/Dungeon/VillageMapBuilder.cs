@@ -809,7 +809,7 @@ namespace Game.Scripts.Editor.Dungeon
             (Vector2 swamp, float _) = VillageLayout.RedPortals[1];
             Vector2 p = VillageLayout.Plaza;
             result.Monsters.Add(Monster(spawns, "SkeletonArcher", Ground(ground, VillageLayout.Chapel + new Vector2(0f, 6f)) + Vector3.up * 0.5f, 180f));
-            result.Monsters.Add(Monster(spawns, "SkeletonSwordsman", Ground(ground, crypt + new Vector2(-6f, 0f)), -90f));
+            result.Monsters.Add(Monster(spawns, "SkeletonWarrior", Ground(ground, crypt + new Vector2(-6f, 0f)), -90f));
             result.Monsters.Add(Monster(spawns, "FlyingHead", Ground(ground, swamp + new Vector2(0f, 7f)) + Vector3.up * 0.3f, 0f));
             result.Monsters.Add(Monster(spawns, "Juggernaut", Ground(ground, p + new Vector2(-3f, 5f)), 180f));
             result.Monsters.Add(Monster(spawns, "SkeletonArcher", Ground(ground, p + new Vector2(8f, 9f)), 200f));

@@ -19,7 +19,7 @@ namespace Game.Scripts.Editor.Battle
         private const string NavMeshPath = "Assets/Game/Scenes/BattleScene/NavMesh.asset";
         private const float RampartHeight = 3f;
 
-        private static readonly string[] s_monsters = { "SkeletonSwordsman", "SkeletonArcher", "FlyingHead", "Juggernaut" };
+        private static readonly string[] s_monsters = { "SkeletonSwordsman", "SkeletonArcher", "SkeletonWarrior", "FlyingHead", "Juggernaut" };
         private static readonly string[] s_monsterLabels = { "Skeleton", "Archer", "Flying Head", "Juggernaut" };
         private static readonly string[] s_dungeonOnlyHud = { "Minimap", "TimerBack", "Timer", "Swarm", "ModuleBack", "Module", "Floor" };
         /// Decor from the character packs: an armoury row of outfit stands by the spawn, statues on the towers and fallen bodies further out.

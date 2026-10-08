@@ -55,16 +55,26 @@ namespace Game.Scripts.Editor.Dungeon
             PrefabUtility.UnpackPrefabInstance(model, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
             Object.DestroyImmediate(model.GetComponent<Animator>());
             model.name = "Skeleton";
-            model.transform.localPosition = rig.transform.localPosition;
-            model.transform.localRotation = rig.transform.localRotation;
-            model.transform.localScale = rig.transform.localScale;
-            BattleEditorUtility.SetLayerRecursively(model, rig.gameObject.layer);
 
             foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>())
             {
                 renderer.sharedMaterial = material;
                 renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
             }
+
+            Retarget(root, rig, model, avatar);
+
+            return model.transform;
+        }
+
+        /// Places a humanoid model where the rig is, hides the rig's own body and makes the model copy the rig's pose.
+        public static void Retarget(GameObject root, Animator rig, GameObject model, Avatar avatar)
+        {
+            model.transform.SetParent(rig.transform.parent, false);
+            model.transform.localPosition = rig.transform.localPosition;
+            model.transform.localRotation = rig.transform.localRotation;
+            model.transform.localScale = rig.transform.localScale;
+            BattleEditorUtility.SetLayerRecursively(model, rig.gameObject.layer);
 
             foreach (Renderer renderer in rig.GetComponentsInChildren<Renderer>(true))
                 renderer.enabled = false;
@@ -74,8 +84,6 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_avatar", avatar);
             BattleEditorUtility.Set(so, "_model", model.transform);
             so.ApplyModifiedPropertiesWithoutUndo();
-
-            return model.transform;
         }
 
         /// The pack ships a generic rig; the pose copy needs it humanoid.

@@ -67,6 +67,8 @@ namespace Game.Scripts.Editor.Dungeon
                 loadouts, arrow, orb, database, pieceSet);
             BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Bow), Experience = 25, Loot = loot["Monster"], Body = DungeonSkeletonBuilder.Material("D"), Scale = 0.98f },
                 loadouts, arrow, orb, database, pieceSet);
+            BuildMonster(new MonsterDef { Name = "SkeletonWarrior", DisplayName = "Skeleton Warrior", Health = 165, Damage = 1.3f, MoveSpeed = 200f, ActionSpeed = 0.65f, Aggro = 10f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.SwordEcu), Experience = 40, Loot = loot["Warrior"], Scale = 1f,
+                Armor = 0.15f, Skin = DungeonWarriorBuilder.Attach }, loadouts, arrow, orb, database, pieceSet);
             BuildFlyingHead(new MonsterDef { Name = "FlyingHead", DisplayName = "Flying Head", Health = 60, Damage = 1f, MoveSpeed = 230f, ActionSpeed = 1f, Aggro = 12f, Experience = 30, Loot = loot["Monster"], Scale = 1f,
                 Voice = DungeonSound.Screech, Charge = 900f }, arrow, orb, database);
             BuildJuggernaut(new MonsterDef { Name = "Juggernaut", DisplayName = "Iron Juggernaut", Health = 220, Damage = 1f, MoveSpeed = 190f, ActionSpeed = 0.8f, Aggro = 12f, Experience = 60, Loot = loot["Monster"], Scale = 1f,
@@ -452,6 +454,11 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Gold Coins", 5f, 1, 6), ("Bandage", 2f, 1, 1), ("Ruby", 0.5f, 1, 1), ("Potion of Healing", 1f, 1, 1),
                 ("Gold Ore", 0.6f, 1, 2), ("Silver Chalice", 0.3f, 1, 1)
             }.Concat(Pieces(0.4f, "Peasant")).ToArray();
+            // The warrior's own gear on top of what any monster carries (DD-016).
+            (string name, float weight, int min, int max)[] warrior = monster.Concat(new (string, float, int, int)[]
+            {
+                ("Arming Sword", 1.5f, 1, 1), ("Écu", 1f, 1, 1), ("Round Shield", 0.8f, 1, 1)
+            }).Concat(Pieces(0.3f, "Ironclad")).ToArray();
 
             return new Dictionary<string, LootTableConfig>
             {
@@ -463,6 +470,7 @@ namespace Game.Scripts.Editor.Dungeon
                 ["Bookshelf"] = BuildLootTable(database, "Bookshelf", bookshelf, 1, 3, new[] { 10f, 45f, 30f, 10f, 4f, 1f, 0f }, 0.2f),
                 // Corpses are searched like chests: a common monster carries a thing or two, the boss a golden chest's worth.
                 ["Monster"] = BuildLootTable(database, "Monster", monster, 1, 2, new[] { 25f, 55f, 15f, 4f, 1f, 0f, 0f }, 0.3f),
+                ["Warrior"] = BuildLootTable(database, "Warrior", warrior, 1, 3, new[] { 20f, 55f, 18f, 5f, 2f, 0f, 0f }, 0.15f),
                 ["Boss"] = BuildLootTable(database, "Boss", ornate, 3, 4, new[] { 0f, 0f, 30f, 35f, 22f, 10f, 3f }, 0f)
             };
         }
@@ -738,6 +746,9 @@ namespace Game.Scripts.Editor.Dungeon
             public float Lunge;
             public float Charge;
             public DungeonSound Voice = DungeonSound.Rattle;
+            public float Armor = -0.22f;
+            /// The body over the fighter rig; skeletons by default.
+            public System.Func<GameObject, Animator, Transform> Skin;
             public (ArmorVisual, Color)[] Attachments = System.Array.Empty<(ArmorVisual, Color)>();
         }
 
@@ -802,7 +813,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_actionSpeed", def.ActionSpeed);
             BattleEditorUtility.Set(so, "_aggroRange", def.Aggro);
             BattleEditorUtility.Set(so, "_leashRange", def.IsBoss ? 16f : 24f);
-            BattleEditorUtility.Set(so, "_armorReduction", def.IsBoss ? 0.1f : -0.22f);
+            BattleEditorUtility.Set(so, "_armorReduction", def.IsBoss ? 0.1f : def.Armor);
             BattleEditorUtility.Set(so, "_magicReduction", def.IsBoss ? 0.1f : -0.17f);
             BattleEditorUtility.Set(so, "_weaponIndex", def.WeaponIndex);
             BattleEditorUtility.Set(so, "_experience", def.Experience);
@@ -838,7 +849,10 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject root = parts.Root;
             BattleEditorUtility.Set(parts.Fighter, "_respawnDelay", 0f);
             parts.Animator.transform.localScale = Vector3.one * def.Scale;
-            DungeonSkeletonBuilder.Attach(root, parts.Animator, def.Body);
+            if (def.Skin != null)
+                def.Skin(root, parts.Animator);
+            else
+                DungeonSkeletonBuilder.Attach(root, parts.Animator, def.Body);
 
             root.GetComponent<CharacterController>().radius = 0.3f * def.Scale;
             root.GetComponent<CharacterController>().height = 1.85f * def.Scale;

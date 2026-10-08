@@ -816,9 +816,12 @@ namespace Game.Scripts.Editor.Dungeon
             ModelImporter importer = (ModelImporter)AssetImporter.GetAtPath(path);
 
             // Tilted import rotations swell the renderer bounds: the box is measured on the vertices.
-            if (!importer.isReadable)
+            // ChestTomb.fbx ships a camera and a light: imported, every tomb rendered the scene once more.
+            if (!importer.isReadable || importer.importCameras || importer.importLights)
             {
                 importer.isReadable = true;
+                importer.importCameras = false;
+                importer.importLights = false;
                 importer.SaveAndReimport();
             }
 

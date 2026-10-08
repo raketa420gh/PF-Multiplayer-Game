@@ -67,7 +67,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_matchPrefab", LoadNetworkObject("Match"));
             BattleEditorUtility.Set(so, "_config", config);
             SerializedProperty monsters = so.FindProperty("_monsters");
-            (string name, float weight)[] kinds = { ("SkeletonSwordsman", 1f), ("SkeletonArcher", 0.6f), ("FlyingHead", 0.8f) };
+            (string name, float weight)[] kinds = { ("SkeletonSwordsman", 1f), ("SkeletonArcher", 0.6f), ("SkeletonWarrior", 0.5f), ("FlyingHead", 0.8f) };
             monsters.arraySize = kinds.Length;
 
             for (int i = 0; i < kinds.Length; i++)
