@@ -202,6 +202,13 @@ namespace Game.Scripts.Editor.Battle
         public static GameObject CreateFigure(string name, bool isFemale, AnimationClip clip, float time, Material body, Material surface,
             params OutfitPart[] parts)
         {
+            return CreateFigure(name, isFemale, clip, time, body, surface, null, parts);
+        }
+
+        /// Adjust bends the sampled skeleton (humanoid bones) before the bake.
+        public static GameObject CreateFigure(string name, bool isFemale, AnimationClip clip, float time, Material body, Material surface,
+            System.Action<Animator> adjust, params OutfitPart[] parts)
+        {
             GameObject instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath), Vector3.zero, Quaternion.identity);
             Dictionary<Material, List<CombineInstance>> groups = new();
             List<Mesh> baked = new();
@@ -219,6 +226,8 @@ namespace Game.Scripts.Editor.Battle
 
                 if (clip != null)
                     BattleEditorUtility.SampleClip(instance.GetComponent<Animator>(), clip, Mathf.Min(time, clip.length));
+
+                adjust?.Invoke(instance.GetComponent<Animator>());
 
                 foreach (SkinnedMeshRenderer renderer in instance.GetComponentsInChildren<SkinnedMeshRenderer>())
                 {

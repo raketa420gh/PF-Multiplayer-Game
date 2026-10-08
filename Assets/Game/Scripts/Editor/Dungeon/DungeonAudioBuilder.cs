@@ -44,6 +44,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Write("Footstep", take, CreateFootstep(take, 0));
                 Write("FootstepB", take, CreateFootstep(take, 1));
                 Write("Rattle", take, CreateRattle(take));
+                Write("Scream", take, CreateScream(take));
             }
 
             for (int take = 0; take < 2; take++)
@@ -360,6 +361,25 @@ namespace Game.Scripts.Editor.Dungeon
                 .Add(AudioSynth.Noise(duration, 450).BandPass(3500f, 1f), 0.2f);
 
             return voice.Shape(time => Mathf.Sin(Mathf.Sqrt(time / duration) * Mathf.PI)).Drive(3f).Normalize(0.6f);
+        }
+
+        /// A hoarse human wail through a crushed throat: an open "aah" that climbs, cracks and sinks, choked by the rope.
+        private static float[] CreateScream(int take)
+        {
+            float duration = 1.5f + take * 0.35f;
+            float peak = 430f + take * 70f;
+
+            float[] throat = AudioSynth.Buzz(duration, time =>
+                {
+                    float t = time / duration;
+
+                    return Mathf.Lerp(240f, peak, Mathf.Sin(Mathf.Min(1f, t * 1.6f) * Mathf.PI * 0.5f)) * (1f - 0.35f * t * t) + 25f * Mathf.Sin(time * 2f * Mathf.PI * (6f + take));
+                })
+                .Shape(time => 0.55f + 0.45f * Mathf.Sin(time * 2f * Mathf.PI * (37f + take * 9f)));
+            float[] voice = throat.Formants((780f, 4f, 1f), (1180f, 5f, 0.8f), (2600f, 6f, 0.45f)).Normalize(1f)
+                .Add(AudioSynth.Noise(duration, 460 + take).BandPass(1800f, 0.8f), 0.3f);
+
+            return voice.Shape(time => Mathf.Pow(Mathf.Sin(Mathf.Min(1f, time / duration * 1.15f) * Mathf.PI), 0.4f)).Drive(2.6f).Reverb(0.9f, 0.25f).Normalize(0.75f);
         }
 
         /// Cave air for one ear: wind breathing through the passages, a whistling draught, drips and far-off rumbles

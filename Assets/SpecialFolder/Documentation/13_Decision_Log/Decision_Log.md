@@ -210,6 +210,22 @@ Hit detection и сетевой authority должны учитывать ори
 **Consequences**
 Прежний формат `Major.Minor.Patch.Build` отменён. Нужны: генерация Build при сборке клиента и dedicated server, вывод версии в главном меню и логах, проверка совпадения Version/Build клиента и сервера. Детали — `05_Technical/Build_And_Release.md`.
 
+## DD-019 — One-Handed Animations Are Universal Across Shields
+**Date:** 2026-10-09
+**Status:** Accepted
+
+**Decision**
+Любая анимация одноручного оружия работает с любым щитом и не привязана к конкретной паре. Пара «оружие + щит» = удары, рипост и стойка правой руки от оружия + положение щита на левой руке, блок, опускание блока и Stability от щита. Щит в замахе едет вместе с корпусом (поворачивается вокруг позвоночника с торсом позы), в покое стоит там, где его держит щит.
+
+**Reason**
+Раньше каждая пара (Sword & Shield, Mace & Écu…) была отдельной ручной записью со своими, устаревшими ударами, а Viking Sword со щитом не работал вовсе.
+
+**Consequences**
+`DungeonWeaponLibrary.ShieldPairs` — единственная таблица одноручного оружия и его записей каталога по `ShieldIndex`; `WithShield` собирает пары, `BattleContentBuilder` — их модели, `DungeonItemLibrary` — ссылки предмета на пары. Новое одноручное оружие = одна строка в `ShieldPairs`. Sword & Shield / Mace & Shield / Sword & Écu / Mace & Écu теперь бьют сериями Arming Sword / Morning Star из футажа (урон, тайминги, рипост — их); добавлены Viking Sword & Round Shield и Viking Sword & Écu (новые записи каталога в конце). Имена пар: `<Оружие> & <Щит>`.
+
+**Related systems**
+Combat, Weapons, Animation pipeline (`video-to-animation`).
+
 ## Template
 
 ### DD-XXX — `[Title]`

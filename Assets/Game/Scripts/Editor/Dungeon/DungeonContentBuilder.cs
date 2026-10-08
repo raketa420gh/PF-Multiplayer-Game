@@ -81,6 +81,8 @@ namespace Game.Scripts.Editor.Dungeon
             BuildContainer("LargeOakChest", "Large Oak Chest", loot["ChestLarge"], "Big Chest", 0.6f);
             BuildContainer("GoldenChest", "Golden Chest", loot["ChestOrnate"], "Treasure Chest", 0f);
             BuildCoffin(loot["Coffin"]);
+            BuildHangedCorpse("HangedCorpse", false, loot["Coffin"]);
+            BuildHangedCorpse("HangedCorpseB", true, loot["Coffin"]);
             BuildBarrel(loot["Barrel"]);
             BuildCrate(loot["Barrel"]);
             BuildBookshelf(loot["Bookshelf"]);
@@ -1238,6 +1240,102 @@ namespace Game.Scripts.Editor.Dungeon
             SetupContainer(root, displayName, table, lid, new Vector3(-110f, 0f, 0f), false, 6, 4);
             AddInteractCollider(root, body.center, body.size + new Vector3(0.2f, 0.1f, 0.2f));
             BattleContentBuilder.SavePrefab(root, Prefab(name));
+        }
+
+        /// A body on a rope from the hanging tree. The root sits at the branch; the swing pivot carries the rope and the baked poses
+        /// (limp first, then convulsion frames). Hitboxes and the search trigger stay round the resting body.
+        private static void BuildHangedCorpse(string name, bool isFemale, LootTableConfig table)
+        {
+            const float rope = 1f;
+            const float neck = 1.5f;
+            const float feet = -rope - neck;
+            GameObject root = new GameObject(name);
+            SetupContainer(root, "Hanged Man", table, null, Vector3.zero, false, 5, 3);
+            HealthComponent health = root.AddComponent<HealthComponent>();
+            HitboxRoot hitboxRoot = root.AddComponent<HitboxRoot>();
+            DamageReceiverComponent receiver = root.AddComponent<DamageReceiverComponent>();
+            HangedCorpseComponent hanged = root.AddComponent<HangedCorpseComponent>();
+
+            Transform swing = BattleEditorUtility.CreateChild("Swing", root.transform).transform;
+            Material hemp = BattleEditorUtility.GetMaterial("Rope", new Color(0.42f, 0.35f, 0.22f), 0f, 0.1f);
+            DungeonStructureBuilder.Block(swing, "Rope", new Vector3(0f, -rope * 0.5f, 0f), new Vector3(0.045f, rope, 0.045f), hemp, 0f, false);
+            DungeonStructureBuilder.Block(swing, "Noose", new Vector3(0f, -rope - 0.02f, 0.02f), new Vector3(0.2f, 0.08f, 0.2f), hemp, 0f, false);
+            Material flesh = BattleEditorUtility.GetMaterial("RottenFlesh", new Color(0.4f, 0.43f, 0.32f), 0f, 0.45f);
+            (string clip, float at)[] poses = { ("Idle_Loop", 0f), ("Swim_Idle_Loop", 0.2f), ("Swim_Idle_Loop", 0.65f), ("Zombie_Scratch", 0.45f), ("Hit_Chest", 0.2f) };
+            GameObject[] figures = new GameObject[poses.Length];
+
+            for (int i = 0; i < poses.Length; i++)
+            {
+                AnimationClip clip = BattleEditorUtility.LoadLibraryClip(poses[i].clip);
+                figures[i] = BattleCharacterBuilder.CreateFigure($"{name}{i}", isFemale, clip, clip.length * poses[i].at, flesh, null,
+                    i == 0 ? (System.Action<Animator>)HangLimp : HangNeck, OutfitPart.PeasantBody, OutfitPart.PeasantLegs);
+                figures[i].transform.SetParent(swing, false);
+                figures[i].transform.localPosition = new Vector3(0f, feet, 0f);
+                figures[i].SetActive(i == 0);
+            }
+
+            int hitboxLayer = LayerMask.NameToLayer(BattleEditorUtility.HitboxLayer);
+            Transform hitboxes = BattleEditorUtility.CreateChild("Hitboxes", root.transform).transform;
+            BattleContentBuilder.CreateSphereHitbox(hitboxes, hitboxRoot, "Head", HitZone.Head, new Vector3(0f, feet + 1.66f, 0.06f), 0.14f, hitboxLayer);
+            BattleContentBuilder.CreateBoxHitbox(hitboxes, hitboxRoot, "Torso", HitZone.Torso, new Vector3(0f, feet + 1.22f, 0f), new Vector3(0.22f, 0.3f, 0.15f), hitboxLayer);
+            BattleContentBuilder.CreateBoxHitbox(hitboxes, hitboxRoot, "Legs", HitZone.Legs, new Vector3(0f, feet + 0.48f, 0f), new Vector3(0.15f, 0.47f, 0.15f), hitboxLayer);
+            hitboxRoot.InitHitboxes();
+            hitboxRoot.BroadRadius = 1.5f;
+            hitboxRoot.Offset = new Vector3(0f, feet + 1f, 0f);
+            BattleContentBuilder.SetupReceiver(receiver, health, hitboxRoot, AssetDatabase.LoadAssetAtPath<HitZoneConfig>($"{BattleEditorUtility.ConfigsFolder}/HitZones.asset"));
+            BattleEditorUtility.Set(root.AddComponent<HitFeedbackComponent>(), "_receiver", receiver);
+            BoxCollider trigger = AddInteractCollider(root, new Vector3(0f, feet + 1f, 0f), new Vector3(0.9f, 2.1f, 0.9f));
+
+            AudioSource voice = root.AddComponent<AudioSource>();
+            voice.playOnAwake = false;
+            voice.spatialBlend = 1f;
+            voice.rolloffMode = AudioRolloffMode.Linear;
+            voice.minDistance = 4f;
+            voice.maxDistance = 75f;
+            voice.dopplerLevel = 0f;
+
+            SerializedObject so = new SerializedObject(hanged);
+            BattleEditorUtility.Set(so, "_health", health);
+            BattleEditorUtility.Set(so, "_swing", swing);
+            BattleEditorUtility.Set(so, "_poses", figures);
+            BattleEditorUtility.Set(so, "_voice", voice);
+            BattleEditorUtility.Set(so, "_screams", DungeonAudioBuilder.Load("Scream"));
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            so = new SerializedObject(root.GetComponent<ContainerComponent>());
+            BattleEditorUtility.Set(so, "_openVerb", "Loot");
+            BattleEditorUtility.Set(so, "_trigger", trigger);
+            BattleEditorUtility.Set(so, "_hanged", hanged);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            BattleContentBuilder.SavePrefab(root, Prefab(name));
+        }
+
+        /// The noose breaks the neck to one side and drops the head forward.
+        private static void HangNeck(Animator animator)
+        {
+            Transform root = animator.transform;
+            Bend(animator, HumanBodyBones.Neck, root.forward, 20f);
+            Bend(animator, HumanBodyBones.Head, root.forward, 16f);
+            Bend(animator, HumanBodyBones.Head, root.right, 24f);
+        }
+
+        /// Dead weight: arms slack at the sides, knees softly bent, toes pointing at the ground.
+        private static void HangLimp(Animator animator)
+        {
+            Transform root = animator.transform;
+            HangNeck(animator);
+            Bend(animator, HumanBodyBones.LeftUpperArm, root.forward, 6f);
+            Bend(animator, HumanBodyBones.RightUpperArm, root.forward, -6f);
+            Bend(animator, HumanBodyBones.LeftLowerLeg, root.right, 12f);
+            Bend(animator, HumanBodyBones.RightLowerLeg, root.right, 7f);
+            Bend(animator, HumanBodyBones.LeftFoot, root.right, 45f);
+            Bend(animator, HumanBodyBones.RightFoot, root.right, 40f);
+        }
+
+        private static void Bend(Animator animator, HumanBodyBones bone, Vector3 axis, float angle)
+        {
+            Transform transform = animator.GetBoneTransform(bone);
+            transform.rotation = Quaternion.AngleAxis(angle, axis) * transform.rotation;
         }
 
         private static void BuildCoffin(LootTableConfig table)

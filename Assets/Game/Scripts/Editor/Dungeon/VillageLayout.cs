@@ -85,6 +85,7 @@ namespace Game.Scripts.Editor.Dungeon
             new() { Name = "Hunter's Lodge", Kind = ZoneKind.Wild, Center = new Vector2(-214f, -36f), Radius = 21f },
             new() { Name = "Gallows Hill", Kind = ZoneKind.Wild, Center = new Vector2(-116f, -12f), Radius = 18f },
             new() { Name = "Abandoned Windmill", Kind = ZoneKind.Wild, Center = new Vector2(44f, 230f), Radius = 24f },
+            new() { Name = "Hanging Tree", Kind = ZoneKind.Wild, Center = new Vector2(60f, 166f), Radius = 22f },
             new() { Name = "Watchtower", Kind = ZoneKind.Wild, Center = new Vector2(172f, -14f), Radius = 21f },
             new() { Name = "Willow Ford", Kind = ZoneKind.Swamp, Center = new Vector2(-212f, -116f), Radius = 22f },
             new() { Name = "Swamp Edge", Kind = ZoneKind.Swamp, Center = new Vector2(-112f, -104f), Radius = 20f },
@@ -143,7 +144,9 @@ namespace Game.Scripts.Editor.Dungeon
             new() { Width = 4f, Points = new Vector2[] { new(-104f, 214f), new(-60f, 222f), new(-30f, 222f), new(-12f, 214f), new(16f, 212f), new(44f, 222f), new(70f, 210f), new(110f, 196f) } },
             // Farm yard loop, a ragged ring round the well.
             new() { Width = 4f, Wobble = 4f, Points = Arc(FarmCenter, 36f, -40f, 250f, 11, 9f) },
-            // Trails through the woods.
+            // Trails through the woods. The hanging tree's clearing lies between the north road and the graveyard's west wall.
+            Trail(new(56f, 216f), new(62f, 194f), new(60f, 172f)),
+            Trail(new(64f, 164f), new(88f, 168f), new(118f, 172f)),
             Trail(new(-176f, 196f), new(-196f, 214f), new(-222f, 224f)),
             Trail(new(-160f, 232f), new(-186f, 246f), new(-214f, 238f)),
             Trail(new(-196f, 122f), new(-214f, 96f), new(-212f, 70f), new(-214f, 52f), new(-208f, 20f), new(-214f, -36f)),

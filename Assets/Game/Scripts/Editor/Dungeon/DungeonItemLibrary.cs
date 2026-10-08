@@ -187,7 +187,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             List<ItemDef> items = new()
             {
-                Weapon("Arming Sword", DungeonWeaponLibrary.ArmingSword, WeaponClass.Sword, 1, 3, 20f, "Sw", s_steel, 25, "A reliable one-handed sword. Pairs with a shield.", shields: new[] { DungeonWeaponLibrary.SwordShield, DungeonWeaponLibrary.SwordEcu }),
+                Weapon("Arming Sword", DungeonWeaponLibrary.ArmingSword, WeaponClass.Sword, 1, 3, 20f, "Sw", s_steel, 25, "A reliable one-handed sword. Pairs with a shield."),
                 Weapon("Battle Axe", DungeonWeaponLibrary.BattleAxe, WeaponClass.Axe, 2, 4, 30f, "Ax", s_steel, 50, "Two-handed double axe. A cut, a backswing and an overhead chop.", twoHanded: true),
                 Weapon("Crossbow", DungeonWeaponLibrary.Crossbow, WeaponClass.Crossbow, 2, 3, 50f, "Xb", s_wood, 55, "Hard-hitting bolt. Press R to load a bolt from the bag.", twoHanded: true, ammo: Bolts),
                 Weapon("Magic Staff", DungeonWeaponLibrary.Staff, WeaponClass.Staff, 1, 4, 20f, "St", new Color(0.5f, 0.7f, 1f), 50, "Caster focus. Also a decent club.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 4f) }, classes: new[] { Wizard, Confessor }),
@@ -221,7 +221,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Treasure("Ancient Scroll", 1, 1, 3, 60, "Sc", new Color(0.85f, 0.75f, 0.5f), true),
 
                 // Second wave of Dark and Darker gear.
-                Weapon("Morning Star", DungeonWeaponLibrary.MorningStar, WeaponClass.Mace, 1, 3, 23f, "Mc", s_steel, 36, "Spiked mace head. Staggers on the third hit.", shields: new[] { DungeonWeaponLibrary.MaceShield, DungeonWeaponLibrary.MaceEcu }),
+                Weapon("Morning Star", DungeonWeaponLibrary.MorningStar, WeaponClass.Mace, 1, 3, 23f, "Mc", s_steel, 36, "Spiked mace head. Staggers on the third hit."),
 
                 Jewelry("Fox Pendant", EquipSlot.Necklace, "Nk", new Color(0.95f, 0.55f, 0.25f), 70, new StatModifier(StatType.Agility, 2f)),
                 Jewelry("Ox Pendant", EquipSlot.Necklace, "Nk", new Color(0.75f, 0.45f, 0.3f), 70, new StatModifier(StatType.Strength, 2f)),
@@ -394,12 +394,12 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         private static ItemDef Weapon(string name, string prefix, WeaponClass weaponClass, int width, int height, float movePenalty, string glyph,
-            Color color, int value, string description, bool twoHanded = false, bool offHand = false, float light = 0f, string[] shields = null,
+            Color color, int value, string description, bool twoHanded = false, bool offHand = false, float light = 0f,
             StatModifier[] modifiers = null, string[] classes = null, bool focus = false, string ammo = null, int shieldIndex = 0)
         {
             return new ItemDef
             {
-                Name = name, Kind = ItemKind.Weapon, Classes = classes, WeaponPrefix = prefix, ShieldPrefixes = shields, ShieldIndex = shieldIndex, WeaponClass = weaponClass, Width = width, Height = height,
+                Name = name, Kind = ItemKind.Weapon, Classes = classes, WeaponPrefix = prefix, ShieldPrefixes = DungeonWeaponLibrary.WithShield(prefix), ShieldIndex = shieldIndex, WeaponClass = weaponClass, Width = width, Height = height,
                 MovePenalty = movePenalty, Glyph = glyph, Color = color, Value = value, Description = description, TwoHanded = twoHanded, OffHand = offHand,
                 LightRange = light, IsFocus = focus, Ammo = ammo, RollsRarity = true, Modifiers = modifiers != null ? new List<StatModifier>(modifiers) : new List<StatModifier>()
             };

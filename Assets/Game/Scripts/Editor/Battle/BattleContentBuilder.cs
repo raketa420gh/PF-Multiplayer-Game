@@ -92,7 +92,6 @@ namespace Game.Scripts.Editor.Battle
             WeaponDefinition[] definitions = DungeonWeaponLibrary.CreateAll();
             Dictionary<string, (GameObject prefab, WeaponSocket socket)[]> attachments = new()
             {
-                [DungeonWeaponLibrary.SwordShield] = new[] { (sword, WeaponSocket.RightHand), (shield, WeaponSocket.LeftShield) },
                 [DungeonWeaponLibrary.Bow] = new[] { (bow, WeaponSocket.LeftHand) },
                 [DungeonWeaponLibrary.SwordShieldLeft] = new[] { (sword, WeaponSocket.LeftHand), (shield, WeaponSocket.RightShield) },
                 [DungeonWeaponLibrary.Fists] = Array.Empty<(GameObject, WeaponSocket)>(),
@@ -100,17 +99,20 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.BattleAxe] = new[] { (axe, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Crossbow] = new[] { (crossbow, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Staff] = new[] { (staff, WeaponSocket.RightHand) },
-                // The morning star is the only mace left, so it is the one carried with a shield.
-                [DungeonWeaponLibrary.MaceShield] = new[] { (morningStar, WeaponSocket.RightHand), (shield, WeaponSocket.LeftShield) },
                 [DungeonWeaponLibrary.Spellbook] = new[] { (book, WeaponSocket.LeftHand) },
                 [DungeonWeaponLibrary.BearClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.PantherClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.RatBite] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.MorningStar] = new[] { (morningStar, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.SwordEcu] = new[] { (sword, WeaponSocket.RightHand), (ecu, WeaponSocket.LeftShield) },
-                [DungeonWeaponLibrary.MaceEcu] = new[] { (morningStar, WeaponSocket.RightHand), (ecu, WeaponSocket.LeftShield) },
                 [DungeonWeaponLibrary.VikingSword] = new[] { (vikingSword, WeaponSocket.RightHand) }
             };
+            GameObject[] shields = { shield, ecu };
+
+            foreach ((string weapon, Func<WeaponDefinition> _, string[] withShield) in DungeonWeaponLibrary.ShieldPairs)
+            {
+                for (int i = 0; i < withShield.Length; i++)
+                    attachments[withShield[i]] = new[] { attachments[weapon][0], (shields[i], WeaponSocket.LeftShield) };
+            }
 
             string[] order = DungeonWeaponLibrary.CatalogOrder;
             Loadout[] loadouts = new Loadout[order.Length];

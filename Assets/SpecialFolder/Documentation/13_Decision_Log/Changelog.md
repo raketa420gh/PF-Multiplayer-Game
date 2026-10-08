@@ -3,6 +3,7 @@
 ## Unreleased — 2026-10-08
 
 ### Changed
+- One-handed animations are universal across shields (DD-019): any one-handed weapon swings and ripostes with its own series whatever shield is in the off hand; the shield gives the off-arm pose, the block and Stability. Sword/Mace & Shield/Écu now use the Arming Sword / Morning Star footage series; Viking Sword works with the Round Shield and the Écu. Pairs are generated from `DungeonWeaponLibrary.ShieldPairs`.
 - Floor 1 (DD-017): teams start in a random farm house (7 houses); the farm has two weak monsters and poor loot. The village is the high-risk centre: a monster in every other house, Iron Juggernaut with two archers and two swordsmen on the square, rich house loot and a golden chest on the square.
 - Ways down to floor 2 are red portals on stone-ring shrines behind the chapel and on Crimson Isle in the swamp (were stone cellars with grates); they still open halfway through the clock.
 - The Old Mill POI became the Abandoned Windmill: three storeys with inner stairs, a gallery round the middle floor with a ramp from the yard, monsters on every level, medium loot (best chest at the top).

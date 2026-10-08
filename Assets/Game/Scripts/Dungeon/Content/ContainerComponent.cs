@@ -9,7 +9,7 @@ namespace Game.Scripts.Dungeon
         public override string Prompt => (IsOpen ? "Search" : _openVerb) + " " + _displayName;
         public override float HoldTime => 0f;
         /// A body can be looted only once it is dead.
-        public override bool IsAvailable => _body == null || _body.IsDead;
+        public override bool IsAvailable => (_body == null || _body.IsDead) && (_hanged == null || _hanged.IsLootable);
         public InventoryComponent Inventory => _inventory;
         public LootTableConfig LootTable => _lootTable;
         public string DisplayName => _displayName;
@@ -44,6 +44,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Interaction trigger switched on together with the availability")]
         private Collider _trigger;
 
+        [SerializeField, Tooltip("Hanged bodies: a living one wakes up instead of being looted")]
+        private HangedCorpseComponent _hanged;
+
         private float _lidBlend;
 
         public override void Render()
@@ -70,10 +73,16 @@ namespace Game.Scripts.Dungeon
         {
             if (table != null)
                 table.Roll(_inventory, seed);
+
+            if (_hanged != null)
+                _hanged.Arm(seed);
         }
 
         public override void Complete(AdventurerComponent adventurer)
         {
+            if (_hanged != null && _hanged.TryWake())
+                return;
+
             IsOpen = true;
             adventurer.OpenContainer(this);
         }

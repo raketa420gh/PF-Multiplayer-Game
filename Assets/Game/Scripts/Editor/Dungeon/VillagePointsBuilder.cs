@@ -32,6 +32,7 @@ namespace Game.Scripts.Editor.Dungeon
             plans.Add(new Plan { Kind = "Pad", Position = mill, Yaw = 180f, HalfSize = new Vector2(14f, 8f) });
             plans.Add(new Plan { Kind = "Tower", Position = Center("Watchtower") + new Vector2(2f, 3f), Yaw = 200f, HalfSize = Vector2.one * 4.8f });
             plans.Add(new Plan { Kind = "Pad", Position = Center("Standing Stones"), Yaw = 12f, HalfSize = Vector2.one * 10f });
+            plans.Add(new Plan { Kind = "Pad", Position = Center("Hanging Tree"), Yaw = 0f, HalfSize = Vector2.one * 11f });
             plans.Add(new Plan { Kind = "Pad", Position = Center("Gallows Hill") + new Vector2(3f, 4f), Yaw = -20f, HalfSize = new Vector2(5f, 3f) });
         }
 
@@ -43,6 +44,7 @@ namespace Game.Scripts.Editor.Dungeon
             StandingStones(root, ground, result, random);
             HunterLodge(root, ground, result, random);
             GallowsHill(root, ground, result, random);
+            HangingTree(root, ground, result, random);
             AbandonedWindmill(root, ground, result, random);
             Watchtower(root, ground, result, random);
             WillowFord(root, ground, result, random);
@@ -263,6 +265,32 @@ namespace Game.Scripts.Editor.Dungeon
             result.Containers.Add(VillageMapBuilder.PutContainer(hill, ground, "Coffin", site + new Vector2(-1f, -4.5f), 70f));
             result.Containers.Add(VillageMapBuilder.PutContainer(hill, ground, "SmallOakChest", site + new Vector2(5.5f, 3f), -110f));
             Spots(result, ground, c, new Vector2(-6f, -6f), new Vector2(8f, 0f));
+        }
+
+        /// The great dead oak with a body on a rope under every main limb (some still alive), bones and a crow-picked corpse
+        /// among its roots, two braziers lighting the clearing between the north road and the graveyard.
+        private static void HangingTree(Transform root, VillageGround ground, VillageMapBuilder.Result result, System.Random random)
+        {
+            const float yaw = 20f;
+            Vector2 c = Center("Hanging Tree");
+            Transform clearing = BattleEditorUtility.CreateChild("Hanging Tree", root).transform;
+            Transform tree = Put(clearing, ground, DungeonVegetationBuilder.Load("HangingTree"), c, yaw).transform;
+            Vector3[] hooks = DungeonVegetationBuilder.HangingTreeHooks();
+
+            for (int i = 0; i < hooks.Length; i++)
+            {
+                Vector3 hook = clearing.InverseTransformPoint(tree.TransformPoint(hooks[i]));
+                Game.Scripts.Dungeon.ContainerComponent body = DungeonMapBuilder.Place(DungeonMapBuilder.Load(i % 2 == 0 ? "HangedCorpse" : "HangedCorpseB"), clearing, hook, random.Next(360), false)
+                    .GetComponent<Game.Scripts.Dungeon.ContainerComponent>();
+                result.Containers.Add(body);
+            }
+
+            Put(clearing, ground, DungeonMapBuilder.Load("SkullPile"), c + new Vector2(2.6f, -1.8f), random.Next(360));
+            Put(clearing, ground, DungeonMapBuilder.Load("SkullPile"), c + new Vector2(-2.2f, 2.4f), random.Next(360));
+            Put(clearing, ground, DungeonMapBuilder.Load("FallenRanger"), c + new Vector2(-7f, -6f), 150f);
+            Put(clearing, ground, DungeonMapBuilder.Load("Brazier"), c + new Vector2(-12f, 4f), 0f);
+            Put(clearing, ground, DungeonMapBuilder.Load("Brazier"), c + new Vector2(11f, -5f), 0f);
+            Spots(result, ground, c, new Vector2(-14f, -8f), new Vector2(13f, 9f));
         }
 
         /// The windmill's yard: a cart, hay and sacks, a fallen sail, a millstone on its edge, stores by the door and a lamp on the road.

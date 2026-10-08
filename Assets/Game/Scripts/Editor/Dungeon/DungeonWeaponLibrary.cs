@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Game.Scripts.Battle;
 using Game.Scripts.Editor.Battle;
@@ -25,8 +26,9 @@ namespace Game.Scripts.Editor.Dungeon
         public const string SwordEcu = "SwordEcu";
         public const string MaceEcu = "MaceEcu";
         public const string VikingSword = "VikingSword";
+        public const string VikingShield = "VikingShield";
+        public const string VikingEcu = "VikingEcu";
 
-        private const float MaceHead = 0.6f;
         private const float AxeHead = 0.8f;
         /// A long axe is held at the butt with the off hand, this far down the haft from the main hand.
         private const float AxeGrip = -0.42f;
@@ -47,11 +49,28 @@ namespace Game.Scripts.Editor.Dungeon
         /// weapon by name.
         public static readonly string[] CatalogOrder =
         {
-            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, BearClaws, PantherClaws, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword
+            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, BearClaws, PantherClaws, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu
         };
 
         /// The entry whose shield is the model of a shield item, by its ShieldIndex: the round shield, the écu.
         public static readonly string[] ShieldModels = { SwordShield, SwordEcu };
+
+        /// Shield items by ShieldIndex: their names and the entries their block, rest and carry come from.
+        private static readonly (string name, Func<WeaponDefinition> create)[] s_shields =
+        {
+            ("Round Shield", BattleAnimationLibrary.CreateSwordShield),
+            ("Écu", CreateEcu)
+        };
+
+        /// Every one-handed weapon and its entries with each shield in the off hand, by ShieldIndex. A pair swings and
+        /// ripostes as the weapon does alone and blocks as the shield does (see WithShield): a new one-handed weapon only
+        /// needs a line here.
+        public static readonly (string weapon, Func<WeaponDefinition> create, string[] withShield)[] ShieldPairs =
+        {
+            (ArmingSword, CreateArmingSword, new[] { SwordShield, SwordEcu }),
+            (MorningStar, CreateMorningStar, new[] { MaceShield, MaceEcu }),
+            (VikingSword, CreateVikingSword, new[] { VikingShield, VikingEcu })
+        };
 
         /// Catalog entries that play another entry's clips (its prefix) with a model, reach and damage of their own.
         /// Their definitions keep the timings of the source, otherwise the shared clips would not match, and their blade
@@ -65,13 +84,29 @@ namespace Game.Scripts.Editor.Dungeon
         private static readonly Dictionary<string, (int impact, int stability)> s_force = new()
         {
             ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 4), ["Rat Bite"] = (1, 1), ["Arming Sword"] = (4, 3), ["Morning Star"] = (6, 3), ["Magic Staff"] = (4, 4),
-            ["Sword & Shield"] = (4, 7), ["Mace & Shield"] = (6, 7), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2),
-            ["Bear Claws"] = (7, 4), ["Sword & Écu"] = (4, 8), ["Mace & Écu"] = (6, 8), ["Viking Sword"] = (5, 3)
+            ["Round Shield"] = (1, 7), ["Écu"] = (1, 8), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2),
+            ["Bear Claws"] = (7, 4), ["Viking Sword"] = (5, 3)
         };
 
+        /// A weapon with a shield hits with the weapon's Impact and blocks with the shield's Stability.
         public static (int impact, int stability) Force(string displayName)
         {
-            return s_force.TryGetValue(displayName, out (int, int) force) ? force : (3, 3);
+            string[] parts = displayName.Split(" & ");
+            (int impact, int stability) force = s_force.TryGetValue(parts[0], out (int, int) found) ? found : (3, 3);
+
+            return parts.Length > 1 ? (force.impact, s_force[parts[1]].stability) : force;
+        }
+
+        /// The entries a one-handed weapon is fought with per shield in the off hand, by ShieldIndex; null for the rest.
+        public static string[] WithShield(string weapon)
+        {
+            foreach ((string name, Func<WeaponDefinition> _, string[] withShield) in ShieldPairs)
+            {
+                if (name == weapon)
+                    return withShield;
+            }
+
+            return null;
         }
 
         public static string SharedPrefix(string name)
@@ -113,25 +148,30 @@ namespace Game.Scripts.Editor.Dungeon
 
         public static WeaponDefinition[] CreateAll()
         {
-            return new[]
+            List<WeaponDefinition> all = new()
             {
-                BattleAnimationLibrary.CreateSwordShield(),
                 BattleAnimationLibrary.CreateBow(),
                 CreateFists(),
-                CreateArmingSword("Arming Sword", 0.12f, 0.9f, 1.4f, 27),
+                CreateArmingSword(),
                 CreateBattleAxe(),
                 CreateCrossbow(),
                 CreateStaff(),
-                CreateMaceShield(),
                 CreateSpellbook(),
                 CreateBearClaws(),
                 CreatePantherClaws(),
                 CreateRatBite(),
                 CreateMorningStar(),
-                CreateEcu(BattleAnimationLibrary.CreateSwordShield(), SwordEcu, "Sword & Écu"),
-                CreateEcu(CreateMaceShield(), MaceEcu, "Mace & Écu"),
                 CreateVikingSword()
             };
+
+            // Every pair is built from a definition of its own: WithShield changes the poses it is given.
+            foreach ((string _, Func<WeaponDefinition> create, string[] withShield) in ShieldPairs)
+            {
+                for (int i = 0; i < withShield.Length; i++)
+                    all.Add(WithShield(create(), s_shields[i].create(), withShield[i], s_shields[i].name));
+            }
+
+            return all.ToArray();
         }
 
         /// The morning star of Dark and Darker, swung in the right hand with the left one hanging free. It is carried
@@ -669,6 +709,11 @@ namespace Game.Scripts.Editor.Dungeon
         /// series is a forehand from behind the head over the right shoulder to the left hip, a backhand from beside the
         /// face over the left shoulder down to the right, and a thrust from the arm held out to the right. A blocked hit is
         /// answered from the low guard with an overhead cut from behind the head down the right side.
+        private static WeaponDefinition CreateArmingSword()
+        {
+            return CreateArmingSword("Arming Sword", 0.12f, 0.9f, 1.4f, 27);
+        }
+
         private static WeaponDefinition CreateArmingSword(string name, float bladeBase, float bladeTip, float reach, int damage)
         {
             BodyPose idle = At(Cm(20f, 1.15f, 40f), 0f, 85f, 0f, 5f, Cm(25f, 1f, 10f), Cm(-25f, 1f, 5f));
@@ -927,13 +972,98 @@ namespace Game.Scripts.Editor.Dungeon
             return pose;
         }
 
-        /// The écu of Dark and Darker on the arm of a one-handed weapon: the swings are the weapon's with the round shield,
-        /// the block is the écu's own.
+        /// A one-handed weapon with a shield on the other arm. The swings and the riposte are the weapon's own; the shield
+        /// arm keeps the shield where the shield entry carries it through a swing, turned with the torso, and at rest where
+        /// it rests. The block is the shield's, the weapon hand where the shield entry has it, back to the weapon's own rest.
+        private static WeaponDefinition WithShield(WeaponDefinition weapon, WeaponDefinition shield, string prefix, string shieldName)
+        {
+            BodyPose carry = shield.Attacks[0].MidPose;
+            List<AttackDefinition> attacks = new(weapon.Attacks);
+
+            if (weapon.Riposte != null)
+                attacks.Add(weapon.Riposte);
+
+            foreach (AttackDefinition attack in attacks)
+            {
+                attack.WindupPose = Carry(attack.WindupPose, carry);
+                attack.MidPose = Carry(attack.MidPose, carry);
+                attack.EndPose = Carry(attack.EndPose, carry);
+                CarryKeys(attack.Raise, carry);
+                CarryKeys(attack.Return, carry);
+            }
+
+            weapon.Prefix = prefix;
+            weapon.DisplayName = $"{weapon.DisplayName} & {shieldName}";
+            weapon.Idle = Carry(weapon.Idle, shield.Idle);
+            weapon.IdleBreath = Carry(weapon.IdleBreath, shield.Idle);
+            weapon.DeflectPose = Carry(weapon.DeflectPose, shield.Idle);
+            weapon.CanBlock = shield.CanBlock;
+            weapon.BlockRaise = shield.BlockRaise;
+            weapon.BlockMitigation = shield.BlockMitigation;
+            weapon.BlockImpact = shield.BlockImpact;
+            weapon.BlockRecovery = shield.BlockRecovery;
+            weapon.BlockAngle = shield.BlockAngle;
+            weapon.BlockMove = shield.BlockMove;
+            weapon.Block = shield.Block;
+            weapon.BlockVia = shield.BlockVia;
+            weapon.BlockLower = shield.BlockLower;
+            weapon.BlockLowerVia = shield.BlockLowerVia;
+            weapon.BlockHit = shield.BlockHit;
+            weapon.BlockLowered = shield.BlockLowered;
+            weapon.BlockSocket = shield.BlockSocket;
+            weapon.BlockBoxCenter = shield.BlockBoxCenter;
+            weapon.BlockBoxExtents = shield.BlockBoxExtents;
+
+            // Let go, the weapon comes back up into its own rest once the shield is on its way down.
+            for (int i = 1; i < weapon.BlockLowerVia.Count; i++)
+            {
+                PoseKey key = weapon.BlockLowerVia[i];
+                key.Pose.Main = weapon.Idle.Main;
+                key.Pose.Edge = weapon.Idle.Edge;
+                key.Pose.Lean = weapon.Idle.Lean;
+                weapon.BlockLowerVia[i] = key;
+            }
+
+            return weapon;
+        }
+
+        private static void CarryKeys(List<PoseKey> keys, BodyPose shield)
+        {
+            for (int i = 0; i < keys.Count; i++)
+            {
+                PoseKey key = keys[i];
+                key.Pose = Carry(key.Pose, shield);
+                keys[i] = key;
+            }
+        }
+
+        /// The weapon pose with the shield arm of 'shield', turned about the spine from the torso of 'shield' to its own.
+        private static BodyPose Carry(BodyPose pose, BodyPose shield)
+        {
+            if (!pose.HasHands)
+                return pose;
+
+            Vector3 spine = new(0f, 1.05f, 0f);
+            Quaternion turn = Quaternion.Euler(pose.Spine) * Quaternion.Inverse(Quaternion.Euler(shield.Spine));
+            HandPose off = shield.Off;
+            off.Position = spine + turn * (off.Position - spine);
+            off.Forward = turn * off.Forward;
+            off.Up = turn * off.Up;
+            off.Elbow = off.ElbowWeight > 0f ? spine + turn * (off.Elbow - spine) : off.Elbow;
+            pose.Off = off;
+            pose.OffSocket = shield.OffSocket;
+            pose.OffOpen = shield.OffOpen;
+
+            return pose;
+        }
+
+        /// The écu of Dark and Darker: its rest and its block; through a swing it rides on the arm like the round shield,
+        /// behind the arm and out of the view.
         /// The footage carries a mace: at rest it stands upright before the right chest with the écu low at the left, its
         /// top just in the corner of the view. The block lifts the écu in a straight line to cover the face up to the eyes,
         /// face ahead and point down, while the weapon drops out of the view by the right hip; let go, it comes down the
         /// same way, slower, sinks a little below rest and settles.
-        private static WeaponDefinition CreateEcu(WeaponDefinition definition, string prefix, string displayName)
+        private static WeaponDefinition CreateEcu()
         {
             Vector3 restShield = new(-0.3f, 1.33f, 0.52f);
             Vector3 restNormal = new(-0.14f, 0f, 0.99f);
@@ -943,20 +1073,9 @@ namespace Game.Scripts.Editor.Dungeon
             Vector3 droppedBlade = new(0.1f, 0.97f, 0.12f);
             Vector3 face = new(0f, 0.09f, 1f);
             Vector3 top = new(0f, 1f, -0.09f);
-            bool isMace = prefix == MaceEcu;
 
-            definition.Prefix = prefix;
-            definition.DisplayName = displayName;
-            OnEcu(ref definition.Idle);
-            OnEcu(ref definition.IdleBreath);
-            // The swings keep the shield hand of the round shield: the écu is behind the arm then, out of the view, and
-            // turned on the arm like at rest it bent the wrist past 130 degrees.
-            OnEcu(ref definition.DeflectPose);
-
-            BodyPose idle = definition.Idle;
-            definition.Idle = isMace
-                ? EcuPose(new(0.12f, 1.38f, 0.42f), new(0.06f, 0.99f, 0.15f), restShield, restNormal, restTop, rightElbow)
-                : EcuPose(idle.Main.Position, idle.Main.Forward, restShield, restNormal, restTop, idle.Main.Elbow);
+            WeaponDefinition definition = BattleAnimationLibrary.CreateSwordShield();
+            definition.Idle = EcuPose(new(0.12f, 1.38f, 0.42f), new(0.06f, 0.99f, 0.15f), restShield, restNormal, restTop, rightElbow);
             definition.BlockRaise = 12 * Footage;
             definition.BlockVia = new()
             {
@@ -974,17 +1093,6 @@ namespace Game.Scripts.Editor.Dungeon
                 new(14 * Footage, EcuPose(new(0.14f, 1.33f, 0.4f), new(-0.2f, 0.96f, 0.15f), new(-0.3f, 1.31f, 0.52f), restNormal, restTop, rightElbow)),
                 new(20 * Footage, EcuPose(new(0.13f, 1.36f, 0.41f), new(-0.05f, 0.99f, 0.15f), new(-0.27f, 1.35f, 0.52f), restNormal, restTop, rightElbow))
             };
-
-            if (!isMace)
-            {
-                // The sword drops out of the view the same way; only the way back up ends in its own rest.
-                for (int i = 0; i < definition.BlockLowerVia.Count; i++)
-                {
-                    PoseKey key = definition.BlockLowerVia[i];
-                    key.Pose.Main = i == 0 ? key.Pose.Main : definition.Idle.Main;
-                    definition.BlockLowerVia[i] = key;
-                }
-            }
 
             return definition;
         }
@@ -1005,37 +1113,6 @@ namespace Game.Scripts.Editor.Dungeon
             pose.Off.Up = socket * Vector3.up;
 
             return pose;
-        }
-
-        /// A pose of the round shield with the écu on the arm instead: what was the thumb of the shield hand is the écu's top.
-        private static void OnEcu(ref BodyPose pose)
-        {
-            if (!pose.HasHands || pose.OffSocket != WeaponSocket.LeftShield)
-                return;
-
-            Quaternion socket = Quaternion.LookRotation(pose.Off.Forward, pose.Off.Up) * Quaternion.Inverse(DungeonWeaponPrefabBuilder.EcuTurn);
-            pose.Off.Forward = socket * Vector3.forward;
-            pose.Off.Up = socket * Vector3.up;
-        }
-
-        private static WeaponDefinition CreateMaceShield()
-        {
-            WeaponDefinition definition = BattleAnimationLibrary.CreateSwordShield();
-            definition.Prefix = MaceShield;
-            definition.DisplayName = "Mace & Shield";
-            definition.BladeTip = 0.7f;
-            definition.Strike = MaceHead;
-            definition.Reach = 1.25f;
-
-            foreach (AttackDefinition attack in definition.Attacks)
-            {
-                attack.Damage = 31;
-                attack.Windup += 0.12f;
-            }
-
-            definition.Attacks[2].Stagger = 0.3f;
-
-            return definition;
         }
 
         /// The double axe of Dark and Darker. It is carried upright by the right shoulder, bits across the view, and

@@ -86,7 +86,7 @@
 - Длительность баффов и дебаффов фиксирована (`AbilityConfig.Duration`); исключение — порог Ловкости (замедления не действуют).
 - Cooldown Recovery: `1 + бонусы% / 100` (`StatType.CooldownRecovery`, только экипировка и перки); откат навыков и восстановление зарядов у костра делятся на это значение (`GetCooldownDuration`, `SimulateSpellRecovery`).
 - Стаггер: длительность задаёт только атака (`MeleeAttackConfig.StaggerDuration`), статы на неё не влияют.
-- Сбитие блока: у оружия `Impact` 1–10, у блока `Stability` 1–10 (`WeaponConfig`, таблица `DungeonWeaponLibrary.s_force`). Impact > Stability — блок сбит, защитник в стаггере `BlockConfig.BreakDuration`; иначе обычная отдача блока. Урон гасится `Mitigation` блока без модификаторов.
+- Сбитие блока: у оружия `Impact` 1–10, у блока `Stability` 1–10 (`WeaponConfig`, таблица `DungeonWeaponLibrary.s_force`; у пары «оружие + щит» Impact берётся от оружия, Stability — от щита). Impact > Stability — блок сбит, защитник в стаггере `BlockConfig.BreakDuration`; иначе обычная отдача блока. Урон гасится `Mitigation` блока без модификаторов.
 - Штрафы к скорости от брони и оружия применяются без множителей.
 
 ## Классы (голые)

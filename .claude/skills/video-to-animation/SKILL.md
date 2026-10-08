@@ -131,6 +131,10 @@ contradict (damage, block numbers, the peak-on-crosshair rule).
   with the edge on +Y), the attachment in `BattleContentBuilder`, the item at the end of `DungeonItemLibrary`
   (item ids are list positions) and the loot/table lists. `SwingPreview` gives numbers before the first rebuild,
   renders the weapon only after it.
+- A one-handed weapon is authored once, without a shield (free off hand), and gets one line in
+  `DungeonWeaponLibrary.ShieldPairs` (its factory and a catalog entry per shield, consts at the end of `CatalogOrder`):
+  `WithShield` gives every pair the weapon's swings and riposte with the shield's carry, rest and block, and the
+  attachments and item links follow from the table. Never author swings for a weapon-and-shield pair.
 
 ### 5. Iterate on the rig
 

@@ -14,6 +14,11 @@ namespace Game.Scripts.Editor.Dungeon
         public const string PrefabsFolder = DungeonPropBuilder.PrefabsFolder + "/Vegetation";
         public const int Variants = 4;
 
+        /// Main limbs of the hanging tree: yaw round the trunk and the height they leave it at.
+        private static readonly (float yaw, float height)[] HangingLimbs = { (8f, 4.6f), (68f, 4.9f), (130f, 4.4f), (188f, 4.8f), (246f, 4.5f), (305f, 4.9f) };
+        private const float HangingTrunk = 1.15f;
+        private const float HangingHookAt = 0.55f;
+
         public static Material Bark => DungeonPropBuilder.Textured("Bark", "Bark", 1f, 0.08f);
         public static Material RockMaterial => DungeonPropBuilder.Textured("Rock", "Rock", 0.35f, 0.12f);
         public static Material Needles => Foliage("Needles", "SpruceSpray", new Color(0.85f, 0.9f, 0.85f));
@@ -126,6 +131,7 @@ namespace Game.Scripts.Editor.Dungeon
                 SaveRock($"Stone{i}", i + 10, new Vector3(0.7f, 0.45f, 0.6f) * (1f + i * 0.3f));
             }
 
+            SaveTree("HangingTree", HangingTree(), null, HangingTrunk);
             SaveRock("Cliff0", 31, new Vector3(9f, 7f, 7f));
             SaveRock("Cliff1", 32, new Vector3(12f, 9f, 8f));
             SaveLog("Stump", true);
@@ -233,6 +239,77 @@ namespace Game.Scripts.Editor.Dungeon
 
             return mesh.Save($"DeadTree{seed}");
         }
+
+        /// Where the ropes hang in the tree's space: under the sagging middle of each main limb.
+        public static Vector3[] HangingTreeHooks()
+        {
+            Vector3[] hooks = new Vector3[HangingLimbs.Length];
+
+            for (int i = 0; i < hooks.Length; i++)
+                hooks[i] = Limb(HangingLimbs[i].yaw, HangingLimbs[i].height, HangingHookAt) + Vector3.down * LimbRadius(HangingHookAt);
+
+            return hooks;
+        }
+
+        /// The great dead oak of the gallows clearing, twice any other tree: a flared trunk on arching roots, six massive limbs
+        /// sagging low to head height and rising again at the ends, a crown of crooked bare branches above.
+        private static Mesh HangingTree()
+        {
+            System.Random random = new System.Random(700);
+            PlantMesh mesh = new PlantMesh();
+            const float radius = HangingTrunk;
+            mesh.Tube(new[] { Vector3.down * 0.5f, Vector3.up * 1f, new Vector3(0.2f, 3f, 0.1f), new Vector3(0.1f, 5.5f, -0.1f), new Vector3(-0.3f, 8f, 0.2f), new Vector3(0f, 10.5f, 0.1f), new Vector3(0.4f, 12.5f, 0f) },
+                new[] { radius * 1.6f, radius * 1.15f, radius, radius * 0.88f, radius * 0.68f, radius * 0.45f, radius * 0.15f }, 16);
+
+            for (int i = 0; i < 9; i++)
+            {
+                float yaw = i * 40f + Rand(random, 14f);
+                Vector3 out1 = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+                float reach = 2.6f + (float)random.NextDouble() * 1.8f;
+                Vector3 start = Vector3.up * (1.3f + (float)random.NextDouble() * 0.9f) + out1 * radius * 0.7f;
+                Vector3 arch = out1 * reach * 0.55f + Vector3.up * (0.6f + (float)random.NextDouble() * 0.4f);
+                mesh.Tube(new[] { start, arch, out1 * reach + Vector3.down * 0.7f }, new[] { radius * 0.42f, radius * 0.3f, radius * 0.1f }, 8);
+            }
+
+            List<(Vector3, Vector3)> tips = new();
+
+            foreach ((float yaw, float height) in HangingLimbs)
+            {
+                const int samples = 12;
+                Vector3[] points = new Vector3[samples + 1];
+                float[] radii = new float[samples + 1];
+
+                for (int k = 0; k <= samples; k++)
+                {
+                    points[k] = Limb(yaw, height, k / (float)samples);
+                    radii[k] = LimbRadius(k / (float)samples);
+                }
+
+                mesh.Tube(points, radii, 10);
+                Branch(mesh, random, points[samples], (points[samples] - points[samples - 1]).normalized, 3.5f, radii[samples], 2, tips);
+                Branch(mesh, random, points[8], Quaternion.Euler(-40f, yaw + Rand(random, 50f), 0f) * Vector3.forward, 3f, radii[8] * 0.6f, 2, tips);
+            }
+
+            for (int i = 0; i < 5; i++)
+            {
+                Vector3 direction = Quaternion.Euler(-45f - (float)random.NextDouble() * 25f, i * 72f + 30f + Rand(random, 20f), 0f) * Vector3.forward;
+                Branch(mesh, random, new Vector3(0f, 7.5f + i * 0.9f, 0f), direction, 6f + (float)random.NextDouble() * 2f, radius * 0.4f, 3, tips);
+            }
+
+            return mesh.Save("HangingTree");
+        }
+
+        /// A main limb of the hanging tree as a cubic curve out of the trunk: level, sagging, then turning up at the end.
+        private static Vector3 Limb(float yaw, float height, float t)
+        {
+            Vector3 direction = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+            Vector3 start = Vector3.up * height + direction * HangingTrunk * 0.6f;
+            float u = 1f - t;
+
+            return start + direction * (3f * u * u * t * 4f + 3f * u * t * t * 6.5f + t * t * t * 10f) + Vector3.up * (3f * u * u * t * 0.3f - 3f * u * t * t * 2.4f + t * t * t * 0.8f);
+        }
+
+        private static float LimbRadius(float t) => Mathf.Lerp(0.55f, 0.12f, t);
 
         /// Huge drowned tree of the bog: a thick leaning trunk on a flare of arching roots, broken top, long crooked bare limbs.
         private static Mesh SwampTree(int seed)
