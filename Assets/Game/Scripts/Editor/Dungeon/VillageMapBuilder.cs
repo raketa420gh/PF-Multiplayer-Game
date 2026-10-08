@@ -486,10 +486,10 @@ namespace Game.Scripts.Editor.Dungeon
                     continue;
                 }
 
-                string kind = roll < 0.42 ? "Headstone" : roll < 0.7 ? "GraveCross" : roll < 0.84 ? "GraveSlab" : "GraveMound";
+                string kind = roll < 0.22 ? "Headstone" : roll < 0.38 ? "SculptedHeadstone" : roll < 0.46 ? "SkullTombstone" : roll < 0.64 ? "GraveCross" : roll < 0.76 ? "GraveSlab" : roll < 0.81 ? "ChestTomb" : "GraveMound";
                 GameObject marker = Put(root, ground, VillageArchitectureBuilder.Piece(kind), grave, random.Next(-5, 5));
 
-                if (kind is "Headstone" or "GraveCross")
+                if (kind is "Headstone" or "SculptedHeadstone" or "SkullTombstone" or "GraveCross")
                 {
                     marker.transform.localPosition += Vector3.down * 0.05f;
                     marker.transform.localRotation *= Quaternion.Euler(Rand(random, 9f), 0f, Rand(random, 7f));

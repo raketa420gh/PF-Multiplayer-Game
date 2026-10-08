@@ -77,8 +77,13 @@ namespace Game.Scripts.Editor.Dungeon
         public static void BuildPieces()
         {
             Material rock = DungeonVegetationBuilder.RockMaterial;
-            SavePiece("Headstone", new DungeonMeshBuilder(1f).Box(new Vector3(0f, 0.4f, 0f), new Vector3(0.62f, 0.8f, 0.16f)).Box(new Vector3(0f, 0.84f, 0f), new Vector3(0.46f, 0.1f, 0.16f))
-                .Box(new Vector3(0f, 0.92f, 0f), new Vector3(0.26f, 0.08f, 0.16f)), rock);
+            Material gravestone = DungeonPropBuilder.Textured("Gravestone", "Rock", 1f, 0.12f);
+            SaveModelPiece("Headstone", "Headstone/Headstone.fbx", 1f, 0f, ModelMaterial("Headstone", "Headstone/Textures/tombstone2_diff.png", "Headstone/Textures/tombstone2_norm.jpg"));
+            SaveModelPiece("SculptedHeadstone", "SculptedHeadstone/SculptedHeadstone.fbx", 1.7f, 90f, ModelMaterial("SculptedHeadstone",
+                "SculptedHeadstone/Textures/g_low_M_sculpted_gravestone_BaseColor.png", "SculptedHeadstone/Textures/g_low_M_sculpted_gravestone_Normal.png"));
+            SaveModelPiece("SkullTombstone", "SkullTombstone/SkullTombstone.fbx", 0.45f, 0f, ModelMaterial("SkullTombstone",
+                "SkullTombstone/Textures/T_SkullTombstoneLowPoly_Color.png", "SkullTombstone/Textures/T_SkullTombstoneLowPoly_Normal.png"));
+            SaveModelPiece("ChestTomb", "ChestTomb/ChestTomb.fbx", 0.6f, 0f, gravestone);
             SavePiece("GraveCross", new DungeonMeshBuilder(1f).Box(new Vector3(0f, 0.6f, 0f), new Vector3(0.16f, 1.2f, 0.14f)).Box(new Vector3(0f, 0.86f, 0f), new Vector3(0.62f, 0.15f, 0.14f)), rock);
             SavePiece("GraveSlab", new DungeonMeshBuilder(1f).Box(new Vector3(0f, 0.12f, 0f), new Vector3(0.9f, 0.24f, 1.9f)).Box(new Vector3(0f, 0.27f, 0f), new Vector3(0.8f, 0.06f, 1.8f)), rock);
             SavePiece("GraveMound", new DungeonMeshBuilder(0.5f).Prism(0.9f, new Vector2(-0.95f, 0f), new Vector2(-0.6f, 0.25f), new Vector2(0.6f, 0.25f), new Vector2(0.95f, 0f)), DungeonPropBuilder.Textured("GraveDirt", "Dirt", 0.5f, 0.05f));
@@ -772,6 +777,68 @@ namespace Game.Scripts.Editor.Dungeon
             BoxCollider box = root.AddComponent<BoxCollider>();
             box.center = mesh.bounds.center;
             box.size = mesh.bounds.size;
+            PrefabUtility.SaveAsPrefabAsset(root, $"{DungeonVillageKitBuilder.PrefabsFolder}/{name}.prefab");
+            Object.DestroyImmediate(root);
+        }
+
+        /// Stone of a grave model from its own albedo and normal map (the 4–8K sources are imported at 2K).
+        private static Material ModelMaterial(string name, string albedo, string normal)
+        {
+            Material material = DungeonPropBuilder.Textured(name, "Rock", 1f, 0.1f);
+            material.SetTexture("_BaseMap", ModelTexture(albedo, false));
+            material.SetTexture("_BumpMap", ModelTexture(normal, true));
+            material.SetTexture("_OcclusionMap", null);
+            material.DisableKeyword("_OCCLUSIONMAP");
+
+            return material;
+        }
+
+        private static Texture2D ModelTexture(string file, bool isNormal)
+        {
+            string path = $"Assets/SpecialFolder/Models/Environment/Gravestones/{file}";
+            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            TextureImporterType type = isNormal ? TextureImporterType.NormalMap : TextureImporterType.Default;
+
+            if (importer.textureType != type || importer.maxTextureSize != 2048)
+            {
+                importer.textureType = type;
+                importer.maxTextureSize = 2048;
+                importer.SaveAndReimport();
+            }
+
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
+        /// The user's grave models: scaled, turned to face +Z, stood on the ground at the origin, with the project stone.
+        private static void SaveModelPiece(string name, string file, float scale, float yaw, Material material)
+        {
+            string path = $"Assets/SpecialFolder/Models/Environment/Gravestones/{file}";
+            ModelImporter importer = (ModelImporter)AssetImporter.GetAtPath(path);
+
+            // Tilted import rotations swell the renderer bounds: the box is measured on the vertices.
+            if (!importer.isReadable)
+            {
+                importer.isReadable = true;
+                importer.SaveAndReimport();
+            }
+
+            GameObject root = new GameObject(name);
+            GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(path), root.transform);
+            model.name = "Model";
+            model.transform.localRotation = Quaternion.Euler(0f, yaw, 0f) * model.transform.localRotation;
+            model.transform.localScale *= scale;
+            MeshFilter filter = model.GetComponentInChildren<MeshFilter>();
+            filter.GetComponent<Renderer>().sharedMaterial = material;
+            Vector3[] vertices = filter.sharedMesh.vertices;
+            Bounds bounds = new Bounds(filter.transform.TransformPoint(vertices[0]), Vector3.zero);
+
+            foreach (Vector3 vertex in vertices)
+                bounds.Encapsulate(filter.transform.TransformPoint(vertex));
+
+            model.transform.localPosition -= new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+            BoxCollider box = root.AddComponent<BoxCollider>();
+            box.center = new Vector3(0f, bounds.extents.y, 0f);
+            box.size = bounds.size;
             PrefabUtility.SaveAsPrefabAsset(root, $"{DungeonVillageKitBuilder.PrefabsFolder}/{name}.prefab");
             Object.DestroyImmediate(root);
         }
