@@ -538,8 +538,11 @@ namespace Game.Scripts.Editor.Dungeon
                 // The left hook is authored as a right one and played mirrored, so its screen positions are mirrored too.
                 Attacks = new[]
                 {
-                    Hook(false, 26, 51, 12, new(0.065f, 1.58f, 0.52f), new(0.38f, 1.62f, 0.36f), new(-0.36f, 1.68f, 0.44f), -42f),
-                    Hook(true, 14, 26, 14, new(-0.03f, 1.55f, 0.52f), new(0.42f, 1.56f, 0.36f), new(-0.36f, 1.68f, 0.44f), -50f)
+                    // Falls through the low left corner; the left one stays level and leaves through the right edge.
+                    Hook(false, 26, 51, 12, new(0.065f, 1.58f, 0.52f), new(0.33f, 1.7f, 0.42f), new(-0.4f, 1.58f, 0.4f),
+                        new(-0.1f, 1.56f, 0.36f), 35f, -65f),
+                    Hook(true, 14, 26, 14, new(-0.03f, 1.55f, 0.52f), new(0.35f, 1.67f, 0.42f), new(-0.45f, 1.64f, 0.42f),
+                        new(-0.11f, 1.58f, 0.36f), 35f, -75f)
                 },
                 CanBlock = true,
                 BlockRaise = 0.15f,
@@ -558,16 +561,32 @@ namespace Game.Scripts.Editor.Dungeon
             };
         }
 
-        /// The free hand reaches out open at the target while the fist drops out of view low on its side; the free hand
-        /// sinks away, and the fist comes in level from the edge of the view, over the crosshair and out past the other
-        /// edge. Times in video frames of D:\bare_hands_attack_1_2.mp4 (attack 1 at 46, attack 2 at 136).
-        private static AttackDefinition Hook(bool isOffHand, int reachAt, int windup, int active, Vector3 reach, Vector3 enter, Vector3 exit, float turn)
+        /// A haymaker. The free hand reaches out open at the target while the fist swings out of view low on its side; the
+        /// free hand sinks away and the fist comes in from the edge of the view, palm down with the forearm level and the
+        /// elbow out at its height, the chest turning with it. Past the crosshair the fist rolls over, palm under, the
+        /// elbow above it, and leaves past the other edge. Times in video frames of D:\bare_hands_attack_1_2.mp4
+        /// (attack 1 at 46, attack 2 at 136).
+        private static AttackDefinition Hook(bool isOffHand, int reachAt, int windup, int active, Vector3 reach, Vector3 enter, Vector3 exit,
+            Vector3 exitElbow, float exitRoll, float turn)
         {
             const float recovery = 40 * Footage;
             Vector3 low = new Vector3(-0.2f, 1.3f, 0.3f);
             Vector3 fingers = new Vector3(0.35f, 0.45f, 0.8f);
             float windupTime = windup * Footage;
             float activeTime = active * Footage;
+
+            // The fist at the end of the forearm from 'elbow', knuckles along it or along 'knuckles'; 'roll' 0 = palm down,
+            // 90 = thumb up.
+            BodyPose Fist(Vector3 fist, Vector3 elbow, float roll, float yaw, Vector3 knuckles = default)
+            {
+                Vector3 forearm = (fist - elbow).normalized;
+                Vector3 flat = Vector3.Cross(forearm, Vector3.up).normalized;
+                BodyPose pose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.Punch(fist, low, fingers, 0.3f, yaw, 8f), elbow, Vector3.zero);
+                pose.Main.Forward = flat * Mathf.Cos(roll * Mathf.Deg2Rad) + Vector3.Cross(flat, forearm) * Mathf.Sin(roll * Mathf.Deg2Rad);
+                pose.Edge = knuckles == Vector3.zero ? forearm : knuckles.normalized;
+
+                return pose;
+            }
 
             return new AttackDefinition
             {
@@ -577,17 +596,13 @@ namespace Game.Scripts.Editor.Dungeon
                 Raise = new()
                 {
                     Via(reachAt, BattleAnimationLibrary.Punch(new(0.36f, 1.34f, 0.1f), reach, fingers, 1f, 15f), 0.5f),
-                    Via(windup - 6, BattleAnimationLibrary.Punch(new(0.46f, 1.5f, 0.2f), low, fingers, 0.3f, 30f))
+                    Via(windup - 6, Fist(new(0.45f, 1.52f, 0.12f), new(0.45f, 1.42f, -0.16f), 30f, 30f))
                 },
-                WindupPose = BattleAnimationLibrary.Punch(enter, low, fingers, 0.3f, 30f),
-                MidPose = BattleAnimationLibrary.Punch(new(0f, 1.66f, 0.5f), low, fingers, 0.3f, -30f, 8f),
-                // The elbow is held level behind the fist through the exit, or the forearm flips over for a frame.
-                EndPose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.Punch(exit, low, fingers, 0.3f, turn, 8f), new(-0.08f, 1.47f, 0.4f), Vector3.zero),
-                Return = new()
-                {
-                    Via(windup + active + 7, BattleAnimationLibrary.Elbows(BattleAnimationLibrary.Punch(exit + new Vector3(0f, -0.22f, -0.12f), low, fingers, 0.3f, -40f, 8f),
-                        new(-0.1f, 1.3f, 0.3f), Vector3.zero), 0.6f)
-                }
+                WindupPose = Fist(enter, new(0.44f, 1.6f, 0.05f), 0f, 35f),
+                // The knuckles lead level, not up along the rising forearm.
+                MidPose = Fist(new(0.12f, 1.72f, 0.5f), new(0.25f, 1.6f, 0.25f), 0f, -15f, new(-0.4f, 0f, 0.9f)),
+                EndPose = Fist(exit, exitElbow, exitRoll, turn),
+                Return = new() { Via(windup + active + 6, Fist(new(-0.35f, 1.25f, 0.3f), new(-0.05f, 1.3f, 0.15f), exitRoll, turn + 10f), 0.6f) }
             };
         }
 

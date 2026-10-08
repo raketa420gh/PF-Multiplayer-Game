@@ -288,7 +288,7 @@ namespace Game.Scripts.Editor.Battle
         {
             List<PoseKey> keys = SwingKeys(weapon, attack);
             LeadWithEdge(keys, WindupIndex(attack), weapon.StrikeOf(attack), IsCut(weapon, attack), !weapon.IsUnarmed && !weapon.IsRound,
-                weapon.IsEdgeBack ? -1f : 1f);
+                weapon.IsEdgeBack ? -1f : 1f, weapon.IsUnarmed);
 
             return keys;
         }
@@ -351,7 +351,7 @@ namespace Game.Scripts.Editor.Battle
         /// the active phase, and its follow-through keeps the roll the cut ended with, or turns from it toward the roll
         /// it comes with. A thrust has no path across the blade to face: the weapon keeps the roll it rests with. Needs
         /// the edge of the rest pose; without it the arm solve rolls the weapon.
-        private static void LeadWithEdge(List<PoseKey> keys, int windup, float strike, bool isCut, bool followsPath, float side)
+        private static void LeadWithEdge(List<PoseKey> keys, int windup, float strike, bool isCut, bool followsPath, float side, bool keepsAuthored)
         {
             if (keys[0].Pose.Edge == Vector3.zero)
                 return;
@@ -385,7 +385,10 @@ namespace Game.Scripts.Editor.Battle
                 if (isCut && i > windup && i < follow && Across(keys, key.Time, strike, out Vector3 normal) >= ThrustShare)
                     held = new HandPose(key.Pose.Main.Position, blade, Vector3.Cross(normal, blade) * side);
 
-                Vector3 edge = Carry(held.Forward, held.Up, blade);
+                // A fist turns its knuckles where the footage has them, when a key says so.
+                Vector3 edge = keepsAuthored && key.Pose.Edge != Vector3.zero
+                    ? Vector3.ProjectOnPlane(key.Pose.Edge, blade).normalized
+                    : Carry(held.Forward, held.Up, blade);
 
                 // A follow-through that comes with a roll of its own is where the weapon starts to turn over to it.
                 if (i == follow && key.Pose.Edge != Vector3.zero)
