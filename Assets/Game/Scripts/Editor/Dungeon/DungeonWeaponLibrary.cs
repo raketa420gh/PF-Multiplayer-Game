@@ -535,7 +535,12 @@ namespace Game.Scripts.Editor.Dungeon
                 Idle = idle,
                 IdleBreath = breath,
                 IdleCycle = 98 * Footage,
-                Attacks = new[] { Hook(34 * Frame, false), Hook(22 * Frame, true) },
+                // The left hook is authored as a right one and played mirrored, so its screen positions are mirrored too.
+                Attacks = new[]
+                {
+                    Hook(false, 26, 51, 12, new(0.065f, 1.58f, 0.52f), new(0.38f, 1.62f, 0.36f), new(-0.36f, 1.68f, 0.44f), -42f),
+                    Hook(true, 14, 26, 14, new(-0.03f, 1.55f, 0.52f), new(0.42f, 1.56f, 0.36f), new(-0.36f, 1.68f, 0.44f), -50f)
+                },
                 CanBlock = true,
                 BlockRaise = 0.15f,
                 BlockMitigation = 0.4f,
@@ -553,22 +558,36 @@ namespace Game.Scripts.Editor.Dungeon
             };
         }
 
-        /// The fist is drawn back to the side while the free hand reaches out, then swings level across the view.
-        private static AttackDefinition Hook(float windup, bool isOffHand)
+        /// The free hand reaches out open at the target while the fist drops out of view low on its side; the free hand
+        /// sinks away, and the fist comes in level from the edge of the view, over the crosshair and out past the other
+        /// edge. Times in video frames of D:\bare_hands_attack_1_2.mp4 (attack 1 at 46, attack 2 at 136).
+        private static AttackDefinition Hook(bool isOffHand, int reachAt, int windup, int active, Vector3 reach, Vector3 enter, Vector3 exit, float turn)
         {
-            const float active = 9 * Frame;
-            const float recovery = 0.5f;
-            Vector3 guard = new Vector3(-0.2f, 1.36f, 0.3f);
-            Vector3 ahead = new Vector3(0.2f, 0.25f, 0.95f);
+            const float recovery = 40 * Footage;
+            Vector3 low = new Vector3(-0.2f, 1.3f, 0.3f);
+            Vector3 fingers = new Vector3(0.35f, 0.45f, 0.8f);
+            float windupTime = windup * Footage;
+            float activeTime = active * Footage;
 
             return new AttackDefinition
             {
-                Windup = windup, Active = active, Recovery = recovery,
-                ComboStart = windup + active * 0.5f, ComboEnd = windup + active + recovery * 0.65f,
-                Damage = 8, MoveMultiplier = 0.8f, IsOffHand = isOffHand,
-                WindupPose = BattleAnimationLibrary.Punch(new(0.44f, 1.56f, 0.1f), new(-0.02f, 1.57f, 0.47f), ahead, 1f, 30f),
-                MidPose = BattleAnimationLibrary.Punch(new(0f, 1.68f, 0.5f), guard, ahead, 0f, -38f, 8f),
-                EndPose = BattleAnimationLibrary.Punch(new(-0.34f, 1.6f, 0.44f), guard, ahead, 0f, -50f, 8f)
+                Windup = windupTime, Active = activeTime, Recovery = recovery,
+                ComboStart = windupTime + activeTime * 0.5f, ComboEnd = windupTime + activeTime + recovery * 0.65f,
+                Damage = 8, MoveMultiplier = 0.8f, IsOffHand = isOffHand, Launch = 1f,
+                Raise = new()
+                {
+                    Via(reachAt, BattleAnimationLibrary.Punch(new(0.36f, 1.34f, 0.1f), reach, fingers, 1f, 15f), 0.5f),
+                    Via(windup - 6, BattleAnimationLibrary.Punch(new(0.46f, 1.5f, 0.2f), low, fingers, 0.3f, 30f))
+                },
+                WindupPose = BattleAnimationLibrary.Punch(enter, low, fingers, 0.3f, 30f),
+                MidPose = BattleAnimationLibrary.Punch(new(0f, 1.66f, 0.5f), low, fingers, 0.3f, -30f, 8f),
+                // The elbow is held level behind the fist through the exit, or the forearm flips over for a frame.
+                EndPose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.Punch(exit, low, fingers, 0.3f, turn, 8f), new(-0.08f, 1.47f, 0.4f), Vector3.zero),
+                Return = new()
+                {
+                    Via(windup + active + 7, BattleAnimationLibrary.Elbows(BattleAnimationLibrary.Punch(exit + new Vector3(0f, -0.22f, -0.12f), low, fingers, 0.3f, -40f, 8f),
+                        new(-0.1f, 1.3f, 0.3f), Vector3.zero), 0.6f)
+                }
             };
         }
 
