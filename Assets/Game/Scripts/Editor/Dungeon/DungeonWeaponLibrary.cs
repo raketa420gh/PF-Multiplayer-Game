@@ -296,6 +296,12 @@ namespace Game.Scripts.Editor.Dungeon
             BodyPose held = ShutBook(new(0.076f, 1.52f, 0.445f), across, Vector3.up, 0f);
             held.Off = idle.Off;
             held.OffOpen = idle.OffOpen;
+            // Casting as in the footage: the book sinks to the bottom corner of the view while the free hand comes up from
+            // the other one and holds the spell in its clawed fingers, palm forward; the release pulls the spell back low,
+            // throws it forward with the hand open and lets the hand fall as the book comes back up.
+            BodyPose lowered = OpenBook(new(0.1f, 1.3f, 0.42f), -3f, 25f, -2f, new(0.26f, 0.98f, 0.18f), Vector3.zero);
+            BodyPose sinking = OpenBook(new(0.09f, 1.42f, 0.45f), -3f, 32f, -2f, new(0.25f, 1.1f, 0.2f), Vector3.zero);
+            BodyPose charged = Casting(lowered, new(-0.22f, 1.67f, 0.44f), new(0.97f, -0.05f, -0.1f), new(0.05f, 0.9f, 0.4f), 0.6f);
 
             return new WeaponDefinition
             {
@@ -313,6 +319,22 @@ namespace Game.Scripts.Editor.Dungeon
                 Idle = idle,
                 IdleBreath = breath,
                 IdleCycle = 160 * Footage,
+                CastVia = new()
+                {
+                    new(0f, idle),
+                    new(16 * Frame, Casting(sinking, new(-0.29f, 1.42f, 0.42f), new(0.9f, -0.3f, 0.3f), new(0.3f, 0.85f, 0.4f), 0.4f)),
+                    new(28 * Frame, Casting(lowered, new(-0.25f, 1.58f, 0.44f), new(0.95f, -0.2f, 0.1f), new(0.2f, 0.9f, 0.35f), 0.55f)),
+                    new(48 * Frame, charged, Ease.Out)
+                },
+                CastReleaseVia = new()
+                {
+                    new(0f, charged),
+                    new(8 * Frame, Casting(sinking, new(-0.18f, 1.62f, 0.4f), new(0f, 1f, -0.2f), new(0.2f, 0.2f, 0.95f), 0.35f)),
+                    new(21 * Frame, Casting(sinking, new(-0.15f, 1.69f, 0.62f), new(1f, 0f, -0.15f), new(0.1f, 0.8f, 0.6f), 1f), Ease.Out),
+                    new(34 * Frame, Casting(idle, new(-0.2f, 1.6f, 0.56f), new(1f, 0f, -0.12f), new(0.1f, 0.6f, 0.8f), 0.9f)),
+                    new(47 * Frame, Casting(idle, new(-0.25f, 1.35f, 0.42f), new(1f, 0f, 0f), new(0f, 0.5f, 0.85f), 0.6f)),
+                    new(58 * Frame, idle)
+                },
                 Attacks = new[]
                 {
                     new AttackDefinition
@@ -381,6 +403,15 @@ namespace Game.Scripts.Editor.Dungeon
             pose.OffOpen = 0.3f;
 
             return pose;
+        }
+
+        /// The book pose with the free hand somewhere else: thumb and fingers as straightened fingers would point, 'open' 0 = a fist.
+        private static BodyPose Casting(BodyPose book, Vector3 hand, Vector3 thumb, Vector3 fingers, float open)
+        {
+            book.Off = new HandPose(hand, thumb, fingers);
+            book.OffOpen = open;
+
+            return book;
         }
 
         /// The shut book between both hands pinching its sides, the book hand on the spine and the other one on the

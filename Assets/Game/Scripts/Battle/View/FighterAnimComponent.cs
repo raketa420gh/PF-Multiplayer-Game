@@ -146,6 +146,8 @@ namespace Game.Scripts.Battle
             public int Deflect;
             public int Draw;
             public int Release;
+            /// The busy states in this weapon's own eyes: its own cast where it has one, the shared ones otherwise.
+            public int[] Busy;
             public int[] Attacks;
             public int[] AttackLegs;
             public int Riposte;
@@ -191,7 +193,7 @@ namespace Game.Scripts.Battle
             _weaponStates = new WeaponStates[loadout.Length];
 
             for (int i = 0; i < loadout.Length; i++)
-                _weaponStates[i] = CreateStates(loadout[i]);
+                _weaponStates[i] = CreateStates(loadout[i], _animator);
 
             _isHeadHidden = HasInputAuthority;
             _fighter.Receiver.OnHitEvent += OnHitEvent;
@@ -248,9 +250,19 @@ namespace Game.Scripts.Battle
             HoldUpperBody();
         }
 
-        private static WeaponStates CreateStates(WeaponConfig weapon)
+        private static WeaponStates CreateStates(WeaponConfig weapon, Animator animator)
         {
             string prefix = weapon.AnimationPrefix;
+            int[] busy = (int[])s_busyFirstPerson.Clone();
+            int cast = Animator.StringToHash(prefix + CastFirstPersonState);
+            int release = Animator.StringToHash(prefix + CastReleaseFirstPersonState);
+
+            if (animator.HasState(UpperLayer, cast))
+                busy[0] = cast;
+
+            if (animator.HasState(UpperLayer, release))
+                busy[^1] = release;
+
             int[] attacks = new int[weapon.Attacks.Length];
             int[] attackLegs = new int[attacks.Length];
 
@@ -269,6 +281,7 @@ namespace Game.Scripts.Battle
                 Deflect = Animator.StringToHash(prefix + DeflectSuffix),
                 Draw = Animator.StringToHash(prefix + DrawSuffix),
                 Release = Animator.StringToHash(prefix + ReleaseSuffix),
+                Busy = busy,
                 Attacks = attacks,
                 AttackLegs = attackLegs,
                 Riposte = Animator.StringToHash(prefix + RiposteSuffix),
@@ -392,10 +405,14 @@ namespace Game.Scripts.Battle
                     break;
                 case CombatState.Busy:
                     int kind = Mathf.Min(combat.BusyKind, s_busy.Length - 1);
-                    state = s_busyFirstPerson[kind] != 0 ? s_busyFirstPerson[kind] : s_busy[kind];
+                    state = states.Busy[kind] != 0 ? states.Busy[kind] : s_busy[kind];
                     token = combat.StateTick;
                     break;
                 default:
+                    // A thrown spell plays its follow-through out before the idle takes over.
+                    if (_upperState == states.Busy[^1] && _animator.GetCurrentAnimatorStateInfo(UpperLayer).normalizedTime < 1f)
+                        return;
+
                     // A let-go block brings the guard down along a clip of its own before the idle takes over.
                     _lowerLeft = combat.State == CombatState.Idle && !_isHolding ? _lowerLeft - deltaTime : 0f;
                     state = _lowerLeft > 0f ? states.BlockLower : _isHolding ? s_hold : states.Idle;

@@ -22,6 +22,10 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private ItemView _item;
 
+        /// The off-hand slot beside a main-hand one: a two-handed weapon in this slot spans both.
+        [SerializeField]
+        private EquipSlotView _pair;
+
         public void Setup(EquipSlot slot, string label)
         {
             _slot = slot;
@@ -34,6 +38,10 @@ namespace Game.Scripts.Dungeon
             ItemConfig config = inventory.GetConfig(stack);
             bool hasItem = config != null;
 
+            bool isSpanned = _pair != null && inventory.IsSlotBlocked(_pair.Slot);
+            float width = isSpanned ? _pair.Rect.anchoredPosition.x + _pair.Rect.sizeDelta.x - Rect.anchoredPosition.x : Rect.sizeDelta.x;
+            ((RectTransform)_item.transform).sizeDelta = new Vector2(width, Rect.sizeDelta.y);
+            gameObject.SetActive(!inventory.IsSlotBlocked(_slot));
             _item.gameObject.SetActive(hasItem);
             _label.gameObject.SetActive(!hasItem);
 

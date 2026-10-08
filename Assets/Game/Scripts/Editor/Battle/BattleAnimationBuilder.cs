@@ -56,12 +56,15 @@ namespace Game.Scripts.Editor.Battle
             AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(BattleEditorUtility.ControllerPath);
             AnimatorStateMachine upper = controller.layers[1].stateMachine;
 
-            foreach (ChildAnimatorState child in upper.states.Where(child => s_firstPersonStates.Contains(child.state.name)).ToArray())
+            foreach (ChildAnimatorState child in upper.states.Where(child => s_firstPersonStates.Contains(child.state.name) || IsWeaponCast(child.state.name)).ToArray())
                 upper.RemoveState(child.state);
 
             using BattlePoseRig rig = new BattlePoseRig();
             s_held.Clear();
             BuildFirstPerson(rig, upper);
+
+            foreach (WeaponDefinition weapon in Game.Scripts.Editor.Dungeon.DungeonWeaponLibrary.CreateAll())
+                BuildCast(rig, upper, weapon);
             BakeSockets(upper);
 
             EditorUtility.SetDirty(controller);
@@ -406,6 +409,8 @@ namespace Game.Scripts.Editor.Battle
                     BattleAnimationLibrary.DeflectKeys(weapon));
             }
 
+            BuildCast(rig, stateMachine, weapon);
+
             if (weapon.Kind == WeaponKind.Ranged)
             {
                 float drawTime = weapon.DrawTime > 0f ? weapon.DrawTime : BattleAnimationLibrary.FullDrawTime;
@@ -415,6 +420,21 @@ namespace Game.Scripts.Editor.Battle
                 AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.ReleaseSuffix, reloadTime,
                     BattleAnimationLibrary.ReleaseKeys(weapon, reloadTime));
             }
+        }
+
+        private static void BuildCast(BattlePoseRig rig, AnimatorStateMachine stateMachine, WeaponDefinition weapon)
+        {
+            if (weapon.CastVia.Count == 0)
+                return;
+
+            AddKeyed(rig, stateMachine, weapon.Prefix + FighterAnimComponent.CastFirstPersonState, weapon.CastVia[^1].Time, SettleRoll(rig, weapon.CastVia));
+            AddKeyed(rig, stateMachine, weapon.Prefix + FighterAnimComponent.CastReleaseFirstPersonState, weapon.CastReleaseVia[^1].Time,
+                SettleRoll(rig, weapon.CastReleaseVia));
+        }
+
+        private static bool IsWeaponCast(string name)
+        {
+            return name.EndsWith(FighterAnimComponent.CastFirstPersonState) || name.EndsWith(FighterAnimComponent.CastReleaseFirstPersonState);
         }
 
         private static void BuildSwing(BattlePoseRig rig, AnimatorStateMachine stateMachine, AnimatorStateMachine legs, WeaponDefinition weapon,

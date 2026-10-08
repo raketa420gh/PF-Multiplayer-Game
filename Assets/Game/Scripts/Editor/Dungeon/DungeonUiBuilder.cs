@@ -677,15 +677,22 @@ namespace Game.Scripts.Editor.Dungeon
             StatsView stats = BuildStats(dollPanel, new Vector2(0f, -462f), 460f, 105f, true, panel, out RectTransform statsTooltip);
 
             // Center: equipment sunburst and backpack.
-            RectTransform equipPanel = CreateRect("Equipment", panel, new Vector2(0f, 1f), new Vector2(530f, -40f), new Vector2(640f, 500f));
+            RectTransform equipPanel = CreateRect("Equipment", panel, new Vector2(0f, 1f), new Vector2(530f, -40f), new Vector2(640f, 650f));
             equipPanel.pivot = new Vector2(0f, 1f);
             CreateImage("Back", equipPanel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
+            // Each weapon set is a pair of hands side by side under the doll: a two-handed weapon spans both.
+            EquipSlotView main1 = Slot(equipPanel, EquipSlot.Weapon1Main, "I", new Vector2(14f, -460f), 2, 4, itemPrefab);
+            EquipSlotView off1 = Slot(equipPanel, EquipSlot.Weapon1Off, "I off", new Vector2(110f, -460f), 2, 4, itemPrefab);
+            EquipSlotView main2 = Slot(equipPanel, EquipSlot.Weapon2Main, "II", new Vector2(440f, -460f), 2, 4, itemPrefab);
+            EquipSlotView off2 = Slot(equipPanel, EquipSlot.Weapon2Off, "II off", new Vector2(536f, -460f), 2, 4, itemPrefab);
+            BattleEditorUtility.Set(main1, "_pair", off1);
+            BattleEditorUtility.Set(main2, "_pair", off2);
             List<EquipSlotView> slots = new()
             {
-                Slot(equipPanel, EquipSlot.Weapon1Main, "I", new Vector2(14f, -14f), 2, 4, itemPrefab),
-                Slot(equipPanel, EquipSlot.Weapon1Off, "I off", new Vector2(14f, -204f), 2, 3, itemPrefab),
-                Slot(equipPanel, EquipSlot.Weapon2Main, "II", new Vector2(538f, -14f), 2, 4, itemPrefab),
-                Slot(equipPanel, EquipSlot.Weapon2Off, "II off", new Vector2(538f, -204f), 2, 3, itemPrefab),
+                main1,
+                off1,
+                main2,
+                off2,
                 Slot(equipPanel, EquipSlot.Head, "Head", new Vector2(276f, -14f), 2, 2, itemPrefab),
                 Slot(equipPanel, EquipSlot.Necklace, "Neck", new Vector2(372f, -36f), 1, 1, itemPrefab),
                 Slot(equipPanel, EquipSlot.Back, "Cloak", new Vector2(170f, -110f), 2, 3, itemPrefab),
@@ -703,7 +710,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Slot(equipPanel, EquipSlot.Utility6, "4", new Vector2(476f, -404f), 1, 1, itemPrefab)
             };
 
-            RectTransform bagPanel = CreateRect("BagPanel", panel, new Vector2(0f, 1f), new Vector2(530f, -560f), new Vector2(640f, 230f));
+            RectTransform bagPanel = CreateRect("BagPanel", panel, new Vector2(0f, 1f), new Vector2(530f, -710f), new Vector2(640f, 230f));
             bagPanel.pivot = new Vector2(0f, 1f);
             CreateImage("Back", bagPanel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
             TMP_Text bagTitle = CreateText("BagTitle", bagPanel, new Vector2(0f, 1f), new Vector2(16f, -8f), new Vector2(300f, 24f), 16f, TextAlignmentOptions.MidlineLeft);

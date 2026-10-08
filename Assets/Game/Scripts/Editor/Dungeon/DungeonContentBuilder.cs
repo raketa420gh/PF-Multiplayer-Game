@@ -574,7 +574,75 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
             BattleEditorUtility.Set(root.AddComponent<FootstepComponent>(), "_fighter", parts.Fighter);
             BattleEditorUtility.Set(root.AddComponent<AdventurerSoundComponent>(), "_adventurer", adventurer);
+            AddSpellCharge(root, adventurer, parts.Animator);
             BattleContentBuilder.SavePrefab(root, Prefab("Adventurer"));
+        }
+
+        /// A glowing core and sparks round it, tinted with the spell at run time.
+        private static void AddSpellCharge(GameObject root, AdventurerComponent adventurer, Animator animator)
+        {
+            Material material = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+            material.SetTexture("_BaseMap", AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd"));
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 2f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_ZWrite", 0f);
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.EnableKeyword("_BLENDMODE_ADD");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            AssetDatabase.CreateAsset(material, $"{DungeonPropBuilder.MaterialsFolder}/SpellGlow.mat");
+
+            Transform ball = new GameObject("SpellCharge").transform;
+            ball.SetParent(root.transform, false);
+            ParticleSystem core = SpellParticles(ball, "Core", material, ParticleSystemSimulationSpace.Local, 90f, 0.25f, 0.16f, 0.02f, 0.02f);
+            ParticleSystem sparks = SpellParticles(ball, "Sparks", material, ParticleSystemSimulationSpace.World, 35f, 0.45f, 0.018f, 0.35f, 0.04f);
+            ParticleSystem.NoiseModule noise = sparks.noise;
+            noise.enabled = true;
+            noise.strength = 0.6f;
+            noise.frequency = 3f;
+            Light light = DungeonPropBuilder.PointLight(ball, Vector3.zero, Color.white, 2.5f, 0.8f, false);
+
+            SpellChargeComponent charge = root.AddComponent<SpellChargeComponent>();
+            SerializedObject so = new SerializedObject(charge);
+            BattleEditorUtility.Set(so, "_adventurer", adventurer);
+            BattleEditorUtility.Set(so, "_animator", animator);
+            BattleEditorUtility.Set(so, "_ball", ball);
+            BattleEditorUtility.Set(so, "_particles", new[] { core, sparks });
+            BattleEditorUtility.Set(so, "_light", light);
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static ParticleSystem SpellParticles(Transform parent, string name, Material material, ParticleSystemSimulationSpace space, float rate,
+            float life, float size, float speed, float radius)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            ParticleSystem particles = go.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particles.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(life * 0.6f, life);
+            main.startSpeed = speed;
+            main.startSize = new ParticleSystem.MinMaxCurve(size * 0.6f, size);
+            main.simulationSpace = space;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            main.maxParticles = 100;
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.rateOverTime = rate;
+            ParticleSystem.ShapeModule shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = radius;
+            ParticleSystem.ColorOverLifetimeModule fade = particles.colorOverLifetime;
+            fade.enabled = true;
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.2f), new GradientAlphaKey(0f, 1f) });
+            fade.color = gradient;
+            ParticleSystemRenderer renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            return particles;
         }
 
         public static GameObject BuildPreviewRig(ArmorPieceSetConfig pieceSet)
