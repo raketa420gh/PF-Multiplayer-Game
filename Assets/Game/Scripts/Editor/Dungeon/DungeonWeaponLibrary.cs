@@ -34,7 +34,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// speed of the fighters, so a clip is that much shorter than what it is copied from.
         private const float Footage = 0.75f * Frame;
         /// How much lower on the screen than in the footage the raised bare fists of the block are held.
-        private const float RaisedFistDrop = 0.15f;
+        private const float RaisedFistDrop = 0.27f;
         private const float StaffHands = -0.55f;
         private const float StaffReach = -0.62f;
         private const float StaffButt = -0.9f;
@@ -521,9 +521,9 @@ namespace Game.Scripts.Editor.Dungeon
             idle.Off.Position = new Vector3(-0.2f, 1.48f, 0.44f);
             // The block of D:are_hands_start_block_hold_end.mp4: fists shut low, swing up to vertical fists (thumbs up, knuckles at
             // the enemy) before the forehead, the forearms two columns from the bottom edge; let go, they drop and open on the way down.
-            Vector3 upThumb = new Vector3(-0.5f, 0.1f, -0.85f);
+            Vector3 upThumb = new Vector3(1f, 0.05f, -0.1f);
             Vector3 upFingers = new Vector3(0f, 1f, 0.1f);
-            BodyPose hold = Fists2(0.565f, 0.05f, 0.4f, 0.09f, upThumb, upFingers, 0f, 0.185f);
+            BodyPose hold = Fists2(0.535f, 0.05f, 0.455f, 0.09f, upThumb, upFingers, 0f, 0.23f);
             BodyPose breath = idle;
             breath.Main.Position += new Vector3(0f, -0.018f, -0.018f);
             breath.Off.Position += new Vector3(0f, -0.018f, -0.018f);
@@ -556,11 +556,11 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockVia = new()
                 {
                     new(2 * Footage, Fists2(0.63f, 0.84f, 0.38f, 0.84f, new(-1f, 0f, 0f), new(0f, 0.5f, 0.85f), 0f, 0.3f), Ease.Linear),
-                    new(4 * Footage, Fists2(0.6f, 0.7f, 0.37f, 0.72f, new(-0.6f, 0.4f, -0.6f), new(0f, 0.8f, 0.6f), 0f, 0.27f), Ease.Linear),
-                    new(6 * Footage, Fists2(0.57f, 0.31f, 0.4f, 0.3f, upThumb, upFingers, 0f, 0.22f), Ease.Linear),
-                    new(8 * Footage, Fists2(0.56f, 0.22f, 0.39f, 0.27f, upThumb, upFingers, 0f, 0.2f), Ease.Linear),
-                    new(10 * Footage, Fists2(0.55f, 0.13f, 0.39f, 0.17f, upThumb, upFingers, 0f, 0.19f), Ease.Linear),
-                    new(13 * Footage, Fists2(0.56f, 0.01f, 0.39f, 0.04f, upThumb, upFingers, 0f, 0.185f), Ease.Out)
+                    new(4 * Footage, Fists2(0.6f, 0.7f, 0.37f, 0.72f, new(-0.2f, 0.5f, -0.85f), new(0f, 0.85f, 0.5f), 0f, 0.27f), Ease.Linear),
+                    new(6 * Footage, Fists2(0.57f, 0.31f, 0.4f, 0.3f, new(0.6f, 0.2f, -0.75f), upFingers, 0f, 0.22f), Ease.Linear),
+                    new(8 * Footage, Fists2(0.55f, 0.07f, 0.43f, 0.08f, new(0.85f, 0.1f, -0.5f), upFingers, 0f, 0.235f), Ease.Linear),
+                    new(10 * Footage, Fists2(0.54f, 0.04f, 0.45f, 0.06f, upThumb, upFingers, 0f, 0.23f), Ease.Linear),
+                    new(13 * Footage, Fists2(0.535f, 0.01f, 0.455f, 0.04f, upThumb, upFingers, 0f, 0.23f), Ease.Out)
                 },
                 BlockLower = 16 * Footage,
                 BlockLowerVia = new()
@@ -576,8 +576,8 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockAngle = 80f,
                 BlockMove = 0.7f,
                 Block = hold,
-                BlockHit = Shifted(hold, new(0f, -0.03f, -0.04f)),
-                BlockLowered = Shifted(hold, new(0f, -0.02f, -0.01f)),
+                BlockHit = Shifted(hold, new(0f, 0f, -0.05f)),
+                BlockLowered = Shifted(hold, new(0f, 0f, -0.02f)),
                 DeflectPose = idle,
                 BlockSocket = WeaponSocket.LeftHand,
                 BlockBoxCenter = Vector3.zero,
@@ -597,9 +597,11 @@ namespace Game.Scripts.Editor.Dungeon
             pose.Off.Position = OnScreen(leftU, leftV, depth) + Vector3.Scale(fingers.normalized, new Vector3(-1f, 1f, 1f)) * 0.1f;
             pose.Main.Up = fingers.normalized;
 
-            // Raised, the forearms stand upright side by side: the elbows tucked in under the fists.
+            // Raised, the forearms close together up to the elbows; on the way up the elbows come in from the sides.
+            float side = Mathf.Lerp(0.03f, 0.15f, Mathf.InverseLerp(0.45f, 0.6f, rightV));
+
             return rightV < 0.5f
-                ? BattleAnimationLibrary.Elbows(pose, pose.Main.Position + new Vector3(0.08f, -0.36f, -0.14f), pose.Off.Position + new Vector3(-0.08f, -0.36f, -0.14f))
+                ? BattleAnimationLibrary.Elbows(pose, pose.Main.Position + new Vector3(side, -0.36f, -0.14f), pose.Off.Position + new Vector3(-side, -0.36f, -0.14f))
                 : pose;
         }
 
