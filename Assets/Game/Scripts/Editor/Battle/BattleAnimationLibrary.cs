@@ -160,6 +160,8 @@ namespace Game.Scripts.Editor.Battle
         public const float CastReleaseTime = 0.5f;
         /// One turn of each hand while searching, as in the Dark and Darker footage.
         public const float InteractCycle = 0.9f;
+        public const float AbilityTime = FighterAnimComponent.AbilityTime;
+        public const float AbilityPeak = FighterAnimComponent.AbilityPeak;
         /// A belt item is no handle to close the fist on: the fingers lie around it.
         private const float HeldOpen = 0.55f;
 
@@ -703,6 +705,37 @@ namespace Game.Scripts.Editor.Battle
                 new(0.15f, Cast(0.26f, 0.62f, 1.4f, 4f), Ease.In),
                 new(CastReleaseTime, Cast(0.22f, 0.3f, 1.25f))
             };
+        }
+
+        /// Activating a skill: both hands come up from below the view with the fingers clawed, palms turned in, are
+        /// highest at AbilityPeak (the skill takes effect there), hold a moment and go back down.
+        public static List<PoseKey> AbilityKeys()
+        {
+            return new List<PoseKey>
+            {
+                new(0f, Cast(0.22f, 0.3f, 1.25f)),
+                new(0.17f, Activating(new(0.2f, 1.645f, 0.42f), new(-0.21f, 1.64f, 0.42f), 0.4f), Ease.Out),
+                new(AbilityPeak, Activating(new(0.16f, 1.685f, 0.44f), new(-0.14f, 1.69f, 0.44f), 0.3f)),
+                new(0.4f, Activating(new(0.165f, 1.645f, 0.44f), new(-0.145f, 1.65f, 0.44f), 0.3f)),
+                new(AbilityTime, Cast(0.22f, 0.3f, 1.25f), Ease.In)
+            };
+        }
+
+        /// Both hands up and clawed, palms turned in with the thumbs back to the eyes; side by side with the right hand given.
+        private static BodyPose Activating(Vector3 main, Vector3 off, float open)
+        {
+            Vector3 thumb = new Vector3(-0.7f, 0.1f, -0.7f).normalized;
+            Vector3 fingers = new Vector3(-0.25f, 0.85f, 0.45f).normalized;
+
+            BodyPose pose = Upper(0f, -2f);
+            pose.Main = new HandPose(main, thumb);
+            pose.Edge = fingers;
+            pose.Off = new HandPose(off, Flip(thumb), Flip(fingers));
+            pose.OffSocket = WeaponSocket.LeftHand;
+            pose.MainOpen = open;
+            pose.OffOpen = open;
+
+            return pose;
         }
 
         /// A belt item waits upright in the main hand, low on the right of the view.

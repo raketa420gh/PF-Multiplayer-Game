@@ -43,6 +43,11 @@ namespace Game.Scripts.Battle
         public const string BandageFirstPersonState = "BandageFp";
         public const string CastReleaseState = "CastRelease";
         public const string CastReleaseFirstPersonState = "CastReleaseFp";
+        public const string AbilityFirstPersonState = "AbilityFp";
+        /// Activating a skill as in the Dark and Darker footage: 40 frames at 60 fps, the hands highest at frame 16.
+        public const float AbilityTime = 40f / 60f;
+        /// The skill takes effect here, with the hands at the top of the view.
+        public const float AbilityPeak = 16f / 60f;
         public const string HitChestState = "HitChest";
         public const string HitHeadState = "HitHead";
         public const string HitStaggerState = "HitStagger";
@@ -104,6 +109,8 @@ namespace Game.Scripts.Battle
         private const int UpperLayer = 1;
         private const int HitLayer = 2;
         private const float RestSpeed = 0.3f;
+        /// The busy kind whose clip is the follow-through of a thrown spell.
+        private const int ReleaseBusy = 7;
 
         private static readonly int s_moveX = Animator.StringToHash(MoveXParam);
         private static readonly int s_moveY = Animator.StringToHash(MoveYParam);
@@ -126,7 +133,7 @@ namespace Game.Scripts.Battle
         {
             Animator.StringToHash(CastState), Animator.StringToHash(UseState), Animator.StringToHash(InteractState),
             Animator.StringToHash(ThrowState), Animator.StringToHash(OpenState), Animator.StringToHash(PickUpState),
-            Animator.StringToHash(BandageState), Animator.StringToHash(CastReleaseState)
+            Animator.StringToHash(BandageState), Animator.StringToHash(CastReleaseState), Animator.StringToHash(AbilityFirstPersonState)
         };
 
         /// Own-eyes variants of the busy states whose library motion stays outside the first-person view; 0 = there is none.
@@ -134,7 +141,7 @@ namespace Game.Scripts.Battle
         private static readonly int[] s_busyFirstPerson =
         {
             Animator.StringToHash(CastFirstPersonState), Animator.StringToHash(UseFirstPersonState), Animator.StringToHash(InteractFirstPersonState), 0, 0, 0,
-            Animator.StringToHash(BandageFirstPersonState), Animator.StringToHash(CastReleaseFirstPersonState)
+            Animator.StringToHash(BandageFirstPersonState), Animator.StringToHash(CastReleaseFirstPersonState), Animator.StringToHash(AbilityFirstPersonState)
         };
 
         private struct WeaponStates
@@ -261,7 +268,7 @@ namespace Game.Scripts.Battle
                 busy[0] = cast;
 
             if (animator.HasState(UpperLayer, release))
-                busy[^1] = release;
+                busy[ReleaseBusy] = release;
 
             int[] attacks = new int[weapon.Attacks.Length];
             int[] attackLegs = new int[attacks.Length];
@@ -410,7 +417,7 @@ namespace Game.Scripts.Battle
                     break;
                 default:
                     // A thrown spell plays its follow-through out before the idle takes over.
-                    if (_upperState == states.Busy[^1] && _animator.GetCurrentAnimatorStateInfo(UpperLayer).normalizedTime < 1f)
+                    if (_upperState == states.Busy[ReleaseBusy] && _animator.GetCurrentAnimatorStateInfo(UpperLayer).normalizedTime < 1f)
                         return;
 
                     // A let-go block brings the guard down along a clip of its own before the idle takes over.

@@ -34,7 +34,8 @@ namespace Game.Scripts.Editor.Battle
         private static readonly string[] s_firstPersonStates =
         {
             FighterAnimComponent.CastFirstPersonState, FighterAnimComponent.CastReleaseFirstPersonState, FighterAnimComponent.UseFirstPersonState,
-            FighterAnimComponent.HoldState, FighterAnimComponent.BandageFirstPersonState, FighterAnimComponent.InteractFirstPersonState
+            FighterAnimComponent.HoldState, FighterAnimComponent.BandageFirstPersonState, FighterAnimComponent.InteractFirstPersonState,
+            FighterAnimComponent.AbilityFirstPersonState
         };
 
         private static readonly string[] s_socketCurves =
@@ -538,6 +539,7 @@ namespace Game.Scripts.Editor.Battle
         {
             AddKeyed(rig, upper, FighterAnimComponent.CastFirstPersonState, BattleAnimationLibrary.CastChargeTime, SettleRoll(rig, BattleAnimationLibrary.CastKeys()));
             AddKeyed(rig, upper, FighterAnimComponent.CastReleaseFirstPersonState, BattleAnimationLibrary.CastReleaseTime, SettleRoll(rig, BattleAnimationLibrary.CastReleaseKeys()));
+            AddKeyed(rig, upper, FighterAnimComponent.AbilityFirstPersonState, BattleAnimationLibrary.AbilityTime, SettleRoll(rig, BattleAnimationLibrary.AbilityKeys()));
             List<PoseKey> use = SettleRoll(rig, BattleAnimationLibrary.UseKeys());
             AddKeyed(rig, upper, FighterAnimComponent.UseFirstPersonState, BattleAnimationLibrary.DrinkTime, use);
             AddState(upper, FighterAnimComponent.HoldState, Record(rig, FighterAnimComponent.HoldState, 1f, true, _ => use[0].Pose));

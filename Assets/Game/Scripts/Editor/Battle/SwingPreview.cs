@@ -77,6 +77,7 @@ namespace Game.Scripts.Editor.Battle
                 "lower" => BattleAnimationLibrary.BlockLowerKeys(weapon),
                 "cast" => weapon.CastVia,
                 "castrelease" => weapon.CastReleaseVia,
+                "ability" => BattleAnimationLibrary.AbilityKeys(),
                 "interact" => Enumerable.Range(0, 37).Select(i => new PoseKey(i * BattleAnimationLibrary.InteractCycle / 36f, BattleAnimationLibrary.Interact(i / 36f), Ease.Linear)).ToList(),
                 _ => BattleAnimationLibrary.AttackKeys(weapon, attack ?? throw new ArgumentException($"'{prefix}' has no swing '{swing}'"))
             };
