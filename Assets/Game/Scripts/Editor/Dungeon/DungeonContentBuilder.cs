@@ -417,7 +417,7 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 ("Gold Coins", 8f, 3, 14), ("Bandage", 4f, 1, 3), ("Potion of Healing", 3f, 1, 2), ("Potion of Protection", 1.5f, 1, 1), ("Lockpick", 1.5f, 1, 2),
                 ("Ale", 1f, 1, 1), ("Throwing Knife", 1f, 1, 2), ("Francisca Axe", 0.8f, 1, 2), ("Campfire Kit", 0.6f, 1, 1),
-                ("Arming Sword", 1f, 1, 1), ("Morning Star", 0.8f, 1, 1), ("Round Shield", 0.8f, 1, 1), ("Écu", 0.4f, 1, 1),
+                ("Arming Sword", 1f, 1, 1), ("Viking Sword", 0.5f, 1, 1), ("Morning Star", 0.8f, 1, 1), ("Round Shield", 0.8f, 1, 1), ("Écu", 0.4f, 1, 1),
                 ("Crossbow", 0.4f, 1, 1), ("Crossbow Bolts", 1.2f, 4, 12), ("Magic Staff", 0.5f, 1, 1), ("Battle Axe", 0.4f, 1, 1),
                 ("Ruby", 0.5f, 1, 1), ("Emerald", 0.5f, 1, 1), ("Sapphire", 0.5f, 1, 1), ("Gold Goblet", 0.5f, 1, 1),
                 ("Potion of Invisibility", 0.6f, 1, 1), ("Silver Chalice", 0.6f, 1, 1), ("Gold Ore", 0.8f, 1, 3), ("Silver Ingot", 0.3f, 1, 1)
@@ -427,7 +427,7 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Gold Coin Purse", 4f, 1, 2), ("Gold Coin Bag", 1f, 1, 1), ("Gold Coins", 3f, 10, 25), ("Diamond", 1.5f, 1, 2), ("Ruby", 2f, 1, 3), ("Emerald", 2f, 1, 3), ("Sapphire", 2f, 1, 3),
                 ("Gold Candlestick", 2f, 1, 1), ("Gold Goblet", 2f, 1, 1), ("Ancient Scroll", 1.5f, 1, 1), ("Gem Necklace", 1f, 1, 1), ("Gold Band", 1f, 1, 1), ("Gem Ring", 1f, 1, 1),
                 ("Battle Axe", 0.8f, 1, 1), ("Crossbow", 0.8f, 1, 1), ("Magic Staff", 0.8f, 1, 1), ("Surgical Kit", 1.5f, 1, 1),
-                ("Morning Star", 0.8f, 1, 1), ("Arming Sword", 0.6f, 1, 1), ("Round Shield", 0.6f, 1, 1), ("Écu", 0.6f, 1, 1),
+                ("Morning Star", 0.8f, 1, 1), ("Arming Sword", 0.6f, 1, 1), ("Viking Sword", 0.6f, 1, 1), ("Round Shield", 0.6f, 1, 1), ("Écu", 0.6f, 1, 1),
                 ("Fox Pendant", 0.6f, 1, 1), ("Ox Pendant", 0.6f, 1, 1), ("Bear Pendant", 0.6f, 1, 1), ("Owl Pendant", 0.6f, 1, 1),
                 ("Ring of Courage", 0.6f, 1, 1), ("Ring of Vitality", 0.6f, 1, 1), ("Ring of Finesse", 0.6f, 1, 1), ("Ring of Wisdom", 0.6f, 1, 1),
                 ("Troll's Blood", 1f, 1, 1), ("Potion of Invisibility", 1f, 1, 2), ("Gold Crown", 0.5f, 1, 1), ("Gold Ingot", 1f, 1, 2), ("Pearl Necklace", 1f, 1, 1)

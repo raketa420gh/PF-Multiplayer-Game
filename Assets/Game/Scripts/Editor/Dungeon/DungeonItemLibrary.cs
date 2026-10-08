@@ -263,6 +263,9 @@ namespace Game.Scripts.Editor.Dungeon
             // The heater shield of Dark and Darker: wider cover above, a point below, a sturdier block than the round one.
             items.Add(Weapon("Écu", null, WeaponClass.Shield, 2, 3, 16f, "Ec", s_steel, 45, "Heater shield. Blocks with a one-handed weapon in the main hand.",
                 offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 25f) }, shieldIndex: 1));
+            // Dark and Darker's viking sword: base damage 31, move speed -20, for the barbarian and the warrior.
+            items.Add(Weapon("Viking Sword", DungeonWeaponLibrary.VikingSword, WeaponClass.Sword, 1, 3, 20f, "Vk", s_steel, 40, "A broad-bladed sword with a lobed pommel. Three cuts in a row.",
+                classes: new[] { Barbarian, Warrior }));
 
             return items;
         }

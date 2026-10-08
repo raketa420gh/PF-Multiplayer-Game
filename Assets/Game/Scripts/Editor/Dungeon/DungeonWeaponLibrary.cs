@@ -24,6 +24,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const string MorningStar = "MorningStar";
         public const string SwordEcu = "SwordEcu";
         public const string MaceEcu = "MaceEcu";
+        public const string VikingSword = "VikingSword";
 
         private const float MaceHead = 0.6f;
         private const float AxeHead = 0.8f;
@@ -46,7 +47,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// weapon by name.
         public static readonly string[] CatalogOrder =
         {
-            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, BearClaws, PantherClaws, RatBite, MorningStar, SwordEcu, MaceEcu
+            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, BearClaws, PantherClaws, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword
         };
 
         /// The entry whose shield is the model of a shield item, by its ShieldIndex: the round shield, the écu.
@@ -65,7 +66,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 4), ["Rat Bite"] = (1, 1), ["Arming Sword"] = (4, 3), ["Morning Star"] = (6, 3), ["Magic Staff"] = (4, 4),
             ["Sword & Shield"] = (4, 7), ["Mace & Shield"] = (6, 7), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2),
-            ["Bear Claws"] = (7, 4), ["Sword & Écu"] = (4, 8), ["Mace & Écu"] = (6, 8)
+            ["Bear Claws"] = (7, 4), ["Sword & Écu"] = (4, 8), ["Mace & Écu"] = (6, 8), ["Viking Sword"] = (5, 3)
         };
 
         public static (int impact, int stability) Force(string displayName)
@@ -128,7 +129,8 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateRatBite(),
                 CreateMorningStar(),
                 CreateEcu(BattleAnimationLibrary.CreateSwordShield(), SwordEcu, "Sword & Écu"),
-                CreateEcu(CreateMaceShield(), MaceEcu, "Mace & Écu")
+                CreateEcu(CreateMaceShield(), MaceEcu, "Mace & Écu"),
+                CreateVikingSword()
             };
         }
 
@@ -801,6 +803,96 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockBoxCenter = new Vector3(0f, 0f, (bladeBase + bladeTip) * 0.5f),
                 BlockBoxExtents = new Vector3(0.08f, 0.08f, (bladeTip - bladeBase) * 0.5f)
             };
+        }
+
+        /// The viking sword of Dark and Darker: carried, blocked and riposted like the arming sword, with a series of its own.
+        /// Three chops: straight down from behind the head over the right shoulder, a backhand from over the left shoulder
+        /// down to the right, and the first again. Each stops low before the belly, and the next one starts from there.
+        private static WeaponDefinition CreateVikingSword()
+        {
+            const int damage = 31;
+
+            WeaponDefinition sword = CreateArmingSword("Viking Sword", 0.11f, 0.88f, 1.4f, damage);
+            BodyPose upright = At(Cm(20f, 1.1f, 35f), 0f, 78f, 0f, 5f, Cm(25f, 1f, 10f), Cm(-25f, 1f, 5f), 10f);
+            BodyPose cocked = At(Cm(23f, 1.83f, 15f), 175f, 25f, 25f, -5f, Cm(40f, 1.5f, -5f), Cm(-35f, 1f, 5f));
+            BodyPose over = At(Cm(17f, 1.95f, 30f), 170f, 75f, 10f, 0f, Cm(35f, 1.55f, 5f), Cm(-30f, 1f, 5f));
+            BodyPose peak = Peak(Cm(3f, 1.47f, 50f), -5f, 10f, Cm(18f, 1.25f, 25f), Cm(-32f, 1f, 0f), 40f);
+            BodyPose low = At(Cm(5f, 1.1f, 45f), -5f, -10f, -10f, 15f, Cm(20f, 1.15f, 20f), Cm(-35f, 1f, 0f), 50f);
+            List<PoseKey> back = new()
+            {
+                Via(56, low, 0.5f),
+                Via(70, At(Cm(15f, 1.05f, 40f), -30f, 40f, -5f, 10f, Cm(25f, 1.05f, 15f), Cm(-30f, 1f, 5f), 30f)),
+                Via(82, upright)
+            };
+
+            // Up the right side with the tip falling to the left, laid level over the head and round behind it.
+            AttackDefinition first = new AttackDefinition
+            {
+                Windup = 35 * Footage, Active = 13 * Footage, Recovery = 42 * Footage, Damage = damage, MoveMultiplier = 0.7f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(4, At(Cm(25f, 1.3f, 38f), -40f, 55f, 5f, 5f, Cm(32f, 1.12f, 12f), Cm(-25f, 1f, 5f))),
+                    Via(8, At(Cm(28f, 1.6f, 35f), -60f, 45f, 10f, 0f, Cm(40f, 1.35f, 10f), Cm(-35f, 1f, 5f))),
+                    Via(12, At(Cm(28f, 1.9f, 28f), -115f, 12f, 15f, -5f, Cm(45f, 1.6f, 5f), Cm(-35f, 1f, 5f))),
+                    Via(20, cocked, 0.5f),
+                    Via(28, cocked, 0.5f)
+                },
+                WindupPose = over,
+                MidPose = peak,
+                EndPose = low,
+                Return = back
+            };
+            // Out of the low stop the tip swings up to the left, the arm folds across over the left shoulder and chops down to the right.
+            AttackDefinition backhand = new AttackDefinition
+            {
+                Windup = 40 * Footage, Active = 10 * Footage, Recovery = 50 * Footage, Damage = damage, MoveMultiplier = 0.7f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(8, At(Cm(5f, 1.2f, 45f), -45f, 40f, -10f, 10f, Cm(20f, 1.15f, 20f), Cm(-35f, 1f, 0f), 30f)),
+                    Via(14, At(Cm(5f, 1.42f, 45f), -90f, 8f, -25f, 5f, Cm(20f, 1.3f, 15f), Cm(-40f, 1f, 0f))),
+                    Via(24, At(Cm(-25f, 1.6f, 33f), -150f, 10f, -40f, 0f, Cm(10f, 1.45f, 20f), Cm(-45f, 0.95f, 5f))),
+                    Via(32, At(Cm(-20f, 1.85f, 22f), -150f, 45f, -45f, -5f, Cm(10f, 1.55f, 25f), Cm(-45f, 0.95f, 5f)), 0.5f)
+                },
+                WindupPose = At(Cm(-15f, 1.78f, 40f), -150f, 70f, -45f, 0f, Cm(12f, 1.5f, 30f), Cm(-45f, 0.95f, 5f)),
+                MidPose = Peak(Cm(8f, 1.47f, 50f), 15f, 10f, Cm(30f, 1.25f, 20f), Cm(-35f, 1f, 0f), 40f),
+                EndPose = At(Cm(22f, 1.05f, 40f), 15f, -15f, 15f, 15f, Cm(27f, 1.15f, 15f), Cm(-35f, 1f, 0f), 50f),
+                Return = new()
+                {
+                    Via(62, At(Cm(22f, 1.05f, 40f), 15f, -15f, 15f, 15f, Cm(27f, 1.15f, 15f), Cm(-35f, 1f, 0f), 50f), 0.5f),
+                    Via(76, At(Cm(20f, 1.05f, 38f), -20f, 40f, 5f, 10f, Cm(26f, 1.05f, 15f), Cm(-30f, 1f, 5f), 30f)),
+                    Via(90, upright)
+                },
+                After = first
+            };
+            // From the low right the blade swings up level to the left, over the head and round behind it, then the first chop again.
+            AttackDefinition last = new AttackDefinition
+            {
+                Windup = 35 * Footage, Active = 13 * Footage, Recovery = 42 * Footage, Damage = damage, MoveMultiplier = 0.7f, Launch = 1f,
+                Raise = new()
+                {
+                    Via(4, At(Cm(25f, 1.3f, 40f), -75f, 10f, 0f, 5f, Cm(32f, 1.15f, 15f), Cm(-35f, 1f, 0f))),
+                    Via(8, At(Cm(25f, 1.7f, 35f), -95f, 10f, 10f, 0f, Cm(40f, 1.4f, 10f), Cm(-35f, 1f, 5f))),
+                    Via(12, At(Cm(25f, 1.9f, 25f), -130f, 5f, 15f, -5f, Cm(45f, 1.6f, 5f), Cm(-35f, 1f, 5f))),
+                    Via(20, cocked, 0.5f),
+                    Via(30, cocked, 0.5f)
+                },
+                WindupPose = over,
+                MidPose = peak,
+                EndPose = low,
+                Return = back,
+                After = backhand
+            };
+
+            foreach (AttackDefinition attack in new[] { first, backhand, last })
+            {
+                attack.ComboStart = attack.Windup + attack.Active * 0.5f;
+                attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
+            }
+
+            sword.Prefix = VikingSword;
+            sword.Attacks = new[] { first, backhand, last };
+
+            return sword;
         }
 
         private static BodyPose At(Vector3 grip, float yaw, float elevation, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean = 0f)

@@ -85,6 +85,7 @@ namespace Game.Scripts.Editor.Battle
             GameObject book = DungeonWeaponPrefabBuilder.BuildBook();
             GameObject morningStar = DungeonWeaponPrefabBuilder.BuildMorningStar();
             GameObject ecu = DungeonWeaponPrefabBuilder.BuildEcu();
+            GameObject vikingSword = BattleWeaponPrefabBuilder.BuildSword("VikingSword", 0.11f, 0.88f, 0.058f, 0.16f, 0.09f, SwordStyle.Viking);
             arrow = BattleWeaponPrefabBuilder.BuildArrow();
             magicOrb = DungeonWeaponPrefabBuilder.BuildMagicOrb();
 
@@ -107,7 +108,8 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.RatBite] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.MorningStar] = new[] { (morningStar, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.SwordEcu] = new[] { (sword, WeaponSocket.RightHand), (ecu, WeaponSocket.LeftShield) },
-                [DungeonWeaponLibrary.MaceEcu] = new[] { (morningStar, WeaponSocket.RightHand), (ecu, WeaponSocket.LeftShield) }
+                [DungeonWeaponLibrary.MaceEcu] = new[] { (morningStar, WeaponSocket.RightHand), (ecu, WeaponSocket.LeftShield) },
+                [DungeonWeaponLibrary.VikingSword] = new[] { (vikingSword, WeaponSocket.RightHand) }
             };
 
             string[] order = DungeonWeaponLibrary.CatalogOrder;
