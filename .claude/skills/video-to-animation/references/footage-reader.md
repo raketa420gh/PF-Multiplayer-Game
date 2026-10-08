@@ -105,6 +105,13 @@ game's field of view. 3D guesses from DaD's 90-degree view come out wrong in our
   the fingers are together, spread, curled, wrapped round an edge; which way the palm faces.
 - Say when a cut is not a cut: arms filling the screen read as one to the scan.
 - Note camera motion (pitch, lunge) separately so it is not taken for hand motion.
+- Strikes with the hands (punches, claws): every frame of the active phase, at 1-frame steps. Per frame give:
+  - which face of the fist we see and the thumb-to-little-finger line on screen (0 = vertical fist, 90 =
+    horizontal, palm down);
+  - the forearm (glove cuff) screen angle and length;
+  - whether the elbow is above, level with or below the fist;
+  - the u range where the sleeve meets the bottom edge (that is the shoulder's sweep);
+  - where the fist turns over and how it leaves the view.
 - The same strike repeated: describe the cleanest one, give the start frames of the others.
 - The rest pose seen at the start of every video: describe it once.
 
@@ -118,3 +125,7 @@ game's field of view. 3D guesses from DaD's 90-degree view come out wrong in our
 > do the arms read natural or twisted next to the video. Check an arm on the full-size `g_<take>_<view>_<frame>.png`
 > before reporting it: the tiles are small. The mannequin, the lighting, the floor and the legs are not part of
 > the comparison.
+
+For hand strikes add: "The game renders have flat fingers and no sleeves: an open-looking hand is the fist. Judge
+it by the back of the hand and the forearm line, not the finger shape." Without this, the reader reports every
+fist as an open palm.

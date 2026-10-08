@@ -1,6 +1,6 @@
 ---
 name: video-to-animation
-description: Turn reference video footage (usually Dark and Darker, first person) into this project's generated animations — weapon swings, riposte, block, idle, and first-person action clips (interacting/searching, drinking, bandaging, casting, picking up) — so that they match the footage in timing, weapon path, screen placement of the hands, finger shape and the arms and torso that carry it. Use whenever the user gives a video file (mp4 and the like) and asks to make, redo or match an animation from it — "сделай анимацию как в видео", "реализуй анимации из видео", "сделай идентичные", a path like D:\something_animations.mp4 next to a weapon or action name — even if they do not say "skill". Also use when asked to compare an existing animation with footage.
+description: Turn reference video footage (usually Dark and Darker, first person) into this project's generated animations — weapon swings, bare-hands punches, riposte, block, idle, and first-person action clips (interacting/searching, drinking, bandaging, casting, picking up) — so that they match the footage in timing, weapon path, screen placement of the hands, finger shape and the arms and torso that carry it. Use whenever the user gives a video file (mp4 and the like) and asks to make, redo or match an animation from it — "сделай анимацию как в видео", "реализуй анимации из видео", "сделай идентичные", a path like D:\something_animations.mp4 next to a weapon or action name — even if they do not say "skill". Also use when asked to compare an existing animation with footage.
 ---
 
 # Video to animation
@@ -18,7 +18,9 @@ and the torso turn come from the footage too, in the same spec and the same revi
 - **A first-person action** (no weapon swing: interaction, search, drink, bandage, cast, pick up...) → follow
   `references/fp-actions.md` alone, then step 7 here. Screen placement and finger shape are the whole job; the
   footage-reader agent, `takes.json` and the full rebuild are not needed.
-- **Weapon motions** (attacks, riposte, block, idle of a weapon) → the steps below.
+- **Weapon motions** (attacks, riposte, block, idle of a weapon) → the steps below. Bare-hands punches (`Fists`)
+  are weapon motions too: the fist is a short blade, the swings go through `SwingPreview`, the rebuild and the
+  play test. Read "Bare hands" in `references/pipeline.md` before authoring them.
 
 The user records first-person footage only. For weapon motions that means the swing's 3D path is inferred from
 the screen, and the screen is the spec:
@@ -90,6 +92,11 @@ agent reviews the comparisons later through `SendMessage`, with the footage alre
 If the spec comes back vague where it matters (no angles, "swings to the left"), ask the reader for that take again
 with a narrower question rather than opening the video yourself.
 
+For first-person strikes, ask in the first brief for every frame of the active phase (1-frame steps, about 5
+frames a sheet): the hand's orientation, the forearm's screen angle and length, and where the sleeve meets the
+bottom edge. A 4-6 frame overview gave a path that matched while the fist stood vertical where the footage had it
+palm down. That cost a whole round with the user.
+
 ### 4. Author
 
 Read `references/pipeline.md`, then the weapon's `Create<Weapon>()`. Convert timings (video frames x 0.75 for
@@ -145,6 +152,21 @@ render: bring them down where the spec allows, accept what a pose of the footage
 report. `report_<swing>.txt` in the folder has the per-frame table
 (grip position, blade yaw/elevation) for when a number in the spec needs checking against the pose.
 
+Every round, also run `python $SKILL/scripts/rigstats.py Temp/footage/<name>`. Its `flips` column and the
+`twitches at swing:frame` line catch twist muscles that jump to ±2 for one or two frames and back. That is a
+visible twitch of the arm in the game, and the FAIL list does not show it (it reports the maximum, which can stay
+under the limit). It moves whenever any neighbouring key changes — the return pose's elbow, the off hand's resting
+point — because the keys are a Catmull-Rom spline. So check every swing after every edit, not only the swing that
+was edited.
+
+To read a few columns of the report without opening the file, print them in the same `execute_code`:
+
+```csharp
+var lines = System.IO.File.ReadAllLines("Temp/footage/<name>/report_0.txt");
+for (int i = 40; i < 50; i++) { var c = lines[i + 1].Split('|'); sb.AppendLine(c[0] + "|" + c[1] + "|" + c[5] + "|" + c[7] + "|" + c[10]); }
+// columns: 1 grip, 2 blade yaw/elev, 5 wrists, 6 roll, 7 main elbow, 8 off elbow, 9 twist, 10 muscles
+```
+
 Whenever the rig or a shared pose changes, run `SwingPreview` for the affected weapons into a `base` tree before
 and a `new` tree after (`<folder>/<Prefix>`), then `python $SKILL/scripts/rigstats.py base new`: frames with a
 broken wrist, with a wrung forearm and the worst elbow jerk per swing, base against new. A change to the rig that
@@ -172,7 +194,9 @@ the player sees, and one comparison sheet per swing read by yourself as the sign
 
 `execute_menu_item` `Tools/Game/Battle/Rebuild Animations And Content` reports "disconnected" after ~30 s and keeps
 running; poll the timestamp of `Assets/Game/Prefabs/Battle/ShieldDummy.prefab` (saved last) from a background
-shell command, then read the console for `[BattleContentBuilder]` errors — none is the pass mark.
+shell command, then read the console for `[BattleContentBuilder]` errors — none is the pass mark. A `TimeoutError`
+from the menu call means the same thing. Errors of other weapons were there before you (claws): name them in the
+report, do not fix them. After the rebuild the active scene can be an untitled one: open the scenes by path.
 
 Training table, every time: the weapon's display name must be in `BattleSceneBuilder.s_tableItems` (the items
 laid out on the table in `BattleScene`). If it is missing, add it before the last weapon-like entry (`"Round
@@ -186,6 +210,7 @@ it to finish (`until [ -f play_<mode>.txt ]` in a shell, not sleeps), read `play
 weapon part stands in the view — the answer to "it stands crooked" in numbers. Open the scene and enter play mode in
 two separate calls; "no local fighter yet" past ~20 s means the session never started: stop, enter again, retry.
 Stop play, delete the copied file and its `.meta`, compile again, reopen the scene that was open before.
+"no local fighter yet" on two calls 15 s apart: stop play, enter again, wait 20 s. That worked every time.
 
 ### 7. Report (Russian, terse)
 
@@ -204,7 +229,12 @@ not push unless asked.
   untracked clip into a commit once.
 - A file the user had dirty before you (a shared library) gets only your hunks: write `git show HEAD:<file>` to
   `Temp/`, apply your edit there with the same anchored patch, `git hash-object -w --no-filters` it and
-  `git update-index --cacheinfo 100644,<hash>,<file>`.
+  `git update-index --cacheinfo 100644,<hash>,<file>`. Keep the line endings: read and write with `newline=''` in
+  Python, or the staged file shows every line as changed. Check with `git diff --cached --stat` that only your lines
+  are staged.
+- Removing a hand edit for a re-authored clip: the clip's guid is in its `.anim.meta`. The entry in
+  `AnimationEdits.asset` runs from `  - _clip: {... guid: <it> ...}` to the line before the next `  - _clip:`.
+  Delete that range, check that the guid count is 0, and give the commit that still has it in the report.
 - `Fighter.controller`, `Bow.prefab`, `Fighter.prefab` come out of every rebuild with fileID churn: leave them out
   unless the job changed states.
 
@@ -266,3 +296,14 @@ Say this to the user when it helps; it is their recording.
 - **Shared poses** (rest, the low stop on one side, upright on the other) are reused by several swings. When one
   swing needs it different (the head up at the start of the next swing rather than down at the end of the last),
   give that swing its own key instead of bending the shared pose.
+- **An elbow high across the chest wraps the upper-arm twist.** Once the fist is past the midline, an elbow above
+  about 1.66 m makes the arm-twist muscle jump between 0 and ±2. The solver puts the elbow there whenever the fist
+  stays high, whatever elbow is authored. Turn the chest further at the end of the swing (yaw -65 to -75 for a
+  right hook). That cleared it where lowering the fist and moving the elbow did not.
+- **A key that lands exactly on a 60 Hz frame** is sampled as the key pose itself. A twitch that sits on a key frame
+  belongs to that key's solve. Change that key's elbow, not its neighbours.
+- **The authored elbow is a hint.** Wrist comfort outweighs it: "elbow off the authored one by 60-120" happens on
+  return keys and peaks and needs no fix while the wrists and twists are fine.
+- **"Размашистый" means the chest and the shoulder.** The user judges swings from outside as well as in first
+  person. A wide punch needs the torso to turn about 100 degrees through the swing and the arm level at shoulder
+  height. Render the `front` and `top` strips too (`footage.py strip DIR TAKE front`) before calling it wide.

@@ -73,6 +73,28 @@ screen terms (grip, which way the top and the back face point) with the elbows d
 that changes shape inside a state (the book shut only for part of the strike) is a `WeaponVisual` window in clip
 seconds (`_attackShut`, set by the prefab builder), read by `WeaponViewComponent` and `AnimationTestView`.
 
+## Bare hands
+
+`CreateFists` and `Hook` in `DungeonWeaponLibrary`; Rat Bite plays the same clips. The fist is a blade 0.12 m long
+along the thumb axis (`Main.Forward`); the knuckles are `pose.Edge`. The second hook is authored as a right one
+(`IsOffHand`) and played mirrored: author it from the mirrored footage and compare with `--mirror`.
+
+- `BattleAnimationLibrary.Punch` gives a vertical fist (thumb up). For a palm-down hook, author the hand from the
+  forearm line, as the local `Fist(fist, elbow, roll, yaw, knuckles)` in `Hook` does:
+  thumb = `Cross(forearm, up)` turned by `roll` (0 = palm down, 90 = thumb up), knuckles = the forearm, or level
+  ones where the forearm rises. Hand-authored thumbs that were not square to the forearm bent the wrist 140-150°.
+- `LeadWithEdge` keeps a key's authored `Edge` for unarmed weapons only (`keepsAuthored`). For everything else the
+  edge is carried from the rest pose, which for a fist means knuckles that point wherever the idle pointed them.
+- The peak aims the thumb axis at the crosshair. The grip is clamped to 0.95 x 0.12 m from the ray, and the aim
+  point is always ahead of the grip. A grip about 0.12 m to the side the fist comes from gives a horizontal fist
+  with the thumb toward the crosshair. A grip on the ray gives a fist that punches thumb-first.
+- A hook that passes the clean checks: windup grip (0.33, 1.70, 0.42), elbow (0.44, 1.60, 0.05), chest +35; peak grip
+  (0.12, 1.72, 0.5), elbow (0.25, 1.60, 0.25), chest -15, knuckles (-0.4, 0, 0.9); end grip (-0.40, 1.58, 0.40),
+  elbow (-0.10, 1.56, 0.36), roll 35, chest -65 to -75.
+- In DaD footage the upper arm comes into the view big from the bottom corner at the peak. With our arm lengths and
+  75-degree view the elbow stays outside the frame. Do not chase it by lowering the elbow: the solver moves it
+  back for the wrist.
+
 ## A swing
 
 ```csharp
