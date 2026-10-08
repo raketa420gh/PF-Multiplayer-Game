@@ -14,7 +14,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// Normalized time of the fist at full reach in the punch.
         public const float AttackImpact = 0.27f;
 
-        private const string PackFolder = "Assets/SpecialFolder/3D Models/IronSpear Content/Iron_Juggernaut";
+        private const string PackFolder = "Assets/SpecialFolder/Models/Monsters/IronJuggernaut";
         private const string ModelPath = PackFolder + "/Meshes/MidPoly.fbx";
         private const string AnimationsFolder = PackFolder + "/Animations";
         private const string MaterialsFolder = DungeonPropBuilder.MaterialsFolder + "/Juggernaut";

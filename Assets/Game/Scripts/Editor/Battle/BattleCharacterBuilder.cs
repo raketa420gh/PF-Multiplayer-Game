@@ -12,24 +12,24 @@ namespace Game.Scripts.Editor.Battle
     /// the base bodies split into body regions and every outfit part rebound to that skeleton.
     internal static class BattleCharacterBuilder
     {
-        public const string AnimationsPath1 = PacksFolder + "/Universal Animation Library[Standard]/Unity/UAL1_Standard.fbx";
-        public const string AnimationsPath2 = PacksFolder + "/Universal Animation Library 2[Standard]/Unity/UAL2_Standard.fbx";
+        public const string AnimationsPath1 = PacksFolder + "/Animations/UniversalAnimationLibrary/Unity/UAL1_Standard.fbx";
+        public const string AnimationsPath2 = PacksFolder + "/Animations/UniversalAnimationLibrary2/Unity/UAL2_Standard.fbx";
         public const string PeasantMaterial = "OutfitPeasant";
         public const string PeasantAltMaterial = "OutfitPeasant2";
         public const string RangerMaterial = "OutfitRanger";
         public const string RangerAltMaterial = "OutfitRanger3";
         public const string WoodMaterial = "DummyWood";
 
-        private const string PacksFolder = "Assets/SpecialFolder/3D Models";
-        private const string BaseFolder = PacksFolder + "/Universal Base Characters[Standard]/Base Characters";
+        private const string PacksFolder = "Assets/SpecialFolder/Models";
+        private const string BaseFolder = PacksFolder + "/Characters/UniversalBaseCharacters/Base Characters";
         private const string MaleBodyPath = BaseFolder + "/Unity/Superhero_Male_FullBody.fbx";
         private const string FemaleBodyPath = BaseFolder + "/Unity/Superhero_Female_FullBody.fbx";
-        private const string OutfitsFolder = PacksFolder + "/Modular Character Outfits - Fantasy[Standard]";
+        private const string OutfitsFolder = PacksFolder + "/Characters/ModularCharacterOutfits";
         // The male body is a Character Creator export; the base character above still gives the skeleton the outfits are cut for.
-        private const string ManFolder = PacksFolder + "/Man";
+        private const string ManFolder = PacksFolder + "/Characters/Man";
         private const string ManPath = ManFolder + "/man.Fbx";
-        private const string ManHair = ManFolder + "/textures/Roger/Short_blowback/Short_blowback/Hair/Hair_Hair ";
-        private const string ManBeard = ManFolder + "/textures/Roger/Chin_Curtain_Sparse/Chin_Curtain_Sparse/Beard/Beard_Hair ";
+        private const string ManHair = ManFolder + "/Textures/Roger/Short_blowback/Short_blowback/Hair/Hair_Hair ";
+        private const string ManBeard = ManFolder + "/Textures/Roger/Chin_Curtain_Sparse/Chin_Curtain_Sparse/Beard/Beard_Hair ";
         private const string CcPrefix = "CC_Base_";
         public const string HeadMeshPath = MeshesFolder + "/Male_Head.asset";
         private const string MeshesFolder = BattleEditorUtility.ModelsFolder + "/Character";

@@ -13,7 +13,7 @@ namespace Game.Scripts.Editor.Dungeon
     {
         public const string PrefabsFolder = DungeonPropBuilder.PrefabsFolder + "/Kit";
 
-        private const string PackFolder = "Assets/SpecialFolder/3D Models/Fantasy Props MegaKit[Standard]";
+        private const string PackFolder = "Assets/SpecialFolder/Models/Environment/FantasyPropsMegaKit";
         private const string ModelsFolder = PackFolder + "/Exports/FBX";
         private const string MaterialsFolder = DungeonPropBuilder.MaterialsFolder + "/Kit";
         private const float CandleSpacing = 0.12f;

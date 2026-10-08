@@ -13,7 +13,7 @@ namespace Game.Scripts.Editor.Dungeon
     internal static class DungeonVillageKitBuilder
     {
         public const string PrefabsFolder = DungeonPropBuilder.PrefabsFolder + "/Village";
-        public const string PackFolder = "Assets/SpecialFolder/3D Models/Medieval Village MegaKit";
+        public const string PackFolder = "Assets/SpecialFolder/Models/Environment/MedievalVillageMegaKit";
         /// Every wall module is 2 m wide; a storey is 3 m and the walls overlap the next one by 0.12 m of trim.
         public const float Module = 2f;
         public const float Storey = 3f;

@@ -9,7 +9,7 @@ namespace Game.Scripts.Editor.Dungeon
     /// The Stylized Skeleton pack as the body of skeleton monsters: a humanoid model over the fighter rig that copies the rig's pose.
     internal static class DungeonSkeletonBuilder
     {
-        private const string PackFolder = "Assets/SpecialFolder/3D Models/Stylized Skeleton";
+        private const string PackFolder = "Assets/SpecialFolder/Models/Monsters/StylizedSkeleton";
         private const string ModelPath = PackFolder + "/Mesh/SKM_Skeleton_Var_1.fbx";
         private const string TexturePrefix = PackFolder + "/Textures/T_Skeleton_Variant_1_";
         private const string MaterialsFolder = DungeonPropBuilder.MaterialsFolder + "/Skeleton";
