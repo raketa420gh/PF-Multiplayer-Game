@@ -26,7 +26,10 @@ namespace Game.Scripts.Editor.Dungeon
         {
             House(plans, "Woodcutter's Camp", new Vector2(-7f, 6f), new HouseSpec { Width = 4, Length = 6, Style = Style.Timber, IsLit = true, Seed = 51 });
             House(plans, "Hunter's Lodge", new Vector2(6f, 5f), new HouseSpec { Width = 6, Length = 8, Style = Style.Timber, IsLit = true, Seed = 52 });
-            House(plans, "Old Mill", new Vector2(3f, 5f), new HouseSpec { Width = 8, Length = 10, Storeys = 2, Style = Style.Brick, IsLit = true, Seed = 53 });
+            // The windmill fronts the north road; its yard is levelled wide enough for the ramp up to the gallery.
+            Vector2 mill = Center("Abandoned Windmill") + new Vector2(0f, 6f);
+            plans.Add(new Plan { Kind = "Windmill", Position = mill, Yaw = 180f, HalfSize = Vector2.one * VillageArchitectureBuilder.MillReach });
+            plans.Add(new Plan { Kind = "Pad", Position = mill, Yaw = 180f, HalfSize = new Vector2(14f, 8f) });
             plans.Add(new Plan { Kind = "Tower", Position = Center("Watchtower") + new Vector2(2f, 3f), Yaw = 200f, HalfSize = Vector2.one * 4.8f });
             plans.Add(new Plan { Kind = "Pad", Position = Center("Standing Stones"), Yaw = 12f, HalfSize = Vector2.one * 10f });
             plans.Add(new Plan { Kind = "Pad", Position = Center("Gallows Hill") + new Vector2(3f, 4f), Yaw = -20f, HalfSize = new Vector2(5f, 3f) });
@@ -40,7 +43,7 @@ namespace Game.Scripts.Editor.Dungeon
             StandingStones(root, ground, result, random);
             HunterLodge(root, ground, result, random);
             GallowsHill(root, ground, result, random);
-            OldMill(root, ground, result, random);
+            AbandonedWindmill(root, ground, result, random);
             Watchtower(root, ground, result, random);
             WillowFord(root, ground, result, random);
             SwampIslands(root, ground, result, random);
@@ -262,22 +265,24 @@ namespace Game.Scripts.Editor.Dungeon
             Spots(result, ground, c, new Vector2(-6f, -6f), new Vector2(8f, 0f));
         }
 
-        private static void OldMill(Transform root, VillageGround ground, VillageMapBuilder.Result result, System.Random random)
+        /// The windmill's yard: a cart, hay and sacks, a fallen sail, a millstone on its edge, stores by the door and a lamp on the road.
+        private static void AbandonedWindmill(Transform root, VillageGround ground, VillageMapBuilder.Result result, System.Random random)
         {
-            Vector2 c = Center("Old Mill");
-            Transform mill = BattleEditorUtility.CreateChild("Old Mill", root).transform;
-            Vector2 house = c + new Vector2(3f, 5f);
-            Vector2 side = Rotate(new Vector2(4.7f, 1f), Facing(c - house));
-            WaterWheel(mill, Ground(ground, house + side) + Vector3.up * 0.1f, Facing(c - house) + 90f);
-            Put(mill, ground, DungeonVillageKitBuilder.Load("Prop_Wagon"), c + new Vector2(-8f, -3f), 120f);
-            Put(mill, ground, VillageArchitectureBuilder.Piece("HayBale"), c + new Vector2(-6f, 4f), 20f);
-            Put(mill, ground, VillageArchitectureBuilder.Piece("HayBale"), c + new Vector2(-5f, 5.5f), 70f);
-            Put(mill, ground, DungeonKitBuilder.Load("Bag"), c + new Vector2(-3.5f, -6f), 0f);
-            Put(mill, ground, DungeonKitBuilder.Load("FarmCrate_Empty"), c + new Vector2(-2.5f, -7f), 30f);
-            result.Containers.Add(VillageMapBuilder.PutContainer(mill, ground, "Crate", c + new Vector2(-9f, 3f), 15f));
-            result.Containers.Add(VillageMapBuilder.PutContainer(mill, ground, "Barrel", c + new Vector2(-1.5f, -8f), 0f));
-            VillageMapBuilder.LampPost(mill, ground, c + new Vector2(-5f, -10f), 180f);
-            Spots(result, ground, c, new Vector2(-6f, 0f), new Vector2(2f, -7f));
+            Vector2 c = Center("Abandoned Windmill");
+            Transform yard = BattleEditorUtility.CreateChild("Abandoned Windmill", root).transform;
+            Put(yard, ground, DungeonVillageKitBuilder.Load("Prop_Wagon"), c + new Vector2(-12f, -2f), 120f);
+            Put(yard, ground, VillageArchitectureBuilder.Piece("HayBale"), c + new Vector2(10f, -4f), 20f);
+            Put(yard, ground, VillageArchitectureBuilder.Piece("HayBale"), c + new Vector2(11f, -5.5f), 70f);
+            Put(yard, ground, VillageArchitectureBuilder.Piece("Haystack"), c + new Vector2(14f, 10f), 0f);
+            Put(yard, ground, DungeonKitBuilder.Load("Bag"), c + new Vector2(8f, -1f), 0f);
+            Put(yard, ground, DungeonKitBuilder.Load("FarmCrate_Empty"), c + new Vector2(9f, -2f), 30f);
+            VillageArchitectureBuilder.Tilted(yard, "Fallen Sail", Ground(ground, c + new Vector2(14f, 4f)) + Vector3.up * 0.15f, Ground(ground, c + new Vector2(18f, 8f)) + Vector3.up * 0.9f, 1.5f, 0.12f, DarkWood);
+            DungeonPropBuilder.MeshObject("Millstone", yard, new DungeonMeshBuilder(0.5f).Cylinder(Vector3.zero, 1.3f, 0.5f, 18).Save("MillstoneEdge"), Stone,
+                Ground(ground, c + new Vector2(-4f, 14f)) + Vector3.up * 1.1f, new Vector3(0f, 30f, 80f));
+            result.Containers.Add(VillageMapBuilder.PutContainer(yard, ground, "Crate", c + new Vector2(-9f, 3f), 15f));
+            result.Containers.Add(VillageMapBuilder.PutContainer(yard, ground, "Barrel", c + new Vector2(4f, -3.5f), 0f));
+            VillageMapBuilder.LampPost(yard, ground, c + new Vector2(-5f, -10f), 180f);
+            Spots(result, ground, c, new Vector2(-8f, -4f), new Vector2(9f, 2f));
         }
 
         private static void Watchtower(Transform root, VillageGround ground, VillageMapBuilder.Result result, System.Random random)
@@ -342,7 +347,7 @@ namespace Game.Scripts.Editor.Dungeon
             result.Containers.Add(VillageMapBuilder.PutContainer(swamp, ground, "Crate", mire + new Vector2(-6f, -9f), 25f));
             Spots(result, ground, mire, new Vector2(-4f, 10f), new Vector2(8f, -2f));
 
-            Vector2 cellar = Center("Sunken Cellar");
+            Vector2 cellar = Center("Crimson Isle");
 
             for (int i = 0; i < 7; i++)
             {
@@ -460,39 +465,6 @@ namespace Game.Scripts.Editor.Dungeon
 
             for (int i = 0; i < 3; i++)
                 DungeonStructureBuilder.Block(rack, "Hide", new Vector3(-0.9f + i * 0.9f, 1.35f, 0f), new Vector3(0.7f, 1.1f + (float)random.NextDouble() * 0.2f, 0.03f), DungeonPropBuilder.Textured("Hide", "DarkWood", 0.3f, 0.2f), 0f, false);
-        }
-
-        /// The mill's broken wheel leaning on its wall: rim, paddles and spokes.
-        private static void WaterWheel(Transform parent, Vector3 position, float yaw)
-        {
-            const float radius = 2.4f;
-            const int count = 12;
-            Transform wheel = BattleEditorUtility.CreateChild("Water Wheel", parent, position + Vector3.up * radius).transform;
-            wheel.localRotation = Quaternion.Euler(0f, yaw, 8f);
-
-            for (int i = 0; i < count; i++)
-            {
-                if (i == 7)
-                    continue;
-
-                float a = i * Mathf.PI * 2f / count;
-                float b = (i + 1) * Mathf.PI * 2f / count;
-                Vector3 pa = new Vector3(0f, Mathf.Sin(a), Mathf.Cos(a)) * radius;
-                Vector3 pb = new Vector3(0f, Mathf.Sin(b), Mathf.Cos(b)) * radius;
-                VillageArchitectureBuilder.Tilted(wheel, "Rim", pa, pb, 0.9f, 0.14f, DarkWood, false);
-                Transform paddle = BattleEditorUtility.CreateChild("Paddle", wheel, pa * 1.08f).transform;
-                paddle.localRotation = Quaternion.Euler(-a * Mathf.Rad2Deg, 0f, 0f);
-                DungeonStructureBuilder.Block(paddle, "Board", Vector3.zero, new Vector3(0.9f, 0.05f, 0.5f), Planks, 0f, false);
-            }
-
-            for (int i = 0; i < 4; i++)
-            {
-                Transform spoke = BattleEditorUtility.CreateChild("Spoke", wheel).transform;
-                spoke.localRotation = Quaternion.Euler(i * 45f, 0f, 0f);
-                DungeonStructureBuilder.Block(spoke, "Spoke", Vector3.zero, new Vector3(0.14f, radius * 2f, 0.14f), DarkWood, 0f, false);
-            }
-
-            DungeonStructureBuilder.Block(wheel, "Hub", Vector3.zero, new Vector3(1.2f, 0.4f, 0.4f), DarkWood);
         }
 
         /// Banks of low mist over the bog islands, the ford and where the river runs in its ravine.

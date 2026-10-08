@@ -71,7 +71,7 @@ namespace Game.Scripts.Editor.Dungeon
             foreach ((Vector2 center, Vector2 halfSize, float yaw) in buildings)
                 Fill(pixels, center, halfSize, yaw, s_ink);
 
-            foreach ((Vector2 position, float yaw) in VillageLayout.Cellars)
+            foreach ((Vector2 position, float yaw) in VillageLayout.RedPortals)
             {
                 Fill(pixels, position, new Vector2(4.5f, 4.5f), yaw, s_way);
                 Fill(pixels, position, new Vector2(2.6f, 2.6f), yaw, s_parchment);

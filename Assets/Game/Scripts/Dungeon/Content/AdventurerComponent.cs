@@ -36,6 +36,8 @@ namespace Game.Scripts.Dungeon
         public const byte BusyPickUp = 5;
         public const byte BusyBandage = 6;
         public const byte BusyRelease = 7;
+        /// A skill: it takes effect at the top of the activation clip, the clip plays out after.
+        public const byte BusyAbility = 8;
         public const int BeltGroupSize = 3;
         public const byte NoBelt = 255;
         public const byte NoSearch = 255;
@@ -933,14 +935,14 @@ namespace Game.Scripts.Dungeon
             if (ability.HealthCost > 0)
                 _fighter.Health.TakeDamage(ability.HealthCost);
 
-            float duration = Mathf.Max(0.05f, ability.CastTime / (ability.IsSpell ? _stats.CastSpeed : _stats.ActionSpeed));
+            float speed = ability.IsSpell ? _stats.CastSpeed : _stats.ActionSpeed;
 
-            if (!_fighter.Combat.StartBusy(duration, BusyCast))
+            if (!_fighter.Combat.StartBusy(FighterAnimComponent.AbilityTime / speed, BusyAbility, speed))
                 return;
 
             Pending = PendingAction.Ability;
             _pendingIndex = (byte)index;
-            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(duration / Runner.DeltaTime);
+            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(FighterAnimComponent.AbilityPeak / speed / Runner.DeltaTime);
         }
 
         private void SimulatePending()

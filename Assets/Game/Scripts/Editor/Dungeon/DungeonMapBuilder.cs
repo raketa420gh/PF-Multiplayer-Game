@@ -14,7 +14,7 @@ namespace Game.Scripts.Editor.Dungeon
     /// a prison cell (north-east), a library (west), an armoury (east), the guards' mess (south-west) and a store (south-east).
     /// Skeletons and a flying head guard it; the escape portal opens at a random spot. Then the NavMesh and the map.
     /// Since the cursed village (VillageMapBuilder) became floor 1, the hall is floor 2, sunk below it; adventurers arrive
-    /// by its north-west and south-east doors from the graveyard and the swamp cellars.
+    /// by its north-west and south-east doors through the red portals of the graveyard and the swamp.
     internal static class DungeonMapBuilder
     {
         /// Wall to wall in ten seconds at 300 move speed (run speed 3.36 m/s).
@@ -133,7 +133,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, first + "Containers", upper.Containers);
             BattleEditorUtility.Set(so, first + "EscapePortals", upper.EscapePortals);
             BattleEditorUtility.Set(so, first + "EscapeArea", VillageLayout.Playable - 12f);
-            BattleEditorUtility.Set(so, first + "DescendPortals", upper.Cellars);
+            BattleEditorUtility.Set(so, first + "DescendPortals", upper.DescendPortals);
             BattleEditorUtility.Set(so, first + "Arrivals", new Transform[0]);
             BattleEditorUtility.Set(so, first + "Center", Vector3.up * 2f);
             // The circle starts wide enough to cover the corners of the square map.

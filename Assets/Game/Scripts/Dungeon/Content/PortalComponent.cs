@@ -12,7 +12,7 @@ namespace Game.Scripts.Dungeon
 
     /// Blue portal escapes the dungeon, red portal leads to the lower floor; stepping into an open one takes the adventurer
     /// through at once. A blue portal shows up as a pedestal rising out of the ground (marked on the map) and opens only after
-    /// someone holds F on the pedestal. A way down opens by itself: its gate (a cellar grate) lifts and the red glow behind waits.
+    /// someone holds F on the pedestal. A way down (red portal) opens by itself; an optional gate lifts.
     public sealed class PortalComponent : InteractableComponent
     {
         public override string Prompt => "Open the portal";

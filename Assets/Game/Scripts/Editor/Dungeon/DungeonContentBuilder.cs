@@ -85,7 +85,6 @@ namespace Game.Scripts.Editor.Dungeon
             BuildDoor("Door", DungeonPropBuilder.DoorLeaf());
             BuildDoor("CellDoor", DungeonMedievalBuilder.CellDoorLeaf());
             BuildDoor("HouseDoor", HouseDoorLeaf(), DungeonVillageKitBuilder.DoorHalf - 0.03f, DungeonVillageKitBuilder.DoorHalf * 2f);
-            BuildCellarGrate();
             BuildPortal("EscapePortal", PortalKind.Escape, DungeonPropBuilder.PortalBlue, config.EscapePortalTime > 0f);
             BuildPortal("DescendPortal", PortalKind.Descend, DungeonPropBuilder.PortalRed, false);
             BuildShrine(ShrineKind.Health, 100f, 0f);
@@ -1291,47 +1290,6 @@ namespace Game.Scripts.Editor.Dungeon
             collider.size = new Vector3(bounds.size.x, bounds.size.y, 0.14f);
 
             return leaf;
-        }
-
-        /// Iron grate at the bottom of a cellar: a way down that opens by itself halfway through the floor's clock. The grate
-        /// rises into the wall and the red portal in the tunnel behind takes whoever steps into it straight down.
-        private static void BuildCellarGrate()
-        {
-            const float width = 1.7f;
-            const float height = 2.5f;
-            GameObject root = new GameObject("CellarGrate");
-            Transform gate = BattleEditorUtility.CreateChild("Gate", root.transform).transform;
-            DungeonMeshBuilder bars = new DungeonMeshBuilder(1f);
-
-            for (float x = -width * 0.5f + 0.06f; x < width * 0.5f; x += 0.16f)
-                bars.Box(new Vector3(x, height * 0.5f, 0f), new Vector3(0.045f, height, 0.045f));
-
-            foreach (float y in new[] { 0.08f, 0.9f, 1.75f, height - 0.08f })
-                bars.Box(new Vector3(0f, y, 0f), new Vector3(width, 0.07f, 0.07f));
-
-            GameObject model = DungeonPropBuilder.MeshObject("Bars", gate, bars.Save("CellarGrate"), DungeonPropBuilder.RustyMetal, default, default, false, false);
-            BoxCollider blocker = model.AddComponent<BoxCollider>();
-            blocker.center = new Vector3(0f, height * 0.5f, 0f);
-            blocker.size = new Vector3(width, height, 0.12f);
-
-            root.AddComponent<NetworkObject>();
-            root.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
-            PortalComponent portal = root.AddComponent<PortalComponent>();
-            SerializedObject so = new SerializedObject(portal);
-            GameObject portalModel = DungeonPropBuilder.Portal(DungeonPropBuilder.PortalRed, false);
-            Transform visual = portalModel.transform.Find("Visual");
-            visual.SetParent(root.transform, false);
-            visual.localPosition = new Vector3(0f, 1.15f, 1.5f);
-            visual.localScale = Vector3.one * 0.8f;
-            Object.DestroyImmediate(portalModel);
-            BattleEditorUtility.Set(so, "_kind", PortalKind.Descend);
-            BattleEditorUtility.Set(so, "_visual", visual.gameObject);
-            BattleEditorUtility.Set(so, "_gate", gate);
-            BattleEditorUtility.Set(so, "_gateLift", 1.95f);
-            BattleEditorUtility.Set(so, "_zoneCenter", new Vector3(0f, 1.2f, 1.5f));
-            BattleEditorUtility.Set(so, "_zoneSize", new Vector3(width, 2.4f, 1.1f));
-            so.ApplyModifiedPropertiesWithoutUndo();
-            BattleContentBuilder.SavePrefab(root, Prefab("CellarGrate"));
         }
 
         private static void BuildPortal(string name, PortalKind kind, Material material, bool singleUse)

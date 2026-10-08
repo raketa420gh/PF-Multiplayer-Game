@@ -8,15 +8,15 @@ namespace Game.Scripts.Editor.Dungeon
 {
     /// Buildings and structures of the cursed village. Houses are put together from the Medieval Village MegaKit on a 2 m module:
     /// walls with a door, windows and shutters, corner posts, plank floors, an inner staircase on two-storey houses, a tiled roof
-    /// with gables and a chimney, furniture and loot inside. The rest is modelled here: windmill, chapel ruin, stilt huts, bridges,
-    /// boardwalks, graves, walls and the stone cellars that lead down to the second floor.
+    /// with gables and a chimney, furniture and loot inside. The rest is modelled here: the abandoned windmill, chapel ruin, stilt huts, bridges,
+    /// boardwalks, graves, walls and the shrines of the red portals that lead down to the second floor.
     internal static class VillageArchitectureBuilder
     {
         public const float BridgeWidth = 3.6f;
-        /// The stone cellar pit: interior half width, length from the top step to the grate, depth.
-        public const float CellarHalfWidth = 1.3f;
-        public const float CellarLength = 7.4f;
-        public const float CellarDepth = 3.2f;
+        /// Half size of the abandoned windmill with its gallery.
+        public const float MillReach = MillHalf + GalleryDepth;
+        /// Flagstone ring round a red portal.
+        public const float ShrineRadius = 4.5f;
         public const float FenceModule = DungeonVillageKitBuilder.Module;
 
         private const float Storey = DungeonVillageKitBuilder.Storey;
@@ -24,12 +24,25 @@ namespace Game.Scripts.Editor.Dungeon
         private const float Inset = DungeonVillageKitBuilder.WallDepth;
         private const float FloorTop = 0.12f;
         private const float StairWidth = 1.1f;
+        /// The abandoned windmill: outer half size of the square stone tower, wall thickness, storey height, gallery depth.
+        private const float MillHalf = 4.5f;
+        private const float MillWall = 0.6f;
+        private const float MillStorey = 3.2f;
+        private const float GalleryDepth = 1.8f;
 
         public enum Style
         {
             Plaster,
             Brick,
             Timber
+        }
+
+        /// How rich the containers of a building are: farm poor, village rich.
+        public enum LootTier
+        {
+            Poor,
+            Normal,
+            Rich
         }
 
         public sealed class HouseSpec
@@ -42,6 +55,7 @@ namespace Game.Scripts.Editor.Dungeon
             public bool IsWindowless;
             public bool HasChimney = true;
             public bool IsFurnished = true;
+            public LootTier Loot = LootTier.Normal;
             public int Seed;
         }
 
@@ -159,7 +173,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             site.Containers.Add(Container("Crate", root, new Vector3(2.8f, FloorTop, -4.8f), 10f));
             site.Containers.Add(Container("Barrel", root, new Vector3(3f, FloorTop, -3.4f), 0f));
-            site.Containers.Add(Container("LargeOakChest", root, new Vector3(-3.1f, FloorTop, 1.5f), 90f));
+            site.Containers.Add(Container("SmallOakChest", root, new Vector3(-3.1f, FloorTop, 1.5f), 90f));
             Prop(DungeonKitBuilder.Load("Workbench"), root, new Vector3(3f, FloorTop, 1f), -90f);
             Prop(DungeonKitBuilder.Load("FarmCrate_Carrot"), root, new Vector3(2.6f, FloorTop, 3.8f), 20f);
             Prop(DungeonKitBuilder.Load("FarmCrate_Apple"), root, new Vector3(1.6f, FloorTop, 4.6f), -10f);
@@ -167,30 +181,102 @@ namespace Game.Scripts.Editor.Dungeon
             return root;
         }
 
-        /// Stone tower mill with a conical cap and four lattice sails, one of them broken.
-        public static Transform Windmill(Transform parent, Vector3 position, float yaw)
+        /// Abandoned windmill, three storeys to fight over: a square stone tower with a timber top, a conical cap and four lattice
+        /// sails (one broken). Ground floor with doorways front and back, stairs up the west wall to the middle floor, which opens
+        /// onto a wooden gallery round the tower (a jump down is safe, a ramp leads up to it from the east, a stretch of the west
+        /// side has fallen), stairs up the east wall to the top floor with windows on every side. Local +Z is the front.
+        public static Transform Windmill(Transform parent, Vector3 position, float yaw, Site site)
         {
+            const float half = MillHalf;
+            const float inner = MillHalf - MillWall;
+            const float top = MillStorey * 3f;
             Transform root = Root(parent, "Windmill", position, yaw);
-            Mesh tower = new DungeonMeshBuilder(0.5f).Cylinder(new Vector3(0f, 5f, 0f), 3.6f, 10.4f, 20, 2.7f).Save("WindmillTower");
-            DungeonPropBuilder.MeshObject("Tower", root, tower, Stone, Vector3.down * 0.4f);
-            DungeonPropBuilder.MeshObject("Cap", root, new DungeonMeshBuilder(0.5f).Cylinder(new Vector3(0f, 1.6f, 0f), 3.1f, 3.2f, 20, 0.08f).Save("WindmillCap"), Tiles, new Vector3(0f, 9.9f, 0f), default, false);
-            Kit("Door_4_Flat", root, new Vector3(0.55f, 0f, 3.35f), 0f);
-            Transform hub = BattleEditorUtility.CreateChild("Sails", root, new Vector3(0f, 9.2f, 3.4f)).transform;
-            hub.localRotation = Quaternion.Euler(0f, 0f, 20f);
-            DungeonStructureBuilder.Block(hub, "Hub", Vector3.zero, new Vector3(0.6f, 0.6f, 0.8f), DarkWood, 0f, false);
+            float run = DungeonStructureBuilder.StairRun(MillStorey);
+            float west = -inner + StairWidth + 0.1f;
+            float east = inner - StairWidth - 0.1f;
+            // A metre in front of each flight to step onto it, the landing at its top.
+            float south = -inner + 1f + run;
+            float north = inner - 1f - run;
+            DungeonStructureBuilder.Block(root, "Floor", new Vector3(0f, FloorTop - 0.3f, 0f), new Vector3(inner * 2f, 0.6f, inner * 2f), Planks);
 
-            for (int i = 0; i < 4; i++)
+            // Walls, storey by storey: (front, east, back, west) openings as (centre, width, sill, head); width 0 is a blind wall.
+            (float center, float width, float sill, float head)[][] openings =
             {
-                float length = i == 2 ? 3.2f : 7.5f;
-                Transform arm = BattleEditorUtility.CreateChild("Sail", hub).transform;
-                arm.localRotation = Quaternion.Euler(0f, 0f, i * 90f);
-                DungeonStructureBuilder.Block(arm, "Spar", new Vector3(0f, length * 0.5f + 0.3f, 0.2f), new Vector3(0.22f, length, 0.22f), DarkWood, 0f, false);
+                new[] { (0f, 1.6f, 0f, 2.6f), (0f, 1.2f, 1.3f, 2.3f), (0f, 1.6f, 0f, 2.6f), (0f, 0f, 0f, 0f) },
+                new[] { (0f, 1.4f, 0f, 2.4f), (0f, 0f, 0f, 0f), (1.2f, 1.4f, 0f, 2.4f), (0f, 1.2f, 1.2f, 2.3f) },
+                new[] { (0f, 2.4f, 0.9f, 2.5f), (0f, 2.4f, 0.9f, 2.5f), (0f, 2.4f, 0.9f, 2.5f), (0f, 2.4f, 0.9f, 2.5f) }
+            };
 
-                for (float y = 1.4f; y < length; y += 0.9f)
-                    DungeonStructureBuilder.Block(arm, "Lath", new Vector3(0.75f, y, 0.25f), new Vector3(1.5f, 0.08f, 0.06f), DarkWood, 0f, false);
-
-                DungeonStructureBuilder.Block(arm, "Lath", new Vector3(1.5f, (length + 1.4f) * 0.5f, 0.25f), new Vector3(0.08f, length - 1.4f, 0.06f), DarkWood, 0f, false);
+            for (int storey = 0; storey < 3; storey++)
+            {
+                for (int side = 0; side < 4; side++)
+                {
+                    (float center, float width, float sill, float head) = openings[storey][side];
+                    MillSide(root, side, storey * MillStorey, center, width, sill, head, storey == 2 ? DarkWood : Stone);
+                }
             }
+
+            // Middle floor: open over the west flight. Top floor: open over the east flight.
+            float y1 = MillStorey;
+            float y2 = MillStorey * 2f;
+            Slab(root, (west + inner) * 0.5f, 0f, inner - west, inner * 2f, y1);
+            Slab(root, (west - inner) * 0.5f, (south + inner) * 0.5f, west + inner, inner - south, y1);
+            Slab(root, (east - inner) * 0.5f, 0f, east + inner, inner * 2f, y2);
+            Slab(root, (east + inner) * 0.5f, (north - inner) * 0.5f, inner - east, north + inner, y2);
+            Slab(root, 0f, 0f, inner * 2f, inner * 2f, top, "Ceiling");
+            DungeonStructureBuilder.Stairs(root, new Vector3(-inner + StairWidth * 0.5f + 0.05f, FloorTop, -inner + 1f), 0f, StairWidth, MillStorey - FloorTop + 0.06f, DarkWood);
+            DungeonStructureBuilder.Stairs(root, new Vector3(inner - StairWidth * 0.5f - 0.05f, y1 + 0.06f, inner - 1f), 180f, StairWidth, MillStorey, DarkWood);
+            DungeonStructureBuilder.Rail(root, new Vector3(west, y1 + 0.06f, -inner + 0.3f), new Vector3(west, y1 + 0.06f, south - 0.6f));
+            DungeonStructureBuilder.Rail(root, new Vector3(east, y2 + 0.06f, inner - 0.3f), new Vector3(east, y2 + 0.06f, north + 0.6f));
+
+            // The gallery round the middle floor; a stretch of the west side has fallen in.
+            float deck = half + GalleryDepth * 0.5f;
+            float outer = half + GalleryDepth;
+            DungeonStructureBuilder.Block(root, "Gallery", new Vector3(0f, y1 - 0.06f, deck), new Vector3(outer * 2f, 0.24f, GalleryDepth), Planks);
+            DungeonStructureBuilder.Block(root, "Gallery", new Vector3(0f, y1 - 0.06f, -deck), new Vector3(outer * 2f, 0.24f, GalleryDepth), Planks);
+            DungeonStructureBuilder.Block(root, "Gallery", new Vector3(deck, y1 - 0.06f, 0f), new Vector3(GalleryDepth, 0.24f, half * 2f), Planks);
+            DungeonStructureBuilder.Block(root, "Gallery", new Vector3(-deck, y1 - 0.06f, -2.75f), new Vector3(GalleryDepth, 0.24f, 3.5f), Planks);
+            DungeonStructureBuilder.Block(root, "Gallery", new Vector3(-deck, y1 - 0.06f, 3f), new Vector3(GalleryDepth, 0.24f, 3f), Planks);
+            Vector3 rail = Vector3.up * (y1 + 0.06f);
+            DungeonStructureBuilder.Rail(root, rail + new Vector3(-outer, 0f, outer), rail + new Vector3(outer, 0f, outer));
+            DungeonStructureBuilder.Rail(root, rail + new Vector3(-outer, 0f, -outer), rail + new Vector3(outer, 0f, -outer));
+            DungeonStructureBuilder.Rail(root, rail + new Vector3(outer, 0f, -1.4f), rail + new Vector3(outer, 0f, outer));
+            DungeonStructureBuilder.Rail(root, rail + new Vector3(-outer, 0f, -outer), rail + new Vector3(-outer, 0f, -4.5f));
+
+            foreach (Vector3 corner in new[] { new Vector3(outer, 0f, outer), new Vector3(-outer, 0f, outer), new Vector3(outer, 0f, -outer), new Vector3(-outer, 0f, -outer) })
+                Tilted(root, "Strut", corner * 0.85f + Vector3.up * (y1 - 0.2f), new Vector3(corner.x * 0.75f, 1.4f, corner.z * 0.75f), 0.2f, 0.2f, DarkWood, false);
+
+            // Plank ramp from the yard up to the east gallery.
+            Tilted(root, "Ramp", new Vector3(outer + 7f, -0.25f, -2.6f), new Vector3(outer - 0.1f, y1 + 0.06f, -2.6f), 1.4f, 0.14f, Planks);
+            DungeonPropBuilder.MeshObject("Cap", root, new DungeonMeshBuilder(0.5f).Cylinder(new Vector3(0f, 1.8f, 0f), half * 1.45f, 3.6f, 20, 0.08f).Save("WindmillCap"), Tiles, new Vector3(0f, top, 0f), default, false);
+            // The sails turn clear of the gallery on a shaft out of the timber top.
+            DungeonStructureBuilder.Block(root, "Shaft", new Vector3(0f, top - 1.4f, (half + outer + 0.5f) * 0.5f), new Vector3(0.35f, 0.35f, outer + 0.5f - half), DarkWood, 0f, false);
+            Sails(root, new Vector3(0f, top - 1.4f, outer + 0.5f));
+
+            // Millstones and sacks below, bins and stores in the middle, the miller's chest at the top.
+            float upper = y1 + 0.06f;
+            float attic = y2 + 0.06f;
+            Mesh millstone = new DungeonMeshBuilder(0.5f).Cylinder(new Vector3(0f, 0.25f, 0f), 1.3f, 0.5f, 18).Save("Millstone");
+            DungeonPropBuilder.MeshObject("Millstone", root, millstone, Stone, new Vector3(1f, FloorTop, -1.2f));
+            DungeonPropBuilder.MeshObject("Millstone", root, millstone, Stone, new Vector3(1f, FloorTop + 0.5f, -1.2f));
+            Prop(DungeonKitBuilder.Load("Bag"), root, new Vector3(2.9f, FloorTop, 2.6f), 30f);
+            Prop(DungeonKitBuilder.Load("Bag"), root, new Vector3(3.1f, FloorTop, 1.7f), -20f);
+            Prop(DungeonKitBuilder.Load("FarmCrate_Empty"), root, new Vector3(-1.4f, upper, -1.6f), 10f);
+            Prop(DungeonKitBuilder.Load("Workbench"), root, new Vector3(-0.6f, attic, 3.3f), 180f);
+            Place(Piece("HayBale"), root, new Vector3(0.8f, upper, -0.6f), 8f);
+            site.Containers.Add(Container("Barrel", root, new Vector3(3.2f, FloorTop, -3.2f), 0f));
+            site.Containers.Add(Container("Crate", root, new Vector3(-2f, FloorTop, 3.2f), 15f));
+            site.Containers.Add(Container("SmallOakChest", root, new Vector3(1.6f, upper, -3.3f), 180f));
+            site.Containers.Add(Container("Barrel", root, new Vector3(0.4f, upper, -3.3f), 0f));
+            site.Containers.Add(Container("LargeOakChest", root, new Vector3(-3.2f, attic, -1f), 90f));
+            Prop(DungeonKitBuilder.Load("Lantern_Wall"), root, new Vector3(inner - 0.02f, 2.2f, -1.4f), -90f);
+            DungeonPropBuilder.PointLight(root, new Vector3(0f, upper + 2.2f, 0f), new Color(1f, 0.7f, 0.42f), 6f, 1.1f, false);
+            DungeonPropBuilder.PointLight(root, new Vector3(0f, attic + 2.4f, 0f), new Color(0.75f, 0.8f, 1f), 6f, 0.7f, false);
+
+            site.Spots.Add(root.TransformPoint(new Vector3(-1f, FloorTop, 0.5f)));
+            site.Spots.Add(root.TransformPoint(new Vector3(0f, upper, 0f)));
+            site.Spots.Add(root.TransformPoint(new Vector3(0f, upper, half + 0.9f)));
+            site.Spots.Add(root.TransformPoint(new Vector3(-0.5f, attic, -0.5f)));
 
             return root;
         }
@@ -290,40 +376,27 @@ namespace Game.Scripts.Editor.Dungeon
             return root;
         }
 
-        /// Stone cellar of the way down: stairs into a lined pit and an iron grate in an arch at the bottom, a lit tunnel behind it.
-        /// Local +Z is the way down. Returns the grate (a descend portal).
-        public static PortalComponent Cellar(Transform parent, Vector3 position, float yaw)
+        /// Red portal down to floor 2 on a flagstone ring among broken standing stones and two braziers; local +Z is the way in.
+        /// The portal shows only once the director opens it, the ring marks the place before that.
+        public static PortalComponent PortalShrine(Transform parent, Vector3 position, float yaw)
         {
-            const float depth = CellarDepth;
-            const float half = CellarHalfWidth;
-            const float wall = 0.5f;
-            const float front = -1f;
-            float back = front + CellarLength;
-            Transform root = Root(parent, "Cellar", position, yaw);
-            Material stone = Stone;
+            System.Random random = new System.Random((int)position.x);
+            Transform root = Root(parent, "Red Portal", position, yaw);
+            DungeonPropBuilder.MeshObject("Floor", root, new DungeonMeshBuilder(0.5f).Cylinder(new Vector3(0f, -0.1f, 0f), ShrineRadius, 0.3f, 20).Save("PortalShrineFloor"), DungeonPropBuilder.Flagstone);
 
-            DungeonStructureBuilder.Block(root, "Floor", new Vector3(0f, -depth - 0.2f, (front + back + 3.6f) * 0.5f), new Vector3(half * 2f + wall * 2f, 0.4f, CellarLength + 5.2f), DungeonPropBuilder.Flagstone);
-            DungeonStructureBuilder.Block(root, "Sill", new Vector3(0f, -0.25f, front - 0.2f), new Vector3(half * 2f + wall * 2f, 0.54f, 0.5f), DungeonPropBuilder.Flagstone);
-
-            foreach (float side in new[] { -1f, 1f })
+            for (int i = 0; i < 7; i++)
             {
-                DungeonStructureBuilder.Block(root, "Wall", new Vector3(side * (half + wall * 0.5f), (0.9f - depth) * 0.5f, (front + back) * 0.5f), new Vector3(wall, depth + 0.9f, CellarLength + 0.4f), stone);
-                DungeonStructureBuilder.Block(root, "Wall Post", new Vector3(side * (half + wall * 0.5f), 0.8f, front + 0.2f), new Vector3(wall + 0.15f, 1.6f, 0.6f), stone);
-                DungeonStructureBuilder.Block(root, "Wall", new Vector3(side * 1.3f, (1.2f - depth) * 0.5f, back + wall * 0.5f), new Vector3(1f, depth + 1.2f, wall), stone);
-                // The tunnel behind the grate.
-                DungeonStructureBuilder.Block(root, "Wall", new Vector3(side * 1.05f, -depth + 1.3f, back + 2.2f), new Vector3(0.5f, 2.6f, 3.6f), DungeonPropBuilder.Ashlar);
-                Prop(DungeonKitBuilder.Load("Lantern_Wall"), root, new Vector3(side * (half + wall + 0.02f), 0.5f, front + 1.2f), side * 90f);
+                float angle = 50f + i * 43f + Rand(random, 6f);
+                Vector3 direction = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
+                float height = 1.4f + (float)random.NextDouble() * 1.6f;
+                DungeonStructureBuilder.Block(root, "Standing Stone", direction * (ShrineRadius - 0.6f) + Vector3.up * (height * 0.5f - 0.1f), new Vector3(0.9f, height, 0.5f), DungeonVegetationBuilder.RockMaterial, angle + Rand(random, 8f));
             }
 
-            DungeonStructureBuilder.Block(root, "Wall", new Vector3(0f, (-depth + 2.4f + 1.2f) * 0.5f, back + wall * 0.5f), new Vector3(1.6f, depth + 1.2f - 2.4f, wall), stone);
-            DungeonStructureBuilder.Block(root, "Ceiling", new Vector3(0f, -depth + 2.75f, back + 2.2f), new Vector3(2.6f, 0.3f, 3.6f), DungeonPropBuilder.Ashlar);
-            DungeonStructureBuilder.Block(root, "Wall", new Vector3(0f, -depth + 1.3f, back + 3.9f), new Vector3(2.6f, 2.6f, 0.4f), DungeonPropBuilder.Ashlar);
-            Prop(DungeonKitBuilder.Load("Torch_Metal"), root, new Vector3(0f, -depth + 1.4f, back + 3.65f), 180f);
-            DungeonStructureBuilder.Stairs(root, new Vector3(0f, -depth, front + DungeonStructureBuilder.StairRun(depth)), 180f, half * 2f, depth, DungeonPropBuilder.Flagstone);
+            Place(Load("Brazier"), root, new Vector3(-1.9f, 0.05f, 1.2f), 0f);
+            Place(Load("Brazier"), root, new Vector3(1.9f, 0.05f, 1.2f), 0f);
 
-            PortalComponent grate = Place(Load("CellarGrate"), root, new Vector3(0f, -depth, back + 0.1f), 0f).GetComponent<PortalComponent>();
-
-            return grate;
+            // Sunk a little so the pedestal's base is a ledge one walks onto.
+            return Place(Load("DescendPortal"), root, new Vector3(0f, -0.1f, -0.6f), 0f).GetComponent<PortalComponent>();
         }
 
         /// Wooden bridge laid across from one end to the other: an arched deck of planks on posts with rails.
@@ -586,7 +659,7 @@ namespace Game.Scripts.Editor.Dungeon
             else
                 Prop(DungeonKitBuilder.Load(random.NextDouble() < 0.5 ? "Mug" : "Table_Plate"), root, new Vector3(table + 0.2f, FloorTop + 0.8f, -0.2f), random.Next(360));
 
-            site.Containers.Add(Container(random.NextDouble() < 0.7 ? "SmallOakChest" : "LargeOakChest", root, new Vector3(ix - 0.5f, FloorTop, iz - 1.4f), -90f));
+            site.Containers.Add(Container(Chest(spec.Loot, random), root, new Vector3(ix - 0.5f, FloorTop, iz - 1.4f), -90f));
 
             if (!hasStairs)
             {
@@ -600,8 +673,70 @@ namespace Game.Scripts.Editor.Dungeon
             Prop(DungeonKitBuilder.Load("Bed_Twin2"), root, new Vector3(ix - 1f, upper, -iz + 1.1f), 0f);
             Prop(DungeonKitBuilder.Load("Nightstand_Shelf"), root, new Vector3(ix - 0.35f, upper, 0.4f), -90f);
             site.Containers.Add(Container("Barrel", root, new Vector3(ix - 0.5f, FloorTop, 0.6f), random.Next(360)));
-            site.Containers.Add(Container(random.NextDouble() < 0.5 ? "Crate" : "SmallOakChest", root, new Vector3(0.6f, upper, iz - 0.6f), 180f));
+            site.Containers.Add(Container(spec.Loot == LootTier.Rich ? Chest(spec.Loot, random) : random.NextDouble() < 0.5 ? "Crate" : "SmallOakChest", root, new Vector3(0.6f, upper, iz - 0.6f), 180f));
             site.Spots.Add(root.TransformPoint(new Vector3(0.5f, upper, 0f)));
+        }
+
+        /// One side of a windmill storey with an opening (a doorway when its sill is 0); side 0 is the front, then east, back, west.
+        /// The side walls fit between the front and back ones, so no faces meet at the corners.
+        private static void MillSide(Transform root, int side, float y, float center, float width, float sill, float head, Material material)
+        {
+            float inset = side % 2 == 1 ? MillWall : 0f;
+            float from = -MillHalf + inset;
+            float to = MillHalf - inset;
+            Quaternion turn = Quaternion.Euler(0f, side * 90f, 0f);
+
+            void Segment(float a, float b, float bottom, float up)
+            {
+                if (b - a > 0.05f && up - bottom > 0.05f)
+                    DungeonStructureBuilder.Block(root, "Wall", turn * new Vector3((a + b) * 0.5f, 0f, MillHalf - MillWall * 0.5f) + Vector3.up * (y + (bottom + up) * 0.5f), new Vector3(b - a, up - bottom, MillWall), material, side * 90f);
+            }
+
+            if (width <= 0f)
+            {
+                Segment(from, to, 0f, MillStorey);
+
+                return;
+            }
+
+            Segment(from, center - width * 0.5f, 0f, MillStorey);
+            Segment(center + width * 0.5f, to, 0f, MillStorey);
+            Segment(center - width * 0.5f, center + width * 0.5f, 0f, sill);
+            Segment(center - width * 0.5f, center + width * 0.5f, head, MillStorey);
+        }
+
+        /// Four lattice sails on a hub, one of them broken off short.
+        private static void Sails(Transform root, Vector3 position)
+        {
+            Transform hub = BattleEditorUtility.CreateChild("Sails", root, position).transform;
+            hub.localRotation = Quaternion.Euler(0f, 0f, 20f);
+            DungeonStructureBuilder.Block(hub, "Hub", Vector3.zero, new Vector3(0.6f, 0.6f, 0.8f), DarkWood, 0f, false);
+
+            for (int i = 0; i < 4; i++)
+            {
+                float length = i == 2 ? 3.2f : 7.5f;
+                Transform arm = BattleEditorUtility.CreateChild("Sail", hub).transform;
+                arm.localRotation = Quaternion.Euler(0f, 0f, i * 90f);
+                DungeonStructureBuilder.Block(arm, "Spar", new Vector3(0f, length * 0.5f + 0.3f, 0.2f), new Vector3(0.22f, length, 0.22f), DarkWood, 0f, false);
+
+                for (float y = 1.4f; y < length; y += 0.9f)
+                    DungeonStructureBuilder.Block(arm, "Lath", new Vector3(0.75f, y, 0.25f), new Vector3(1.5f, 0.08f, 0.06f), DarkWood, 0f, false);
+
+                DungeonStructureBuilder.Block(arm, "Lath", new Vector3(1.5f, (length + 1.4f) * 0.5f, 0.25f), new Vector3(0.08f, length - 1.4f, 0.06f), DarkWood, 0f, false);
+            }
+        }
+
+        /// The house chest by loot tier: a crate or a small chest on the farm, oak chests in the woods, a golden one now and then in the village.
+        private static string Chest(LootTier tier, System.Random random)
+        {
+            double roll = random.NextDouble();
+
+            return tier switch
+            {
+                LootTier.Poor => roll < 0.5 ? "Crate" : "SmallOakChest",
+                LootTier.Rich => roll < 0.15 ? "GoldenChest" : roll < 0.6 ? "LargeOakChest" : "SmallOakChest",
+                _ => roll < 0.7 ? "SmallOakChest" : "LargeOakChest"
+            };
         }
 
         private static void Wall(Transform root, Vector3 basePoint, float length, float height, float thickness, float yaw = 0f)

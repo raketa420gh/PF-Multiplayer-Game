@@ -4,8 +4,9 @@ using UnityEngine;
 namespace Game.Scripts.Editor.Dungeon
 {
     /// The first floor after the user's map "Этаж 1 — Проклятая деревня": 540 m square (the map's scale bar), 5 x 5 modules of 108 m.
-    /// North-west the farm with its windmill and fields, north-east the walled graveyard with a ruined chapel, the village round
-    /// its square in the middle, the swamp along the south. A river comes down between farm and graveyard and curls round the
+    /// North-west the farm with its fields (where adventurers start), north-east the walled graveyard with a ruined chapel, the village round
+    /// its square in the middle, the swamp along the south, the abandoned windmill on the north road. Red portals down to floor 2
+    /// stand behind the chapel and on an island of the swamp: from the farm one goes either way, past the dangerous village or round it. A river comes down between farm and graveyard and curls round the
     /// village to the swamp; a stream leaves it at the bend and closes the ring in the west. World X is east, Z is north, the origin is the map centre.
     /// Level design: the floor is a set of zones (settlements, points of interest in the woods, islands of the swamp) joined by
     /// winding paths, every zone with two or more ways out. Everything between them is closed: wooded rocky ridges, the river
@@ -83,13 +84,13 @@ namespace Game.Scripts.Editor.Dungeon
             new() { Name = "Standing Stones", Kind = ZoneKind.Wild, Center = new Vector2(-214f, 52f), Radius = 19f },
             new() { Name = "Hunter's Lodge", Kind = ZoneKind.Wild, Center = new Vector2(-214f, -36f), Radius = 21f },
             new() { Name = "Gallows Hill", Kind = ZoneKind.Wild, Center = new Vector2(-116f, -12f), Radius = 18f },
-            new() { Name = "Old Mill", Kind = ZoneKind.Wild, Center = new Vector2(44f, 232f), Radius = 19f },
+            new() { Name = "Abandoned Windmill", Kind = ZoneKind.Wild, Center = new Vector2(44f, 230f), Radius = 24f },
             new() { Name = "Watchtower", Kind = ZoneKind.Wild, Center = new Vector2(172f, -14f), Radius = 21f },
             new() { Name = "Willow Ford", Kind = ZoneKind.Swamp, Center = new Vector2(-212f, -116f), Radius = 22f },
             new() { Name = "Swamp Edge", Kind = ZoneKind.Swamp, Center = new Vector2(-112f, -104f), Radius = 20f },
             new() { Name = "Stilt Huts", Kind = ZoneKind.Swamp, Center = new Vector2(-80f, -162f), Radius = 20f },
             new() { Name = "Western Mire", Kind = ZoneKind.Swamp, Center = new Vector2(-146f, -208f), Radius = 22f },
-            new() { Name = "Sunken Cellar", Kind = ZoneKind.Swamp, Center = new Vector2(-2f, -214f), Radius = 22f },
+            new() { Name = "Crimson Isle", Kind = ZoneKind.Swamp, Center = new Vector2(-2f, -214f), Radius = 22f },
             new() { Name = "South Causeway", Kind = ZoneKind.Swamp, Center = new Vector2(22f, -120f), Radius = 15f },
             new() { Name = "Reed Banks", Kind = ZoneKind.Swamp, Center = new Vector2(106f, -116f), Radius = 18f },
             new() { Name = "Black Bog", Kind = ZoneKind.Swamp, Center = new Vector2(90f, -192f), Radius = 20f },
@@ -97,8 +98,8 @@ namespace Game.Scripts.Editor.Dungeon
             new() { Name = "Fisher's Jetty", Kind = ZoneKind.Swamp, Center = new Vector2(206f, -142f), Radius = 20f }
         };
 
-        /// Ways down to the stone cellars: behind the chapel and on an island in the middle of the swamp. Stairs run along the yaw.
-        public static readonly (Vector2 position, float yaw)[] Cellars = { (new Vector2(208f, 214f), 90f), (new Vector2(-2f, -214f), 180f) };
+        /// Red portals down to floor 2: behind the chapel and on an island in the middle of the swamp. One walks in along the yaw.
+        public static readonly (Vector2 position, float yaw)[] RedPortals = { (new Vector2(208f, 214f), -90f), (new Vector2(-2f, -214f), 0f) };
 
         public static readonly Vector2[] River =
         {
@@ -138,7 +139,7 @@ namespace Game.Scripts.Editor.Dungeon
             // Ring street of the village.
             new() { Width = 4f, Wobble = 3f, Points = new Vector2[] { new(-40f, -6f), new(-52f, -40f), new(-20f, -66f), new(20f, -66f), new(70f, -60f), new(110f, -36f), new(128f, 14f) } },
             new() { Width = 4f, Wobble = 3f, Points = new Vector2[] { new(-40f, -6f), new(-36f, 34f), new(-6f, 62f), new(34f, 72f), new(72f, 58f), new(92f, 62f) } },
-            // Farm past the old mill to the graveyard's west gate over the north bridge.
+            // Farm past the abandoned windmill to the graveyard's west gate over the north bridge.
             new() { Width = 4f, Points = new Vector2[] { new(-104f, 214f), new(-60f, 222f), new(-30f, 222f), new(-12f, 214f), new(16f, 212f), new(44f, 222f), new(70f, 210f), new(110f, 196f) } },
             // Farm yard loop, a ragged ring round the well.
             new() { Width = 4f, Wobble = 4f, Points = Arc(FarmCenter, 36f, -40f, 250f, 11, 9f) },
@@ -192,11 +193,11 @@ namespace Game.Scripts.Editor.Dungeon
 
         public static readonly string[] ModuleNames =
         {
-            "Western Mire", "Stilt Huts", "Sunken Cellar", "Black Bog", "Hermit's Hut",
+            "Western Mire", "Stilt Huts", "Crimson Isle", "Black Bog", "Hermit's Hut",
             "Willow Ford", "Swamp Edge", "South Causeway", "Reed Banks", "Fisher's Jetty",
             "Hunter's Lodge", "Gallows Hill", "Village Square", "East Quarter", "Watchtower",
             "Wheat Fields", "Farmstead", "North Bridge", "Gravekeeper's Path", "Graveyard",
-            "Woodcutter's Camp", "Windmill", "Old Mill", "Old Graves", "Ruined Chapel"
+            "Woodcutter's Camp", "North Fields", "Abandoned Windmill", "Old Graves", "Ruined Chapel"
         };
 
         public static Zone FindZone(string name) => System.Array.Find(Zones, zone => zone.Name == name);

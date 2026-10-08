@@ -32,7 +32,7 @@ namespace Game.Scripts.Editor.Dungeon
             Puddle
         }
 
-        /// Areas the terrain leaves open: building plots and their yards, holes for the cellar pits.
+        /// Areas the terrain leaves open: building plots and their yards, holes cut through the terrain.
         public sealed class Clearings
         {
             public readonly List<(Vector2 center, float radius)> Open = new();

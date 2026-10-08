@@ -1104,7 +1104,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             (string title, string info, Texture picture, string scene)[] destinations =
             {
-                (DungeonSceneBuilder.Title, "Floor 1 · the Cursed Village: farm, village, graveyard, swamp · cellars to the Great Hall open halfway through the clock", inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null, SceneTravel.DungeonScene),
+                (DungeonSceneBuilder.Title, "Floor 1 · the Cursed Village: start on the farm · rich, deadly village · windmill · red portals to the Great Hall (graveyard, swamp) open halfway through the clock", inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null, SceneTravel.DungeonScene),
                 ("Training Grounds", "Test scene · weapon table, dummies, dev spawns", DungeonTextureBuilder.Load("Cobble", false), SceneTravel.SandboxScene)
             };
 
