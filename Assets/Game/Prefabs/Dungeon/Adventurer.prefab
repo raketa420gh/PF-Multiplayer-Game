@@ -6339,6 +6339,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Battle.HitFeedbackComponent
   _receiver: {fileID: 2460426408855529504}
   _combat: {fileID: 750579576652030624}
+  _body: 1
+  _blockSurface: 5
 --- !u!114 &1356796623276567547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6475,7 +6477,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.FootstepComponent
   _fighter: {fileID: 8570979275232955941}
-  _stride: 0.8
+  _stride: 1.3
+  _sounds: {fileID: 11400000, guid: a97bb3003ade55149ab1fb0bb8a88380, type: 2}
+  _footwear: 1
+  _inventory: {fileID: 7601709563013398511}
 --- !u!114 &8523927498272018642
 MonoBehaviour:
   m_ObjectHideFlags: 0
