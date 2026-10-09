@@ -65,7 +65,7 @@ namespace Game.Scripts.Battle
 
         public const byte NoWeapon = 255;
 
-        public event Action<Vector3, Vector3> OnWorldHit;
+        public event Action<Vector3, Vector3, ImpactSurface> OnWorldHit;
 
         /// Every weapon the prefab knows about; slots map onto this catalog.
         public WeaponConfig[] Catalog => _loadout;
@@ -215,6 +215,9 @@ namespace Game.Scripts.Battle
         [Networked]
         private Vector3 _worldHitNormal { get; set; }
 
+        [Networked]
+        private ImpactSurface _worldHitSurface { get; set; }
+
         [Networked, Capacity(MaxSlots)]
         private NetworkArray<byte> _slotWeapons => default;
 
@@ -264,7 +267,7 @@ namespace Game.Scripts.Battle
         public override void Render()
         {
             if (_renderedWorldHits != _worldHitCount)
-                OnWorldHit?.Invoke(_worldHitPoint, _worldHitNormal);
+                OnWorldHit?.Invoke(_worldHitPoint, _worldHitNormal, _worldHitSurface);
 
             _renderedWorldHits = _worldHitCount;
         }
@@ -761,7 +764,8 @@ namespace Game.Scripts.Battle
                     StaggerDuration = attack.StaggerDuration,
                     Impact = weapon.Impact,
                     DamageType = weapon.DamageType,
-                    Attacker = _receiver
+                    Attacker = _receiver,
+                    Sound = weapon.SoundId
                 });
 
                 isDeflected |= result == HitResult.Blocked;
@@ -771,6 +775,7 @@ namespace Game.Scripts.Battle
             {
                 _worldHitPoint = _worldHit.Point;
                 _worldHitNormal = _worldHit.Normal;
+                _worldHitSurface = WorldSurface.Of(_worldHit.GameObject);
                 _worldHitCount++;
                 isDeflected = true;
             }

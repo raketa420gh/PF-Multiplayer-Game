@@ -11,6 +11,7 @@ namespace Game.Scripts.Editor.Battle
             BattleAudioBuilder.Build();
             WeaponTextureBuilder.Build();
             BattleContentBuilder.Build();
+            CombatSoundBuilder.Build();
             BattleSceneBuilder.Build();
         }
 
@@ -19,6 +20,7 @@ namespace Game.Scripts.Editor.Battle
         {
             BattleAnimationBuilder.Build();
             BattleContentBuilder.Build();
+            CombatSoundBuilder.Build();
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -50,6 +51,9 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private AudioClip[] _shotClips;
+
+        [SerializeField, Tooltip("Recorded weapon sets by id; a blow without a set falls back to the clips above")]
+        private WeaponSoundConfig[] _weaponSounds = Array.Empty<WeaponSoundConfig>();
 
         [SerializeField]
         private int _voiceCount = 8;
@@ -118,7 +122,7 @@ namespace Game.Scripts.Battle
             }
         }
 
-        public void PlayHit(HitEventData hit)
+        public void PlayHit(HitEventData hit, ImpactSurface surface)
         {
             ParticleSystem vfx = hit.Result == HitResult.Hit ? _hitVfx : _blockVfx;
 
@@ -126,25 +130,40 @@ namespace Game.Scripts.Battle
                 hit.Normal == Vector3.zero ? Quaternion.identity : Quaternion.LookRotation(hit.Normal));
             vfx.Play();
 
-            PlayClip(hit.Result == HitResult.Hit ? _hitClips : _blockClips, hit.Point);
+            WeaponSoundConfig sounds = hit.Sound > 0 && hit.Sound <= _weaponSounds.Length ? _weaponSounds[hit.Sound - 1] : null;
+            PlayClip(GetClips(sounds, surface) ?? (hit.Result == HitResult.Hit ? _hitClips : _blockClips), hit.Point);
         }
 
-        public void PlayWorldHit(Vector3 point, Vector3 normal)
+        public void PlayWorldHit(Vector3 point, Vector3 normal, WeaponSoundConfig sounds, ImpactSurface surface)
         {
             _blockVfx.transform.SetPositionAndRotation(point, Quaternion.LookRotation(normal));
             _blockVfx.Play();
-            PlayClip(_worldClips, point);
+            PlayClip(GetClips(sounds, surface) ?? _worldClips, point);
         }
 
-        /// Long heavy weapons move more air: the longer the reach, the lower the swing sounds.
-        public void PlaySwing(Vector3 position, float reach)
+        /// Recorded swings carry their own weight; the synthesized fallback drops in pitch with reach, as long weapons move more air.
+        public void PlaySwing(Vector3 position, float reach, WeaponSoundConfig sounds)
         {
+            if (sounds != null && sounds.Swing.Length > 0)
+            {
+                PlayClip(sounds.Swing, position);
+
+                return;
+            }
+
             PlayClip(_swingClips, position, Mathf.Lerp(_swingPitch.x, _swingPitch.y, Mathf.InverseLerp(_swingReach.x, _swingReach.y, reach)));
         }
 
         public void PlayShot(Vector3 position)
         {
             PlayClip(_shotClips, position);
+        }
+
+        private static AudioClip[] GetClips(WeaponSoundConfig sounds, ImpactSurface surface)
+        {
+            AudioClip[] clips = sounds != null ? sounds.Get(surface) : null;
+
+            return clips != null && clips.Length > 0 ? clips : null;
         }
 
         private static string GetText(HitEventData hit)
@@ -177,8 +196,8 @@ namespace Game.Scripts.Battle
             AudioSource voice = _voices[_nextVoice];
             _nextVoice = (_nextVoice + 1) % _voices.Length;
             voice.transform.position = position;
-            voice.pitch = pitch * Random.Range(1f - _pitchSpread, 1f + _pitchSpread);
-            voice.clip = clips[Random.Range(0, clips.Length)];
+            voice.pitch = pitch * UnityEngine.Random.Range(1f - _pitchSpread, 1f + _pitchSpread);
+            voice.clip = clips[UnityEngine.Random.Range(0, clips.Length)];
             voice.Play();
         }
     }

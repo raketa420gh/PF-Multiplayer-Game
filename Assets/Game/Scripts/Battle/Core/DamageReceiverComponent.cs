@@ -25,6 +25,9 @@ namespace Game.Scripts.Battle
         public int Impact;
         public DamageType DamageType;
         public DamageReceiverComponent Attacker;
+
+        /// Sound set of the striking weapon, see WeaponSoundConfig.Id.
+        public byte Sound;
     }
 
     public struct HitEventData : INetworkStruct
@@ -34,6 +37,7 @@ namespace Game.Scripts.Battle
         public HitResult Result;
         public HitZone Zone;
         public short Damage;
+        public byte Sound;
     }
 
     public sealed class DamageReceiverComponent : NetworkBehaviour
@@ -166,7 +170,8 @@ namespace Game.Scripts.Battle
                 Normal = request.Normal,
                 Result = result,
                 Zone = result == HitResult.Blocked ? HitZone.Block : request.Zone,
-                Damage = (short)damage
+                Damage = (short)damage,
+                Sound = request.Sound
             });
             _eventCount++;
 

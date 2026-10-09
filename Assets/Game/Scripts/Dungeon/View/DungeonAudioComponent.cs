@@ -130,6 +130,12 @@ namespace Game.Scripts.Dungeon
                 s_instance.PlayAt(sound, position, volume, pitch);
         }
 
+        public static void Play(AudioClip clip, Vector3 position, float volume = 1f, float pitch = 1f)
+        {
+            if (s_instance != null && clip != null)
+                s_instance.PlayAt(clip, position, volume, pitch);
+        }
+
         public static void PlayUi(DungeonSound sound, float volume = 1f)
         {
             if (s_instance != null)
@@ -143,6 +149,11 @@ namespace Game.Scripts.Dungeon
             if (clip == null)
                 return;
 
+            PlayAt(clip, position, volume, pitch);
+        }
+
+        private void PlayAt(AudioClip clip, Vector3 position, float volume, float pitch)
+        {
             AudioSource source = _sources[_next];
             _next = (_next + 1) % _sources.Length;
             source.transform.position = position;

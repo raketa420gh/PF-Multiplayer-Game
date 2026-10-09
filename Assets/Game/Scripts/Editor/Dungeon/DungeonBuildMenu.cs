@@ -16,6 +16,7 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonUiSpriteBuilder.Build();
             BattleContentBuilder.Build();
             DungeonContentBuilder.Build();
+            CombatSoundBuilder.Build();
             DungeonSceneBuilder.Build();
             BattleSceneBuilder.Build();
             LobbySceneBuilder.Build();

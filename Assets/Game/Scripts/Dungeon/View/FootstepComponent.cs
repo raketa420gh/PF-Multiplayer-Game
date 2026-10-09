@@ -11,7 +11,16 @@ namespace Game.Scripts.Dungeon
         private FighterComponent _fighter;
 
         [SerializeField]
-        private float _stride = 0.8f;
+        private float _stride = 1.3f;
+
+        [SerializeField, Tooltip("Recorded steps; without them the synthesized pair plays")]
+        private FootstepSoundConfig _sounds;
+
+        [SerializeField, Tooltip("Footwear of a body without an inventory")]
+        private Footwear _footwear = Footwear.Light;
+
+        [SerializeField, Tooltip("Optional: the boots in the Feet slot pick the footwear")]
+        private InventoryComponent _inventory;
 
         private Vector3 _lastPosition;
         private float _travelled;
@@ -40,8 +49,22 @@ namespace Game.Scripts.Dungeon
             _travelled = 0f;
             _toggle = !_toggle;
             float speed = delta.magnitude / Mathf.Max(Time.deltaTime, 0.001f);
-            float volume = Mathf.Clamp01(speed / 4.2f) * 0.6f + 0.15f;
-            DungeonAudioComponent.Play(_toggle ? DungeonSound.Footstep : DungeonSound.FootstepB, position, volume, Random.Range(0.92f, 1.08f));
+            float volume = Mathf.Clamp01(speed / 4.2f) * 0.3f + 0.08f;
+            float pitch = Random.Range(0.92f, 1.08f);
+            AudioClip clip = _sounds != null ? _sounds.Pick(GetFootwear()) : null;
+
+            if (clip != null)
+                DungeonAudioComponent.Play(clip, position, volume, pitch);
+            else
+                DungeonAudioComponent.Play(_toggle ? DungeonSound.Footstep : DungeonSound.FootstepB, position, volume, pitch);
+        }
+
+        private Footwear GetFootwear()
+        {
+            if (_inventory == null)
+                return _footwear;
+
+            return FootstepSoundConfig.FromArmor(_inventory.GetEquippedConfig<ArmorItemConfig>(EquipSlot.Feet));
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Game.Scripts.Dungeon
     }
 
     /// The player's body inside the dungeon: class, inventory, interaction, abilities, death and extraction on top of the fighter.
-    public sealed class AdventurerComponent : NetworkBehaviour, InventoryActionsComponent.IOwner, DamageReceiverComponent.IHitModifier, CombatComponent.IShotModifier
+    public sealed class AdventurerComponent : NetworkBehaviour, InventoryActionsComponent.IOwner, DamageReceiverComponent.IHitModifier, CombatComponent.IShotModifier, HitFeedbackComponent.IBodySource
     {
         public const int AbilityCapacity = 16;
         public const float InteractRange = 2.6f;
@@ -1874,6 +1874,19 @@ namespace Game.Scripts.Dungeon
         {
         }
 
+
+        /// Plate on the struck part rings like armor; anything softer is a body hit.
+        ImpactSurface HitFeedbackComponent.IBodySource.GetBodySurface(HitZone zone)
+        {
+            EquipSlot slot = zone switch
+            {
+                HitZone.Head => EquipSlot.Head,
+                HitZone.Legs => EquipSlot.Legs,
+                _ => EquipSlot.Chest
+            };
+
+            return _inventory.GetEquippedConfig<ArmorItemConfig>(slot) is { ArmorType: ArmorType.Plate } ? ImpactSurface.Plate : ImpactSurface.None;
+        }
 
         int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, DamageType type, HitZone zone)
         {

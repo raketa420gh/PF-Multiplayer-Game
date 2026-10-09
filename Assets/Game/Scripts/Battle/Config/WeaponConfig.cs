@@ -253,6 +253,9 @@ namespace Game.Scripts.Battle
         public RangedConfig Ranged => _ranged;
         public DamageType DamageType => _damageType;
         public int Impact => _impact;
+        public WeaponSoundConfig Sounds => _sounds;
+        public byte SoundId => _sounds != null ? _sounds.Id : (byte)0;
+        public bool HasShield => Array.Exists(_attachments, attachment => attachment.Socket is WeaponSocket.RightShield or WeaponSocket.LeftShield);
 
         /// A weapon in the left hand alone strikes with the right button; one held in both hands (the mirrored spellbook) keeps the left.
         public PlayerInputButtons AttackButton => IsLeftButtonAttack ? PlayerInputButtons.Primary : PlayerInputButtons.Secondary;
@@ -296,6 +299,9 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private RangedConfig _ranged = new();
+
+        [SerializeField]
+        private WeaponSoundConfig _sounds;
 
         [SerializeField]
         private DamageType _damageType = DamageType.Physical;

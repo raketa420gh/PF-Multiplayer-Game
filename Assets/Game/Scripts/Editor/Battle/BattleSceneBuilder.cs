@@ -321,6 +321,7 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_worldClips", BattleAudioBuilder.Load(BattleAudioBuilder.Clank));
             BattleEditorUtility.Set(so, "_swingClips", BattleAudioBuilder.Load(BattleAudioBuilder.Swing));
             BattleEditorUtility.Set(so, "_shotClips", BattleAudioBuilder.Load(BattleAudioBuilder.Shot));
+            BattleEditorUtility.Set(so, "_weaponSounds", CombatSoundBuilder.LoadSets());
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return feedback;
