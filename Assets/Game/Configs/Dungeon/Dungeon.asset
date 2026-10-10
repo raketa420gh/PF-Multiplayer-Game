@@ -12,24 +12,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1188933aa788ed4188175b12e288642, type: 3}
   m_Name: Dungeon
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.DungeonConfig
-  _matchDuration: 720
+  _matchDuration: 900
+  _isSwarmEnabled: 0
   _swarmDamagePerSecond: 3
   _swarmStages:
-  - StartTime: 360
-    Duration: 60
-    Share: 0.82
   - StartTime: 450
     Duration: 60
+    Share: 0.82
+  - StartTime: 562.5
+    Duration: 60
     Share: 0.48
-  - StartTime: 540
+  - StartTime: 675
     Duration: 60
     Share: 0.22
-  - StartTime: 630
+  - StartTime: 787.5
     Duration: 60
     Share: 0
-  _escapePortalTime: 60
-  _descendPortalTime: 360
-  _escapePortalsPerFloor: 3
+  _escapePortalTimes:
+  - 420
+  - 600
+  - 720
+  - 870
+  _descendPortalTime: 450
   _fallDamageThreshold: 4
   _fallDamagePerMeter: 8
   _experiencePerLevel: 32000000320000003200000032000000320000004b0000004b0000004b0000004b0000004b0000004b0000004b0000004b0000004b0000004b000000
