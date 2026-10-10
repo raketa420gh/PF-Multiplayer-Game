@@ -16,18 +16,26 @@ namespace Game.Scripts.Dungeon
     public sealed class DungeonConfig : ScriptableObject
     {
         public float MatchDuration => _matchDuration;
+        public bool IsSwarmEnabled => _isSwarmEnabled;
         public float SwarmDamagePerSecond => _swarmDamagePerSecond;
         public SwarmStage[] SwarmStages => _swarmStages;
-        public float EscapePortalTime => _escapePortalTime;
+        /// When each escape portal of a floor shows up, one portal per entry; the last entry serves any further portals.
+        public float[] EscapePortalTimes => _escapePortalTimes;
         public float DescendPortalTime => _descendPortalTime;
-        public int EscapePortalsPerFloor => _escapePortalsPerFloor;
         public float FallDamageThreshold => _fallDamageThreshold;
         public float FallDamagePerMeter => _fallDamagePerMeter;
+        /// A drop at least this deep (a chasm) kills outright.
+        public float LethalFall => _lethalFall;
+        /// Longest time monsters ignore a freshly spawned adventurer who has not moved or pressed anything yet.
+        public float LoadInProtection => _loadInProtection;
         public int[] ExperiencePerLevel => _experiencePerLevel;
         public int MaxLevel => _maxLevel;
 
         [SerializeField]
-        private float _matchDuration = 720f;
+        private float _matchDuration = 900f;
+
+        [SerializeField]
+        private bool _isSwarmEnabled;
 
         [SerializeField]
         private float _swarmDamagePerSecond = 3f;
@@ -42,19 +50,22 @@ namespace Game.Scripts.Dungeon
         };
 
         [SerializeField]
-        private float _escapePortalTime = 60f;
+        private float[] _escapePortalTimes = { 420f, 600f, 720f, 870f };
 
         [SerializeField]
         private float _descendPortalTime = 60f;
-
-        [SerializeField]
-        private int _escapePortalsPerFloor = 3;
 
         [SerializeField]
         private float _fallDamageThreshold = 4f;
 
         [SerializeField]
         private float _fallDamagePerMeter = 8f;
+
+        [SerializeField]
+        private float _lethalFall = 10f;
+
+        [SerializeField]
+        private float _loadInProtection = 20f;
 
         [SerializeField]
         private int[] _experiencePerLevel = { 50, 50, 50, 50, 50, 75, 75, 75, 75, 75, 75, 75, 75, 75, 75 };

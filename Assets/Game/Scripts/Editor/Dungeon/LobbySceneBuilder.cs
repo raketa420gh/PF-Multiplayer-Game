@@ -55,7 +55,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Camera = camera,
                 PreviewRig = AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("PreviewRig")),
                 PieceSet = AssetDatabase.LoadAssetAtPath<ArmorPieceSetConfig>($"{DungeonContentBuilder.ConfigsFolder}/ArmorPieces.asset"),
-                FloorMaps = new[] { AssetDatabase.LoadAssetAtPath<Texture2D>($"{DungeonMinimapBuilder.Folder}/Floor1.png") },
+                FloorMaps = new[] { AssetDatabase.LoadAssetAtPath<Texture2D>($"{DungeonMinimapBuilder.Folder}/Floor{MatchComponent.EntryFloor}.png") },
                 ModuleNames = new string[0],
                 Title = Title
             });

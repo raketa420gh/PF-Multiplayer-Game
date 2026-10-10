@@ -55,8 +55,9 @@ namespace Game.Scripts.Editor.Dungeon
                     new Vector3(-0.11f, -1.43f, 0.59f), new Vector3(-0.49f, -1.43f, 0.33f), new Vector3(-0.32f, -1.44f, -0.49f)
                 }
             },
-            ["Ornated Torch"] = new Fire { Flame = 0.8f, Range = 16f, Intensity = 8f, Points = new[] { new Vector3(0f, 0.78f, 0f) } },
-            ["Torch"] = new Fire { Flame = 0.8f, Range = 16f, Intensity = 8f, Points = new[] { new Vector3(0f, 0.8f, 0f) } }
+            // Range 12, not 16: under half the light volume for Forward+ and less light through the walls; brighter to keep the near glow.
+            ["Ornated Torch"] = new Fire { Flame = 0.8f, Range = 12f, Intensity = 9f, Points = new[] { new Vector3(0f, 0.78f, 0f) } },
+            ["Torch"] = new Fire { Flame = 0.8f, Range = 12f, Intensity = 9f, Points = new[] { new Vector3(0f, 0.8f, 0f) } }
         };
 
         /// Pack material names that do not match their texture folder.

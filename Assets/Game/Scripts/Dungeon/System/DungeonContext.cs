@@ -20,6 +20,8 @@ namespace Game.Scripts.Dungeon
         public AdventurerComponent LocalAdventurer => _localAdventurer;
         public MatchComponent Match => _match;
         public DungeonDirector Director => _director;
+        /// Generator of the floor laid out anew every run; null where every floor is fixed.
+        public CatacombGenerator Catacombs => _catacombs;
         /// Test ground: no lobby, no persistence of the kit, stash or profile.
         public bool IsSandbox => _isSandbox;
 
@@ -37,6 +39,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private DungeonDirector _director;
+
+        [SerializeField]
+        private CatacombGenerator _catacombs;
 
         [SerializeField]
         private bool _isSandbox;

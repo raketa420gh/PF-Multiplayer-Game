@@ -56,6 +56,7 @@ namespace Game.Scripts.Dungeon
         private const float EnchantSlowTime = 1.5f;
         private const float SunderStagger = 0.7f;
         private const float VerdictSilence = 3f;
+        private const int LethalDamage = 100000;
         /// Half-angle of a volley fan and the share of the shot's damage every projectile of it carries.
         private const float VolleySpread = 6f;
         private const float VolleyDamage = 0.7f;
@@ -119,6 +120,10 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         public int PerkMask { get; private set; }
+
+        /// Just spawned and not acted yet: the client may still be loading in, so monsters leave the adventurer alone.
+        [Networked]
+        public NetworkBool IsLoadingIn { get; private set; }
 
         [Networked]
         public byte Subclass { get; private set; }
@@ -265,6 +270,9 @@ namespace Game.Scripts.Dungeon
         private TickTimer _removeTimer { get; set; }
 
         [Networked]
+        private TickTimer _loadingTimer { get; set; }
+
+        [Networked]
         private NetworkBool _isHoldingCast { get; set; }
 
         [Networked]
@@ -388,10 +396,14 @@ namespace Game.Scripts.Dungeon
             if (Resource > 0 && _resourceTimer.Expired(Runner))
                 Resource = 0;
 
+            if (IsLoadingIn)
+                SimulateLoadingIn();
+
             SimulateAura();
             SimulateRest();
             SimulateSwarm();
             SimulateSearch();
+            SimulateFall();
         }
 
         public override void Render()
@@ -403,7 +415,7 @@ namespace Game.Scripts.Dungeon
                 _lookTarget = FindInteractable();
         }
 
-        public void Setup(byte classId, PlayerSessionComponent session)
+        public void Setup(byte classId, PlayerSessionComponent session, byte floor = 1)
         {
             ClassId = classId;
             _session = session;
@@ -412,8 +424,9 @@ namespace Game.Scripts.Dungeon
             PerkMask = session.PerkMask;
             SpellMask = session.SpellMask;
             Subclass = session.Subclass;
-            Floor = 1;
+            Floor = floor;
             State = AdventurerState.Alive;
+            IsLoadingIn = true;
         }
 
         /// Spawn callback of an adventurer coming down from the floor above.
@@ -1660,6 +1673,37 @@ namespace Game.Scripts.Dungeon
         private float RestHealInterval()
         {
             return _restHealInterval / _stats.PhysicalHealing / (_stats.HasThreshold(StatType.Vitality) ? 2f : 1f);
+        }
+
+        /// Protection ends with the first move or button press of the player, or after DungeonConfig.LoadInProtection at the latest.
+        private void SimulateLoadingIn()
+        {
+            if (!_loadingTimer.IsRunning)
+                _loadingTimer = TickTimer.CreateFromSeconds(Runner, _config.LoadInProtection);
+
+            if (_loadingTimer.Expired(Runner) || GetInput(out PlayerInputData input) && (input.MoveDirection != Vector2.zero || input.Buttons.Bits != 0))
+                IsLoadingIn = false;
+        }
+
+        /// A drop deeper than the threshold hurts by every metre beyond it; one into a chasm kills.
+        private void SimulateFall()
+        {
+            float fall = _fighter.Move.TakeFall();
+            float excess = fall - _config.FallDamageThreshold;
+
+            if (excess <= 0f)
+                return;
+
+            _fighter.Receiver.ApplyHit(new HitRequest
+            {
+                BaseDamage = fall >= _config.LethalFall ? LethalDamage : Mathf.RoundToInt(excess * _config.FallDamagePerMeter),
+                BodyRays = 1,
+                Zone = HitZone.Legs,
+                Point = transform.position,
+                Normal = Vector3.up,
+                AttackerPosition = transform.position + Vector3.down,
+                DamageType = DamageType.True
+            });
         }
 
         /// Unsearched loot of the opened container is discovered one item at a time; Perception sets the pace.

@@ -54,6 +54,7 @@ namespace Game.Scripts.Dungeon
 
         private readonly List<Image> _markers = new();
         private int _shownFloor = -1;
+        private int _shownLayout = -1;
 
         private void Update()
         {
@@ -64,8 +65,11 @@ namespace Game.Scripts.Dungeon
 
             int floor = Mathf.Clamp(adventurer.Floor - 1, 0, _floorMaps.Length - 1);
 
-            if (floor != _shownFloor)
-                ShowFloor(floor);
+            CatacombGenerator catacombs = _context.Catacombs;
+            int layout = catacombs != null && catacombs.Floor == floor + 1 ? catacombs.Version : 0;
+
+            if (floor != _shownFloor || layout != _shownLayout)
+                ShowFloor(floor, layout > 0 ? catacombs : null);
 
             Vector3 position = adventurer.transform.position;
             Vector2 size = _map.rectTransform.rect.size;
@@ -113,11 +117,13 @@ namespace Game.Scripts.Dungeon
             return index + 1;
         }
 
-        private void ShowFloor(int floor)
+        private void ShowFloor(int floor, CatacombGenerator catacombs)
         {
             _shownFloor = floor;
-            _map.texture = _floorMaps[floor];
-            _title.text = $"Floor {floor + 1}";
+            _shownLayout = catacombs != null ? catacombs.Version : 0;
+            _map.texture = catacombs != null && catacombs.Map != null ? catacombs.Map : _floorMaps[floor];
+            DungeonDirector director = _context.Director;
+            _title.text = director != null && floor < director.Floors.Count ? director.Floors[floor].Title : $"Floor {floor + 1}";
 
             int grid = _floorGrids[floor];
             Vector2 module = _map.rectTransform.rect.size / grid;
@@ -129,13 +135,13 @@ namespace Game.Scripts.Dungeon
             for (int i = 0; i < _moduleLabels.Length; i++)
             {
                 TMP_Text label = _moduleLabels[i];
-                bool isUsed = i < grid * grid && first + i < _floorModuleNames.Length;
+                bool isUsed = i < grid * grid && (catacombs != null || first + i < _floorModuleNames.Length);
                 label.gameObject.SetActive(isUsed);
 
                 if (!isUsed)
                     continue;
 
-                label.text = _floorModuleNames[first + i];
+                label.text = catacombs != null ? catacombs.GetTitle(i) : _floorModuleNames[first + i];
                 label.rectTransform.sizeDelta = new Vector2(module.x - 8f, label.rectTransform.sizeDelta.y);
                 label.rectTransform.anchoredPosition = new Vector2((i % grid + 0.5f - grid * 0.5f) * module.x, (i / grid + 0.5f - grid * 0.5f) * module.y);
             }

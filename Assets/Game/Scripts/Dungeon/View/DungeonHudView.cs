@@ -249,7 +249,8 @@ namespace Game.Scripts.Dungeon
         private void UpdateMatch(AdventurerComponent adventurer)
         {
             MatchComponent match = _context.Match;
-            _floorText.text = MatchComponent.FloorCount > 1 ? $"Dungeon · Floor {adventurer.Floor}" : "Dungeon";
+            DungeonDirector director = _context.Director;
+            _floorText.text = director != null && adventurer.Floor <= director.Floors.Count ? director.Floors[adventurer.Floor - 1].Title : "Dungeon";
 
             if (match == null || !match.IsRunning)
             {
@@ -262,6 +263,14 @@ namespace Game.Scripts.Dungeon
             float left = match.GetTimeLeft(adventurer.Floor);
             _timerText.text = $"{Mathf.FloorToInt(left / 60f):00}:{Mathf.FloorToInt(left % 60f):00}";
             _timerText.color = left < 60f ? new Color(1f, 0.3f, 0.2f) : Color.white;
+
+            if (!match.Config.IsSwarmEnabled)
+            {
+                float portal = match.GetTimeToNextPortal(adventurer.Floor);
+                _swarmText.text = portal >= 0f ? $"Next portal in {Mathf.FloorToInt(portal / 60f)}:{Mathf.FloorToInt(portal % 60f):00}" : "All portals are open";
+
+                return;
+            }
 
             Vector3 delta = adventurer.transform.position - match.GetSwarmCenter(adventurer.Floor);
             delta.y = 0f;

@@ -29,6 +29,9 @@ namespace Game.Scripts.Dungeon
 
         private void Update()
         {
+            if (!_light.enabled)
+                return;
+
             float time = Time.time * _speed + _seed;
             float noise = Mathf.PerlinNoise(time, _seed) * 0.7f + Mathf.PerlinNoise(time * 2.3f, _seed + 5f) * 0.3f;
             _light.intensity = _baseIntensity + (noise - 0.5f) * 2f * _amplitude;

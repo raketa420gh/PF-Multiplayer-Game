@@ -16,6 +16,8 @@ namespace Game.Scripts.Dungeon
     public sealed class MatchComponent : NetworkBehaviour
     {
         public const int FloorCount = 2;
+        /// Floor a run starts on. The cursed village (floor 1) is cut for now: registration leads straight to the catacombs.
+        public const int EntryFloor = 2;
 
         public DungeonConfig Config => _config;
         public float Elapsed => State == MatchState.Running ? Runner.SecondsSince(StartTick) : 0f;
@@ -29,6 +31,10 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         public int Round { get; private set; }
+
+        /// Seed of the generated floor layout; every peer lays the same rooms out of it.
+        [Networked]
+        public int Seed { get; private set; }
 
         [Networked, Capacity(FloorCount)]
         private NetworkArray<Vector3> _floorCenters => default;
@@ -67,6 +73,11 @@ namespace Game.Scripts.Dungeon
             BeginFloor(firstFloor);
         }
 
+        public void SetSeed(int seed)
+        {
+            Seed = seed;
+        }
+
         /// Starts the clock of a floor; until then its swarm stays wide open.
         public void BeginFloor(int floor)
         {
@@ -100,10 +111,10 @@ namespace Game.Scripts.Dungeon
             return GetElapsed(floor) >= _config.MatchDuration;
         }
 
-        /// The swarm stays hidden and harmless until its first stage begins.
+        /// The swarm stays hidden and harmless until its first stage begins, and for good while the config turns it off.
         public bool IsSwarmActive(int floor)
         {
-            return IsRunning && GetElapsed(floor) >= _config.SwarmStages[0].StartTime;
+            return _config.IsSwarmEnabled && IsRunning && GetElapsed(floor) >= _config.SwarmStages[0].StartTime;
         }
 
         /// Current safe radius for a floor; stages interpolate from the previous radius to the stage radius.
@@ -154,6 +165,20 @@ namespace Game.Scripts.Dungeon
             float ramp = 1f + GetElapsed(floor) / _config.MatchDuration;
 
             return _config.SwarmDamagePerSecond * ramp;
+        }
+
+        /// Seconds until the next escape portal of the floor shows up; negative once all of them have.
+        public float GetTimeToNextPortal(int floor)
+        {
+            float elapsed = GetElapsed(floor);
+
+            foreach (float time in _config.EscapePortalTimes)
+            {
+                if (elapsed < time)
+                    return time - elapsed;
+            }
+
+            return -1f;
         }
 
         public float GetSwarmTimeToNextStage(int floor)

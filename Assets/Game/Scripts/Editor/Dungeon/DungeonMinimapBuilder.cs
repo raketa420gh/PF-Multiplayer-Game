@@ -12,8 +12,16 @@ namespace Game.Scripts.Editor.Dungeon
 
         public static Texture2D Render(Transform floor, float floorY, string name)
         {
+            return Render(floor, Vector3.up * floorY, DungeonMapBuilder.WorldSize * 0.5f, Size, name, false);
+        }
+
+        /// Square of the given half side around center; small maps are rendered four times larger and scaled down. Readable
+        /// maps can be stitched together at runtime (the cells of a generated floor).
+        public static Texture2D Render(Transform floor, Vector3 center, float extent, int size, string name, bool isReadable)
+        {
             BattleEditorUtilityShim.EnsureFolder(Folder);
-            float extent = DungeonMapBuilder.WorldSize * 0.5f;
+            int samples = size < Size / 2 ? 4 : 1;
+            int render = size * samples;
             GameObject cameraObject = new GameObject("MinimapCamera");
             GameObject lightObject = new GameObject("MinimapLight");
             string path = $"{Folder}/{name}.png";
@@ -24,7 +32,8 @@ namespace Game.Scripts.Editor.Dungeon
             foreach (MeshRenderer renderer in floor.GetComponentsInChildren<MeshRenderer>())
             {
                 bool isCeiling = renderer.gameObject.name.StartsWith("Ceiling");
-                bool isWall = renderer.gameObject.name.StartsWith("Wall");
+                // Walls of pits outline the drop, so a pit reads on the map.
+                bool isWall = renderer.gameObject.name.StartsWith("Wall") || renderer.gameObject.name.StartsWith("Pit Wall");
 
                 if (!isCeiling && !isWall)
                     continue;
@@ -51,7 +60,7 @@ namespace Game.Scripts.Editor.Dungeon
                 camera.nearClipPlane = 0.1f;
                 camera.farClipPlane = DungeonPropBuilder.WallHeight + 3f;
                 camera.cullingMask = 1;
-                camera.transform.position = new Vector3(0f, floorY + DungeonPropBuilder.WallHeight + 2f, 0f);
+                camera.transform.position = center + Vector3.up * (DungeonPropBuilder.WallHeight + 2f);
                 camera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
                 Light light = lightObject.AddComponent<Light>();
@@ -64,21 +73,23 @@ namespace Game.Scripts.Editor.Dungeon
                 RenderSettings.ambientLight = new Color(0.6f, 0.6f, 0.6f);
                 RenderSettings.fog = false;
 
-                RenderTexture texture = RenderTexture.GetTemporary(Size, Size, 24, RenderTextureFormat.ARGB32);
+                RenderTexture texture = RenderTexture.GetTemporary(render, render, 24, RenderTextureFormat.ARGB32);
                 camera.targetTexture = texture;
                 camera.Render();
                 RenderTexture.active = texture;
-                Texture2D image = new Texture2D(Size, Size, TextureFormat.RGBA32, false);
-                image.ReadPixels(new Rect(0f, 0f, Size, Size), 0, 0);
+                Texture2D image = new Texture2D(render, render, TextureFormat.RGBA32, false);
+                image.ReadPixels(new Rect(0f, 0f, render, render), 0, 0);
                 RenderTexture.active = null;
                 camera.targetTexture = null;
                 RenderTexture.ReleaseTemporary(texture);
                 RenderSettings.ambientLight = ambient;
                 RenderSettings.fog = fog;
 
-                Stylize(image);
-                File.WriteAllBytes(path, image.EncodeToPNG());
+                Stylize(image, render, samples > 1 ? 2 : 3);
+                Texture2D map = samples > 1 ? Shrink(image, samples) : image;
+                File.WriteAllBytes(path, map.EncodeToPNG());
                 Object.DestroyImmediate(image);
+                Object.DestroyImmediate(map);
             }
             finally
             {
@@ -94,23 +105,66 @@ namespace Game.Scripts.Editor.Dungeon
                 Object.DestroyImmediate(lightObject);
             }
 
-            return Import(path);
+            return Import(path, isReadable);
         }
 
-        private static Texture2D Import(string path)
+        /// A finished map written as an asset: the parchment of a generated floor.
+        public static Texture2D Save(Texture2D map, string name)
+        {
+            BattleEditorUtilityShim.EnsureFolder(Folder);
+            string path = $"{Folder}/{name}.png";
+            File.WriteAllBytes(path, map.EncodeToPNG());
+
+            return Import(path, false);
+        }
+
+        private static Texture2D Import(string path, bool isReadable)
         {
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
             importer.textureType = TextureImporterType.Default;
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.mipmapEnabled = false;
+            importer.isReadable = isReadable;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.textureCompression = isReadable ? TextureImporterCompression.Uncompressed : importer.textureCompression;
             importer.SaveAndReimport();
 
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
         /// Ink-swapped walls become thick dark strokes; floors become flat parchment with faint seams.
-        private static void Stylize(Texture2D image)
+        private static Texture2D Shrink(Texture2D image, int samples)
+        {
+            int size = image.width / samples;
+            Color[] source = image.GetPixels();
+            Color[] pixels = new Color[size * size];
+            float weight = 1f / (samples * samples);
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    Color sum = Color.clear;
+
+                    for (int dy = 0; dy < samples; dy++)
+                    {
+                        for (int dx = 0; dx < samples; dx++)
+                            sum += source[(y * samples + dy) * image.width + x * samples + dx];
+                    }
+
+                    pixels[y * size + x] = sum * weight;
+                }
+            }
+
+            Texture2D result = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            result.SetPixels(pixels);
+            result.Apply();
+
+            return result;
+        }
+
+        private static void Stylize(Texture2D image, int size, int radius)
         {
             Color[] pixels = image.GetPixels();
             float[] luminance = new float[pixels.Length];
@@ -122,16 +176,16 @@ namespace Game.Scripts.Editor.Dungeon
                 ink[i] = luminance[i] < 0.06f;
             }
 
-            bool[] thick = Dilate(ink, 3);
+            bool[] thick = Dilate(ink, size, radius);
             Color parchment = new Color(0.82f, 0.74f, 0.55f);
             Color inkColor = new Color(0.2f, 0.13f, 0.07f);
             Color shade = new Color(0.68f, 0.58f, 0.4f);
 
-            for (int y = 0; y < Size; y++)
+            for (int y = 0; y < size; y++)
             {
-                for (int x = 0; x < Size; x++)
+                for (int x = 0; x < size; x++)
                 {
-                    int index = y * Size + x;
+                    int index = y * size + x;
 
                     if (thick[index])
                     {
@@ -142,10 +196,10 @@ namespace Game.Scripts.Editor.Dungeon
                     float value = luminance[index];
                     float edge = 0f;
 
-                    if (x > 0 && x < Size - 1 && y > 0 && y < Size - 1)
+                    if (x > 0 && x < size - 1 && y > 0 && y < size - 1)
                     {
                         float dx = luminance[index + 1] - luminance[index - 1];
-                        float dy = luminance[index + Size] - luminance[index - Size];
+                        float dy = luminance[index + size] - luminance[index - size];
                         edge = Mathf.Clamp01(Mathf.Sqrt(dx * dx + dy * dy) * 2f);
                     }
 
@@ -158,15 +212,15 @@ namespace Game.Scripts.Editor.Dungeon
             image.Apply();
         }
 
-        private static bool[] Dilate(bool[] source, int radius)
+        private static bool[] Dilate(bool[] source, int size, int radius)
         {
             bool[] result = new bool[source.Length];
 
-            for (int y = 0; y < Size; y++)
+            for (int y = 0; y < size; y++)
             {
-                for (int x = 0; x < Size; x++)
+                for (int x = 0; x < size; x++)
                 {
-                    if (!source[y * Size + x])
+                    if (!source[y * size + x])
                         continue;
 
                     for (int dy = -radius; dy <= radius; dy++)
@@ -176,8 +230,8 @@ namespace Game.Scripts.Editor.Dungeon
                             int nx = x + dx;
                             int ny = y + dy;
 
-                            if (nx >= 0 && nx < Size && ny >= 0 && ny < Size)
-                                result[ny * Size + nx] = true;
+                            if (nx >= 0 && nx < size && ny >= 0 && ny < size)
+                                result[ny * size + nx] = true;
                         }
                     }
                 }

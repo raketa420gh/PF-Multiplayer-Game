@@ -47,8 +47,12 @@ namespace Game.Scripts.Dungeon
 
             int floor = Mathf.Clamp(adventurer.Floor - 1, 0, _floorMaps.Length - 1);
 
-            if (_map.texture != _floorMaps[floor])
-                _map.texture = _floorMaps[floor];
+            CatacombGenerator catacombs = _context.Catacombs;
+            bool isGenerated = catacombs != null && catacombs.Floor == adventurer.Floor && catacombs.Map != null;
+            Texture map = isGenerated ? catacombs.Map : _floorMaps[floor];
+
+            if (_map.texture != map)
+                _map.texture = map;
 
             Vector3 position = adventurer.transform.position;
             float size = _floorSizes[floor];
@@ -58,6 +62,13 @@ namespace Game.Scripts.Dungeon
             _map.uvRect = new Rect(u - window * 0.5f, v - window * 0.5f, window, window);
             _arrow.localRotation = Quaternion.Euler(0f, 0f, -adventurer.transform.eulerAngles.y);
             _swarm.Show(_context.Match, adventurer.Floor, position, _map.rectTransform.rect.width / _windowSizes[floor]);
+
+            if (isGenerated)
+            {
+                _moduleText.text = catacombs.GetTitle(position);
+
+                return;
+            }
 
             int grid = _floorGrids[floor];
             float module = _floorSizes[floor] / grid;

@@ -15,6 +15,7 @@ namespace Game.Scripts.Dungeon
         [Serializable]
         public sealed class FloorLayout
         {
+            public string Title;
             public Transform[] PlayerSpawns;
             /// Houses adventurers start in, their children are the spots: every team gets a house of its own.
             public Transform[] SpawnHouses;
@@ -23,6 +24,7 @@ namespace Game.Scripts.Dungeon
             public MonsterPlacement[] Monsters;
             public ContainerComponent[] Containers;
             public PortalComponent[] EscapePortals;
+            /// Escape portals show up one by one at DungeonConfig.EscapePortalTimes.
             /// Half side of the square around Center where escape portals open at random; 0 keeps them in place.
             public float EscapeArea;
             /// Ways down, opened halfway through the floor's clock; they hand adventurers over to the next floor's session.
@@ -72,6 +74,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private FloorLayout[] _floors = new FloorLayout[MatchComponent.FloorCount];
 
+        [SerializeField, Tooltip("Lays out its floor anew for every run; its rooms bring the starts, monsters, containers and traps")]
+        private CatacombGenerator _catacombs;
+
         [SerializeField]
         private MonsterKind[] _monsters;
 
@@ -102,12 +107,20 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Teams start in houses at least this far apart while there are such houses left")]
         private float _houseSpacing = 45f;
 
+        [SerializeField, Tooltip("No monster stands closer than this to an adventurer spawn spot, so nobody is aggroed while still loading in")]
+        private float _spawnSafety = 18f;
+
+        [SerializeField, Tooltip("How many houses (catacomb start rooms) are kept monster-free for team starts; one per team at most")]
+        private int _safeStarts = 12;
+
         private readonly List<NetworkObject> _spawned = new();
+        private readonly List<Vector3> _spawnSpots = new();
+        private readonly List<Transform> _safeHouses = new();
         private readonly List<PlayerSessionComponent> _sessions = new();
         private readonly Dictionary<int, Transform> _teamHouses = new();
         private readonly Dictionary<int, int> _teamSpawns = new();
         private readonly bool[] _populated = new bool[MatchComponent.FloorCount];
-        private readonly bool[] _escapeOpened = new bool[MatchComponent.FloorCount];
+        private readonly int[] _escapeOpened = new int[MatchComponent.FloorCount];
         private readonly bool[] _descendOpened = new bool[MatchComponent.FloorCount];
         private NetworkRunner _runner;
         private MatchComponent _match;
@@ -150,7 +163,7 @@ namespace Game.Scripts.Dungeon
             if (_match.State == MatchState.Finished)
                 ResetDungeon();
 
-            int floor = Mathf.Clamp(_admission != null ? _admission.Floor : 1, 1, _floors.Length);
+            int floor = Mathf.Clamp(_admission != null ? _admission.Floor : MatchComponent.EntryFloor, 1, _floors.Length);
 
             if (!_populated[floor - 1])
             {
@@ -158,8 +171,15 @@ namespace Game.Scripts.Dungeon
 
                 for (int i = 0; i < _floors.Length; i++)
                 {
-                    SetEscapePortals(i, false);
+                    CloseEscapePortals(i);
                     SetDescendPortal(i, false);
+                }
+
+                if (IsGenerated(floor - 1))
+                {
+                    _match.SetSeed(_seed | 1);
+                    _catacombs.Generate(_seed | 1);
+                    _catacombs.BakeNavMesh();
                 }
 
                 Populate(floor - 1);
@@ -171,7 +191,7 @@ namespace Game.Scripts.Dungeon
             session.EnsureKit();
 
             PlayerRef player = session.Object.InputAuthority;
-            Transform point = TakeSpawn(_floors[floor - 1], _admission != null ? _admission.TeamOf(player) : -1 - player.PlayerId);
+            Transform point = TakeSpawn(floor - 1, _admission != null ? _admission.TeamOf(player) : -1 - player.PlayerId);
             FloorTransfer.Carry arrival = session.Arrival != null && session.Arrival.Floor == floor ? session.Arrival : null;
 
             Vector3 position = NavMesh.SamplePosition(point.position, out NavMeshHit hit, _spawnSnap, NavMesh.AllAreas) ? hit.position : point.position;
@@ -179,7 +199,7 @@ namespace Game.Scripts.Dungeon
             NetworkObject adventurer = _runner.Spawn(_adventurerPrefab, position, point.rotation, player, (_, obj) =>
             {
                 AdventurerComponent component = obj.GetComponent<AdventurerComponent>();
-                component.Setup(session.ClassId, session);
+                component.Setup(session.ClassId, session, (byte)floor);
                 component.Inventory.CopyFrom(session.Kit);
 
                 if (arrival != null)
@@ -190,28 +210,28 @@ namespace Game.Scripts.Dungeon
         }
 
         /// Teammates share a house, every team gets its own one away from the others.
-        private Transform TakeSpawn(FloorLayout floor, int team)
+        private Transform TakeSpawn(int floorIndex, int team)
         {
-            if (floor.SpawnHouses == null || floor.SpawnHouses.Length == 0)
-                return TakeSpawn(floor);
+            if (_safeHouses.Count == 0)
+                return TakeSpawn(_floors[floorIndex]);
 
             if (!_teamHouses.TryGetValue(team, out Transform house))
             {
                 List<Transform> free = new();
                 List<Transform> far = new();
 
-                foreach (Transform candidate in floor.SpawnHouses)
+                foreach (Transform candidate in _safeHouses)
                 {
                     if (_teamHouses.ContainsValue(candidate))
                         continue;
 
                     free.Add(candidate);
 
-                    if (IsFarFromTeams(candidate.position))
+                    if (IsFarFrom(_teamHouses.Values, candidate.position))
                         far.Add(candidate);
                 }
 
-                List<Transform> pool = far.Count > 0 ? far : free.Count > 0 ? free : new List<Transform>(floor.SpawnHouses);
+                List<Transform> pool = far.Count > 0 ? far : free.Count > 0 ? free : _safeHouses;
                 house = pool[UnityEngine.Random.Range(0, pool.Count)];
                 _teamHouses[team] = house;
             }
@@ -222,9 +242,9 @@ namespace Game.Scripts.Dungeon
             return house.childCount > 0 ? house.GetChild(index % house.childCount) : house;
         }
 
-        private bool IsFarFromTeams(Vector3 position)
+        private bool IsFarFrom(IEnumerable<Transform> houses, Vector3 position)
         {
-            foreach (Transform taken in _teamHouses.Values)
+            foreach (Transform taken in houses)
             {
                 if ((taken.position - position).sqrMagnitude < _houseSpacing * _houseSpacing)
                     return false;
@@ -339,11 +359,10 @@ namespace Game.Scripts.Dungeon
                     SetDescendPortal(i, true);
                 }
 
-                if (!_escapeOpened[i] && elapsed >= _config.EscapePortalTime)
-                {
-                    _escapeOpened[i] = true;
-                    SetEscapePortals(i, true);
-                }
+                float[] times = _config.EscapePortalTimes;
+
+                while (_escapeOpened[i] < _floors[i].EscapePortals.Length && elapsed >= times[Mathf.Min(_escapeOpened[i], times.Length - 1)])
+                    OpenEscapePortal(i, _escapeOpened[i]++);
             }
 
             // A run ends as soon as nobody is left inside, so the next arrival gets a fresh dungeon and a full swarm timer.
@@ -382,6 +401,7 @@ namespace Game.Scripts.Dungeon
             System.Random random = new System.Random(_seed + floorIndex);
             FloorLayout floor = _floors[floorIndex];
             byte level = (byte)(floorIndex + 1);
+            CollectSpawnSpots(floorIndex);
 
             foreach (ContainerComponent container in floor.Containers)
             {
@@ -407,10 +427,105 @@ namespace Game.Scripts.Dungeon
 
             foreach (MonsterPlacement placement in floor.Monsters)
                 SpawnMonster(placement.Prefab, placement.Point, level);
+
+            if (!IsGenerated(floorIndex))
+                return;
+
+            foreach (CatacombRoomComponent room in _catacombs.Rooms)
+            {
+                foreach (MonsterPlacement placement in room.Containers)
+                {
+                    NetworkObject spawned = _runner.Spawn(placement.Prefab, placement.Point.position, placement.Point.rotation);
+                    ContainerComponent container = spawned.GetComponent<ContainerComponent>();
+                    container.Fill(container.LootTable, random.Next());
+                    _spawned.Add(spawned);
+                }
+
+                foreach (MonsterPlacement placement in room.Traps)
+                    _spawned.Add(_runner.Spawn(placement.Prefab, placement.Point.position, placement.Point.rotation));
+
+                foreach (MonsterPlacement placement in room.Monsters)
+                {
+                    if (random.NextDouble() <= _monsterSpawnChance)
+                        SpawnMonster(placement.Prefab != null ? placement.Prefab : Pick(_monsters, random, m => m.Weight).Prefab, placement.Point, level);
+                }
+            }
+        }
+
+        private bool IsGenerated(int floorIndex)
+        {
+            return _catacombs != null && _catacombs.Floor == floorIndex + 1;
+        }
+
+        private Transform[] Starts()
+        {
+            List<Transform> starts = new();
+
+            foreach (CatacombRoomComponent room in _catacombs.Rooms)
+            {
+                if (room.StartSpots != null)
+                    starts.Add(room.StartSpots);
+            }
+
+            return starts.ToArray();
+        }
+
+        /// Reserves the houses teams may start in, spread apart, and every place an adventurer may appear: monsters keep clear of them.
+        private void CollectSpawnSpots(int floorIndex)
+        {
+            FloorLayout floor = _floors[floorIndex];
+            List<Transform> pool = new(IsGenerated(floorIndex) ? Starts() : floor.SpawnHouses ?? Array.Empty<Transform>());
+            pool.RemoveAll(house => house == null);
+            _safeHouses.Clear();
+
+            while (_safeHouses.Count < _safeStarts && pool.Count > 0)
+            {
+                List<Transform> far = pool.FindAll(house => IsFarFrom(_safeHouses, house.position));
+                List<Transform> from = far.Count > 0 ? far : pool;
+                Transform pick = from[UnityEngine.Random.Range(0, from.Count)];
+                _safeHouses.Add(pick);
+                pool.Remove(pick);
+            }
+
+            _spawnSpots.Clear();
+            AddSpawnSpots(_safeHouses.ToArray());
+            AddSpawnSpots(floor.PlayerSpawns);
+            AddSpawnSpots(floor.Arrivals);
+        }
+
+        private void AddSpawnSpots(Transform[] points)
+        {
+            if (points == null)
+                return;
+
+            foreach (Transform point in points)
+            {
+                if (point == null)
+                    continue;
+
+                _spawnSpots.Add(point.position);
+
+                foreach (Transform spot in point)
+                    _spawnSpots.Add(spot.position);
+            }
+        }
+
+        private bool IsNearSpawn(Vector3 position)
+        {
+            foreach (Vector3 spot in _spawnSpots)
+            {
+                if ((spot - position).sqrMagnitude < _spawnSafety * _spawnSafety)
+                    return true;
+            }
+
+            return false;
         }
 
         private void SpawnMonster(NetworkObject prefab, Transform point, byte level)
         {
+            if (IsNearSpawn(point.position))
+                return;
+
             _spawned.Add(_runner.Spawn(prefab, point.position, point.rotation, PlayerRef.None, (_, obj) => obj.GetComponent<MonsterComponent>().Setup(level)));
         }
 
@@ -431,23 +546,27 @@ namespace Game.Scripts.Dungeon
             }
         }
 
-        private void SetEscapePortals(int floorIndex, bool isActive)
+        private void CloseEscapePortals(int floorIndex)
         {
-            FloorLayout floor = _floors[floorIndex];
-
-            foreach (PortalComponent portal in floor.EscapePortals)
+            foreach (PortalComponent portal in _floors[floorIndex].EscapePortals)
             {
-                if (portal == null)
-                    continue;
-
-                if (isActive && floor.EscapeArea > 0f)
-                    portal.GetComponent<NetworkTransform>().Teleport(RandomPortalPoint(floor, portal.transform.position), Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f));
-
-                if (isActive)
-                    portal.Activate();
-                else
+                if (portal != null)
                     portal.Deactivate();
             }
+        }
+
+        private void OpenEscapePortal(int floorIndex, int index)
+        {
+            FloorLayout floor = _floors[floorIndex];
+            PortalComponent portal = floor.EscapePortals[index];
+
+            if (portal == null)
+                return;
+
+            if (floor.EscapeArea > 0f)
+                portal.GetComponent<NetworkTransform>().Teleport(RandomPortalPoint(floor, portal.transform.position), Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f));
+
+            portal.Activate();
         }
 
         /// Random walkable point of the floor square that keeps clear of walls and props.

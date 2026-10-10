@@ -59,7 +59,7 @@ namespace Game.Scripts.Dungeon
         {
             AdventurerComponent adventurer = _context.LocalAdventurer;
             bool isInside = adventurer != null && adventurer.Object != null && adventurer.Object.IsValid;
-            int floor = isInside ? Mathf.Clamp(adventurer.Floor - 1, 0, _floors.Length - 1) : 0;
+            int floor = Mathf.Clamp((isInside ? adventurer.Floor : MatchComponent.EntryFloor) - 1, 0, _floors.Length - 1);
 
             if (floor == _shownFloor)
                 return;

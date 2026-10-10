@@ -164,7 +164,7 @@ namespace Game.Scripts.Dungeon
                 if (fighter.IsBot || fighter.Health.IsDead || !fighter.TryGetComponent(out AdventurerComponent adventurer))
                     continue;
 
-                if (adventurer.State != AdventurerState.Alive || adventurer.IsInvisible)
+                if (adventurer.State != AdventurerState.Alive || adventurer.IsInvisible || adventurer.IsLoadingIn)
                     continue;
 
                 float distance = (fighter.transform.position - transform.position).sqrMagnitude;

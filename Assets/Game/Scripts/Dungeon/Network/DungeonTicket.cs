@@ -39,7 +39,7 @@ namespace Game.Scripts.Dungeon
         private List<SessionInfo> _sessions;
         private bool _isRetryable;
 
-        public DungeonTicket(QueueMode mode, int party, int size, bool isLeader, byte floor = 1, int attempt = 0)
+        public DungeonTicket(QueueMode mode, int party, int size, bool isLeader, byte floor = MatchComponent.EntryFloor, int attempt = 0)
         {
             _mode = mode;
             _party = party;
@@ -57,7 +57,7 @@ namespace Game.Scripts.Dungeon
 
         public static (QueueMode mode, int party, int size, byte floor) Read(byte[] token)
         {
-            return token == null || token.Length < TokenSize ? (QueueMode.Solo, 0, 1, (byte)1) : ((QueueMode)token[0], BitConverter.ToInt32(token, 2), token[1], token[6]);
+            return token == null || token.Length < TokenSize ? (QueueMode.Solo, 0, 1, (byte)MatchComponent.EntryFloor) : ((QueueMode)token[0], BitConverter.ToInt32(token, 2), token[1], token[6]);
         }
 
         public override async Task<string> Start(NetworkRunner runner, NetworkEvents events, StartGameArgs args)
@@ -68,7 +68,7 @@ namespace Game.Scripts.Dungeon
 
             try
             {
-                SceneTravel.Report(_floor > 1 ? $"Descending to floor {_floor}..." : $"Registering for the {GameServer.Title(_mode)} queue...", 0.2f);
+                SceneTravel.Report(_floor > MatchComponent.EntryFloor ? $"Descending to floor {_floor}..." : $"Registering for the {GameServer.Title(_mode)} queue...", 0.2f);
                 StartGameResult lobby = await runner.JoinSessionLobby(SessionLobby.Custom, GameServer.DungeonLobby);
 
                 if (!lobby.Ok)
@@ -121,7 +121,7 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
-            if (_floor > 1)
+            if (_floor > MatchComponent.EntryFloor)
             {
                 FloorTransfer.Forget();
                 NetworkLaunch.Notice = $"The way down to floor {_floor} collapsed ({error}). You made it out with everything you carried.";
@@ -161,7 +161,7 @@ namespace Game.Scripts.Dungeon
                     continue;
 
                 // Down below, teammates who came first hold the place for the rest of the party.
-                if (_floor > 1 && _party != 0 && IsListed(session, _party))
+                if (_floor > MatchComponent.EntryFloor && _party != 0 && IsListed(session, _party))
                     return session;
 
                 if (best == null || session.PlayerCount > best.PlayerCount)
@@ -173,7 +173,7 @@ namespace Game.Scripts.Dungeon
 
         private SessionInfo FindParty(List<SessionInfo> sessions)
         {
-            return sessions.Find(s => Property(s, GameServer.FloorProperty) <= 1 && IsListed(s, _party));
+            return sessions.Find(s => Property(s, GameServer.FloorProperty) <= MatchComponent.EntryFloor && IsListed(s, _party));
         }
 
         private static bool IsListed(SessionInfo session, int party)

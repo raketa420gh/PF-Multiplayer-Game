@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Катакомбы — макеты комнат</title>
+<style>
+:root{--bg:#121214;--panel:#1b1b1f;--line:#2c2c33;--text:#ddd8cc;--dim:#8d887d;--accent:#d9a441}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 "Segoe UI",system-ui,sans-serif}
+header{position:sticky;top:0;z-index:5;background:#0e0e10f0;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+h1{font-size:18px;margin:0;color:var(--accent)}
+.scale{color:var(--dim);font-size:12px;max-width:640px}
+button,select{background:#26262c;color:var(--text);border:1px solid #3a3a42;border-radius:6px;padding:5px 10px;cursor:pointer;font:inherit;font-size:13px}
+button:hover{border-color:var(--accent)}
+button.on{background:#3b3220;border-color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:8px 16px;border-bottom:1px solid var(--line);font-size:12px;color:var(--dim)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid #000}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;padding:16px}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.card.ok{border-color:#4caf50}.card.rework{border-color:#e0a030}.card.no{border-color:#b04040;opacity:.55}
+.card canvas{width:100%;aspect-ratio:1;cursor:zoom-in;display:block;background:#000}
+.body{padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.title{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.title b{font-size:15px}
+.tag{font-size:11px;padding:1px 7px;border-radius:9px;background:#2a2a31;color:var(--dim);white-space:nowrap}
+.tag.live{background:#24402a;color:#9fe0a8}
+.desc{font-size:12px;color:var(--dim)}
+.stats{font-size:12px;display:flex;flex-wrap:wrap;gap:2px 10px}
+.good{color:#7fd38a}.bad{color:#ff7070}
+.status{display:flex;gap:6px}
+.status button{flex:1;padding:4px 0;font-size:12px}
+.status .ok.on{background:#1f3a22;border-color:#4caf50}
+.status .rework.on{background:#3d3015;border-color:#e0a030}
+.status .no.on{background:#3b1c1c;border-color:#b04040}
+textarea{width:100%;background:#141417;color:var(--text);border:1px solid #33333a;border-radius:6px;font:12px/1.3 "Segoe UI",sans-serif;padding:5px;resize:vertical;min-height:34px}
+#viewer{position:fixed;inset:0;background:#000;z-index:10;display:none}
+#viewer.open{display:flex}
+#view3d{flex:1;position:relative;overflow:hidden}
+#view3d>canvas{display:block}
+#labels{position:absolute;inset:0;pointer-events:none}
+.lbl{font:11px "Segoe UI",sans-serif;color:#fff;background:#000b;padding:1px 5px;border-radius:4px;white-space:nowrap}
+.lbl.rich{color:#ffd24a}.lbl.prop{color:#bba98f;background:#0008}
+#hud{position:absolute;left:12px;top:12px;background:#000b;padding:6px 10px;border-radius:6px;font-size:12px;pointer-events:none;white-space:pre;display:none}
+#help{position:absolute;left:12px;bottom:10px;color:#fff8;font-size:12px;pointer-events:none}
+#side{width:380px;background:var(--panel);border-left:1px solid var(--line);padding:12px;overflow:auto;display:flex;flex-direction:column;gap:9px}
+#side canvas{width:100%;aspect-ratio:1;background:#000;border-radius:6px}
+.tools{display:flex;flex-wrap:wrap;gap:5px}
+.row{display:flex;gap:6px;align-items:center}
+.row .grow{flex:1}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.164.1/build/three.module.js","three/addons/":"https://unpkg.com/three@0.164.1/examples/jsm/"}}
+</script>
+</head>
+<body>
+<header>
+  <h1>Катакомбы — макеты комнат</h1>
+  <div class="scale">1 клетка сетки 7×7 = комната 33.6×33.6 м, высота 6 м — ≈10 с бега на скорости 300 (3.36 м/с). Проёмы 3×3.4 м: по два на каждой стороне, в серединах половин стены (±8.4 м). Угловые комнаты — проёмы только на двух соседних сторонах (на макете С и В). Генератор поворачивает комнату, поэтому все проёмы обязаны быть связаны.</div>
+  <select id="filter">
+    <option value="all">Все</option><option value="none">Без оценки</option><option value="ok">Подходят</option>
+    <option value="rework">Доработать</option><option value="no">Не подходят</option><option value="regular">Обычные (8 проходов)</option><option value="corner">Угловые (4 прохода)</option>
+  </select>
+  <span id="counter" class="tag"></span>
+  <button id="copy">Скопировать итог</button>
+  <button id="download">Скачать JSON</button>
+</header>
+<div class="legend" id="legend"></div>
+<div id="grid"></div>
+
+<div id="viewer">
+  <div id="view3d"><div id="labels"></div><div id="hud"></div>
+    <div id="help">ЛКМ — вращать · ПКМ — двигать · колесо — зум · «Пройтись»: WASD, мышь, R — сброс таймера, Esc — выход · ←/→ — соседние комнаты</div></div>
+  <div id="side">
+    <div class="row"><button id="prev">←</button><b id="vTitle" class="grow"></b><button id="next">→</button><button id="close">✕</button></div>
+    <div id="vDesc" class="desc"></div>
+    <div id="vStats" class="stats"></div>
+    <div id="vStatus"></div>
+    <textarea id="vNote" placeholder="Заметка: что поменять…"></textarea>
+    <div class="tools">
+      <button id="tRot">⟳ 90°</button><button id="tLight" class="on">Свет</button><button id="tShadow" class="on">Тени</button>
+      <button id="tCut">Низкие стены</button><button id="tCeil">Потолок</button><button id="tLabels" class="on">Подписи</button>
+      <button id="tZones" class="on">Зоны</button><button id="tTop">Сверху</button><button id="tWalk">Пройтись</button>
+    </div>
+    <canvas id="vPlan" width="640" height="640"></canvas>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+const H = 16.8, HEIGHT = 6, DOOR = 3, DOOR_H = 3.4, WALL = 0.6, TORCH_Y = 2.6, SPEED = 3.36, EYE = 1.7, DEG = Math.PI / 180, O = H / 2;
+const $ = s => document.querySelector(s);
+const hex = c => { const n = parseInt(c.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+
+const MOBS = {
+  sword: { n: 'Мечник', c: '#e0524c', l: 'М' }, archer: { n: 'Лучник', c: '#5cc35c', l: 'Л' }, xbow: { n: 'Арбалетчик', c: '#2fb3a8', l: 'А' },
+  warrior: { n: 'Воин со щитом', c: '#e88a2e', l: 'В' }, mage: { n: 'Маг', c: '#a970f0', l: 'Мг' }, skull: { n: 'Летучий череп', c: '#eee6c4', l: 'Ч' }
+};
+const CHESTS = {
+  rich: { n: 'Богатый сундук', c: '#ffd24a', s: [1.4, 0.9, 0.9], v: 5 }, large: { n: 'Большой сундук', c: '#d98c2b', s: [1.2, 0.8, 0.8], v: 3 },
+  small: { n: 'Малый сундук', c: '#c9a46a', s: [0.9, 0.6, 0.6], v: 2 }, coffin: { n: 'Гроб с лутом', c: '#9a82b8', s: [0.8, 0.7, 2.1], v: 2 },
+  shelf: { n: 'Полка', c: '#a07a50', s: [2.4, 2.4, 0.5], v: 1 }, barrel: { n: 'Бочка', c: '#8a5a32', s: [0.8, 1, 0.8], v: 0.5 },
+  crate: { n: 'Ящик', c: '#9c7a4a', s: [0.9, 0.9, 0.9], v: 0.5 }, urn: { n: 'Урна', c: '#7d9090', s: [0.6, 0.8, 0.6], v: 0.5 }
+};
+const TRAPS = { spike: { n: 'Шипы', c: '#ff3b3b' }, blade: { n: 'Маятник', c: '#ff3b3b' } };
+const LIGHTS = {
+  torch: { n: 'Факел', c: '#ffae55', R: 9, p: 1, i: 40 }, candle: { n: 'Свечи', c: '#ffd27a', R: 4, p: 0.7, i: 6 },
+  brazier: { n: 'Жаровня', c: '#ff9440', R: 12, p: 1.3, i: 100 }, fire: { n: 'Костёр / очаг', c: '#ff8a3a', R: 10, p: 1.2, i: 70 },
+  shaft: { n: 'Свет из пролома', c: '#cfe0ff', R: 9, p: 1.1, i: 320 }, glow: { n: 'Свечение', c: '#7dff8a', R: 7, p: 1, i: 30 }
+};
+
+// ---------- item constructors (Unity coords: x east, z north, yaw clockwise, metres) ----------
+const rotP = (x, z, k) => { k = ((k % 4) + 4) % 4; for (let i = 0; i < k; i++) [x, z] = [z, -x]; return [x, z]; };
+const B = (x, z, w, d, h = HEIGHT, r = 0) => ({ t: 'block', x, z, w, d, h, r });
+const C = (x, z, s = 1.2, h = HEIGHT) => ({ t: 'block', x, z, w: s, d: s, h, r: 0, col: true });
+const L = (x, z, w, d, h, name, c = '#6a4a2c', r = 0, cyl = false) => ({ t: 'prop', x, z, w, d, h, name, c, r, cyl });
+const SK = (x, z, s = 1) => L(x, z, 1.1 * s, 1.1 * s, 0.5 * s, 'Черепа', '#cfc6a8', 0, true);
+const CR = (x, z, w, d, h = 2.5, r = 0) => L(x, z, w, d, h, 'Штабель ящиков', '#6b4a2b', r);
+const M = (k, x, z, r = 0) => ({ t: 'mob', k, x, z, r });
+const K = (k, x, z, r = 0) => ({ t: 'chest', k, x, z, r });
+const T = (k, x, z, r = 0) => ({ t: 'trap', k, x, z, r });
+const TO = (side, o) => { const [x, z] = rotP(o, H - 0.3, side); return { t: 'light', k: 'torch', x, z, r: side * 90 + 180, wall: true }; };
+const TP = (x, z, r) => ({ t: 'light', k: 'torch', x, z, r, wall: true });
+const CA = (x, z, y) => ({ t: 'light', k: 'candle', x, z, y });
+const BR = (x, z) => ({ t: 'light', k: 'brazier', x, z });
+const FI = (x, z) => ({ t: 'light', k: 'fire', x, z });
+const SH = (x, z, R = 9) => ({ t: 'light', k: 'shaft', x, z, R });
+const GL = (x, z, c, R = 7) => ({ t: 'light', k: 'glow', x, z, c, R });
+const S = (x, z, r = 0) => ({ t: 'start', x, z, r });
+const P = (x, z, w, d, depth) => ({ t: 'pit', x, z, w, d, depth });
+const W = (x, z, w, d) => ({ t: 'water', x, z, w, d });
+const PL = (x, z, w, d, h) => ({ t: 'plat', x, z, w, d, h });
+const ST = (x, z, w, d, h, r = 0, y0 = 0) => ({ t: 'stairs', x, z, w, d, h, r, y0 });
+const D = (x, z, w, d) => ({ t: 'dark', x, z, w, d });
+const RU = (x, z, R) => ({ t: 'rune', x, z, R });
+const seg = (x1, z1, x2, z2, th = WALL, h = HEIGHT) => x1 === x2 ? B(x1, (z1 + z2) / 2, th, Math.abs(z2 - z1), h) : B((x1 + x2) / 2, z1, Math.abs(x2 - x1), th, h);
+const BA = (x1, z1, x2, z2) => ({ ...seg(x1, z1, x2, z2, 0.12, 3), t: 'bars' });
+function rotItem(it, k) {
+  const o = { ...it };
+  [o.x, o.z] = rotP(it.x, it.z, k);
+  if ('r' in it) o.r = it.r + k * 90;
+  if (k % 2 && ['pit', 'water', 'plat', 'dark'].includes(it.t)) [o.w, o.d] = [it.d, it.w];
+  return o;
+}
+/// Doorways of a room: side (0 N, 1 E, 2 S, 3 W) and offset along it; point at depth d from the wall plane inward (negative = outside).
+const doors = room => (room.corner ? [0, 1] : [0, 1, 2, 3]).flatMap(s => [-O, O].map(o => ({ s, o, at: d => rotP(o, H - d, s) })));
+const sym = items => [0, 1, 2, 3].flatMap(k => items.map(i => rotItem(i, k)));
+const rng = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+// ---------- rooms ----------
+// Doorways: two per side at ±O (middle of each half of the wall). Corner rooms: doorways only on the north and east sides.
+const ROOMS = [
+  { id: 'crypt', name: 'Склеп', en: 'Crypt', desc: 'Гроб в центре под четырьмя колоннами; две из них рухнули в разные стороны и раскололись, обломки легли укрытиями. Гробы рядами у стен между проходами, кости в тёмных углах. Два факела.',
+    items: [
+      C(-5.5, 5.5), C(5.5, -5.5), C(5.5, 5.5, 1.2, 1.6), C(-5.5, -5.5, 1.2, 2.4),
+      B(7.8, 3.6, 1.1, 5, 1.1, 131), L(9.9, 1.6, 1.4, 1.2, 0.6, 'Обломки', '#5a524a', 20), L(6.6, 6.7, 1.2, 1, 0.5, 'Обломки', '#5a524a', 60),
+      B(-3.1, -6.5, 1.1, 5, 1.1, 112), L(-0.4, -7.6, 1.3, 1.3, 0.6, 'Обломки', '#5a524a', 35), L(-7, -4.2, 1, 1, 0.5, 'Обломки', '#5a524a', 10),
+      K('coffin', 0, 0, 0), CA(-1.3, 1.8), CA(1.3, -1.8),
+      ...sym([L(-3.6, 15.6, 0.8, 2.1, 0.7, 'Гроб', '#5e4f45'), L(-1.2, 15.6, 0.8, 2.1, 0.7, 'Гроб', '#5e4f45'), L(3.6, 15.6, 0.8, 2.1, 0.7, 'Гроб', '#5e4f45'),
+        K('coffin', 1.2, 15.6, 180), SK(14.6, 14.6), D(13.4, 13.4, 6.8, 6.8)]),
+      TO(0, 0), TO(2, 0), M('sword', O, 0, 270), M('sword', -O, 0, 90), M('skull', 0, -9, 0), S(-12, -4, 90)] },
+  { id: 'ossuary', name: 'Оссуарий', en: 'Ossuary', desc: 'Перегородки из костей у стен образуют преддверия у каждого прохода, ниши посередине и закутки в углах. Вокруг кучи черепов в центре — разорванное кольцо костяных стенок, между ним и стенами столбы и кучи костей.',
+    items: [
+      ...sym([...[-13.5, -4, 4, 13.5].map(x => B(x, H - 1.6, 3.2, 0.5, 3, 90)), SK(15.4, 15.4, 1.2),
+        B(6.5, 0, 0.5, 4.5, 2.2), C(10.5, 4.5, 1), SK(9.5, 9.5, 1.3), L(10, -7, 2.2, 0.6, 1.1, 'Кости', '#cfc6a8', 30)]),
+      K('small', 0, 15.6, 180), K('coffin', 0, -15.4, 0), SK(15.6, 0, 1.4), SK(-15.6, 0, 1.4),
+      SK(0, 0, 2.6), CA(1.6, 1.2), M('skull', 5, 5, 225), M('skull', -5, -5, 45), M('sword', 5, -5, 315), S(-5, 5, 135)] },
+  { id: 'pillared', name: 'Зал колонн', en: 'Pillared Hall', desc: 'Сетка колонн 4×4, проходы ложатся ровно между рядами. Жаровня в центре — единственный огонь, углы чёрные.',
+    items: [
+      ...[-12.6, -4.2, 4.2, 12.6].flatMap(x => [-12.6, -4.2, 4.2, 12.6].map(z => C(x, z))),
+      BR(0, 0), K('large', -15, 15, 135), K('barrel', 15.2, -15.2), K('crate', 13.8, -15.4, 20), SK(15, 15),
+      M('archer', O, O, 225), M('sword', -O, -O, 45), M('warrior', -O, O, 135), S(0, -12, 0)] },
+  { id: 'blades', name: 'Коридоры маятников', en: 'Blade Corridors', desc: 'Сплошная скала, коридоры решёткой «#» от восьми проходов. Маятники качаются прямо у входов в центральную камеру с сундуком и шипами.',
+    items: [
+      ...sym([B(13.35, 13.35, 6.9, 6.9), B(0, 13.35, 13.8, 6.9), B(-3.95, 5.95, 5.9, 1.9), B(3.95, 5.95, 5.9, 1.9), T('blade', 0, O, 90)]),
+      T('spike', 0, 0), K('large', 2.5, 2.5, 225), CA(-2.6, 2.6), M('sword', -2.4, -2.4, 45), M('skull', -O, 13, 180), M('skull', O, -13, 0)] },
+  { id: 'spikes', name: 'Галерея шипов', en: 'Spike Gallery', meta: 'лимит 5', desc: 'Все проходы ведут в кольцевой коридор вокруг замурованного хранилища. Шипы в углах и посередине сторон, узкий вход в хранилище тоже с шипами.',
+    items: (() => { const o = 13.4, n = 4.5, ps = 1, ring = (o + H) / 2; return [
+      B(0, (o + n) / 2, o * 2, o - n), B(-(o + ps) / 2, -(o + n) / 2, o - ps, o - n), B((o + ps) / 2, -(o + n) / 2, o - ps, o - n),
+      B(-(o + n) / 2, 0, o - n, n * 2), B((o + n) / 2, 0, o - n, n * 2),
+      ...[[ring, ring], [-ring, ring], [ring, -ring], [-ring, -ring], [ring, 0], [-ring, 0], [0, ring], [0, -ring], [0, -9]].map(([x, z]) => T('spike', x, z)),
+      K('large', 0, 3, 180), CA(2.6, 3), SK(-3, 3), M('sword', ring, -4, 0), M('sword', -ring, 4, 180)]; })() },
+  { id: 'torture', name: 'Пыточная', en: 'Torture Chamber', meta: 'лимит 4', desc: 'Гильотина и дыба по осям, клетка и колодки в углах, X-колодки у западной стены. Палач-воин и подручный.',
+    items: [
+      L(0, 11.5, 1.2, 0.8, 3.2, 'Гильотина', '#6a5040'), L(0, -11.5, 2.2, 1, 1, 'Дыба', '#6a5040'), L(-13, -13, 2, 2, 2.5, 'Клетка', '#555555'),
+      L(13, -13, 2, 0.6, 1.2, 'Колодки', '#6a5040', 45), L(-H + 0.4, 0, 2, 0.4, 2, 'X-колодки', '#6a5040', 90), L(-3, H - 0.3, 3, 0.3, 0.6, 'Цепи', '#555555'),
+      L(2, 3, 0.5, 0.5, 0.5, 'Ведро', '#6a5040', 0, true), L(-3, 3, 1.5, 1.5, 0.05, 'Плита (декор)', '#5a2020'),
+      L(13, 13, 1.8, 0.9, 0.8, 'Стол с инструментами', '#6a4a2c', 45), CA(13, 13, 0.8),
+      K('crate', 15.2, 3, 10), K('barrel', -15.2, -4), TO(0, 4), TO(2, 4),
+      M('warrior', 0, 6, 180), M('sword', 0, -6, 0), M('sword', -12.5, 12.5, 135), S(12, -4, 270)] },
+  { id: 'guard', name: 'Караульная', en: 'Guard Room', desc: 'Столы с лавками в зале, стойки с оружием у восточной стены. Вдоль стен четыре каморки: спальня с койками у западной стены, кладовая в северо-восточном углу, карцер в юго-западном и комната начальника караула в юго-восточном.',
+    items: [
+      ...[[-4, 4], [4, -4]].flatMap(([x, z]) => [L(x, z, 1.8, 0.9, 0.8, 'Стол'), L(x, z + 1, 1.6, 0.4, 0.45, 'Лавка', '#5b4128'), L(x, z - 1, 1.6, 0.4, 0.45, 'Лавка', '#5b4128'), CA(x + 0.6, z, 0.8)]),
+      seg(-12.8, -6, -12.8, -1.5, 0.4), seg(-12.8, 1.5, -12.8, 6, 0.4), seg(-H, 6, -12.6, 6, 0.4), seg(-H, -6, -12.6, -6, 0.4),
+      ...[-4, 0, 4].map(z => L(-15.7, z, 2.1, 1, 0.6, 'Койка', '#5a4a3a')),
+      seg(10.6, 10.4, 10.6, H, 0.4), seg(10.4, 10.6, 15, 10.6, 0.4), K('barrel', 15, 15), K('crate', 13.2, 15.4, 15), M('sword', 12.6, 12.8, 225),
+      seg(-10.6, -H, -10.6, -12.6, 0.4), seg(-H, -10.6, -10.4, -10.6, 0.4), K('barrel', -15, -15, 40), K('small', -14.8, -12.6, 90), L(-12.4, -15.6, 1.2, 1.6, 0.6, 'Койка', '#5a4a3a'),
+      seg(10.6, -H, 10.6, -13, 0.4), seg(12.4, -10.6, H, -10.6, 0.4), L(14, -14, 1.8, 0.9, 0.8, 'Стол'), CA(14.4, -14, 0.8), K('small', 15.6, -12.2, 270),
+      L(16.5, -4, 0.4, 1.8, 1.8, 'Стойка с оружием', '#5b4128'), L(16.5, 4, 0.4, 1.8, 1.8, 'Стойка с оружием', '#5b4128'),
+      K('small', 0, 15.6, 180),
+      TO(0, 4), TO(2, 4), TO(1, 0), M('sword', -5, -5, 45), M('sword', 5, 5, 225), M('warrior', 12, 0, 270), S(-12.5, 12.5, 135)] },
+  { id: 'scriptorium', name: 'Скрипторий', en: 'Scriptorium', meta: 'лимит 4', desc: 'Шкафы вдоль северной и южной стен между проходами, кафедра и столы для чтения со свечами. Маг-книжник.',
+    items: [
+      ...[-14.2, -11.6, -3.6, -1.2, 1.2, 3.6, 11.6, 14.2].flatMap(x => [
+        x === 14.2 ? K('shelf', x, H - 0.26, 180) : L(x, H - 0.26, 2.4, 0.5, 2.6, 'Книжный шкаф', '#5b4128'),
+        x === -14.2 ? K('shelf', x, -H + 0.26, 0) : L(x, -H + 0.26, 2.4, 0.5, 2.6, 'Книжный шкаф', '#5b4128')]),
+      L(0, 0, 0.8, 0.8, 1.2, 'Кафедра', '#5b4128'),
+      ...[[0, 6, 0], [0, -6, 0], [12.5, 0, 90], [-12.5, 0, 90]].flatMap(([x, z, r]) => [L(x, z, 1.8, 0.9, 0.8, 'Стол', '#6a4a2c', r), CA(x, z, 0.8)]),
+      TO(1, 0), TO(3, 0), M('mage', 0, 3, 180), M('sword', -5, -3, 90), S(5, -11, 0)] },
+  { id: 'chapel', name: 'Часовня', en: 'Chapel', desc: 'Пресвитерий с алтарём у северной стены между проходами, большой сундук за алтарём, маг «читает проповедь». Скамьи в тёмном нефе, колонны вдоль боковых нефов.',
+    items: [
+      PL(0, 13, 12, 7.6, 0.25), L(0, 13.5, 3, 1.2, 1.1, 'Алтарь', '#8a8070'), CA(-1.2, 13.5, 1.1), CA(1.2, 13.5, 1.1), CA(-4.5, 12), CA(4.5, 12),
+      ...[4, 1.5, -1, -3.5, -6].flatMap(z => [-3.5, 3.5].map(x => L(x, z, 4.5, 0.6, 0.9, 'Скамья', '#5b4128'))),
+      ...[-12, -4, 4, 12].flatMap(z => [C(-11.5, z), C(11.5, z)]),
+      K('large', 0, 15.6, 180), K('small', -15, -15, 45), K('coffin', 15.4, 0, 0),
+      M('mage', 0, 11.3, 180), M('sword', 13.5, -2, 270), M('sword', -13.5, 2, 90), M('archer', -13.5, 13.5, 135),
+      TO(0, -3), TO(0, 3), D(0, -11.5, 33, 10), S(0, -12, 0)] },
+  { id: 'pit', name: 'Провал', en: 'Sunken Pit', desc: 'Яма 12×12 глубиной 3 м в центре, две лестницы вниз. По краю ямы парапет с разрывами у лестниц и посередине боков — там можно спрыгнуть; ещё четыре парапета-укрытия между ямой и стенами. На дне жаровня, череп, сундук и гроб; стрелки в углах простреливают дно.',
+    items: [
+      P(0, 0, 12, 12, 3), ST(0, 3.5, 2.6, 5, 3, 0, -3), ST(0, -3.5, 2.6, 5, 3, 180, -3),
+      ...sym([L(-3.75, 6.2, 4.5, 0.4, 1, 'Парапет', '#6a625a'), L(3.75, 6.2, 4.5, 0.4, 1, 'Парапет', '#6a625a'), L(0, 10.5, 3, 0.4, 1, 'Парапет', '#6a625a')]),
+      ...[-12.5, 12.5].flatMap(x => [-12.5, 12.5].map(z => C(x, z))),
+      BR(-3.5, 3.5), K('large', -3.8, -1, 90), K('coffin', 3.8, -1, 0), SK(-3, -4), SK(3.5, 3.5), M('skull', 0, 0, 0),
+      M('archer', 12.5, 10.5, 225), M('archer', -12.5, -10.5, 45), M('sword', 12, -3, 270), M('xbow', -12, 3, 90),
+      TO(0, 0), TO(1, 0), TO(2, 0), TO(3, 0), S(0, -12.5, 0)] },
+  { id: 'chambers', name: 'Четыре палаты', en: 'Four Chambers', desc: 'Каждая четверть — закрытая палата со своими двумя проходами наружу и одной дверью в центральный крест. Палаты разные: страж с сундуком, тёмная засада, шипы у двери, кладовая с черепом.',
+    items: [
+      ...sym([seg(5, 5, 5, 10), seg(5, 12, 5, H), seg(5, 5, H, 5)]),
+      BR(0, 0), TO(0, 0), TO(1, 0), TO(2, 0), TO(3, 0),
+      K('large', 14.5, 14.5, 225), M('warrior', 11, 9, 225),
+      D(10.9, -10.9, 11.8, 11.8), M('sword', 12, -12, 315), M('sword', 7, -7, 315), K('small', 15.2, -15.2, 315),
+      T('spike', -7, -11), K('large', -14.5, -14.5, 45), CA(-14, -11),
+      K('barrel', -15.3, 12.5), K('crate', -12.5, 15.4, 10), M('skull', -11, 11, 135), D(-10.9, 10.9, 11.8, 11.8),
+      M('sword', 2.5, -2.5, 0), S(0, -13.5, 0)] },
+  { id: 'prison', name: 'Тюремный блок', en: 'Prison Block', desc: 'Коридоры решёткой «#» от восьми проходов, между ними 12 камер за решётками с открытыми дверцами. В центре пост тюремщиков.',
+    items: [
+      ...sym([seg(6.7, 10.1, 6.7, H, 0.5), seg(-6.7, 10.1, -6.7, H, 0.5), seg(0, 10.1, 0, H, 0.4), BA(-6.45, 10.1, -4, 10.1), BA(-2.8, 10.1, 2.8, 10.1), BA(4, 10.1, 6.45, 10.1),
+        seg(10.1, 10.1, 10.1, H, 0.5), BA(10.35, 10.1, 12.9, 10.1), BA(14.1, 10.1, H, 10.1), TP(6.95, 13.4, 90)]),
+      K('small', -3.4, 15.6, 180), M('sword', 3.4, 13, 180), K('large', 14.8, 14.8, 225),
+      T('spike', 13.5, 3.4), M('skull', 13.5, -3.4, 270), K('crate', 14.8, -14.8),
+      K('coffin', 3.4, -14.8, 0), M('sword', -3.4, -13, 0), M('sword', -13.5, -13.5, 45),
+      K('small', -15.6, -3.4, 90), K('barrel', -14.8, 14.8),
+      L(0, 0, 1.8, 0.9, 0.8, 'Стол', '#6a4a2c'), CA(0.5, 0, 0.8), BR(0, 3.5), M('warrior', 0, -3, 0), M('xbow', -3, 2, 90), S(3.5, -4, 90)] },
+  { id: 'cistern', name: 'Затопленная цистерна', en: 'Flooded Cistern', desc: 'Пол залит водой (замедляет), мостки решёткой «#» на 0.25 м выше ведут от проходов. Островок с большим сундуком в центре под лучом из пролома, колонны в воде.',
+    items: [
+      W(0, 0, 2 * H, 2 * H), PL(O, 0, 3, 2 * H, 0.25), PL(-O, 0, 3, 2 * H, 0.25), PL(0, O, 2 * H, 3, 0.25), PL(0, -O, 2 * H, 3, 0.25), PL(0, 0, 6, 6, 0.25),
+      ...[[0, 13], [0, -13], [13, 0], [-13, 0], [13, 13], [-13, 13], [13, -13], [-13, -13], [4.4, 4.4], [-4.4, 4.4], [4.4, -4.4], [-4.4, -4.4]].map(([x, z]) => C(x, z)),
+      SH(0, 0, 10), TO(0, 0), TO(2, 0),
+      K('large', 0, 0, 180), K('small', -15, 15, 135), K('crate', 15, -15),
+      M('skull', -4, 12, 0), M('skull', 4, -12, 0), M('archer', O, 0, 270), M('sword', -O, -3, 0), M('warrior', 0, O, 180),
+      D(12.5, -12.5, 8, 8), S(O, -12, 0)] },
+  { id: 'mausoleum', name: 'Мавзолей', en: 'Mausoleum', desc: 'Склеп 10×10 в центре с одним входом с юга: богатый саркофаг и шипы на пороге. Статуи в углах, стражи снаружи, тёмная северная сторона.',
+    items: [
+      seg(-5, 5, 5, 5, 0.8, 4.5), seg(-5, -5, -5, 5, 0.8, 4.5), seg(5, -5, 5, 5, 0.8, 4.5), seg(-5, -5, -1.2, -5, 0.8, 4.5), seg(1.2, -5, 5, -5, 0.8, 4.5),
+      K('rich', 0, 1.5, 180), CA(-2.5, 2.5), CA(2.5, 2.5), T('spike', 0, -3.5),
+      ...[-12.5, 12.5].flatMap(x => [-12.5, 12.5].map(z => C(x, z, 1.2, 3))),
+      TO(1, 0), TO(2, 0), TO(3, 0), D(0, 12.5, 13, 8), K('coffin', 15.4, 0, 0), K('coffin', -15.4, 0, 0),
+      M('warrior', 0, -7, 180), M('sword', -11.5, -3, 90), M('sword', 11.5, 3, 270), M('archer', -14.5, 14.5, 135), M('skull', 3, 11, 180), S(14, -14, 315)] },
+  { id: 'ritual', name: 'Ритуальный круг', en: 'Ritual Circle', desc: 'Кольцо из 8 свечей и пентаграмма вокруг жертвенника, маг в центре, черепа кружат. Факелов нет — все углы во тьме.',
+    items: [
+      RU(0, 0, 6.5), L(0, 0, 2, 2, 0.8, 'Жертвенник', '#6b5f55'),
+      ...[...Array(8)].map((_, i) => CA(5.5 * Math.sin(i * 45 * DEG), 5.5 * Math.cos(i * 45 * DEG))),
+      ...[-12.5, 12.5].flatMap(x => [-12.5, 12.5].map(z => C(x, z, 1.6))), ...sym([D(13.4, 13.4, 6.8, 6.8)]),
+      K('large', 0, 2.2, 180), M('mage', 0, -2.4, 0), M('skull', 4, 4, 225), M('skull', -4, -4, 45), M('sword', -13.5, 4, 90), M('sword', 13.5, -4, 270), S(-14.5, -14.5, 45)] },
+  { id: 'collapsed', name: 'Обрушенный зал', en: 'Collapsed Hall', desc: 'Завалы и упавшая колонна дают укрытия, через пролом в потолке падает холодный свет. Мечники ждут в тёмных углах, лут спрятан за обломками.',
+    items: [
+      B(-3, 11, 6, 4, 2.6, 25), L(-12, 3, 3, 3, 1.2, 'Обломки', '#5a524a', 10), L(3, 12.5, 3, 2, 1, 'Обломки', '#5a524a', 40), B(3, -10, 5, 3, 3, -20),
+      L(12.5, -2, 2.5, 2.5, 1, 'Обломки', '#5a524a', 15), B(1.5, 3.5, 1.4, 8, 1.4, 65), B(-12.5, -12.8, 4, 4.5, 4, 15), L(12.5, 12.5, 3, 3, 1.2, 'Обломки', '#5a524a', 30), B(-2, -3, 4, 2.5, 2.2, -8),
+      SH(4, -1, 10), TO(3, 0), D(-13, 13, 7, 7), D(13, -13, 7, 7),
+      K('crate', -15.6, -10.5, 30), K('small', 15.2, 15.2, 225), K('barrel', 14.5, -14.8),
+      M('skull', 5, -1, 0), M('sword', -13.5, -3, 90), M('sword', 13.5, 3, 270), M('warrior', -5, 5, 135), S(0, -14, 0)] },
+  { id: 'gallery', name: 'Четыре галереи', en: 'Archer Galleries', desc: 'У каждой стены между проходами балкон 2.5 м с парапетом и лестницей к центру. Стрелки сверху держат весь зал, внизу только угловые укрытия.',
+    items: [
+      ...sym([PL(0, 14.3, 13.4, 5, 2.5), ST(0, 8.8, 2.4, 6, 2.5, 0), L(-3.95, 11.95, 5.5, 0.4, 1, 'Парапет', '#6a625a'), L(3.95, 11.95, 5.5, 0.4, 1, 'Парапет', '#6a625a'), TO(0, -4)]),
+      L(12.6, 12.6, 3, 0.8, 1.2, 'Укрытие', '#6a625a', 45), L(-12.6, 12.6, 3, 0.8, 1.2, 'Укрытие', '#6a625a', 135), L(-12.6, -12.6, 3, 0.8, 1.2, 'Укрытие', '#6a625a', 45),
+      K('large', -15.5, -4, 90), K('small', 4, 15.8, 180), K('barrel', 15.5, 15.5),
+      M('archer', -4, 14, 180), M('archer', 4, -14, 0), M('xbow', 14, 4, 270), M('warrior', 0, 0, 0), M('sword', -12.5, -11, 45), S(12.6, -12.6, 315)] },
+  mazeRoom(),
+  { id: 'niches', name: 'Погребальные ниши', en: 'Burial Niches', desc: 'Толстые стены с нишами для костей тянутся с севера на юг, их рвут два поперечных прохода у восточных и западных дверей. Боковые коридоры тёмные: гробы, урны, засады.',
+    items: [
+      ...[-12, -5, 5, 12].flatMap(x => [B(x, 0, 1.6, 13.2), B(x, 12.35, 1.6, 4.3), B(x, -12.35, 1.6, 4.3)]),
+      K('coffin', 6.6, 0, 0), K('coffin', -10.4, 2, 0), K('coffin', 15.9, -3, 0), K('coffin', -15.9, 3, 0),
+      K('urn', -3.4, 12.5), K('urn', 3.4, -12.5), K('urn', 14.5, 12.5),
+      CA(0, 4), CA(0, -4), TO(0, 0), TO(2, 0),
+      D(8.5, 0, 5.4, 13.2), D(-8.5, 0, 5.4, 13.2), D(14.8, 0, 4, 13.2), D(-14.8, 0, 4, 13.2),
+      M('sword', -8.5, 4, 180), M('sword', 8.5, -4, 0), M('skull', 14.8, 0, 270), M('archer', 0, -11, 0), M('xbow', -14.8, -12, 0), S(-14.8, 12, 180)] },
+  { id: 'store', name: 'Склад', en: 'Storeroom', desc: 'Штабели ящиков и бочек между линиями проходов. Много дешёвых контейнеров, малый сундук спрятан в тёмном углу.',
+    items: [
+      CR(-3, 3, 4, 3), CR(3.5, -2.5, 3, 4), CR(-3.5, 13.5, 4, 3), L(3.5, 14, 3, 2.5, 2.2, 'Бочки', '#5a3a22'), CR(13.5, -3, 3, 5), CR(-13.5, 3, 3, 5),
+      CR(2, -13.5, 5, 3), CR(13.5, 13.5, 3, 3, 1.6), CR(-12, -12, 2.4, 2.4),
+      K('barrel', 11.2, 15.6), K('crate', -15.5, 15.5), K('barrel', 15.5, -15.5), K('crate', -3, -12.5), K('small', -15, -15, 45), K('crate', 15.6, 3), K('barrel', -15.6, -2),
+      TO(1, 0), TO(3, 0), D(-14, -14, 5.6, 5.6),
+      M('sword', 0, O, 180), M('sword', -O, 0, 90), M('xbow', 12.5, -12.5, 315), S(5, 5, 225)] },
+  { id: 'lordtomb', name: 'Гробница лорда', en: "Lord's Tomb", meta: 'лимит 1', desc: 'Помост 1 м в центре с лестницей с юга: богатый саркофаг между жаровнями, за ним маг. Два воина держат лестницу, лучники в северных углах, южный вход тёмный.',
+    items: [
+      PL(0, 1, 12, 10, 1), ST(0, -5, 4, 2, 1, 0), K('rich', 0, 3, 180), BR(-4.5, 5), BR(4.5, 5),
+      C(-11.5, 2.5), C(11.5, 2.5), C(-11.5, -2.5), C(11.5, -2.5),
+      K('coffin', 15.4, 0, 0), K('coffin', -15.4, 0, 0), TO(1, 0), TO(3, 0), TO(0, 0), D(0, -13, 13, 7),
+      M('warrior', -3, -7, 180), M('warrior', 3, -7, 180), M('mage', 0, 5, 180), M('archer', -13.5, 13.5, 135), M('archer', 13.5, 13.5, 225)] },
+  { id: 'rest', name: 'Привал у колодца', en: 'Well Rest', desc: 'Тихая комната без монстров: колодец, костёр для отдыха, спальники, бедный лут. В двух углах террасы — 1 м и 2.5 м — с лестницами и парапетами, колодец на низком помосте. Передышка между опасными комнатами.',
+    items: [
+      PL(0, 0, 6, 6, 0.25),
+      PL(13.6, 13.6, 6.4, 6.4, 1), ST(12.6, 9.4, 2.4, 2, 1, 0), L(10.6, 13.6, 0.4, 6.4, 1, 'Парапет', '#6a625a'), L(15.3, 10.6, 3, 0.4, 1, 'Парапет', '#6a625a'),
+      K('small', 15.2, 15.2, 225), CA(12, 15.6),
+      PL(-13.6, -13.6, 6.4, 6.4, 2.5), ST(-7.4, -13.1, 2.4, 6, 2.5, 270), L(-13.6, -10.6, 6.4, 0.4, 1, 'Парапет', '#6a625a'), L(-10.6, -15.55, 0.4, 2.5, 1, 'Парапет', '#6a625a'),
+      K('crate', -15.4, -15.4, 20),
+      L(0, 0, 3, 3, 1, 'Колодец', '#4f5a60', 0, true), FI(4.5, -4.5),
+      L(4.5, -2.1, 2.4, 0.5, 0.45, 'Бревно', '#5b4128'), L(6.9, -4.5, 0.5, 2.4, 0.45, 'Бревно', '#5b4128'), L(2.1, -4.9, 0.5, 2.2, 0.45, 'Бревно', '#5b4128'),
+      L(-3, -13.5, 1, 2, 0.15, 'Спальник', '#4a3b2e'), L(-1, -13.5, 1, 2, 0.15, 'Спальник', '#4a3b2e'),
+      K('barrel', -15, 15), K('crate', -12.5, 15.5, 8), TO(0, 0), S(-5, 5, 135)] },
+  { id: 'chasm', name: 'Пропасть', en: 'Chasm', desc: 'Бездна 12 м. Мосты шириной 3 м решёткой «#» от проходов, от них узкие мостки к центральному острову с богатым сундуком и стражем. Вдоль стен карнизы 1.5 м, черепа караулят на них (в игре черепа ходят по полу, висеть над пропастью не могут).',
+    items: [
+      ...sym([P(12.6, 12.6, 5.4, 5.4, 12), P(0, 12.6, 13.8, 5.4, 12), P(4.95, 3.95, 3.9, 5.9, 12), P(2, 4.95, 2, 3.9, 12)]),
+      K('rich', 1.5, 1.5, 225), BR(-1.5, -1.5), M('warrior', -1.5, 1.5, 135),
+      M('skull', 12.6, 16, 180), M('skull', -12.6, -16, 0), M('archer', 16, 0, 270), M('xbow', -16, 0, 90),
+      TO(0, 0), TO(1, 0), TO(2, 0), TO(3, 0)] },
+  { id: 'refectory', name: 'Трапезная', en: 'Refectory', desc: 'Два длинных стола с лавками по центру и стол прислуги, очаг с поленницами у северной стены, буфеты с посудой у западной, полки и мешки с припасами у восточной, кухонный угол с котлом и бочками. Мертвецы «обедают».',
+    items: [
+      ...[-3, 3].flatMap(x => [L(x, 0, 1.2, 11, 0.8, 'Стол'), L(x - 1.1, 0, 0.4, 11, 0.45, 'Лавка', '#5b4128'), L(x + 1.1, 0, 0.4, 11, 0.45, 'Лавка', '#5b4128')]),
+      L(0, 15.9, 4.5, 1.6, 2.8, 'Очаг', '#4a4440'), FI(0, 14.6),
+      L(13.4, -15.8, 5, 1.2, 0.9, 'Разделочный стол'), K('barrel', 15.8, -12.5), K('barrel', 15.8, -11.6), K('crate', 12, -12.5),
+      L(9.6, -13.4, 1.2, 1.2, 0.9, 'Котёл', '#2b2b2b', 0, true), L(15.9, -3, 0.6, 3, 2.2, 'Полки с припасами', '#5b4128'), L(15.6, 3.2, 1, 2.6, 0.8, 'Мешки', '#8a7a5a'),
+      L(-15.9, 3.5, 0.6, 3, 2.2, 'Буфет с посудой', '#5b4128'), L(-15.9, -3.5, 0.6, 3, 2.2, 'Буфет с посудой', '#5b4128'),
+      L(4.5, 15.9, 2, 0.9, 1.2, 'Поленница', '#5b4128'), L(-4.5, 15.9, 2, 0.9, 1.2, 'Поленница', '#5b4128'),
+      L(0, -10, 3, 1, 0.8, 'Стол'), L(-1.9, -10, 0.5, 0.5, 0.45, 'Табурет', '#5b4128'), L(1.9, -10, 0.5, 0.5, 0.45, 'Табурет', '#5b4128'), CA(0.6, -10, 0.8),
+      CR(-13, -15.4, 2.4, 1.4, 1.6), L(-15.6, -12.4, 1, 2, 0.8, 'Мешки', '#8a7a5a'), L(15.4, 12.8, 1.4, 1.4, 1.2, 'Бочки', '#5a3a22'),
+      K('small', -15, 15, 135), K('crate', -12.5, 15.6), CA(-3, 2, 0.8), CA(3, -2, 0.8), TO(1, 0), TO(3, 0),
+      M('sword', -1.9, 2, 270), M('sword', 4.1, -3, 270), M('warrior', -12.5, -12.5, 45), M('archer', 12.5, 12.5, 225), S(-13, 0, 90)] },
+  { id: 'alchemy', name: 'Алхимическая', en: 'Alchemy Lab', desc: 'Котёл с зелёным свечением на низком помосте в центре, столы алхимика в углах, стеллажи с банками посередине стен. Маг на галерее 2.5 м в северо-восточном углу, ещё один помост 1 м с парапетом в юго-западном. Черепа и мечник внизу.',
+    items: [
+      PL(0, 0, 6, 6, 0.25), L(0, 0, 1.6, 1.6, 1, 'Котёл', '#2b2b2b', 0, true), GL(0, 0, '#5cff7a', 8),
+      PL(13.6, 13.6, 6.4, 6.4, 2.5), ST(7.4, 12.6, 2.4, 6, 2.5, 90), L(13.6, 10.6, 6.4, 0.4, 1, 'Парапет', '#6a625a'), L(10.6, 15.3, 0.4, 3, 1, 'Парапет', '#6a625a'),
+      PL(-13.6, -13.6, 6.4, 6.4, 1), ST(-12.6, -9.4, 2.4, 2, 1, 180), L(-10.6, -13.6, 0.4, 6.4, 1, 'Парапет', '#6a625a'),
+      L(12.5, 12.5, 1.2, 4, 0.9, 'Стол алхимика', '#6a4a2c', 45), L(-12.5, 12.5, 1.2, 4, 0.9, 'Стол алхимика', '#6a4a2c', -45), L(-12.5, -12.5, 1.2, 4, 0.9, 'Стол алхимика', '#6a4a2c', 45),
+      CA(12.5, 12.5, 0.9), CA(-12.5, -12.5, 0.9),
+      K('shelf', -16.5, 0, 90), K('shelf', 0, -16.5, 0), L(16.5, 0, 0.5, 2.4, 2.6, 'Стеллаж с банками', '#5b4128'), L(0, 16.5, 2.4, 0.5, 2.6, 'Стеллаж с банками', '#5b4128'),
+      K('small', 15.5, -15.5, 315), TO(0, 4), D(13, -13, 7, 7),
+      M('mage', 14.6, 14.6, 225), M('skull', 3, 3, 225), M('skull', -5, -5, 45), M('skull', 5, -3, 270), M('sword', -12, 4, 90), S(-4, -12, 0)] },
+
+  { id: 'c_tower', corner: true, name: 'Угловая площадка', en: 'Corner Watch', desc: 'В глухом углу площадка 2.5 м с парапетом и двумя лестницами; на ней стрелки, жаровня и большой сундук. Внизу воин и мечник, укрытие у центра.',
+    items: [
+      PL(-11, -11, 11.6, 11.6, 2.5), ST(-11, -2.2, 2.4, 6, 2.5, 180), ST(-2.2, -11, 2.4, 6, 2.5, 270),
+      L(-14.5, -5.4, 4.6, 0.4, 1, 'Парапет', '#6a625a'), L(-7.5, -5.4, 4.6, 0.4, 1, 'Парапет', '#6a625a'), L(-5.4, -14.5, 0.4, 4.6, 1, 'Парапет', '#6a625a'), L(-5.4, -7.5, 0.4, 4.6, 1, 'Парапет', '#6a625a'),
+      K('large', -15.5, -15.5, 45), BR(-12, -12), L(4, 4, 3, 0.8, 1.2, 'Укрытие', '#6a625a', 45),
+      M('archer', -8, -8, 45), M('xbow', -14, -8, 45), M('warrior', 4, -2, 225), M('sword', 2, 8, 180),
+      K('barrel', 15.5, -15.5), K('crate', -15.5, 15.5), TO(2, 4), TO(3, -4), TO(0, 0), S(12, 12, 225)] },
+  { id: 'c_shrine', corner: true, name: 'Угловое святилище', en: 'Corner Shrine', desc: 'Алтарь в глухом углу на невысоком помосте, богатый сундук за ним, маг перед алтарём. Скамьи по диагонали, лучник в тёмном углу у входов.',
+    items: [
+      PL(-12.5, -12.5, 8.6, 8.6, 0.25), L(-13, -13, 2.4, 1.2, 1.1, 'Алтарь', '#8a8070', 45), CA(-12, -14, 1.1), CA(-14, -12, 1.1), K('rich', -15.4, -15.4, 45),
+      C(-6, -14, 1.2, 3), C(-14, -6, 1.2, 3),
+      ...[-5.5, -3, -0.5].map(d => L(d, d, 6, 0.6, 0.9, 'Скамья', '#5b4128', 45)),
+      M('mage', -10.5, -10.5, 45), M('sword', -9, 3, 135), M('sword', 3, -9, 315), M('archer', 10, 10, 225),
+      TO(2, -4), TO(3, 4), D(12, 12, 9, 9), K('coffin', 15.4, 0, 0), K('small', 0, 15.6, 180), S(12, -3, 270)] },
+  { id: 'c_bonepit', corner: true, name: 'Костяная яма', en: 'Bone Pit', desc: 'Тупиковый угол: яма 12×12 глубиной 4 м, одна длинная лестница. На дне рой черепов, большой сундук и гроб, почти без света.',
+    items: [
+      P(-9, -9, 12, 12, 4), ST(-9, -7, 2.6, 8, 4, 0, -4),
+      SK(-13, -6, 1.5), SK(-5, -13, 1.5), SK(-13, -13, 1.2), K('large', -12, -13.5, 45), K('coffin', -5.5, -9, 0), CA(-11, -11),
+      M('skull', -12, -9, 90), M('skull', -9, -12, 0), M('skull', -6, -5, 225),
+      M('sword', 6, 6, 225), M('archer', 12, -12, 315), K('crate', 15.4, 15.4), TO(0, 0), TO(1, 0), S(0, 12, 180)] },
+  { id: 'c_barracks', corner: true, name: 'Угловая казарма', en: 'Corner Barracks', desc: 'Ряды коек вдоль двух глухих стен, стол в центре. Три каморки: комната офицера в глухом углу, оружейная у северной стены между проходами, кладовая в юго-восточном углу. Спящие скелеты и дежурные.',
+    items: [
+      ...[-7, -4, -1, 2, 5, 8].map(x => L(x, -15.7, 1, 2.1, 0.6, 'Койка', '#5a4a3a')),
+      ...[-7, -4, -1, 2, 5, 8, 11].map(z => L(-15.7, z, 2.1, 1, 0.6, 'Койка', '#5a4a3a')),
+      L(2, 2, 4, 1.2, 0.8, 'Стол'), L(2, 3.1, 4, 0.4, 0.45, 'Лавка', '#5b4128'), L(2, 0.9, 4, 0.4, 0.45, 'Лавка', '#5b4128'), CA(2, 2, 0.8),
+      seg(-10, -H, -10, -12, 0.4), seg(-H, -10, -9.8, -10, 0.4), K('large', -15.3, -15.3, 45), L(-13, -13, 1.8, 0.9, 0.8, 'Стол'), CA(-12.4, -13, 0.8), M('warrior', -12.5, -11.5, 135),
+      seg(-5, 11.5, -5, H, 0.4), seg(5, 11.5, 5, H, 0.4), seg(-5.2, 11.5, -1, 11.5, 0.4), seg(1, 11.5, 5.2, 11.5, 0.4),
+      L(0, 16.5, 2.4, 0.4, 1.8, 'Стойка с оружием', '#5b4128'), L(-3.5, 16.5, 2, 0.4, 1.8, 'Стойка с оружием', '#5b4128'), K('small', 3.5, 15.8, 180),
+      seg(10.5, -H, 10.5, -12.5, 0.4), seg(12.5, -10.5, H, -10.5, 0.4), K('barrel', 15.3, -15.3), K('crate', 13, -15.4, 10), L(15.6, -12.5, 1, 1, 0.9, 'Бочки', '#5a3a22'),
+      K('crate', 15.4, 15.4),
+      M('sword', -6, -13, 0), M('sword', -13, 4, 90), M('warrior', 2, -1.5, 0), M('xbow', 10, 10, 225),
+      TO(2, 4), TO(3, -4), TO(0, 4), S(12, 0, 270)] },
+  { id: 'c_vault', corner: true, name: 'Угловая сокровищница', en: 'Corner Vault', desc: 'В глухом углу замурованное хранилище с одной дверью и шипами за ней: богатый и большой сундуки. Воин у двери, маг и стрелок в зале.',
+    items: [
+      seg(-7, -H, -7, -7, 0.8), seg(-H, -7, -12, -7, 0.8), seg(-10, -7, -7, -7, 0.8),
+      K('rich', -14, -14, 45), K('large', -10, -14.5, 0), T('spike', -11, -8.6), CA(-14.5, -11),
+      C(-3, 3), C(3, -3), TP(-6.6, -12, 90), TO(0, 0), TO(1, 0), D(12, -12, 8, 8),
+      M('warrior', -11, -5, 0), M('sword', -4, -11, 90), M('mage', 4, 4, 225), M('archer', 12, 12, 225),
+      K('barrel', 15.3, -15.3), K('crate', -15.3, 15.3), S(12, 0, 270)] }
+];
+
+/// A 6×6 maze of 5.6 m cells: the doorways fall in the middle of the second and fifth cell of every side; loot in dead ends.
+function mazeRoom() {
+  const n = 6, c = 2 * H / n, r = rng(11), E = [...Array(n)].map(() => Array(n).fill(true)), N = [...Array(n)].map(() => Array(n).fill(true));
+  const seen = new Set(['2,2']), stack = [[2, 2]], door = k => k === 1 || k === 4;
+  while (stack.length) {
+    const [i, j] = stack[stack.length - 1];
+    const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([a, b]) => [i + a, j + b]).filter(([a, b]) => a >= 0 && b >= 0 && a < n && b < n && !seen.has(a + ',' + b));
+    if (!nb.length) { stack.pop(); continue; }
+    const [a, b] = nb[Math.floor(r() * nb.length)];
+    if (a !== i) E[Math.min(a, i)][j] = false; else N[i][Math.min(b, j)] = false;
+    seen.add(a + ',' + b); stack.push([a, b]);
+  }
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { if (i < n - 1 && r() < 0.12) E[i][j] = false; if (j < n - 1 && r() < 0.12) N[i][j] = false; }
+  const items = [], cx = i => -H + (i + 0.5) * c;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    if (i < n - 1 && E[i][j]) items.push(B(-H + (i + 1) * c, cx(j), 0.5, c + 0.5, 3.2));
+    if (j < n - 1 && N[i][j]) items.push(B(cx(i), -H + (j + 1) * c, c + 0.5, 0.5, 3.2));
+  }
+  const walls = (i, j) => (i === 0 ? !door(j) : E[i - 1][j]) + (i === n - 1 ? !door(j) : E[i][j]) + (j === 0 ? !door(i) : N[i][j - 1]) + (j === n - 1 ? !door(i) : N[i][j]);
+  const dead = [];
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (walls(i, j) >= 3) dead.push([i, j]);
+  dead.sort((a, b) => Math.hypot(b[0] - 2.5, b[1] - 2.5) - Math.hypot(a[0] - 2.5, a[1] - 2.5));
+  const at = (k, f) => dead[k] && items.push(f(cx(dead[k][0]), cx(dead[k][1])));
+  at(0, (x, z) => K('large', x, z)); at(0, (x, z) => CA(x + 1.5, z + 1.5)); at(1, (x, z) => K('small', x, z)); at(2, (x, z) => K('coffin', x, z));
+  at(2, (x, z) => CA(x - 1.5, z + 1.5)); at(3, (x, z) => T('spike', x, z)); at(4, (x, z) => T('spike', x, z)); at(5, (x, z) => K('urn', x, z));
+  items.push(BR(cx(3), cx(3)), TO(0, 0), TO(2, 0), M('skull', cx(0), cx(5)), M('skull', cx(5), cx(0)), M('sword', cx(5), cx(5), 225), M('sword', cx(0), cx(0), 45), S(cx(2), cx(0), 0));
+  return { id: 'maze', name: 'Лабиринт', en: 'Labyrinth', desc: 'Стены 3.2 м по сетке 6×6 клеток (5.6 м), проходы попадают в середины клеток. В тупиках сундуки, шипы и урны; жаровня у центра, остальное почти без света.', items };
+}
+
+// ---------- geometry queries ----------
+function inOBB(x, z, o, pad = 0) {
+  const a = (o.r || 0) * DEG, c = Math.cos(a), s = Math.sin(a), dx = x - o.x, dz = z - o.z;
+  return Math.abs(dx * c - dz * s) <= o.w / 2 + pad && Math.abs(dx * s + dz * c) <= o.d / 2 + pad;
+}
+function floorAt(room, x, z) {
+  let y = 0;
+  for (const it of room.items) if (it.t === 'pit' && inOBB(x, z, it)) y = -it.depth;
+  for (const it of room.items) if (it.t === 'plat' && inOBB(x, z, it)) y = Math.max(y, it.h);
+  for (const it of room.items) if (it.t === 'stairs' && inOBB(x, z, it)) {
+    const a = it.r * DEG, lz = (x - it.x) * Math.sin(a) + (z - it.z) * Math.cos(a);
+    y = it.y0 + it.h * Math.min(1, Math.max(0, (lz + it.d / 2) / it.d));
+  }
+  return y;
+}
+function footprints(room) {
+  return room.items.flatMap(i => {
+    if (i.t === 'block' || i.t === 'bars') return [i];
+    if (i.t === 'prop') return i.h > 0.3 ? [i] : [];
+    if (i.t === 'chest') { const s = CHESTS[i.k].s; return [{ x: i.x, z: i.z, w: s[0], d: s[2], r: i.r }]; }
+    if (i.t === 'light' && (i.k === 'brazier' || i.k === 'fire')) return [{ x: i.x, z: i.z, w: 1, d: 1 }];
+    return [];
+  });
+}
+/// Walk grid 0.4 m with a 0.3 m body: blocked cells and floor heights; steps up to 0.35 m; flood fill from the north doorway.
+function nav(room) {
+  if (room._nav) return room._nav;
+  const st = 0.4, N = Math.round(2 * H / st), obs = footprints(room), h = new Float32Array(N * N), ok = new Uint8Array(N * N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const x = -H + (i + 0.5) * st, z = -H + (j + 0.5) * st, k = j * N + i;
+    h[k] = floorAt(room, x, z);
+    ok[k] = Math.abs(x) < H - 0.3 && Math.abs(z) < H - 0.3 && !obs.some(o => inOBB(x, z, o, 0.3)) ? 1 : 0;
+  }
+  const idx = (x, z) => { const i = Math.floor((x + H) / st), j = Math.floor((z + H) / st); return i < 0 || j < 0 || i >= N || j >= N ? -1 : j * N + i; };
+  const ds = doors(room).map(d => idx(...d.at(0.5)));
+  const seen = new Uint8Array(N * N), q = ok[ds[0]] ? [ds[0]] : [];
+  if (q.length) seen[ds[0]] = 1;
+  while (q.length) {
+    const k = q.pop(), i = k % N, j = (k - i) / N;
+    for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const ni = i + a, nj = j + b;
+      if (ni < 0 || nj < 0 || ni >= N || nj >= N) continue;
+      const m = nj * N + ni;
+      if (seen[m] || !ok[m] || Math.abs(h[m] - h[k]) > 0.35) continue;
+      seen[m] = 1; q.push(m);
+    }
+  }
+  return room._nav = { ok, idx, links: ds.map(d => !!seen[d]) };
+}
+function lightSources(room) {
+  return room.items.filter(i => i.t === 'light').map(i => {
+    const def = LIGHTS[i.k];
+    let x = i.x, z = i.z;
+    if (i.wall) { x += Math.sin(i.r * DEG) * 0.45; z += Math.cos(i.r * DEG) * 0.45; }
+    return { x, z, R: i.R || def.R, p: def.p, rgb: hex(i.c || def.c) };
+  });
+}
+function segHits(ax, az, bx, bz, o) {
+  const a = (o.r || 0) * DEG, c = Math.cos(a), s = Math.sin(a), loc = (x, z) => [(x - o.x) * c - (z - o.z) * s, (x - o.x) * s + (z - o.z) * c];
+  const [x0, z0] = loc(ax, az), [x1, z1] = loc(bx, bz), hw = o.w / 2 - 0.02, hd = o.d / 2 - 0.02, dx = x1 - x0, dz = z1 - z0;
+  let t0 = 0, t1 = 1;
+  for (const [p, q] of [[-dx, x0 + hw], [dx, hw - x0], [-dz, z0 + hd], [dz, hd - z0]]) {
+    if (p === 0) { if (q < 0) return false; continue; }
+    const t = q / p;
+    if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; }
+  }
+  return t0 <= t1;
+}
+/// 2D light map: every light with quadratic falloff, shadowed by blocks and props taller than 2 m.
+function lightmap(room) {
+  if (room._lm) return room._lm;
+  const N = 64, st = 2 * H / N, lights = lightSources(room), occ = room.items.filter(i => (i.t === 'block' || i.t === 'prop') && i.h >= 2);
+  const solid = room.items.filter(i => i.t === 'block'), cv = document.createElement('canvas');
+  cv.width = cv.height = N;
+  const ctx = cv.getContext('2d'), img = ctx.createImageData(N, N);
+  let lit = 0, total = 0;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const x = -H + (i + 0.5) * st, z = H - (j + 0.5) * st;
+    let I = 0, r = 0, g = 0, b = 0;
+    for (const s of lights) {
+      const d = Math.hypot(x - s.x, z - s.z);
+      if (d >= s.R || occ.some(o => segHits(s.x, s.z, x, z, o))) continue;
+      const f = s.p * (1 - d / s.R) ** 2;
+      I += f; r += f * s.rgb[0]; g += f * s.rgb[1]; b += f * s.rgb[2];
+    }
+    if (!solid.some(o => inOBB(x, z, o))) { total++; if (I > 0.2) lit++; }
+    const pit = floorAt(room, x, z) < 0 ? 0.6 : 1, a = Math.min(1, I * 1.6) * pit, v = 0.35 + 0.65 * Math.min(1, I), n = I || 1, o = (j * N + i) * 4;
+    const base = pit < 1 ? [6, 6, 9] : [17, 16, 21];
+    img.data[o] = base[0] + (r / n * 255 * v - base[0]) * a;
+    img.data[o + 1] = base[1] + (g / n * 235 * v - base[1]) * a;
+    img.data[o + 2] = base[2] + (b / n * 200 * v - base[2]) * a;
+    img.data[o + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return room._lm = { canvas: cv, lit: total ? lit / total : 0 };
+}
+function stats(room) {
+  if (room._st) return room._st;
+  const it = room.items, mobs = it.filter(i => i.t === 'mob'), chests = it.filter(i => i.t === 'chest'), types = {};
+  mobs.forEach(m => types[m.k] = (types[m.k] || 0) + 1);
+  return room._st = {
+    mobs: mobs.length, types, chests: chests.length, loot: chests.reduce((s, c) => s + CHESTS[c.k].v, 0),
+    traps: it.filter(i => i.t === 'trap').length, lights: it.filter(i => i.t === 'light').length, lit: lightmap(room).lit, links: nav(room).links
+  };
+}
+function statsHtml(room) {
+  const s = stats(room), mix = Object.entries(s.types).map(([k, n]) => `<span title="${MOBS[k].n}" style="color:${MOBS[k].c}">${MOBS[k].l}×${n}</span>`).join(' ');
+  const linked = s.links.every(Boolean);
+  return `<span>Мобы ${s.mobs} ${mix}</span><span>Лут ${s.chests} (★${s.loot})</span><span>Ловушки ${s.traps}</span><span>Источники света ${s.lights}</span>` +
+    `<span>Освещено ${Math.round(s.lit * 100)}%</span><span class="${linked ? 'good' : 'bad'}" title="Сколько проёмов связано между собой">Проходы ${s.links.filter(Boolean).length}/${s.links.length} ${linked ? '✔' : '✖'}</span>`;
+}
+
+/// Solid stretches of a side's wall (local x from -H-WALL to H+WALL) between its doorways.
+function wallSpans(room, s) {
+  const E = H + WALL, cuts = doors(room).filter(d => d.s === s).map(d => d.o).sort((a, b) => a - b), spans = [];
+  let from = -E;
+  for (const o of cuts) { spans.push([from, o - DOOR / 2]); from = o + DOOR / 2; }
+  spans.push([from, E]);
+  return spans;
+}
+
+// ---------- 2D plan ----------
+function drawPlan(cv, room) {
+  const sz = cv.width, ctx = cv.getContext('2d'), E = H + WALL, m = sz * 0.02, k = (sz - 2 * m) / (2 * E);
+  const px = x => m + (x + E) * k, py = z => m + (E - z) * k, lw = Math.max(1, k * 0.08);
+  const local = (it, f) => { ctx.save(); ctx.translate(px(it.x), py(it.z)); ctx.rotate((it.r || 0) * DEG); f(); ctx.restore(); };
+  const rect = (it, fill, stroke, dash) => local(it, () => {
+    ctx.beginPath(); ctx.rect(-it.w * k / 2, -it.d * k / 2, it.w * k, it.d * k);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.setLineDash(dash || []); ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+  });
+  const text = (s, x, y, size, color = '#fff') => { ctx.font = `bold ${size}px Segoe UI,sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color; ctx.fillText(s, x, y); };
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, sz, sz);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(lightmap(room).canvas, px(-H), py(H), 2 * H * k, 2 * H * k);
+  const by = t => room.items.filter(i => i.t === t);
+  by('water').forEach(i => rect(i, 'rgba(50,110,190,.35)'));
+  by('pit').forEach(i => {
+    rect(i, 'rgba(0,0,0,.6)', '#000');
+    local(i, () => {
+      ctx.beginPath(); ctx.rect(-i.w * k / 2, -i.d * k / 2, i.w * k, i.d * k); ctx.clip();
+      ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1;
+      for (let s = -i.w - i.d; s < i.w + i.d; s += 1) { ctx.beginPath(); ctx.moveTo(s * k, -i.d * k); ctx.lineTo((s + i.d * 2) * k, i.d * k); ctx.stroke(); }
+    });
+    text(`−${i.depth} м`, px(i.x), py(i.z), Math.max(9, k * 0.9), '#9aa');
+  });
+  by('plat').forEach(i => { rect(i, 'rgba(220,210,190,.12)', 'rgba(235,225,205,.7)'); text(`+${i.h} м`, px(i.x), py(i.z), Math.max(9, k * 0.8), '#ddd'); });
+  by('stairs').forEach(i => {
+    rect(i, 'rgba(220,210,190,.22)', 'rgba(235,225,205,.7)');
+    local(i, () => {
+      ctx.strokeStyle = 'rgba(235,225,205,.5)'; ctx.lineWidth = 1;
+      for (let z = -i.d / 2 + 0.5; z < i.d / 2; z += 0.5) { ctx.beginPath(); ctx.moveTo(-i.w * k / 2, -z * k); ctx.lineTo(i.w * k / 2, -z * k); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(0, i.d * k * 0.35); ctx.lineTo(0, -i.d * k * 0.35); ctx.lineTo(-k * 0.5, -i.d * k * 0.2); ctx.moveTo(0, -i.d * k * 0.35); ctx.lineTo(k * 0.5, -i.d * k * 0.2);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = lw * 1.5; ctx.stroke();
+    });
+  });
+  by('dark').forEach(i => rect(i, 'rgba(80,30,130,.28)', 'rgba(170,110,255,.75)', [k * 0.5, k * 0.4]));
+  by('rune').forEach(i => {
+    ctx.strokeStyle = 'rgba(255,60,60,.7)'; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.arc(px(i.x), py(i.z), i.R * k, 0, 7); ctx.stroke();
+    ctx.beginPath();
+    for (let s = 0; s <= 5; s++) { const a = s * 144 * DEG, x = px(i.x + Math.sin(a) * i.R * 0.95), y = py(i.z + Math.cos(a) * i.R * 0.95); s ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke();
+  });
+  by('block').forEach(i => rect(i, i.col ? '#57514b' : '#3d3833', '#7d756b'));
+  by('prop').forEach(i => i.cyl
+    ? local(i, () => { ctx.beginPath(); ctx.ellipse(0, 0, i.w * k / 2, i.d * k / 2, 0, 0, 7); ctx.fillStyle = i.c; ctx.fill(); ctx.strokeStyle = '#000a'; ctx.lineWidth = 1; ctx.stroke(); })
+    : rect(i, i.c, '#000a'));
+  by('bars').forEach(i => rect(i, null, '#b8b8c8', [k * 0.15, k * 0.15]));
+  ctx.fillStyle = '#6d655c';
+  for (let s = 0; s < 4; s++) {
+    ctx.save(); ctx.translate(px(0), py(0)); ctx.rotate(s * 90 * DEG);
+    for (const [a, b] of wallSpans(room, s)) ctx.fillRect(a * k, -E * k, (b - a) * k, WALL * k);
+    ctx.restore();
+  }
+  by('chest').forEach(i => {
+    const d = CHESTS[i.k], s = { ...i, w: Math.max(d.s[0], 0.8), d: Math.max(d.s[2], 0.6) };
+    if (i.k === 'rich') { ctx.beginPath(); ctx.arc(px(i.x), py(i.z), k * 1.3, 0, 7); ctx.fillStyle = 'rgba(255,210,74,.25)'; ctx.fill(); }
+    rect(s, d.c, '#000');
+  });
+  by('trap').forEach(i => local(i, () => {
+    ctx.strokeStyle = TRAPS[i.k].c; ctx.lineWidth = lw * 2;
+    if (i.k === 'spike') { const s = 0.8 * k; ctx.strokeRect(-s, -s, 2 * s, 2 * s); ctx.beginPath(); ctx.moveTo(-s, -s); ctx.lineTo(s, s); ctx.moveTo(s, -s); ctx.lineTo(-s, s); ctx.stroke(); }
+    else { ctx.beginPath(); ctx.moveTo(-1.6 * k, 0); ctx.lineTo(1.6 * k, 0); ctx.stroke(); ctx.beginPath(); ctx.arc(0, -2.2 * k, 2.6 * k, 55 * DEG, 125 * DEG); ctx.setLineDash([3, 3]); ctx.lineWidth = lw; ctx.stroke(); }
+  }));
+  by('light').forEach(i => {
+    const d = LIGHTS[i.k], c = i.c || d.c, x = px(i.x), y = py(i.z);
+    if (i.k === 'shaft') { ctx.setLineDash([4, 4]); ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(x, y, (i.R || d.R) * 0.5 * k, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
+    const r = Math.max(3, k * (i.k === 'candle' ? 0.3 : 0.5));
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = c; ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, r * 0.4, 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
+  });
+  by('start').forEach(i => local(i, () => {
+    ctx.fillStyle = '#3ddc6a'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+    for (const o of [-1.2, 0, 1.2]) { ctx.beginPath(); ctx.moveTo(o * k, -0.6 * k); ctx.lineTo((o + 0.45) * k, 0.4 * k); ctx.lineTo((o - 0.45) * k, 0.4 * k); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  }));
+  by('mob').forEach(i => {
+    const d = MOBS[i.k], r = Math.max(5, 0.75 * k), x = px(i.x), y = py(i.z), a = i.r * DEG;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.sin(a) * r * 1.8, y - Math.cos(a) * r * 1.8); ctx.strokeStyle = d.c; ctx.lineWidth = lw * 2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = d.c; ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5; ctx.stroke();
+    text(d.l, x, y + 0.5, r * (d.l.length > 1 ? 0.9 : 1.2), '#000');
+  });
+  const bar = 5 * k, bx = px(-H) + 6, byy = py(-H) - 8;
+  ctx.fillStyle = '#fff'; ctx.fillRect(bx, byy, bar, 2);
+  ctx.font = `${Math.max(9, k * 0.7)}px Segoe UI,sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText('5 м ≈ 1.5 с', bx, byy - 2);
+}
+
+// ---------- state ----------
+const KEY = 'pf-catacomb-rooms', state = JSON.parse(localStorage.getItem(KEY) || '{}');
+const save = () => localStorage.setItem(KEY, JSON.stringify(state));
+const st = id => state[id] || (state[id] = { s: '', note: '' });
+const cards = new Map();
+
+function statusBar(room) {
+  const d = document.createElement('div');
+  d.className = 'status';
+  for (const [s, t] of [['ok', '✔ Подходит'], ['rework', '✎ Доработать'], ['no', '✖ Нет']]) {
+    const b = document.createElement('button');
+    b.className = s + (st(room.id).s === s ? ' on' : '');
+    b.textContent = t;
+    b.onclick = e => { e.stopPropagation(); const r = st(room.id); r.s = r.s === s ? '' : s; save(); refresh(room); };
+    d.append(b);
+  }
+  return d;
+}
+function makeCard(room) {
+  const s = st(room.id), card = document.createElement('div');
+  card.className = 'card ' + s.s;
+  card.innerHTML = `<canvas width="420" height="420"></canvas><div class="body">
+    <div class="title"><b>${room.name}</b><span>${room.corner ? '<span class="tag live">угловая</span> ' : ''}${room.meta ? `<span class="tag">${room.meta}</span>` : ''}</span></div>
+    <div class="desc">${room.en} — ${room.desc}</div><div class="stats">${statsHtml(room)}</div></div>`;
+  const body = card.querySelector('.body'), note = document.createElement('textarea');
+  note.placeholder = 'Заметка…'; note.value = s.note; note.rows = 1;
+  note.oninput = () => { st(room.id).note = note.value; save(); updateCounter(); };
+  body.append(statusBar(room), note);
+  card.querySelector('canvas').onclick = () => openViewer(room);
+  drawPlan(card.querySelector('canvas'), room);
+  return card;
+}
+function visible(room) {
+  const f = $('#filter').value, s = st(room.id).s;
+  return f === 'all' || (f === 'none' && !s) || f === s || (f === 'corner' && room.corner) || (f === 'regular' && !room.corner);
+}
+function renderGrid() {
+  const grid = $('#grid');
+  grid.innerHTML = ''; cards.clear();
+  const list = ROOMS.filter(visible);
+  let i = 0;
+  const next = () => { if (i >= list.length) return; const r = list[i++], c = makeCard(r); cards.set(r.id, c); grid.append(c); setTimeout(next, 0); };
+  next();
+  updateCounter();
+}
+function refresh(room) {
+  const old = cards.get(room.id);
+  if (old) { const c = makeCard(room); old.replaceWith(c); cards.set(room.id, c); }
+  if (V.room === room) fillSide();
+  updateCounter();
+}
+function updateCounter() {
+  const n = s => ROOMS.filter(r => st(r.id).s === s).length;
+  $('#counter').textContent = `Комнат ${ROOMS.length} · ✔ ${n('ok')} · ✎ ${n('rework')} · ✖ ${n('no')} · без оценки ${n('')}`;
+}
+function summary() {
+  const group = s => ROOMS.filter(r => st(r.id).s === s).map(r => `- ${r.name} (${r.id})${st(r.id).note ? ' — ' + st(r.id).note : ''}`).join('\n') || '- нет';
+  return `Подходят:\n${group('ok')}\n\nДоработать:\n${group('rework')}\n\nНе подходят:\n${group('no')}\n\nБез оценки:\n${group('')}`;
+}
+$('#copy').onclick = async () => {
+  const t = summary();
+  try { await navigator.clipboard.writeText(t); } catch { const a = document.createElement('textarea'); a.value = t; document.body.append(a); a.select(); document.execCommand('copy'); a.remove(); }
+  $('#copy').textContent = 'Скопировано ✔'; setTimeout(() => $('#copy').textContent = 'Скопировать итог', 1500);
+};
+$('#download').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(ROOMS.map(r => ({ id: r.id, name: r.name, ...st(r.id) })), null, 2)], { type: 'application/json' }));
+  a.download = 'catacomb-room-choice.json'; a.click();
+};
+$('#filter').onchange = renderGrid;
+$('#legend').innerHTML = [
+  ...Object.values(MOBS).map(d => `<span><i style="background:${d.c};border-radius:50%"></i>${d.n}</span>`),
+  ...Object.values(CHESTS).map(d => `<span><i style="background:${d.c}"></i>${d.n}</span>`),
+  ...Object.values(TRAPS).map(d => `<span><i style="border:2px solid ${d.c};background:none"></i>${d.n}</span>`),
+  ...Object.values(LIGHTS).map(d => `<span><i style="background:${d.c};border-radius:50%"></i>${d.n}</span>`),
+  `<span><i style="background:#3ddc6a"></i>Старт команды</span>`, `<span><i style="background:#3d3833;border-color:#7d756b"></i>Стена / колонна</span>`,
+  `<span><i style="background:#6a4a2c"></i>Мебель / декор</span>`, `<span><i style="background:rgba(220,210,190,.3)"></i>Возвышение / лестница</span>`,
+  `<span><i style="background:#000;border-color:#555"></i>Яма</span>`, `<span><i style="background:rgba(50,110,190,.6)"></i>Вода</span>`,
+  `<span><i style="background:rgba(80,30,130,.5);border:1px dashed #a6f"></i>Тёмная зона (задумка)</span>`, `<span>Фон плана — расчётная освещённость</span>`
+].join('');
+
+// ---------- 3D viewer ----------
+const V = { room: null, walking: false, keys: {}, dist: 0, time: 0 };
+
+function texture(draw) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  draw(c.getContext('2d'));
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+function init3D() {
+  const host = $('#view3d'), renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.3;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate = false;
+  host.prepend(renderer.domElement);
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(55, 1, 0.05, 400);
+  scene.background = new THREE.Color(0x050506);
+  const orbit = new OrbitControls(camera, renderer.domElement), plc = new PointerLockControls(camera, renderer.domElement);
+  orbit.enableDamping = true;
+  plc.addEventListener('unlock', () => exitWalk());
+  const amb = new THREE.AmbientLight(0xffffff, 0.05), hemi = new THREE.HemisphereLight(0x8899aa, 0x221f1a, 0.15), sun = new THREE.DirectionalLight(0xffffff, 0);
+  sun.position.set(10, 30, 15);
+  scene.add(amb, hemi, sun);
+  const floorTex = texture(x => {
+    x.fillStyle = '#1e1c1a'; x.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { const v = 78 + Math.random() * 30; x.fillStyle = `rgb(${v},${v - 5},${v - 12})`; x.fillRect(i * 64 + 2, j * 64 + 2, 60, 60); }
+  });
+  const mats = {
+    floor: new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.95, side: THREE.DoubleSide }),
+    wall: new THREE.MeshStandardMaterial({ color: 0x6d655c, roughness: 0.9 }), block: new THREE.MeshStandardMaterial({ color: 0x57514b, roughness: 0.9 }),
+    col: new THREE.MeshStandardMaterial({ color: 0x7a7268, roughness: 0.85 }), plat: new THREE.MeshStandardMaterial({ color: 0x6f675d, roughness: 0.9 }),
+    water: new THREE.MeshStandardMaterial({ color: 0x1d4a6a, transparent: true, opacity: 0.6, roughness: 0.1, metalness: 0.2 }),
+    zone: new THREE.MeshBasicMaterial({ color: 0x7a3acc, transparent: true, opacity: 0.3, depthWrite: false }),
+    bars: new THREE.MeshStandardMaterial({ color: 0x3a3a40, metalness: 0.7, roughness: 0.4 }), red: new THREE.MeshStandardMaterial({ color: 0x7a1a1a, roughness: 0.6 }),
+    steel: new THREE.MeshStandardMaterial({ color: 0xb8c0c8, metalness: 0.9, roughness: 0.25 }), wood: new THREE.MeshStandardMaterial({ color: 0x4a3420, roughness: 0.9 })
+  };
+  const labelR = new CSS2DRenderer({ element: $('#labels') });
+  Object.assign(V, { renderer, scene, camera, orbit, plc, mats, labelR, amb, hemi, sun, clock: new THREE.Clock(), light: true, shadows: true, cut: false, ceil: false, labels: true, zones: true });
+  const resize = () => { const w = host.clientWidth, h = host.clientHeight; renderer.setSize(w, h); labelR.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); };
+  addEventListener('resize', resize);
+  V.resize = resize;
+}
+function shadowed(o) { o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } }); return o; }
+function box(w, h, d, mat, cut) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d).translate(0, h / 2, 0), mat);
+  if (cut) m.userData.cut = h;
+  return shadowed(m);
+}
+function cyl(r, h, mat, seg = 16) { return shadowed(new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg).translate(0, h / 2, 0), mat)); }
+function put(o, x, y, z, r = 0) { o.position.set(x, y, -z); o.rotation.y = -r * DEG; return o; }
+function std(c, e = 0) { return new THREE.MeshStandardMaterial({ color: c, roughness: 0.8, emissive: c, emissiveIntensity: e }); }
+function label(o, text, y, cls = '') { const d = document.createElement('div'); d.className = 'lbl ' + cls; d.textContent = text; const l = new CSS2DObject(d); l.position.set(0, y, 0); o.add(l); return l; }
+
+function floorMesh(room) {
+  const pits = room.items.filter(i => i.t === 'pit'), rnd = v => Math.round(v * 1000) / 1000;
+  const cuts = (a, b) => [...new Set([-H, H, ...pits.flatMap(p => [p[a] - p[b] / 2, p[a] + p[b] / 2])].map(v => rnd(Math.max(-H, Math.min(H, v)))))].sort((u, v) => u - v);
+  const xs = cuts('x', 'w'), zs = cuts('z', 'd'), dep = (x, z) => { const p = pits.find(p => inOBB(x, z, p)); return p ? p.depth : 0; };
+  const cd = (i, j) => i < 0 || j < 0 || i >= xs.length - 1 || j >= zs.length - 1 ? 0 : dep((xs[i] + xs[i + 1]) / 2, (zs[j] + zs[j + 1]) / 2);
+  const pos = [], uv = [], quad = (a, b, c, d, ua, ub, uc, ud) => { pos.push(...a, ...b, ...c, ...a, ...c, ...d); uv.push(...ua, ...ub, ...uc, ...ua, ...uc, ...ud); };
+  const flat = (x0, x1, z0, z1, y) => quad([x0, y, -z0], [x1, y, -z0], [x1, y, -z1], [x0, y, -z1], [x0 / 2, z0 / 2], [x1 / 2, z0 / 2], [x1 / 2, z1 / 2], [x0 / 2, z1 / 2]);
+  for (let i = 0; i < xs.length - 1; i++) for (let j = 0; j < zs.length - 1; j++) {
+    const x0 = xs[i], x1 = xs[i + 1], z0 = zs[j], z1 = zs[j + 1], y = -cd(i, j);
+    flat(x0, x1, z0, z1, y);
+    if (y >= 0) continue;
+    for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      const ny = -cd(i + di, j + dj);
+      if (ny <= y) continue;
+      if (di) { const x = di < 0 ? x0 : x1; quad([x, y, -z0], [x, y, -z1], [x, ny, -z1], [x, ny, -z0], [z0 / 2, y / 2], [z1 / 2, y / 2], [z1 / 2, ny / 2], [z0 / 2, ny / 2]); }
+      else { const z = dj < 0 ? z0 : z1; quad([x0, y, -z], [x1, y, -z], [x1, ny, -z], [x0, ny, -z], [x0 / 2, y / 2], [x1 / 2, y / 2], [x1 / 2, ny / 2], [x0 / 2, ny / 2]); }
+    }
+  }
+  const out = H + WALL + 3;
+  for (const d of doors(room)) {
+    const [ax, az] = rotP(d.o - DOOR / 2, H, d.s), [bx, bz] = rotP(d.o + DOOR / 2, out, d.s);
+    flat(Math.min(ax, bx), Math.max(ax, bx), Math.min(az, bz), Math.max(az, bz), 0);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, V.mats.floor);
+  m.receiveShadow = true;
+  return m;
+}
+function buildRoom(room) {
+  const g = new THREE.Group(), mats = V.mats, fy = (x, z) => floorAt(room, x, z);
+  g.userData = { anim: [], lights: [] };
+  g.add(floorMesh(room));
+  for (let s = 0; s < 4; s++) {
+    const w = new THREE.Group();
+    w.rotation.y = -s * Math.PI / 2;
+    for (const [a, b] of wallSpans(room, s)) w.add(put(box(b - a, HEIGHT, WALL, mats.wall, true), (a + b) / 2, 0, H + WALL / 2));
+    for (const d of doors(room).filter(d => d.s === s)) {
+      const lintel = put(box(DOOR, HEIGHT - DOOR_H, WALL, mats.wall), d.o, DOOR_H, H + WALL / 2);
+      lintel.userData.lintel = true;
+      w.add(lintel);
+    }
+    g.add(w);
+  }
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(2 * (H + WALL), 2 * (H + WALL)), new THREE.MeshStandardMaterial({ color: 0x2a2724, side: THREE.DoubleSide }));
+  ceil.rotation.x = Math.PI / 2; ceil.position.y = HEIGHT; ceil.userData.ceil = true; ceil.visible = V.ceil;
+  g.add(ceil);
+  const refDoor = doors(room).find(d => d.s === 2) || doors(room)[0], ref = put(new THREE.Group(), ...((p => [p[0], 0, p[1]])(refDoor.at(-WALL - 1.5))));
+  ref.add(shadowed(new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 1.2, 4, 12).translate(0, 0.9, 0), std(0x9a9a9a))));
+  label(ref, 'Игрок 1.8 м', 2.1);
+  g.add(ref);
+  let shadowBudget = 6;
+  for (const it of room.items) {
+    const y = fy(it.x, it.z);
+    switch (it.t) {
+      case 'block': g.add(put(box(it.w, it.h, it.d, it.col ? mats.col : mats.block, true), it.x, 0, it.z, it.r)); break;
+      case 'prop': {
+        const mat = std(it.c), o = it.cyl ? cyl(it.w / 2, it.h, mat, 20) : box(it.w, it.h, it.d, mat);
+        if (it.h > 2) o.userData.cut = it.h;
+        g.add(put(o, it.x, y, it.z, it.r));
+        label(o, it.name, it.h + 0.3, 'prop');
+        break;
+      }
+      case 'plat': g.add(put(box(it.w, it.h, it.d, mats.plat), it.x, 0, it.z)); break;
+      case 'stairs': {
+        const o = put(new THREE.Group(), it.x, 0, it.z, it.r), n = Math.max(2, Math.round(it.h / 0.25));
+        for (let s = 0; s < n; s++) { const top = it.y0 + it.h * (s + 1) / n, b = box(it.w, top - it.y0 + 0.01, it.d / n, mats.plat); b.position.set(0, it.y0, -(-it.d / 2 + (s + 0.5) * it.d / n)); o.add(b); }
+        g.add(o);
+        break;
+      }
+      case 'bars': {
+        const o = put(new THREE.Group(), it.x, 0, it.z, it.r), along = it.w >= it.d, len = Math.max(it.w, it.d);
+        for (let s = -len / 2; s <= len / 2; s += 0.25) { const b = cyl(0.025, 3, mats.bars, 6); b.position.set(along ? s : 0, 0, along ? 0 : -s); o.add(b); }
+        const rail = box(along ? len : 0.08, 0.08, along ? 0.08 : len, mats.bars); rail.position.y = 2.9; o.add(rail);
+        g.add(o);
+        break;
+      }
+      case 'water': { const m = new THREE.Mesh(new THREE.PlaneGeometry(it.w, it.d), mats.water); m.rotation.x = -Math.PI / 2; m.position.set(it.x, 0.12, -it.z); m.receiveShadow = true; g.add(m); break; }
+      case 'dark': { const m = new THREE.Mesh(new THREE.PlaneGeometry(it.w, it.d), mats.zone); m.rotation.x = -Math.PI / 2; m.position.set(it.x, y + 0.04, -it.z); m.userData.zone = true; g.add(m); break; }
+      case 'rune': {
+        const mat = new THREE.MeshBasicMaterial({ color: 0xff3030, transparent: true, opacity: 0.7 }), o = put(new THREE.Group(), it.x, 0.03, it.z);
+        const ring = new THREE.Mesh(new THREE.RingGeometry(it.R - 0.1, it.R, 64), mat); ring.rotation.x = -Math.PI / 2; o.add(ring);
+        const pts = [...Array(6)].map((_, s) => new THREE.Vector3(Math.sin(s * 144 * DEG) * it.R * 0.95, 0, -Math.cos(s * 144 * DEG) * it.R * 0.95));
+        o.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xff3030 })));
+        g.add(o);
+        break;
+      }
+      case 'mob': {
+        const d = MOBS[it.k], mat = std(d.c, 0.35), o = put(new THREE.Group(), it.x, it.k === 'skull' ? Math.max(0, y) : y, it.z, it.r);
+        if (it.k === 'skull') {
+          const s = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 12), mat)); s.position.y = 1.8; o.add(s);
+          const eye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff4020 })); eye.position.set(0, 1.85, -0.27); o.add(eye);
+          g.userData.anim.push(t => s.position.y = eye.position.y - 0.05 + Math.sin(t * 2 + it.x) * 0.15);
+        } else {
+          o.add(shadowed(new THREE.Mesh(new THREE.CapsuleGeometry(0.33, 1.1, 4, 12).translate(0, 0.88, 0), mat)));
+          const nose = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.4, 8).rotateX(-Math.PI / 2), mat); nose.position.set(0, 1.45, -0.4); o.add(nose);
+          if (it.k === 'warrior') { const sh = box(0.75, 0.95, 0.08, mats.wood); sh.position.set(-0.25, 0.55, -0.42); o.add(sh); }
+          if (it.k === 'mage') { const hat = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.6, 12), mat); hat.position.y = 2.0; o.add(hat); }
+          if (it.k === 'archer' || it.k === 'xbow') { const bow = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.03, 6, 16, Math.PI), mats.wood); bow.rotation.z = it.k === 'xbow' ? Math.PI / 2 : 0; bow.position.set(0.3, 1.1, -0.45); o.add(bow); }
+        }
+        label(o, d.n, 2.4);
+        g.add(o);
+        break;
+      }
+      case 'chest': {
+        const d = CHESTS[it.k], s = d.s, mat = std(d.c, it.k === 'rich' ? 0.3 : 0.08);
+        const o = it.k === 'barrel' || it.k === 'urn' ? cyl(s[0] / 2, s[1], mat) : box(s[0], s[1], s[2], mat);
+        g.add(put(o, it.x, y, it.z, it.r));
+        label(o, d.n, s[1] + 0.35, it.k === 'rich' ? 'rich' : '');
+        break;
+      }
+      case 'trap': {
+        const o = put(new THREE.Group(), it.x, y, it.z, it.r);
+        if (it.k === 'spike') {
+          o.add(box(1.6, 0.05, 1.6, mats.red));
+          for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const sp = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.35, 6), mats.steel); sp.position.set(a * 0.5, 0.22, b * 0.5); o.add(sp); }
+        } else {
+          const pivot = new THREE.Group(); pivot.position.y = 5.6; o.add(pivot);
+          const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 4.2, 6).translate(0, -2.1, 0), mats.bars); pivot.add(arm);
+          const blade = shadowed(new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.45, 0.05), mats.steel)); blade.position.y = -4.3; pivot.add(blade);
+          g.userData.anim.push(t => pivot.rotation.z = Math.sin(t * 2.2) * 1.05);
+        }
+        label(o, TRAPS[it.k].n, it.k === 'spike' ? 0.8 : 2.2);
+        g.add(o);
+        break;
+      }
+      case 'start': {
+        const o = put(new THREE.Group(), it.x, y, it.z, it.r), mat = std(0x3ddc6a, 0.5);
+        for (const s of [-1.2, 0, 1.2]) { const a = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.7, 3).rotateX(-Math.PI / 2), mat); a.position.set(s, 0.1, 0); o.add(a); }
+        label(o, 'Старт команды', 0.9);
+        g.add(o);
+        break;
+      }
+      case 'light': {
+        const d = LIGHTS[it.k], c = new THREE.Color(it.c || d.c), R = it.R || d.R, o = put(new THREE.Group(), it.x, 0, it.z, it.r || 0);
+        const flame = h => { const f = new THREE.Mesh(new THREE.SphereGeometry(it.k === 'candle' ? 0.06 : 0.16, 10, 8), new THREE.MeshBasicMaterial({ color: c })); f.position.y = h; o.add(f); };
+        let ly;
+        if (it.k === 'shaft') {
+          const sp = new THREE.SpotLight(c, d.i, 0, Math.atan(R * 0.6 / HEIGHT), 0.6, 2);
+          sp.position.set(0, HEIGHT - 0.05, 0); sp.target.position.set(0, 0, 0); o.add(sp, sp.target);
+          const beam = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.25, R * 0.6, HEIGHT, 32, 1, true).translate(0, HEIGHT / 2, 0),
+            new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.06, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+          beam.userData.zone = true; o.add(beam);
+          g.userData.lights.push(sp);
+        } else {
+          if (it.k === 'torch') { ly = y + TORCH_Y; const b = box(0.12, 0.5, 0.12, mats.wood); b.castShadow = false; b.position.set(0, ly - 0.45, -0.25); o.add(b); flame(ly); o.children.at(-1).position.z = -0.3; }
+          else if (it.k === 'candle') { ly = y + (it.y || 0) + 0.3; for (const [a, b2] of [[0, 0], [0.12, 0.05], [-0.08, 0.1]]) { const cd = cyl(0.04, 0.18 + a, std(0xeee8d0)); cd.position.set(a, ly - 0.3, b2); o.add(cd); } flame(ly); }
+          else if (it.k === 'brazier') { ly = y + 1.3; o.add(cyl(0.45, 1.0, mats.bars, 12)); flame(ly); }
+          else if (it.k === 'fire') { ly = y + 0.5; for (let s = 0; s < 3; s++) { const lg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1, 6).rotateZ(Math.PI / 2), mats.wood); lg.rotation.y = s * 60 * DEG; lg.position.y = y + 0.1; o.add(lg); } flame(ly); }
+          else ly = y + 1.3;
+          const pl = new THREE.PointLight(c, d.i, R * 1.8, 2);
+          pl.position.set(0, ly, it.k === 'torch' ? 0.3 * -1 : 0);
+          pl.shadow.mapSize.set(512, 512); pl.shadow.bias = -0.003; pl.shadow.camera.near = 0.1;
+          pl.userData.flicker = it.k !== 'glow';
+          if (it.k !== 'candle' && shadowBudget-- > 0) g.userData.lights.push(pl);
+          o.add(pl);
+          const base = d.i;
+          if (pl.userData.flicker) g.userData.anim.push(t => pl.intensity = base * (0.9 + 0.1 * Math.sin(t * 11 + it.x * 3) * Math.sin(t * 7.3 + it.z)));
+        }
+        const ring = new THREE.Mesh(new THREE.RingGeometry(R - 0.08, R, 64), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.35, depthWrite: false }));
+        ring.rotation.x = -Math.PI / 2; ring.position.y = Math.max(0, y) + 0.05; ring.userData.zone = true;
+        const rg = put(new THREE.Group(), it.x, 0, it.z); rg.add(ring); g.add(rg);
+        g.add(o);
+        break;
+      }
+    }
+  }
+  return g;
+}
+function apply() {
+  const { roomG, light, shadows, cut, ceil, labels, zones } = V;
+  V.amb.intensity = light ? 0.15 : 0.9; V.hemi.intensity = light ? 0.3 : 0.6; V.sun.intensity = light ? 0 : 1.4;
+  roomG.userData.lights.forEach(l => l.castShadow = shadows);
+  roomG.traverse(o => {
+    if (o.userData.cut) o.scale.y = cut ? Math.min(1, 1.5 / o.userData.cut) : 1;
+    if (o.userData.lintel) o.visible = !cut;
+    if (o.userData.zone) o.visible = zones;
+    if (o.userData.ceil) o.visible = ceil || V.walking;
+  });
+  V.labelR.domElement.style.display = labels ? '' : 'none';
+  V.renderer.shadowMap.needsUpdate = true;
+  for (const [id, on] of [['tLight', light], ['tShadow', shadows], ['tCut', cut], ['tCeil', ceil], ['tLabels', labels], ['tZones', zones]]) $('#' + id).classList.toggle('on', on);
+}
+function fillSide() {
+  const r = V.room;
+  $('#vTitle').textContent = `${r.name} · ${r.en}`;
+  $('#vDesc').textContent = (r.corner ? '[угловая] ' : '') + r.desc + (r.meta ? ` (${r.meta})` : '');
+  $('#vStats').innerHTML = statsHtml(r);
+  $('#vStatus').replaceChildren(statusBar(r));
+  $('#vNote').value = st(r.id).note;
+  drawPlan($('#vPlan'), r);
+}
+function openViewer(room) {
+  if (!V.renderer) init3D();
+  $('#viewer').classList.add('open');
+  V.resize();
+  if (V.roomG) { V.roomG.traverse(o => o.isCSS2DObject && o.element.remove()); V.scene.remove(V.roomG); }
+  V.room = room; V.roomG = buildRoom(room);
+  V.scene.add(V.roomG);
+  fillSide(); apply(); homeCamera();
+  if (!V.loop) { V.loop = true; loop(); }
+}
+function homeCamera() { V.camera.position.set(20, 30, 34); V.orbit.target.set(0, 0, 0); V.orbit.update(); }
+function closeViewer() { $('#viewer').classList.remove('open'); V.loop = false; }
+function loop() {
+  if (!V.loop) return;
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05, V.clock.getDelta()), t = V.clock.elapsedTime;
+  V.roomG.userData.anim.forEach(f => f(t));
+  if (V.walking) walkStep(dt); else V.orbit.update();
+  V.renderer.render(V.scene, V.camera);
+  V.labelR.render(V.scene, V.camera);
+}
+function toRoom(v) { const l = V.roomG.worldToLocal(v.clone()); return [l.x, -l.z]; }
+function enterWalk() {
+  V.walking = true; V.orbit.enabled = false; V.dist = 0; V.time = 0;
+  V.saved = [V.camera.position.clone(), V.orbit.target.clone()];
+  const [sx, sz] = (doors(V.room).find(d => d.s === 2) || doors(V.room)[0]).at(1.3);
+  V.camera.position.copy(V.roomG.localToWorld(new THREE.Vector3(sx, floorAt(V.room, sx, sz) + EYE, -sz)));
+  V.camera.lookAt(V.roomG.localToWorld(new THREE.Vector3(0, EYE, 0)));
+  $('#hud').style.display = 'block';
+  apply(); V.plc.lock();
+}
+function exitWalk() {
+  if (!V.walking) return;
+  V.walking = false; V.orbit.enabled = true;
+  V.camera.position.copy(V.saved[0]); V.orbit.target.copy(V.saved[1]);
+  $('#hud').style.display = 'none';
+  apply();
+}
+function walkStep(dt) {
+  const k = V.keys, f = (k.KeyW ? 1 : 0) - (k.KeyS ? 1 : 0), s = (k.KeyD ? 1 : 0) - (k.KeyA ? 1 : 0);
+  if (f || s) {
+    const fwd = new THREE.Vector3(); V.camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
+    const right = new THREE.Vector3().crossVectors(fwd, V.camera.up).normalize(), mv = fwd.multiplyScalar(f).add(right.multiplyScalar(s)).normalize().multiplyScalar(SPEED * dt), nv = nav(V.room);
+    const [cx, cz] = toRoom(V.camera.position), ch = floorAt(V.room, cx, cz);
+    let moved = 0;
+    for (const step of [new THREE.Vector3(mv.x, 0, 0), new THREE.Vector3(0, 0, mv.z)]) {
+      const cand = V.camera.position.clone().add(step), [x, z] = toRoom(cand), i = nv.idx(x, z), h = floorAt(V.room, x, z);
+      if (i < 0 || !nv.ok[i] || h - ch > 0.4) continue;
+      V.camera.position.copy(cand); moved += step.length();
+    }
+    if (moved) { V.dist += moved; V.time += dt; }
+  }
+  const [x, z] = toRoom(V.camera.position), target = floorAt(V.room, x, z) + EYE, wy = V.roomG.localToWorld(new THREE.Vector3(x, target, -z)).y;
+  V.camera.position.y += (wy - V.camera.position.y) * Math.min(1, dt * 12);
+  $('#hud').textContent = `Скорость 300 = ${SPEED} м/с\nПройдено ${V.dist.toFixed(1)} м за ${V.time.toFixed(1)} с\nКомната 33.6 м ≈ ${(2 * H / SPEED).toFixed(1)} с · R — сброс`;
+}
+addEventListener('keydown', e => {
+  if (!$('#viewer').classList.contains('open')) return;
+  V.keys[e.code] = true;
+  if (V.walking) { if (e.code === 'KeyR') { V.dist = 0; V.time = 0; } return; }
+  if (e.target.tagName === 'TEXTAREA') return;
+  if (e.code === 'Escape') closeViewer();
+  if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') step(e.code === 'ArrowRight' ? 1 : -1);
+});
+addEventListener('keyup', e => V.keys[e.code] = false);
+function step(d) { const list = ROOMS.filter(visible), i = list.indexOf(V.room); openViewer(list[(i + d + list.length) % list.length]); }
+$('#prev').onclick = () => step(-1); $('#next').onclick = () => step(1); $('#close').onclick = closeViewer;
+$('#vNote').oninput = () => { st(V.room.id).note = $('#vNote').value; save(); const c = cards.get(V.room.id); if (c) c.querySelector('textarea').value = $('#vNote').value; updateCounter(); };
+$('#tRot').onclick = () => { V.roomG.rotation.y -= Math.PI / 2; V.renderer.shadowMap.needsUpdate = true; };
+for (const [id, key] of [['tLight', 'light'], ['tShadow', 'shadows'], ['tCut', 'cut'], ['tCeil', 'ceil'], ['tLabels', 'labels'], ['tZones', 'zones']]) $('#' + id).onclick = () => { V[key] = !V[key]; apply(); };
+$('#tTop').onclick = () => { V.camera.position.set(0, 52, 0.01); V.orbit.target.set(0, 0, 0); };
+$('#tWalk').onclick = enterWalk;
+
+renderGrid();
+const linked = ROOMS.find(r => r.id === location.hash.slice(1));
+if (linked) openViewer(linked);
+</script>
+</body>
+</html>

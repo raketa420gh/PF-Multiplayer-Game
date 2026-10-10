@@ -13,29 +13,33 @@ namespace Game.Scripts.Editor.Dungeon
     /// The hall around it is dressed with the Medieval Assets Pack, one purpose per stretch: an execution corner (north-west),
     /// a prison cell (north-east), a library (west), an armoury (east), the guards' mess (south-west) and a store (south-east).
     /// Skeletons and a flying head guard it; the escape portal opens at a random spot. Then the NavMesh and the map.
-    /// Since the cursed village (VillageMapBuilder) became floor 1, the hall is floor 2, sunk below it; adventurers arrive
-    /// by its north-west and south-east doors through the red portals of the graveyard and the swamp.
+    /// The cursed village (VillageMapBuilder) is floor 1, cut from the game for now. Floor 2, sunk below it, is the Tangled
+    /// Catacombs, where runs start: the hall is their key room in the middle of a 7x7 grid whose other rooms
+    /// (CatacombRoomBuilder) CatacombGenerator lays out anew every run; two doorways on each side lead on.
     internal static class DungeonMapBuilder
     {
         /// Wall to wall in ten seconds at 300 move speed (run speed 3.36 m/s).
         public const float RoomSize = 33.6f;
-        /// Side of the floor; its map is drawn to this scale.
+        /// Side of the hall's own map.
         public const float WorldSize = RoomSize + 2f;
-        public const float FloorRadius = WorldSize * 0.75f;
+        public const float Height = 6f;
+        /// Distance between neighbouring cells of the catacombs: a room and the wall two rooms share.
+        public const float Pitch = RoomSize + DungeonPropBuilder.WallThickness;
+        public const int CatacombGrid = 7;
+        public const float CatacombSize = Pitch * CatacombGrid;
         /// Depth of the hall below the village, well under the deepest riverbed.
         public const float FloorDrop = -60f;
         public const float AgentRadius = 0.35f;
-        public const string NavMeshPath = "Assets/Game/Scenes/DungeonScene/NavMesh.asset";
         public const string VillageNavMeshPath = "Assets/Game/Scenes/DungeonScene/VillageNavMesh.asset";
 
-        public static readonly float[] FloorSizes = { VillageLayout.Size, WorldSize };
-        public static readonly int[] FloorGrids = { VillageLayout.Grid, 1 };
+        public static readonly string[] FloorTitles = { "Cursed Village", "Tangled Catacombs" };
+        public static readonly float[] FloorSizes = { VillageLayout.Size, CatacombSize };
+        public static readonly int[] FloorGrids = { VillageLayout.Grid, CatacombGrid };
         /// How much of each floor the minimap window shows.
-        public static readonly float[] WindowSizes = { 110f, WorldSize };
+        public static readonly float[] WindowSizes = { 110f, 70f };
         public static readonly string[] ModuleNames = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Append(VillageLayout.ModuleNames, "Great Hall"));
 
         private const float WallThickness = DungeonPropBuilder.WallThickness;
-        private const float Height = 6f;
         private const float Half = RoomSize * 0.5f;
         private const float SanctumSize = 13.6f;
         private const float SanctumGap = 3f;
@@ -48,12 +52,18 @@ namespace Game.Scripts.Editor.Dungeon
         public static Transform Build(DungeonDirector director, out Texture2D[] floorMaps)
         {
             BuildPieces();
+            CatacombRoomBuilder.Result rooms = CatacombRoomBuilder.Build();
             Transform root = new GameObject("[Dungeon]").transform;
             Transform village = BattleEditorUtility.CreateChild("Floor1", root).transform;
             Transform floor = BattleEditorUtility.CreateChild("Floor2", root, Vector3.up * FloorDrop).transform;
             Transform spawns = new GameObject("[Spawns]").transform;
-            VillageMapBuilder.Result upper = VillageMapBuilder.Build(village, spawns);
-            Vector3 slab = new Vector3(RoomSize + WallThickness * 2f, WallThickness, RoomSize + WallThickness * 2f);
+            // The village is cut while runs start in the catacombs: an empty Floor1 keeps the floor indices, its hundreds of network
+            // objects, colliders and lights cost no peer anything.
+            bool isVillageCut = MatchComponent.EntryFloor > 1;
+            VillageMapBuilder.Result upper = isVillageCut
+                ? new VillageMapBuilder.Result { Map = AssetDatabase.LoadAssetAtPath<Texture2D>($"{DungeonMinimapBuilder.Folder}/Floor1.png") }
+                : VillageMapBuilder.Build(village, spawns);
+            Vector3 slab = new Vector3(Pitch, WallThickness, Pitch);
             List<ContainerComponent> containers = new();
 
             DungeonStructureBuilder.Block(floor, "Floor", Vector3.down * WallThickness * 0.5f, slab, DungeonPropBuilder.Flagstone);
@@ -66,18 +76,15 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 Quaternion side = Quaternion.Euler(0f, i * 90f, 0f);
                 float yaw = i * 90f;
-                Wall(floor, side * new Vector3(0f, 0f, Half + WallThickness * 0.5f), slab.x, yaw);
+                Place(rooms.Sides[3], floor, side * new Vector3(0f, 0f, Half + WallThickness * 0.5f), yaw).name = "Wall Doorways";
                 Wall(floor, side * new Vector3(Half - 0.45f, 0f, Half - 0.45f), 0.9f, yaw, 0.9f, Height, "Wall Pilaster");
 
                 if (i % 2 == 0)
                 {
-                    Wall(floor, side * new Vector3(0f, 0f, Half - 0.25f), 1.2f, yaw, 0.5f, Height, "Wall Pilaster");
-
                     foreach (float x in new[] { -DoorOffset, DoorOffset })
                     {
-                        Door(floor, side * new Vector3(x, 0f, Half), yaw + 180f);
-                        Torch(floor, "HallTorch", side * new Vector3(x - 1.9f, TorchHeight, Half), yaw + 180f);
-                        Torch(floor, "HallTorch", side * new Vector3(x + 1.9f, TorchHeight, Half), yaw + 180f);
+                        Torch(floor, "HallTorch", side * new Vector3(x - 2.4f, TorchHeight, Half), yaw + 180f);
+                        Torch(floor, "HallTorch", side * new Vector3(x + 2.4f, TorchHeight, Half), yaw + 180f);
                     }
 
                     foreach (float x in new[] { -3.4f, 3.4f })
@@ -85,7 +92,8 @@ namespace Game.Scripts.Editor.Dungeon
                 }
                 else
                 {
-                    Torch(floor, "HallTorch", side * new Vector3(0f, TorchHeight, Half), yaw + 180f);
+                    foreach (float x in new[] { -2.4f, 2.4f })
+                        Torch(floor, "HallTorch", side * new Vector3(x, TorchHeight, Half), yaw + 180f);
 
                     foreach (float x in new[] { -4.2f, 4.2f })
                         Banner(floor, "Small Banner", side * new Vector3(x, 0f, Half), yaw + 180f);
@@ -117,15 +125,21 @@ namespace Game.Scripts.Editor.Dungeon
                 Monster(spawns, "FlyingHead", floor.TransformPoint(new Vector3(Half - 4.5f, 0f, -3f)), -90f)
             };
 
-            // Parked out of the way and invisible until it opens; the director then moves it to a random free spot.
-            PortalComponent portal = Place(Load("EscapePortal"), floor, new Vector3(0f, 0f, -Half * 0.5f), 0f, false).GetComponent<PortalComponent>();
+            // Parked out of the way and invisible until they open one by one; the director then moves each to a random free spot.
+            PortalComponent[] portals = new PortalComponent[4];
 
-            BakeNavMesh(village.gameObject, VillageNavMeshPath, 0.2f, upper.Sources);
-            BakeNavMesh(floor.gameObject, NavMeshPath, 0.12f, null);
+            for (int i = 0; i < portals.Length; i++)
+                portals[i] = Place(Load("EscapePortal"), floor, new Vector3(i * 2.5f - 3.75f, 0f, -Half * 0.5f), 0f, false).GetComponent<PortalComponent>();
+
+            // The catacombs get their NavMesh at runtime, once the rooms of the run are laid out.
+            if (!isVillageCut)
+                BakeNavMesh(village.gameObject, VillageNavMeshPath, 0.2f, upper.Sources);
+            CatacombGenerator catacombs = BuildCatacombs(floor, rooms, out Texture2D catacombMap);
 
             SerializedObject so = new SerializedObject(director);
             so.FindProperty("_floors").arraySize = 2;
             const string first = "_floors.Array.data[0].";
+            BattleEditorUtility.Set(so, first + "Title", FloorTitles[0]);
             BattleEditorUtility.Set(so, first + "PlayerSpawns", upper.PlayerSpawns);
             BattleEditorUtility.Set(so, first + "SpawnHouses", upper.SpawnHouses);
             BattleEditorUtility.Set(so, first + "MonsterSpawns", upper.MonsterSpawns);
@@ -140,21 +154,60 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, first + "Radius", VillageLayout.Half * 1.45f);
 
             const string layout = "_floors.Array.data[1].";
+            BattleEditorUtility.Set(so, layout + "Title", FloorTitles[1]);
             BattleEditorUtility.Set(so, layout + "PlayerSpawns", new Transform[0]);
             BattleEditorUtility.Set(so, layout + "SpawnHouses", new Transform[0]);
             BattleEditorUtility.Set(so, layout + "MonsterSpawns", new Transform[0]);
             SetMonsters(so, layout, monsters);
             BattleEditorUtility.Set(so, layout + "Containers", containers);
-            BattleEditorUtility.Set(so, layout + "EscapePortals", new[] { portal });
-            BattleEditorUtility.Set(so, layout + "EscapeArea", Half);
+            BattleEditorUtility.Set(so, layout + "EscapePortals", portals);
+            BattleEditorUtility.Set(so, layout + "EscapeArea", CatacombSize * 0.5f - 3f);
             BattleEditorUtility.Set(so, layout + "DescendPortals", new PortalComponent[0]);
             BattleEditorUtility.Set(so, layout + "Arrivals", arrivals);
             BattleEditorUtility.Set(so, layout + "Center", Vector3.up * FloorDrop);
-            BattleEditorUtility.Set(so, layout + "Radius", FloorRadius);
+            BattleEditorUtility.Set(so, layout + "Radius", CatacombSize * 0.75f);
+            BattleEditorUtility.Set(so, "_catacombs", catacombs);
             so.ApplyModifiedPropertiesWithoutUndo();
-            floorMaps = new[] { upper.Map, DungeonMinimapBuilder.Render(floor, FloorDrop, "Floor2") };
+            floorMaps = new[] { upper.Map, catacombMap };
 
             return root;
+        }
+
+        /// The generator of the catacombs on the hall's floor, with the rooms, the hall's own cell map and, for the menus,
+        /// the map of one sample layout.
+        private static CatacombGenerator BuildCatacombs(Transform floor, CatacombRoomBuilder.Result rooms, out Texture2D sampleMap)
+        {
+            Texture2D keyMap = DungeonMinimapBuilder.Render(floor, floor.position, Pitch * 0.5f, CatacombRoomBuilder.MapPixels, "CatacombGreatHall", true);
+            CatacombGenerator generator = floor.gameObject.AddComponent<CatacombGenerator>();
+            SerializedObject so = new SerializedObject(generator);
+            BattleEditorUtility.Set(so, "_floor", MatchComponent.EntryFloor);
+            BattleEditorUtility.Set(so, "_grid", CatacombGrid);
+            BattleEditorUtility.Set(so, "_pitch", Pitch);
+            BattleEditorUtility.Set(so, "_keyTitle", "Great Hall");
+            BattleEditorUtility.Set(so, "_keyMap", keyMap);
+            BattleEditorUtility.Set(so, "_sides", rooms.Sides);
+            BattleEditorUtility.Set(so, "_post", rooms.Post);
+            BattleEditorUtility.Set(so, "_doorWidth", CatacombRoomBuilder.DoorWidth);
+            BattleEditorUtility.Set(so, "_doorOffset", CatacombRoomBuilder.DoorOffset);
+            BattleEditorUtility.Set(so, "_cellPixels", CatacombRoomBuilder.MapPixels);
+            BattleEditorUtility.Set(so, "_agentRadius", AgentRadius);
+            SerializedProperty kinds = so.FindProperty("_kinds");
+            kinds.arraySize = rooms.Kinds.Length;
+
+            for (int i = 0; i < rooms.Kinds.Length; i++)
+            {
+                SerializedProperty kind = kinds.GetArrayElementAtIndex(i);
+                kind.FindPropertyRelative("Prefab").objectReferenceValue = rooms.Kinds[i].Prefab;
+                kind.FindPropertyRelative("Weight").floatValue = rooms.Kinds[i].Weight;
+                kind.FindPropertyRelative("Limit").intValue = rooms.Kinds[i].Limit;
+            }
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+            Texture2D sample = generator.Paint(generator.Lay(1));
+            sampleMap = DungeonMinimapBuilder.Save(sample, "Floor2");
+            Object.DestroyImmediate(sample);
+
+            return generator;
         }
 
         private static void SetMonsters(SerializedObject so, string layout, DungeonDirector.MonsterPlacement[] monsters)
@@ -300,10 +353,10 @@ namespace Game.Scripts.Editor.Dungeon
             Prop(floor, "X Stocks", new Vector3(-Half + 0.4f, 0f, 14.9f), 90f);
             Prop(floor, "Shackle Plank", new Vector3(-12f, 2f, Half), 180f);
             Banner(floor, "Large Banner", new Vector3(-14.6f, 0f, Half), 180f);
-            Prop(floor, "Floor Trap Tile", new Vector3(-Half + 0.9f, 0f, 9.45f));
-            Prop(floor, "Floor Trap Tile", new Vector3(-Half + 0.9f, 0f, 8.55f));
+            Prop(floor, "Floor Trap Tile", new Vector3(-Half + 0.9f, 0f, 12.45f));
+            Prop(floor, "Floor Trap Tile", new Vector3(-Half + 0.9f, 0f, 11.55f));
             Prop(floor, "Bucket", new Vector3(-10.3f, 0f, 11.4f), 30f);
-            Prop(floor, "Big Candle", new Vector3(-Half + 0.9f, 0f, 11.6f));
+            Prop(floor, "Big Candle", new Vector3(-Half + 0.9f, 0f, 13.5f));
             Prop(floor, "Medium Candle", new Vector3(-11.4f, 0f, 14.6f));
         }
 
@@ -332,32 +385,33 @@ namespace Game.Scripts.Editor.Dungeon
             Prop(floor, "Small Candle", new Vector3(11.7f, 0f, 16.4f));
             containers.Add(Container("SmallOakChest", floor, new Vector3(Half - 0.7f, 0f, 14.6f), -90f));
 
-            Prop(floor, "Stocks", new Vector3(14f, 0f, 9.4f), 180f);
+            Prop(floor, "Stocks", new Vector3(11.4f, 0f, 4.6f), 180f);
             Prop(floor, "Cage", new Vector3(10.8f, 0f, 9.6f));
             Prop(floor, "Wall Lever 03", new Vector3(5.7f, 1.3f, Half), 180f);
         }
 
-        /// West: bookcases along the wall, a reading table with scrolls and a candle.
+        /// West: bookcases along the wall between the doorways, a reading table with scrolls and a candle.
         private static void BuildLibrary(Transform floor, List<ContainerComponent> containers)
         {
             const float x = -13.4f;
+            const float z = -5f;
             const float wall = -Half + 0.26f;
 
-            Prop(floor, "Large Bookcase", new Vector3(wall, 0f, 2.2f), 90f);
-            Prop(floor, "Large Bookcase", new Vector3(wall, 0f, -6.3f), 90f);
-            Prop(floor, "Drawer Bookcase", new Vector3(wall, 0f, 6.3f), 90f);
-            containers.Add(Container("Bookshelf", floor, new Vector3(wall, 0f, -2.2f), 90f));
-            Prop(floor, "Medium Candle", new Vector3(wall, 1.76f, 6f));
-            Prop(floor, "Small Candle", new Vector3(wall, 1.76f, 6.6f));
+            Prop(floor, "Large Bookcase", new Vector3(wall, 0f, 3.4f), 90f);
+            Prop(floor, "Large Bookcase", new Vector3(wall, 0f, -5.6f), 90f);
+            Prop(floor, "Drawer Bookcase", new Vector3(wall, 0f, 5.6f), 90f);
+            containers.Add(Container("Bookshelf", floor, new Vector3(wall, 0f, -3.4f), 90f));
+            Prop(floor, "Medium Candle", new Vector3(wall, 1.76f, 5.3f));
+            Prop(floor, "Small Candle", new Vector3(wall, 1.76f, 5.9f));
 
-            Prop(floor, "Table", new Vector3(x, 0f, 0f), 90f);
-            Prop(floor, "Chair", new Vector3(x + 1f, 0f, 0.1f), -90f);
-            Prop(floor, "Stool", new Vector3(x - 1.2f, 0f, -0.5f));
-            Prop(floor, "Open Scroll", new Vector3(x + 0.1f, TableTop, 0.15f), 90f);
-            Prop(floor, "Large Scroll", new Vector3(x + 0.3f, TableTop + 0.045f, -0.9f), 0f, 1f, 90f);
-            Prop(floor, "Small Scroll", new Vector3(x - 0.25f, TableTop + 0.045f, -0.8f), 30f, 1f, 90f);
-            Prop(floor, "Folded Scroll", new Vector3(x - 0.2f, TableTop, 0.75f), 15f);
-            Prop(floor, "Big Candle", new Vector3(x + 0.3f, TableTop, 0.8f));
+            Prop(floor, "Table", new Vector3(x, 0f, z), 90f);
+            Prop(floor, "Chair", new Vector3(x + 1f, 0f, z + 0.1f), -90f);
+            Prop(floor, "Stool", new Vector3(x - 1.2f, 0f, z - 0.5f));
+            Prop(floor, "Open Scroll", new Vector3(x + 0.1f, TableTop, z + 0.15f), 90f);
+            Prop(floor, "Large Scroll", new Vector3(x + 0.3f, TableTop + 0.045f, z - 0.9f), 0f, 1f, 90f);
+            Prop(floor, "Small Scroll", new Vector3(x - 0.25f, TableTop + 0.045f, z - 0.8f), 30f, 1f, 90f);
+            Prop(floor, "Folded Scroll", new Vector3(x - 0.2f, TableTop, z + 0.75f), 15f);
+            Prop(floor, "Big Candle", new Vector3(x + 0.3f, TableTop, z + 0.8f));
         }
 
         /// East: weapon racks either side of a shield, swords on a crate and leaning on the wall, a helmet on a crate.
@@ -365,17 +419,17 @@ namespace Game.Scripts.Editor.Dungeon
         {
             float wall = Half - 0.3f;
 
-            Prop(floor, "Weapon Rack", new Vector3(wall, 0f, 2.2f), -90f);
-            Prop(floor, "Weapon Rack", new Vector3(wall, 0f, -2.2f), -90f);
-            Prop(floor, "Shield", new Vector3(Half - 0.25f, 0.48f, 0f), -90f);
+            Prop(floor, "Weapon Rack", new Vector3(wall, 0f, 3.4f), -90f);
+            Prop(floor, "Weapon Rack", new Vector3(wall, 0f, -3.4f), -90f);
+            Prop(floor, "Shield", new Vector3(Half - 0.25f, 4.2f, 0f), -90f);
             Prop(floor, "Big Crate", new Vector3(15.2f, 0f, 5.4f), 90f);
             Prop(floor, "Sword 01", new Vector3(15.05f, 0.75f, 4.8f), 0f, 1f, 90f);
             Prop(floor, "Sword 02", new Vector3(15.35f, 0.75f, 4.85f), 0f, 1f, 90f);
             Prop(floor, "Sword 03", new Vector3(Half - 0.29f, 0f, -4.7f), -90f, 1f, -14f);
             Prop(floor, "Sword 04", new Vector3(Half - 0.29f, 0f, -5.3f), -90f, 1f, -12f);
-            containers.Add(Container("Crate", floor, new Vector3(15.4f, 0f, -6.6f), 10f));
-            Prop(floor, "Helmet", new Vector3(15.4f, 0.87f, -6.6f), -60f);
-            containers.Add(Container("Barrel", floor, new Vector3(15.9f, 0f, -8f), 40f));
+            containers.Add(Container("Crate", floor, new Vector3(15.4f, 0f, -11.2f), 10f));
+            Prop(floor, "Helmet", new Vector3(15.4f, 0.87f, -11.2f), -60f);
+            containers.Add(Container("Barrel", floor, new Vector3(14.2f, 0f, -11.4f), 40f));
         }
 
         /// South-west: a long table with benches, mugs, a jug and a supper; barrels and a crate in the corner.
@@ -429,25 +483,6 @@ namespace Game.Scripts.Editor.Dungeon
         private static void CellWall(Transform parent, Vector3 position, float length, float yaw)
         {
             Wall(parent, position, length, yaw, CellThickness, CellHeight);
-        }
-
-        /// Shut door in a stone frame, set against the wall; local +Z faces the room.
-        private static void Door(Transform parent, Vector3 position, float yaw)
-        {
-            GameObject door = BattleEditorUtility.CreateChild("Door", parent, position);
-            door.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            door.isStatic = true;
-            Mesh frame = new DungeonMeshBuilder(0.5f)
-                .Box(new Vector3(-1.3f, 1.6f, 0.15f), new Vector3(0.45f, 3.2f, 0.3f))
-                .Box(new Vector3(1.3f, 1.6f, 0.15f), new Vector3(0.45f, 3.2f, 0.3f))
-                .Box(new Vector3(0f, 3.4f, 0.17f), new Vector3(3.05f, 0.5f, 0.34f))
-                .Box(new Vector3(0f, 3.75f, 0.1f), new Vector3(1.2f, 0.3f, 0.2f))
-                .Save("DoorFrame");
-            DungeonPropBuilder.MeshObject("Wall Door Frame", door.transform, frame, DungeonPropBuilder.Ashlar);
-            GameObject leaf = DungeonPropBuilder.DoorLeaf();
-            leaf.transform.SetParent(door.transform, false);
-            leaf.transform.localPosition = new Vector3(-1.05f, 0.02f, 0.07f);
-            leaf.isStatic = true;
         }
 
         /// Torch in an iron bracket on the wall face; local +Z faces the room.

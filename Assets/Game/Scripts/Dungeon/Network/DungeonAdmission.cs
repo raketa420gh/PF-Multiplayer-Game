@@ -10,7 +10,7 @@ namespace Game.Scripts.Dungeon
     /// the first or a deeper one, which adventurers reach from the floor above.
     public sealed class DungeonAdmission : MonoBehaviour
     {
-        public int Floor => Mathf.Max(1, (int)_floor);
+        public int Floor => _floor > 0 ? _floor : MatchComponent.EntryFloor;
 
         [SerializeField]
         private NetworkEvents _networkEvents;

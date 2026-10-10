@@ -35,13 +35,27 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private LayerMask _groundMask = 1;
 
+        [SerializeField, Tooltip("Trigger volumes of standing water, on the Ignore Raycast layer so shots and the NavMesh never see them")]
+        private LayerMask _waterMask = 1 << 2;
+
+        [SerializeField, Range(0.1f, 1f)]
+        private float _waterMultiplier = 0.6f;
+
         [Networked]
         private TickTimer _dashTimer { get; set; }
 
         [Networked]
         private Vector3 _dashVelocity { get; set; }
 
+        /// Highest point of the body since its feet left the ground.
+        [Networked]
+        private float _airborneTop { get; set; }
+
         private const float SnapDistance = 0.35f;
+        private const float WaterProbe = 0.2f;
+
+        private static readonly Collider[] s_water = new Collider[1];
+        private float _fall;
 
         public override void Spawned()
         {
@@ -53,6 +67,9 @@ namespace Game.Scripts.Battle
             _controller.gravity = _config.Gravity;
             _controller.jumpImpulse = _config.JumpImpulse;
             _controller.rotationSpeed = 0f;
+
+            if (HasStateAuthority)
+                _airborneTop = transform.position.y;
         }
 
         public void Simulate(Vector2 move, Vector2 look, bool isWalk, bool isCrouch, bool isJump, float speedMultiplier)
@@ -76,7 +93,7 @@ namespace Game.Scripts.Battle
 
             bool wasGrounded = _controller.Grounded;
             float riseSpeed = _controller.Velocity.y;
-            _controller.maxSpeed = GetSpeed(move, isWalk) * speedMultiplier;
+            _controller.maxSpeed = GetSpeed(move, isWalk) * speedMultiplier * (IsWading() ? _waterMultiplier : 1f);
             _controller.Move(transform.rotation * new Vector3(move.x, 0f, move.y));
 
             // The controller derives velocity from displacement: a step-up or a push out of another capsule would
@@ -86,12 +103,24 @@ namespace Game.Scripts.Battle
 
             if (wasGrounded && riseSpeed <= 0f && !_controller.Grounded)
                 SnapToGround();
+
+            TrackFall(wasGrounded);
         }
 
         public void Teleport(Vector3 position, float yaw)
         {
             _controller.Velocity = Vector3.zero;
             _controller.Teleport(position, Quaternion.Euler(0f, yaw, 0f));
+            _airborneTop = position.y;
+        }
+
+        /// Height of the last fall that ended on the ground, once; 0 when the body has not landed since the last call.
+        public float TakeFall()
+        {
+            float fall = _fall;
+            _fall = 0f;
+
+            return fall;
         }
 
         /// Moves the body at a fixed velocity for a moment, ignoring input; the first wall or body in the way ends it.
@@ -133,6 +162,21 @@ namespace Game.Scripts.Battle
 
             _collider.Move(Vector3.down * hit.distance);
             _controller.Grounded = true;
+        }
+
+        private void TrackFall(bool wasGrounded)
+        {
+            float y = transform.position.y;
+
+            if (!_controller.Grounded)
+                _airborneTop = wasGrounded ? y : Mathf.Max(_airborneTop, y);
+            else if (!wasGrounded)
+                _fall = Mathf.Max(_fall, _airborneTop - y);
+        }
+
+        private bool IsWading()
+        {
+            return Runner.GetPhysicsScene().OverlapSphere(transform.position + Vector3.up * WaterProbe, WaterProbe, s_water, _waterMask, QueryTriggerInteraction.Collide) > 0;
         }
 
         private float GetSpeed(Vector2 move, bool isWalk)

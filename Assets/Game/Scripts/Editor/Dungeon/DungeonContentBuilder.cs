@@ -89,7 +89,7 @@ namespace Game.Scripts.Editor.Dungeon
             BuildDoor("Door", DungeonPropBuilder.DoorLeaf());
             BuildDoor("CellDoor", DungeonMedievalBuilder.CellDoorLeaf());
             BuildDoor("HouseDoor", HouseDoorLeaf(), DungeonVillageKitBuilder.DoorHalf - 0.03f, DungeonVillageKitBuilder.DoorHalf * 2f);
-            BuildPortal("EscapePortal", PortalKind.Escape, DungeonPropBuilder.PortalBlue, config.EscapePortalTime > 0f);
+            BuildPortal("EscapePortal", PortalKind.Escape, DungeonPropBuilder.PortalBlue, true);
             BuildPortal("DescendPortal", PortalKind.Descend, DungeonPropBuilder.PortalRed, false);
             BuildShrine(ShrineKind.Health, 100f, 0f);
             BuildShrine(ShrineKind.Protection, 30f, 60f);
@@ -1112,13 +1112,16 @@ namespace Game.Scripts.Editor.Dungeon
             return BattleContentBuilder.SavePrefab(root, Prefab("Corpse"));
         }
 
-        /// Swarm stages shrink to fixed shares of each floor's radius, so they follow the map size; the swarm only shows up
-        /// in the second half of a floor's clock.
+        /// A floor's clock runs 15 minutes; blue portals show up at 7:00, 10:00, 12:00 and 14:30. Swarm stages shrink to fixed
+        /// shares of each floor's radius, so they follow the map size, in the second half of the clock; the swarm is off for now.
         private static void BuildSwarmStages(DungeonConfig config)
         {
             (float start, float share)[] stages = { (0.5f, 0.82f), (0.625f, 0.48f), (0.75f, 0.22f), (0.875f, 0f) };
+            const float duration = 900f;
             SerializedObject so = new SerializedObject(config);
-            float duration = so.FindProperty("_matchDuration").floatValue;
+            BattleEditorUtility.Set(so, "_matchDuration", duration);
+            BattleEditorUtility.Set(so, "_isSwarmEnabled", false);
+            BattleEditorUtility.Set(so, "_escapePortalTimes", new[] { 420f, 600f, 720f, 870f });
             so.FindProperty("_swarmStages").arraySize = stages.Length;
 
             for (int i = 0; i < stages.Length; i++)
@@ -1585,6 +1588,8 @@ namespace Game.Scripts.Editor.Dungeon
         {
             GameObject root = DungeonPropBuilder.SpikeTrap(out Transform spikes);
             root.AddComponent<NetworkObject>();
+            // Spawned at runtime in the generated catacombs: clients need the spot it stands on.
+            root.AddComponent<NetworkTransform>();
             TrapComponent trap = root.AddComponent<TrapComponent>();
             SerializedObject so = new SerializedObject(trap);
             BattleEditorUtility.Set(so, "_kind", TrapKind.Spikes);
@@ -1605,6 +1610,8 @@ namespace Game.Scripts.Editor.Dungeon
         {
             GameObject root = DungeonPropBuilder.BladeTrap(out Transform pivot);
             root.AddComponent<NetworkObject>();
+            // Spawned at runtime in the generated catacombs: clients need the spot it stands on.
+            root.AddComponent<NetworkTransform>();
             TrapComponent trap = root.AddComponent<TrapComponent>();
             SerializedObject so = new SerializedObject(trap);
             BattleEditorUtility.Set(so, "_kind", TrapKind.SwingingBlade);

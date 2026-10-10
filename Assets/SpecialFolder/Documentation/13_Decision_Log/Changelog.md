@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased — 2026-10-08
+## Unreleased — 2026-10-09
+
+### Changed
+- DD-020: floor 1 (Cursed Village) is cut from the game for now — nothing deleted; registering for the Dungeon leads straight to the former floor 2, the **Tangled Catacombs**.
+- Floor clock is 15 minutes (was 12); blue escape portals show up one by one at 7:00, 10:00, 12:00 and 14:30 (four portals, random spots over the whole floor); the HUD shows the time to the next portal.
+- Dark Swarm is switched off (`DungeonConfig._isSwarmEnabled`).
+- The Great Hall is the key room in the middle of the catacombs: doorways in the middle of all four walls, props moved off them; the floor is darker (ambient ×0.3, denser fog, weaker fill light).
+- HUD and map show the floor title instead of "Floor N"; the tavern Dungeon card shows the catacombs.
+- Safe starts: on populating a floor the host reserves up to 12 start rooms/houses spread apart (`DungeonDirector._safeStarts`); teams spawn only there and no monster is placed within 18 m (`_spawnSafety`) of them or of `PlayerSpawns`/`Arrivals`, so players are no longer killed while still loading in.
+- Load-in protection: a freshly spawned adventurer (`AdventurerComponent.IsLoadingIn`) is ignored by monsters until the player first moves or presses a button, at most 20 s (`DungeonConfig._loadInProtection`) — covers slow loading and monsters that walk up to the start anyway.
+
+### Added
+- Tangled Catacombs: 7×7 grid of rooms laid out anew every run from a networked seed (`CatacombGenerator`) — random spanning-tree maze with loops, eight room kinds turned at random: Crypt, Ossuary, Pillared Hall, Blade Corridors, Spike Gallery, Torture Chamber, Guard Room, Scriptorium. Rooms carry markers for monsters, containers, traps and team starts; the host bakes the NavMesh at runtime and spawns them.
+- Floor map stitched at runtime from per-room parchment cells, with room names on the map and under the minimap.
+
+## 2026-10-08
 
 ### Changed
 - One-handed animations are universal across shields (DD-019): any one-handed weapon swings and ripostes with its own series whatever shield is in the off hand; the shield gives the off-arm pose, the block and Stability. Sword/Mace & Shield/Écu now use the Arming Sword / Morning Star footage series; Viking Sword works with the Round Shield and the Écu. Pairs are generated from `DungeonWeaponLibrary.ShieldPairs`.
