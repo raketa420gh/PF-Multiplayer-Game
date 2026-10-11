@@ -8,6 +8,7 @@ using Unity.AI.Navigation;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace Game.Scripts.Editor.Dungeon
 {
@@ -567,6 +568,8 @@ namespace Game.Scripts.Editor.Dungeon
 
             Transform rightHand = parts.Animator.GetBoneTransform(HumanBodyBones.RightHand);
             Light torchLight = DungeonPropBuilder.PointLight(rightHand, new Vector3(0.14f, 0.08f, 0.5f), new Color(1f, 0.65f, 0.3f), 9f, 2.6f, false, true);
+            torchLight.shadows = LightShadows.Hard;
+            BattleEditorUtility.Set(torchLight.GetUniversalAdditionalLightData(),"m_AdditionalLightsShadowResolutionTier", UniversalAdditionalLightData.AdditionalLightsShadowResolutionTierLow);
             torchLight.enabled = false;
             Transform leftHand = parts.Animator.GetBoneTransform(HumanBodyBones.LeftHand);
             Light handGlow = DungeonPropBuilder.PointLight(leftHand, new Vector3(-0.1f, 0f, 0.02f), new Color(0.6f, 0.6f, 1f), 3f, 1.2f, false);
@@ -1121,6 +1124,7 @@ namespace Game.Scripts.Editor.Dungeon
             SerializedObject so = new SerializedObject(config);
             BattleEditorUtility.Set(so, "_matchDuration", duration);
             BattleEditorUtility.Set(so, "_isSwarmEnabled", false);
+            BattleEditorUtility.Set(so, "_isMonstersEnabled", false);
             BattleEditorUtility.Set(so, "_escapePortalTimes", new[] { 420f, 600f, 720f, 870f });
             so.FindProperty("_swarmStages").arraySize = stages.Length;
 

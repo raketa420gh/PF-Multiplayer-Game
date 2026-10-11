@@ -159,6 +159,15 @@ namespace Game.Scripts.Editor.Dungeon
             return go;
         }
 
+        /// Small things cast no shadows: hundreds of them per room cost more in the shadow maps than they give.
+        public static GameObject Shadowless(GameObject root)
+        {
+            foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            return root;
+        }
+
         public static Light PointLight(Transform parent, Vector3 position, Color color, float range, float intensity, bool flicker, bool shadows = false)
         {
             GameObject go = BattleEditorUtility.CreateChild("Light", parent, position);
@@ -229,7 +238,7 @@ namespace Game.Scripts.Editor.Dungeon
             Flame(root.transform, new Vector3(0f, 0.21f, 0f), 0.3f);
             PointLight(root.transform, new Vector3(0f, 0.3f, 0f), new Color(1f, 0.7f, 0.35f), 4f, 1.1f, true);
 
-            return root;
+            return Shadowless(root);
         }
 
         public static GameObject Pillar()
@@ -339,7 +348,7 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject root = new GameObject("SkullPile");
             MeshObject("Skulls", root.transform, builder.Save("SkullPile"), Bone, default, default, false, false);
 
-            return root;
+            return Shadowless(root);
         }
 
         /// Wooden armour stand: a mannequin of the animation packs wearing outfit parts, frozen in a pose of the animation library.

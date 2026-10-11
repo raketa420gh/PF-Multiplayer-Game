@@ -152,8 +152,10 @@ namespace Game.Scripts.Dungeon
             if (!isLit)
                 return;
 
+            if (!Mathf.Approximately(_torchLight.range, range))
+                _torchLight.range = range;
+
             _flicker += Time.deltaTime * 9f;
-            _torchLight.range = range;
             _torchLight.intensity = 2.4f + Mathf.PerlinNoise(_flicker, 0.7f) * _torchFlicker * 4f;
         }
 

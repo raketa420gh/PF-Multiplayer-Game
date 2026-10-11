@@ -32,6 +32,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private CharacterPreviewView _inventoryPreview;
 
+        [SerializeField]
+        private PauseMenuView _pause;
+
         [Tooltip("Optional developer panel shown together with the inventory (test ground)")]
         [SerializeField]
         private DisplayableView _devPanel;
@@ -50,12 +53,14 @@ namespace Game.Scripts.Dungeon
         {
             _context.OnLocalSessionChanged += OnSessionChanged;
             _context.OnLocalAdventurerChanged += OnAdventurerChanged;
+            _pause.OnResumeClicked += OnResumeClicked;
         }
 
         private void OnDisable()
         {
             _context.OnLocalSessionChanged -= OnSessionChanged;
             _context.OnLocalAdventurerChanged -= OnAdventurerChanged;
+            _pause.OnResumeClicked -= OnResumeClicked;
         }
 
         private void Start()
@@ -77,19 +82,41 @@ namespace Game.Scripts.Dungeon
             if (_session.State != SessionState.InDungeon || _adventurer == null)
                 return;
 
+            if (Input.GetKeyDown(KeyCode.Escape))
+                Escape();
+
+            if (_pause.IsShown)
+            {
+                CloseWheel(false);
+
+                return;
+            }
+
             if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.I))
                 SetInventoryOpen(!_isInventoryOpen);
 
             if (Input.GetKeyDown(KeyCode.M) && _map.HasFloors)
                 _map.SetShown(!_map.IsShown);
 
-            if (Input.GetKeyDown(KeyCode.Escape) && _isInventoryOpen)
-                SetInventoryOpen(false);
-            else if (Input.GetKeyDown(KeyCode.Escape))
-                _map.Hide();
-
             UpdateContainer();
             UpdateWheel();
+        }
+
+        /// Escape closes the inventory or the map first; otherwise it toggles the menu.
+        private void Escape()
+        {
+            if (_isInventoryOpen)
+                SetInventoryOpen(false);
+            else if (_map.IsShown)
+                _map.Hide();
+            else
+                SetPauseOpen(!_pause.IsShown);
+        }
+
+        private void SetPauseOpen(bool isOpen)
+        {
+            _pause.SetShown(isOpen);
+            _context.Battle.Input.SetUiOpen(isOpen);
         }
 
         private void UpdateWheel()
@@ -208,6 +235,11 @@ namespace Game.Scripts.Dungeon
             }
         }
 
+        private void OnResumeClicked()
+        {
+            SetPauseOpen(false);
+        }
+
         private void ApplyState()
         {
             _shownState = _session.State;
@@ -222,6 +254,7 @@ namespace Game.Scripts.Dungeon
                     _loading.Hide();
                     _result.Hide();
                     _hud.Show();
+                    _pause.Hide();
                     SetInventoryOpen(false);
                     break;
                 default:
@@ -229,6 +262,7 @@ namespace Game.Scripts.Dungeon
                     _hud.Hide();
                     _inventory.Hide();
                     _map.Hide();
+                    _pause.Hide();
                     _loading.Hide();
                     _result.Show();
                     _context.Battle.Input.SetUiOpen(true);
@@ -243,6 +277,7 @@ namespace Game.Scripts.Dungeon
             _result.Hide();
             _inventory.Hide();
             _map.Hide();
+            _pause.Hide();
             _loading.Show();
             _loading.SetStatus("Entering...", 1f);
             _context.Battle.Input.SetUiOpen(true);

@@ -231,6 +231,7 @@ namespace Game.Scripts.Editor.Dungeon
             bloom.threshold.value = 1.1f;
             bloom.intensity.value = 0.3f;
             bloom.scatter.value = 0.6f;
+            bloom.downscale.value = BloomDownscaleMode.Quarter;
             Vignette vignette = Add<Vignette>(profile);
             vignette.intensity.value = 0.18f;
             vignette.smoothness.value = 0.45f;
@@ -238,15 +239,6 @@ namespace Game.Scripts.Editor.Dungeon
             color.postExposure.value = exposure;
             color.contrast.value = 4f;
             color.saturation.value = 0f;
-            FilmGrain grain = Add<FilmGrain>(profile);
-            grain.type.value = FilmGrainLookup.Thin1;
-            grain.intensity.value = 0.15f;
-            Add<ScreenSpaceLensFlare>(profile).intensity.value = 0f;
-            Add<MotionBlur>(profile).intensity.value = 0f;
-            Add<ChromaticAberration>(profile).intensity.value = 0f;
-            Add<DepthOfField>(profile).mode.value = DepthOfFieldMode.Off;
-            Add<PaniniProjection>(profile).distance.value = 0f;
-            Add<LensDistortion>(profile).intensity.value = 0f;
             EditorUtility.SetDirty(profile);
             AssetDatabase.SaveAssets();
 
@@ -277,6 +269,7 @@ namespace Game.Scripts.Editor.Dungeon
             bloom.intensity.value = 0.65f;
             bloom.scatter.value = 0.72f;
             bloom.tint.value = new Color(1f, 0.85f, 0.7f);
+            bloom.downscale.value = BloomDownscaleMode.Quarter;
             ShadowsMidtonesHighlights grade = Add<ShadowsMidtonesHighlights>(profile);
             grade.shadows.value = new Vector4(0.86f, 0.97f, 1.1f, 0f);
             grade.highlights.value = new Vector4(1.08f, 1f, 0.9f, 0f);

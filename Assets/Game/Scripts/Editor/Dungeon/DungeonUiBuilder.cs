@@ -58,6 +58,7 @@ namespace Game.Scripts.Editor.Dungeon
             HelpView help = BuildHelp(root);
             SpellWheelView wheel = BuildWheel(root);
             MapView map = BuildMap(root, inputs);
+            PauseMenuView pause = BuildPause(root);
             LoadingView loading = BuildLoading(root, inputs.Title);
 
             DungeonUiRoot uiRoot = canvasObject.AddComponent<DungeonUiRoot>();
@@ -71,8 +72,10 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_wheel", wheel);
             BattleEditorUtility.Set(so, "_map", map);
             BattleEditorUtility.Set(so, "_inventoryPreview", dungeonPreview);
+            BattleEditorUtility.Set(so, "_pause", pause);
             so.ApplyModifiedPropertiesWithoutUndo();
 
+            pause.gameObject.SetActive(false);
             hud.gameObject.SetActive(false);
             dungeonInventory.gameObject.SetActive(false);
             result.gameObject.SetActive(false);
@@ -1822,6 +1825,58 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_detailsText", details);
             BattleEditorUtility.Set(so, "_returnButton", back2);
             so.ApplyModifiedPropertiesWithoutUndo();
+
+            return view;
+        }
+
+        /// Escape menu: Resume / Settings, and the settings page with the master volume slider.
+        private static PauseMenuView BuildPause(Transform root)
+        {
+            Vector2 center = new Vector2(0.5f, 0.5f);
+            RectTransform panel = CreateRect("Pause", root, center, Vector2.zero, Vector2.zero);
+            Stretch(panel, 0f);
+            Image dim = CreateImage("Back", panel, center, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.6f));
+            Stretch(dim.rectTransform, 0f);
+            dim.raycastTarget = true;
+
+            RectTransform main = CreateImage("Main", panel, center, Vector2.zero, new Vector2(360f, 220f), s_panel).rectTransform;
+            TMP_Text title = CreateText("Title", main, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(320f, 50f), 30f, TextAlignmentOptions.Center);
+            title.text = "Menu";
+            title.color = s_gold;
+            Button resume = CreateButton("Resume", main, center, new Vector2(0f, 0f), new Vector2(260f, 48f), "Resume");
+            Button settings = CreateButton("Settings", main, center, new Vector2(0f, -64f), new Vector2(260f, 48f), "Settings");
+
+            RectTransform page = CreateImage("Settings", panel, center, Vector2.zero, new Vector2(460f, 240f), s_panel).rectTransform;
+            TMP_Text pageTitle = CreateText("Title", page, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(420f, 50f), 30f, TextAlignmentOptions.Center);
+            pageTitle.text = "Settings";
+            pageTitle.color = s_gold;
+            TMP_Text volumeText = CreateText("Volume", page, center, new Vector2(0f, 26f), new Vector2(380f, 30f), 20f, TextAlignmentOptions.Left);
+            volumeText.color = s_text;
+            Slider slider = DefaultControls.CreateSlider(new DefaultControls.Resources
+            {
+                standard = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd"),
+                background = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd"),
+                knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd")
+            }).GetComponent<Slider>();
+            RectTransform sliderRect = (RectTransform)slider.transform;
+            sliderRect.SetParent(page, false);
+            sliderRect.anchorMin = sliderRect.anchorMax = center;
+            sliderRect.anchoredPosition = new Vector2(0f, -10f);
+            sliderRect.sizeDelta = new Vector2(380f, 24f);
+            slider.fillRect.GetComponent<Image>().color = s_gold;
+            Button back = CreateButton("Back", page, center, new Vector2(0f, -78f), new Vector2(200f, 44f), "Back");
+
+            PauseMenuView view = panel.gameObject.AddComponent<PauseMenuView>();
+            SerializedObject so = new SerializedObject(view);
+            BattleEditorUtility.Set(so, "_mainPage", main.gameObject);
+            BattleEditorUtility.Set(so, "_settingsPage", page.gameObject);
+            BattleEditorUtility.Set(so, "_resumeButton", resume);
+            BattleEditorUtility.Set(so, "_settingsButton", settings);
+            BattleEditorUtility.Set(so, "_backButton", back);
+            BattleEditorUtility.Set(so, "_volumeSlider", slider);
+            BattleEditorUtility.Set(so, "_volumeText", volumeText);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            page.gameObject.SetActive(false);
 
             return view;
         }

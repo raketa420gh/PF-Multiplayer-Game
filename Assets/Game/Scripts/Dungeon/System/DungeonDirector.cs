@@ -412,7 +412,7 @@ namespace Game.Scripts.Dungeon
                 container.Fill(container.LootTable, random.Next());
             }
 
-            if (floor.BossSpawn != null && _bossPrefab != null)
+            if (floor.BossSpawn != null && _bossPrefab != null && _config.IsMonstersEnabled)
             {
                 NetworkObject boss = _runner.Spawn(_bossPrefab, floor.BossSpawn.position, floor.BossSpawn.rotation, PlayerRef.None,
                     (_, obj) => obj.GetComponent<MonsterComponent>().Setup(level));
@@ -523,7 +523,7 @@ namespace Game.Scripts.Dungeon
 
         private void SpawnMonster(NetworkObject prefab, Transform point, byte level)
         {
-            if (IsNearSpawn(point.position))
+            if (!_config.IsMonstersEnabled || IsNearSpawn(point.position))
                 return;
 
             _spawned.Add(_runner.Spawn(prefab, point.position, point.rotation, PlayerRef.None, (_, obj) => obj.GetComponent<MonsterComponent>().Setup(level)));

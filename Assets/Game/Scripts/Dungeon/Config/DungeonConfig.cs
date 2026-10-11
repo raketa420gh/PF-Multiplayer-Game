@@ -17,6 +17,7 @@ namespace Game.Scripts.Dungeon
     {
         public float MatchDuration => _matchDuration;
         public bool IsSwarmEnabled => _isSwarmEnabled;
+        public bool IsMonstersEnabled => _isMonstersEnabled;
         public float SwarmDamagePerSecond => _swarmDamagePerSecond;
         public SwarmStage[] SwarmStages => _swarmStages;
         /// When each escape portal of a floor shows up, one portal per entry; the last entry serves any further portals.
@@ -36,6 +37,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private bool _isSwarmEnabled;
+
+        [SerializeField]
+        private bool _isMonstersEnabled;
 
         [SerializeField]
         private float _swarmDamagePerSecond = 3f;

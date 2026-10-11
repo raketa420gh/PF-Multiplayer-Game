@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Fusion;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -38,6 +39,8 @@ namespace Game.Scripts.Dungeon
         /// Grows with every new layout, so views know to redraw.
         public int Version => _version;
         public IReadOnlyList<CatacombRoomComponent> Rooms => _rooms;
+        /// Parent of every generated room, side and post; null before the first layout.
+        public Transform Content => _content;
 
         [SerializeField]
         private int _floor = MatchComponent.EntryFloor;
@@ -123,6 +126,12 @@ namespace Game.Scripts.Dungeon
 
             if (_content != null)
             {
+                foreach (MeshFilter filter in _content.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    if (filter.sharedMesh != null && filter.sharedMesh.name.StartsWith("Combined Mesh"))
+                        Destroy(filter.sharedMesh);
+                }
+
                 _content.gameObject.SetActive(false);
                 Destroy(_content.gameObject);
             }
@@ -151,6 +160,8 @@ namespace Game.Scripts.Dungeon
                 for (int x = 0; x <= _grid; x++)
                     Instantiate(_post, Corner(x, z), Quaternion.identity, _content);
             }
+
+            StaticBatchingUtility.Combine(StaticParts(), _content.gameObject);
 
             if (_map != null)
                 Destroy(_map);
@@ -394,6 +405,32 @@ namespace Game.Scripts.Dungeon
         private void Side(Vector3 position, float yaw, int doorways)
         {
             Instantiate(_sides[doorways], position, Quaternion.Euler(0f, yaw, 0f), _content);
+        }
+
+        /// Readable meshes of the layout that never move or change: nothing networked, physical, animated or flickering above them.
+        private GameObject[] StaticParts()
+        {
+            List<GameObject> parts = new();
+
+            foreach (MeshRenderer renderer in _content.GetComponentsInChildren<MeshRenderer>())
+            {
+                if (renderer.TryGetComponent(out MeshFilter filter) && filter.sharedMesh != null && filter.sharedMesh.isReadable && IsStatic(renderer.transform))
+                    parts.Add(renderer.gameObject);
+            }
+
+            return parts.ToArray();
+        }
+
+        private bool IsStatic(Transform part)
+        {
+            for (; part != _content; part = part.parent)
+            {
+                if (part.TryGetComponent(out NetworkObject _) || part.TryGetComponent(out Rigidbody _) || part.TryGetComponent(out Animator _)
+                    || part.TryGetComponent(out Animation _) || part.TryGetComponent(out FlickerLightComponent _))
+                    return false;
+            }
+
+            return true;
         }
 
         private Vector3 CellCenter(int cell)

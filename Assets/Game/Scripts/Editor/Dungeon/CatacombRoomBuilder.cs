@@ -48,6 +48,11 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static readonly HashSet<string> s_againstWall = new() { "Weapon Rack", "Large Bookcase", "Drawer Bookcase" };
         private static readonly HashSet<string> s_stone = new() { "Алтарь", "Жертвенник", "Парапет", "Укрытие", "Обломки", "Колодец", "Очаг" };
+        /// Small pieces and rubble cast no shadows; walls, columns, altars, tables, beds and shelves keep theirs.
+        private static readonly HashSet<string> s_clutter = new()
+        {
+            "Черепа", "Штабель ящиков", "Бочки", "Бревно", "Кости", "Котёл", "Лавка", "Мешки", "Обломки", "Поленница", "Скамья", "Спальник", "Табурет"
+        };
 
         public sealed class Kind
         {
@@ -517,7 +522,7 @@ namespace Game.Scripts.Editor.Dungeon
                         Vector3 center = new Vector3(di == 0 ? middle.x : di < 0 ? min.x + PitWall * 0.5f : max.x - PitWall * 0.5f, -depth + rise * 0.5f,
                             dj == 0 ? middle.y : dj < 0 ? min.y + PitWall * 0.5f : max.y - PitWall * 0.5f);
                         Vector3 extent = new Vector3(di == 0 ? size.x : PitWall, rise, dj == 0 ? size.y : PitWall);
-                        DungeonStructureBuilder.Block(room.Root, "Pit Wall", center, extent, DungeonPropBuilder.Ashlar);
+                        DungeonPropBuilder.Shadowless(DungeonStructureBuilder.Block(room.Root, "Pit Wall", center, extent, DungeonPropBuilder.Ashlar));
                     }
                 }
             }
@@ -579,24 +584,33 @@ namespace Game.Scripts.Editor.Dungeon
                 collider.size = new Vector3(item.W, item.H, item.D);
             }
 
+            Dress(prop.transform, item);
+
+            if (s_clutter.Contains(item.Name))
+                DungeonPropBuilder.Shadowless(prop);
+        }
+
+        /// The look of a prop: a pack model, a stack of them or a block of the page's size.
+        private static void Dress(Transform prop, Item item)
+        {
             switch (item.Name)
             {
                 case "Черепа":
-                    DungeonMapBuilder.Place(DungeonMapBuilder.Load("SkullPile"), prop.transform, Vector3.zero, 0f).transform.localScale = Vector3.one * item.W / 1.1f;
+                    DungeonMapBuilder.Place(DungeonMapBuilder.Load("SkullPile"), prop, Vector3.zero, 0f).transform.localScale = Vector3.one * item.W / 1.1f;
 
                     return;
                 case "Гроб":
                     GameObject coffin = DungeonPropBuilder.Coffin(out _);
-                    coffin.transform.SetParent(prop.transform, false);
+                    coffin.transform.SetParent(prop, false);
 
                     return;
                 case "Штабель ящиков":
                     // The plain crate: the size of the big one at a quarter of its triangles, stacks run to hundreds per room.
-                    Fill(prop.transform, "Crate", item.W, item.D, item.H);
+                    Fill(prop, "Crate", item.W, item.D, item.H);
 
                     return;
                 case "Бочки":
-                    Fill(prop.transform, "Barrel", item.W, item.D, 0f);
+                    Fill(prop, "Barrel", item.W, item.D, 0f);
 
                     return;
             }
@@ -604,7 +618,7 @@ namespace Game.Scripts.Editor.Dungeon
             if (s_models.TryGetValue(item.Name, out string model) && Mathf.Max(item.W, item.D) <= 2.5f)
             {
                 float yaw = s_againstWall.Contains(model) ? WallFacing(item) : item.R + (model == "Bed" && item.W > item.D ? 90f : 0f);
-                DungeonMapBuilder.Place(DungeonMedievalBuilder.Load(model), prop.transform, Vector3.zero, yaw - item.R);
+                DungeonMapBuilder.Place(DungeonMedievalBuilder.Load(model), prop, Vector3.zero, yaw - item.R);
 
                 return;
             }
@@ -617,7 +631,7 @@ namespace Game.Scripts.Editor.Dungeon
             string key = $"CatacombProp_{(item.IsRound ? "Round" : "Box")}_{item.W:0.##}x{item.H:0.##}x{item.D:0.##}".Replace(',', '.');
             DungeonMeshBuilder builder = new DungeonMeshBuilder(0.5f);
             Mesh mesh = (item.IsRound ? builder.Cylinder(Vector3.up * item.H * 0.5f, item.W * 0.5f, item.H, 16) : builder.Box(Vector3.up * item.H * 0.5f, new Vector3(item.W, item.H, item.D))).Save(key);
-            DungeonPropBuilder.MeshObject("Body", prop.transform, mesh, material, default, default, false);
+            DungeonPropBuilder.MeshObject("Body", prop, mesh, material, default, default, false);
         }
 
         /// Wall-standing pieces turn their front to the room, away from the nearest wall.

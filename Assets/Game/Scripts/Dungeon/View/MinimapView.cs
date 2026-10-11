@@ -38,6 +38,8 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private int[] _floorGrids;
 
+        private string _shownModule;
+
         private void Update()
         {
             AdventurerComponent adventurer = _context.LocalAdventurer;
@@ -65,7 +67,7 @@ namespace Game.Scripts.Dungeon
 
             if (isGenerated)
             {
-                _moduleText.text = catacombs.GetTitle(position);
+                SetModuleText(catacombs.GetTitle(position));
 
                 return;
             }
@@ -79,7 +81,16 @@ namespace Game.Scripts.Dungeon
             for (int i = 0; i < floor; i++)
                 index += _floorGrids[i] * _floorGrids[i];
 
-            _moduleText.text = index < _floorModuleNames.Length ? _floorModuleNames[index] : string.Empty;
+            SetModuleText(index < _floorModuleNames.Length ? _floorModuleNames[index] : string.Empty);
+        }
+
+        private void SetModuleText(string module)
+        {
+            if (module == _shownModule)
+                return;
+
+            _shownModule = module;
+            _moduleText.text = module;
         }
     }
 }
