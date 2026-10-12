@@ -1876,6 +1876,9 @@ namespace Game.Scripts.Dungeon
 
             switch (item)
             {
+                // A torch only shines while it is held.
+                case ConsumableItemConfig { IsLight: true }:
+                    return;
                 // Potions are drunk at Action Speed, bandages are wound at Handling Speed.
                 case ConsumableItemConfig consumable when consumable.Effect == ConsumableEffect.HealInstant:
                     useTime = consumable.UseTime / _stats.HandlingSpeed;

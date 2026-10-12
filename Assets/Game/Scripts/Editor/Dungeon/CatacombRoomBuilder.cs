@@ -19,7 +19,9 @@ namespace Game.Scripts.Editor.Dungeon
     {
         public const string Folder = DungeonPropBuilder.PrefabsFolder + "/Catacombs";
         public const int MapPixels = 144;
-        public const float DoorWidth = 3f;
+        public const float DoorWidth = 2f;
+        /// A little above a head, and above the 2 m NavMesh agent standing on a quarter-metre walkway: the doorways carry doors.
+        public const float DoorHeight = 2.4f;
         /// The two doorways of a side sit this far either side of its middle: in the middles of its halves.
         public const float DoorOffset = DungeonMapBuilder.RoomSize * 0.25f;
 
@@ -27,7 +29,8 @@ namespace Game.Scripts.Editor.Dungeon
         private const float Height = DungeonMapBuilder.Height;
         private const float Thickness = DungeonPropBuilder.WallThickness;
         private const float Half = DungeonMapBuilder.RoomSize * 0.5f;
-        private const float DoorHeight = 3.4f;
+        private const float JambWidth = 0.4f;
+        private const float ArchHeight = 0.4f;
         private const float TorchHeight = 2.6f;
         private const float PitWall = 0.3f;
         private const float WaterLevel = 0.12f;
@@ -364,6 +367,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Kind Realize(Layout layout)
         {
+            Partition(layout);
             Site room = new Site { Layout = layout, Root = new GameObject(layout.Name).transform };
             room.Root.position = s_workshop;
             Floor(room);
@@ -855,9 +859,9 @@ namespace Game.Scripts.Editor.Dungeon
                     continue;
 
                 float middle = (i * 2 - 1) * DoorOffset;
-                Wall(root.transform, from, middle - DoorWidth * 0.5f);
+                Wall(root.transform, from, middle - (DoorWidth + JambWidth) * 0.5f);
                 Doorway(root.transform, middle);
-                from = middle + DoorWidth * 0.5f;
+                from = middle + (DoorWidth + JambWidth) * 0.5f;
             }
 
             Wall(root.transform, from, end);
@@ -870,13 +874,15 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonStructureBuilder.Block(root, "Wall", new Vector3((from + to) * 0.5f, Height * 0.5f, 0f), new Vector3(to - from, Height, Thickness), DungeonPropBuilder.Ashlar);
         }
 
+        /// Walls end inside the jambs and the lintel inside the arch: no two faces of the frame share a plane.
         private static void Doorway(Transform root, float middle)
         {
             foreach (float sign in new[] { -1f, 1f })
-                DungeonStructureBuilder.Block(root, "Wall Jamb", new Vector3(middle + sign * (DoorWidth * 0.5f + 0.2f), DoorHeight * 0.5f, 0f), new Vector3(0.4f, DoorHeight, Thickness + 0.3f), DungeonPropBuilder.StoneWall);
+                DungeonStructureBuilder.Block(root, "Wall Jamb", new Vector3(middle + sign * (DoorWidth + JambWidth) * 0.5f, DoorHeight * 0.5f, 0f), new Vector3(JambWidth, DoorHeight, Thickness + 0.3f), DungeonPropBuilder.StoneWall);
 
-            DungeonStructureBuilder.Block(root, "Lintel", new Vector3(middle, (DoorHeight + Height) * 0.5f, 0f), new Vector3(DoorWidth, Height - DoorHeight, Thickness), DungeonPropBuilder.Ashlar);
-            DungeonStructureBuilder.Block(root, "Arch", new Vector3(middle, DoorHeight + 0.2f, 0f), new Vector3(DoorWidth + 0.8f, 0.4f, Thickness + 0.3f), DungeonPropBuilder.StoneWall);
+            float bottom = DoorHeight + ArchHeight * 0.5f;
+            DungeonStructureBuilder.Block(root, "Lintel", new Vector3(middle, (bottom + Height) * 0.5f, 0f), new Vector3(DoorWidth + JambWidth, Height - bottom, Thickness), DungeonPropBuilder.Ashlar);
+            DungeonStructureBuilder.Block(root, "Arch", new Vector3(middle, bottom, 0f), new Vector3(DoorWidth + JambWidth * 2f, ArchHeight, Thickness + 0.3f), DungeonPropBuilder.StoneWall);
         }
 
         private static GameObject Post()

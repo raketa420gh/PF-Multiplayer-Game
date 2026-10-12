@@ -266,6 +266,9 @@ namespace Game.Scripts.Editor.Dungeon
             // Dark and Darker's viking sword: base damage 31, move speed -20, for the barbarian and the warrior.
             items.Add(Weapon("Viking Sword", DungeonWeaponLibrary.VikingSword, WeaponClass.Sword, 1, 3, 20f, "Vk", s_steel, 40, "A broad-bladed sword with a lobed pommel. Three cuts in a row.",
                 classes: new[] { Barbarian, Warrior }));
+            // Darkness is the catacombs' danger: a torch from the belt lights 5 m around the right hand while held.
+            items.Add(Consumable("Torch", ConsumableEffect.Light, 5f, 0f, 0f, 1, "To", new Color(1f, 0.6f, 0.25f), 3, "Hold it in the right hand to light the dark around you.",
+                1, 2));
 
             return items;
         }

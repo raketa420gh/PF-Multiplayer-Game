@@ -234,7 +234,8 @@ namespace Game.Scripts.Dungeon
         HealInstant,
         Protection,
         Haste,
-        Invisibility
+        Invisibility,
+        Light
     }
 
     public enum UtilityKind : byte

@@ -10,7 +10,9 @@ namespace Game.Scripts.Dungeon
         public override ItemKind Kind => ItemKind.Consumable;
         public ConsumableEffect Effect => _effect;
         /// Drunk from a bottle, unlike a bandage.
-        public bool IsDrink => _effect != ConsumableEffect.HealInstant;
+        public bool IsDrink => _effect is not (ConsumableEffect.HealInstant or ConsumableEffect.Light);
+        /// A torch: shines Magnitude metres around while in hand.
+        public bool IsLight => _effect == ConsumableEffect.Light;
         public float Magnitude => _magnitude;
         public float Duration => _duration;
         public float UseTime => _useTime;

@@ -252,13 +252,13 @@ namespace Game.Scripts.Editor.Dungeon
             return MeshObject("Pillar", null, mesh, StoneWall);
         }
 
-        public static GameObject DoorLeaf()
+        public static GameObject DoorLeaf(float width = 2.1f, float height = 2.9f, string name = "DoorLeaf")
         {
             Mesh mesh = new DungeonMeshBuilder(0.5f)
-                .Box(new Vector3(1.05f, 1.45f, 0f), new Vector3(2.1f, 2.9f, 0.12f))
-                .Box(new Vector3(1.05f, 0.7f, 0.08f), new Vector3(2.0f, 0.1f, 0.04f))
-                .Box(new Vector3(1.05f, 2.2f, 0.08f), new Vector3(2.0f, 0.1f, 0.04f))
-                .Save("DoorLeaf");
+                .Box(new Vector3(width * 0.5f, height * 0.5f, 0f), new Vector3(width, height, 0.12f))
+                .Box(new Vector3(width * 0.5f, 0.7f, 0.08f), new Vector3(width - 0.1f, 0.1f, 0.04f))
+                .Box(new Vector3(width * 0.5f, height - 0.7f, 0.08f), new Vector3(width - 0.1f, 0.1f, 0.04f))
+                .Save(name);
 
             GameObject leaf = MeshObject("Leaf", null, mesh, WoodPlanks, default, default, true, false);
             leaf.GetComponent<MeshCollider>().convex = true;

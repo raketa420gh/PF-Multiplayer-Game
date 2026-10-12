@@ -20,6 +20,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const string Title = SceneTravel.DungeonTitle;
         private const string ReflectionPath = DungeonTextureBuilder.Folder + "/Reflection.cubemap";
         private const string NightReflectionPath = DungeonTextureBuilder.Folder + "/NightReflection.cubemap";
+        private const string CatacombReflectionPath = DungeonTextureBuilder.Folder + "/CatacombReflection.cubemap";
 
         public static void Build()
         {
@@ -90,9 +91,8 @@ namespace Game.Scripts.Editor.Dungeon
             Transform dungeon = DungeonMapBuilder.Build(director, out Texture2D[] floorMaps);
             Transform village = dungeon.Find("Floor1");
             Transform hall = dungeon.Find("Floor2");
-            fill.transform.SetParent(hall, true);
-            // The catacombs are meant to be dark between their torches: a weaker fill than the old lone hall had.
-            fill.intensity *= 0.45f;
+            // Darkness is a mechanic of the catacombs: no fill, only their own fires and the torches adventurers carry.
+            Object.DestroyImmediate(fill.gameObject);
             BattleEditorUtility.Set(context, "_catacombs", hall.GetComponent<CatacombGenerator>());
             so = new SerializedObject(dungeon.gameObject.AddComponent<FloorVisibilityView>());
             BattleEditorUtility.Set(so, "_context", context);
@@ -109,8 +109,9 @@ namespace Game.Scripts.Editor.Dungeon
             SetAtmosphere(atmospheres.GetArrayElementAtIndex(0), new Color(0.3f, 0.36f, 0.42f), new Color(0.19f, 0.22f, 0.25f), new Color(0.08f, 0.08f, 0.075f),
                 new Color(0.19f, 0.235f, 0.26f), 0.021f, 140f, BuildReflection(NightReflectionPath, new Color(0.07f, 0.085f, 0.11f), new Color(0.04f, 0.048f, 0.055f), new Color(0.01f, 0.011f, 0.01f)));
             BuildVillageVolume(village);
-            SetAtmosphere(atmospheres.GetArrayElementAtIndex(1), new Color(0.4f, 0.4f, 0.46f) * 0.3f, new Color(0.32f, 0.31f, 0.33f) * 0.3f, new Color(0.22f, 0.2f, 0.18f) * 0.3f,
-                new Color(0.02f, 0.02f, 0.028f), 0.024f, 70f, RenderSettings.customReflectionTexture as Cubemap);
+            // Nearly pitch black away from the fires: barely a silhouette at arm's length, no glint off metal.
+            SetAtmosphere(atmospheres.GetArrayElementAtIndex(1), new Color(0.4f, 0.4f, 0.46f) * 0.025f, new Color(0.32f, 0.31f, 0.33f) * 0.025f, new Color(0.22f, 0.2f, 0.18f) * 0.025f,
+                new Color(0.004f, 0.004f, 0.006f), 0.024f, 70f, BuildReflection(CatacombReflectionPath, new Color(0.006f, 0.006f, 0.007f), new Color(0.004f, 0.004f, 0.004f), new Color(0.002f, 0.002f, 0.002f)));
             so.ApplyModifiedPropertiesWithoutUndo();
             // Runs start in the catacombs while the village is cut: their air is the saved default.
             ApplyAtmosphere(atmospheres.GetArrayElementAtIndex(MatchComponent.EntryFloor - 1), camera);

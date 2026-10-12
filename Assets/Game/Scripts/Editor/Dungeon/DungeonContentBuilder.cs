@@ -90,6 +90,9 @@ namespace Game.Scripts.Editor.Dungeon
             BuildDoor("Door", DungeonPropBuilder.DoorLeaf());
             BuildDoor("CellDoor", DungeonMedievalBuilder.CellDoorLeaf());
             BuildDoor("HouseDoor", HouseDoorLeaf(), DungeonVillageKitBuilder.DoorHalf - 0.03f, DungeonVillageKitBuilder.DoorHalf * 2f);
+            const float catacombLeaf = CatacombRoomBuilder.DoorWidth - 0.04f;
+            BuildDoor("CatacombDoor", DungeonPropBuilder.DoorLeaf(catacombLeaf, CatacombRoomBuilder.DoorHeight - 0.04f, "CatacombDoorLeaf"), -catacombLeaf * 0.5f,
+                CatacombRoomBuilder.DoorWidth, true);
             BuildPortal("EscapePortal", PortalKind.Escape, DungeonPropBuilder.PortalBlue, true);
             BuildPortal("DescendPortal", PortalKind.Descend, DungeonPropBuilder.PortalRed, false);
             BuildShrine(ShrineKind.Health, 100f, 0f);
@@ -418,7 +421,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             (string name, float weight, int min, int max)[] common = new (string, float, int, int)[]
             {
-                ("Gold Coins", 8f, 3, 14), ("Bandage", 4f, 1, 3), ("Potion of Healing", 3f, 1, 2), ("Potion of Protection", 1.5f, 1, 1), ("Lockpick", 1.5f, 1, 2),
+                ("Gold Coins", 8f, 3, 14), ("Bandage", 4f, 1, 3), ("Torch", 2f, 1, 1), ("Potion of Healing", 3f, 1, 2), ("Potion of Protection", 1.5f, 1, 1), ("Lockpick", 1.5f, 1, 2),
                 ("Ale", 1f, 1, 1), ("Throwing Knife", 1f, 1, 2), ("Francisca Axe", 0.8f, 1, 2), ("Campfire Kit", 0.6f, 1, 1),
                 ("Arming Sword", 1f, 1, 1), ("Viking Sword", 0.5f, 1, 1), ("Morning Star", 0.8f, 1, 1), ("Round Shield", 0.8f, 1, 1), ("Écu", 0.4f, 1, 1),
                 ("Crossbow", 0.4f, 1, 1), ("Crossbow Bolts", 1.2f, 4, 12), ("Magic Staff", 0.5f, 1, 1), ("Battle Axe", 0.4f, 1, 1),
@@ -444,7 +447,7 @@ namespace Game.Scripts.Editor.Dungeon
             };
             (string name, float weight, int min, int max)[] barrel =
             {
-                ("Gold Coins", 4f, 1, 6), ("Bandage", 3f, 1, 2), ("Potion of Healing", 2f, 1, 1), ("Ale", 2f, 1, 2), ("Throwing Knife", 1f, 1, 2), ("Lockpick", 1f, 1, 1),
+                ("Gold Coins", 4f, 1, 6), ("Bandage", 3f, 1, 2), ("Torch", 2f, 1, 1), ("Potion of Healing", 2f, 1, 1), ("Ale", 2f, 1, 2), ("Throwing Knife", 1f, 1, 2), ("Lockpick", 1f, 1, 1),
                 ("Crossbow Bolts", 1.5f, 4, 10)
             };
             (string name, float weight, int min, int max)[] bookshelf = new (string, float, int, int)[]
@@ -1377,10 +1380,15 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.SavePrefab(root, Prefab("Bookshelf"));
         }
 
-        private static void BuildDoor(string name, GameObject leaf, float hingeX = -1.05f, float width = 2.2f)
+        private static void BuildDoor(string name, GameObject leaf, float hingeX = -1.05f, float width = 2.2f, bool isSpawned = false)
         {
             GameObject root = new GameObject(name);
             root.AddComponent<NetworkObject>();
+
+            // Spawned at runtime in the generated catacombs: clients need the doorway it stands in.
+            if (isSpawned)
+                root.AddComponent<NetworkTransform>();
+
             // A closed leaf would cut the NavMesh in two; monsters shove doors open on their way instead.
             root.AddComponent<NavMeshModifier>().ignoreFromBuild = true;
             GameObject hinge = BattleEditorUtility.CreateChild("Hinge", root.transform, new Vector3(hingeX, 0f, 0f));

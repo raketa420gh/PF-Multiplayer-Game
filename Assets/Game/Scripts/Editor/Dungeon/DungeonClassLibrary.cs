@@ -99,7 +99,7 @@ namespace Game.Scripts.Editor.Dungeon
                     new PerkDef("Commanding Presence", "+2 physical power per Command.", new StatModifier(StatType.PhysicalPower, 2f)) { Icon = "Chevrons", Color = command, Subclass = 2, PerStack = true },
                     new PerkDef("Banner Bearer", "+10 armor rating and +15 magic resistance.", new StatModifier(StatType.ArmorRating, 10f), new StatModifier(StatType.MagicResistance, 15f)) { Icon = "Shield", Color = command, Subclass = 2 }
                 },
-                Kit = new[] { ("Battle Axe", EquipSlot.Weapon1Main, 1, true), ("Morning Star", EquipSlot.Weapon2Main, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Francisca Axe", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 3, true) },
+                Kit = new[] { ("Battle Axe", EquipSlot.Weapon1Main, 1, true), ("Morning Star", EquipSlot.Weapon2Main, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Francisca Axe", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 3, true), ("Torch", EquipSlot.Utility3, 1, true) },
                 Weapons = new[] { WeaponClass.Axe, WeaponClass.Sword, WeaponClass.Mace, WeaponClass.Spear, WeaponClass.Dagger, WeaponClass.Torch }
             };
         }
@@ -195,7 +195,7 @@ namespace Game.Scripts.Editor.Dungeon
                     new PerkDef("Storm Sense", "+4 Knowledge and +4 Agility.", new StatModifier(StatType.Knowledge, 4f), new StatModifier(StatType.Agility, 4f)) { Icon = "Eye", Color = storm, Subclass = 2 }
                 },
                 Kit = new[] { ("Spellbook", EquipSlot.Weapon1Main, 1, true), ("Magic Staff", EquipSlot.Weapon2Main, 1, true), ("Peasant Hood", EquipSlot.Head, 1, true),
-                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true), ("Bandage", EquipSlot.Utility2, 2, true) },
+                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true), ("Bandage", EquipSlot.Utility2, 2, true), ("Torch", EquipSlot.Utility3, 1, true) },
                 Weapons = new[] { WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.CrystalBall, WeaponClass.Dagger, WeaponClass.Sword },
                 Focus = CastFocus.Magic
             };
@@ -282,7 +282,7 @@ namespace Game.Scripts.Editor.Dungeon
                     new PerkDef("Heavy Hands", "+12% physical damage, but -6% action speed.", new StatModifier(StatType.PhysicalDamageBonus, 0.12f), new StatModifier(StatType.ActionSpeed, -6f)) { Icon = "Mace", Color = momentum, Subclass = 2 }
                 },
                 Kit = new[] { ("Arming Sword", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Battle Axe", EquipSlot.Weapon2Main, 1, true),
-                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Bandage", EquipSlot.Utility1, 3, true) },
+                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Bandage", EquipSlot.Utility1, 3, true), ("Torch", EquipSlot.Utility2, 1, true) },
                 Weapons = new[] { WeaponClass.Sword, WeaponClass.Axe, WeaponClass.Mace, WeaponClass.Dagger, WeaponClass.Spear, WeaponClass.Bow, WeaponClass.Crossbow,
                     WeaponClass.Staff, WeaponClass.Shield, WeaponClass.Torch }
             };
@@ -393,7 +393,7 @@ namespace Game.Scripts.Editor.Dungeon
                     new PerkDef("Ritualist", "+6 magical power.", new StatModifier(StatType.MagicalPower, 6f)) { Icon = "Book", Color = seal, Subclass = 2 }
                 },
                 Kit = new[] { ("Morning Star", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Spellbook", EquipSlot.Weapon2Main, 1, true),
-                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true), ("Bandage", EquipSlot.Utility2, 2, true) },
+                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true), ("Bandage", EquipSlot.Utility2, 2, true), ("Torch", EquipSlot.Utility3, 1, true) },
                 Weapons = new[] { WeaponClass.Mace, WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.Shield, WeaponClass.Torch },
                 Focus = CastFocus.Magic
             };
@@ -468,7 +468,7 @@ namespace Game.Scripts.Editor.Dungeon
                 },
                 Kit = new[] { ("Crossbow", EquipSlot.Weapon1Main, 1, true), ("Arming Sword", EquipSlot.Weapon2Main, 1, true), ("Peasant Hood", EquipSlot.Head, 1, true),
                     ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true),
-                    ("Throwing Knife", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 2, true), ("Crossbow Bolts", EquipSlot.Head, 20, false) },
+                    ("Throwing Knife", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 2, true), ("Torch", EquipSlot.Utility3, 1, true), ("Crossbow Bolts", EquipSlot.Head, 20, false) },
                 Weapons = new[] { WeaponClass.Bow, WeaponClass.Crossbow, WeaponClass.Sword, WeaponClass.Dagger, WeaponClass.Spear, WeaponClass.Torch }
             };
         }

@@ -10,6 +10,8 @@ namespace Game.Scripts.Editor.Dungeon
     {
         public const string Folder = DungeonPropBuilder.PrefabsFolder + "/Items";
 
+        private const float HandTorchLength = 0.6f;
+
         public static GameObject Build(ItemDef def)
         {
             BattleEditorUtility.EnsureFolder(Folder);
@@ -62,6 +64,15 @@ namespace Game.Scripts.Editor.Dungeon
                     BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Mug", parent, new Vector3(0f, 0.08f, 0f), Vector3.zero, new Vector3(0.12f, 0.08f, 0.12f), BattleEditorUtility.GetMaterial("DarkWood", new Color(0.22f, 0.14f, 0.08f)));
                     BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Foam", parent, new Vector3(0f, 0.17f, 0f), Vector3.zero, new Vector3(0.11f, 0.015f, 0.11f), cloth);
                     BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Handle", parent, new Vector3(0.08f, 0.08f, 0f), Vector3.zero, new Vector3(0.03f, 0.1f, 0.03f), BattleEditorUtility.GetMaterial("DarkWood", new Color(0.22f, 0.14f, 0.08f)));
+                    break;
+                case ConsumableEffect.Light:
+                    // The wall torch cut to a hand length, sunk so the hand grips its lower third; the light is the holder's own.
+                    Transform torch = DungeonMedievalBuilder.Model("Torch", parent).transform;
+                    Bounds bounds = DungeonKitBuilder.Bounds(torch.gameObject);
+                    float scale = HandTorchLength / bounds.size.y;
+                    torch.localScale *= scale;
+                    torch.localPosition = new Vector3(-bounds.center.x, -bounds.min.y - HandTorchLength * 0.3f / scale, -bounds.center.z) * scale;
+                    DungeonPropBuilder.Flame(parent, Vector3.up * HandTorchLength * 0.68f, 0.45f);
                     break;
                 default:
                     BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Flask", parent, new Vector3(0f, 0.07f, 0f), Vector3.zero, new Vector3(0.13f, 0.13f, 0.13f), glass);

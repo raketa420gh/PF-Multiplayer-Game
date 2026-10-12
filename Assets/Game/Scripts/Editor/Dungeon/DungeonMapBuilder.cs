@@ -187,6 +187,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_keyMap", keyMap);
             BattleEditorUtility.Set(so, "_sides", rooms.Sides);
             BattleEditorUtility.Set(so, "_post", rooms.Post);
+            BattleEditorUtility.Set(so, "_door", DungeonSceneBuilder.LoadNetworkObject("CatacombDoor"));
             BattleEditorUtility.Set(so, "_doorWidth", CatacombRoomBuilder.DoorWidth);
             BattleEditorUtility.Set(so, "_doorOffset", CatacombRoomBuilder.DoorOffset);
             BattleEditorUtility.Set(so, "_cellPixels", CatacombRoomBuilder.MapPixels);

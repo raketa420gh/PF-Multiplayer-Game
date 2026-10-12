@@ -431,6 +431,12 @@ namespace Game.Scripts.Dungeon
             if (!IsGenerated(floorIndex))
                 return;
 
+            if (_catacombs.Door != null)
+            {
+                foreach (Pose doorway in _catacombs.Doorways)
+                    _spawned.Add(_runner.Spawn(_catacombs.Door, doorway.position, doorway.rotation));
+            }
+
             foreach (CatacombRoomComponent room in _catacombs.Rooms)
             {
                 foreach (MonsterPlacement placement in room.Containers)

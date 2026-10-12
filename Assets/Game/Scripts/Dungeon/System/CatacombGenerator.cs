@@ -41,6 +41,9 @@ namespace Game.Scripts.Dungeon
         public IReadOnlyList<CatacombRoomComponent> Rooms => _rooms;
         /// Parent of every generated room, side and post; null before the first layout.
         public Transform Content => _content;
+        /// Every open doorway of the layout, the key room's too: the host hangs a door in each.
+        public IReadOnlyList<Pose> Doorways => _doorways;
+        public NetworkObject Door => _door;
 
         [SerializeField]
         private int _floor = MatchComponent.EntryFloor;
@@ -66,6 +69,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Stands on every grid corner")]
         private GameObject _post;
 
+        [SerializeField, Tooltip("Hangs in every open doorway; its length runs along local X like a side's")]
+        private NetworkObject _door;
+
         [SerializeField, Range(0f, 1f), Tooltip("Chance of the second doorway of a passage, and of a wall of the maze to open anyway, giving loops")]
         private float _loops = 0.25f;
 
@@ -90,12 +96,16 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _agentRadius = 0.35f;
 
+        [SerializeField, Tooltip("A body's height: doorways are only a little higher, walkways raise the floor under some of them")]
+        private float _agentHeight = 1.8f;
+
         private const int NotWalkable = 1;
         private const int BothDoorways = 3;
 
         private static readonly Vector2Int[] s_steps = { Vector2Int.right, Vector2Int.up, Vector2Int.left, Vector2Int.down };
 
         private readonly List<CatacombRoomComponent> _rooms = new();
+        private readonly List<Pose> _doorways = new();
         private string[] _titles = Array.Empty<string>();
         private Transform _content;
         private Texture2D _map;
@@ -167,6 +177,7 @@ namespace Game.Scripts.Dungeon
                 Destroy(_map);
 
             _map = Paint(plan);
+            CollectDoorways(plan);
         }
 
         /// Host only: the walkable surface of the whole floor, the key room included.
@@ -177,6 +188,7 @@ namespace Game.Scripts.Dungeon
 
             NavMeshBuildSettings settings = NavMesh.GetSettingsByID(0);
             settings.agentRadius = _agentRadius;
+            settings.agentHeight = _agentHeight;
             settings.overrideVoxelSize = true;
             settings.voxelSize = _voxelSize;
             List<NavMeshBuildMarkup> markups = new();
@@ -405,6 +417,31 @@ namespace Game.Scripts.Dungeon
         private void Side(Vector3 position, float yaw, int doorways)
         {
             Instantiate(_sides[doorways], position, Quaternion.Euler(0f, yaw, 0f), _content);
+        }
+
+        /// The doorways of every east and north side between two cells, placed as the sides place them.
+        private void CollectDoorways(Plan plan)
+        {
+            _doorways.Clear();
+            float half = _pitch * 0.5f;
+
+            for (int cell = 0; cell < plan.Kinds.Length; cell++)
+            {
+                if (cell % _grid < _grid - 1)
+                    AddDoorways(CellCenter(cell) + Vector3.right * half, Quaternion.Euler(0f, -90f, 0f), plan.East[cell]);
+
+                if (cell / _grid < _grid - 1)
+                    AddDoorways(CellCenter(cell) + Vector3.forward * half, Quaternion.identity, plan.North[cell]);
+            }
+        }
+
+        private void AddDoorways(Vector3 side, Quaternion rotation, int doorways)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                if ((doorways & 1 << i) != 0)
+                    _doorways.Add(new Pose(side + rotation * Vector3.right * ((i * 2 - 1) * _doorOffset), rotation));
+            }
         }
 
         /// Readable meshes of the layout that never move or change: nothing networked, physical, animated or flickering above them.
