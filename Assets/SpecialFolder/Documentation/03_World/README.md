@@ -1,5 +1,6 @@
 # World
 
+- `Lore.md`
 - `Map_Design.md`
 - `POI.md`
 - `PvE.md`
