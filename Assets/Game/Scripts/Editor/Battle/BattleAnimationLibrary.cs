@@ -160,6 +160,8 @@ namespace Game.Scripts.Editor.Battle
         public const float CastReleaseTime = 0.5f;
         /// One turn of each hand while searching, as in the Dark and Darker footage.
         public const float InteractCycle = 0.9f;
+        /// The torch goes up over the head in 24 frames at 60 fps (the footage) and is kept there while RMB is held.
+        public const float TorchRaiseTime = 24f / 60f;
         public const float AbilityTime = FighterAnimComponent.AbilityTime;
         public const float AbilityPeak = FighterAnimComponent.AbilityPeak;
         /// A belt item is no handle to close the fist on: the fingers lie around it.
@@ -742,6 +744,73 @@ namespace Game.Scripts.Editor.Battle
         public static BodyPose Hold()
         {
             return Held(new(0.17f, 1.49f, 0.5f), new(-0.08f, 1f, 0.12f), new(-0.25f, 0.45f, 0.85f));
+        }
+
+        /// A torch as in Dark and Darker: held up in the off hand, low on the left of the view, its head leaning in toward the
+        /// middle at eye height; the empty main hand rests by the hip.
+        public static BodyPose HoldTorch()
+        {
+            return Torch(new(-0.29f, 1.43f, 0.615f), new(0.08f, 1f, -0.05f), new(0.25f, 0.45f, 0.85f), new(0.12f, 1.495f, 0.45f),
+                new(0f, 0.96f, -0.27f), new(-0.35f, 0.25f, 0.9f), 0.4f);
+        }
+
+        /// Raising a torch to throw as in Dark and Darker: the torch goes up over the head on the left, out of the view, the
+        /// open main hand reaches forward to aim; the clip ends on the aim, which is kept while RMB is held.
+        public static List<PoseKey> TorchAimKeys()
+        {
+            return new List<PoseKey>
+            {
+                new(0f, HoldTorch()),
+                new(TorchRaiseTime, TorchAim(), Ease.Out)
+            };
+        }
+
+        /// The throw: the aiming hand drops away, the torch comes over the top head trailing and leaves the hand ahead of the
+        /// eyes at FighterAnimComponent.TorchRelease, the empty hand follows through to the lower left and both go down to rest.
+        public static List<PoseKey> TorchThrowKeys()
+        {
+            Vector3 low = new(0.22f, 1.15f, 0.25f);
+            Vector3 thumb = new(0f, 0.96f, -0.27f);
+            Vector3 fingers = new(-0.35f, 0.25f, 0.9f);
+            // The empty main hand keeps its roll on the way to the rest.
+            BodyPose rest = Cast(0.22f, 0.3f, 1.25f);
+            rest.Edge = fingers;
+
+            return new List<PoseKey>
+            {
+                new(0f, TorchAim()),
+                new(0.06f, Torch(new(-0.22f, 1.98f, 0.2f), new(0.88f, -0.09f, -0.47f), new(0.15f, 0.95f, 0.1f), new(0.2f, 1.4f, 0.35f), thumb, fingers, 0.5f),
+                    Ease.In),
+                new(FighterAnimComponent.TorchRelease, Torch(new(-0.105f, 1.9f, 0.47f), new(0.23f, 0.67f, -0.71f), new(0.13f, 0.7f, 0.7f), low, thumb, fingers,
+                    0.4f)),
+                // The empty hand comes down palm first.
+                new(0.17f, Torch(new(-0.12f, 1.65f, 0.53f), new(0.98f, 0f, -0.2f), new(0.2f, 0.1f, 0.97f), low, thumb, fingers, 0.4f, 0.6f), Ease.Out),
+                new(0.25f, Torch(new(-0.17f, 1.5f, 0.5f), new(0.98f, 0f, -0.11f), new(0.1f, -0.4f, 0.9f), low, thumb, fingers, 0.4f, 0.6f)),
+                new(FighterAnimComponent.TorchThrowTime, rest)
+            };
+        }
+
+        /// Aiming the throw: the torch over the head on the left, lying back across it (the forearm stays unwrung), the open main
+        /// hand forward low right of the crosshair.
+        private static BodyPose TorchAim()
+        {
+            return Torch(new(-0.28f, 1.92f, -0.08f), new(0.84f, 0f, -0.55f), Vector3.up, new(0.095f, 1.62f, 0.6f),
+                new(0f, 0.82f, -0.57f), new(-0.25f, 0.55f, 0.8f), 0.8f);
+        }
+
+        /// The torch in the off hand by its axis with the forearm pointing a given way; the main hand by its thumb and fingers.
+        private static BodyPose Torch(Vector3 off, Vector3 axis, Vector3 forearm, Vector3 main, Vector3 thumb, Vector3 fingers, float mainOpen,
+            float offOpen = 0.1f)
+        {
+            BodyPose pose = Upper(0f, 0f);
+            pose.Main = new HandPose(main, thumb);
+            pose.Edge = fingers;
+            pose.Off = new HandPose(off, axis, forearm);
+            pose.OffSocket = WeaponSocket.LeftHand;
+            pose.MainOpen = mainOpen;
+            pose.OffOpen = offOpen;
+
+            return pose;
         }
 
         /// Drinking as in Dark and Darker: the bottle tips its mouth to the eyes on the way up, the hand turns over it

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Game.Scripts.Battle;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -18,14 +19,22 @@ namespace Game.Scripts.Editor.Battle
         private const int Height = 540;
 
         /// Clips: names in the animations folder. Phases: moments as fractions of each clip, 0..1. Writes
-        /// c_{clip}_{index}.png into the folder and returns the paths.
-        public static string Run(string clips, string phases, string folder)
+        /// c_{clip}_{index}.png into the folder and returns the paths. A held item (a world model) sits in the hand as in the game.
+        public static string Run(string clips, string phases, string folder, GameObject held = null, bool isTorch = false)
         {
             Directory.CreateDirectory(folder);
             StringBuilder written = new StringBuilder();
             GameObject model = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath), Vector3.zero, Quaternion.identity);
             List<GameObject> stage = new List<GameObject> { model, new GameObject("Camera"), SwingPreview.CreateLight(1.3f, 160f), SwingPreview.CreateLight(0.7f, -40f) };
             Animator animator = model.GetComponentInChildren<Animator>();
+
+            if (held != null)
+            {
+                BattlePoseRig.CreateSockets(animator);
+
+                foreach (Transform part in HandItem.Create(held, animator, true, isTorch).GetComponentsInChildren<Transform>())
+                    part.gameObject.layer = Layer;
+            }
 
             foreach (GameObject item in stage)
                 item.hideFlags = HideFlags.HideAndDontSave;

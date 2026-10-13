@@ -34,8 +34,8 @@ namespace Game.Scripts.Editor.Battle
         private static readonly string[] s_firstPersonStates =
         {
             FighterAnimComponent.CastFirstPersonState, FighterAnimComponent.CastReleaseFirstPersonState, FighterAnimComponent.UseFirstPersonState,
-            FighterAnimComponent.HoldState, FighterAnimComponent.BandageFirstPersonState, FighterAnimComponent.InteractFirstPersonState,
-            FighterAnimComponent.AbilityFirstPersonState
+            FighterAnimComponent.HoldState, FighterAnimComponent.HoldTorchState, FighterAnimComponent.BandageFirstPersonState, FighterAnimComponent.InteractFirstPersonState,
+            FighterAnimComponent.AbilityFirstPersonState, FighterAnimComponent.TorchAimState, FighterAnimComponent.TorchThrowState
         };
 
         private static readonly string[] s_socketCurves =
@@ -543,6 +543,9 @@ namespace Game.Scripts.Editor.Battle
             List<PoseKey> use = SettleRoll(rig, BattleAnimationLibrary.UseKeys());
             AddKeyed(rig, upper, FighterAnimComponent.UseFirstPersonState, BattleAnimationLibrary.DrinkTime, use);
             AddState(upper, FighterAnimComponent.HoldState, Record(rig, FighterAnimComponent.HoldState, 1f, true, _ => use[0].Pose));
+            AddState(upper, FighterAnimComponent.HoldTorchState, Record(rig, FighterAnimComponent.HoldTorchState, 1f, true, _ => BattleAnimationLibrary.HoldTorch()));
+            AddKeyed(rig, upper, FighterAnimComponent.TorchAimState, BattleAnimationLibrary.TorchRaiseTime, SettleRoll(rig, BattleAnimationLibrary.TorchAimKeys()));
+            AddKeyed(rig, upper, FighterAnimComponent.TorchThrowState, FighterAnimComponent.TorchThrowTime, SettleRoll(rig, BattleAnimationLibrary.TorchThrowKeys()));
             AddState(upper, FighterAnimComponent.BandageFirstPersonState, Record(rig, FighterAnimComponent.BandageFirstPersonState, BandageCycle, true,
                 time => BattleAnimationLibrary.Bandage(time / BandageCycle)));
             AddState(upper, FighterAnimComponent.InteractFirstPersonState, Record(rig, FighterAnimComponent.InteractFirstPersonState,

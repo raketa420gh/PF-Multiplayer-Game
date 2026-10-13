@@ -64,7 +64,8 @@ namespace Game.Scripts.Dungeon
             }
 
             _anim.SetKneeling(_adventurer.IsResting);
-            _anim.SetHolding(_adventurer.HasBeltItemInHand && !_adventurer.IsHandsOccupied);
+            bool isHolding = _adventurer.HasBeltItemInHand && !_adventurer.IsHandsOccupied;
+            _anim.SetHolding(isHolding, isHolding && _adventurer.Inventory.GetEquippedConfig<ConsumableItemConfig>((EquipSlot)_adventurer.BeltSlot) is { IsLight: true });
             UpdateTorch();
             UpdateInvisibility();
             UpdateHandGlow();
@@ -90,8 +91,9 @@ namespace Game.Scripts.Dungeon
             if (config == null || config.WorldModel == null)
                 return;
 
-            // A torch is held upright like a bottle.
-            _handItem = HandItem.Create(config.WorldModel, _animator, config is ConsumableItemConfig { IsDrink: true } or ConsumableItemConfig { IsLight: true });
+            // A torch is held upright like a bottle, in the left hand; its light comes with the model.
+            bool isTorch = config is ConsumableItemConfig { IsLight: true };
+            _handItem = HandItem.Create(config.WorldModel, _animator, isTorch || config is ConsumableItemConfig { IsDrink: true }, isTorch);
 
             foreach (Collider collider in _handItem.GetComponentsInChildren<Collider>())
                 Destroy(collider);
@@ -144,9 +146,7 @@ namespace Game.Scripts.Dungeon
             int slot = _adventurer.Fighter.Combat.WeaponSlot;
             WeaponItemConfig main = inventory.GetEquippedConfig<WeaponItemConfig>(slot == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main);
             WeaponItemConfig off = inventory.GetEquippedConfig<WeaponItemConfig>(slot == 0 ? EquipSlot.Weapon1Off : EquipSlot.Weapon2Off);
-            ConsumableItemConfig held = _adventurer.HasBeltItemInHand && !_adventurer.IsHandsOccupied ? inventory.GetEquippedConfig<ConsumableItemConfig>((EquipSlot)_adventurer.BeltSlot) : null;
-            float range = held != null && held.IsLight ? held.Magnitude
-                : _adventurer.HasWeaponInHand ? Mathf.Max(main != null ? main.LightRange : 0f, off != null ? off.LightRange : 0f) : 0f;
+            float range = _adventurer.HasWeaponInHand ? Mathf.Max(main != null ? main.LightRange : 0f, off != null ? off.LightRange : 0f) : 0f;
             bool isLit = range > 0f && _adventurer.Fighter.Health.IsAlive;
 
             if (_torchLight.enabled != isLit)

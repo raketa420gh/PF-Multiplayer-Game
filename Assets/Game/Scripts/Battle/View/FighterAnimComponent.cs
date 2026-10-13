@@ -36,7 +36,13 @@ namespace Game.Scripts.Battle
         public const string CastFirstPersonState = "CastFp";
         public const string UseFirstPersonState = "UseFp";
         public const string HoldState = "Hold";
+        public const string HoldTorchState = "HoldTorch";
         public const string ThrowState = "Throw";
+        public const string TorchAimState = "TorchAim";
+        public const string TorchThrowState = "TorchThrow";
+        /// Throwing a torch as in the Dark and Darker footage: 27 frames at 60 fps, the torch leaves the hand at frame 6.
+        public const float TorchThrowTime = 27f / 60f;
+        public const float TorchRelease = 6f / 60f;
         public const string OpenState = "Open";
         public const string PickUpState = "PickUp";
         public const string BandageState = "Bandage";
@@ -127,13 +133,15 @@ namespace Game.Scripts.Battle
         private static readonly int s_hitHead = Animator.StringToHash(HitHeadState);
         private static readonly int s_hitStagger = Animator.StringToHash(HitStaggerState);
         private static readonly int s_hold = Animator.StringToHash(HoldState);
+        private static readonly int s_holdTorch = Animator.StringToHash(HoldTorchState);
 
         /// Indexed by CombatComponent.BusyKind.
         private static readonly int[] s_busy =
         {
             Animator.StringToHash(CastState), Animator.StringToHash(UseState), Animator.StringToHash(InteractState),
             Animator.StringToHash(ThrowState), Animator.StringToHash(OpenState), Animator.StringToHash(PickUpState),
-            Animator.StringToHash(BandageState), Animator.StringToHash(CastReleaseState), Animator.StringToHash(AbilityFirstPersonState)
+            Animator.StringToHash(BandageState), Animator.StringToHash(CastReleaseState), Animator.StringToHash(AbilityFirstPersonState),
+            Animator.StringToHash(TorchAimState), Animator.StringToHash(TorchThrowState)
         };
 
         /// Own-eyes variants of the busy states whose library motion stays outside the first-person view; 0 = there is none.
@@ -141,7 +149,8 @@ namespace Game.Scripts.Battle
         private static readonly int[] s_busyFirstPerson =
         {
             Animator.StringToHash(CastFirstPersonState), Animator.StringToHash(UseFirstPersonState), Animator.StringToHash(InteractFirstPersonState), 0, 0, 0,
-            Animator.StringToHash(BandageFirstPersonState), Animator.StringToHash(CastReleaseFirstPersonState), Animator.StringToHash(AbilityFirstPersonState)
+            Animator.StringToHash(BandageFirstPersonState), Animator.StringToHash(CastReleaseFirstPersonState), Animator.StringToHash(AbilityFirstPersonState),
+            Animator.StringToHash(TorchAimState), Animator.StringToHash(TorchThrowState)
         };
 
         private struct WeaponStates
@@ -177,6 +186,7 @@ namespace Game.Scripts.Battle
         private bool _isHeadHidden;
         private bool _isKneeling;
         private bool _isHolding;
+        private bool _isHoldingTorch;
         private float _crouch;
         private float _spineHeight;
 
@@ -227,10 +237,11 @@ namespace Game.Scripts.Battle
             _isKneeling = isKneeling;
         }
 
-        /// While set, the idle hands hold an item instead of the weapon.
-        public void SetHolding(bool isHolding)
+        /// While set, the idle hands hold an item instead of the weapon; a torch is held up in the left hand.
+        public void SetHolding(bool isHolding, bool isTorch = false)
         {
             _isHolding = isHolding;
+            _isHoldingTorch = isTorch;
         }
 
         private void LateUpdate()
@@ -422,7 +433,7 @@ namespace Game.Scripts.Battle
 
                     // A let-go block brings the guard down along a clip of its own before the idle takes over.
                     _lowerLeft = combat.State == CombatState.Idle && !_isHolding ? _lowerLeft - deltaTime : 0f;
-                    state = _lowerLeft > 0f ? states.BlockLower : _isHolding ? s_hold : states.Idle;
+                    state = _lowerLeft > 0f ? states.BlockLower : _isHoldingTorch ? s_holdTorch : _isHolding ? s_hold : states.Idle;
                     time = 0f;
                     break;
             }

@@ -20,7 +20,8 @@ namespace Game.Scripts.Dungeon
         Consumable,
         Interact,
         Utility,
-        Shapeshift
+        Shapeshift,
+        Torch
     }
 
     /// The player's body inside the dungeon: class, inventory, interaction, abilities, death and extraction on top of the fighter.
@@ -38,6 +39,9 @@ namespace Game.Scripts.Dungeon
         public const byte BusyRelease = 7;
         /// A skill: it takes effect at the top of the activation clip, the clip plays out after.
         public const byte BusyAbility = 8;
+        /// A torch raised over the head while RMB is held, and its throw when RMB is let go.
+        public const byte BusyTorchAim = 9;
+        public const byte BusyTorchThrow = 10;
         public const int BeltGroupSize = 3;
         public const byte NoBelt = 255;
         public const byte NoSearch = 255;
@@ -63,6 +67,8 @@ namespace Game.Scripts.Dungeon
         /// An aimed shot flies this much faster and drops this much less.
         private const float AimedSpeed = 1.8f;
         private const float AimedGravity = 0.25f;
+        private const float TorchThrowSpeed = 11f;
+        private const float TorchThrowLift = 1.5f;
 
         public FighterComponent Fighter => _fighter;
         public InventoryComponent Inventory => _inventory;
@@ -183,6 +189,7 @@ namespace Game.Scripts.Dungeon
 
         public float CastCharge => IsHoldingCast ? Mathf.InverseLerp(_fighter.Combat.StateTick, _pendingCompleteTick, Runner.Tick) : 0f;
         public bool IsHoldingCast => Pending == PendingAction.Ability && _isHoldingCast;
+        public bool IsAimingTorch => Pending == PendingAction.Torch && _fighter.Combat.BusyKind == BusyTorchAim;
         public float ReloadSpeed => _stats.ReloadSpeed * (1f + _effects.GetMagnitude(StatusEffectKind.QuickReload) / 100f);
 
         public const byte NoSpell = 255;
@@ -293,7 +300,12 @@ namespace Game.Scripts.Dungeon
         [Networked]
         private TickTimer _resourceTimer { get; set; }
 
+        [Networked]
+        private TickTimer _burnTimer { get; set; }
+
         private static readonly List<LagCompensatedHit> s_hits = new(16);
+        /// A thrown torch leaves the hand above the head and ahead of the eyes, along the aim and a little up.
+        private static readonly Vector3 s_torchRelease = new(-0.1f, 0.15f, 0.4f);
         private static readonly List<DamageReceiverComponent> s_struck = new();
 
         private AbilityConfig _aura;
@@ -392,6 +404,8 @@ namespace Game.Scripts.Dungeon
 
             if (HasBeltItemInHand && _inventory.GetEquipped((EquipSlot)BeltSlot).IsEmpty)
                 BeltSlot = NoBelt;
+
+            BurnTorch();
 
             if (Resource > 0 && _resourceTimer.Expired(Runner))
                 Resource = 0;
@@ -772,6 +786,9 @@ namespace Game.Scripts.Dungeon
             }
             else
             {
+                if (IsAimingTorch && !buttons.IsSet(PlayerInputButtons.Secondary))
+                    ReleaseTorch();
+
                 SimulatePending();
             }
 
@@ -804,7 +821,8 @@ namespace Game.Scripts.Dungeon
                 TryCastReadiedSpell();
         }
 
-        /// 1 / 2 take a weapon set out, X puts it away, 3 / 4 cycle the three belt slots of their group; LMB uses the belt item, RMB puts it away.
+        /// 1 / 2 take a weapon set out, X puts it away, 3 / 4 cycle the three belt slots of their group; LMB uses the belt item, RMB puts it away
+        /// (a torch is thrown with RMB instead).
         private bool SimulateBelt(NetworkButtons buttons, NetworkButtons previous)
         {
             if (buttons.WasPressed(previous, PlayerInputButtons.Weapon1) || buttons.WasPressed(previous, PlayerInputButtons.Weapon2))
@@ -830,10 +848,69 @@ namespace Game.Scripts.Dungeon
 
             if (buttons.WasPressed(previous, PlayerInputButtons.Primary))
                 OnUseItem((EquipSlot)BeltSlot);
-            else if (buttons.WasPressed(previous, PlayerInputButtons.Secondary))
+            else if (buttons.WasPressed(previous, PlayerInputButtons.Secondary) && !TryAimTorch())
                 BeltSlot = NoBelt;
 
             return true;
+        }
+
+        /// RMB with a torch in hand raises it over the head to throw; it flies when the button is let go.
+        private bool TryAimTorch()
+        {
+            if (_inventory.GetEquippedConfig<ConsumableItemConfig>((EquipSlot)BeltSlot) is not { IsLight: true })
+                return false;
+
+            if (_fighter.Combat.StartBusy(float.PositiveInfinity, BusyTorchAim))
+            {
+                Pending = PendingAction.Torch;
+                _pendingIndex = BeltSlot;
+                _pendingCompleteTick = int.MaxValue;
+            }
+
+            return true;
+        }
+
+        /// The throw plays out; the torch leaves the hand at its release moment (SimulatePending).
+        private void ReleaseTorch()
+        {
+            _fighter.Combat.CancelBusy();
+            _fighter.Combat.StartBusy(FighterAnimComponent.TorchThrowTime, BusyTorchThrow);
+            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(FighterAnimComponent.TorchRelease / Runner.DeltaTime);
+        }
+
+        /// The torch flies from over the head along the aim and burns on where it lands.
+        private void ThrowTorch(EquipSlot slot)
+        {
+            ItemStack torch = _inventory.GetEquipped(slot);
+
+            if (_worldItemPrefab == null || _database.Get(torch.ItemId) is not ConsumableItemConfig { IsLight: true })
+                return;
+
+            _inventory.SetEquipment(slot, default);
+            FighterBodyComponent body = _fighter.Body;
+            Vector3 velocity = body.AimDirection * TorchThrowSpeed + Vector3.up * TorchThrowLift;
+            Runner.Spawn(_worldItemPrefab, body.EyePosition + body.AimRotation * s_torchRelease, transform.rotation, PlayerRef.None, (_, item) =>
+            {
+                WorldItemComponent thrown = item.GetComponent<WorldItemComponent>();
+                thrown.Setup(torch.WithLit(true));
+                thrown.Launch(velocity);
+            });
+        }
+
+        /// The torch in hand burns a second of its fuel each second and is gone when the fuel runs out.
+        private void BurnTorch()
+        {
+            if (!HasBeltItemInHand || IsHandsOccupied || !_burnTimer.ExpiredOrNotRunning(Runner))
+                return;
+
+            EquipSlot slot = (EquipSlot)BeltSlot;
+            ItemStack torch = _inventory.GetEquipped(slot);
+
+            if (_database.Get(torch.ItemId) is not ConsumableItemConfig { IsLight: true } config)
+                return;
+
+            _burnTimer = TickTimer.CreateFromSeconds(Runner, 1f);
+            _inventory.SetEquipment(slot, torch.Burnt + 1 < config.Duration ? torch.WithBurnt(torch.Burnt + 1) : default);
         }
 
         private bool CanChangeHands()
@@ -980,6 +1057,9 @@ namespace Game.Scripts.Dungeon
                     break;
                 case PendingAction.Utility:
                     ApplyUtility((EquipSlot)_pendingIndex);
+                    break;
+                case PendingAction.Torch:
+                    ThrowTorch((EquipSlot)_pendingIndex);
                     break;
                 case PendingAction.Shapeshift:
                     Form = Form == (ShapeshiftForm)_pendingIndex ? ShapeshiftForm.None : (ShapeshiftForm)_pendingIndex;
@@ -1876,7 +1956,7 @@ namespace Game.Scripts.Dungeon
 
             switch (item)
             {
-                // A torch only shines while it is held.
+                // A torch is thrown with RMB (TryAimTorch); one dropped from the inventory lies unlit.
                 case ConsumableItemConfig { IsLight: true }:
                     return;
                 // Potions are drunk at Action Speed, bandages are wound at Handling Speed.
@@ -1909,10 +1989,20 @@ namespace Game.Scripts.Dungeon
 
         void InventoryActionsComponent.IOwner.OnDropItem(ItemStack stack)
         {
+            DropItem(stack);
+        }
+
+        private void DropItem(ItemStack stack)
+        {
             if (_worldItemPrefab == null)
                 return;
 
             Vector3 position = transform.position + transform.forward * 0.8f + Vector3.up * 0.3f;
+
+            // Down onto the floor, so a dropped item lies on it instead of hanging in the air.
+            if (Physics.Raycast(position + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 2f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                position = hit.point;
+
             Runner.Spawn(_worldItemPrefab, position, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), PlayerRef.None,
                 (_, item) => item.GetComponent<WorldItemComponent>().Setup(stack));
         }

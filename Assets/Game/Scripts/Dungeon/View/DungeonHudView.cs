@@ -29,6 +29,8 @@ namespace Game.Scripts.Dungeon
             public TMP_Text Glyph;
             public TMP_Text Count;
             public Image Frame;
+            /// Fuel left in a torch: a filled bar under the icon, its parent the bar's back.
+            public Image Fuel;
         }
 
         [SerializeField]
@@ -297,7 +299,7 @@ namespace Game.Scripts.Dungeon
             InventoryComponent inventory = adventurer.Inventory;
             ItemConfig held = adventurer.HasBeltItemInHand ? inventory.GetConfig(inventory.GetEquipped((EquipSlot)adventurer.BeltSlot)) : null;
             _weaponText.text = held != null
-                ? $"{held.DisplayName}  <size=70%>{(state.Length > 0 ? state : "[LMB] use  [RMB] put away")}</size>"
+                ? $"{held.DisplayName}  <size=70%>{(state.Length > 0 ? state : held is ConsumableItemConfig { IsLight: true } ? "[RMB] hold to throw  [X] put away" : "[LMB] use  [RMB] put away")}</size>"
                 : $"{combat.Weapon.DisplayName}  <size=70%>{state}{(bolts < int.MaxValue ? $"  bolts {bolts}" : string.Empty)}</size>";
 
             int activeSlot = adventurer.HasBeltItemInHand ? 2 + (adventurer.BeltSlot - (int)EquipSlot.Utility1) / AdventurerComponent.BeltGroupSize
@@ -394,6 +396,11 @@ namespace Game.Scripts.Dungeon
                 _belt[i].Glyph.color = config != null ? config.IconColor : Color.white;
                 _belt[i].Count.text = config != null && stack.Count > 1 ? stack.Count.ToString() : string.Empty;
                 _belt[i].Frame.color = adventurer.BeltSlot == (int)EquipSlot.Utility1 + i ? _beltSelectedColor : _beltIdleColor;
+                bool isTorch = config is ConsumableItemConfig { IsLight: true };
+                _belt[i].Fuel.transform.parent.gameObject.SetActive(isTorch);
+
+                if (isTorch)
+                    _belt[i].Fuel.fillAmount = 1f - stack.Burnt / ((ConsumableItemConfig)config).Duration;
             }
         }
 

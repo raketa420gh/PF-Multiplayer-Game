@@ -449,7 +449,7 @@ namespace Game.Scripts.Editor.Dungeon
             readied.rectTransform.pivot = new Vector2(0f, 0.5f);
 
             // Two belt groups of three: key 3 cycles the left group, key 4 the right one.
-            List<(GameObject, Image, TMP_Text, TMP_Text, Image)> belt = new();
+            List<(GameObject, Image, TMP_Text, TMP_Text, Image, Image)> belt = new();
 
             for (int i = 0; i < 6; i++)
                 belt.Add(BeltSlot(hud, bottom, new Vector2((i < 3 ? -182f : 78f) + i % 3 * 52f, 104f), (3 + i / 3).ToString()));
@@ -572,6 +572,7 @@ namespace Game.Scripts.Editor.Dungeon
                 element.FindPropertyRelative("Glyph").objectReferenceValue = belt[i].Item3;
                 element.FindPropertyRelative("Count").objectReferenceValue = belt[i].Item4;
                 element.FindPropertyRelative("Frame").objectReferenceValue = belt[i].Item5;
+                element.FindPropertyRelative("Fuel").objectReferenceValue = belt[i].Item6;
             }
 
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -635,7 +636,7 @@ namespace Game.Scripts.Editor.Dungeon
             return (slot.gameObject, icon, glyph, keyText, charges, cooldown);
         }
 
-        private static (GameObject, Image, TMP_Text, TMP_Text, Image) BeltSlot(RectTransform parent, Vector2 anchor, Vector2 position, string key)
+        private static (GameObject, Image, TMP_Text, TMP_Text, Image, Image) BeltSlot(RectTransform parent, Vector2 anchor, Vector2 position, string key)
         {
             RectTransform slot = CreateRect("Belt" + key, parent, anchor, position, new Vector2(44f, 44f));
             CreateImage("Back", slot, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(44f, 44f), s_panelLight);
@@ -650,8 +651,12 @@ namespace Game.Scripts.Editor.Dungeon
             keyText.color = new Color(1f, 0.9f, 0.6f);
             TMP_Text count = CreateText("Count", slot, new Vector2(1f, 0f), new Vector2(-3f, 1f), new Vector2(30f, 14f), 11f, TextAlignmentOptions.BottomRight);
             count.rectTransform.pivot = new Vector2(1f, 0f);
+            Image fuelBack = CreateImage("FuelBack", slot, new Vector2(0.5f, 0f), new Vector2(0f, 5f), new Vector2(36f, 5f), new Color(0.08f, 0.06f, 0.04f, 0.9f));
+            Image fuel = CreateImage("Fuel", fuelBack.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(34f, 3f), new Color(1f, 0.6f, 0.2f));
+            MakeFilled(fuel);
+            fuelBack.gameObject.SetActive(false);
 
-            return (slot.gameObject, icon, glyph, count, frame);
+            return (slot.gameObject, icon, glyph, count, frame, fuel);
         }
 
         private static InventoryView BuildInventory(Transform root, Canvas canvas, Inputs inputs, ItemView itemPrefab, Image cellPrefab, string title, bool fullscreen,

@@ -68,7 +68,8 @@ namespace Game.Scripts.Battle
                 FighterAnimComponent.UseState, FighterAnimComponent.UseFirstPersonState, FighterAnimComponent.HoldState,
                 FighterAnimComponent.InteractState, FighterAnimComponent.InteractFirstPersonState, FighterAnimComponent.ThrowState,
                 FighterAnimComponent.OpenState, FighterAnimComponent.PickUpState,
-                FighterAnimComponent.BandageState, FighterAnimComponent.BandageFirstPersonState, FighterAnimComponent.AbilityFirstPersonState
+                FighterAnimComponent.BandageState, FighterAnimComponent.BandageFirstPersonState, FighterAnimComponent.AbilityFirstPersonState, FighterAnimComponent.HoldTorchState,
+                FighterAnimComponent.TorchAimState, FighterAnimComponent.TorchThrowState
             },
             new[] { FighterAnimComponent.HitChestState, FighterAnimComponent.HitHeadState, FighterAnimComponent.HitStaggerState }
         };

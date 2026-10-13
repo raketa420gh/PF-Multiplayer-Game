@@ -2,6 +2,7 @@ using Game.Scripts.Dungeon;
 using Game.Scripts.Editor.Battle;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace Game.Scripts.Editor.Dungeon
 {
@@ -11,6 +12,8 @@ namespace Game.Scripts.Editor.Dungeon
         public const string Folder = DungeonPropBuilder.PrefabsFolder + "/Items";
 
         private const float HandTorchLength = 0.6f;
+        private const float HandTorchSlim = 0.6f;
+        private const float TorchLightLift = 0.25f;
 
         public static GameObject Build(ItemDef def)
         {
@@ -66,13 +69,26 @@ namespace Game.Scripts.Editor.Dungeon
                     BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Handle", parent, new Vector3(0.08f, 0.08f, 0f), Vector3.zero, new Vector3(0.03f, 0.1f, 0.03f), BattleEditorUtility.GetMaterial("DarkWood", new Color(0.22f, 0.14f, 0.08f)));
                     break;
                 case ConsumableEffect.Light:
-                    // The wall torch cut to a hand length, sunk so the hand grips its lower third; the light is the holder's own.
-                    Transform torch = DungeonMedievalBuilder.Model("Torch", parent).transform;
+                    // The wall torch cut to a hand length and slimmed, sunk so the hand grips its lower third; it carries its own
+                    // light, so the flame lights the dark in the hand and on the floor alike.
+                    Transform slim = BattleEditorUtility.CreateChild("Slim", parent, Vector3.zero).transform;
+                    slim.localScale = new Vector3(HandTorchSlim, 1f, HandTorchSlim);
+                    Transform torch = DungeonMedievalBuilder.Model("Torch", slim).transform;
                     Bounds bounds = DungeonKitBuilder.Bounds(torch.gameObject);
                     float scale = HandTorchLength / bounds.size.y;
                     torch.localScale *= scale;
                     torch.localPosition = new Vector3(-bounds.center.x, -bounds.min.y - HandTorchLength * 0.3f / scale, -bounds.center.z) * scale;
-                    DungeonPropBuilder.Flame(parent, Vector3.up * HandTorchLength * 0.68f, 0.45f);
+
+                    // The head would shade its own shaft from the light above it.
+                    foreach (Renderer renderer in torch.GetComponentsInChildren<Renderer>())
+                        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+                    Vector3 flame = Vector3.up * HandTorchLength * 0.68f;
+                    DungeonPropBuilder.Flame(parent, flame, 0.5f);
+                    // Well above the flame: right by it the torch head burns out white.
+                    Light light = DungeonPropBuilder.PointLight(parent, flame + Vector3.up * TorchLightLift, new Color(1f, 0.65f, 0.3f), def.Magnitude, 3f, true, true);
+                    light.shadows = LightShadows.Hard;
+                    BattleEditorUtility.Set(light.GetUniversalAdditionalLightData(), "m_AdditionalLightsShadowResolutionTier", UniversalAdditionalLightData.AdditionalLightsShadowResolutionTierLow);
                     break;
                 default:
                     BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Flask", parent, new Vector3(0f, 0.07f, 0f), Vector3.zero, new Vector3(0.13f, 0.13f, 0.13f), glass);

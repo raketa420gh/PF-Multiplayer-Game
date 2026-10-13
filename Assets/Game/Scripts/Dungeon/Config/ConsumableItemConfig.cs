@@ -11,7 +11,7 @@ namespace Game.Scripts.Dungeon
         public ConsumableEffect Effect => _effect;
         /// Drunk from a bottle, unlike a bandage.
         public bool IsDrink => _effect is not (ConsumableEffect.HealInstant or ConsumableEffect.Light);
-        /// A torch: shines Magnitude metres around while in hand.
+        /// A torch: shines Magnitude metres around, burns Duration seconds in hand or thrown down.
         public bool IsLight => _effect == ConsumableEffect.Light;
         public float Magnitude => _magnitude;
         public float Duration => _duration;

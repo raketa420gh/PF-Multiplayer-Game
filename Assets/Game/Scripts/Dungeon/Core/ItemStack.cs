@@ -8,6 +8,7 @@ namespace Game.Scripts.Dungeon
         public const int ByteSize = 8;
         public const int LegacyByteSize = 6;
         private const byte HiddenFlag = 1;
+        private const byte LitFlag = 2;
 
         public short ItemId;
         public byte Count;
@@ -22,6 +23,10 @@ namespace Game.Scripts.Dungeon
         public ItemRarity RarityValue => (ItemRarity)Rarity;
         /// Loot nobody has searched yet: shown as an eye tile and locked until an adventurer discovers it.
         public bool IsHidden => (Flags & HiddenFlag) != 0;
+        /// A torch thrown down burning; only ever set on the floor.
+        public bool IsLit => (Flags & LitFlag) != 0;
+        /// Seconds a torch has burnt. A torch rolls no modifiers, so its seed keeps them and they survive the stash.
+        public int Burnt => Seed;
 
         public static ItemStack Create(ItemConfig item, int count, ItemRarity rarity, int seed = 0)
         {
@@ -54,6 +59,22 @@ namespace Game.Scripts.Dungeon
         {
             ItemStack copy = this;
             copy.Flags = (byte)(isHidden ? Flags | HiddenFlag : Flags & ~HiddenFlag);
+
+            return copy;
+        }
+
+        public ItemStack WithLit(bool isLit)
+        {
+            ItemStack copy = this;
+            copy.Flags = (byte)(isLit ? Flags | LitFlag : Flags & ~LitFlag);
+
+            return copy;
+        }
+
+        public ItemStack WithBurnt(int seconds)
+        {
+            ItemStack copy = this;
+            copy.Seed = (ushort)seconds;
 
             return copy;
         }

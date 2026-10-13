@@ -58,7 +58,7 @@ namespace Game.Scripts.Dungeon
                         ConsumableEffect.HealOverTime => $"Heals {consumable.Magnitude:0} over {Mathf.Max(1f, consumable.Duration - tier * 2.5f):0.#}s",
                         ConsumableEffect.Protection => $"Absorbs {consumable.Magnitude + tier * 5f:0} damage for {consumable.Duration:0}s",
                         ConsumableEffect.Invisibility => $"Invisible for {consumable.Duration + tier * 2f:0}s",
-                        ConsumableEffect.Light => $"Lights {consumable.Magnitude:0} m around while in hand",
+                        ConsumableEffect.Light => $"Lights {consumable.Magnitude:0} m around, burns {consumable.Duration:0}s",
                         _ => $"+{consumable.Magnitude:0} move speed for {consumable.Duration:0}s"
                     });
                     break;
