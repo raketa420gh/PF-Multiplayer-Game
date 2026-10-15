@@ -83,6 +83,7 @@ namespace Game.Scripts.Dungeon
         public int ResourceMax => _resourceMax;
         public ResourceSource ResourceSources => _resourceSources;
         public float ResourceDecay => _resourceDecay;
+        public Sprite Icon => _icon;
 
         [SerializeField]
         private string _name;
@@ -104,6 +105,168 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField, Tooltip("Seconds without a new stack before all of them are lost")]
         private float _resourceDecay = 8f;
+
+        [SerializeField]
+        private Sprite _icon;
+    }
+
+    /// What a perk does beyond its stat modifiers; the meaning of its value is told per entry.
+    public enum PerkEffect : byte
+    {
+        None,
+        /// Share of the armor move penalty taken off.
+        HeavyArmorTraining,
+        /// Share more healing from bandages.
+        BandageHealing,
+        /// A raised block does not slow.
+        SteadyBlock,
+        /// Share more of a hit the shield stops.
+        ShieldTraining,
+        /// Percent faster attacks for a moment after a blocked hit.
+        Retaliation,
+        /// Nothing throws the body back.
+        KnockbackImmune,
+        /// Every weapon can be equipped.
+        AnyWeapon,
+        /// Move speed rating added while no plate is worn.
+        LightStep,
+        /// Percent faster attacks per hit in a row on one body.
+        Onslaught,
+        /// Allies around: flat armor.
+        BannerAura,
+        /// Allies around: percent move speed.
+        ExampleAura,
+        /// Allies around: percent damage.
+        FormationAura,
+        /// Share wider war cries and auras.
+        Voice,
+        /// Share longer potions.
+        PotionDuration,
+        /// More potions in a stack.
+        PotionStack,
+        /// Share less poison damage.
+        PoisonResistance,
+        /// Allies around: Vitality.
+        VitalityAura,
+        /// Share of a drunk healing potion that heals the allies around.
+        GenerousFlask,
+        /// Allies around: percent faster drinking and bandaging.
+        CalmHandsAura,
+        /// Every heal of his cleanses poison.
+        PureBlood,
+        /// Percent more damage taken by the ones his flasks hit.
+        CausticMix,
+        /// Share more flask damage.
+        StrongCharge,
+        /// Share wider flasks and pools.
+        WideSpread,
+        /// Share less damage from his own flasks and fire.
+        BlastHabit,
+        /// Share shorter side effects.
+        Accustomed,
+        /// Share longer mixture buffs.
+        DoubleDose,
+        /// Share less damage while a mixture works.
+        Buzz,
+        /// Share more damage to monsters.
+        BeastHabit,
+        /// Share more ranged damage at 20 m and beyond.
+        LongShot,
+        /// Share more damage to bodies below 30% health.
+        FinishOff,
+        /// Share farther torch light.
+        CatEye,
+        /// Share less damage from traps.
+        TrapSense,
+        /// Share faster searching of chests and bodies.
+        VeinExpert,
+        /// Percent more damage the marked body takes.
+        HuntersMark,
+        /// Seconds longer trap hold.
+        HeavyJaws,
+        /// Seconds of poison from a trap.
+        PoisonTeeth,
+        /// More traps at once.
+        IronStock,
+        /// Share more damage to rooted and slowed bodies.
+        SnaredPrey,
+        /// Chance not to spend a charge.
+        FrugalWord,
+        /// Share more fire damage.
+        FireMastery,
+        /// Seconds longer burning.
+        LongSmoulder,
+        /// Damage of the blaze a body killed by his fire bursts into.
+        FuneralHeat,
+        /// Share stronger slows.
+        DeepCold,
+        /// Percent more damage taken by bodies he slowed.
+        Brittle,
+        /// More charges of frost spells.
+        WinterMemory,
+        /// Share more lightning damage.
+        DryAir,
+        /// Share more lightning damage to plate.
+        IronCalls,
+        /// More chain jumps.
+        LongChain,
+        /// Share faster lightning casting.
+        QuickWord,
+        /// Share more damage to the undead.
+        Requiem,
+        /// Share faster prayers.
+        Acolyte,
+        /// Share more healing done.
+        WarmHands,
+        /// Percent less damage for a moment taken by the one he heals.
+        Shroud,
+        /// More charges of healing prayers.
+        Patience,
+        /// Share more healing on allies below 30% health.
+        LastRites,
+        /// Share more damage of blunt weapons.
+        HeavyHand,
+        /// Percent more damage of the next attack after a hit taken.
+        RighteousWrath,
+        /// Percent of maximum health every weapon hit heals.
+        BloodTithe,
+        /// Percent of maximum health a prayer without charges costs.
+        BloodPrayer,
+        /// Share more prayer damage below half health.
+        DarkVoice,
+        /// Percent more damage taken by the ones he cursed.
+        Rot,
+        /// Percent of maximum health a kill of a cursed body brings back.
+        TakeBack,
+        /// Share faster searching of bodies.
+        GraveSense,
+        /// Share more damage of the first hit on a body at full health.
+        FirstBlood,
+        /// Share more dagger damage.
+        ShortBlade,
+        /// Share more damage of hits on the head.
+        Throat,
+        /// Seconds off the skill cooldowns per kill.
+        CleanWork,
+        /// Seconds longer poison.
+        ThickVenom,
+        /// Share more poison damage.
+        CausticVenom,
+        /// Percent less damage dealt by the ones he poisoned.
+        Weakness,
+        /// Percent less healing for the ones he poisoned.
+        RotBlood,
+        /// More throwing weapons in a stack.
+        KnifeBundle,
+        /// Share more thrown damage.
+        TrueThrow,
+        /// Share faster throws.
+        QuickThrow,
+        /// The venom on the blade goes on thrown weapons too.
+        OiledBlades,
+        /// Share more armor rating.
+        FrostSkin,
+        Count
     }
 
     [Serializable]
@@ -117,6 +280,8 @@ namespace Game.Scripts.Dungeon
         public int Subclass => _subclass;
         /// The modifiers count once per stack of the subclass resource.
         public bool IsPerStack => _isPerStack;
+        public PerkEffect Effect => _effect;
+        public float Value => _value;
 
         [SerializeField]
         private string _name;
@@ -135,6 +300,12 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private bool _isPerStack;
+
+        [SerializeField]
+        private PerkEffect _effect;
+
+        [SerializeField]
+        private float _value;
     }
 
     [Serializable]
@@ -179,8 +350,8 @@ namespace Game.Scripts.Dungeon
         public const int WheelCount = 2;
         /// The first five spells in wheel I, the next five in wheel II.
         public const int DefaultSpellMask = ((1 << SpellWheelSize) - 1) | (((1 << SpellWheelSize) - 1) << (SpellWheelSize + WheelBits));
-        /// Subclasses are hidden from the player for now: only the shared skills, perks and spells are offered and no subclass resource is kept.
-        public static readonly bool AreSubclassesEnabled = false;
+        /// Every class picks one of its three subclasses; its own perks, skills and spells join the shared ones.
+        public static readonly bool AreSubclassesEnabled = true;
 
         public bool CanCastBareHanded => _castFocus == CastFocus.BareHands;
         public CastFocus Focus => _castFocus;
@@ -284,6 +455,22 @@ namespace Game.Scripts.Dungeon
             }
 
             return mask;
+        }
+
+        /// Summed values of the perks in the mask, indexed by PerkEffect; perkCount caps how many count, as in the stats.
+        public void SumPerkEffects(int perkMask, int perkCount, float[] values)
+        {
+            Array.Clear(values, 0, values.Length);
+            int applied = 0;
+
+            for (int i = 0; i < _perks.Length && applied < perkCount; i++)
+            {
+                if ((perkMask & (1 << i)) == 0)
+                    continue;
+
+                applied++;
+                values[(int)_perks[i].Effect] += _perks[i].Value;
+            }
         }
 
         public bool CanUseWeapon(WeaponClass weaponClass)

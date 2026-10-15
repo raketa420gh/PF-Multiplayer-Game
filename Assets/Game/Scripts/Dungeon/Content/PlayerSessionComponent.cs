@@ -514,12 +514,30 @@ namespace Game.Scripts.Dungeon
             Subclass = (byte)Mathf.Clamp(Subclass, 0, Mathf.Max(0, config.Subclasses.Length - 1));
             PerkMask &= config.AvailablePerkMask(Subclass);
             SpellMask &= config.AvailableSpellMask(Subclass) & (config.HasWheel(1) ? -1 : (1 << ClassConfig.WheelBits) - 1);
+            FillWheel(config);
 
             if (!config.IsSkillAvailable(SkillA, Subclass))
                 SkillA = FreeSkill(config, SkillB);
 
             if (!config.IsSkillAvailable(SkillB, Subclass) || SkillB == SkillA)
                 SkillB = FreeSkill(config, SkillA);
+        }
+
+        /// Free places of the first wheel take the spells of the class and subclass that sit in no wheel yet, so a new subclass starts with its own.
+        private void FillWheel(ClassConfig config)
+        {
+            if (!config.HasWheel(0))
+                return;
+
+            int wheelMask = (1 << ClassConfig.WheelBits) - 1;
+
+            for (int i = 0; i < config.Spells.Length && CountBits(SpellMask & wheelMask) < ClassConfig.SpellWheelSize; i++)
+            {
+                bool isPlaced = ClassConfig.IsInWheel(SpellMask, 0, i) || ClassConfig.IsInWheel(SpellMask, 1, i);
+
+                if (!isPlaced && ClassConfig.IsAvailable(config.Spells[i].Subclass, Subclass))
+                    SpellMask |= ClassConfig.WheelBit(0, i);
+            }
         }
 
         private byte FreeSkill(ClassConfig config, int taken)

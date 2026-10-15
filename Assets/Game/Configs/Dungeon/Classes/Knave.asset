@@ -1,0 +1,275 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d988ee4bac2acf74b80699d6e83c0b70, type: 3}
+  m_Name: Knave
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
+  _id: 5
+  _displayName: Knave
+  _description: 'A grave robber: the Cathedral chased him off every churchyard and
+    threatened the stake. The vein is the biggest graveyard in the world, and here
+    the same work pays. Takes what the dead wear.'
+  _baseStats:
+    Strength: 11
+    Vitality: 12
+    Spirit: 8
+    Knowledge: 15
+    Agility: 22
+    Dexterity: 22
+  _color: {r: 0.55, g: 0.6, b: 0.55, a: 1}
+  _bodyColor: {r: 1, g: 1, b: 1, a: 1}
+  _skills:
+  - {fileID: 11400000, guid: 4a58dfb1c4cc0e744b52f5e9f28e87e9, type: 2}
+  - {fileID: 11400000, guid: bb23c3c44c4e7cc4a82498ffcc1f3f6d, type: 2}
+  - {fileID: 11400000, guid: 412ddddf33e590548953ea3512bc7421, type: 2}
+  - {fileID: 11400000, guid: f6faabd6146a5044d80e74b3acf7633e, type: 2}
+  - {fileID: 11400000, guid: 4b7a8a1e85ca3c24f8cf97842d5f059e, type: 2}
+  - {fileID: 11400000, guid: b7dbc6ecf2f4c934ba33a719c1caa428, type: 2}
+  - {fileID: 11400000, guid: df41a865c59ca3b408967b5ba6ac96c7, type: 2}
+  - {fileID: 11400000, guid: 5660ad9532096c744ab77f365f62354a, type: 2}
+  _spells: []
+  _perks:
+  - _name: Knows Where to Look
+    _description: 'Search bodies 50% faster (not chests).
+
+      <i><color=#a89f8a>"Rings
+      on the fingers. Coins in the mouth."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 84c26fda299a7ac419ed8b48109e805e, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+    _effect: 63
+    _value: 0.5
+  - _name: Light-Footed
+    _description: '+5% move speed.
+
+      <i><color=#a89f8a>"With a shovel, at a
+      run. Without, faster still."</color></i>'
+    _modifiers:
+    - Stat: 9
+      Value: 15
+    _icon: {fileID: 21300000, guid: 4bf1fb2cfbc296640b3045835d3f9926, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+    _effect: 0
+    _value: 0
+  - _name: Nimble Fingers
+    _description: '+3 Dexterity.
+
+      <i><color=#a89f8a>"Take the ring without
+      waking the widow."</color></i>'
+    _modifiers:
+    - Stat: 5
+      Value: 3
+    _icon: {fileID: 21300000, guid: 03a8a74e600bc2042823c716d3de4bb7, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+    _effect: 0
+    _value: 0
+  - _name: First Blood
+    _description: '+40% damage of the first hit on a foe at full health.
+
+      <i><color=#a89f8a>"The
+      first is the one that matters. The second is to be sure."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: de8e70ab9610a214b8610bf4cfaa4a9c, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 64
+    _value: 0.4
+  - _name: Short Blade
+    _description: '+15% damage with daggers and throwing knives.
+
+      <i><color=#a89f8a>"Long
+      ones are for duels. Short ones for work."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: d44e90396eb984b42a4d707525f33650, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 65
+    _value: 0.15
+  - _name: For the Throat
+    _description: '+20% damage of hits on the head.
+
+      <i><color=#a89f8a>"A watchman
+      screams once. If he gets to."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 65c88dd256301154f986f3a96d8b2ce9, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 66
+    _value: 0.2
+  - _name: Clean Work
+    _description: 'A kill cuts the current cooldowns of your skills by 5s.
+
+      <i><color=#a89f8a>"One
+      less. Next."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 0eddef9399659a9459f4f8998e904973, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 67
+    _value: 5
+  - _name: Thick Venom
+    _description: 'Your poison lasts 2s longer.
+
+      <i><color=#a89f8a>"Brew slowly.
+      Kill slowly too."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 183f5b0704d9d674e8cbf3559f1d9981, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 68
+    _value: 2
+  - _name: Caustic Venom
+    _description: '+25% damage of your poison.
+
+      <i><color=#a89f8a>"Rats die
+      at once. People slower. Fixed that."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 1d0293e52dea6ea4381623125e1a4abe, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 69
+    _value: 0.25
+  - _name: Weakness
+    _description: 'Foes you poison deal 10% less damage.
+
+      <i><color=#a89f8a>"The
+      hand still holds the knife. Not firmly."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: e51e6e40eef64ca4e86c08f8e49c76fe, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 70
+    _value: 10
+  - _name: Rotten Blood
+    _description: 'Foes you poison heal half as well.
+
+      <i><color=#a89f8a>"Bandage
+      it. Won''t help."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: ad80f3a62a9461b419a47c26adfd7722, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 71
+    _value: 50
+  - _name: Bundle of Knives
+    _description: '+2 throwing weapons in every belt stack.
+
+      <i><color=#a89f8a>"One
+      for the dog. The rest for the master."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 93395d2d193686841834ed65bcd9d963, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 72
+    _value: 2
+  - _name: True Throw
+    _description: '+15% damage of throwing weapons.
+
+      <i><color=#a89f8a>"Over
+      the fence, in the dark, in the eye."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 8f1f6a4984a28d84f9cd160a5d3e4377, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 73
+    _value: 0.15
+  - _name: Quick Hand
+    _description: 'Throwing weapons are thrown 25% faster.
+
+      <i><color=#a89f8a>"While
+      you aim, I''ve already thrown."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: e4b43d4b5c4a3844eb4ef58e382de7af, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 74
+    _value: 0.25
+  - _name: Oiled Blades
+    _description: 'Blade Venom poisons with throwing weapons too.
+
+      <i><color=#a89f8a>"A
+      scratch is enough."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: de79cf5058c03704e8ab84fcbfd531b9, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 75
+    _value: 1
+  _subclasses:
+  - _name: Assassin
+    _description: 'One target: open it fast, finish it fast. Cut churchyard watchmen
+      at night.'
+    _color: {r: 0.85, g: 0.25, b: 0.3, a: 1}
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
+    _resourceDecay: 8
+    _icon: {fileID: 21300000, guid: 60bf39514071fa24e9cb56d9d0987b54, type: 3}
+  - _name: Poisoner
+    _description: Lingering damage and weakness with poison. Poisoned rats in the
+      crypts, then rival grave robbers.
+    _color: {r: 0.5, g: 0.85, b: 0.3, a: 1}
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
+    _resourceDecay: 8
+    _icon: {fileID: 21300000, guid: fbc916c5639b342428243a0fa3f088e3, type: 3}
+  - _name: Thrower
+    _description: Damage with belt knives and axes. Hit the watchdogs with knives
+      over the churchyard fence.
+    _color: {r: 0.8, g: 0.8, b: 0.85, a: 1}
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
+    _resourceDecay: 8
+    _icon: {fileID: 21300000, guid: 45f5060e3a3acfb4c8ef2d4775872a69, type: 3}
+  _startingKit:
+  - _item: {fileID: 11400000, guid: 81485b83cb38163419e5794205a7c787, type: 2}
+    _slot: 9
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: e208ce7ba798983479a2f2a919f71f20, type: 2}
+    _slot: 0
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: c402e9ed6fb1b394889c3f3a19f32561, type: 2}
+    _slot: 1
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: a6c7b4d014c8e5842a1bcf6a2bc1cfb7, type: 2}
+    _slot: 3
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 5ab24771d6d7b4f43995ba089005238b, type: 2}
+    _slot: 4
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 281bfe6e316403549a6634a2cefb629b, type: 2}
+    _slot: 13
+    _count: 2
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 4eaa8cb45665cd0429d1f03654919c37, type: 2}
+    _slot: 14
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 1cf148bc8a302b84d87d1896014a5456, type: 2}
+    _slot: 15
+    _count: 2
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: bdca8856464b5274b9d57abb31b1d8ea, type: 2}
+    _slot: 16
+    _count: 1
+    _isEquipped: 1
+  _allowedWeapons: 000306050409
+  _castFocus: 0

@@ -12,6 +12,25 @@ namespace Game.Scripts.Battle
         PartialBlock
     }
 
+    /// What dealt a hit: class perks and status effects tell sources apart by it.
+    [Flags]
+    public enum DamageTag : ushort
+    {
+        None = 0,
+        Melee = 1,
+        Ranged = 2,
+        Thrown = 4,
+        Spell = 8,
+        Fire = 16,
+        Frost = 32,
+        Lightning = 64,
+        Holy = 128,
+        Poison = 256,
+        Flask = 512,
+        Trap = 1024,
+        Dark = 2048
+    }
+
     public struct HitRequest
     {
         public int BaseDamage;
@@ -28,6 +47,9 @@ namespace Game.Scripts.Battle
 
         /// Sound set of the striking weapon, see WeaponSoundConfig.Id.
         public byte Sound;
+        public DamageTag Tag;
+        /// The victim's armor and resistances do not reduce the hit.
+        public bool IgnoreArmor;
     }
 
     public struct HitEventData : INetworkStruct
@@ -52,7 +74,11 @@ namespace Game.Scripts.Battle
         /// Optional second interface: outgoing hit bonuses and incoming armor and resistances of the receiver.
         public interface IHitModifier
         {
-            int ModifyIncomingDamage(int damage, DamageType type, HitZone zone);
+            /// Attacker side, before the victim's reductions: the striker's bonuses may change the damage and the request.
+            void ModifyOutgoingHit(DamageReceiverComponent victim, ref HitRequest request);
+            /// Victim side: share of the hit the raised block stops.
+            float ModifyBlockMitigation(float mitigation);
+            int ModifyIncomingDamage(int damage, in HitRequest request);
         }
 
         /// Everything that can be hit: fighters, monsters and dummies.
@@ -61,10 +87,10 @@ namespace Game.Scripts.Battle
         public event Action<HitEventData> OnHitEvent;
 
         /// State authority only: this receiver's owner landed a hit on another receiver.
-        public event Action<DamageReceiverComponent, HitResult, int, DamageType> OnHitDealt;
+        public event Action<DamageReceiverComponent, HitResult, int, HitRequest> OnHitDealt;
 
         /// State authority only: this receiver was hit; the damage is what went through.
-        public event Action<HitResult, int> OnHitTaken;
+        public event Action<HitResult, int, HitRequest> OnHitTaken;
 
         public HitboxRoot HitboxRoot => _hitboxRoot;
         public bool IsAlive => _health.IsAlive;
@@ -139,11 +165,12 @@ namespace Game.Scripts.Battle
 
         public HitResult ApplyHit(in HitRequest request)
         {
+            HitRequest hit = request;
             BlockConfig block = _owner?.ActiveBlock;
-            int blockRays = request.BlockRays;
-            int bodyRays = request.BodyRays;
+            int blockRays = hit.BlockRays;
+            int bodyRays = hit.BodyRays;
 
-            if (blockRays > 0 && !IsBlockValid(block, request.AttackerPosition))
+            if (blockRays > 0 && !IsBlockValid(block, hit.AttackerPosition))
             {
                 bodyRays += blockRays;
                 blockRays = 0;
@@ -151,35 +178,42 @@ namespace Game.Scripts.Battle
 
             HitResult result = blockRays == 0 ? HitResult.Hit : bodyRays == 0 ? HitResult.Blocked : HitResult.PartialBlock;
             float blockedShare = blockRays / (float)(blockRays + bodyRays);
-            IHitModifier attacker = request.Attacker != null ? request.Attacker._modifier : null;
-            float zoneMultiplier = result == HitResult.Blocked ? 1f : _zoneConfig.GetMultiplier(request.Zone);
+
+            if (hit.Attacker != null && hit.Attacker._modifier != null)
+                hit.Attacker._modifier.ModifyOutgoingHit(this, ref hit);
+
+            float zoneMultiplier = result == HitResult.Blocked ? 1f : _zoneConfig.GetMultiplier(hit.Zone);
             float mitigation = block != null ? block.Mitigation * blockedShare : 0f;
-            int damage = Mathf.RoundToInt(request.BaseDamage * zoneMultiplier * (1f - mitigation));
+
+            if (_modifier != null && mitigation > 0f)
+                mitigation = Mathf.Clamp01(_modifier.ModifyBlockMitigation(mitigation));
+
+            int damage = Mathf.RoundToInt(hit.BaseDamage * zoneMultiplier * (1f - mitigation));
 
             if (_modifier != null && damage > 0)
-                damage = Mathf.Max(0, _modifier.ModifyIncomingDamage(damage, request.DamageType, request.Zone));
+                damage = Mathf.Max(0, _modifier.ModifyIncomingDamage(damage, hit));
 
-            if (request.Attacker != null)
-                _lastAttacker = request.Attacker;
+            if (hit.Attacker != null)
+                _lastAttacker = hit.Attacker;
 
             _health.TakeDamage(damage);
 
             _events.Set(_eventCount % EventCapacity, new HitEventData
             {
-                Point = request.Point,
-                Normal = request.Normal,
+                Point = hit.Point,
+                Normal = hit.Normal,
                 Result = result,
-                Zone = result == HitResult.Blocked ? HitZone.Block : request.Zone,
+                Zone = result == HitResult.Blocked ? HitZone.Block : hit.Zone,
                 Damage = (short)damage,
-                Sound = request.Sound
+                Sound = hit.Sound
             });
             _eventCount++;
 
-            _owner?.OnHitReceived(result, request.StaggerDuration, request.Impact);
-            OnHitTaken?.Invoke(result, damage);
+            _owner?.OnHitReceived(result, hit.StaggerDuration, hit.Impact);
+            OnHitTaken?.Invoke(result, damage, hit);
 
-            if (request.Attacker != null)
-                request.Attacker.OnHitDealt?.Invoke(this, result, damage, request.DamageType);
+            if (hit.Attacker != null)
+                hit.Attacker.OnHitDealt?.Invoke(this, result, damage, hit);
 
             return result;
         }

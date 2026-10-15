@@ -54,9 +54,9 @@ namespace Game.Scripts.Dungeon
                 if (other.IsHidden)
                     return;
 
-                if (other.CanStackWith(stack) && config.MaxStack > 1 && other.Count < config.MaxStack)
+                if (other.CanStackWith(stack) && config.MaxStack > 1 && other.Count < to.MaxStackOf(config))
                 {
-                    int moved = Mathf.Min(config.MaxStack - other.Count, stack.Count);
+                    int moved = Mathf.Min(to.MaxStackOf(config) - other.Count, stack.Count);
                     to.RemoveAt(occupied);
                     to.TryPlaceAt(other.WithCount(other.Count + moved), other.X, other.Y);
                     from.RemoveAt(fromIndex, moved);

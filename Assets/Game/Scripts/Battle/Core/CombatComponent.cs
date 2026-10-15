@@ -49,6 +49,7 @@ namespace Game.Scripts.Battle
         public byte Effect;
         public float EffectMagnitude;
         public float EffectDuration;
+        public ProjectileFlags Flags;
     }
 
     public sealed class CombatComponent : NetworkBehaviour, DamageReceiverComponent.IOwner
@@ -120,7 +121,7 @@ namespace Game.Scripts.Battle
                 return State switch
                 {
                     CombatState.Attack => Attack.MoveMultiplier,
-                    CombatState.BlockRaise or CombatState.Block or CombatState.BlockImpact => Weapon.Block.MoveMultiplier,
+                    CombatState.BlockRaise or CombatState.Block or CombatState.BlockImpact => _isBlockSlowIgnored ? 1f : Weapon.Block.MoveMultiplier,
                     CombatState.Draw => Weapon.Ranged.DrawMoveMultiplier,
                     CombatState.Deflected => _deflectedMoveMultiplier,
                     CombatState.Stagger => _staggerMoveMultiplier,
@@ -245,6 +246,7 @@ namespace Game.Scripts.Battle
         private IShotModifier _shotModifier;
         private bool _isBlockHeld;
         private bool _isBlockSuppressed;
+        private bool _isBlockSlowIgnored;
         private bool _isAttackSuppressed;
         private int _renderedWorldHits;
         private bool _hasWorldHit;
@@ -286,6 +288,12 @@ namespace Game.Scripts.Battle
         public void SetBlockSuppressed(bool isSuppressed)
         {
             _isBlockSuppressed = isSuppressed;
+        }
+
+        /// A raised block keeps the full pace (a class perk).
+        public void SetBlockSlowIgnored(bool isIgnored)
+        {
+            _isBlockSlowIgnored = isIgnored;
         }
 
         /// While a belt item is in hand the primary button uses it instead of attacking.
@@ -542,7 +550,7 @@ namespace Game.Scripts.Battle
                 float yaw = shot.Count > 1 ? Mathf.Lerp(-shot.Spread, shot.Spread, i / (shot.Count - 1f)) : 0f;
                 Vector3 direction = _body.AimRotation * Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
                 _projectiles.Fire(_body.EyePosition, direction * shot.Speed, shot.Gravity, shot.Damage, ranged.StaggerDuration, Weapon.DamageType,
-                    ProjectileKind.Arrow, effect: shot.Effect, effectMagnitude: shot.EffectMagnitude, effectDuration: shot.EffectDuration, impact: Weapon.Impact);
+                    ProjectileKind.Arrow, effect: shot.Effect, effectMagnitude: shot.EffectMagnitude, effectDuration: shot.EffectDuration, impact: Weapon.Impact, flags: shot.Flags);
             }
 
             if (ranged.IsManualReload)
@@ -765,7 +773,8 @@ namespace Game.Scripts.Battle
                     Impact = weapon.Impact,
                     DamageType = weapon.DamageType,
                     Attacker = _receiver,
-                    Sound = weapon.SoundId
+                    Sound = weapon.SoundId,
+                    Tag = DamageTag.Melee
                 });
 
                 isDeflected |= result == HitResult.Blocked;

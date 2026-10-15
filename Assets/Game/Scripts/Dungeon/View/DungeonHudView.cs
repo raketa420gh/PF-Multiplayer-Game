@@ -415,7 +415,7 @@ namespace Game.Scripts.Dungeon
                 if (!effect.IsActive)
                     continue;
 
-                _builder.AppendLine($"{effect.Kind} {Mathf.CeilToInt(effect.Remaining)}s");
+                _builder.AppendLine($"{System.Text.RegularExpressions.Regex.Replace(effect.Kind.ToString(), "(?<=[a-z])(?=[A-Z])", " ")} {Mathf.CeilToInt(effect.Remaining)}s");
             }
 
             SubclassDefinition subclass = adventurer.SubclassConfig;

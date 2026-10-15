@@ -45,7 +45,80 @@ namespace Game.Scripts.Dungeon
         /// Percent faster reloads of bows and crossbows.
         QuickReload,
         /// The next shot flies straight and fast and adds the magnitude as physical damage.
-        AimedShot
+        AimedShot,
+        /// Damage over time from venom: the magnitude over the whole duration.
+        Poison,
+        /// Cannot move a step.
+        Root,
+        /// Percent more damage taken from every hit.
+        Vulnerable,
+        /// Percent less damage dealt.
+        Weakened,
+        /// Every attribute lowered by the magnitude.
+        Cursed,
+        /// Marked by a tracker: percent more damage taken from every hit.
+        Marked,
+        Agility,
+        Dexterity,
+        Vitality,
+        Spirit,
+        Knowledge,
+        /// Every attribute raised by the magnitude.
+        AllAttributes,
+        /// Flat armor rating.
+        Armor,
+        /// Percent more armor rating.
+        ArmorPercent,
+        /// Percent faster spell and prayer casting.
+        CastSpeed,
+        /// Percent more damage dealt.
+        DamageBonus,
+        /// Percent faster drinking and bandaging.
+        UseSpeed,
+        /// A small light floats over the head.
+        Lightbearer,
+        /// Enemy silhouettes are seen through walls within the magnitude in metres.
+        Tracking,
+        /// No damage from anything in front.
+        Bulwark,
+        /// Strength raised by the magnitude; when it runs out the body pays with Sluggish.
+        BullBlood,
+        /// Agility lowered by the magnitude.
+        Sluggish,
+        /// Percent faster actions, bought with health.
+        Mercury,
+        /// Loses the magnitude in health every second, never below one.
+        Drain,
+        /// Every weapon hit poisons the victim for the magnitude in seconds.
+        VenomBlade,
+        /// The next weapon hit deals the magnitude in percent more damage.
+        HeavyBlow,
+        /// The next weapon hit ignores armor and deals the magnitude in percent more damage.
+        Expose,
+        /// The next weapon hit on a body below 40% health deals the magnitude times the damage.
+        Execute,
+        /// The next weapon hit poisons hard: the magnitude over 6 s and a slow.
+        DeadRoot,
+        /// The next weapon hit stuns for the magnitude in seconds.
+        Judgement,
+        /// The next shot deals the magnitude in percent more damage.
+        Exhale,
+        /// The next shot ignores armor.
+        PiercingShot,
+        /// The next shot slows by the magnitude in percent.
+        PinningShot,
+        /// The next shot burns where it lands and lights the place up.
+        FlareShot,
+        /// The next thrown knife flies as a fan of this many.
+        KnifeFan,
+        /// The attacks after a blocked hit are the magnitude in percent faster.
+        Retaliation,
+        /// Hits in a row on one body: percent faster actions.
+        Onslaught,
+        /// The next weapon hit deals the magnitude in percent more damage (righteous wrath).
+        Wrath,
+        /// Percent less healing received.
+        Festering
     }
 
     public struct StatusEffect : INetworkStruct
@@ -65,9 +138,13 @@ namespace Game.Scripts.Dungeon
         public interface IResistance
         {
             float GetDurationScale(StatusEffectKind kind);
+            /// Scales the damage of a damage-over-time effect.
+            float GetDamageScale(StatusEffectKind kind);
         }
 
-        public const int Capacity = 8;
+        public const int Capacity = 16;
+        /// A drain never takes the last point of health.
+        private const int DrainFloor = 1;
 
         public NetworkArray<StatusEffect> Effects => _effects;
 
@@ -80,6 +157,10 @@ namespace Game.Scripts.Dungeon
         private IResistance _resistance;
         private float _healAccumulator;
         private float _burnAccumulator;
+        private float _drainAccumulator;
+
+        /// State authority only: an effect ran out on its own (not removed, not replaced).
+        public event Action<StatusEffectKind, float> OnExpired;
 
         public override void FixedUpdateNetwork()
         {
@@ -98,6 +179,9 @@ namespace Game.Scripts.Dungeon
                 Tick(effect, deltaTime);
                 effect.Remaining -= deltaTime;
                 _effects.Set(i, effect.Remaining > 0f ? effect : default);
+
+                if (effect.Remaining <= 0f)
+                    OnExpired?.Invoke(effect.Kind, effect.Magnitude);
             }
 
             Flush();
@@ -117,9 +201,9 @@ namespace Game.Scripts.Dungeon
 
             duration *= scale;
 
-            // Burn deals its magnitude over the whole duration: a shorter bleed is a weaker one.
-            if (kind == StatusEffectKind.Burn)
-                magnitude *= scale;
+            // Burn and poison deal their magnitude over the whole duration: a shorter one is a weaker one.
+            if (kind is StatusEffectKind.Burn or StatusEffectKind.Poison)
+                magnitude *= scale * (_resistance?.GetDamageScale(kind) ?? 1f);
 
             int slot = -1;
 
@@ -193,6 +277,12 @@ namespace Game.Scripts.Dungeon
             return index >= 0 ? _effects[index].Remaining : 0f;
         }
 
+        /// Festering wounds take a share of every heal.
+        public int ScaleHealing(int heal)
+        {
+            return Mathf.RoundToInt(heal * Mathf.Clamp01(1f - GetMagnitude(StatusEffectKind.Festering) / 100f));
+        }
+
         /// Protection absorbs incoming damage; returns the damage left after the shield.
         public int Absorb(int damage)
         {
@@ -227,8 +317,11 @@ namespace Game.Scripts.Dungeon
                 case StatusEffectKind.HealOverTime:
                     _healAccumulator += effect.Magnitude / effect.Duration * deltaTime;
                     break;
-                case StatusEffectKind.Burn:
+                case StatusEffectKind.Burn or StatusEffectKind.Poison:
                     _burnAccumulator += effect.Magnitude / effect.Duration * deltaTime;
+                    break;
+                case StatusEffectKind.Drain:
+                    _drainAccumulator += effect.Magnitude * deltaTime;
                     break;
             }
         }
@@ -239,7 +332,7 @@ namespace Game.Scripts.Dungeon
             {
                 int heal = Mathf.FloorToInt(_healAccumulator);
                 _healAccumulator -= heal;
-                _health.Restore(heal);
+                _health.Restore(ScaleHealing(heal));
             }
 
             if (_burnAccumulator >= 1f)
@@ -247,6 +340,15 @@ namespace Game.Scripts.Dungeon
                 int burn = Mathf.FloorToInt(_burnAccumulator);
                 _burnAccumulator -= burn;
                 _health.TakeDamage(burn);
+            }
+
+            if (_drainAccumulator >= 1f)
+            {
+                int drain = Mathf.Min(Mathf.FloorToInt(_drainAccumulator), _health.CurrentHealth - DrainFloor);
+                _drainAccumulator -= Mathf.FloorToInt(_drainAccumulator);
+
+                if (drain > 0)
+                    _health.TakeDamage(drain);
             }
         }
     }

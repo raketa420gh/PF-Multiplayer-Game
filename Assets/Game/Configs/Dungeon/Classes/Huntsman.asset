@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
   _id: 4
   _displayName: Huntsman
-  _description: 'Ranged hunter of the depths: crossbow and bow, throwing knives and
-    axes, a sword for close calls. No magic and little health: strikes first, from
-    afar, and never stands still.'
+  _description: 'A hunter from the dead forests: dust from the spoil heaps poisoned
+    the woods above and the game left. Now his game is the creatures of the vein,
+    and the House of Scales buys the trophies.'
   _baseStats:
     Strength: 12
     Vitality: 13
@@ -27,125 +27,214 @@ MonoBehaviour:
   _color: {r: 0.45, g: 0.72, b: 0.35, a: 1}
   _bodyColor: {r: 1, g: 1, b: 1, a: 1}
   _skills:
-  - {fileID: 11400000, guid: 2369366328b3c054aa0a2c491f96b3ce, type: 2}
-  - {fileID: 11400000, guid: 97e696afdb1d8394e912b022c4c8c53e, type: 2}
-  - {fileID: 11400000, guid: 3ddce03bb9a282b4d984fab4ed429841, type: 2}
-  - {fileID: 11400000, guid: 62637848513730e48a95d2fafc90ae2d, type: 2}
+  - {fileID: 11400000, guid: 410bfcfc17c626a438140c7f9601ed69, type: 2}
+  - {fileID: 11400000, guid: b01e40d20a533f7479a1427f9505d191, type: 2}
+  - {fileID: 11400000, guid: c9dcc29d93cd21d4cba5d9d6e85d729f, type: 2}
+  - {fileID: 11400000, guid: 50f56ee3cec9ea34aa64752d6fb6756e, type: 2}
+  - {fileID: 11400000, guid: cea0de0dc8887524cb57695ecba512fd, type: 2}
+  - {fileID: 11400000, guid: 59590035dc1089b4aaca1387c498f28e, type: 2}
   - {fileID: 11400000, guid: 99295b8f6eb12dd42bb080ba9775d66e, type: 2}
-  - {fileID: 11400000, guid: a25ad51815db15246a558ae5b96a2fe8, type: 2}
+  - {fileID: 11400000, guid: 7b2f0e08bfd40f641b129811df057fe3, type: 2}
   _spells: []
   _perks:
-  - _name: Fletcher
-    _description: +12% damage of arrows, bolts and thrown weapons.
-    _modifiers:
-    - Stat: 16
-      Value: 0.12
-    _icon: {fileID: 21300000, guid: 6a85e45dd0b8ab64eb2d1c7f9bd29418, type: 3}
+  - _name: Beast Habit
+    _description: '+10% damage to monsters (not to players).
+
+      <i><color=#a89f8a>"A
+      beast is a beast, however much stone grows in it."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 3607947fdf893f540a72a803a1c37df0, type: 3}
     _subclass: -1
     _isPerStack: 0
-  - _name: Practised Hands
-    _description: Bows and crossbows reload 25% faster.
+    _effect: 28
+    _value: 0.1
+  - _name: Knack
+    _description: 'Draw bows and reload crossbows 15% faster.
+
+      <i><color=#a89f8a>"The
+      hand remembers. The head may sleep."</color></i>'
     _modifiers:
-    - Stat: 17
-      Value: 25
-    _icon: {fileID: 21300000, guid: 52f7aa4677b5db64386dfdd4ff397b10, type: 3}
-    _subclass: -1
-    _isPerStack: 0
-  - _name: Light Tread
-    _description: +12 move speed.
-    _modifiers:
-    - Stat: 9
-      Value: 12
-    _icon: {fileID: 21300000, guid: 4e65bdc7b2547544e87691b486b7f273, type: 3}
-    _subclass: -1
-    _isPerStack: 0
-  - _name: Hawk Eye
-    _description: +20% damage of ranged headshots.
-    _modifiers:
-    - Stat: 18
-      Value: 0.2
-    _icon: {fileID: 21300000, guid: bf4b5ce9bf2445f4ea93b49f7e663a91, type: 3}
-    _subclass: -1
-    _isPerStack: 0
-  - _name: Steady Aim
-    _description: +3% ranged damage per Focus.
-    _modifiers:
-    - Stat: 16
-      Value: 0.03
-    _icon: {fileID: 21300000, guid: c76a9c76544e9314aad8477ef7ab971d, type: 3}
-    _subclass: 0
-    _isPerStack: 1
-  - _name: Deadeye
-    _description: +30% damage of ranged headshots, but -8 move speed.
-    _modifiers:
-    - Stat: 18
-      Value: 0.3
-    - Stat: 9
-      Value: -8
-    _icon: {fileID: 21300000, guid: 837857cc87426c745a171dc8064b7c01, type: 3}
-    _subclass: 0
-    _isPerStack: 0
-  - _name: Predator
-    _description: +2 physical power per Quarry.
-    _modifiers:
-    - Stat: 10
-      Value: 2
-    _icon: {fileID: 21300000, guid: 2f328e63ee89b66428965bceb81327c1, type: 3}
-    _subclass: 1
-    _isPerStack: 1
-  - _name: Woodcraft
-    _description: '+5 Agility and +5 Knowledge: quicker steps and searching.'
-    _modifiers:
-    - Stat: 4
-      Value: 5
-    - Stat: 3
-      Value: 5
-    _icon: {fileID: 21300000, guid: ca05363f995db4141a8bf378fc29f065, type: 3}
-    _subclass: 1
-    _isPerStack: 0
-  - _name: Fleet Hunter
-    _description: +4 move speed per Stride.
-    _modifiers:
-    - Stat: 9
-      Value: 4
-    _icon: {fileID: 21300000, guid: 6ef16c0992884204db7b9a98ac5fbc92, type: 3}
-    _subclass: 2
-    _isPerStack: 1
-  - _name: Snap Shot
-    _description: +8% action speed and reloads 15% faster.
-    _modifiers:
-    - Stat: 12
-      Value: 8
     - Stat: 17
       Value: 15
-    _icon: {fileID: 21300000, guid: a57a436cd4a8fe3419e798a5e1e6a7e1, type: 3}
+    _icon: {fileID: 21300000, guid: b2ab635919c6f50499143149773a2d25, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+    _effect: 0
+    _value: 0
+  - _name: Forest Hardened
+    _description: '+3 Agility.
+
+      <i><color=#a89f8a>"Thirty winters after deer
+      through windfall."</color></i>'
+    _modifiers:
+    - Stat: 4
+      Value: 3
+    _icon: {fileID: 21300000, guid: 33fe3f149fc66c84aab4383d5dc7545a, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+    _effect: 0
+    _value: 0
+  - _name: Taut String
+    _description: '+15% damage of ranged weapons.
+
+      <i><color=#a89f8a>"Grandfather''s
+      bow. My string."</color></i>'
+    _modifiers:
+    - Stat: 16
+      Value: 0.15
+    _icon: {fileID: 21300000, guid: 8059c6ba3fcdf1f45bd5ab26e18e9b01, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 0
+    _value: 0
+  - _name: Long Shot
+    _description: 'Shots hit harder with distance, up to +20% at 20m and beyond.
+
+      <i><color=#a89f8a>"Closer
+      is for butchers."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 43131907fa3891f46a611ce250dd425b, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 29
+    _value: 0.2
+  - _name: Finishing Shot
+    _description: '+20% damage to targets below 30% health.
+
+      <i><color=#a89f8a>"A
+      wounded beast is the most dangerous. Give it no time."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 8e711d2388dec294fab436be8d04d2c9, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 30
+    _value: 0.2
+  - _name: Steady Hand
+    _description: '+3 Dexterity.
+
+      <i><color=#a89f8a>"Don''t shake. He doesn''t."</color></i>'
+    _modifiers:
+    - Stat: 5
+      Value: 3
+    _icon: {fileID: 21300000, guid: 245968cdcca556a499d729928af42cf5, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 0
+    _value: 0
+  - _name: Cat's Eye
+    _description: 'Your torch lights 50% farther.
+
+      <i><color=#a89f8a>"Nights
+      are darker in the woods. Used to it."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 18bd1a247fb061a4a87100078e876737, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 31
+    _value: 0.5
+  - _name: Trap Sense
+    _description: 'Traps hurt you 50% less.
+
+      <i><color=#a89f8a>"The same snare,
+      only of stone."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: ad1c17fd7e8c6554ba51652a120db407, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 32
+    _value: 0.5
+  - _name: Vein Expert
+    _description: 'Search chests and bodies 30% faster.
+
+      <i><color=#a89f8a>"Skin
+      it quick, before they come."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: f868efca3a0bc5847a385d6d1972beb1, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 33
+    _value: 0.3
+  - _name: Hunter's Mark
+    _description: 'Your hits mark the target for 5s: everyone deals 10% more damage
+      to it.
+
+      <i><color=#a89f8a>"That one. The lame one."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 55b78c91d4b51794e92789cb77311ac6, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 34
+    _value: 10
+  - _name: Heavy Jaws
+    _description: 'Your trap holds 1s longer.
+
+      <i><color=#a89f8a>"The wolf
+      chewed off its paw. These won''t."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 95e0294e2bf720741a4a04656c0d21ac, type: 3}
     _subclass: 2
     _isPerStack: 0
+    _effect: 35
+    _value: 1
+  - _name: Poisoned Teeth
+    _description: 'Whoever steps into your trap is poisoned for 4s.
+
+      <i><color=#a89f8a>"Wolfsbane.
+      The dead don''t care, the living have enough."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 08e05605da2eaf14dadc7aae9b5dbcf5, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 36
+    _value: 4
+  - _name: Iron Stock
+    _description: '+1 trap on the ground at once.
+
+      <i><color=#a89f8a>"Carries
+      half a pood of iron on his back."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 0bf9e6a95cf56f941853cb55598b0956, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 37
+    _value: 1
+  - _name: Prey in the Snare
+    _description: '+15% damage to rooted and slowed targets.
+
+      <i><color=#a89f8a>"Caught?
+      Don''t struggle."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: ee5c5f7a4c479d346876525db9722085, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 38
+    _value: 0.15
   _subclasses:
   - _name: Marksman
-    _description: 'Patient shooter: every bolt or arrow that lands builds Focus,
-      a headshot twice as much; Aimed Shot spends it on one devastating shot.'
+    _description: Damage from afar. The last hunter of his village.
     _color: {r: 0.95, g: 0.85, b: 0.45, a: 1}
-    _resourceName: Focus
-    _resourceMax: 5
-    _resourceSources: 384
-    _resourceDecay: 12
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
+    _resourceDecay: 8
+    _icon: {fileID: 21300000, guid: b3141f894c0591349b1558a50cad1391, type: 3}
+  - _name: Tracker
+    _description: Scouting and support, walks first. Led hunts for the lords while
+      there was anything to hunt.
+    _color: {r: 0.55, g: 0.85, b: 0.9, a: 1}
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
+    _resourceDecay: 8
+    _icon: {fileID: 21300000, guid: e1e36608f6c01bb4597648f668f4b36f, type: 3}
   - _name: Trapper
-    _description: 'Master of the ground: ranged hits mark Quarry that hardens every
-      blow; hunting traps snap shut on whoever walks the wrong way.'
+    _description: Control. Set snares for wolves; now traps for the dead.
     _color: {r: 0.75, g: 0.55, b: 0.35, a: 1}
-    _resourceName: Quarry
-    _resourceMax: 4
-    _resourceSources: 128
-    _resourceDecay: 15
-  - _name: Skirmisher
-    _description: 'Hit and run: every hit, near or far, builds Stride that quickens
-      the feet; Disengage spends it to leap back out of reach.'
-    _color: {r: 0.5, g: 0.85, b: 0.9, a: 1}
-    _resourceName: Stride
-    _resourceMax: 4
-    _resourceSources: 1
-    _resourceDecay: 6
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
+    _resourceDecay: 8
+    _icon: {fileID: 21300000, guid: 44bfb10e1490a1544bef1bb37327501b, type: 3}
   _startingKit:
   - _item: {fileID: 11400000, guid: dc24d3f2a48f2ba4d955f624c0660410, type: 2}
     _slot: 9
@@ -187,5 +276,5 @@ MonoBehaviour:
     _slot: 0
     _count: 20
     _isEquipped: 0
-  _allowedWeapons: 050600030409
+  _allowedWeapons: 05060003040109
   _castFocus: 0

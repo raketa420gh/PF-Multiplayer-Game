@@ -19,6 +19,8 @@ namespace Game.Scripts.Editor.Dungeon
         public const string ItemsFolder = ConfigsFolder + "/Items";
         public const string AbilitiesFolder = ConfigsFolder + "/Abilities";
         public const string ClassesFolder = ConfigsFolder + "/Classes";
+        public const string AbilitySoundsFolder = "Assets/Game/Audio/Dungeon/Abilities";
+        private static ItemDatabase s_database;
         public const string LootFolder = ConfigsFolder + "/Loot";
         public const string MonstersFolder = ConfigsFolder + "/Monsters";
         public const string MerchantsFolder = ConfigsFolder + "/Merchants";
@@ -54,6 +56,8 @@ namespace Game.Scripts.Editor.Dungeon
             BuildCaltrops();
             BuildHuntingTrap();
             BuildSmokePot();
+            AbilityVfxConfig vfx = AbilityVfxBuilder.Build();
+            AbilityZoneComponent zone = BuildAbilityZone();
             ClassConfig[] classes = BuildClasses(database);
             Dictionary<string, LootTableConfig> loot = BuildLootTables(database);
             GameObject worldItem = BuildWorldItem(database);
@@ -63,7 +67,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.EnsureLayer(DungeonUiBuilder.PreviewLayer);
             BuildPreviewRig(pieceSet);
 
-            BuildAdventurer(loadouts, arrow, orb, database, classes, config, weapons, worldItem, corpse, campfire, pieceSet);
+            BuildAdventurer(loadouts, arrow, orb, database, classes, config, weapons, worldItem, corpse, campfire, pieceSet, zone, vfx);
             BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.ArmingSword), Experience = 25, Loot = loot["Monster"], Body = DungeonSkeletonBuilder.Material("A"), Scale = 0.98f },
                 loadouts, arrow, orb, database, pieceSet);
             BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Bow), Experience = 25, Loot = loot["Monster"], Body = DungeonSkeletonBuilder.Material("D"), Scale = 0.98f },
@@ -176,6 +180,7 @@ namespace Game.Scripts.Editor.Dungeon
                         break;
                     case ItemKind.Utility:
                         BattleEditorUtility.Set(so, "_utilityKind", def.Utility);
+                        BattleEditorUtility.Set(so, "_isBlade", def.Name == "Throwing Knife");
                         BattleEditorUtility.Set(so, "_damage", def.Damage);
                         BattleEditorUtility.Set(so, "_useTime", def.UseTime);
                         break;
@@ -285,10 +290,28 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_effectDuration", def.HitDuration);
             BattleEditorUtility.Set(so, "_color", def.Color);
             BattleEditorUtility.Set(so, "_glyph", def.Glyph);
-            BattleEditorUtility.Set(so, "_icon", DungeonAbilityIconBuilder.Build(Sanitize(def.Name), def.Icon ?? DungeonAbilityIconBuilder.SymbolFor(def.Kind), def.Color));
+            BattleEditorUtility.Set(so, "_icon", DungeonAbilityIconBuilder.BuildOrPainted(Sanitize(def.Name), def.Icon ?? DungeonAbilityIconBuilder.SymbolFor(def.Kind), def.Color));
 
-            if (def.Kind is AbilityKind.Projectile or AbilityKind.AreaDamage or AbilityKind.Blink or AbilityKind.Dash && def.HitEffect != StatusEffectKind.None)
+            if (def.Kind is AbilityKind.Projectile or AbilityKind.AreaDamage or AbilityKind.Blink or AbilityKind.Dash or AbilityKind.Zone or AbilityKind.Throw or AbilityKind.TargetEffect
+                && def.HitEffect != StatusEffectKind.None)
                 BattleEditorUtility.Set(so, "_effect", def.HitEffect);
+
+            BattleEditorUtility.Set(so, "_secondEffect", def.SecondEffect);
+            BattleEditorUtility.Set(so, "_secondMagnitude", def.SecondMagnitude);
+            BattleEditorUtility.Set(so, "_secondDuration", def.SecondDuration);
+            BattleEditorUtility.Set(so, "_isPercentHealth", def.PercentHealth);
+            BattleEditorUtility.Set(so, "_flags", (int)def.Flags);
+            BattleEditorUtility.Set(so, "_zone", def.Zone);
+            BattleEditorUtility.Set(so, "_zoneRadius", def.ZoneRadius);
+            BattleEditorUtility.Set(so, "_zoneDuration", def.ZoneDuration);
+            BattleEditorUtility.Set(so, "_zoneDelay", def.ZoneDelay);
+            BattleEditorUtility.Set(so, "_zoneTick", def.ZoneTick);
+            BattleEditorUtility.Set(so, "_channel", def.Channel);
+            BattleEditorUtility.Set(so, "_healthCostPercent", def.HealthCostPercent);
+            BattleEditorUtility.Set(so, "_item", def.Item != null ? s_database.Find(def.Item) : null);
+            BattleEditorUtility.Set(so, "_castSound", AbilitySound(def.Name, "cast"));
+            BattleEditorUtility.Set(so, "_impactSound", AbilitySound(def.Name, "impact"));
+            BattleEditorUtility.Set(so, "_vfx", def.Vfx);
 
             BattleEditorUtility.Set(so, "_subclass", def.Subclass);
             BattleEditorUtility.Set(so, "_resourceCost", def.ResourceCost);
@@ -309,8 +332,59 @@ namespace Game.Scripts.Editor.Dungeon
             return config;
         }
 
+        /// Red rim-lit silhouettes the tracker sees through walls.
+        private static Material XRayMaterial()
+        {
+            const string path = "Assets/Game/Materials/Vfx/XRay.mat";
+            BattleEditorUtility.EnsureFolder("Assets/Game/Materials/Vfx");
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+
+            if (material == null)
+            {
+                material = new Material(Shader.Find("Game/XRaySilhouette"));
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.SetColor("_Color", new Color(1f, 0.32f, 0.2f, 0.55f));
+            EditorUtility.SetDirty(material);
+
+            return material;
+        }
+
+        /// Recorded sound of an ability, null until one is made for it.
+        private static AudioClip AbilitySound(string name, string kind)
+        {
+            return AssetDatabase.LoadAssetAtPath<AudioClip>($"{AbilitySoundsFolder}/{System.Text.RegularExpressions.Regex.Replace(name, "[^A-Za-z0-9]", string.Empty)}_{kind}.wav");
+        }
+
+        /// The networked zone every lasting ability leaves; its loops are picked per kind.
+        private static AbilityZoneComponent BuildAbilityZone()
+        {
+            GameObject root = new GameObject("AbilityZone");
+            root.AddComponent<NetworkObject>();
+            AbilityZoneComponent zone = root.AddComponent<AbilityZoneComponent>();
+            AudioClip[] loops = new AudioClip[(int)ZoneKind.Flare + 1];
+            AudioClip fire = AssetDatabase.LoadAssetAtPath<AudioClip>($"{AbilitySoundsFolder}/Zone_FireLoop.wav");
+            loops[(int)ZoneKind.FirePool] = fire;
+            loops[(int)ZoneKind.FireWall] = fire;
+            loops[(int)ZoneKind.Flare] = fire;
+            loops[(int)ZoneKind.PoisonCloud] = AssetDatabase.LoadAssetAtPath<AudioClip>($"{AbilitySoundsFolder}/Zone_GasLoop.wav");
+            loops[(int)ZoneKind.Sanctuary] = AssetDatabase.LoadAssetAtPath<AudioClip>($"{AbilitySoundsFolder}/Zone_HolyLoop.wav");
+            loops[(int)ZoneKind.HealPool] = loops[(int)ZoneKind.Sanctuary];
+            loops[(int)ZoneKind.Whisper] = AssetDatabase.LoadAssetAtPath<AudioClip>($"{AbilitySoundsFolder}/Zone_WhisperLoop.wav");
+            loops[(int)ZoneKind.Frost] = AssetDatabase.LoadAssetAtPath<AudioClip>($"{AbilitySoundsFolder}/Zone_FrostLoop.wav");
+            SerializedObject so = new SerializedObject(zone);
+            BattleEditorUtility.Set(so, "_loops", loops);
+            BattleEditorUtility.Set(so, "_strikeSound", AbilitySound("Thunderstorm", "impact"));
+            BattleEditorUtility.Set(so, "_eruptSound", AbilitySound("Funeral Pyre", "impact"));
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            return BattleContentBuilder.SavePrefab(root, Prefab("AbilityZone")).GetComponent<AbilityZoneComponent>();
+        }
+
         private static ClassConfig[] BuildClasses(ItemDatabase database)
         {
+            s_database = database;
             ClassDef[] defs = DungeonClassLibrary.CreateClasses();
             ClassConfig[] configs = new ClassConfig[defs.Length];
 
@@ -354,8 +428,11 @@ namespace Game.Scripts.Editor.Dungeon
                     perk.FindPropertyRelative("_description").stringValue = def.Perks[p].Description;
                     perk.FindPropertyRelative("_subclass").intValue = def.Perks[p].Subclass;
                     perk.FindPropertyRelative("_isPerStack").boolValue = def.Perks[p].PerStack;
+                    perk.FindPropertyRelative("_effect").intValue = (int)def.Perks[p].Effect;
+                    perk.FindPropertyRelative("_value").floatValue = def.Perks[p].Value;
                     string symbol = def.Perks[p].Icon ?? (def.Perks[p].Modifiers.Length > 0 ? DungeonAbilityIconBuilder.SymbolFor(def.Perks[p].Modifiers[0].Stat) : "Chevrons");
-                    perk.FindPropertyRelative("_icon").objectReferenceValue = DungeonAbilityIconBuilder.Build(Sanitize(def.Perks[p].Name), symbol, def.Perks[p].Color ?? def.Color);
+                    Color perkColor = def.Perks[p].Color ?? (def.Perks[p].Subclass >= 0 ? def.Subclasses[def.Perks[p].Subclass].Color : def.Color);
+                    perk.FindPropertyRelative("_icon").objectReferenceValue = DungeonAbilityIconBuilder.BuildOrPainted(Sanitize(def.Perks[p].Name), symbol, perkColor);
                     SerializedProperty modifiers = perk.FindPropertyRelative("_modifiers");
                     modifiers.arraySize = def.Perks[p].Modifiers.Length;
 
@@ -381,6 +458,7 @@ namespace Game.Scripts.Editor.Dungeon
                     entry.FindPropertyRelative("_resourceMax").intValue = sub.ResourceMax;
                     entry.FindPropertyRelative("_resourceSources").intValue = (int)sub.Sources;
                     entry.FindPropertyRelative("_resourceDecay").floatValue = sub.Decay;
+                    entry.FindPropertyRelative("_icon").objectReferenceValue = DungeonAbilityIconBuilder.BuildOrPainted("Subclass_" + Sanitize(sub.Name), "Chevrons", sub.Color);
                 }
 
                 SerializedProperty kit = so.FindProperty("_startingKit");
@@ -540,7 +618,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void BuildAdventurer(BattleContentBuilder.Loadout[] loadouts, GameObject arrow, GameObject orb, ItemDatabase database,
             ClassConfig[] classes, DungeonConfig config, Dictionary<string, WeaponConfig> weapons, GameObject worldItem, GameObject corpse, GameObject campfire,
-            ArmorPieceSetConfig pieceSet)
+            ArmorPieceSetConfig pieceSet, AbilityZoneComponent zone, AbilityVfxConfig vfx)
         {
             BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(loadouts, arrow, orb, 2, "Adventurer");
             GameObject root = parts.Root;
@@ -565,6 +643,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_worldItemPrefab", worldItem.GetComponent<NetworkObject>());
             BattleEditorUtility.Set(so, "_corpsePrefab", corpse.GetComponent<NetworkObject>());
             BattleEditorUtility.Set(so, "_campfirePrefab", campfire.GetComponent<NetworkObject>());
+            BattleEditorUtility.Set(so, "_zonePrefab", zone);
             BattleEditorUtility.Set(so, "_fistsWeapon", weapons[DungeonWeaponLibrary.Fists]);
             BattleEditorUtility.Set(so, "_formWeapons", new[] { weapons[DungeonWeaponLibrary.BearClaws], weapons[DungeonWeaponLibrary.PantherClaws], weapons[DungeonWeaponLibrary.RatBite] });
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -590,6 +669,10 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(root.AddComponent<FootstepComponent>(), "_fighter", parts.Fighter);
             BattleEditorUtility.Set(root.AddComponent<AdventurerSoundComponent>(), "_adventurer", adventurer);
             AddSpellCharge(root, adventurer, parts.Animator);
+            AbilityVfxBuilder.Attach(root, effects, vfx);
+            TrackingViewComponent tracking = root.AddComponent<TrackingViewComponent>();
+            BattleEditorUtility.Set(tracking, "_adventurer", adventurer);
+            BattleEditorUtility.Set(tracking, "_material", XRayMaterial());
             BattleContentBuilder.SavePrefab(root, Prefab("Adventurer"));
         }
 
@@ -1036,11 +1119,16 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_trigger", trigger);
             so.ApplyModifiedPropertiesWithoutUndo();
 
+            StatusEffectComponent effects = root.AddComponent<StatusEffectComponent>();
+            BattleEditorUtility.Set(effects, "_health", parts.Health);
+            AbilityVfxBuilder.Attach(root, effects, AbilityVfxBuilder.Load());
+
             MonsterComponent monster = root.AddComponent<MonsterComponent>();
             so = new SerializedObject(monster);
             BattleEditorUtility.Set(so, "_config", config);
             BattleEditorUtility.Set(so, "_fighter", parts.Fighter);
             BattleEditorUtility.Set(so, "_corpse", corpse);
+            BattleEditorUtility.Set(so, "_effects", effects);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             MonsterBrainComponent brain = root.AddComponent<MonsterBrainComponent>();
@@ -1553,7 +1641,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_activePosition", new Vector3(0f, -0.2f, 0f));
             BattleEditorUtility.Set(so, "_lifetime", 60f);
             BattleEditorUtility.Set(so, "_slowMagnitude", 70f);
-            BattleEditorUtility.Set(so, "_slowDuration", 3f);
+            BattleEditorUtility.Set(so, "_slowDuration", 2f);
             BattleEditorUtility.Set(so, "_isSingleUse", true);
             so.ApplyModifiedPropertiesWithoutUndo();
             BattleContentBuilder.SavePrefab(root, Prefab(DungeonClassLibrary.HuntingTrap));

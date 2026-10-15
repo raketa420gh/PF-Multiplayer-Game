@@ -406,6 +406,7 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_projectiles", projectiles);
             BattleEditorUtility.Set(so, "_arrowPrefab", arrow);
             BattleEditorUtility.Set(so, "_magicPrefab", magicOrb);
+            BattleEditorUtility.Set(so, "_vfx", AbilityVfxBuilder.Load());
             so.ApplyModifiedPropertiesWithoutUndo();
 
             so = new SerializedObject(root.AddComponent<HitFeedbackComponent>());

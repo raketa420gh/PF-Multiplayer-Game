@@ -53,6 +53,7 @@ namespace Game.Scripts.Dungeon
         private int _bonusCharges;
         private readonly float[] _flat = new float[(int)StatType.Count];
         private readonly StatModifier[] _affixes = new StatModifier[ItemAffixes.MaxCount];
+        private float _poisonScale = 1f;
 
         public float GetDamageMultiplier(DamageType type)
         {
@@ -67,12 +68,14 @@ namespace Game.Scripts.Dungeon
         /// activeWeaponSet is -1 when the weapons are put away, heldBeltSlot is -1 when no belt item is in hand; stacks of the
         /// subclass resource multiply the per-stack perks.
         public void Recalculate(ClassConfig config, InventoryComponent inventory, StatusEffectComponent effects, int activeWeaponSet, int perkCount,
-            ShapeshiftForm form = ShapeshiftForm.None, int perkMask = 0, int heldBeltSlot = -1, int stacks = 0)
+            ShapeshiftForm form = ShapeshiftForm.None, int perkMask = 0, int heldBeltSlot = -1, int stacks = 0, float[] perks = null)
         {
             System.Array.Clear(_flat, 0, _flat.Length);
             float armor = 0f;
             float magicResistance = 0f;
             float moveAdd = 0f;
+            float armorMove = 0f;
+            bool isPlated = false;
 
             for (int i = 0; i < InventoryComponent.EquipmentCapacity; i++)
             {
@@ -96,7 +99,8 @@ namespace Game.Scripts.Dungeon
                 {
                     armor += armorItem.ArmorRating + tier * 2f;
                     magicResistance += armorItem.MagicResistance;
-                    moveAdd += armorItem.MoveSpeedPenalty;
+                    armorMove += armorItem.MoveSpeedPenalty;
+                    isPlated |= armorItem.ArmorType == ArmorType.Plate;
                 }
                 else if (item is WeaponItemConfig weaponItem)
                 {
@@ -118,13 +122,18 @@ namespace Game.Scripts.Dungeon
                     Apply(perk.IsPerStack ? new StatModifier(modifier.Stat, modifier.Value * stacks) : modifier);
             }
 
+            // Plate and leather weigh on the feet; drilled bodies carry them lighter, the unarmoured step quicker.
+            moveAdd += armorMove * (1f - Perk(perks, PerkEffect.HeavyArmorTraining)) + (isPlated ? 0f : Perk(perks, PerkEffect.LightStep));
+            _poisonScale = Mathf.Max(0f, 1f - Perk(perks, PerkEffect.PoisonResistance));
+
             float rage = Effect(effects, StatusEffectKind.Rage);
-            float strength = Attribute(StatType.Strength) + Effect(effects, StatusEffectKind.Strength) + rage;
-            float vitality = Attribute(StatType.Vitality);
-            float spirit = Attribute(StatType.Spirit);
-            float knowledge = Attribute(StatType.Knowledge);
-            float agility = Attribute(StatType.Agility);
-            float dexterity = Attribute(StatType.Dexterity);
+            float all = Effect(effects, StatusEffectKind.AllAttributes) - Effect(effects, StatusEffectKind.Cursed);
+            float strength = Attribute(StatType.Strength) + Effect(effects, StatusEffectKind.Strength) + Effect(effects, StatusEffectKind.BullBlood) + rage + all;
+            float vitality = Attribute(StatType.Vitality) + Effect(effects, StatusEffectKind.Vitality) + all;
+            float spirit = Attribute(StatType.Spirit) + Effect(effects, StatusEffectKind.Spirit) + all;
+            float knowledge = Attribute(StatType.Knowledge) + Effect(effects, StatusEffectKind.Knowledge) + all;
+            float agility = Attribute(StatType.Agility) + Effect(effects, StatusEffectKind.Agility) - Effect(effects, StatusEffectKind.Sluggish) + all;
+            float dexterity = Attribute(StatType.Dexterity) + Effect(effects, StatusEffectKind.Dexterity) + all;
 
             _attributes = new ClassStats(Mathf.RoundToInt(strength), Mathf.RoundToInt(vitality), Mathf.RoundToInt(spirit),
                 Mathf.RoundToInt(knowledge), Mathf.RoundToInt(agility), Mathf.RoundToInt(dexterity));
@@ -139,7 +148,7 @@ namespace Game.Scripts.Dungeon
             _magicalPower = spirit + _flat[(int)StatType.MagicalPower] + ThresholdPower(StatType.Spirit);
 
             // Knowledge
-            _castSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(knowledge, 0.8f));
+            _castSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(knowledge, 0.8f)) * (1f + Effect(effects, StatusEffectKind.CastSpeed) / 100f);
             _bonusCharges = DungeonFormulas.BonusCharges(knowledge);
 
             // Agility: the only attribute that moves the feet.
@@ -147,10 +156,12 @@ namespace Game.Scripts.Dungeon
             float rating = DungeonFormulas.BaseMoveSpeed * DungeonFormulas.Scale(agility, 0.2f) + moveAdd + _flat[(int)StatType.MoveSpeed] + FormMoveAdd(form);
             rating *= 1f + (haste + rage * 0.7f) / 100f;
             _moveSpeedRating = Mathf.Min(rating, DungeonFormulas.MaxMoveSpeed);
-            _moveSpeedMultiplier = Mathf.Max(0.3f, _moveSpeedRating / DungeonFormulas.BaseMoveSpeed);
+            _moveSpeedMultiplier = Effect(effects, StatusEffectKind.Root) > 0f ? 0f : Mathf.Max(0.3f, _moveSpeedRating / DungeonFormulas.BaseMoveSpeed);
 
             // Dexterity: the only attribute that speeds up the hands.
-            _actionSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(dexterity, 0.5f) + _flat[(int)StatType.ActionSpeed] / 100f + Effect(effects, StatusEffectKind.ActionSpeed) / 100f);
+            float quickness = Effect(effects, StatusEffectKind.ActionSpeed) + Effect(effects, StatusEffectKind.Mercury) + Effect(effects, StatusEffectKind.Onslaught)
+                + Effect(effects, StatusEffectKind.Retaliation);
+            _actionSpeed = Mathf.Max(0.4f, DungeonFormulas.Scale(dexterity, 0.5f) + _flat[(int)StatType.ActionSpeed] / 100f + quickness / 100f);
 
             // Edges: geometric mean of two neighbours on the ring.
             _physicalHealing = Mathf.Max(0.3f, DungeonFormulas.Scale(DungeonFormulas.Edge(strength, vitality), 0.6f));
@@ -162,7 +173,8 @@ namespace Game.Scripts.Dungeon
 
             // Gear only.
             _cooldownSpeed = Mathf.Max(0.4f, 1f + _flat[(int)StatType.CooldownRecovery] / 100f);
-            _armorRating = armor + _flat[(int)StatType.ArmorRating];
+            _armorRating = (armor + _flat[(int)StatType.ArmorRating] + Effect(effects, StatusEffectKind.Armor))
+                * (1f + Perk(perks, PerkEffect.FrostSkin) + Effect(effects, StatusEffectKind.ArmorPercent) / 100f);
             _magicResistance = DungeonFormulas.BaseMagicResistance + magicResistance + _flat[(int)StatType.MagicResistance];
             _physicalReduction = DungeonFormulas.ArmorReduction(_armorRating) + rage * -0.01f;
             _magicalReduction = DungeonFormulas.MagicReduction(_magicResistance);
@@ -175,6 +187,11 @@ namespace Game.Scripts.Dungeon
         public float GetDurationScale(StatusEffectKind kind)
         {
             return kind == StatusEffectKind.Slow && HasThreshold(StatType.Agility) ? 0f : 1f;
+        }
+
+        public float GetDamageScale(StatusEffectKind kind)
+        {
+            return kind == StatusEffectKind.Poison ? _poisonScale : 1f;
         }
 
         /// Altars answer to magic; doors, levers, portals and the rest to the hands.
@@ -219,6 +236,11 @@ namespace Game.Scripts.Dungeon
                 ShapeshiftForm.Rat => 30f,
                 _ => 0f
             };
+        }
+
+        private static float Perk(float[] perks, PerkEffect effect)
+        {
+            return perks != null ? perks[(int)effect] : 0f;
         }
 
         private static float Effect(StatusEffectComponent effects, StatusEffectKind kind)

@@ -13,16 +13,18 @@ MonoBehaviour:
   m_Name: Fireball
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Fireball
-  _description: Explodes for up to 30 magical damage around the impact and sets the
-    struck ablaze.
+  _description: 'Explodes within 2m: 26 magical damage and burning for 3s.
+
+    <i><color=#a89f8a>"A
+    simple word. A loud one."</color></i>'
   _kind: 2
   _isSpell: 1
-  _charges: 3
+  _charges: 4
   _cooldown: 1
-  _castTime: 1.1
-  _magnitude: 30
+  _castTime: 1
+  _magnitude: 26
   _duration: 0
-  _radius: 2.5
+  _radius: 2
   _effect: 7
   _damageType: 1
   _projectileSpeed: 22
@@ -30,11 +32,11 @@ MonoBehaviour:
   _projectileCount: 1
   _projectileSpread: 0
   _projectileKind: 2
-  _effectMagnitude: 12
-  _effectDuration: 4
+  _effectMagnitude: 9
+  _effectDuration: 3
   _color: {r: 1, g: 0.45, b: 0.12, a: 1}
   _glyph: FB
-  _icon: {fileID: 21300000, guid: 2f581159014f64e4cb893f105801c506, type: 3}
+  _icon: {fileID: 21300000, guid: c0e2a3093f9aa8f41a85157c5e19d7a5, type: 3}
   _healthCost: 0
   _lifeSteal: 0
   _spawnPrefab: {fileID: 0}
@@ -48,3 +50,19 @@ MonoBehaviour:
   _range: 20
   _auraTime: 0
   _isGround: 0
+  _secondEffect: 0
+  _secondMagnitude: 0
+  _secondDuration: 0
+  _isPercentHealth: 0
+  _flags: 8
+  _zone: 0
+  _zoneRadius: 0
+  _zoneDuration: 0
+  _zoneDelay: 0
+  _zoneTick: 0
+  _channel: 0
+  _healthCostPercent: 0
+  _item: {fileID: 0}
+  _castSound: {fileID: 8300000, guid: ffd3d31a6dd32fb499f2ea32cecf8cb2, type: 3}
+  _impactSound: {fileID: 8300000, guid: 0394fdc9c2baf044c8fc3bcac43562ee, type: 3}
+  _vfx: 3

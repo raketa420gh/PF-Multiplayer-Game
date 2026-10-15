@@ -45,6 +45,9 @@ namespace Game.Scripts.Dungeon
         private Button[] _subclassTabs;
 
         [SerializeField]
+        private Image[] _subclassIcons;
+
+        [SerializeField]
         private TMP_Text _subclassText;
 
         private const int NoPerk = -1;
@@ -187,6 +190,15 @@ namespace Game.Scripts.Dungeon
                     continue;
 
                 bool isChosen = i == _session.Subclass;
+                Image icon = i < _subclassIcons.Length ? _subclassIcons[i] : null;
+
+                if (icon != null)
+                {
+                    icon.sprite = subclass.Icon;
+                    icon.enabled = subclass.Icon != null;
+                    icon.color = isChosen ? Color.white : new Color(0.6f, 0.6f, 0.6f);
+                }
+
                 TMP_Text label = _subclassTabs[i].GetComponentInChildren<TMP_Text>();
                 label.text = subclass.Name;
                 label.color = isChosen ? subclass.Color : new Color(0.62f, 0.58f, 0.5f);

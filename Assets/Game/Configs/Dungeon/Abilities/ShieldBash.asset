@@ -13,16 +13,18 @@ MonoBehaviour:
   m_Name: ShieldBash
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Shield Bash
-  _description: 'Bash everyone in a narrow cone 2.6m ahead: 10 physical damage, a
-    long stagger and a shove back.'
+  _description: 'Swing your shield ahead without a lunge: 8 physical damage to everyone
+    in front and a 1s stun. Needs a shield.
+
+    <i><color=#a89f8a>"Down."</color></i>'
   _kind: 3
   _isSpell: 0
   _charges: 1
-  _cooldown: 14
-  _castTime: 0.2
-  _magnitude: 10
+  _cooldown: 15
+  _castTime: 0.15
+  _magnitude: 8
   _duration: 0
-  _radius: 2.6
+  _radius: 2.4
   _effect: 0
   _damageType: 0
   _projectileSpeed: 26
@@ -32,16 +34,35 @@ MonoBehaviour:
   _projectileKind: 1
   _effectMagnitude: 0
   _effectDuration: 0
-  _color: {r: 0.75, g: 0.8, b: 0.95, a: 1}
+  _color: {r: 0.62, g: 0.72, b: 0.86, a: 1}
   _glyph: SB
-  _icon: {fileID: 21300000, guid: 08de9944bc931154ea9a8d8f687d5487, type: 3}
+  _icon: {fileID: 21300000, guid: b2afabc0bf5aede4a9e6ea752bcbff5f, type: 3}
   _healthCost: 0
   _lifeSteal: 0
   _spawnPrefab: {fileID: 0}
-  _staggerDuration: 0.8
-  _subclass: 1
+  _staggerDuration: 1
+  _subclass: 0
   _resourceCost: 0
   _stackBonus: 0
   _isOnAlly: 0
   _coneAngle: 50
-  _push: 7
+  _push: 0
+  _range: 20
+  _auraTime: 0
+  _isGround: 0
+  _secondEffect: 0
+  _secondMagnitude: 0
+  _secondDuration: 0
+  _isPercentHealth: 0
+  _flags: 256
+  _zone: 0
+  _zoneRadius: 0
+  _zoneDuration: 0
+  _zoneDelay: 0
+  _zoneTick: 0
+  _channel: 0
+  _healthCostPercent: 0
+  _item: {fileID: 0}
+  _castSound: {fileID: 8300000, guid: 77e354fe5e04baa4cbd36cc2aafef951, type: 3}
+  _impactSound: {fileID: 8300000, guid: 38f339a0fe478b34f81b8c589af499ff, type: 3}
+  _vfx: 1

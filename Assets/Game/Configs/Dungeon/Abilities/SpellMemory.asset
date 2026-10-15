@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: SpellMemory
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Spell Memory
-  _description: Hold to open the spell wheel, release to ready a spell. Cast with
-    RMB.
+  _description: Hold to open the spell wheel and ready a spell; hold RMB with a staff
+    or a spellbook in hand and release to cast. The centre of the wheel returns RMB
+    to the weapon.
   _kind: 7
   _isSpell: 0
   _charges: 1
@@ -32,9 +33,35 @@ MonoBehaviour:
   _projectileKind: 1
   _effectMagnitude: 0
   _effectDuration: 0
-  _color: {r: 1, g: 0.95, b: 0.7, a: 1}
+  _color: {r: 0.62, g: 0.5, b: 0.95, a: 1}
   _glyph: SM
+  _icon: {fileID: 21300000, guid: abf6cde85d04b764495ed195b59fbb20, type: 3}
   _healthCost: 0
   _lifeSteal: 0
   _spawnPrefab: {fileID: 0}
   _staggerDuration: 0
+  _subclass: -1
+  _resourceCost: 0
+  _stackBonus: 0
+  _isOnAlly: 0
+  _coneAngle: 0
+  _push: 0
+  _range: 20
+  _auraTime: 0
+  _isGround: 0
+  _secondEffect: 0
+  _secondMagnitude: 0
+  _secondDuration: 0
+  _isPercentHealth: 0
+  _flags: 0
+  _zone: 0
+  _zoneRadius: 0
+  _zoneDuration: 0
+  _zoneDelay: 0
+  _zoneTick: 0
+  _channel: 0
+  _healthCostPercent: 0
+  _item: {fileID: 0}
+  _castSound: {fileID: 0}
+  _impactSound: {fileID: 0}
+  _vfx: 0

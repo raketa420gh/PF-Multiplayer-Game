@@ -12,7 +12,21 @@ namespace Game.Scripts.Battle
         Ice,
         Dark,
         Holy,
-        Thrown
+        Thrown,
+        /// A glass flask of the alchemist: shatters where it lands.
+        Flask,
+        Net,
+        Poison
+    }
+
+    [System.Flags]
+    public enum ProjectileFlags : byte
+    {
+        None = 0,
+        /// The hit ignores the victim's armor.
+        IgnoreArmor = 1,
+        /// A flare: the shooter is told where it lands.
+        Flare = 2
     }
 
     public struct ProjectileData : INetworkStruct
@@ -35,9 +49,26 @@ namespace Game.Scripts.Battle
         public byte Effect;
         public byte Impact;
         public NetworkBool IsHidden;
+        public ProjectileFlags Flags;
+        /// Index of the ability that fired it in the shooter's list, NoAbility for a weapon shot.
+        public byte Ability;
+        public const byte NoAbility = 255;
 
         public bool IsFlying => FireTick > 0 && FinishTick == 0;
         public ProjectileKind KindValue => (ProjectileKind)Kind;
+        public DamageTag Tag => KindValue switch
+        {
+            ProjectileKind.Arrow => DamageTag.Ranged,
+            ProjectileKind.Thrown => DamageTag.Thrown,
+            ProjectileKind.Fire => DamageTag.Spell | DamageTag.Fire,
+            ProjectileKind.Ice => DamageTag.Spell | DamageTag.Frost,
+            ProjectileKind.Holy => DamageTag.Spell | DamageTag.Holy,
+            ProjectileKind.Dark => DamageTag.Spell | DamageTag.Dark,
+            ProjectileKind.Flask => DamageTag.Flask,
+            ProjectileKind.Net => DamageTag.Thrown,
+            ProjectileKind.Poison => DamageTag.Flask | DamageTag.Poison,
+            _ => DamageTag.Spell
+        };
 
         public Vector3 GetPosition(float time)
         {
@@ -58,6 +89,9 @@ namespace Game.Scripts.Battle
         public delegate void ProjectileHitHandler(in ProjectileData data, DamageReceiverComponent receiver, HitZone zone, HitResult result);
 
         public event ProjectileHitHandler OnReceiverHit;
+
+        /// Raised on the state authority when a projectile stops on anything: a body, a wall or the floor.
+        public event System.Action<ProjectileData, Vector3, Vector3> OnImpact;
 
         public NetworkArray<ProjectileData> Projectiles => _projectiles;
         public LayerMask HitMask => _hitMask;
@@ -99,7 +133,7 @@ namespace Game.Scripts.Battle
 
         public void Fire(Vector3 origin, Vector3 velocity, float gravity, int damage, float staggerDuration,
             DamageType damageType = DamageType.Physical, ProjectileKind kind = ProjectileKind.Arrow,
-            float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f, float lifeSteal = 0f, int impact = 3, float maxDistance = 0f)
+            float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f, float lifeSteal = 0f, int impact = 3, float maxDistance = 0f, ProjectileFlags flags = ProjectileFlags.None, byte ability = ProjectileData.NoAbility)
         {
             _projectiles.Set(_fireCount % Capacity, new ProjectileData
             {
@@ -117,7 +151,9 @@ namespace Game.Scripts.Battle
                 EffectDuration = effectDuration,
                 LifeSteal = lifeSteal,
                 Impact = (byte)impact,
-                MaxDistance = maxDistance
+                MaxDistance = maxDistance,
+                Flags = flags,
+                Ability = ability
             });
             _fireCount++;
         }
@@ -144,6 +180,8 @@ namespace Game.Scripts.Battle
                     Explode(data, hit.Point);
                 else if (hit.Hitbox != null)
                     ApplyHit(data, hit, from);
+
+                OnImpact?.Invoke(data, hit.Point, hit.Normal);
 
                 return;
             }
@@ -175,7 +213,9 @@ namespace Game.Scripts.Battle
                 StaggerDuration = data.StaggerDuration,
                 Impact = data.Impact,
                 DamageType = (DamageType)data.DamageType,
-                Attacker = _ownReceiver
+                Attacker = _ownReceiver,
+                Tag = data.Tag,
+                IgnoreArmor = (data.Flags & ProjectileFlags.IgnoreArmor) != 0
             });
 
             OnReceiverHit?.Invoke(data, receiver, isBlock ? HitZone.Block : zone, result);
@@ -192,7 +232,7 @@ namespace Game.Scripts.Battle
                 if (hit.Hitbox == null || !hit.Hitbox.Root.TryGetComponent(out DamageReceiverComponent receiver))
                     continue;
 
-                if (!receiver.CanBeHitBy(_ownReceiver) || WasAlreadyHit(receiver, i))
+                if ((receiver != _ownReceiver || data.KindValue is not (ProjectileKind.Flask or ProjectileKind.Poison)) && !receiver.CanBeHitBy(_ownReceiver) || WasAlreadyHit(receiver, i))
                     continue;
 
                 float distance = Vector3.Distance(point, hit.Hitbox.Root.transform.position + Vector3.up);
@@ -209,7 +249,8 @@ namespace Game.Scripts.Battle
                     StaggerDuration = data.StaggerDuration,
                     Impact = data.Impact,
                     DamageType = (DamageType)data.DamageType,
-                    Attacker = _ownReceiver
+                    Attacker = _ownReceiver,
+                    Tag = data.Tag
                 });
 
                 OnReceiverHit?.Invoke(data, receiver, HitZone.Torso, result);

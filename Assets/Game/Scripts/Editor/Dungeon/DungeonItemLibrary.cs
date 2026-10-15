@@ -94,6 +94,23 @@ namespace Game.Scripts.Editor.Dungeon
         public float Range = 20f;
         public float AuraTime;
         public bool Ground;
+        public StatusEffectKind SecondEffect;
+        public float SecondMagnitude;
+        public float SecondDuration;
+        public bool PercentHealth;
+        public AbilityFlags Flags;
+        public ZoneKind Zone;
+        public float ZoneRadius;
+        public float ZoneDuration;
+        public float ZoneDelay;
+        public float ZoneTick;
+        public float Channel;
+        public float HealthCostPercent;
+        /// Item name for GiveItem.
+        public string Item;
+        public VfxStyle Vfx;
+        /// What the icon shows, for the icon generator.
+        public string Art;
     }
 
     internal sealed class PerkDef
@@ -109,6 +126,10 @@ namespace Game.Scripts.Editor.Dungeon
         public int Subclass = -1;
         /// The modifiers count once per stack of the subclass resource.
         public bool PerStack;
+        public PerkEffect Effect;
+        public float Value;
+        /// What the icon shows, for the icon generator.
+        public string Art;
 
         public PerkDef(string name, string description, params StatModifier[] modifiers)
         {
@@ -127,6 +148,7 @@ namespace Game.Scripts.Editor.Dungeon
         public int ResourceMax;
         public ResourceSource Sources;
         public float Decay = 8f;
+        public string Art;
     }
 
     internal sealed class ClassDef
@@ -162,11 +184,12 @@ namespace Game.Scripts.Editor.Dungeon
         private const string DevoutRangerMaterial = OutfitDyeBuilder.Prefix + "RangerDevout";
         private const string StalkerMaterial = OutfitDyeBuilder.Prefix + "RangerStalker";
 
-        private const string Barbarian = "Barbarian";
+        private const string Mercenary = "Mercenary";
         private const string Wizard = "Wizard";
-        private const string Warrior = "Warrior";
+        private const string Alchemist = "Alchemist";
         private const string Confessor = "Confessor";
         private const string Huntsman = "Huntsman";
+        private const string Knave = "Knave";
         private const string Bolts = "Crossbow Bolts";
 
         private static readonly Color s_steel = new(0.8f, 0.82f, 0.88f);
@@ -249,7 +272,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             // Huntsman, Dexterity +9 (21 -> 30): quicker hands and reloads, and arrows that bite deeper. Ranger leather dyed
             // to forest green and soot, light enough for the feet of a hunter.
-            AddOutfit(items, "Stalker", new[] { Huntsman }, ArmorType.Leather, null, StalkerMaterial, new Color(0.3f, 0.5f, 0.28f),
+            AddOutfit(items, "Stalker", new[] { Huntsman, Knave, Alchemist }, ArmorType.Leather, null, StalkerMaterial, new Color(0.3f, 0.5f, 0.28f),
                 Piece("Stalker Hood", s_hood, 22f, 1f, 32, 0f, new StatModifier(StatType.Dexterity, 2f), new StatModifier(StatType.HeadshotDamage, 0.05f)),
                 Piece("Stalker Jerkin", new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt2, OutfitPart.RangerPauldron }, 46f, 3f, 62, 0f,
                     new StatModifier(StatType.Dexterity, 3f), new StatModifier(StatType.RangedDamageBonus, 0.03f)),
@@ -265,7 +288,7 @@ namespace Game.Scripts.Editor.Dungeon
                 offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 25f) }, shieldIndex: 1));
             // Dark and Darker's viking sword: base damage 31, move speed -20, for the barbarian and the warrior.
             items.Add(Weapon("Viking Sword", DungeonWeaponLibrary.VikingSword, WeaponClass.Sword, 1, 3, 20f, "Vk", s_steel, 40, "A broad-bladed sword with a lobed pommel. Three cuts in a row.",
-                classes: new[] { Barbarian, Warrior }));
+                classes: new[] { Mercenary }));
             // Darkness is the catacombs' danger: a torch from the belt lights 5 m around the left hand for 60 s of fuel.
             items.Add(Consumable("Torch", ConsumableEffect.Light, 5f, 60f, 0f, 1, "To", new Color(1f, 0.6f, 0.25f), 3,
                 "Hold it in the left hand to light the dark around you. Throw it down to light a spot: it burns until the fuel runs out.",
@@ -304,7 +327,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Piece("Mystic Shoes", s_shoes, 10f, -5f, 28, 5f, new StatModifier(StatType.Spirit, 1f)));
 
             // Wizard, Knowledge +9 (21 -> 30): faster casts, more charges and a free first spell.
-            AddOutfit(items, "Occultist", new[] { Wizard }, ArmorType.Leather, null, OccultistMaterial, new Color(0.6f, 0.3f, 0.75f),
+            AddOutfit(items, "Occultist", new[] { Wizard, Alchemist }, ArmorType.Leather, null, OccultistMaterial, new Color(0.6f, 0.3f, 0.75f),
                 Piece("Occultist Hood", s_hood, 20f, 1f, 32, 5f, new StatModifier(StatType.Knowledge, 2f)),
                 Piece("Occultist Coat", new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt2 }, 40f, 4f, 60, 15f,
                     new StatModifier(StatType.Knowledge, 3f)),
@@ -313,7 +336,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Piece("Occultist Boots", s_boots, 16f, -4f, 30, 0f, new StatModifier(StatType.Knowledge, 1f)));
 
             // Barbarian, Strength +9 (21 -> 30): physical power and +10% physical damage. The heaviest clothes there are.
-            AddOutfit(items, "Marauder", new[] { Barbarian }, ArmorType.Leather, null, MarauderMaterial, new Color(0.8f, 0.25f, 0.2f),
+            AddOutfit(items, "Marauder", new[] { Mercenary, Knave }, ArmorType.Leather, null, MarauderMaterial, new Color(0.8f, 0.25f, 0.2f),
                 Piece("Marauder Hood", s_hood, 30f, 2f, 34, 0f, new StatModifier(StatType.Strength, 2f)),
                 Piece("Marauder Jerkin", new[] { OutfitPart.RangerBody, OutfitPart.RangerBelt1, OutfitPart.RangerBelt2, OutfitPart.RangerPauldron }, 70f, 7f, 65, 0f,
                     new StatModifier(StatType.Strength, 3f)),
@@ -323,7 +346,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             // Barbarian, Vitality +8 (22 -> 30): health, rest heals twice as fast, and some action speed.
             // Straps on a bare chest protect next to nothing.
-            AddOutfit(items, "Berserker", new[] { Barbarian }, ArmorType.Leather, BattleCharacterBuilder.PeasantAltMaterial, BerserkerMaterial, new Color(0.75f, 0.7f, 0.65f),
+            AddOutfit(items, "Berserker", new[] { Mercenary }, ArmorType.Leather, BattleCharacterBuilder.PeasantAltMaterial, BerserkerMaterial, new Color(0.75f, 0.7f, 0.65f),
                 Piece("Berserker Hood", s_hood, 18f, 0f, 30, 0f, new StatModifier(StatType.Vitality, 1f)),
                 Piece("Berserker Harness", new[] { OutfitPart.RangerBelt1, OutfitPart.RangerBelt2, OutfitPart.RangerPauldron }, 22f, 0f, 60, 0f,
                     new StatModifier(StatType.Vitality, 3f), new StatModifier(StatType.ActionSpeed, 4f)),
@@ -336,10 +359,10 @@ namespace Game.Scripts.Editor.Dungeon
         private static void AddSecondOutfits(List<ItemDef> items)
         {
             // The Confessor wears the body armour of the plate, but neither the coif nor the vambraces.
-            string[] plated = { Warrior, Confessor };
+            string[] plated = { Mercenary, Confessor };
 
             // Warrior: the only plate there is. Twice the armour of leather and the slowest to walk in; Vitality +6 (18 -> 24).
-            AddOutfit(items, "Ironclad", new[] { Warrior }, ArmorType.Plate, null, IroncladMaterial, new Color(0.72f, 0.76f, 0.84f),
+            AddOutfit(items, "Ironclad", new[] { Mercenary }, ArmorType.Plate, null, IroncladMaterial, new Color(0.72f, 0.76f, 0.84f),
                 Piece("Ironclad Coif", s_hood, 42f, 3f, 60, 0f, new StatModifier(StatType.Vitality, 1f)),
                 For(plated, Piece("Ironclad Cuirass", new[] { OutfitPart.RangerBody, OutfitPart.RangerArms, OutfitPart.RangerBelt1, OutfitPart.RangerPauldron }, 115f, 11f, 120, 0f,
                     new StatModifier(StatType.Vitality, 2f))),

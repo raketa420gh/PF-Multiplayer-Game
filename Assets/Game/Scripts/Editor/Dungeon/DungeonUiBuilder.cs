@@ -1231,8 +1231,16 @@ namespace Game.Scripts.Editor.Dungeon
             // Subclass tabs under the title, the chosen one's description under them, right above the arch.
             Button[] subclassTabs = new Button[3];
 
+            Image[] subclassIcons = new Image[subclassTabs.Length];
+
             for (int i = 0; i < subclassTabs.Length; i++)
+            {
                 subclassTabs[i] = CreateButton("Subclass" + i, page, top, new Vector2((i - 1) * 196f, -156f), new Vector2(184f, 34f), string.Empty);
+                subclassIcons[i] = CreateImage("Icon", (RectTransform)subclassTabs[i].transform, new Vector2(0f, 0.5f), new Vector2(18f, 0f), new Vector2(30f, 30f), Color.white);
+                subclassIcons[i].raycastTarget = false;
+                subclassIcons[i].preserveAspect = true;
+                subclassTabs[i].GetComponentInChildren<TMP_Text>().margin = new Vector4(30f, 0f, 0f, 0f);
+            }
 
             TMP_Text subclassText = CreateText("SubclassText", page, top, new Vector2(0f, -194f), new Vector2(900f, 24f), 13f, TextAlignmentOptions.Center);
             subclassText.color = s_textDim;
@@ -1301,6 +1309,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_tooltip", tooltip);
             BattleEditorUtility.Set(so, "_tooltipText", tooltipText);
             BattleEditorUtility.Set(so, "_subclassTabs", subclassTabs);
+            BattleEditorUtility.Set(so, "_subclassIcons", subclassIcons);
             BattleEditorUtility.Set(so, "_subclassText", subclassText);
             so.ApplyModifiedPropertiesWithoutUndo();
 

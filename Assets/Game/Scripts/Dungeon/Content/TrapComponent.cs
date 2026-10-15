@@ -71,6 +71,10 @@ namespace Game.Scripts.Dungeon
         [Networked]
         private TickTimer _lifetimeTimer { get; set; }
 
+        /// The trapper who set it: his perks decide how long it holds and whether it poisons.
+        [Networked]
+        private NetworkBehaviourId _owner { get; set; }
+
         [Networked]
         private TickTimer _cooldown { get; set; }
 
@@ -168,8 +172,8 @@ namespace Game.Scripts.Dungeon
                 if (receiver == null || !receiver.IsAlive || !_hitThisCycle.Add(receiver))
                     continue;
 
-                if (_slowMagnitude > 0f && receiver.TryGetComponent(out StatusEffectComponent effects))
-                    effects.Add(StatusEffectKind.Slow, _slowMagnitude, _slowDuration);
+                if (receiver.TryGetComponent(out StatusEffectComponent effects))
+                    Catch(effects);
 
                 receiver.ApplyHit(new HitRequest
                 {
@@ -180,14 +184,38 @@ namespace Game.Scripts.Dungeon
                     Normal = Vector3.up,
                     AttackerPosition = transform.position,
                     StaggerDuration = 0.3f,
-                    DamageType = DamageType.True
+                    DamageType = DamageType.True,
+                    Tag = DamageTag.Trap
                 });
             }
+        }
+
+        /// Called before spawning a trap set by an adventurer.
+        public void SetOwner(AdventurerComponent owner)
+        {
+            _owner = owner.Id;
         }
 
         public void Disarm()
         {
             IsArmed = false;
+        }
+
+        /// A trapper's jaws hold the body in place and may poison it; any other trap only slows.
+        private void Catch(StatusEffectComponent effects)
+        {
+            if (Runner.TryFindBehaviour(_owner, out NetworkBehaviour behaviour) && behaviour is AdventurerComponent owner)
+            {
+                owner.ApplyEffectTo(effects, StatusEffectKind.Root, 1f, _slowDuration + owner.Perk(PerkEffect.HeavyJaws));
+
+                if (owner.Perk(PerkEffect.PoisonTeeth) > 0f)
+                    owner.ApplyEffectTo(effects, StatusEffectKind.Poison, owner.Perk(PerkEffect.PoisonTeeth) * 3f, owner.Perk(PerkEffect.PoisonTeeth));
+
+                return;
+            }
+
+            if (_slowMagnitude > 0f)
+                effects.Add(StatusEffectKind.Slow, _slowMagnitude, _slowDuration);
         }
 
         /// Bodies inside the trap, its owner left out.

@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4878759625195276997
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3800210218225240930}
+  - component: {fileID: 4918464811116368256}
+  - component: {fileID: 2179807794119198738}
+  m_Layer: 0
+  m_Name: AbilityZone
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3800210218225240930
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4878759625195276997}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4918464811116368256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4878759625195276997}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 3069746708
+  SendPriority: 1
+  EnableInterpolation: 1
+  Flags: 262146
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 2179807794119198738}
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &2179807794119198738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4878759625195276997}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ee858403c6a9fa4bbc7814258398a02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityZoneComponent
+  _Kind: 0
+  _Radius: 0
+  _StrikeTick: 0
+  _loops:
+  - {fileID: 0}
+  - {fileID: 8300000, guid: f4cd872a09dc81a4cbb260c49991f0c5, type: 3}
+  - {fileID: 8300000, guid: fe4de3fdd5cd3e441b22fc1f398e38af, type: 3}
+  - {fileID: 8300000, guid: d1c6f83c1e52f8045abd3a495b791872, type: 3}
+  - {fileID: 8300000, guid: 0e7e0a03ca663784e9ee37c00df9d4b7, type: 3}
+  - {fileID: 0}
+  - {fileID: 8300000, guid: fe4de3fdd5cd3e441b22fc1f398e38af, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 8300000, guid: f4cd872a09dc81a4cbb260c49991f0c5, type: 3}
+  - {fileID: 8300000, guid: 9febb1a1a313858418d6d4f73abee197, type: 3}
+  - {fileID: 8300000, guid: fe4de3fdd5cd3e441b22fc1f398e38af, type: 3}
+  _strikeSound: {fileID: 8300000, guid: 730fe56b3f8de584fb46b2db77b121b5, type: 3}
+  _eruptSound: {fileID: 8300000, guid: 720fa7ce3a420444090315629680a708, type: 3}

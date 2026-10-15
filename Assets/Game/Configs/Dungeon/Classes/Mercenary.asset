@@ -1,0 +1,271 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d988ee4bac2acf74b80699d6e83c0b70, type: 3}
+  m_Name: Mercenary
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
+  _id: 0
+  _displayName: Mercenary
+  _description: 'A free blade: a soldier of a disbanded army gone below for the coin.
+    Loyal to no one, trusts no ossarite: plain steel, and ossarite is only pay.'
+  _baseStats:
+    Strength: 19
+    Vitality: 19
+    Spirit: 8
+    Knowledge: 9
+    Agility: 17
+    Dexterity: 18
+  _color: {r: 0.72, g: 0.74, b: 0.78, a: 1}
+  _bodyColor: {r: 1, g: 1, b: 1, a: 1}
+  _skills:
+  - {fileID: 11400000, guid: 06ab41a003485ca47b2a61fae64a4ea8, type: 2}
+  - {fileID: 11400000, guid: ac3f421e8eb26454cbb1b54e10c40f41, type: 2}
+  - {fileID: 11400000, guid: c40d5bbd647e1a1469e85cdc29ad7243, type: 2}
+  - {fileID: 11400000, guid: f073aacf70471c946b1056ba96eceb66, type: 2}
+  - {fileID: 11400000, guid: 1ca5a8a5c3d9731469f7a5a2fa8d05f6, type: 2}
+  - {fileID: 11400000, guid: 23eb54721936c49408fd2007d14338aa, type: 2}
+  - {fileID: 11400000, guid: 3500915f7619e594faa8443273162a33, type: 2}
+  - {fileID: 11400000, guid: 630c368736f188d43ad72da1eeb5565b, type: 2}
+  - {fileID: 11400000, guid: 75cd9f0edc313264e95fd2035a4a3ec4, type: 2}
+  _spells: []
+  _perks:
+  - _name: Hardened
+    _description: '+10% max health.
+
+      <i><color=#a89f8a>"So many scars there
+      is no room for new ones."</color></i>'
+    _modifiers:
+    - Stat: 6
+      Value: 10
+    _icon: {fileID: 21300000, guid: d942bf66c02e1134585b3c806aef36e0, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+    _effect: 0
+    _value: 0
+  - _name: Plate Habit
+    _description: 'Heavy armor slows you half as much.
+
+      <i><color=#a89f8a>"Twenty
+      years in iron."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: afe5a533cd25f324b89e89872bec45be, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+    _effect: 1
+    _value: 0.5
+  - _name: Used to Wounds
+    _description: 'Bandages heal 30% more.
+
+      <i><color=#a89f8a>"Bind it tight.
+      Walk on."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 26d2816557543644390759b7f3876e1b, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+    _effect: 2
+    _value: 0.3
+  - _name: Steady Stance
+    _description: 'Your block does not slow you down.
+
+      <i><color=#a89f8a>"Feet
+      first, then the shield."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 382fea937ea50bd468104935848a6e97, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 3
+    _value: 1
+  - _name: Shield Drill
+    _description: 'Your shield block stops 20% more damage.
+
+      <i><color=#a89f8a>"The
+      shield is a wall, not a plate."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 9f67861172e2b9543a7a62aa7812440c, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 4
+    _value: 0.2
+  - _name: Counterblow
+    _description: 'After a blocked hit your attacks are 25% faster for 2s.
+
+      <i><color=#a89f8a>"Your
+      turn is over."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 03e471288b6f51b4885bf45c7a512a6a, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 5
+    _value: 25
+  - _name: Heavy Bones
+    _description: 'Nothing can knock you back.
+
+      <i><color=#a89f8a>"Push. I
+      will wait."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: c9ba5f02b0c1a044a99335e9c83e3ed8, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 6
+    _value: 1
+  - _name: Anything Sharp
+    _description: 'You can wield any weapon.
+
+      <i><color=#a89f8a>"A weapon is
+      a weapon."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 6d998b8343a8b8e44b44475bb0114b65, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 7
+    _value: 1
+  - _name: Light Step
+    _description: '+15 move speed while you wear no plate.
+
+      <i><color=#a89f8a>"Iron
+      is for the dead."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 15eb14c6f92fd404fbb9028c7b9b4290, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 8
+    _value: 15
+  - _name: Onslaught
+    _description: 'Each hit in a row on the same foe makes your attacks 5% faster,
+      up to 25%.
+
+      <i><color=#a89f8a>"Don''t let him breathe."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 8812240b3501b73438b92d0c97f9a2b2, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 9
+    _value: 5
+  - _name: Quick Hands
+    _description: '+5% action speed.
+
+      <i><color=#a89f8a>"Faster than the other
+      side."</color></i>'
+    _modifiers:
+    - Stat: 12
+      Value: 5
+    _icon: {fileID: 21300000, guid: fa6e6c7cd9c947942bc1cc9e0b7bc903, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 0
+    _value: 0
+  - _name: Under the Banner
+    _description: 'Allies within 6m get +15 armor.
+
+      <i><color=#a89f8a>"Stay
+      in sight of the colours."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 8d0d0f7bd3dd90f4e93a971ab6cf6f78, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 10
+    _value: 15
+  - _name: Set the Example
+    _description: 'Allies within 6m move 5% faster.
+
+      <i><color=#a89f8a>"Follow
+      me."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: ae37eabbe9610cc409d9dd0e523b359f, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 11
+    _value: 5
+  - _name: Battle Order
+    _description: 'Allies within 6m deal 5% more damage.
+
+      <i><color=#a89f8a>"Each
+      one to his place."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 6f88820281eb2054dacba790c1290b09, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 12
+    _value: 5
+  - _name: Voice
+    _description: 'Your war cries reach 50% farther.
+
+      <i><color=#a89f8a>"Heard
+      over any steel."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 534ada0cfc9e12647ae297ec2f8d2138, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 13
+    _value: 0.5
+  _subclasses:
+  - _name: Shieldbearer
+    _description: Hardest to kill, deals less. Shield only. Held the passes for the
+      guild convoys.
+    _color: {r: 0.62, g: 0.72, b: 0.86, a: 1}
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
+    _resourceDecay: 8
+    _icon: {fileID: 21300000, guid: ddd6f3fa65389a048af75b89caddbbbb, type: 3}
+  - _name: Hewer
+    _description: Fast and less sturdy; fights with any weapon. Takes a share of
+      the loot, not a wage.
+    _color: {r: 0.9, g: 0.42, b: 0.28, a: 1}
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
+    _resourceDecay: 8
+    _icon: {fileID: 21300000, guid: 418f046570dc01749a99d7dd7e09a100, type: 3}
+  - _name: Captain
+    _description: Holds the squad together; middling at everything himself. Led a
+      free company that is no more.
+    _color: {r: 0.95, g: 0.75, b: 0.35, a: 1}
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
+    _resourceDecay: 8
+    _icon: {fileID: 21300000, guid: c74bb65339336a846912ac98e2f36374, type: 3}
+  _startingKit:
+  - _item: {fileID: 11400000, guid: 81485b83cb38163419e5794205a7c787, type: 2}
+    _slot: 9
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: c52b74ed91a0f4844a83fc48c5717b79, type: 2}
+    _slot: 10
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: c396e03d12b5a744c991cc25c0434fe8, type: 2}
+    _slot: 11
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: c402e9ed6fb1b394889c3f3a19f32561, type: 2}
+    _slot: 1
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: a6c7b4d014c8e5842a1bcf6a2bc1cfb7, type: 2}
+    _slot: 3
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 5ab24771d6d7b4f43995ba089005238b, type: 2}
+    _slot: 4
+    _count: 1
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: 1cf148bc8a302b84d87d1896014a5456, type: 2}
+    _slot: 13
+    _count: 3
+    _isEquipped: 1
+  - _item: {fileID: 11400000, guid: bdca8856464b5274b9d57abb31b1d8ea, type: 2}
+    _slot: 14
+    _count: 1
+    _isEquipped: 1
+  _allowedWeapons: 00010204030809
+  _castFocus: 0

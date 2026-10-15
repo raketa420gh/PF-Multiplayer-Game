@@ -199,7 +199,7 @@ namespace Game.Scripts.Dungeon
             NetworkObject adventurer = _runner.Spawn(_adventurerPrefab, position, point.rotation, player, (_, obj) =>
             {
                 AdventurerComponent component = obj.GetComponent<AdventurerComponent>();
-                component.Setup(session.ClassId, session, (byte)floor);
+                component.Setup(session.ClassId, session, (byte)floor, _admission != null ? _admission.TeamOf(player) : AdventurerComponent.NoTeam);
                 component.Inventory.CopyFrom(session.Kit);
 
                 if (arrival != null)

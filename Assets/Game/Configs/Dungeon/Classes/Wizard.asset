@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.ClassConfig
   _id: 1
   _displayName: Wizard
-  _description: 'Master of spells: frost, fire and lightning from two spell wheels.
-    Spells run out and come back only by a campfire. Fragile in melee.'
+  _description: 'An outcast bookman: the College above teaches magic by the canon,
+    he went for the forbidden books of Mornheim and was thrown out. One wheel of
+    spells that come back only by a campfire. Fragile in melee.'
   _baseStats:
     Strength: 8
     Vitality: 10
@@ -23,134 +24,222 @@ MonoBehaviour:
     Knowledge: 21
     Agility: 15
     Dexterity: 13
-  _color: {r: 0.65, g: 0.45, b: 1, a: 1}
+  _color: {r: 0.62, g: 0.5, b: 0.95, a: 1}
   _bodyColor: {r: 1, g: 1, b: 1, a: 1}
   _skills:
-  - {fileID: 11400000, guid: d303210ef3c48a14e8e9f5dbef4c85e7, type: 2}
-  - {fileID: 11400000, guid: be58156c84422e248af9f279c12fca93, type: 2}
-  - {fileID: 11400000, guid: 1580786ef315ae6498759ea65bd34ddc, type: 2}
-  - {fileID: 11400000, guid: 1baaf1fd92dee1d4ab121e280f4435ec, type: 2}
-  - {fileID: 11400000, guid: abb7fbac559a24f47829eb4116af1000, type: 2}
-  - {fileID: 11400000, guid: 8b8419e805e76014b9179bdde40819f8, type: 2}
+  - {fileID: 11400000, guid: da7e2a721d36245459b5026a36bf5b93, type: 2}
+  - {fileID: 11400000, guid: 3f6a84922c5eadb4b947db11dc861dd0, type: 2}
+  - {fileID: 11400000, guid: 25ae09b748754924db798bb98d29ceba, type: 2}
   _spells:
-  - {fileID: 11400000, guid: c62cf91ff561076408cb971c786edad7, type: 2}
-  - {fileID: 11400000, guid: 68169288e63f5744db89ea8d8b1b2497, type: 2}
-  - {fileID: 11400000, guid: 12c8ec57a6709174ba976fdb342f9760, type: 2}
-  - {fileID: 11400000, guid: 471621ec6502bb64c874549fcb2e1dde, type: 2}
+  - {fileID: 11400000, guid: 0d6f1fe119951a444932d546867af9c6, type: 2}
+  - {fileID: 11400000, guid: d8abb64f6c699b7479f44c3c51998e2a, type: 2}
   - {fileID: 11400000, guid: eb98f996a3a65fa42923f55944a2cce3, type: 2}
-  - {fileID: 11400000, guid: c6f1859333260694b847af8561cefe9e, type: 2}
-  - {fileID: 11400000, guid: 385d55f047a590d46afacfa522a355cc, type: 2}
-  - {fileID: 11400000, guid: 16db566873570464eb1e0fe1c792b6dc, type: 2}
+  - {fileID: 11400000, guid: 8e1c5d291b9643149b7f13692bd04645, type: 2}
+  - {fileID: 11400000, guid: 68ca86b9a7c00de45bb54b1f7529cf95, type: 2}
+  - {fileID: 11400000, guid: f3b2341d60e564649b2d6a41f7c519a5, type: 2}
+  - {fileID: 11400000, guid: 739d176e754584845987ac66bc258eb7, type: 2}
+  - {fileID: 11400000, guid: 34fcfc0a7d50f6c4f928ee09fa618f60, type: 2}
+  - {fileID: 11400000, guid: 5ba0da4d9732d324084270919ec83f49, type: 2}
   - {fileID: 11400000, guid: 8ca36ccb603995842b7a607a016c6b72, type: 2}
-  - {fileID: 11400000, guid: 3d8000edbd09f0e4a92ea1f6afc56348, type: 2}
+  - {fileID: 11400000, guid: e24c8df6c8ad8be49a7bffba46c27540, type: 2}
   _perks:
-  - _name: Arcane Mastery
-    _description: +6 magical power and +10% magical damage.
-    _modifiers:
-    - Stat: 11
-      Value: 6
-    - Stat: 14
-      Value: 0.1
-    _icon: {fileID: 21300000, guid: 2e0148156428dbf45aff6a031dc5fea4, type: 3}
-    _subclass: -1
-    _isPerStack: 0
-  - _name: Sage
-    _description: '+10 Knowledge: more charges for every spell, faster casting.'
+  - _name: Well-Read
+    _description: '+3 Knowledge.
+
+      <i><color=#a89f8a>"Copied it by hand, so
+      I remember it."</color></i>'
     _modifiers:
     - Stat: 3
-      Value: 10
-    _icon: {fileID: 21300000, guid: 148348c4b17af5f448453754d032a36a, type: 3}
+      Value: 3
+    _icon: {fileID: 21300000, guid: e005fccff3128574688f3bb1d5686309, type: 3}
     _subclass: -1
     _isPerStack: 0
-  - _name: Spell Ward
-    _description: +30 magic resistance.
+    _effect: 0
+    _value: 0
+  - _name: Firm Word
+    _description: '+3 Spirit.
+
+      <i><color=#a89f8a>"A word weighs what you put
+      in it."</color></i>'
     _modifiers:
-    - Stat: 8
-      Value: 30
-    _icon: {fileID: 21300000, guid: 4cb22c13b94331748a95b6ec59046e42, type: 3}
+    - Stat: 2
+      Value: 3
+    _icon: {fileID: 21300000, guid: 4bd57f92d1f12ae46994356698d1b1be, type: 3}
     _subclass: -1
     _isPerStack: 0
-  - _name: Kindling
-    _description: +2 magical power per Heat.
-    _modifiers:
-    - Stat: 11
-      Value: 2
-    _icon: {fileID: 21300000, guid: d060fb5700d044d468aa3107203d8327, type: 3}
+    _effect: 0
+    _value: 0
+  - _name: Frugal Word
+    _description: '15% chance a spell does not spend its charge.
+
+      <i><color=#a89f8a>"Ink
+      is dear. So is strength."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 94af2f1b9bc7517498e3a724f61af71e, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+    _effect: 39
+    _value: 0.15
+  - _name: Hot Flame
+    _description: '+15% fire damage.
+
+      <i><color=#a89f8a>"Mornheim burned its
+      dead to ash. I learned from the best."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: e24f987397c0e5e4c93d3e3d74b781de, type: 3}
     _subclass: 0
-    _isPerStack: 1
-  - _name: Pyromania
-    _description: +12% magical damage, but -15 magic resistance.
-    _modifiers:
-    - Stat: 14
-      Value: 0.12
-    - Stat: 8
-      Value: -15
-    _icon: {fileID: 21300000, guid: dacab27957b384c43a80e7e2d9aa6aba, type: 3}
+    _isPerStack: 0
+    _effect: 40
+    _value: 0.15
+  - _name: Long Smoulder
+    _description: 'Your burning lasts 2s longer.
+
+      <i><color=#a89f8a>"Embers
+      remember longer than people."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: b665aeb8f4f9a8244b2f0b71557fd642, type: 3}
     _subclass: 0
     _isPerStack: 0
-  - _name: Permafrost
-    _description: +8 armor rating and +5 magic resistance per Rime.
-    _modifiers:
-    - Stat: 7
-      Value: 8
-    - Stat: 8
-      Value: 5
-    _icon: {fileID: 21300000, guid: 4b8746e556d9b704681bb5e6c38f0048, type: 3}
-    _subclass: 1
-    _isPerStack: 1
-  - _name: Glacial Mind
-    _description: +6 Knowledge and +10% max health.
-    _modifiers:
-    - Stat: 3
-      Value: 6
-    - Stat: 6
-      Value: 10
-    _icon: {fileID: 21300000, guid: 93cd7369cf480e94ead9e4b5d5bbc072, type: 3}
+    _effect: 41
+    _value: 2
+  - _name: Burnt Hands
+    _description: 'Your own fire hurts you 50% less.
+
+      <i><color=#a89f8a>"I
+      burned the first hundred pages with my fingers."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 1f7724477f4dad243b641bb59f0528cb, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 24
+    _value: 0.5
+  - _name: Funeral Heat
+    _description: 'A foe killed by your fire bursts into flame: 8 magical damage
+      to everyone within 2m.
+
+      <i><color=#a89f8a>"One pyre lights another."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: edb2ec879d65ff143a83e58fa8bbdeff, type: 3}
+    _subclass: 0
+    _isPerStack: 0
+    _effect: 42
+    _value: 8
+  - _name: Piercing Cold
+    _description: 'Your slows are 15% stronger.
+
+      <i><color=#a89f8a>"Cold does
+      not strike. Cold waits."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: dcf654bdd2b2b7242a4318b4b15d5568, type: 3}
     _subclass: 1
     _isPerStack: 0
-  - _name: Conductor
-    _description: +5 move speed per Static.
-    _modifiers:
-    - Stat: 9
-      Value: 5
-    _icon: {fileID: 21300000, guid: b3f8b07b6bee8f44f813b4e822e5869f, type: 3}
-    _subclass: 2
-    _isPerStack: 1
-  - _name: Storm Sense
-    _description: +4 Knowledge and +4 Agility.
-    _modifiers:
-    - Stat: 3
-      Value: 4
-    - Stat: 4
-      Value: 4
-    _icon: {fileID: 21300000, guid: 72578b8a232523147a282437a65cd230, type: 3}
+    _effect: 43
+    _value: 0.15
+  - _name: Brittleness
+    _description: 'Foes you slow take 10% more damage from everyone.
+
+      <i><color=#a89f8a>"Frozen
+      bone breaks like glass."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 9212356fbdcea674b854c6bdf7a7a882, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 44
+    _value: 10
+  - _name: Rime on the Skin
+    _description: '+10% armor rating.
+
+      <i><color=#a89f8a>"I am not cold. I
+      have not been cold for a long time."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 0f473f9715952224991624ed91cee7e3, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 76
+    _value: 0.1
+  - _name: Winter Memory
+    _description: '+1 charge to every frost spell.
+
+      <i><color=#a89f8a>"The
+      bone-scholars wrote small. There was room in the margins."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 9ea88e08fb4451a4abba63ccd55871f9, type: 3}
+    _subclass: 1
+    _isPerStack: 0
+    _effect: 45
+    _value: 1
+  - _name: Dry Air
+    _description: '+15% lightning damage.
+
+      <i><color=#a89f8a>"No storms underground.
+      So all of it is mine."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 2a1c374b6428eb649972ffe41d338954, type: 3}
     _subclass: 2
     _isPerStack: 0
+    _effect: 46
+    _value: 0.15
+  - _name: Iron Calls
+    _description: '+20% lightning damage to foes in plate.
+
+      <i><color=#a89f8a>"Plate
+      is the best lightning rod."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: f69e3948231977d4d84e82daff81a13d, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 47
+    _value: 0.2
+  - _name: Long Chain
+    _description: 'Chain lightning leaps to one more body.
+
+      <i><color=#a89f8a>"Let
+      it find them itself."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: 7c9f68d6f506da94889ac7f8c6c5aef5, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 48
+    _value: 1
+  - _name: Quick Word
+    _description: 'Lightning spells are cast 15% faster.
+
+      <i><color=#a89f8a>"Thunder
+      does not wait. Nor do I."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: cb96c90be05bd3d458dba0dc7c25a238, type: 3}
+    _subclass: 2
+    _isPerStack: 0
+    _effect: 49
+    _value: 0.15
   _subclasses:
-  - _name: Pyromancer
-    _description: 'School of fire: spell hits build Heat that feeds magical power;
-      Combustion spends it in a blast around you.'
+  - _name: Flamer
+    _description: 'Area damage and burning. Copied the funeral books of Mornheim:
+      whom the vein would not take, the empire burned.'
     _color: {r: 1, g: 0.45, b: 0.12, a: 1}
-    _resourceName: Heat
-    _resourceMax: 5
-    _resourceSources: 32
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
     _resourceDecay: 8
-  - _name: Cryomancer
-    _description: 'School of frost: blows taken or blocked leave Rime that thickens
-      your guard; Frost Nova spends it to freeze the crowd.'
+    _icon: {fileID: 21300000, guid: 55d6f887fcac9934cba8a8dcd459de48, type: 3}
+  - _name: Frostbinder
+    _description: 'Control: slows and binds. Found the ice formulas the bone-scholars
+      froze the dead with.'
     _color: {r: 0.55, g: 0.85, b: 1, a: 1}
-    _resourceName: Rime
-    _resourceMax: 3
-    _resourceSources: 24
-    _resourceDecay: 12
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
+    _resourceDecay: 8
+    _icon: {fileID: 21300000, guid: d1378e2f32f757f4bbf9dfe8c161c094, type: 3}
   - _name: Stormcaller
-    _description: 'School of lightning: spell hits build Static that quickens your
-      feet; Overload spends it for an instant spell.'
-    _color: {r: 0.7, g: 0.75, b: 1, a: 1}
-    _resourceName: Static
-    _resourceMax: 3
-    _resourceSources: 32
-    _resourceDecay: 6
+    _description: Single targets and armor. Learned to call the sparks that crackle
+      in the deep shafts before a Crumble.
+    _color: {r: 0.72, g: 0.78, b: 1, a: 1}
+    _resourceName: 
+    _resourceMax: 0
+    _resourceSources: 0
+    _resourceDecay: 8
+    _icon: {fileID: 21300000, guid: f8b93f8d7f519f54485e1ce1f7d6e196, type: 3}
   _startingKit:
   - _item: {fileID: 11400000, guid: 03db1738938f1ee419d7c1f8073365ba, type: 2}
     _slot: 9

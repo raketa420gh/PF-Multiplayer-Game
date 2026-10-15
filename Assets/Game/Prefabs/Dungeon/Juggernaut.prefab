@@ -1312,6 +1312,8 @@ GameObject:
   - component: {fileID: 5588532377528971840}
   - component: {fileID: 5575448124531914033}
   - component: {fileID: 4630637930370080467}
+  - component: {fileID: 887382161600362644}
+  - component: {fileID: 6748283687826216892}
   - component: {fileID: 7602602773363556557}
   - component: {fileID: 8070731113590499834}
   - component: {fileID: 635030318346192650}
@@ -1399,6 +1401,7 @@ MonoBehaviour:
   - {fileID: 5588532377528971840}
   - {fileID: 5575448124531914033}
   - {fileID: 4630637930370080467}
+  - {fileID: 887382161600362644}
   - {fileID: 7602602773363556557}
   - {fileID: 8070731113590499834}
   - {fileID: 635030318346192650}
@@ -1626,6 +1629,7 @@ MonoBehaviour:
   _projectiles: {fileID: 2332732224044246294}
   _arrowPrefab: {fileID: 1121593214888324848, guid: f42c9e7e47f797347a1da198ea963a98, type: 3}
   _magicPrefab: {fileID: 7946508209065813238, guid: 513c7212f6d25674ea7146b278f060ef, type: 3}
+  _vfx: {fileID: 11400000, guid: fffd0206241f9e742a1987e3c3f8be4a, type: 2}
   _stuckLifetime: 8
   _spawnOffset: 0.6
   _stuckOffset: 0.6
@@ -1695,6 +1699,34 @@ MonoBehaviour:
   _body: {fileID: 4931141715566873384}
   _trigger: {fileID: 8064034185218691193}
   _hanged: {fileID: 0}
+--- !u!114 &887382161600362644
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1580397704310821766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 527250439e300b74991e4cfd9e01da1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.StatusEffectComponent
+  _health: {fileID: 4931141715566873384}
+--- !u!114 &6748283687826216892
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1580397704310821766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83140bfb64e310c48bb376cd282ec0fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.StatusEffectVisualComponent
+  _effects: {fileID: 887382161600362644}
+  _config: {fileID: 11400000, guid: fffd0206241f9e742a1987e3c3f8be4a, type: 2}
+  _head: {fileID: 6093472538865474923}
 --- !u!114 &7602602773363556557
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1714,6 +1746,7 @@ MonoBehaviour:
   _fighter: {fileID: 4030284413469854380}
   _corpse: {fileID: 4630637930370080467}
   _team: 2
+  _effects: {fileID: 887382161600362644}
   _corpseLifetime: {x: 300, y: 30}
 --- !u!114 &8070731113590499834
 MonoBehaviour:

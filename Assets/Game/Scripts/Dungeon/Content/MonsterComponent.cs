@@ -29,6 +29,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private int _team = 2;
 
+        [SerializeField]
+        private StatusEffectComponent _effects;
+
         [SerializeField, Tooltip("Seconds the body stays when it carries loot / when it is empty")]
         private Vector2 _corpseLifetime = new(300f, 30f);
 
@@ -37,8 +40,12 @@ namespace Game.Scripts.Dungeon
 
         public float ActionSpeed => _config.ActionSpeed;
         public float HandlingSpeed => 1f;
-        /// Monsters plant their feet while swinging so players can read and dodge the attack, as in Dark and Darker.
-        public float MoveSpeedMultiplier => _fighter.Combat.State == CombatState.Attack ? AttackMoveMultiplier : _config.MoveSpeed / DungeonFormulas.BaseMoveSpeed;
+        public StatusEffectComponent Effects => _effects;
+        /// Monsters plant their feet while swinging so players can read and dodge the attack, as in Dark and Darker. Slows, curses and roots hold them too.
+        public float MoveSpeedMultiplier => (_fighter.Combat.State == CombatState.Attack ? AttackMoveMultiplier : _config.MoveSpeed / DungeonFormulas.BaseMoveSpeed) * EffectMoveScale;
+
+        private float EffectMoveScale => _effects == null ? 1f : _effects.Has(StatusEffectKind.Root) ? 0f
+            : Mathf.Max(0.2f, 1f - (_effects.GetMagnitude(StatusEffectKind.Slow) + _effects.GetMagnitude(StatusEffectKind.Cursed) * 3f) / 100f);
         public bool IsBoss => _config.IsBoss;
         public static System.Collections.Generic.IReadOnlyList<MonsterComponent> All => s_all;
 
@@ -91,17 +98,26 @@ namespace Game.Scripts.Dungeon
 
         public float GetDamageMultiplier(DamageType type)
         {
-            return _config.DamageMultiplier;
+            return _config.DamageMultiplier * StatusDamage.Dealt(_effects, true);
         }
 
 
 
 
-        int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, DamageType type, HitZone zone)
+        void DamageReceiverComponent.IHitModifier.ModifyOutgoingHit(DamageReceiverComponent victim, ref HitRequest request)
         {
-            float reduction = type == DamageType.Physical ? _config.ArmorReduction : type == DamageType.Magical ? _config.MagicReduction : 0f;
+        }
 
-            return Mathf.RoundToInt(damage * (1f - reduction));
+        float DamageReceiverComponent.IHitModifier.ModifyBlockMitigation(float mitigation)
+        {
+            return mitigation;
+        }
+
+        int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, in HitRequest request)
+        {
+            float reduction = request.IgnoreArmor ? 0f : request.DamageType == DamageType.Physical ? _config.ArmorReduction : request.DamageType == DamageType.Magical ? _config.MagicReduction : 0f;
+
+            return Mathf.RoundToInt(damage * (1f - reduction) * StatusDamage.Taken(_effects));
         }
 
         /// The loot stays on the body: the corpse is a container the adventurers search.

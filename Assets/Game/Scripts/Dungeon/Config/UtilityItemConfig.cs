@@ -11,6 +11,8 @@ namespace Game.Scripts.Dungeon
         public UtilityKind UtilityKind => _utilityKind;
         public int Damage => _damage;
         public float UseTime => _useTime;
+        /// A knife, not an axe: short-blade perks count for it.
+        public bool IsBlade => _isBlade;
 
         [SerializeField]
         private UtilityKind _utilityKind;
@@ -20,6 +22,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private float _useTime = 0.5f;
+
+        [SerializeField]
+        private bool _isBlade;
 
         public override bool CanEquip(EquipSlot slot)
         {

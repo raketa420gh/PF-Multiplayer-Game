@@ -13,6 +13,9 @@ namespace Game.Scripts.Editor.Dungeon
     internal static class DungeonAbilityIconBuilder
     {
         public const string Folder = "Assets/Game/Textures/Icons/Abilities";
+        /// Painted icons of abilities, perks and subclasses, one file per sanitized name.
+        public const string PaintedFolder = "Assets/Game/Textures/Icons/Painted";
+        private const int PaintedSize = 256;
         private const int Size = 128;
         /// Symbols are drawn slightly smaller than the square so the outline and the glow fit in.
         private const float Fit = 0.86f;
@@ -260,6 +263,31 @@ namespace Game.Scripts.Editor.Dungeon
                 StatType.HeadshotDamage => "Crosshair",
                 _ => "Chevrons"
             };
+        }
+
+        /// A painted icon of that name when there is one, the drawn symbol otherwise.
+        public static Sprite BuildOrPainted(string name, string symbol, Color color)
+        {
+            string painted = $"{PaintedFolder}/{name}.png";
+
+            if (!File.Exists(painted))
+                return Build(name, symbol, color);
+
+            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(painted);
+
+            if (importer.textureType != TextureImporterType.Sprite || importer.maxTextureSize != PaintedSize)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Single;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = true;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.maxTextureSize = PaintedSize;
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
+                importer.SaveAndReimport();
+            }
+
+            return AssetDatabase.LoadAssetAtPath<Sprite>(painted);
         }
 
         /// Renders the symbol into `Folder/name.png` and returns it as a sprite.

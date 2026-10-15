@@ -41,6 +41,7 @@ namespace Game.Scripts.Dungeon
         private NetworkArray<ItemStack> _equipment => default;
 
         private int _renderedVersion = -1;
+        private System.Func<ItemConfig, int> _stackBonus;
 
         public override void Render()
         {
@@ -142,6 +143,17 @@ namespace Game.Scripts.Dungeon
             return true;
         }
 
+        /// Class perks may let the owner carry bigger stacks of some items.
+        public void SetStackBonus(System.Func<ItemConfig, int> stackBonus)
+        {
+            _stackBonus = stackBonus;
+        }
+
+        public int MaxStackOf(ItemConfig config)
+        {
+            return config.MaxStack > 1 && _stackBonus != null ? config.MaxStack + _stackBonus(config) : config.MaxStack;
+        }
+
         public bool TryAdd(ItemStack stack)
         {
             ItemConfig config = GetConfig(stack);
@@ -149,16 +161,18 @@ namespace Game.Scripts.Dungeon
             if (config == null)
                 return false;
 
-            if (config.MaxStack > 1)
+            int maxStack = MaxStackOf(config);
+
+            if (maxStack > 1)
             {
                 for (int i = 0; i < Capacity && stack.Count > 0; i++)
                 {
                     ItemStack other = _bag[i];
 
-                    if (!other.CanStackWith(stack) || other.Count >= config.MaxStack)
+                    if (!other.CanStackWith(stack) || other.Count >= maxStack)
                         continue;
 
-                    int moved = Mathf.Min(config.MaxStack - other.Count, stack.Count);
+                    int moved = Mathf.Min(maxStack - other.Count, stack.Count);
                     _bag.Set(i, other.WithCount(other.Count + moved));
                     stack.Count = (byte)(stack.Count - moved);
                 }
@@ -194,10 +208,10 @@ namespace Game.Scripts.Dungeon
             {
                 ItemStack other = _equipment[(int)slot];
 
-                if (!other.CanStackWith(stack) || other.Count >= config.MaxStack)
+                if (!other.CanStackWith(stack) || other.Count >= MaxStackOf(config))
                     continue;
 
-                int moved = Mathf.Min(config.MaxStack - other.Count, stack.Count);
+                int moved = Mathf.Min(MaxStackOf(config) - other.Count, stack.Count);
                 SetEquipment(slot, other.WithCount(other.Count + moved));
                 stack.Count = (byte)(stack.Count - moved);
             }
