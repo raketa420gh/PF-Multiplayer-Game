@@ -424,7 +424,7 @@ namespace Game.Scripts.Dungeon
                 _builder.AppendLine($"<color=#{ColorUtility.ToHtmlStringRGB(subclass.Color)}>{subclass.ResourceName} {adventurer.Resource}/{subclass.ResourceMax}</color>");
 
             if (adventurer.IsResting)
-                _builder.AppendLine(adventurer.IsRecoveringSpells ? "Resting by the fire: spells recover" : "Resting...");
+                _builder.AppendLine(adventurer.IsByFire ? "Resting by the fire  ·  G to get up" : "Resting (no fire: slow)  ·  G to get up");
 
             _effectsText.text = _builder.ToString();
         }

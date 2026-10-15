@@ -236,9 +236,10 @@ namespace Game.Scripts.Dungeon
         {
             foreach (AbilityIconView icon in _skillIcons)
             {
-                int slot = icon.Index == _session.SkillA ? 0 : icon.Index == _session.SkillB ? 1 : -1;
-                icon.SetSelected(slot >= 0);
-                icon.SetBadge(slot >= 0 ? s_skillKeys[slot] : string.Empty);
+                // The spell memory may sit in both slots.
+                string badge = (icon.Index == _session.SkillA ? s_skillKeys[0] : string.Empty) + (icon.Index == _session.SkillB ? s_skillKeys[1] : string.Empty);
+                icon.SetSelected(badge.Length > 0);
+                icon.SetBadge(badge);
             }
 
             for (int slot = 0; slot < _skillSlots.Length; slot++)

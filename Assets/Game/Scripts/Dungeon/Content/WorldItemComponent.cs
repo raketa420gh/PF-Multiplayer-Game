@@ -89,6 +89,12 @@ namespace Game.Scripts.Dungeon
             _isPermanent = isPermanent;
         }
 
+        /// Rotation of a thrown weapon stuck in a surface: head first along its flight (the model lies along -x, head up at the throw).
+        public static Quaternion StuckRotation(Vector3 direction)
+        {
+            return Quaternion.LookRotation(direction) * Quaternion.Euler(90f, 0f, 0f) * Quaternion.Euler(0f, 0f, -90f);
+        }
+
         /// A thrown item flies from where it was spawned. Called before Spawned.
         public void Launch(Vector3 velocity)
         {

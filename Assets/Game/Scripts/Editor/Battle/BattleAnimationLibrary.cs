@@ -754,6 +754,35 @@ namespace Game.Scripts.Editor.Battle
                 new(0f, 0.96f, -0.27f), new(-0.35f, 0.25f, 0.9f), 0.4f);
         }
 
+        /// Drawing a knife or a francisca back to throw: the main hand goes up over the right shoulder, the head pointing up and back;
+        /// the clip ends on the draw, which is kept while LMB is held.
+        public static List<PoseKey> ThrowAimKeys()
+        {
+            return new List<PoseKey>
+            {
+                new(0f, Hold()),
+                new(TorchRaiseTime, Held(new(0.26f, 1.86f, 0.02f), new(0f, 0.75f, -0.66f), new(0.05f, 0.98f, -0.15f)), Ease.Out)
+            };
+        }
+
+        /// The throw: the hand comes over the top and lets go ahead of the eyes at FighterAnimComponent.TorchRelease, then follows
+        /// through open to the lower left and comes back to the hold (the next weapon of the stack is already in it).
+        public static List<PoseKey> ThrowReleaseKeys()
+        {
+            BodyPose release = Held(new(0.14f, 1.78f, 0.55f), new(0f, 0.2f, 1f), new(-0.05f, 0.35f, 0.94f));
+            BodyPose follow = Held(new(0.02f, 1.35f, 0.5f), new(0f, -0.5f, 0.85f), new(-0.3f, -0.2f, 0.93f));
+            follow.MainOpen = 0.9f;
+
+            return new List<PoseKey>
+            {
+                new(0f, Held(new(0.26f, 1.86f, 0.02f), new(0f, 0.75f, -0.66f), new(0.05f, 0.98f, -0.15f))),
+                new(4f / 60f, Held(new(0.24f, 1.92f, 0.25f), new(0f, 0.9f, 0.4f), new(0f, 0.9f, 0.3f)), Ease.In),
+                new(FighterAnimComponent.TorchRelease, release),
+                new(12f / 60f, follow, Ease.Out),
+                new(FighterAnimComponent.TorchThrowTime, Hold())
+            };
+        }
+
         /// Raising a torch to throw as in Dark and Darker: the torch goes up over the head on the left, out of the view, the
         /// open main hand reaches forward to aim; the clip ends on the aim, which is kept while RMB is held.
         public static List<PoseKey> TorchAimKeys()
@@ -929,6 +958,20 @@ namespace Game.Scripts.Editor.Battle
             pose.HipsEuler = new Vector3(lean, 0f, 0f);
             Step(phase, direction, stride, lift, out pose.LeftFoot, out pose.LeftFootEuler);
             Step(Mathf.Repeat(phase + 0.5f, 1f), direction, stride, lift, out pose.RightFoot, out pose.RightFootEuler);
+
+            return pose;
+        }
+
+        /// Sitting on the ground by a fire: the hips down by `drop` and a little back, the feet planted ahead, knees up.
+        public static BodyPose Sit(float drop)
+        {
+            BodyPose pose = Standing(drop);
+            pose.Hips.z = -0.15f;
+            pose.HipsEuler = new Vector3(-12f, 0f, 0f);
+            pose.LeftFoot = new Vector3(-0.06f, 0f, 0.42f);
+            pose.RightFoot = new Vector3(0.06f, 0f, 0.36f);
+            pose.LeftFootEuler = new Vector3(-15f, 0f, 0f);
+            pose.RightFootEuler = new Vector3(-15f, 0f, 0f);
 
             return pose;
         }

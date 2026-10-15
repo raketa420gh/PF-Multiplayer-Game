@@ -122,7 +122,7 @@ namespace Game.Scripts.Editor.Dungeon
             fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
             fitter.aspectRatio = 16f / 9f;
             CharacterPreviewView preview = BuildPreview(backdrop, inputs, 6, 1920, 1080, out Camera camera);
-            BuildTavern(camera, preview);
+            BuildTavern(camera);
             Image vignette = CreateImage("Vignette", root, center, Vector2.zero, Vector2.zero, Color.white);
             vignette.sprite = DungeonUiSpriteBuilder.Load("Vignette");
             Stretch(vignette.rectTransform, 0f);
@@ -1018,7 +1018,7 @@ namespace Game.Scripts.Editor.Dungeon
             fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
             fitter.aspectRatio = 16f / 9f;
             CharacterPreviewView preview = BuildPreview(backdrop, inputs, 5, 1920, 1080, out Camera camera);
-            BuildTavern(camera, preview);
+            BuildTavern(camera);
             Image vignette = CreateImage("Vignette", page, center, Vector2.zero, Vector2.zero, Color.white);
             vignette.sprite = DungeonUiSpriteBuilder.Load("Vignette");
             Stretch(vignette.rectTransform, 0f);
@@ -1156,7 +1156,7 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         /// Dresses the preview stage as a candle-lit tavern corner and frames the character behind the table.
-        private static void BuildTavern(Camera camera, CharacterPreviewView preview)
+        private static void BuildTavern(Camera camera)
         {
             Transform root = camera.transform.parent;
             camera.transform.localPosition = new Vector3(0f, 1.5f, 4f);
@@ -1169,7 +1169,6 @@ namespace Game.Scripts.Editor.Dungeon
             data.antialiasing = UnityEngine.Rendering.Universal.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
             // The rig spawns turned 15 degrees aside; here it faces the camera.
             root.Find("Stage").localRotation = Quaternion.Euler(0f, 15f, 0f);
-            BattleEditorUtility.Set(preview, "_isUnarmed", true);
 
             Transform set = BattleEditorUtility.CreateChild("Tavern", root).transform;
             Mesh shell = new DungeonMeshBuilder(0.5f)
@@ -1335,17 +1334,19 @@ namespace Game.Scripts.Editor.Dungeon
             title.color = s_gold;
             CreateImage("TitleRule", page, top, new Vector2(room, -146f), new Vector2(620f, 2f), s_frame);
             TMP_Text info = CreateText("Info", page, top, new Vector2(room, -156f), new Vector2(900f, 24f), 13f, TextAlignmentOptions.Center);
-            info.text = $"Each wheel holds {ClassConfig.SpellWheelSize} spells and opens with its memory skill on Q or E";
+            info.text = $"Each wheel holds {ClassConfig.SpellWheelSize} spells  ·  wheel I opens with the memory skill put on Q, wheel II with the one on E";
             info.color = s_textDim;
 
             GameObject[] wheels = new GameObject[ClassConfig.WheelCount];
             TMP_Text[] wheelTitles = new TMP_Text[ClassConfig.WheelCount];
+            GameObject[] inactiveLabels = new GameObject[ClassConfig.WheelCount];
             AbilityIconView[] slots = new AbilityIconView[ClassConfig.WheelCount * ClassConfig.SpellWheelSize];
 
             for (int wheel = 0; wheel < wheels.Length; wheel++)
             {
                 RectTransform ring = CreateRect("Wheel" + (wheel + 1), page, top, new Vector2(room + (wheel * 2 - 1) * 290f, -560f), new Vector2(520f, 520f));
                 ring.pivot = center;
+                ring.gameObject.AddComponent<CanvasGroup>();
                 CreateImage("Disc", ring, center, Vector2.zero, new Vector2(500f, 500f), new Color(0f, 0f, 0f, 0.45f)).sprite = disc;
                 CreateImage("Rim", ring, center, Vector2.zero, new Vector2(500f, 500f), new Color(line.r, line.g, line.b, 0.5f)).sprite = circle;
                 CreateImage("Track", ring, center, Vector2.zero, new Vector2(340f, 340f), new Color(line.r, line.g, line.b, 0.15f)).sprite = circle;
@@ -1367,6 +1368,12 @@ namespace Game.Scripts.Editor.Dungeon
                 }
 
                 wheels[wheel] = ring.gameObject;
+                TMP_Text inactive = CreateText("Inactive" + (wheel + 1), page, top, ring.anchoredPosition, new Vector2(320f, 50f), 28f, TextAlignmentOptions.Center);
+                inactive.rectTransform.pivot = center;
+                inactive.text = "INACTIVE";
+                inactive.color = s_textDim;
+                inactive.fontStyle = FontStyles.Bold;
+                inactiveLabels[wheel] = inactive.gameObject;
             }
 
             TMP_Text empty = CreateText("Empty", page, top, new Vector2(room, -540f), new Vector2(700f, 60f), 22f, TextAlignmentOptions.Center);
@@ -1404,6 +1411,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_wheels", wheels);
             BattleEditorUtility.Set(so, "_wheelSlots", slots);
             BattleEditorUtility.Set(so, "_wheelTitles", wheelTitles);
+            BattleEditorUtility.Set(so, "_inactiveLabels", inactiveLabels);
             BattleEditorUtility.Set(so, "_emptyRoot", empty.gameObject);
             BattleEditorUtility.Set(so, "_tooltip", tooltip);
             BattleEditorUtility.Set(so, "_tooltipText", tooltipText);
@@ -1439,7 +1447,7 @@ namespace Game.Scripts.Editor.Dungeon
             chartObject.ApplyModifiedPropertiesWithoutUndo();
 
             List<StatLabelView> labels = new();
-            List<StatId> list = new();
+            List<(StatId stat, string header)> list = new();
             Vector2 badge = Vector2.one * (isCompact ? 50f : 58f);
             float dot = isCompact ? 10f : 12f;
             float pitch = isCompact ? 15f : 18f;
@@ -1469,14 +1477,19 @@ namespace Game.Scripts.Editor.Dungeon
             for (int i = 0; i < StatSheet.AttributeCount; i++)
                 labels.Add(StatNode(chartRoot, (StatId)i, Corner(i), "Diamond", badge, isCompact ? 17f : 19f, isCompact ? 14f : 15f));
 
-            // The list: own stats in ring order, so every flat stat stands right above the share it turns into, then the edges and the gear.
-            for (int i = 0; i < StatSheet.AttributeCount; i++)
-                list.AddRange(StatSheet.OwnStats((StatId)i));
+            // The list: Health first, then everything else, the damage and defense groups at the bottom; every flat stat stands
+            // right above the share it turns into.
+            void Add(params StatId[] stats) => list.AddRange(System.Array.ConvertAll(stats, stat => (stat, (string)null)));
+
+            Add(StatId.Health, StatId.MoveSpeed, StatId.ActionSpeed, StatId.CastSpeed, StatId.BonusCharges, StatId.CooldownSpeed);
 
             for (int i = 0; i < StatSheet.AttributeCount; i++)
-                list.Add(StatSheet.Edge(i));
+                Add(StatSheet.Edge(i));
 
-            list.AddRange(new[] { StatId.ArmorRating, StatId.PhysicalReduction, StatId.MagicResistance, StatId.MagicalReduction, StatId.CooldownSpeed });
+            list.Add((default, "Damage"));
+            Add(StatId.PhysicalPower, StatId.PhysicalDamage, StatId.MagicalPower, StatId.MagicalDamage);
+            list.Add((default, "Defense"));
+            Add(StatId.ArmorRating, StatId.PhysicalReduction, StatId.MagicResistance, StatId.MagicalReduction);
             int columns = isCompact ? 2 : 1;
             int rows = (list.Count + columns - 1) / columns;
             float rowHeight = isCompact ? 17f : 23f;
@@ -1485,12 +1498,25 @@ namespace Game.Scripts.Editor.Dungeon
             for (int i = 0; i < list.Count; i++)
             {
                 Vector2 rowPosition = new Vector2(-width * 0.5f + 20f + i / rows * (columnWidth + 16f), -chartHeight - 4f - i % rows * rowHeight);
-                float indent = i > 0 && StatSheet.TryGetResult(list[i - 1], out StatId result) && result == list[i] ? textSize : 0f;
+                (StatId stat, string header) = list[i];
 
-                if (StatSheet.TryGetResult(list[i], out _))
-                    StatLink(root, list[i], rowPosition, new Vector2(columnWidth, rowHeight), textSize);
+                if (header != null)
+                {
+                    TMP_Text group = CreateText(header, root, top, rowPosition, new Vector2(columnWidth, rowHeight), textSize, TextAlignmentOptions.MidlineLeft);
+                    group.rectTransform.pivot = new Vector2(0f, 1f);
+                    group.text = header.ToUpperInvariant();
+                    group.color = s_gold;
+                    group.fontStyle = FontStyles.Bold;
 
-                labels.Add(StatRow(root, list[i], rowPosition + new Vector2(indent, 0f), new Vector2(columnWidth - indent, rowHeight), textSize));
+                    continue;
+                }
+
+                float indent = i > 0 && StatSheet.TryGetResult(list[i - 1].stat, out StatId result) && result == stat && list[i - 1].header == null ? textSize : 0f;
+
+                if (StatSheet.TryGetResult(stat, out _))
+                    StatLink(root, stat, rowPosition, new Vector2(columnWidth, rowHeight), textSize);
+
+                labels.Add(StatRow(root, stat, rowPosition + new Vector2(indent, 0f), new Vector2(columnWidth - indent, rowHeight), textSize));
             }
 
             tooltip = CreateRect("StatTooltip", tooltipParent, center, Vector2.zero, new Vector2(380f, 100f));
@@ -1807,6 +1833,12 @@ namespace Game.Scripts.Editor.Dungeon
             CreateIcon(slot, 38f).rectTransform.anchoredPosition = new Vector2(0f, 20f);
             TMP_Text name = CreateText("Name", slot, new Vector2(0.5f, 0f), new Vector2(0f, 4f), new Vector2(100f, 44f), 12f, TextAlignmentOptions.Center);
             name.rectTransform.pivot = new Vector2(0.5f, 0f);
+            // Charge bar under the slot.
+            Image bar = CreateImage("Bar", slot, new Vector2(0.5f, 0f), new Vector2(0f, -8f), new Vector2(96f, 7f), new Color(0f, 0f, 0f, 0.8f));
+            Image fill = CreateImage("Fill", bar.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(94f, 5f), s_gold);
+            fill.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            fill.type = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Horizontal;
             slot.gameObject.SetActive(false);
 
             SpellWheelView view = panel.gameObject.AddComponent<SpellWheelView>();

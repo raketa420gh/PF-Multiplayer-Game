@@ -19,6 +19,9 @@ namespace Game.Scripts.Battle
         public float CrouchAmount { get; private set; }
 
         public bool IsDashing => !_dashTimer.ExpiredOrNotRunning(Runner);
+        /// Crouch amount of one sitting on the ground: the eyes come down to about a metre.
+        public const float SitCrouch = 1.65f;
+        public const float SitTime = 2f;
 
         [SerializeField]
         private MovementConfig _config;
@@ -72,13 +75,14 @@ namespace Game.Scripts.Battle
                 _airborneTop = transform.position.y;
         }
 
-        public void Simulate(Vector2 move, Vector2 look, bool isWalk, bool isCrouch, bool isJump, float speedMultiplier)
+        /// Sitting on the ground lowers the body past a full crouch, sitting down and getting up take SitTime.
+        public void Simulate(Vector2 move, Vector2 look, bool isWalk, bool isCrouch, bool isJump, float speedMultiplier, bool isSeated = false, bool isInSeat = false)
         {
             Pitch = Mathf.Clamp(look.x, -MaxPitch, MaxPitch);
             transform.rotation = Quaternion.Euler(0f, look.y, 0f);
 
-            float crouchTarget = isCrouch ? 1f : 0f;
-            CrouchAmount = Mathf.MoveTowards(CrouchAmount, crouchTarget, Runner.DeltaTime / _config.CrouchTransitionTime);
+            float crouchTarget = isSeated ? SitCrouch : isCrouch ? 1f : 0f;
+            CrouchAmount = Mathf.MoveTowards(CrouchAmount, crouchTarget, Runner.DeltaTime * (isInSeat ? SitCrouch / SitTime : 1f / _config.CrouchTransitionTime));
             UpdateCollider();
 
             if (IsDashing)

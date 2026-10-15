@@ -40,6 +40,9 @@ namespace Game.Scripts.Battle
         public const string ThrowState = "Throw";
         public const string TorchAimState = "TorchAim";
         public const string TorchThrowState = "TorchThrow";
+        /// A knife or a francisca drawn back and thrown; the throw keeps the torch throw's timing.
+        public const string ThrowAimState = "ThrowAim";
+        public const string ThrowReleaseState = "ThrowRelease";
         /// Throwing a torch as in the Dark and Darker footage: 27 frames at 60 fps, the torch leaves the hand at frame 6.
         public const float TorchThrowTime = 27f / 60f;
         public const float TorchRelease = 6f / 60f;
@@ -108,9 +111,6 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private float _landFadeTime = 0.2f;
 
-        [SerializeField]
-        private float _restFadeTime = 0.3f;
-
         private const int BaseLayer = 0;
         private const int UpperLayer = 1;
         private const int HitLayer = 2;
@@ -141,7 +141,8 @@ namespace Game.Scripts.Battle
             Animator.StringToHash(CastState), Animator.StringToHash(UseState), Animator.StringToHash(InteractState),
             Animator.StringToHash(ThrowState), Animator.StringToHash(OpenState), Animator.StringToHash(PickUpState),
             Animator.StringToHash(BandageState), Animator.StringToHash(CastReleaseState), Animator.StringToHash(AbilityFirstPersonState),
-            Animator.StringToHash(TorchAimState), Animator.StringToHash(TorchThrowState)
+            Animator.StringToHash(TorchAimState), Animator.StringToHash(TorchThrowState), Animator.StringToHash(ThrowAimState),
+            Animator.StringToHash(ThrowReleaseState)
         };
 
         /// Own-eyes variants of the busy states whose library motion stays outside the first-person view; 0 = there is none.
@@ -150,7 +151,8 @@ namespace Game.Scripts.Battle
         {
             Animator.StringToHash(CastFirstPersonState), Animator.StringToHash(UseFirstPersonState), Animator.StringToHash(InteractFirstPersonState), 0, 0, 0,
             Animator.StringToHash(BandageFirstPersonState), Animator.StringToHash(CastReleaseFirstPersonState), Animator.StringToHash(AbilityFirstPersonState),
-            Animator.StringToHash(TorchAimState), Animator.StringToHash(TorchThrowState)
+            Animator.StringToHash(TorchAimState), Animator.StringToHash(TorchThrowState), Animator.StringToHash(ThrowAimState),
+            Animator.StringToHash(ThrowReleaseState)
         };
 
         private struct WeaponStates
@@ -184,9 +186,10 @@ namespace Game.Scripts.Battle
         private float _lowerLeft;
         private float _landLeft;
         private bool _isHeadHidden;
-        private bool _isKneeling;
+        private bool _isSeated;
         private bool _isHolding;
         private bool _isHoldingTorch;
+        private bool _isSocketsFlipped;
         private float _crouch;
         private float _spineHeight;
 
@@ -231,10 +234,10 @@ namespace Game.Scripts.Battle
             UpdatePitch();
         }
 
-        /// While set, a fighter who stands still goes down on one knee.
-        public void SetKneeling(bool isKneeling)
+        /// While set, the fighter sits on the ground; sitting down and getting up blend over FighterMoveComponent.SitTime.
+        public void SetSeated(bool isSeated)
         {
-            _isKneeling = isKneeling;
+            _isSeated = isSeated;
         }
 
         /// While set, the idle hands hold an item instead of the weapon; a torch is held up in the left hand.
@@ -244,9 +247,16 @@ namespace Game.Scripts.Battle
             _isHoldingTorch = isTorch;
         }
 
+        /// Off-hand swings of a weapon held in the right-hand socket's place (the torch in the left hand): the humanoid mirror
+        /// moves the arms but not the socket curves, so the sockets swap sides as for a mirrored weapon while it is set.
+        public void SetSocketsFlipped(bool isFlipped)
+        {
+            _isSocketsFlipped = isFlipped;
+        }
+
         private void LateUpdate()
         {
-            if (Object != null && Object.IsValid && _fighter.Combat.Weapon.IsMirrored)
+            if (Object != null && Object.IsValid && _fighter.Combat.Weapon.IsMirrored != _isSocketsFlipped)
                 SocketMirror.Apply(_sockets);
 
             if (_spineBones.Length == 0)
@@ -350,8 +360,8 @@ namespace Game.Scripts.Battle
             {
                 CombatComponent combat = _fighter.Combat;
                 bool isStill = Mathf.Abs(velocity.x) + Mathf.Abs(velocity.z) < RestSpeed;
-                state = _isKneeling && isStill ? s_rest : s_locomotion;
-                fadeTime = _baseState == s_land ? _landFadeTime : state == s_rest || _baseState == s_rest ? _restFadeTime : _fadeTime;
+                state = _isSeated ? s_rest : s_locomotion;
+                fadeTime = _baseState == s_land ? _landFadeTime : state == s_rest || _baseState == s_rest ? FighterMoveComponent.SitTime : _fadeTime;
 
                 // One who strikes without walking steps into the swing.
                 if (isStill && combat.State == CombatState.Attack)

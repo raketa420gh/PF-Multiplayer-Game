@@ -26,7 +26,9 @@ namespace Game.Scripts.Battle
         /// The hit ignores the victim's armor.
         IgnoreArmor = 1,
         /// A flare: the shooter is told where it lands.
-        Flare = 2
+        Flare = 2,
+        /// Set when it stopped on a body rather than on the world.
+        HitBody = 4
     }
 
     public struct ProjectileData : INetworkStruct
@@ -52,6 +54,9 @@ namespace Game.Scripts.Battle
         public ProjectileFlags Flags;
         /// Index of the ability that fired it in the shooter's list, NoAbility for a weapon shot.
         public byte Ability;
+        /// Item that flew (a thrown weapon): it is left in the world where the projectile stops; 0 for none.
+        public short Item;
+        public byte ItemRarity;
         public const byte NoAbility = 255;
 
         public bool IsFlying => FireTick > 0 && FinishTick == 0;
@@ -133,7 +138,8 @@ namespace Game.Scripts.Battle
 
         public void Fire(Vector3 origin, Vector3 velocity, float gravity, int damage, float staggerDuration,
             DamageType damageType = DamageType.Physical, ProjectileKind kind = ProjectileKind.Arrow,
-            float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f, float lifeSteal = 0f, int impact = 3, float maxDistance = 0f, ProjectileFlags flags = ProjectileFlags.None, byte ability = ProjectileData.NoAbility)
+            float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f, float lifeSteal = 0f, int impact = 3, float maxDistance = 0f, ProjectileFlags flags = ProjectileFlags.None, byte ability = ProjectileData.NoAbility,
+            short item = 0, byte itemRarity = 0)
         {
             _projectiles.Set(_fireCount % Capacity, new ProjectileData
             {
@@ -153,7 +159,9 @@ namespace Game.Scripts.Battle
                 Impact = (byte)impact,
                 MaxDistance = maxDistance,
                 Flags = flags,
-                Ability = ability
+                Ability = ability,
+                Item = item,
+                ItemRarity = itemRarity
             });
             _fireCount++;
         }
@@ -175,6 +183,7 @@ namespace Game.Scripts.Battle
                 data.FinishTick = Runner.Tick;
                 data.HitPoint = hit.Point;
                 data.IsHidden = hit.Hitbox != null || data.KindValue != ProjectileKind.Arrow;
+                data.Flags |= hit.Hitbox != null ? ProjectileFlags.HitBody : ProjectileFlags.None;
 
                 if (data.Radius > 0f)
                     Explode(data, hit.Point);

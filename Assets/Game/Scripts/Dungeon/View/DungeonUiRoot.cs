@@ -148,6 +148,12 @@ namespace Game.Scripts.Dungeon
             _wheel.Move(new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) * 12f);
             ReadyHoveredSpell();
 
+            for (int i = 0; _adventurer.GetSkill(_wheelSkill).Kind == AbilityKind.SpellMemory && i < _wheelSpells.Count; i++)
+            {
+                int index = _adventurer.SkillCount + _wheelSpells[i];
+                _wheel.SetFill(i, _adventurer.Abilities[index].IsCooldownBased ? -1f : _adventurer.GetChargeFill(index));
+            }
+
             if (!Input.GetKey(_wheelSkill == 0 ? KeyCode.Q : KeyCode.E))
                 CloseWheel(true);
         }
@@ -170,9 +176,11 @@ namespace Game.Scripts.Dungeon
                 AbilityConfig[] spells = _adventurer.Class.Spells;
                 _wheelSpells.Clear();
 
-                for (int i = 0; i < spells.Length; i++)
+                for (int slot = skillIndex * ClassConfig.SpellWheelSize; slot < (skillIndex + 1) * ClassConfig.SpellWheelSize; slot++)
                 {
-                    if (!_adventurer.IsSpellInWheel(i, skill.Wheel))
+                    int i = _adventurer.GetSlotSpell(slot);
+
+                    if (i < 0 || i >= spells.Length)
                         continue;
 
                     int index = _adventurer.SkillCount + i;
@@ -231,7 +239,7 @@ namespace Game.Scripts.Dungeon
             {
                 _inventory.Bind(adventurer.Inventory, adventurer.Actions, adventurer.Stats, adventurer.Class.DisplayName, true);
                 _inventory.SetSearcher(adventurer);
-                _inventoryPreview.Bind(adventurer.Inventory, adventurer.Class);
+                _inventoryPreview.Bind(adventurer.Inventory, adventurer.Class, adventurer);
             }
         }
 

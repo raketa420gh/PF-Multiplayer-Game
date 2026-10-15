@@ -63,9 +63,11 @@ namespace Game.Scripts.Dungeon
                 _dresser.Apply(_adventurer.Inventory);
             }
 
-            _anim.SetKneeling(_adventurer.IsResting);
+            _anim.SetSeated(_adventurer.IsSeated);
             bool isHolding = _adventurer.HasBeltItemInHand && !_adventurer.IsHandsOccupied;
             _anim.SetHolding(isHolding, isHolding && _adventurer.Inventory.GetEquippedConfig<ConsumableItemConfig>((EquipSlot)_adventurer.BeltSlot) is { IsLight: true });
+            // Torch blows are left-hand swings played mirrored.
+            _anim.SetSocketsFlipped(_adventurer.IsTorchInHand && _adventurer.Fighter.Combat.State == CombatState.Attack);
             UpdateTorch();
             UpdateInvisibility();
             UpdateHandGlow();

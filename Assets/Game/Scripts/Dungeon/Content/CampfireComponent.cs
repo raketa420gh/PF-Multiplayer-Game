@@ -4,27 +4,16 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Placed campfire: adventurers nearby who rest (hold F) regain health over time, spells come back to those who sit by it
-    /// (rest key); burns out after a while.
-    public sealed class CampfireComponent : InteractableComponent
+    /// Campfire set on the floor: adventurers seated (G) within WarmRadius heal faster and get their spells back faster; burns out
+    /// after a while.
+    public sealed class CampfireComponent : NetworkBehaviour
     {
         public const float WarmRadius = 3.5f;
 
-        public override string Prompt => "Rest at campfire";
-        public override float HoldTime => _restTime;
-        public override bool IsAvailable => _lifetime.ExpiredOrNotRunning(Runner) == false;
+        public bool IsLit => _lifetime.ExpiredOrNotRunning(Runner) == false;
 
         [SerializeField]
-        private float _restTime = 6f;
-
-        [SerializeField]
-        private float _healPercent = 60f;
-
-        [SerializeField]
-        private float _healDuration = 8f;
-
-        [SerializeField]
-        private float _burnTime = 60f;
+        private float _burnTime = 180f;
 
         [SerializeField]
         private Light _light;
@@ -51,7 +40,7 @@ namespace Game.Scripts.Dungeon
         /// A lit campfire burns within reach of the point.
         public static bool IsWarming(Vector3 position)
         {
-            return s_all.Exists(fire => fire.IsAvailable && (fire.transform.position - position).sqrMagnitude < WarmRadius * WarmRadius);
+            return s_all.Exists(fire => fire.IsLit && (fire.transform.position - position).sqrMagnitude < WarmRadius * WarmRadius);
         }
 
         public override void Render()
@@ -67,12 +56,6 @@ namespace Game.Scripts.Dungeon
         {
             if (HasStateAuthority && _lifetime.Expired(Runner))
                 Runner.Despawn(Object);
-        }
-
-        public override void Complete(AdventurerComponent adventurer)
-        {
-            float amount = adventurer.Fighter.Health.MaxHealth * _healPercent / 100f * adventurer.Stats.PhysicalHealing;
-            adventurer.Effects.Add(StatusEffectKind.HealOverTime, amount, _healDuration);
         }
     }
 }

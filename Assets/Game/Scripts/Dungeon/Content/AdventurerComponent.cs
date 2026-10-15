@@ -21,7 +21,8 @@ namespace Game.Scripts.Dungeon
         Interact,
         Utility,
         Shapeshift,
-        Torch
+        /// A torch (RMB) or a throwing weapon (LMB) drawn back while the button is held, thrown when it is let go.
+        Throw
     }
 
     /// The player's body inside the dungeon: class, inventory, interaction, abilities, death and extraction on top of the fighter.
@@ -32,7 +33,6 @@ namespace Game.Scripts.Dungeon
         public const byte BusyCast = 0;
         public const byte BusyUse = 1;
         public const byte BusyInteract = 2;
-        public const byte BusyThrow = 3;
         public const byte BusyOpen = 4;
         public const byte BusyPickUp = 5;
         public const byte BusyBandage = 6;
@@ -42,6 +42,9 @@ namespace Game.Scripts.Dungeon
         /// A torch raised over the head while RMB is held, and its throw when RMB is let go.
         public const byte BusyTorchAim = 9;
         public const byte BusyTorchThrow = 10;
+        /// A knife or a francisca drawn back while LMB is held, and its throw when LMB is let go.
+        public const byte BusyThrowAim = 11;
+        public const byte BusyThrowRelease = 12;
         public const int BeltGroupSize = 3;
         public const byte NoBelt = 255;
         public const byte NoSearch = 255;
@@ -69,10 +72,20 @@ namespace Game.Scripts.Dungeon
         /// An aimed shot flies this much faster and drops this much less.
         private const float AimedSpeed = 1.8f;
         private const float AimedGravity = 0.25f;
-        private const float TorchThrowSpeed = 11f;
-        private const float TorchThrowLift = 1.5f;
+        private const float TorchThrowSpeed = 14f;
         private const float PinTime = 3f;
-        private const float ThrowSpeed = 16f;
+        private const float ThrowSpeed = 22f;
+        /// A throw let go at once flies this share of the full speed, high as a candle; held FullDrawTime it flies almost
+        /// straight at full speed and power.
+        private const float LobSpeed = 0.25f;
+        private const float LobLift = 6.5f;
+        private const float StraightLift = 0.6f;
+        private const float LobDamage = 0.5f;
+        private const float FullDrawTime = 1f;
+        /// A weapon that stops in a surface sinks this deep into it.
+        private const float StickDepth = 0.06f;
+        /// A lit campfire heals the seated this many times faster; without one spells come back this many times slower.
+        private const float FireRestBoost = 4f;
         private const float FanSpread = 7f;
 
         public FighterComponent Fighter => _fighter;
@@ -86,8 +99,11 @@ namespace Game.Scripts.Dungeon
         public InteractableComponent LookTarget => _lookTarget;
         public bool IsInvisible => _effects.Has(StatusEffectKind.Invisible);
         public SubclassDefinition SubclassConfig => _class != null ? _class.GetSubclass(Subclass) : null;
-        /// Sitting by a lit campfire brings spell charges back.
-        public bool IsRecoveringSpells => IsResting && CampfireComponent.IsWarming(transform.position);
+        /// Sitting down (G) or getting up takes FighterMoveComponent.SitTime; nothing else is done meanwhile.
+        public bool IsInSeat => IsSeated || Runner.Tick - _seatTick < SeatTicks;
+        /// Seated on the ground: health and spell charges come back, much faster by a lit campfire.
+        public bool IsResting => IsSeated && Runner.Tick - _seatTick >= SeatTicks;
+        public bool IsByFire => CampfireComponent.IsWarming(transform.position);
         public ContainerComponent OpenedContainer => Runner != null && Runner.TryFindBehaviour(OpenContainerId, out NetworkBehaviour b) ? b as ContainerComponent : null;
 
         [Networked]
@@ -112,7 +128,7 @@ namespace Game.Scripts.Dungeon
         public PendingAction Pending { get; private set; }
 
         [Networked]
-        public NetworkBool IsResting { get; private set; }
+        public NetworkBool IsSeated { get; private set; }
 
         [Networked]
         public NetworkBool IsInSwarm { get; private set; }
@@ -148,13 +164,14 @@ namespace Game.Scripts.Dungeon
         public byte Resource { get; private set; }
 
         [Networked]
-        public int SpellMask { get; private set; }
+        public long SpellLayout { get; private set; }
 
         /// Equipment slot of the belt item held in hand instead of the weapon (keys 3 / 4), NoBelt when the weapon is out.
         [Networked]
         public byte BeltSlot { get; private set; } = NoBelt;
 
         public bool HasBeltItemInHand => BeltSlot != NoBelt;
+        public bool IsTorchInHand => HasBeltItemInHand && _torchWeapon != null && _inventory.GetEquippedConfig<ConsumableItemConfig>((EquipSlot)BeltSlot) is { IsLight: true };
 
         /// The weapon set is put away (X): bare hands until a set is taken out again.
         [Networked]
@@ -198,7 +215,9 @@ namespace Game.Scripts.Dungeon
 
         public float CastCharge => IsHoldingCast ? Mathf.InverseLerp(_fighter.Combat.StateTick, _pendingCompleteTick, Runner.Tick) : 0f;
         public bool IsHoldingCast => Pending == PendingAction.Ability && _isHoldingCast;
-        public bool IsAimingTorch => Pending == PendingAction.Torch && _fighter.Combat.BusyKind == BusyTorchAim;
+        public bool IsAimingThrow => Pending == PendingAction.Throw && _fighter.Combat.BusyKind is BusyTorchAim or BusyThrowAim;
+        /// How far the throw being held is drawn, 0..1.
+        public float ThrowDraw => IsAimingThrow ? Mathf.Clamp01((Runner.Tick - _fighter.Combat.StateTick) * Runner.DeltaTime * (1f + Perk(PerkEffect.QuickThrow)) / FullDrawTime) : 0f;
         public float ReloadSpeed => _stats.ReloadSpeed * (1f + _effects.GetMagnitude(StatusEffectKind.QuickReload) / 100f);
 
         public const byte NoSpell = 255;
@@ -249,6 +268,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private WeaponConfig _fistsWeapon;
 
+        [SerializeField, Tooltip("Strikes of a burning torch held from the belt")]
+        private WeaponConfig _torchWeapon;
+
         [SerializeField]
         private WeaponConfig[] _formWeapons;
 
@@ -283,7 +305,14 @@ namespace Game.Scripts.Dungeon
         private TickTimer _restTimer { get; set; }
 
         [Networked]
-        private TickTimer _spellTimer { get; set; }
+        private int _seatTick { get; set; }
+
+        [Networked]
+        private float _seatYaw { get; set; }
+
+        /// Share of the next charge each spell has regained by resting.
+        [Networked, Capacity(AbilityCapacity)]
+        private NetworkArray<float> _recovery => default;
 
         [Networked]
         private TickTimer _removeTimer { get; set; }
@@ -314,6 +343,9 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         private TickTimer _burnTimer { get; set; }
+
+        [Networked]
+        private float _throwPower { get; set; }
 
         private static readonly List<LagCompensatedHit> s_hits = new(16);
         /// A thrown torch leaves the hand above the head and ahead of the eyes, along the aim and a little up.
@@ -402,8 +434,8 @@ namespace Game.Scripts.Dungeon
             if (IsStatsChanged || _appliedForm != Form)
                 RefreshStats(false);
 
-            _fighter.Combat.SetBlockSuppressed((ReadiedSpell != NoSpell && HasFocus && State == AdventurerState.Alive) || HasBeltItemInHand);
-            _fighter.Combat.SetAttackSuppressed(HasBeltItemInHand);
+            _fighter.Combat.SetBlockSuppressed((ReadiedSpell != NoSpell && HasFocus && State == AdventurerState.Alive) || HasBeltItemInHand || IsInSeat);
+            _fighter.Combat.SetAttackSuppressed((HasBeltItemInHand && !IsTorchInHand) || IsInSeat);
             _fighter.Combat.SetBlockSlowIgnored(Perk(PerkEffect.SteadyBlock) > 0f);
 
             if (!HasStateAuthority)
@@ -448,8 +480,14 @@ namespace Game.Scripts.Dungeon
             if (IsStatsChanged)
                 RefreshStats(false);
 
-            if (HasInputAuthority)
-                _lookTarget = FindInteractable();
+            if (!HasInputAuthority)
+                return;
+
+            _lookTarget = FindInteractable();
+
+            // Seated, the head turns as far as at a door.
+            if (DungeonContext.Instance != null)
+                DungeonContext.Instance.Battle.Input.SetYawLimit(_seatYaw, IsInSeat ? RootTurnLimit : -1f);
         }
 
         public void Setup(byte classId, PlayerSessionComponent session, byte floor = 1, int team = NoTeam)
@@ -460,7 +498,7 @@ namespace Game.Scripts.Dungeon
             SkillA = session.SkillA;
             SkillB = session.SkillB;
             PerkMask = session.PerkMask;
-            SpellMask = session.SpellMask;
+            SpellLayout = session.SpellLayout;
             Subclass = session.Subclass;
             Floor = floor;
             State = AdventurerState.Alive;
@@ -666,17 +704,18 @@ namespace Game.Scripts.Dungeon
             ReadiedSpell = spell;
         }
 
-        public bool IsSpellInWheel(int spellIndex, int wheel)
+        /// Spell in the wheel slot, -1 for a free one.
+        public int GetSlotSpell(int slot)
         {
-            return ClassConfig.IsInWheel(SpellMask, wheel, spellIndex);
+            return ClassConfig.GetSlotSpell(SpellLayout, slot);
         }
 
-        /// A spell can be readied when it sits in the wheel of an equipped spell memory.
+        /// A spell can be readied when it sits in the wheel of an equipped spell memory: the memory in skill slot i opens wheel i.
         public bool IsSpellMemorized(int spellIndex)
         {
-            foreach (AbilityConfig skill in _skills)
+            for (int wheel = 0; wheel < _skills.Length; wheel++)
             {
-                if (skill != null && skill.Kind == AbilityKind.SpellMemory && IsSpellInWheel(spellIndex, skill.Wheel))
+                if (_skills[wheel] != null && _skills[wheel].Kind == AbilityKind.SpellMemory && ClassConfig.IsInWheel(SpellLayout, wheel, spellIndex))
                     return true;
             }
 
@@ -817,6 +856,10 @@ namespace Game.Scripts.Dungeon
             if (Form != ShapeshiftForm.None && _formWeapons != null && (int)Form - 1 < _formWeapons.Length)
                 return Mathf.Max(0, _fighter.Combat.FindCatalogIndex(_formWeapons[(int)Form - 1]));
 
+            // A torch in hand strikes with LMB.
+            if (IsTorchInHand && set == _fighter.Combat.WeaponSlot)
+                return Mathf.Max(0, _fighter.Combat.FindCatalogIndex(_torchWeapon));
+
             // A belt item in hand or the holster key puts the active set away: empty hands.
             if (!HasWeaponInHand && set == _fighter.Combat.WeaponSlot)
                 return Mathf.Max(0, _fighter.Combat.FindCatalogIndex(_fistsWeapon));
@@ -852,8 +895,8 @@ namespace Game.Scripts.Dungeon
             }
             else
             {
-                if (IsAimingTorch && !buttons.IsSet(PlayerInputButtons.Secondary))
-                    ReleaseTorch();
+                if (IsAimingThrow && !buttons.IsSet(_fighter.Combat.BusyKind == BusyTorchAim ? PlayerInputButtons.Secondary : PlayerInputButtons.Primary))
+                    ReleaseThrow();
 
                 SimulatePending();
             }
@@ -864,11 +907,11 @@ namespace Game.Scripts.Dungeon
             if (Pending != PendingAction.None && combat.State != CombatState.Busy)
                 CancelPending();
 
-            // Resting is done on one knee: the body goes down as in a crouch.
-            IsResting = Pending == PendingAction.None && buttons.IsSet(PlayerInputButtons.Rest) && combat.State == CombatState.Idle;
-            _fighter.SetCrouchForced(IsResting);
+            if (SimulateSeat(buttons, previous))
+                return;
+
             _fighter.SetRooted((Pending == PendingAction.Interact && _isRooted) || (Pending == PendingAction.Ability && _isChanneling));
-            _fighter.SetCrouchForced(IsResting || (Pending == PendingAction.Ability && _isChanneling));
+            _fighter.SetCrouchForced(Pending == PendingAction.Ability && _isChanneling);
 
             if (Pending != PendingAction.None)
                 return;
@@ -888,8 +931,33 @@ namespace Game.Scripts.Dungeon
                 TryCastReadiedSpell();
         }
 
-        /// 1 / 2 take a weapon set out, X puts it away, 3 / 4 cycle the three belt slots of their group; LMB uses the belt item, RMB puts it away
-        /// (a torch is thrown with RMB instead).
+        /// G sits down on the ground with empty hands or gets up again; in the seat the body stays put and only the head turns.
+        private bool SimulateSeat(NetworkButtons buttons, NetworkButtons previous)
+        {
+            bool isSettled = Runner.Tick - _seatTick >= SeatTicks;
+            bool canSit = Pending == PendingAction.None && _fighter.Combat.State == CombatState.Idle && Form == ShapeshiftForm.None && _fighter.Move.IsGrounded;
+
+            if (buttons.WasPressed(previous, PlayerInputButtons.Rest) && isSettled && (IsSeated || canSit))
+            {
+                IsSeated = !IsSeated;
+                _seatTick = Runner.Tick;
+                _seatYaw = _fighter.Look.y;
+                BeltSlot = NoBelt;
+                IsHolstered |= IsSeated;
+            }
+
+            bool isInSeat = IsInSeat;
+            _fighter.SetSeat(IsSeated, isInSeat);
+            _fighter.SetRooted(isInSeat);
+            _fighter.SetCrouchForced(false);
+
+            return isInSeat;
+        }
+
+        private int SeatTicks => Mathf.CeilToInt(FighterMoveComponent.SitTime / Runner.DeltaTime);
+
+        /// 1 / 2 take a weapon set out, X puts it away, 3 / 4 cycle the three belt slots of their group; LMB uses the belt item, RMB puts it away.
+        /// A torch strikes with LMB and is thrown with RMB; a throwing weapon is thrown with LMB and has nothing on RMB.
         private bool SimulateBelt(NetworkButtons buttons, NetworkButtons previous)
         {
             if (buttons.WasPressed(previous, PlayerInputButtons.Weapon1) || buttons.WasPressed(previous, PlayerInputButtons.Weapon2))
@@ -913,36 +981,63 @@ namespace Game.Scripts.Dungeon
             if (!HasBeltItemInHand)
                 return false;
 
-            if (buttons.WasPressed(previous, PlayerInputButtons.Primary))
+            ItemConfig held = _inventory.GetEquippedConfig<ItemConfig>((EquipSlot)BeltSlot);
+            bool isTorch = held is ConsumableItemConfig { IsLight: true };
+            bool isThrowing = held is UtilityItemConfig { UtilityKind: UtilityKind.ThrowingWeapon };
+
+            if (buttons.WasPressed(previous, PlayerInputButtons.Primary) && isThrowing)
+                TryAimThrow(BusyThrowAim);
+            else if (buttons.WasPressed(previous, PlayerInputButtons.Primary))
                 OnUseItem((EquipSlot)BeltSlot);
-            else if (buttons.WasPressed(previous, PlayerInputButtons.Secondary) && !TryAimTorch())
+            else if (buttons.WasPressed(previous, PlayerInputButtons.Secondary) && isTorch)
+                TryAimThrow(BusyTorchAim);
+            else if (buttons.WasPressed(previous, PlayerInputButtons.Secondary) && !isThrowing)
                 BeltSlot = NoBelt;
 
             return true;
         }
 
-        /// RMB with a torch in hand raises it over the head to throw; it flies when the button is let go.
-        private bool TryAimTorch()
+        /// The held torch or throwing weapon is drawn back; it flies when the button is let go, the harder the longer it was held.
+        private void TryAimThrow(byte kind)
         {
-            if (_inventory.GetEquippedConfig<ConsumableItemConfig>((EquipSlot)BeltSlot) is not { IsLight: true })
-                return false;
+            if (!_fighter.Combat.StartBusy(float.PositiveInfinity, kind))
+                return;
 
-            if (_fighter.Combat.StartBusy(float.PositiveInfinity, BusyTorchAim))
-            {
-                Pending = PendingAction.Torch;
-                _pendingIndex = BeltSlot;
-                _pendingCompleteTick = int.MaxValue;
-            }
-
-            return true;
+            Pending = PendingAction.Throw;
+            _pendingIndex = BeltSlot;
+            _pendingCompleteTick = int.MaxValue;
         }
 
-        /// The throw plays out; the torch leaves the hand at its release moment (SimulatePending).
-        private void ReleaseTorch()
+        /// The throw plays out; the item leaves the hand at its release moment (SimulatePending).
+        private void ReleaseThrow()
         {
+            byte kind = _fighter.Combat.BusyKind == BusyTorchAim ? BusyTorchThrow : BusyThrowRelease;
+            float speed = kind == BusyThrowRelease ? _stats.HandlingSpeed * (1f + Perk(PerkEffect.QuickThrow)) : 1f;
+            _throwPower = ThrowDraw;
             _fighter.Combat.CancelBusy();
-            _fighter.Combat.StartBusy(FighterAnimComponent.TorchThrowTime, BusyTorchThrow);
-            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(FighterAnimComponent.TorchRelease / Runner.DeltaTime);
+            _fighter.Combat.StartBusy(FighterAnimComponent.TorchThrowTime / speed, kind, speed);
+            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(FighterAnimComponent.TorchRelease / speed / Runner.DeltaTime);
+        }
+
+        /// Let go at once the throw goes up as a candle and lands near; fully drawn it flies almost straight, slightly dropping.
+        private Vector3 ThrowVelocity(float fullSpeed)
+        {
+            return _fighter.Body.AimDirection * (fullSpeed * Mathf.Lerp(LobSpeed, 1f, _throwPower)) + Vector3.up * Mathf.Lerp(LobLift, StraightLift, _throwPower);
+        }
+
+        private void Throw(EquipSlot slot)
+        {
+            ItemStack stack = _inventory.GetEquipped(slot);
+
+            if (_database.Get(stack.ItemId) is not UtilityItemConfig { UtilityKind: UtilityKind.ThrowingWeapon } item)
+            {
+                ThrowTorch(slot);
+
+                return;
+            }
+
+            ThrowWeapon(item, stack);
+            Consume(slot, stack);
         }
 
         /// The torch flies from over the head along the aim and burns on where it lands.
@@ -955,7 +1050,7 @@ namespace Game.Scripts.Dungeon
 
             _inventory.SetEquipment(slot, default);
             FighterBodyComponent body = _fighter.Body;
-            Vector3 velocity = body.AimDirection * TorchThrowSpeed + Vector3.up * TorchThrowLift;
+            Vector3 velocity = ThrowVelocity(TorchThrowSpeed);
             Runner.Spawn(_worldItemPrefab, body.EyePosition + body.AimRotation * s_torchRelease, transform.rotation, PlayerRef.None, (_, item) =>
             {
                 WorldItemComponent thrown = item.GetComponent<WorldItemComponent>();
@@ -1168,8 +1263,8 @@ namespace Game.Scripts.Dungeon
                 case PendingAction.Utility:
                     ApplyUtility((EquipSlot)_pendingIndex);
                     break;
-                case PendingAction.Torch:
-                    ThrowTorch((EquipSlot)_pendingIndex);
+                case PendingAction.Throw:
+                    Throw((EquipSlot)_pendingIndex);
                     break;
                 case PendingAction.Shapeshift:
                     Form = Form == (ShapeshiftForm)_pendingIndex ? ShapeshiftForm.None : (ShapeshiftForm)_pendingIndex;
@@ -1784,6 +1879,8 @@ namespace Game.Scripts.Dungeon
         /// A projectile stopped somewhere: a thrown flask leaves its zone, a flare arrow lights the place.
         private void OnProjectileImpact(ProjectileData data, Vector3 point, Vector3 normal)
         {
+            DropThrown(data, point);
+
             if ((data.Flags & ProjectileFlags.Flare) != 0 && _zonePrefab != null)
                 Runner.Spawn(_zonePrefab, point + normal * 0.1f, Quaternion.identity, PlayerRef.None, (_, zone) => zone.GetComponent<AbilityZoneComponent>().SetupFlare(this, new Color(1f, 0.6f, 0.25f)));
 
@@ -2022,10 +2119,7 @@ namespace Game.Scripts.Dungeon
             {
                 case UtilityKind.Campfire:
                     if (_campfirePrefab != null)
-                        Runner.Spawn(_campfirePrefab, transform.position + transform.forward * 1.2f, Quaternion.identity);
-                    break;
-                case UtilityKind.ThrowingWeapon:
-                    ThrowWeapon(item);
+                        Runner.Spawn(_campfirePrefab, FindGround(transform.position + transform.forward * 1.2f), Quaternion.identity);
                     break;
                 default:
                     return;
@@ -2034,20 +2128,53 @@ namespace Game.Scripts.Dungeon
             Consume(slot, stack);
         }
 
-        /// A knife or an axe from the belt; a knife fan buff turns the next knife into a fan of them, only one spent.
-        private void ThrowWeapon(UtilityItemConfig item)
+        /// A knife or an axe from the belt, as hard as it was drawn; a knife fan buff turns the next knife into a fan of them, only
+        /// one spent. The one paid for stops where it lands, to be picked up again; the fan's extra ones are conjured.
+        private void ThrowWeapon(UtilityItemConfig item, ItemStack stack)
         {
             CombatComponent combat = _fighter.Combat;
-            float bonus = 1f + Perk(PerkEffect.TrueThrow) + (item.IsBlade ? Perk(PerkEffect.ShortBlade) : 0f);
+            float bonus = (1f + Perk(PerkEffect.TrueThrow) + (item.IsBlade ? Perk(PerkEffect.ShortBlade) : 0f)) * Mathf.Lerp(LobDamage, 1f, _throwPower);
             int damage = Mathf.RoundToInt(combat.ScaleDamage(item.Damage, DamageType.Physical) * _stats.RangedDamageMultiplier * bonus);
             int count = item.IsBlade && Take(StatusEffectKind.KnifeFan, out float fan) ? Mathf.RoundToInt(fan) : 1;
+            Vector3 velocity = ThrowVelocity(ThrowSpeed);
 
             for (int i = 0; i < count; i++)
             {
                 float yaw = count > 1 ? Mathf.Lerp(-FanSpread, FanSpread, i / (count - 1f)) : 0f;
-                Vector3 direction = combat.Body.AimRotation * Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
-                combat.Projectiles.Fire(combat.Body.EyePosition, direction * ThrowSpeed, -9.81f, damage, 0.2f, DamageType.Physical, ProjectileKind.Thrown);
+                combat.Projectiles.Fire(combat.Body.EyePosition, Quaternion.Euler(0f, yaw, 0f) * velocity, -9.81f, damage, 0.2f, DamageType.Physical,
+                    ProjectileKind.Thrown, item: i == count / 2 ? stack.ItemId : (short)0, itemRarity: stack.Rarity);
             }
+        }
+
+        /// A thrown weapon stops in the surface it hit, along its flight; one that struck a body drops to the floor below.
+        private void DropThrown(in ProjectileData data, Vector3 point)
+        {
+            if (data.Item <= 0 || _worldItemPrefab == null || _database.Get(data.Item) is not { } config)
+                return;
+
+            ItemStack stack = ItemStack.Create(config, 1, (ItemRarity)data.ItemRarity);
+            Vector3 direction = data.GetVelocity(Runner.SecondsSince(data.FireTick)).normalized;
+
+            if ((data.Flags & ProjectileFlags.HitBody) == 0)
+            {
+                Runner.Spawn(_worldItemPrefab, point + direction * StickDepth, WorldItemComponent.StuckRotation(direction), PlayerRef.None,
+                    (_, item) => item.GetComponent<WorldItemComponent>().Setup(stack));
+
+                return;
+            }
+
+            Runner.Spawn(_worldItemPrefab, point - direction * 0.2f, Quaternion.identity, PlayerRef.None, (_, item) =>
+            {
+                WorldItemComponent dropped = item.GetComponent<WorldItemComponent>();
+                dropped.Setup(stack);
+                dropped.Launch(Vector3.up - direction);
+            });
+        }
+
+        /// The floor under a point (a campfire is set on it), or the point itself over a drop.
+        private static Vector3 FindGround(Vector3 point)
+        {
+            return Physics.Raycast(point + Vector3.up, Vector3.down, out RaycastHit hit, GroundProbe, WorldMask, QueryTriggerInteraction.Ignore) ? hit.point : point;
         }
 
         private void Consume(EquipSlot slot, ItemStack stack)
@@ -2055,71 +2182,72 @@ namespace Game.Scripts.Dungeon
             _inventory.SetEquipment(slot, stack.Count > 1 ? stack.WithCount(stack.Count - 1) : default);
         }
 
+        /// Seated, health comes back a point at a time and every spent spell fills toward its next charge, much faster by a lit fire.
         private void SimulateRest()
         {
-            SimulateSpellRecovery();
+            float pace = IsByFire ? FireRestBoost : 1f;
 
-            if (!IsResting || _fighter.Move.Velocity.sqrMagnitude > 0.05f)
+            if (!IsResting)
             {
                 _restTimer = TickTimer.None;
 
                 return;
             }
 
+            SimulateSpellRecovery(pace / FireRestBoost);
+
             if (!_restTimer.IsRunning)
-                _restTimer = TickTimer.CreateFromSeconds(Runner, RestHealInterval());
+                _restTimer = TickTimer.CreateFromSeconds(Runner, RestHealInterval() / pace);
 
             if (_restTimer.Expired(Runner))
             {
                 _fighter.Health.Restore(1);
-                _restTimer = TickTimer.CreateFromSeconds(Runner, RestHealInterval());
+                _restTimer = TickTimer.CreateFromSeconds(Runner, RestHealInterval() / pace);
             }
         }
 
-        /// As in Dark and Darker, spells come back only by the fire: one charge at a time, the most spent spell first; Knowledge
-        /// sets the pace. The free cast of Knowledge 30 returns with the last charge.
-        private void SimulateSpellRecovery()
+        /// Every spell short of charges fills at once, a heavy one (few charges) slower; Cooldown Recovery sets the pace. The free
+        /// cast of Knowledge 30 returns with the last charge.
+        private void SimulateSpellRecovery(float pace)
         {
-            int spell = IsRecoveringSpells ? FindSpentSpell() : -1;
-
-            if (spell < 0)
-            {
-                _spellTimer = TickTimer.None;
-
-                return;
-            }
-
-            if (!_spellTimer.IsRunning)
-                _spellTimer = TickTimer.CreateFromSeconds(Runner, _spellRecoverInterval / _stats.CooldownSpeed);
-
-            if (!_spellTimer.Expired(Runner))
-                return;
-
-            _charges.Set(spell, (byte)(_charges[spell] + 1));
-            _spellTimer = TickTimer.None;
-
-            if (FindSpentSpell() < 0)
-                _isAttuned = true;
-        }
-
-        private int FindSpentSpell()
-        {
-            int found = -1;
-            float lowest = 1f;
+            bool isSpent = false;
 
             for (int i = _skillCount; i < _abilities.Count; i++)
             {
-                int max = GetMaxCharges(i);
-                float share = _charges[i] / (float)max;
+                if (_abilities[i].IsCooldownBased || _charges[i] >= GetMaxCharges(i))
+                {
+                    _recovery.Set(i, 0f);
 
-                if (_abilities[i].IsCooldownBased || _charges[i] >= max || share >= lowest)
                     continue;
+                }
 
-                found = i;
-                lowest = share;
+                float recovery = _recovery[i] + Runner.DeltaTime * pace * _stats.CooldownSpeed / (_spellRecoverInterval * SpellWeight(_abilities[i]));
+
+                if (recovery >= 1f)
+                {
+                    _charges.Set(i, (byte)(_charges[i] + 1));
+                    recovery = 0f;
+                }
+
+                _recovery.Set(i, recovery);
+                isSpent |= _charges[i] < GetMaxCharges(i);
             }
 
-            return found;
+            _isAttuned |= !isSpent;
+        }
+
+        /// A spell of six charges comes back three times faster than one of a single charge.
+        private static float SpellWeight(AbilityConfig spell)
+        {
+            return Mathf.Lerp(0.6f, 2f, Mathf.InverseLerp(6f, 1f, spell.Charges));
+        }
+
+        /// Charges of the ability with the share of the next one regained by resting, over its maximum: the bar under a wheel icon.
+        public float GetChargeFill(int ability)
+        {
+            int max = GetMaxCharges(ability);
+
+            return max > 0 ? Mathf.Clamp01((_charges[ability] + _recovery[ability]) / max) : 1f;
         }
 
         /// Vitality 30 rests twice as fast.
@@ -2345,10 +2473,11 @@ namespace Game.Scripts.Dungeon
                     useTime = consumable.UseTime / animSpeed;
                     action = PendingAction.Consumable;
                     break;
-                case UtilityItemConfig utility when utility.UtilityKind != UtilityKind.Lockpick:
-                    useTime = utility.UseTime / _stats.HandlingSpeed / (utility.UtilityKind == UtilityKind.ThrowingWeapon ? 1f + Perk(PerkEffect.QuickThrow) : 1f);
+                // Throwing weapons are drawn and thrown in SimulateBelt.
+                case UtilityItemConfig utility when utility.UtilityKind is not (UtilityKind.Lockpick or UtilityKind.ThrowingWeapon):
+                    useTime = utility.UseTime / _stats.HandlingSpeed;
                     action = PendingAction.Utility;
-                    kind = utility.UtilityKind == UtilityKind.ThrowingWeapon ? BusyThrow : BusyInteract;
+                    kind = BusyInteract;
                     break;
                 default:
                     return;

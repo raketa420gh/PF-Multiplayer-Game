@@ -645,6 +645,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_campfirePrefab", campfire.GetComponent<NetworkObject>());
             BattleEditorUtility.Set(so, "_zonePrefab", zone);
             BattleEditorUtility.Set(so, "_fistsWeapon", weapons[DungeonWeaponLibrary.Fists]);
+            BattleEditorUtility.Set(so, "_torchWeapon", weapons[DungeonWeaponLibrary.Torch]);
             BattleEditorUtility.Set(so, "_formWeapons", new[] { weapons[DungeonWeaponLibrary.BearClaws], weapons[DungeonWeaponLibrary.PantherClaws], weapons[DungeonWeaponLibrary.RatBite] });
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -1308,7 +1309,10 @@ namespace Game.Scripts.Editor.Dungeon
             root.AddComponent<NetworkTransform>();
             CampfireComponent campfire = root.AddComponent<CampfireComponent>();
             BattleEditorUtility.Set(campfire, "_light", root.GetComponentInChildren<Light>());
-            AddInteractCollider(root, new Vector3(0f, 0.4f, 0f), new Vector3(1.6f, 0.8f, 1.6f));
+            // A solid object on the floor: nothing to interact with, rest beside it with G.
+            BoxCollider collider = root.AddComponent<BoxCollider>();
+            collider.center = new Vector3(0f, 0.2f, 0f);
+            collider.size = new Vector3(0.9f, 0.4f, 0.9f);
 
             return BattleContentBuilder.SavePrefab(root, Prefab("Campfire"));
         }

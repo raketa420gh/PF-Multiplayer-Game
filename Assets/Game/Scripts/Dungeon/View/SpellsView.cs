@@ -25,6 +25,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Name of the skill that opens each wheel")]
         private TMP_Text[] _wheelTitles;
 
+        [SerializeField, Tooltip("Shown over a wheel whose skill slot holds no spell memory")]
+        private GameObject[] _inactiveLabels;
+
         [SerializeField, Tooltip("Shown instead of the wheels to a class without spells")]
         private GameObject _emptyRoot;
 
@@ -37,8 +40,10 @@ namespace Game.Scripts.Dungeon
         private static readonly string[] s_wheelBadges = { "I", "II" };
         private readonly List<AbilityIconView> _spellIcons = new();
         private PlayerSessionComponent _session;
+        private static readonly string[] s_wheelKeys = { "Q", "E" };
         private int _shownClass = -1;
-        private int _shownMask;
+        private long _shownLayout;
+        private int _shownSkills = -1;
         private AbilityIconView _ghost;
         private AbilityIconView _dragged;
         private bool _isDropHandled;
@@ -72,13 +77,21 @@ namespace Game.Scripts.Dungeon
             {
                 _shownClass = config.Id;
                 BuildIcons(config);
-                ShowWheels(config);
-                _shownMask = ~_session.SpellMask;
+                _shownSkills = -1;
+                _shownLayout = ~_session.SpellLayout;
             }
 
-            if (_shownMask != _session.SpellMask)
+            int skills = _session.SkillA | (_session.SkillB << 8);
+
+            if (_shownSkills != skills)
             {
-                _shownMask = _session.SpellMask;
+                _shownSkills = skills;
+                ShowWheels(config);
+            }
+
+            if (_shownLayout != _session.SpellLayout)
+            {
+                _shownLayout = _session.SpellLayout;
                 Refresh(config);
             }
         }
@@ -125,40 +138,36 @@ namespace Game.Scripts.Dungeon
             }
         }
 
-        /// A wheel is shown only when one of the class skills opens it; its title is that skill.
+        /// Both wheels of a spell class are shown; one whose skill slot (Q / E) holds no spell memory is greyed out as inactive.
         private void ShowWheels(ClassConfig config)
         {
             for (int wheel = 0; wheel < _wheels.Length; wheel++)
             {
-                _wheels[wheel].SetActive(config.HasWheel(wheel));
-                AbilityConfig memory = Array.Find(config.Skills, skill => skill.Kind == AbilityKind.SpellMemory && skill.Wheel == wheel);
-                _wheelTitles[wheel].text = memory != null ? memory.DisplayName : string.Empty;
+                int skill = wheel == 0 ? _session.SkillA : _session.SkillB;
+                bool isActive = skill < config.Skills.Length && config.Skills[skill].Kind == AbilityKind.SpellMemory;
+                _wheels[wheel].SetActive(config.HasSpellWheels);
+                _wheels[wheel].GetComponent<CanvasGroup>().alpha = isActive ? 1f : 0.35f;
+                _inactiveLabels[wheel].SetActive(config.HasSpellWheels && !isActive);
+                _wheelTitles[wheel].text = isActive ? $"{config.Skills[skill].DisplayName} ({s_wheelKeys[wheel]})" : string.Empty;
             }
 
-            _emptyRoot.SetActive(!config.HasWheel(0));
+            _emptyRoot.SetActive(!config.HasSpellWheels);
         }
 
-        /// Each wheel lists its spells in pool order, the way the wheel opens in the dungeon.
+        /// Every slot shows the spell put into it: the wheel opens in the dungeon in the same order.
         private void Refresh(ClassConfig config)
         {
-            for (int wheel = 0; wheel < ClassConfig.WheelCount; wheel++)
+            for (int slot = 0; slot < _wheelSlots.Length; slot++)
             {
-                int slot = wheel * ClassConfig.SpellWheelSize;
-                int end = slot + ClassConfig.SpellWheelSize;
+                int spell = ClassConfig.GetSlotSpell(_session.SpellLayout, slot);
+                bool isUsed = spell >= 0 && spell < config.Spells.Length;
 
-                for (int spell = 0; spell < config.Spells.Length && slot < end; spell++)
-                {
-                    if (ClassConfig.IsInWheel(_session.SpellMask, wheel, spell))
-                        _wheelSlots[slot++].SetAbility(spell, config.Spells[spell]);
-                }
+                if (isUsed)
+                    _wheelSlots[slot].SetAbility(spell, config.Spells[spell]);
+                else
+                    _wheelSlots[slot].Clear();
 
-                for (int i = wheel * ClassConfig.SpellWheelSize; i < end; i++)
-                {
-                    if (i >= slot)
-                        _wheelSlots[i].Clear();
-
-                    _wheelSlots[i].SetSelected(i < slot);
-                }
+                _wheelSlots[slot].SetSelected(isUsed);
             }
 
             foreach (AbilityIconView icon in _spellIcons)
@@ -171,13 +180,9 @@ namespace Game.Scripts.Dungeon
 
         private int WheelOf(int spell)
         {
-            for (int wheel = 0; wheel < ClassConfig.WheelCount; wheel++)
-            {
-                if (ClassConfig.IsInWheel(_session.SpellMask, wheel, spell))
-                    return wheel;
-            }
+            int slot = ClassConfig.FindSlot(_session.SpellLayout, spell);
 
-            return -1;
+            return slot >= 0 ? slot / ClassConfig.SpellWheelSize : -1;
         }
 
         private void MoveGhost(PointerEventData eventData)
@@ -194,7 +199,7 @@ namespace Game.Scripts.Dungeon
             _dragged = null;
             _ghost.gameObject.SetActive(false);
             // The slots get their own frame colours back with the next refresh.
-            _shownMask = ~_session.SpellMask;
+            _shownLayout = ~_session.SpellLayout;
         }
 
         private void OnSpellClicked(AbilityIconView icon, PointerEventData.InputButton button)
@@ -251,25 +256,15 @@ namespace Game.Scripts.Dungeon
                 MoveGhost(eventData);
         }
 
-        /// A spell dropped on a slot joins that wheel and takes the place of the spell the slot held; a spell already in the wheel stays.
+        /// A spell dropped on a slot takes exactly that slot; the spell the slot held swaps to the dragged one's old place.
         private void OnDropped(AbilityIconView target)
         {
             if (_dragged == null)
                 return;
 
             _isDropHandled = true;
-            int spell = _dragged.Index;
-            int wheel = Array.IndexOf(_wheelSlots, target) / ClassConfig.SpellWheelSize;
-
-            if (ClassConfig.IsInWheel(_session.SpellMask, wheel, spell))
-                return;
-
             DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.5f);
-
-            if (target.Index >= 0)
-                _session.RpcToggleSpell((byte)wheel, (byte)target.Index);
-
-            _session.RpcToggleSpell((byte)wheel, (byte)spell);
+            _session.RpcPlaceSpell((byte)Array.IndexOf(_wheelSlots, target), (byte)_dragged.Index);
         }
 
         private void OnDragEnded(AbilityIconView icon)

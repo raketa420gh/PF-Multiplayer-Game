@@ -28,6 +28,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const string VikingSword = "VikingSword";
         public const string VikingShield = "VikingShield";
         public const string VikingEcu = "VikingEcu";
+        public const string Torch = "Torch";
 
         private const float AxeHead = 0.8f;
         /// A long axe is held at the butt with the off hand, this far down the haft from the main hand.
@@ -49,7 +50,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// weapon by name.
         public static readonly string[] CatalogOrder =
         {
-            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, BearClaws, PantherClaws, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu
+            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, BearClaws, PantherClaws, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu, Torch
         };
 
         /// The entry whose shield is the model of a shield item, by its ShieldIndex: the round shield, the écu.
@@ -85,7 +86,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 4), ["Rat Bite"] = (1, 1), ["Arming Sword"] = (4, 3), ["Morning Star"] = (6, 3), ["Magic Staff"] = (4, 4),
             ["Round Shield"] = (1, 7), ["Écu"] = (1, 8), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2),
-            ["Bear Claws"] = (7, 4), ["Viking Sword"] = (5, 3)
+            ["Bear Claws"] = (7, 4), ["Viking Sword"] = (5, 3), ["Torch"] = (2, 1)
         };
 
         /// A weapon with a shield hits with the weapon's Impact and blocks with the shield's Stability.
@@ -161,7 +162,8 @@ namespace Game.Scripts.Editor.Dungeon
                 CreatePantherClaws(),
                 CreateRatBite(),
                 CreateMorningStar(),
-                CreateVikingSword()
+                CreateVikingSword(),
+                CreateTorch()
             };
 
             // Every pair is built from a definition of its own: WithShield changes the poses it is given.
@@ -320,6 +322,57 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockSocket = WeaponSocket.RightHand,
                 BlockBoxCenter = new Vector3(0f, 0f, 0.45f),
                 BlockBoxExtents = new Vector3(0.08f, 0.08f, 0.35f)
+            };
+        }
+
+        /// A burning torch from the belt, struck with LMB in the left hand that carries it (RMB throws it): two short vertical
+        /// blows, the first coming down a little right of the middle, the second a little left. Both are authored in the right hand
+        /// and played mirrored (IsOffHand); the idle is the torch hold of the belt, so the rest pose here is its mirror image. The
+        /// model is the belt item in the hand: no attachment, no block.
+        private static WeaponDefinition CreateTorch()
+        {
+            const int damage = 14;
+
+            BodyPose idle = At(Cm(29f, 1.43f, 51.5f), -122f, 85f, 0f, 0f, Cm(36.5f, 1.3f, 26f), Cm(-12f, 1.5f, 35f));
+            AttackDefinition right = new AttackDefinition
+            {
+                Windup = 30 * Footage, Active = 8 * Footage, Recovery = 30 * Footage, Damage = damage, MoveMultiplier = 0.85f, Launch = 1f, IsOffHand = true,
+                Raise = new() { Via(12, At(Cm(26f, 1.7f, 30f), 10f, 70f, 5f, 0f, Cm(34f, 1.45f, 12f), Cm(-12f, 1.35f, 32f))) },
+                WindupPose = At(Cm(20f, 1.86f, 22f), 10f, 105f, 10f, -5f, Cm(30f, 1.6f, 5f), Cm(-12f, 1.3f, 30f)),
+                MidPose = Peak(Cm(8f, 1.5f, 50f), -8f, 10f, Cm(18f, 1.35f, 25f), Cm(-15f, 1.25f, 30f), 20f),
+                EndPose = At(Cm(4f, 1.3f, 52f), -5f, -40f, -12f, 15f, Cm(15f, 1.25f, 25f), Cm(-15f, 1.2f, 28f), 30f),
+                Return = new() { Via(52, At(Cm(18f, 1.3f, 45f), -60f, 30f, -5f, 8f, Cm(28f, 1.2f, 22f), Cm(-12f, 1.35f, 32f))) }
+            };
+            AttackDefinition left = new AttackDefinition
+            {
+                Windup = 30 * Footage, Active = 8 * Footage, Recovery = 30 * Footage, Damage = damage, MoveMultiplier = 0.85f, Launch = 1f, IsOffHand = true,
+                Raise = new() { Via(12, At(Cm(8f, 1.62f, 42f), -10f, 60f, 5f, 0f, Cm(20f, 1.42f, 20f), Cm(-12f, 1.3f, 30f))) },
+                WindupPose = At(Cm(-4f, 1.86f, 25f), -15f, 105f, 15f, -5f, Cm(12f, 1.6f, 8f), Cm(-14f, 1.3f, 30f)),
+                MidPose = Peak(Cm(-2f, 1.5f, 50f), 10f, 10f, Cm(10f, 1.35f, 25f), Cm(-16f, 1.25f, 30f), 20f),
+                EndPose = At(Cm(-7f, 1.3f, 52f), 5f, -40f, 10f, 15f, Cm(8f, 1.25f, 25f), Cm(-16f, 1.2f, 28f), 30f),
+                Return = new() { Via(52, At(Cm(18f, 1.3f, 45f), -60f, 30f, -5f, 8f, Cm(28f, 1.2f, 22f), Cm(-12f, 1.35f, 32f))) },
+                After = right
+            };
+
+            foreach (AttackDefinition attack in new[] { right, left })
+            {
+                attack.ComboStart = attack.Windup + attack.Active * 0.5f;
+                attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
+            }
+
+            return new WeaponDefinition
+            {
+                Prefix = Torch,
+                DisplayName = "Torch",
+                Kind = WeaponKind.OneHanded,
+                IsRound = true,
+                Reach = 1.05f,
+                DeflectDuration = 0.5f,
+                BladeBase = 0.05f,
+                BladeTip = 0.42f,
+                Strike = 0.35f,
+                Idle = idle,
+                Attacks = new[] { right, left }
             };
         }
 

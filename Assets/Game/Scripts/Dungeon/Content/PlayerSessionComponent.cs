@@ -100,7 +100,7 @@ namespace Game.Scripts.Dungeon
         public int PerkMask { get; private set; } = 1;
 
         [Networked]
-        public int SpellMask { get; private set; } = ClassConfig.DefaultSpellMask;
+        public long SpellLayout { get; private set; } = ClassConfig.DefaultSpellLayout;
 
         [Networked]
         public byte Subclass { get; private set; }
@@ -166,7 +166,7 @@ namespace Game.Scripts.Dungeon
                 RpcArrive(carry.Floor, carry.Health, carry.Kills, carry.Experience, carry.Charges);
 
             RpcSetProfile(StashService.LoadLevel(), StashService.LoadExperience(), StashService.LoadClass(), StashService.LoadName());
-            RpcSetBuild(StashService.LoadSubclass(), StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask(), StashService.LoadSpellMask());
+            RpcSetBuild(StashService.LoadSubclass(), StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask(), StashService.LoadSpellLayout());
             SendInventory(LoadKit, StashService.LoadKit());
 
             for (int page = 0; page < StashPages; page++)
@@ -225,7 +225,7 @@ namespace Game.Scripts.Dungeon
             }
 
             StashService.SaveProfile(Level, Experience, ClassId, DisplayName);
-            StashService.SaveBuild(Subclass, SkillA, SkillB, PerkMask, SpellMask);
+            StashService.SaveBuild(Subclass, SkillA, SkillB, PerkMask, SpellLayout);
         }
 
         /// Nobody descends naked: an empty kit is replaced by the starting one; what is carried down from above stays as it is.
@@ -316,7 +316,7 @@ namespace Game.Scripts.Dungeon
             SkillA = 0;
             SkillB = 1;
             PerkMask = 1;
-            SpellMask = ClassConfig.DefaultSpellMask;
+            SpellLayout = ClassConfig.DefaultSpellLayout;
             FitBuild();
             StoreKit();
             GiveDefaultKit();
@@ -339,16 +339,18 @@ namespace Game.Scripts.Dungeon
             if (State != SessionState.Lobby || !Class.IsSkillAvailable(index, Subclass))
                 return;
 
+            bool isShared = IsSharedSkill(Class, index);
+
             if (slot == 0)
             {
-                if (SkillB == index)
+                if (SkillB == index && !isShared)
                     SkillB = SkillA;
 
                 SkillA = index;
             }
             else
             {
-                if (SkillA == index)
+                if (SkillA == index && !isShared)
                     SkillA = SkillB;
 
                 SkillB = index;
@@ -376,22 +378,34 @@ namespace Game.Scripts.Dungeon
             PerkMask |= bit;
         }
 
-        /// Toggles a spell in one of the two spell wheels; a wheel holds at most SpellWheelSize spells and a spell sits in one wheel only.
+        /// Toggles a spell in one of the two spell wheels: it leaves the wheel it sits in or takes the first free slot of the other.
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcToggleSpell(byte wheel, byte index)
         {
-            if (State != SessionState.Lobby || index >= Class.Spells.Length || wheel >= ClassConfig.WheelCount || !Class.HasWheel(wheel)
-                || !ClassConfig.IsAvailable(Class.Spells[index].Subclass, Subclass))
+            if (State != SessionState.Lobby || wheel >= ClassConfig.WheelCount || !Class.HasSpellWheels || !Class.IsSpellAvailable(index, Subclass))
                 return;
 
-            int bit = ClassConfig.WheelBit(wheel, index);
-            int other = ClassConfig.WheelBit(1 - wheel, index);
-            int wheelMask = ((1 << ClassConfig.WheelBits) - 1) << (wheel * ClassConfig.WheelBits);
+            int slot = ClassConfig.FindSlot(SpellLayout, index);
+            int free = ClassConfig.FindSlot(SpellLayout, -1, wheel * ClassConfig.SpellWheelSize, ClassConfig.SpellWheelSize);
+            bool isInWheel = slot >= 0 && slot / ClassConfig.SpellWheelSize == wheel;
 
-            if ((SpellMask & bit) == 0 && CountBits(SpellMask & wheelMask) >= ClassConfig.SpellWheelSize)
+            if (!isInWheel && free < 0)
                 return;
 
-            SpellMask = (SpellMask ^ bit) & ~other;
+            long layout = slot >= 0 ? ClassConfig.SetSlotSpell(SpellLayout, slot, -1) : SpellLayout;
+            SpellLayout = isInWheel ? layout : ClassConfig.SetSlotSpell(layout, free, index);
+        }
+
+        /// A spell dropped on a wheel slot takes it; the spell the slot held moves to the place the dropped one left, or out of the wheels.
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcPlaceSpell(byte slot, byte index)
+        {
+            if (State != SessionState.Lobby || slot >= ClassConfig.SlotCount || !Class.HasSpellWheels || !Class.IsSpellAvailable(index, Subclass))
+                return;
+
+            int from = ClassConfig.FindSlot(SpellLayout, index);
+            long layout = from >= 0 ? ClassConfig.SetSlotSpell(SpellLayout, from, ClassConfig.GetSlotSpell(SpellLayout, slot)) : SpellLayout;
+            SpellLayout = ClassConfig.SetSlotSpell(layout, slot, index);
         }
 
         /// Buys one ware (a full stack of stackables) into the stash; coins leave the stash first, then the kit bag.
@@ -496,13 +510,13 @@ namespace Game.Scripts.Dungeon
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        private void RpcSetBuild(byte subclass, byte skillA, byte skillB, int perkMask, int spellMask)
+        private void RpcSetBuild(byte subclass, byte skillA, byte skillB, int perkMask, long spellLayout)
         {
             Subclass = subclass;
             SkillA = skillA;
             SkillB = skillB;
             PerkMask = perkMask;
-            SpellMask = spellMask;
+            SpellLayout = spellLayout;
             FitBuild();
         }
 
@@ -513,31 +527,44 @@ namespace Game.Scripts.Dungeon
             ClassConfig config = Class;
             Subclass = (byte)Mathf.Clamp(Subclass, 0, Mathf.Max(0, config.Subclasses.Length - 1));
             PerkMask &= config.AvailablePerkMask(Subclass);
-            SpellMask &= config.AvailableSpellMask(Subclass) & (config.HasWheel(1) ? -1 : (1 << ClassConfig.WheelBits) - 1);
-            FillWheel(config);
+            FitSpells(config);
 
             if (!config.IsSkillAvailable(SkillA, Subclass))
                 SkillA = FreeSkill(config, SkillB);
 
-            if (!config.IsSkillAvailable(SkillB, Subclass) || SkillB == SkillA)
+            if (!config.IsSkillAvailable(SkillB, Subclass) || (SkillB == SkillA && !IsSharedSkill(config, SkillA)))
                 SkillB = FreeSkill(config, SkillA);
         }
 
-        /// Free places of the first wheel take the spells of the class and subclass that sit in no wheel yet, so a new subclass starts with its own.
-        private void FillWheel(ClassConfig config)
+        /// Slots keep only spells of the class and subclass, each once; free places of the first wheel then take the spells that sit
+        /// in no wheel yet, so a new subclass starts with its own.
+        private void FitSpells(ClassConfig config)
         {
-            if (!config.HasWheel(0))
-                return;
+            long layout = 0;
 
-            int wheelMask = (1 << ClassConfig.WheelBits) - 1;
-
-            for (int i = 0; i < config.Spells.Length && CountBits(SpellMask & wheelMask) < ClassConfig.SpellWheelSize; i++)
+            for (int slot = 0; config.HasSpellWheels && slot < ClassConfig.SlotCount; slot++)
             {
-                bool isPlaced = ClassConfig.IsInWheel(SpellMask, 0, i) || ClassConfig.IsInWheel(SpellMask, 1, i);
+                int spell = ClassConfig.GetSlotSpell(SpellLayout, slot);
 
-                if (!isPlaced && ClassConfig.IsAvailable(config.Spells[i].Subclass, Subclass))
-                    SpellMask |= ClassConfig.WheelBit(0, i);
+                if (config.IsSpellAvailable(spell, Subclass) && ClassConfig.FindSlot(layout, spell) < 0)
+                    layout = ClassConfig.SetSlotSpell(layout, slot, spell);
             }
+
+            for (int i = 0; config.HasSpellWheels && i < config.Spells.Length; i++)
+            {
+                int free = ClassConfig.FindSlot(layout, -1, 0, ClassConfig.SpellWheelSize);
+
+                if (free >= 0 && config.IsSpellAvailable(i, Subclass) && ClassConfig.FindSlot(layout, i) < 0)
+                    layout = ClassConfig.SetSlotSpell(layout, free, i);
+            }
+
+            SpellLayout = layout;
+        }
+
+        /// The spell memory may sit in both skill slots: each opens its own wheel.
+        private static bool IsSharedSkill(ClassConfig config, int skill)
+        {
+            return skill < config.Skills.Length && config.Skills[skill].Kind == AbilityKind.SpellMemory;
         }
 
         private byte FreeSkill(ClassConfig config, int taken)

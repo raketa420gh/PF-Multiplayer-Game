@@ -42,6 +42,7 @@ namespace Game.Scripts.Dungeon
 
         private readonly List<RectTransform> _slots = new();
         private readonly List<Image> _backgrounds = new();
+        private readonly List<Image> _bars = new();
         private readonly List<string> _names = new();
         private Vector2 _cursor;
         private int _selected = -1;
@@ -63,6 +64,7 @@ namespace Game.Scripts.Dungeon
                 RectTransform slot = Instantiate(_slotPrefab, _slotsRoot);
                 _slots.Add(slot);
                 _backgrounds.Add(slot.GetComponent<Image>());
+                _bars.Add(slot.Find("Bar/Fill").GetComponent<Image>());
             }
 
             for (int i = 0; i < _slots.Count; i++)
@@ -84,9 +86,18 @@ namespace Game.Scripts.Dungeon
                 glyph.color = entries[i].color;
                 name.text = entries[i].name + (string.IsNullOrEmpty(entries[i].detail) ? string.Empty : $"\n<size=70%>{entries[i].detail}</size>");
                 _names.Add(entries[i].name);
+                SetFill(i, -1f);
             }
 
             Highlight();
+        }
+
+        /// Bar under the slot: how full its charges are, a resting spell filling toward the next one; a negative fill hides it.
+        public void SetFill(int index, float fill)
+        {
+            Transform bar = _bars[index].transform.parent;
+            bar.gameObject.SetActive(fill >= 0f);
+            _bars[index].fillAmount = fill;
         }
 
         public void Move(Vector2 delta)

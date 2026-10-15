@@ -104,7 +104,9 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.PantherClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.RatBite] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.MorningStar] = new[] { (morningStar, WeaponSocket.RightHand) },
-                [DungeonWeaponLibrary.VikingSword] = new[] { (vikingSword, WeaponSocket.RightHand) }
+                [DungeonWeaponLibrary.VikingSword] = new[] { (vikingSword, WeaponSocket.RightHand) },
+                // The torch is the belt item in the hand.
+                [DungeonWeaponLibrary.Torch] = Array.Empty<(GameObject, WeaponSocket)>()
             };
             GameObject[] shields = { shield, ecu };
 

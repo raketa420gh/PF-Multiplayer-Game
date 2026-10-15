@@ -114,59 +114,6 @@ MonoBehaviour:
   _baseIntensity: 2.8
   _amplitude: 0.7
   _speed: 9
---- !u!1 &570458218530284329
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8079329831723461662}
-  - component: {fileID: 5857529151124915409}
-  m_Layer: 6
-  m_Name: Interact
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8079329831723461662
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 570458218530284329}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6298877690950100970}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &5857529151124915409
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 570458218530284329}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.6, y: 0.8, z: 1.6}
-  m_Center: {x: 0, y: 0.4, z: 0}
 --- !u!1 &1123434880344257756
 GameObject:
   m_ObjectHideFlags: 0
@@ -5105,6 +5052,7 @@ GameObject:
   - component: {fileID: 2687143168910824239}
   - component: {fileID: 2071293808977824564}
   - component: {fileID: 5557384291898473590}
+  - component: {fileID: 3468861100259419295}
   m_Layer: 0
   m_Name: Campfire
   m_TagString: Untagged
@@ -5129,7 +5077,6 @@ Transform:
   - {fileID: 199334926422209344}
   - {fileID: 1373159809258367393}
   - {fileID: 8290786869995123582}
-  - {fileID: 8079329831723461662}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2687143168910824239
@@ -5205,13 +5152,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7af1f13e4d3ba6d4da3bdafb0dcb736b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.CampfireComponent
-  _prompt: Interact
-  _holdTime: 1
-  _restTime: 6
-  _healPercent: 60
-  _healDuration: 8
-  _burnTime: 60
+  _burnTime: 180
   _light: {fileID: 4014526801105951517}
+--- !u!65 &3468861100259419295
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5332004997720009126}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.9, y: 0.4, z: 0.9}
+  m_Center: {x: 0, y: 0.2, z: 0}
 --- !u!1 &6851073790367451373
 GameObject:
   m_ObjectHideFlags: 0

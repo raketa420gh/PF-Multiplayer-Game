@@ -22,6 +22,8 @@ namespace Game.Scripts.Battle
         private bool _resetButtons;
         private bool _isUiOpen;
         private bool _isLookFrozen;
+        private float _yawCenter;
+        private float _yawLimit = -1f;
 
         private bool IsMoving => Cursor.lockState == CursorLockMode.Locked || _isUiOpen;
 
@@ -62,6 +64,10 @@ namespace Game.Scripts.Battle
             if (!_isLookFrozen)
             {
                 _look.y = Mathf.Repeat(_look.y + Input.GetAxisRaw("Mouse X") * _sensitivity, 360f);
+
+                if (_yawLimit >= 0f)
+                    _look.y = Mathf.Repeat(_yawCenter + Mathf.Clamp(Mathf.DeltaAngle(_yawCenter, _look.y), -_yawLimit, _yawLimit), 360f);
+
                 _look.x = Mathf.Clamp(_look.x - Input.GetAxisRaw("Mouse Y") * _sensitivity, -MaxPitch, MaxPitch);
             }
 
@@ -83,6 +89,13 @@ namespace Game.Scripts.Battle
         public void SetLook(Vector2 look)
         {
             _look = look;
+        }
+
+        /// Keeps the camera within `limit` degrees left and right of `center` (sitting by a fire); a negative limit frees it.
+        public void SetYawLimit(float center, float limit)
+        {
+            _yawCenter = center;
+            _yawLimit = limit;
         }
 
         /// A radial menu keeps the cursor locked but stops the camera from turning.

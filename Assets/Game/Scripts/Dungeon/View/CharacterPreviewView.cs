@@ -30,9 +30,6 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Degrees per dragged pixel")]
         private float _dragSpeed = 0.45f;
 
-        [SerializeField, Tooltip("Tavern backdrop: hands stay empty and the body stands in the relaxed idle")]
-        private bool _isUnarmed;
-
         private GameObject _rig;
         private Animator _animator;
         private CharacterModelComponent _model;
@@ -40,8 +37,9 @@ namespace Game.Scripts.Dungeon
         private ArmorDresser _dresser;
         private InventoryComponent _inventory;
         private ClassConfig _class;
+        private AdventurerComponent _hands;
         private int _shownVersion = -1;
-        private int _shownWeapon = -1;
+        private int _shownHands = -1;
         private GameObject[] _weaponVisuals = System.Array.Empty<GameObject>();
 
         private void OnEnable()
@@ -76,19 +74,25 @@ namespace Game.Scripts.Dungeon
 
             _rig.transform.Rotate(0f, _turnSpeed * Time.deltaTime, 0f, Space.Self);
 
-            if (_shownVersion == _inventory.Version)
+            int hands = HandsKey();
+
+            if (_shownVersion == _inventory.Version && _shownHands == hands)
                 return;
 
             _shownVersion = _inventory.Version;
+            _shownHands = hands;
             _dresser.Apply(_inventory);
             ShowWeapon();
         }
 
-        public void Bind(InventoryComponent inventory, ClassConfig config)
+        /// Without an adventurer (tavern) the hands hold the first weapon set, the one a run starts with; in the dungeon they hold
+        /// what the adventurer actually has in hand.
+        public void Bind(InventoryComponent inventory, ClassConfig config, AdventurerComponent hands = null)
         {
             EnsureRig();
             _inventory = inventory;
             _class = config;
+            _hands = hands;
             _shownVersion = -1;
 
             if (_model != null && config != null)
@@ -142,29 +146,53 @@ namespace Game.Scripts.Dungeon
 
             WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(EquipSlot.Weapon1Main);
             WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(EquipSlot.Weapon1Off);
-            WeaponConfig config = main != null && !_isUnarmed ? main.GetWeapon(off) : null;
+            WeaponConfig config = _hands != null ? _hands.Fighter.Combat.Weapon : main != null ? main.GetWeapon(off) : null;
+            bool isArmed = config != null && config.Attachments.Length > 0;
 
             // Unarmed, the whole body stands in the relaxed library idle instead of the fist guard.
             if (_animator != null)
-                _animator.SetLayerWeight(1, config != null ? 1f : 0f);
+                _animator.SetLayerWeight(1, isArmed ? 1f : 0f);
 
-            if (config == null)
-            {
-                _weaponVisuals = System.Array.Empty<GameObject>();
+            _weaponVisuals = new GameObject[isArmed ? config.Attachments.Length + 1 : 1];
 
-                return;
-            }
-
-            _weaponVisuals = new GameObject[config.Attachments.Length];
-
-            for (int i = 0; i < config.Attachments.Length; i++)
+            for (int i = 0; isArmed && i < config.Attachments.Length; i++)
             {
                 WeaponAttachment attachment = config.Attachments[i];
                 _weaponVisuals[i] = Instantiate(attachment.Prefab, _sockets[(int)attachment.Socket], false);
                 SetLayer(_weaponVisuals[i], _rig.layer);
             }
 
-            PlayIdle(config.AnimationPrefix);
+            _weaponVisuals[^1] = CreateHandItem();
+
+            if (isArmed)
+                PlayIdle(config.AnimationPrefix);
+        }
+
+        /// The belt item the adventurer holds (a torch, a potion, a knife) sits in the hand as in the dungeon.
+        private GameObject CreateHandItem()
+        {
+            ItemConfig config = _hands != null && _hands.HasBeltItemInHand ? _inventory.GetConfig(_inventory.GetEquipped((EquipSlot)_hands.BeltSlot)) : null;
+
+            if (config == null || config.WorldModel == null || _animator == null)
+                return null;
+
+            bool isTorch = config is ConsumableItemConfig { IsLight: true };
+            GameObject item = HandItem.Create(config.WorldModel, _animator, isTorch || config is ConsumableItemConfig { IsDrink: true }, isTorch);
+
+            foreach (Collider collider in item.GetComponentsInChildren<Collider>())
+                Destroy(collider);
+
+            SetLayer(item, _rig.layer);
+
+            return item;
+        }
+
+        private int HandsKey()
+        {
+            if (_hands == null || _hands.Object == null || !_hands.Object.IsValid)
+                return -1;
+
+            return _hands.Fighter.Combat.WeaponIndex | (_hands.HasBeltItemInHand ? _hands.BeltSlot + 1 : 0) << 16;
         }
 
         private void PlayIdle(string prefix)

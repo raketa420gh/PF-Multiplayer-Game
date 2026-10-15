@@ -35,7 +35,8 @@ namespace Game.Scripts.Editor.Battle
         {
             FighterAnimComponent.CastFirstPersonState, FighterAnimComponent.CastReleaseFirstPersonState, FighterAnimComponent.UseFirstPersonState,
             FighterAnimComponent.HoldState, FighterAnimComponent.HoldTorchState, FighterAnimComponent.BandageFirstPersonState, FighterAnimComponent.InteractFirstPersonState,
-            FighterAnimComponent.AbilityFirstPersonState, FighterAnimComponent.TorchAimState, FighterAnimComponent.TorchThrowState
+            FighterAnimComponent.AbilityFirstPersonState, FighterAnimComponent.TorchAimState, FighterAnimComponent.TorchThrowState,
+            FighterAnimComponent.ThrowAimState, FighterAnimComponent.ThrowReleaseState
         };
 
         private static readonly string[] s_socketCurves =
@@ -202,7 +203,7 @@ namespace Game.Scripts.Editor.Battle
             AnimationClip air = RecordLegs(rig, "Air", "Jump_Loop", 0f);
             AnimationClip jump = RecordLegs(rig, "Jump", "Jump_Rise", 0f);
             AnimationClip land = RecordLegs(rig, "Land", "Jump_Land", 0f, anchor: 1f);
-            AnimationClip rest = RecordLegs(rig, "Rest", "Kneel_Loop", crouch);
+            AnimationClip rest = Record(rig, "Rest", 1f, true, _ => BattleAnimationLibrary.Sit(crouch * FighterMoveComponent.SitCrouch));
 
             AnimatorState locomotion = controller.CreateBlendTreeInController(FighterAnimComponent.LocomotionState, out BlendTree root, 0);
             root.blendType = BlendTreeType.Simple1D;
@@ -546,6 +547,8 @@ namespace Game.Scripts.Editor.Battle
             AddState(upper, FighterAnimComponent.HoldTorchState, Record(rig, FighterAnimComponent.HoldTorchState, 1f, true, _ => BattleAnimationLibrary.HoldTorch()));
             AddKeyed(rig, upper, FighterAnimComponent.TorchAimState, BattleAnimationLibrary.TorchRaiseTime, SettleRoll(rig, BattleAnimationLibrary.TorchAimKeys()));
             AddKeyed(rig, upper, FighterAnimComponent.TorchThrowState, FighterAnimComponent.TorchThrowTime, SettleRoll(rig, BattleAnimationLibrary.TorchThrowKeys()));
+            AddKeyed(rig, upper, FighterAnimComponent.ThrowAimState, BattleAnimationLibrary.TorchRaiseTime, SettleRoll(rig, BattleAnimationLibrary.ThrowAimKeys()));
+            AddKeyed(rig, upper, FighterAnimComponent.ThrowReleaseState, FighterAnimComponent.TorchThrowTime, SettleRoll(rig, BattleAnimationLibrary.ThrowReleaseKeys()));
             AddState(upper, FighterAnimComponent.BandageFirstPersonState, Record(rig, FighterAnimComponent.BandageFirstPersonState, BandageCycle, true,
                 time => BattleAnimationLibrary.Bandage(time / BandageCycle)));
             AddState(upper, FighterAnimComponent.InteractFirstPersonState, Record(rig, FighterAnimComponent.InteractFirstPersonState,

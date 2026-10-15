@@ -68,6 +68,12 @@ namespace Game.Scripts.Battle
         [Networked]
         private NetworkBool _isRooted { get; set; }
 
+        [Networked]
+        private NetworkBool _isSeated { get; set; }
+
+        [Networked]
+        private NetworkBool _isInSeat { get; set; }
+
         private static readonly List<FighterComponent> s_all = new();
         private IInputSource _inputSource;
         private ICombatStats _stats;
@@ -164,6 +170,14 @@ namespace Game.Scripts.Battle
             _isCrouchForced = isForced;
         }
 
+        /// Sits on the ground (isSeated) or gets up from it: the body goes down or up over FighterMoveComponent.SitTime while
+        /// isInSeat lasts. State authority only.
+        public void SetSeat(bool isSeated, bool isInSeat)
+        {
+            _isSeated = isSeated;
+            _isInSeat = isInSeat;
+        }
+
         /// Keeps the fighter on the spot: only the camera turns. State authority only.
         public void SetRooted(bool isRooted)
         {
@@ -210,7 +224,7 @@ namespace Game.Scripts.Battle
             float speed = _combat.MoveMultiplier * (_stats?.MoveSpeedMultiplier ?? 1f);
 
             _move.Simulate(_isRooted ? Vector2.zero : input.MoveDirection, input.LookRotation, isWalk,
-                buttons.IsSet(PlayerInputButtons.Crouch) || _isCrouchForced, isJump, speed);
+                buttons.IsSet(PlayerInputButtons.Crouch) || _isCrouchForced, isJump, speed, _isSeated, _isInSeat);
             _body.UpdateHitboxes();
             _combat.Simulate(buttons, _previousButtons);
         }

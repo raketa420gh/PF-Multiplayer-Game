@@ -345,11 +345,14 @@ namespace Game.Scripts.Dungeon
         public StartingItem[] StartingKit => _startingKit;
         public WeaponClass[] AllowedWeapons => _allowedWeapons;
         public const int SpellWheelSize = 5;
-        /// The spell mask keeps a wheel in each half: bit i is spell i in wheel I, bit WheelBits + i is spell i in wheel II.
+        /// The old saved spell mask kept a wheel in each half: bit i is spell i in wheel I, bit WheelBits + i is spell i in wheel II.
         public const int WheelBits = 16;
         public const int WheelCount = 2;
+        public const int SlotCount = WheelCount * SpellWheelSize;
+        /// The spell layout keeps SlotBits per wheel slot, wheel I first, clockwise from the top: 0 is a free slot, n is spell n - 1.
+        public const int SlotBits = 5;
         /// The first five spells in wheel I, the next five in wheel II.
-        public const int DefaultSpellMask = ((1 << SpellWheelSize) - 1) | (((1 << SpellWheelSize) - 1) << (SpellWheelSize + WheelBits));
+        public static readonly long DefaultSpellLayout = DefaultLayout();
         /// Every class picks one of its three subclasses; its own perks, skills and spells join the shared ones.
         public static readonly bool AreSubclassesEnabled = true;
 
@@ -400,15 +403,47 @@ namespace Game.Scripts.Dungeon
             return 1 << (wheel * WheelBits + spell);
         }
 
-        public static bool IsInWheel(int mask, int wheel, int spell)
+        /// Spell in the slot of the layout, -1 for a free slot.
+        public static int GetSlotSpell(long layout, int slot)
         {
-            return (mask & WheelBit(wheel, spell)) != 0;
+            return (int)((layout >> (slot * SlotBits)) & ((1 << SlotBits) - 1)) - 1;
         }
 
-        /// A class has a spell wheel when one of its skills opens it.
-        public bool HasWheel(int wheel)
+        public static long SetSlotSpell(long layout, int slot, int spell)
         {
-            return Array.Exists(_skills, skill => skill.Kind == AbilityKind.SpellMemory && skill.Wheel == wheel);
+            long mask = ((1L << SlotBits) - 1) << (slot * SlotBits);
+
+            return (layout & ~mask) | ((long)(spell + 1) << (slot * SlotBits));
+        }
+
+        /// First slot from `first` on holding the spell (-1: a free slot), -1 when none does.
+        public static int FindSlot(long layout, int spell, int first = 0, int count = SlotCount)
+        {
+            for (int slot = first; slot < first + count; slot++)
+            {
+                if (GetSlotSpell(layout, slot) == spell)
+                    return slot;
+            }
+
+            return -1;
+        }
+
+        public static bool IsInWheel(long layout, int wheel, int spell)
+        {
+            return FindSlot(layout, spell, wheel * SpellWheelSize, SpellWheelSize) >= 0;
+        }
+
+        /// The wheels of a class are opened by its spell memory skill, from the skill slot (Q: wheel I, E: wheel II) it is put in.
+        public bool HasSpellWheels => Array.Exists(_skills, skill => skill.Kind == AbilityKind.SpellMemory);
+
+        private static long DefaultLayout()
+        {
+            long layout = 0;
+
+            for (int slot = 0; slot < SlotCount; slot++)
+                layout = SetSlotSpell(layout, slot, slot);
+
+            return layout;
         }
 
         public SubclassDefinition GetSubclass(int subclass)
@@ -440,21 +475,9 @@ namespace Game.Scripts.Dungeon
             return mask;
         }
 
-        /// Spell bits of both wheels the subclass may hold.
-        public int AvailableSpellMask(int subclass)
+        public bool IsSpellAvailable(int index, int subclass)
         {
-            int mask = 0;
-
-            for (int i = 0; i < _spells.Length; i++)
-            {
-                if (!IsAvailable(_spells[i].Subclass, subclass))
-                    continue;
-
-                for (int wheel = 0; wheel < WheelCount; wheel++)
-                    mask |= WheelBit(wheel, i);
-            }
-
-            return mask;
+            return index >= 0 && index < _spells.Length && IsAvailable(_spells[index].Subclass, subclass);
         }
 
         /// Summed values of the perks in the mask, indexed by PerkEffect; perkCount caps how many count, as in the stats.
