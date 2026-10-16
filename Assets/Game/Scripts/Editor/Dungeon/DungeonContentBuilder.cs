@@ -104,6 +104,8 @@ namespace Game.Scripts.Editor.Dungeon
             BuildShrine(ShrineKind.Power, 15f, 60f);
             BuildShrine(ShrineKind.Speed, 10f, 60f);
             BuildLever();
+            BuildBridgeLever();
+            BuildAcidMoat();
             BuildSpikeTrap();
             BuildBladeTrap();
 
@@ -1589,6 +1591,51 @@ namespace Game.Scripts.Editor.Dungeon
             AddInteractCollider(root, new Vector3(0f, 0.8f, 0f), new Vector3(0.8f, 1.6f, 0.8f));
             BattleEditorUtility.Set(root.AddComponent<InteractableSoundComponent>(), "_lever", lever);
             BattleContentBuilder.SavePrefab(root, Prefab("Lever"));
+        }
+
+        /// A plank hinged at the root along local +Z, raised until the lever behind the hinge lowers it (Alchemy Lab).
+        private static void BuildBridgeLever()
+        {
+            const float length = 8.4f;
+            GameObject root = new GameObject("BridgeLever");
+            root.AddComponent<NetworkObject>();
+            Transform bridge = BattleEditorUtility.CreateChild("Bridge", root.transform).transform;
+            Vector3 size = new Vector3(1.6f, 0.25f, length + 0.3f);
+            Vector3 center = new Vector3(0f, -size.y * 0.5f, length * 0.5f - 0.15f);
+            DungeonPropBuilder.MeshObject("Planks", bridge, new DungeonMeshBuilder(0.5f).Box(center, size).Save("BridgePlanks"), DungeonPropBuilder.WoodPlanks, default, default, false, false);
+            BoxCollider deck = bridge.gameObject.AddComponent<BoxCollider>();
+            deck.center = center;
+            deck.size = size;
+            GameObject lever = DungeonPropBuilder.Lever(out Transform handle);
+            lever.transform.SetParent(root.transform, false);
+            lever.transform.localPosition = new Vector3(0f, 0f, -2.4f);
+            BridgeLeverComponent component = lever.AddComponent<BridgeLeverComponent>();
+            SerializedObject so = new SerializedObject(component);
+            BattleEditorUtility.Set(so, "_bridge", bridge);
+            BattleEditorUtility.Set(so, "_handle", handle);
+            BattleEditorUtility.Set(so, "_holdTime", 0.6f);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            AddInteractCollider(lever, new Vector3(0f, 0.8f, 0f), new Vector3(0.8f, 1.6f, 0.8f));
+            BattleContentBuilder.SavePrefab(root, Prefab("BridgeLever"));
+        }
+
+        /// Burns whoever stands in the 15 × 15 m moat sunk a quarter metre around the Alchemy Lab; bodies on the walkways and
+        /// the lab floor above it stay clear. The room draws the acid itself.
+        private static void BuildAcidMoat()
+        {
+            GameObject root = new GameObject("AcidMoat");
+            root.AddComponent<NetworkObject>();
+            SerializedObject so = new SerializedObject(root.AddComponent<TrapComponent>());
+            BattleEditorUtility.Set(so, "_kind", TrapKind.Caltrops);
+            BattleEditorUtility.Set(so, "_damage", 8);
+            BattleEditorUtility.Set(so, "_period", 0.5f);
+            BattleEditorUtility.Set(so, "_halfExtents", new Vector3(7.5f, 0.2f, 7.5f));
+            BattleEditorUtility.Set(so, "_center", new Vector3(0f, -0.22f, 0f));
+            BattleEditorUtility.Set(so, "_victimMask", (LayerMask)(1 << LayerMask.NameToLayer(BattleEditorUtility.CharacterLayer)));
+            BattleEditorUtility.Set(so, "_slowMagnitude", 30f);
+            BattleEditorUtility.Set(so, "_slowDuration", 1f);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            BattleContentBuilder.SavePrefab(root, Prefab("AcidMoat"));
         }
 
         private static void BuildCaltrops()
