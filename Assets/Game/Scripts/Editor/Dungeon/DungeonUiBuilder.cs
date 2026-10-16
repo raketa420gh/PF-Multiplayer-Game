@@ -1110,10 +1110,11 @@ namespace Game.Scripts.Editor.Dungeon
             result.color = s_text;
             resultBack.gameObject.SetActive(false);
 
-            (string title, string info, Texture picture, string scene)[] destinations =
+            Texture floorMap = inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null;
+            (string title, string info, Texture picture, string scene, bool isDevTest)[] destinations =
             {
-                (DungeonSceneBuilder.Title, "The Tangled Catacombs · 7x7 rooms laid out anew every run around the Great Hall · dark crypts, skeletons, trapped corridors · 15 min · blue portals at 7:00, 10:00, 12:00, 14:30", inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null, SceneTravel.DungeonScene),
-                ("Training Grounds", "Test scene · weapon table, dummies, dev spawns", DungeonTextureBuilder.Load("Cobble", false), SceneTravel.SandboxScene)
+                (DungeonSceneBuilder.Title, "The Tangled Catacombs · 7x7 rooms laid out anew every run around the Great Hall · dark crypts, skeletons, trapped corridors · 15 min · blue portals at 7:00, 10:00, 12:00, 14:30", floorMap, SceneTravel.DungeonScene, false),
+                (GameServer.Title(Game.Scripts.Dungeon.QueueMode.DevTest), "DEV · 2x2: the key room and the three rooms of DevDungeonTestConfig · Trio rules", floorMap, SceneTravel.DungeonScene, true)
             };
 
             LobbyHomeView view = page.gameObject.AddComponent<LobbyHomeView>();
@@ -1148,6 +1149,7 @@ namespace Game.Scripts.Editor.Dungeon
                 BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].Info", destinations[i].info);
                 BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].Picture", destinations[i].picture);
                 BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].Scene", destinations[i].scene);
+                BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].IsDevTest", destinations[i].isDevTest);
             }
 
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -1925,49 +1927,6 @@ namespace Game.Scripts.Editor.Dungeon
             page.gameObject.SetActive(false);
 
             return view;
-        }
-
-        /// Test ground developer buttons, placed in the free corner under the container panel of the inventory.
-        public static SandboxDevView BuildDevPanel(GameObject canvas, SandboxDirector director, string[] monsterNames)
-        {
-            // Same 1920x1080 frame as the centered inventory panel: x 1200, y -520 from its top-left corner.
-            RectTransform panel = CreateRect("DevPanel", canvas.transform, new Vector2(0.5f, 0.5f), new Vector2(240f, 20f), new Vector2(680f, 224f));
-            panel.pivot = new Vector2(0f, 1f);
-            CreateImage("Back", panel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
-            TMP_Text title = CreateText("Title", panel, new Vector2(0f, 1f), new Vector2(16f, -10f), new Vector2(400f, 28f), 18f, TextAlignmentOptions.MidlineLeft);
-            title.rectTransform.pivot = new Vector2(0f, 1f);
-            title.text = "Developer (host)";
-            title.color = s_gold;
-
-            Button[] monsters = new Button[monsterNames.Length];
-
-            for (int i = 0; i < monsterNames.Length; i++)
-                monsters[i] = DevButton(panel, i, 0, "+ " + monsterNames[i]);
-
-            SandboxDevView view = panel.gameObject.AddComponent<SandboxDevView>();
-            SerializedObject so = new SerializedObject(view);
-            BattleEditorUtility.Set(so, "_director", director);
-            BattleEditorUtility.Set(so, "_monsterButtons", monsters);
-            BattleEditorUtility.Set(so, "_botButton", DevButton(panel, 0, 1, "+ Duel bot"));
-            BattleEditorUtility.Set(so, "_clearButton", DevButton(panel, 1, 1, "Remove mobs"));
-            BattleEditorUtility.Set(so, "_restockButton", DevButton(panel, 2, 1, "Restock table"));
-            BattleEditorUtility.Set(so, "_lobbyButton", DevButton(panel, 3, 1, "To the lobby"));
-            BattleEditorUtility.Set(so, "_debugButton", DevButton(panel, 0, 2, "Hitboxes"));
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            BattleEditorUtility.SetLayerRecursively(panel.gameObject, LayerMask.NameToLayer("UI"));
-            panel.gameObject.SetActive(false);
-            BattleEditorUtility.Set(canvas.GetComponent<DungeonUiRoot>(), "_devPanel", view);
-
-            return view;
-        }
-
-        private static Button DevButton(RectTransform panel, int column, int row, string label)
-        {
-            Button button = CreateButton(label, panel, new Vector2(0f, 1f), new Vector2(16f + column * 164f, -50f - row * 54f), new Vector2(154f, 42f), label);
-            ((RectTransform)button.transform).pivot = new Vector2(0f, 1f);
-
-            return button;
         }
 
         /// Full floor map on M: parchment with the names of the modules, the player's arrow on top.

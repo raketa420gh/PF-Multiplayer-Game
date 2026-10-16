@@ -8,9 +8,10 @@ using UnityEngine.AI;
 namespace Game.Scripts.Dungeon
 {
     /// The Tangled Catacombs: a square grid of rooms laid out anew from the match seed, the same on every peer. The key room
-    /// (the Great Hall, built into the scene) keeps the middle cell; the four corners get corner rooms turned so their blind sides
-    /// face out, every other cell a random room turned a random quarter. Every side has two doorways; a random maze with a few
-    /// loops decides which of them open into the neighbours. The host bakes the NavMesh of the result.
+    /// (the Great Hall, a prefab placed in the scene) keeps the middle cell; the four corners get corner rooms turned so their blind
+    /// sides face out, every other cell a random room turned a random quarter. Every side has two doorways; a random maze with a
+    /// few loops decides which of them open into the neighbours. Dev Dungeon Test lays a 2x2 grid of the key room and the three
+    /// rooms of its config, the rest is rock. The host bakes the NavMesh of the result.
     public sealed class CatacombGenerator : MonoBehaviour
     {
         [Serializable]
@@ -22,10 +23,10 @@ namespace Game.Scripts.Dungeon
             public int Limit;
         }
 
-        /// Room kind (-1 = key room), quarter turns and open doorways of every cell, row by row from the south-west corner.
+        /// Room prefab (null = the key room or rock), quarter turns and open doorways of every cell, row by row from the south-west corner.
         public sealed class Plan
         {
-            public int[] Kinds;
+            public CatacombRoomComponent[] Rooms;
             public int[] Turns;
             /// Doorways from a cell to its east / north neighbour: bit 0 the one nearer the south-west corner, bit 1 the other.
             public int[] East;
@@ -57,11 +58,11 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private RoomKind[] _kinds;
 
-        [SerializeField]
-        private string _keyTitle = "Great Hall";
+        [SerializeField, Tooltip("Instance of the key room in the scene, in the middle cell")]
+        private CatacombRoomComponent _keyRoom;
 
         [SerializeField]
-        private Texture2D _keyMap;
+        private DevDungeonTestConfig _devTest;
 
         [SerializeField, Tooltip("Side between two cells by its open doorways (bit 0 at local -X, bit 1 at +X); length runs along local X")]
         private GameObject[] _sides = new GameObject[4];
@@ -101,8 +102,12 @@ namespace Game.Scripts.Dungeon
 
         private const int NotWalkable = 1;
         private const int BothDoorways = 3;
+        private const string KeyRoomSide = "Wall Doorways";
 
         private static readonly Vector2Int[] s_steps = { Vector2Int.right, Vector2Int.up, Vector2Int.left, Vector2Int.down };
+        /// Cells of DevDungeonTestConfig from the key room (east, north, north-east), and the turns that put a corner room's blind sides out.
+        private static readonly Vector2Int[] s_devCells = { Vector2Int.right, Vector2Int.up, Vector2Int.one };
+        private static readonly int[] s_devTurns = { 3, 1, 2 };
 
         private readonly List<CatacombRoomComponent> _rooms = new();
         private readonly List<Pose> _doorways = new();
@@ -118,7 +123,7 @@ namespace Game.Scripts.Dungeon
             MatchComponent match = DungeonContext.Instance != null ? DungeonContext.Instance.Match : null;
 
             if (match != null && match.Object != null && match.Object.IsValid && match.Seed != 0 && match.Seed != _seed)
-                Generate(match.Seed);
+                Generate(match.Seed, match.IsDevTest);
         }
 
         private void OnDestroy()
@@ -128,11 +133,12 @@ namespace Game.Scripts.Dungeon
         }
 
         /// Lays the rooms of the seed out; the old layout is gone at once.
-        public void Generate(int seed)
+        public void Generate(int seed, bool isDevTest = false)
         {
             _seed = seed;
             _version++;
             _rooms.Clear();
+            _rooms.Add(_keyRoom);
 
             if (_content != null)
             {
@@ -148,27 +154,30 @@ namespace Game.Scripts.Dungeon
 
             _content = new GameObject("[Generated]").transform;
             _content.SetParent(transform, false);
-            Plan plan = Lay(seed);
-            _titles = new string[plan.Kinds.Length];
+            Plan plan = isDevTest ? LayDevTest(seed) : Lay(seed);
+            _titles = new string[plan.Rooms.Length];
+            _titles[KeyCell] = _keyRoom.Title;
 
-            for (int cell = 0; cell < plan.Kinds.Length; cell++)
+            for (int cell = 0; cell < plan.Rooms.Length; cell++)
             {
-                if (plan.Kinds[cell] < 0)
-                {
-                    _titles[cell] = _keyTitle;
+                if (plan.Rooms[cell] == null)
                     continue;
-                }
 
-                CatacombRoomComponent room = Instantiate(_kinds[plan.Kinds[cell]].Prefab, CellCenter(cell), Quaternion.Euler(0f, plan.Turns[cell] * 90f, 0f), _content);
+                CatacombRoomComponent room = Instantiate(plan.Rooms[cell], CellCenter(cell), Quaternion.Euler(0f, plan.Turns[cell] * 90f, 0f), _content);
                 _titles[cell] = room.Title;
                 _rooms.Add(room);
                 PlaceSides(plan, cell);
             }
 
+            WallKeyRoom(plan);
+
             for (int z = 0; z <= _grid; z++)
             {
                 for (int x = 0; x <= _grid; x++)
-                    Instantiate(_post, Corner(x, z), Quaternion.identity, _content);
+                {
+                    if (IsFilled(plan, x - 1, z - 1) || IsFilled(plan, x, z - 1) || IsFilled(plan, x - 1, z) || IsFilled(plan, x, z))
+                        Instantiate(_post, Corner(x, z), Quaternion.identity, _content);
+                }
             }
 
             StaticBatchingUtility.Combine(StaticParts(), _content.gameObject);
@@ -237,8 +246,8 @@ namespace Game.Scripts.Dungeon
         {
             System.Random random = new System.Random(seed);
             int count = _grid * _grid;
-            int key = count / 2;
-            Plan plan = new Plan { Kinds = new int[count], Turns = new int[count], East = new int[count], North = new int[count] };
+            int key = KeyCell;
+            Plan plan = NewPlan();
             bool[] visited = new bool[count];
             Stack<int> stack = new();
             List<int> next = new();
@@ -287,9 +296,35 @@ namespace Game.Scripts.Dungeon
             for (int cell = 0; cell < count; cell++)
             {
                 int corner = CornerTurns(cell);
-                plan.Kinds[cell] = cell == key ? -1 : PickKind(random, used, corner >= 0);
+                plan.Rooms[cell] = cell == key ? null : _kinds[PickKind(random, used, corner >= 0)].Prefab;
                 plan.Turns[cell] = corner >= 0 ? corner : random.Next(4);
             }
+
+            return plan;
+        }
+
+        /// A 2x2 grid: the key room in its south-west and the three rooms of the config, both doorways open between neighbours;
+        /// a slot left empty takes a random room. Corner rooms turn their blind sides out, the others stand as authored.
+        public Plan LayDevTest(int seed)
+        {
+            System.Random random = new System.Random(seed);
+            Plan plan = NewPlan();
+            CatacombRoomComponent[] rooms = _devTest != null ? _devTest.Rooms() : new CatacombRoomComponent[s_devCells.Length];
+            int[] used = new int[_kinds.Length];
+            int[] cells = new int[s_devCells.Length];
+
+            for (int i = 0; i < s_devCells.Length; i++)
+            {
+                cells[i] = Neighbour(KeyCell, s_devCells[i]);
+                CatacombRoomComponent room = rooms[i] != null ? rooms[i] : _kinds[PickKind(random, used, false)].Prefab;
+                plan.Rooms[cells[i]] = room;
+                plan.Turns[cells[i]] = room.IsCorner ? s_devTurns[i] : 0;
+            }
+
+            Open(plan, KeyCell, cells[0], BothDoorways);
+            Open(plan, KeyCell, cells[1], BothDoorways);
+            Open(plan, cells[0], cells[2], BothDoorways);
+            Open(plan, cells[1], cells[2], BothDoorways);
 
             return plan;
         }
@@ -301,24 +336,29 @@ namespace Game.Scripts.Dungeon
             int size = n * _grid;
             Color32[] pixels = new Color32[size * size];
 
-            for (int cell = 0; cell < plan.Kinds.Length; cell++)
+            for (int cell = 0; cell < plan.Rooms.Length; cell++)
             {
-                Texture2D source = plan.Kinds[cell] < 0 ? _keyMap : _kinds[plan.Kinds[cell]].Prefab.Map;
-                Blit(pixels, size, cell % _grid * n, cell / _grid * n, source != null ? source.GetPixels32() : null, n, plan.Turns[cell]);
+                Texture2D source = cell == KeyCell ? _keyRoom.Map : plan.Rooms[cell] != null ? plan.Rooms[cell].Map : null;
+                Color32 fill = IsFilled(plan, cell % _grid, cell / _grid) ? _parchment : _ink;
+                Blit(pixels, size, cell % _grid * n, cell / _grid * n, source != null ? source.GetPixels32() : null, n, plan.Turns[cell], fill);
             }
 
-            for (int cell = 0; cell < plan.Kinds.Length; cell++)
+            for (int cell = 0; cell < plan.Rooms.Length; cell++)
             {
-                int x = cell % _grid * n;
-                int z = cell / _grid * n;
-                Line(pixels, size, x, z, true, cell % _grid < _grid - 1 ? plan.East[cell] : 0);
-                Line(pixels, size, x, z, false, cell / _grid < _grid - 1 ? plan.North[cell] : 0);
+                int x = cell % _grid;
+                int z = cell / _grid;
 
-                if (cell % _grid == 0)
-                    Line(pixels, size, x - n, z, true, 0);
+                if (IsFilled(plan, x, z) || IsFilled(plan, x + 1, z))
+                    Line(pixels, size, x * n, z * n, true, x < _grid - 1 ? plan.East[cell] : 0);
 
-                if (cell / _grid == 0)
-                    Line(pixels, size, x, z - n, false, 0);
+                if (IsFilled(plan, x, z) || IsFilled(plan, x, z + 1))
+                    Line(pixels, size, x * n, z * n, false, z < _grid - 1 ? plan.North[cell] : 0);
+
+                if (x == 0 && IsFilled(plan, x, z))
+                    Line(pixels, size, x * n - n, z * n, true, 0);
+
+                if (z == 0 && IsFilled(plan, x, z))
+                    Line(pixels, size, x * n, z * n - n, false, 0);
             }
 
             Texture2D map = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "Catacombs" };
@@ -391,27 +431,63 @@ namespace Game.Scripts.Dungeon
                 plan.North[low] |= doorways;
         }
 
-        /// The east and north sides of a cell, the west and south ones on the border; sides of the key room are its own walls.
-        /// East and west sides turn -90°, so local +X runs north and bit 1 is always the doorway farther from the south-west.
+        private int KeyCell => _grid * _grid / 2;
+
+        private Plan NewPlan()
+        {
+            int count = _grid * _grid;
+
+            return new Plan { Rooms = new CatacombRoomComponent[count], Turns = new int[count], East = new int[count], North = new int[count] };
+        }
+
+        /// A room or the key room stands in the cell; outside the grid and rock are empty.
+        private bool IsFilled(Plan plan, int x, int z)
+        {
+            int cell = z * _grid + x;
+
+            return x >= 0 && x < _grid && z >= 0 && z < _grid && (cell == KeyCell || plan.Rooms[cell] != null);
+        }
+
+        /// The east and north sides of a cell, the west and south ones towards the border or rock; sides of the key room are its
+        /// own walls. East and west sides turn -90°, so local +X runs north and bit 1 is always the doorway farther from the south-west.
         private void PlaceSides(Plan plan, int cell)
         {
             int x = cell % _grid;
             int z = cell / _grid;
-            int key = _grid * _grid / 2;
             Vector3 center = CellCenter(cell);
             float half = _pitch * 0.5f;
 
-            if (cell + 1 != key)
+            if (cell + 1 != KeyCell)
                 Side(center + Vector3.right * half, -90f, x < _grid - 1 ? plan.East[cell] : 0);
 
-            if (cell + _grid != key)
+            if (cell + _grid != KeyCell)
                 Side(center + Vector3.forward * half, 0f, z < _grid - 1 ? plan.North[cell] : 0);
 
-            if (x == 0)
+            if (!IsFilled(plan, x - 1, z))
                 Side(center + Vector3.left * half, -90f, 0);
 
-            if (z == 0)
+            if (!IsFilled(plan, x, z - 1))
                 Side(center + Vector3.back * half, 0f, 0);
+        }
+
+        /// The key room's own doorway sides that face rock give way to blind sides.
+        private void WallKeyRoom(Plan plan)
+        {
+            int x = KeyCell % _grid;
+            int z = KeyCell / _grid;
+
+            foreach (Transform side in _keyRoom.transform)
+            {
+                if (side.name != KeyRoomSide)
+                    continue;
+
+                Vector3 local = side.localPosition;
+                bool isOpen = Mathf.Abs(local.x) > Mathf.Abs(local.z) ? IsFilled(plan, x + (int)Mathf.Sign(local.x), z) : IsFilled(plan, x, z + (int)Mathf.Sign(local.z));
+                side.gameObject.SetActive(isOpen);
+
+                if (!isOpen)
+                    Instantiate(_sides[0], side.position, side.rotation, _content);
+            }
         }
 
         private void Side(Vector3 position, float yaw, int doorways)
@@ -425,7 +501,7 @@ namespace Game.Scripts.Dungeon
             _doorways.Clear();
             float half = _pitch * 0.5f;
 
-            for (int cell = 0; cell < plan.Kinds.Length; cell++)
+            for (int cell = 0; cell < plan.Rooms.Length; cell++)
             {
                 if (cell % _grid < _grid - 1)
                     AddDoorways(CellCenter(cell) + Vector3.right * half, Quaternion.Euler(0f, -90f, 0f), plan.East[cell]);
@@ -483,7 +559,7 @@ namespace Game.Scripts.Dungeon
         }
 
         /// Copies a cell map turned by quarter turns (clockwise seen from above, as a room turned by +90° yaw).
-        private void Blit(Color32[] target, int size, int left, int bottom, Color32[] source, int n, int turns)
+        private void Blit(Color32[] target, int size, int left, int bottom, Color32[] source, int n, int turns, Color32 fill)
         {
             for (int j = 0; j < n; j++)
             {
@@ -497,7 +573,7 @@ namespace Game.Scripts.Dungeon
                         _ => (i, j)
                     };
 
-                    target[(bottom + j) * size + left + i] = source != null && source.Length == n * n ? source[sj * n + si] : (Color32)_parchment;
+                    target[(bottom + j) * size + left + i] = source != null && source.Length == n * n ? source[sj * n + si] : fill;
                 }
             }
         }

@@ -116,7 +116,7 @@ namespace Game.Scripts.Dungeon
             if (_attempt + 1 < MaxAttempts && _isRetryable)
             {
                 NetworkLaunch.Set(new DungeonTicket(_mode, _party, _size, _isLeader, _floor, _attempt + 1));
-                SceneTravel.Load(runner, SceneTravel.DungeonScene, SceneTravel.DungeonTitle);
+                SceneTravel.Load(runner, SceneTravel.DungeonScene, GameServer.DungeonTitle(_mode));
 
                 return;
             }

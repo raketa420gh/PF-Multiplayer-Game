@@ -35,10 +35,6 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private PauseMenuView _pause;
 
-        [Tooltip("Optional developer panel shown together with the inventory (test ground)")]
-        [SerializeField]
-        private DisplayableView _devPanel;
-
         private PlayerSessionComponent _session;
         private AdventurerComponent _adventurer;
         private SessionState _shownState = (SessionState)255;
@@ -299,9 +295,6 @@ namespace Game.Scripts.Dungeon
 
             if (isOpen)
                 _map.Hide();
-
-            if (_devPanel != null)
-                _devPanel.SetShown(isOpen);
 
             if (!isOpen && _adventurer != null && _adventurer.OpenedContainer != null)
                 _adventurer.RpcCloseContainer();

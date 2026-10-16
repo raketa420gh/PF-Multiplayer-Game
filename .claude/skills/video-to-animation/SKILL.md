@@ -197,18 +197,15 @@ the player sees, and one comparison sheet per swing read by yourself as the sign
 ### 6. Rebuild and verify
 
 `execute_menu_item` `Tools/Game/Battle/Rebuild Animations And Content` reports "disconnected" after ~30 s and keeps
-running; poll the timestamp of `Assets/Game/Prefabs/Battle/ShieldDummy.prefab` (saved last) from a background
+running; poll the timestamp of `Assets/Game/Prefabs/Battle/BotFighter.prefab` (saved last) from a background
 shell command, then read the console for `[BattleContentBuilder]` errors — none is the pass mark. A `TimeoutError`
 from the menu call means the same thing. Errors of other weapons were there before you (claws): name them in the
 report, do not fix them. After the rebuild the active scene can be an untitled one: open the scenes by path.
 
-Training table, every time: the weapon's display name must be in `BattleSceneBuilder.s_tableItems` (the items
-laid out on the table in `BattleScene`). If it is missing, add it before the last weapon-like entry (`"Round
-Shield"`), then `Tools/Game/Dungeon/Build Content` if the item asset is new, then `Tools/Game/Battle/Build Scene`
-— do this before the play test, since it rebuilds the scene. Already there: nothing to do, say so in the report.
-
-Play test in `BattleScene` (the sandbox never saves the player's kit): copy `$SKILL/assets/SwingPlayTest.cs` into
-`Assets/Game/Scripts/Editor/Battle/`, compile, open the scene, enter play mode, wait ~12 s for the session, call
+The training ground (`BattleScene`) was removed on 2026-10-16. Play test in the dungeon: back up the user's save
+first (see the play-test recipes in memory — the dungeon saves the kit), enter LobbyScene → queue "Dev Dungeon Test",
+put the weapon in the hand. Copy `$SKILL/assets/SwingPlayTest.cs` into
+`Assets/Game/Scripts/Editor/Battle/`, compile, enter play mode through the lobby, wait for the session, call
 `SwingPlayTest.Begin("<Display Name>", "combo" | "riposte" | "block", "Temp/footage/<name>")` by reflection, wait for
 it to finish (`until [ -f play_<mode>.txt ]` in a shell, not sleeps), read `play_<mode>.txt`. "block" logs how each
 weapon part stands in the view — the answer to "it stands crooked" in numbers. Open the scene and enter play mode in

@@ -48,7 +48,7 @@ namespace Game.Scripts.Dungeon
             if (isLeader && size > 1)
                 await Task.Delay(1000);
 
-            SceneTravel.Load(runner, SceneTravel.DungeonScene, SceneTravel.DungeonTitle);
+            SceneTravel.Load(runner, SceneTravel.DungeonScene, GameServer.DungeonTitle(mode));
         }
 
         private static void Travel(NetworkRunner runner, LaunchPlan plan)

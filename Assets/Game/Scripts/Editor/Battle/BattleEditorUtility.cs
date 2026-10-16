@@ -18,7 +18,6 @@ namespace Game.Scripts.Editor.Battle
         public const string PrefabsFolder = "Assets/Game/Prefabs/Battle";
         public const string MaterialsFolder = "Assets/Game/Materials/Battle";
         public const string AudioFolder = "Assets/Game/Audio/Battle";
-        public const string ScenePath = "Assets/Game/Scenes/BattleScene.unity";
         public const string ControllerPath = AnimationsFolder + "/Fighter.controller";
         public const string HitboxLayer = "Hitbox";
         public const string CharacterLayer = "Character";

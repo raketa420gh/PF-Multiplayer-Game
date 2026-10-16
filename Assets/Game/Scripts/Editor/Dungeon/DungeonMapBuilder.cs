@@ -31,6 +31,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const float FloorDrop = -60f;
         public const float AgentRadius = 0.35f;
         public const string VillageNavMeshPath = "Assets/Game/Scenes/DungeonScene/VillageNavMesh.asset";
+        public const string DevTestConfigPath = "Assets/Game/Configs/Dungeon/DevDungeonTestConfig.asset";
 
         public static readonly string[] FloorTitles = { "Cursed Village", "Tangled Catacombs" };
         public static readonly float[] FloorSizes = { VillageLayout.Size, CatacombSize };
@@ -63,53 +64,7 @@ namespace Game.Scripts.Editor.Dungeon
             VillageMapBuilder.Result upper = isVillageCut
                 ? new VillageMapBuilder.Result { Map = AssetDatabase.LoadAssetAtPath<Texture2D>($"{DungeonMinimapBuilder.Folder}/Floor1.png") }
                 : VillageMapBuilder.Build(village, spawns);
-            Vector3 slab = new Vector3(Pitch, WallThickness, Pitch);
-            List<ContainerComponent> containers = new();
-
-            DungeonStructureBuilder.Block(floor, "Floor", Vector3.down * WallThickness * 0.5f, slab, DungeonPropBuilder.Flagstone);
-            DungeonStructureBuilder.Block(floor, "Ceiling", Vector3.up * (Height + WallThickness * 0.5f), slab, DungeonPropBuilder.Ashlar);
-
-            for (int i = 1; i < 8; i++)
-                DungeonStructureBuilder.Block(floor, "Ceiling Beam", new Vector3(0f, Height - 0.2f, i * RoomSize / 8f - Half), new Vector3(RoomSize, 0.4f, 0.35f), DungeonPropBuilder.DarkWood, 0f, false);
-
-            for (int i = 0; i < 4; i++)
-            {
-                Quaternion side = Quaternion.Euler(0f, i * 90f, 0f);
-                float yaw = i * 90f;
-                Place(rooms.Sides[3], floor, side * new Vector3(0f, 0f, Half + WallThickness * 0.5f), yaw).name = "Wall Doorways";
-                Wall(floor, side * new Vector3(Half - 0.45f, 0f, Half - 0.45f), 0.9f, yaw, 0.9f, Height, "Wall Pilaster");
-
-                if (i % 2 == 0)
-                {
-                    foreach (float x in new[] { -DoorOffset, DoorOffset })
-                    {
-                        Torch(floor, "HallTorch", side * new Vector3(x - 2.4f, TorchHeight, Half), yaw + 180f);
-                        Torch(floor, "HallTorch", side * new Vector3(x + 2.4f, TorchHeight, Half), yaw + 180f);
-                    }
-
-                    foreach (float x in new[] { -3.4f, 3.4f })
-                        Banner(floor, "Large Banner", side * new Vector3(x, 0f, Half), yaw + 180f);
-                }
-                else
-                {
-                    foreach (float x in new[] { -2.4f, 2.4f })
-                        Torch(floor, "HallTorch", side * new Vector3(x, TorchHeight, Half), yaw + 180f);
-
-                    foreach (float x in new[] { -4.2f, 4.2f })
-                        Banner(floor, "Small Banner", side * new Vector3(x, 0f, Half), yaw + 180f);
-                }
-            }
-
-            foreach (Vector3 point in new[] { new Vector3(0f, 0f, 12.6f), new Vector3(0f, 0f, -12.6f), new Vector3(12.6f, 0f, 0f), new Vector3(-12.6f, 0f, 0f) })
-                Prop(floor, "Chandelier", point + Vector3.up * (Height - 0.4f));
-
-            BuildSanctum(floor, containers);
-            BuildExecution(floor);
-            BuildPrison(floor, containers);
-            BuildLibrary(floor, containers);
-            BuildArmoury(floor, containers);
-            BuildMess(floor, containers);
-            BuildStore(floor, containers);
+            CatacombRoomComponent hall = BuildHall(floor, rooms);
 
             Transform[] arrivals =
             {
@@ -117,13 +72,6 @@ namespace Game.Scripts.Editor.Dungeon
                 BattleEditorUtility.CreateChild("Arrival Swamp", spawns, floor.TransformPoint(new Vector3(DoorOffset, 0f, 1.6f - Half))).transform
             };
             arrivals[0].rotation = Quaternion.Euler(0f, 180f, 0f);
-
-            DungeonDirector.MonsterPlacement[] monsters =
-            {
-                Monster(spawns, "SkeletonArcher", floor.TransformPoint(new Vector3(0f, 0f, Half - 4f)), 180f),
-                Monster(spawns, "SkeletonSwordsman", floor.TransformPoint(new Vector3(-9.5f, 0f, 0f)), -90f),
-                Monster(spawns, "FlyingHead", floor.TransformPoint(new Vector3(Half - 4.5f, 0f, -3f)), -90f)
-            };
 
             // Parked out of the way and invisible until they open one by one; the director then moves each to a random free spot.
             PortalComponent[] portals = new PortalComponent[4];
@@ -134,7 +82,7 @@ namespace Game.Scripts.Editor.Dungeon
             // The catacombs get their NavMesh at runtime, once the rooms of the run are laid out.
             if (!isVillageCut)
                 BakeNavMesh(village.gameObject, VillageNavMeshPath, 0.2f, upper.Sources);
-            CatacombGenerator catacombs = BuildCatacombs(floor, rooms, out Texture2D catacombMap);
+            CatacombGenerator catacombs = BuildCatacombs(floor, rooms, hall, out Texture2D catacombMap);
 
             SerializedObject so = new SerializedObject(director);
             so.FindProperty("_floors").arraySize = 2;
@@ -158,8 +106,8 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, layout + "PlayerSpawns", new Transform[0]);
             BattleEditorUtility.Set(so, layout + "SpawnHouses", new Transform[0]);
             BattleEditorUtility.Set(so, layout + "MonsterSpawns", new Transform[0]);
-            SetMonsters(so, layout, monsters);
-            BattleEditorUtility.Set(so, layout + "Containers", containers);
+            SetMonsters(so, layout, new DungeonDirector.MonsterPlacement[0]);
+            BattleEditorUtility.Set(so, layout + "Containers", new ContainerComponent[0]);
             BattleEditorUtility.Set(so, layout + "EscapePortals", portals);
             BattleEditorUtility.Set(so, layout + "EscapeArea", CatacombSize * 0.5f - 3f);
             BattleEditorUtility.Set(so, layout + "DescendPortals", new PortalComponent[0]);
@@ -173,18 +121,87 @@ namespace Game.Scripts.Editor.Dungeon
             return root;
         }
 
-        /// The generator of the catacombs on the hall's floor, with the rooms, the hall's own cell map and, for the menus,
-        /// the map of one sample layout.
-        private static CatacombGenerator BuildCatacombs(Transform floor, CatacombRoomBuilder.Result rooms, out Texture2D sampleMap)
+        /// The Great Hall, the key room of the catacombs: its prefab placed in the middle cell, built first when it is missing.
+        /// Its chests and monsters are markers like the rooms'.
+        private static CatacombRoomComponent BuildHall(Transform floor, CatacombRoomBuilder.Result rooms)
         {
-            Texture2D keyMap = DungeonMinimapBuilder.Render(floor, floor.position, Pitch * 0.5f, CatacombRoomBuilder.MapPixels, "CatacombGreatHall", true);
+            string path = $"{CatacombRoomBuilder.Folder}/{CatacombRoomBuilder.HallName}.prefab";
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+
+            if (prefab != null && !CatacombRoomBuilder.IsOverwriting)
+                return Place(prefab, floor, Vector3.zero, 0f, false).GetComponent<CatacombRoomComponent>();
+
+            Transform hall = BattleEditorUtility.CreateChild(CatacombRoomBuilder.HallName, floor).transform;
+            Vector3 slab = new Vector3(Pitch, WallThickness, Pitch);
+            DungeonStructureBuilder.Block(hall, "Floor", Vector3.down * WallThickness * 0.5f, slab, DungeonPropBuilder.Flagstone);
+            DungeonStructureBuilder.Block(hall, "Ceiling", Vector3.up * (Height + WallThickness * 0.5f), slab, DungeonPropBuilder.Ashlar);
+
+            for (int i = 1; i < 8; i++)
+                DungeonStructureBuilder.Block(hall, "Ceiling Beam", new Vector3(0f, Height - 0.2f, i * RoomSize / 8f - Half), new Vector3(RoomSize, 0.4f, 0.35f), DungeonPropBuilder.DarkWood, 0f, false);
+
+            for (int i = 0; i < 4; i++)
+            {
+                Quaternion side = Quaternion.Euler(0f, i * 90f, 0f);
+                float yaw = i * 90f;
+                Place(rooms.Sides[3], hall, side * new Vector3(0f, 0f, Half + WallThickness * 0.5f), yaw).name = "Wall Doorways";
+                Wall(hall, side * new Vector3(Half - 0.45f, 0f, Half - 0.45f), 0.9f, yaw, 0.9f, Height, "Wall Pilaster");
+
+                if (i % 2 == 0)
+                {
+                    foreach (float x in new[] { -DoorOffset, DoorOffset })
+                    {
+                        Torch(hall, "HallTorch", side * new Vector3(x - 2.4f, TorchHeight, Half), yaw + 180f);
+                        Torch(hall, "HallTorch", side * new Vector3(x + 2.4f, TorchHeight, Half), yaw + 180f);
+                    }
+
+                    foreach (float x in new[] { -3.4f, 3.4f })
+                        Banner(hall, "Large Banner", side * new Vector3(x, 0f, Half), yaw + 180f);
+                }
+                else
+                {
+                    foreach (float x in new[] { -2.4f, 2.4f })
+                        Torch(hall, "HallTorch", side * new Vector3(x, TorchHeight, Half), yaw + 180f);
+
+                    foreach (float x in new[] { -4.2f, 4.2f })
+                        Banner(hall, "Small Banner", side * new Vector3(x, 0f, Half), yaw + 180f);
+                }
+            }
+
+            foreach (Vector3 point in new[] { new Vector3(0f, 0f, 12.6f), new Vector3(0f, 0f, -12.6f), new Vector3(12.6f, 0f, 0f), new Vector3(-12.6f, 0f, 0f) })
+                Prop(hall, "Chandelier", point + Vector3.up * (Height - 0.4f));
+
+            BuildSanctum(hall);
+            BuildExecution(hall);
+            BuildPrison(hall);
+            BuildLibrary(hall);
+            BuildArmoury(hall);
+            BuildMess(hall);
+            BuildStore(hall);
+            CatacombRoomBuilder.Kit("Monster Archer", hall, new Vector3(0f, 0f, Half - 4f), 180f);
+            CatacombRoomBuilder.Kit("Monster Sword", hall, new Vector3(-9.5f, 0f, 0f), -90f);
+            CatacombRoomBuilder.Kit("Monster Skull", hall, new Vector3(Half - 4.5f, 0f, -3f), -90f);
+
+            Texture2D map = DungeonMinimapBuilder.Render(hall, hall.position, Pitch * 0.5f, CatacombRoomBuilder.MapPixels, $"Catacomb{CatacombRoomBuilder.HallName}", true);
+            SerializedObject so = new SerializedObject(hall.gameObject.AddComponent<CatacombRoomComponent>());
+            BattleEditorUtility.Set(so, "_title", "Great Hall");
+            BattleEditorUtility.Set(so, "_map", map);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            PrefabUtility.SaveAsPrefabAssetAndConnect(hall.gameObject, path, InteractionMode.AutomatedAction);
+
+            return hall.GetComponent<CatacombRoomComponent>();
+        }
+
+        /// The generator of the catacombs on the hall's floor, with the rooms, the key room and, for the menus, the map of one
+        /// sample layout. The Dev Dungeon Test config is made once and left to the user.
+        private static CatacombGenerator BuildCatacombs(Transform floor, CatacombRoomBuilder.Result rooms, CatacombRoomComponent hall, out Texture2D sampleMap)
+        {
             CatacombGenerator generator = floor.gameObject.AddComponent<CatacombGenerator>();
             SerializedObject so = new SerializedObject(generator);
             BattleEditorUtility.Set(so, "_floor", MatchComponent.EntryFloor);
             BattleEditorUtility.Set(so, "_grid", CatacombGrid);
             BattleEditorUtility.Set(so, "_pitch", Pitch);
-            BattleEditorUtility.Set(so, "_keyTitle", "Great Hall");
-            BattleEditorUtility.Set(so, "_keyMap", keyMap);
+            BattleEditorUtility.Set(so, "_keyRoom", hall);
+            BattleEditorUtility.Set(so, "_devTest", BattleEditorUtility.LoadOrCreate<DevDungeonTestConfig>(DevTestConfigPath));
             BattleEditorUtility.Set(so, "_sides", rooms.Sides);
             BattleEditorUtility.Set(so, "_post", rooms.Post);
             BattleEditorUtility.Set(so, "_door", DungeonSceneBuilder.LoadNetworkObject("CatacombDoor"));
@@ -280,7 +297,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         /// Walled room in the middle of the hall: openings east and west, the golden chest north and the large one south,
         /// heaps of gold in two corners, candelabra by the chests and offerings on the plinth steps.
-        private static void BuildSanctum(Transform floor, List<ContainerComponent> containers)
+        private static void BuildSanctum(Transform floor)
         {
             float half = SanctumSize * 0.5f;
             float edge = half + WallThickness * 0.5f;
@@ -322,9 +339,9 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonPropBuilder.MeshObject("Plinth", floor, plinth, DungeonPropBuilder.Ashlar, Vector3.zero, new Vector3(0f, 22.5f, 0f));
             Place(Load("Brazier"), floor, Vector3.up * 0.6f, 0f);
 
-            containers.Add(Container("GoldenChest", floor, new Vector3(0f, 0f, half - 1.2f), 180f));
-            containers.Add(Container("LargeOakChest", floor, new Vector3(0f, 0f, 1.2f - half), 0f));
-            containers.Add(Container("SmallOakChest", floor, new Vector3(-5.3f, 0f, 5.3f), 135f));
+            Container("GoldenChest", floor, new Vector3(0f, 0f, half - 1.2f), 180f);
+            Container("LargeOakChest", floor, new Vector3(0f, 0f, 1.2f - half), 0f);
+            Container("SmallOakChest", floor, new Vector3(-5.3f, 0f, 5.3f), 135f);
 
             foreach (float x in new[] { -1.6f, 1.6f })
             {
@@ -362,7 +379,7 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         /// North-east: a cell with a barred door and a bunk on chains; stocks and a gibbet cage outside.
-        private static void BuildPrison(Transform floor, List<ContainerComponent> containers)
+        private static void BuildPrison(Transform floor)
         {
             const float front = 12.2f;
             const float side = 11.2f;
@@ -384,7 +401,7 @@ namespace Game.Scripts.Editor.Dungeon
             Prop(floor, "Spoon", new Vector3(12.55f, 0f, 15.7f), 40f);
             Prop(floor, "Bucket", new Vector3(Half - 0.5f, 0f, front + 0.6f));
             Prop(floor, "Small Candle", new Vector3(11.7f, 0f, 16.4f));
-            containers.Add(Container("SmallOakChest", floor, new Vector3(Half - 0.7f, 0f, 14.6f), -90f));
+            Container("SmallOakChest", floor, new Vector3(Half - 0.7f, 0f, 14.6f), -90f);
 
             Prop(floor, "Stocks", new Vector3(11.4f, 0f, 4.6f), 180f);
             Prop(floor, "Cage", new Vector3(10.8f, 0f, 9.6f));
@@ -392,7 +409,7 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         /// West: bookcases along the wall between the doorways, a reading table with scrolls and a candle.
-        private static void BuildLibrary(Transform floor, List<ContainerComponent> containers)
+        private static void BuildLibrary(Transform floor)
         {
             const float x = -13.4f;
             const float z = -5f;
@@ -401,7 +418,7 @@ namespace Game.Scripts.Editor.Dungeon
             Prop(floor, "Large Bookcase", new Vector3(wall, 0f, 3.4f), 90f);
             Prop(floor, "Large Bookcase", new Vector3(wall, 0f, -5.6f), 90f);
             Prop(floor, "Drawer Bookcase", new Vector3(wall, 0f, 5.6f), 90f);
-            containers.Add(Container("Bookshelf", floor, new Vector3(wall, 0f, -3.4f), 90f));
+            Container("Bookshelf", floor, new Vector3(wall, 0f, -3.4f), 90f);
             Prop(floor, "Medium Candle", new Vector3(wall, 1.76f, 5.3f));
             Prop(floor, "Small Candle", new Vector3(wall, 1.76f, 5.9f));
 
@@ -416,7 +433,7 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         /// East: weapon racks either side of a shield, swords on a crate and leaning on the wall, a helmet on a crate.
-        private static void BuildArmoury(Transform floor, List<ContainerComponent> containers)
+        private static void BuildArmoury(Transform floor)
         {
             float wall = Half - 0.3f;
 
@@ -428,13 +445,13 @@ namespace Game.Scripts.Editor.Dungeon
             Prop(floor, "Sword 02", new Vector3(15.35f, 0.75f, 4.85f), 0f, 1f, 90f);
             Prop(floor, "Sword 03", new Vector3(Half - 0.29f, 0f, -4.7f), -90f, 1f, -14f);
             Prop(floor, "Sword 04", new Vector3(Half - 0.29f, 0f, -5.3f), -90f, 1f, -12f);
-            containers.Add(Container("Crate", floor, new Vector3(15.4f, 0f, -11.2f), 10f));
+            Container("Crate", floor, new Vector3(15.4f, 0f, -11.2f), 10f);
             Prop(floor, "Helmet", new Vector3(15.4f, 0.87f, -11.2f), -60f);
-            containers.Add(Container("Barrel", floor, new Vector3(14.2f, 0f, -11.4f), 40f));
+            Container("Barrel", floor, new Vector3(14.2f, 0f, -11.4f), 40f);
         }
 
         /// South-west: a long table with benches, mugs, a jug and a supper; barrels and a crate in the corner.
-        private static void BuildMess(Transform floor, List<ContainerComponent> containers)
+        private static void BuildMess(Transform floor)
         {
             const float x = -13f;
             const float z = -12.6f;
@@ -453,20 +470,20 @@ namespace Game.Scripts.Editor.Dungeon
             Prop(floor, "Candle Stick", new Vector3(x + 0.85f, TableTop, z));
             Banner(floor, "Small Banner", new Vector3(-14f, 0f, -Half), 0f);
 
-            containers.Add(Container("Barrel", floor, new Vector3(-Half + 0.9f, 0f, -Half + 0.9f), 0f));
-            containers.Add(Container("Barrel", floor, new Vector3(-Half + 1.95f, 0f, -Half + 0.75f), 50f));
-            containers.Add(Container("Crate", floor, new Vector3(-Half + 0.8f, 0f, -Half + 2.05f), 8f));
+            Container("Barrel", floor, new Vector3(-Half + 0.9f, 0f, -Half + 0.9f), 0f);
+            Container("Barrel", floor, new Vector3(-Half + 1.95f, 0f, -Half + 0.75f), 50f);
+            Container("Crate", floor, new Vector3(-Half + 0.8f, 0f, -Half + 2.05f), 8f);
             Prop(floor, "Big Crate", new Vector3(-11.6f, 0f, -Half + 0.5f));
         }
 
         /// South-east: barrels, crates stacked on a big one and a small chest.
-        private static void BuildStore(Transform floor, List<ContainerComponent> containers)
+        private static void BuildStore(Transform floor)
         {
-            containers.Add(Container("Barrel", floor, new Vector3(Half - 0.9f, 0f, -Half + 0.9f), 0f));
-            containers.Add(Container("Barrel", floor, new Vector3(Half - 1.95f, 0f, -Half + 0.75f), 70f));
-            containers.Add(Container("Barrel", floor, new Vector3(Half - 0.85f, 0f, -Half + 2f), 20f));
-            containers.Add(Container("Crate", floor, new Vector3(13.4f, 0f, -Half + 0.6f), 8f));
-            containers.Add(Container("SmallOakChest", floor, new Vector3(11.8f, 0f, -Half + 0.5f), 0f));
+            Container("Barrel", floor, new Vector3(Half - 0.9f, 0f, -Half + 0.9f), 0f);
+            Container("Barrel", floor, new Vector3(Half - 1.95f, 0f, -Half + 0.75f), 70f);
+            Container("Barrel", floor, new Vector3(Half - 0.85f, 0f, -Half + 2f), 20f);
+            Container("Crate", floor, new Vector3(13.4f, 0f, -Half + 0.6f), 8f);
+            Container("SmallOakChest", floor, new Vector3(11.8f, 0f, -Half + 0.5f), 0f);
             Prop(floor, "Big Crate", new Vector3(Half - 0.4f, 0f, -12.9f), 90f);
             Prop(floor, "Crate", new Vector3(Half - 0.45f, 0.68f, -12.9f), 15f);
             Banner(floor, "Small Banner", new Vector3(14f, 0f, -Half), 0f);
@@ -506,17 +523,10 @@ namespace Game.Scripts.Editor.Dungeon
             prop.transform.localScale = Vector3.one * scale;
         }
 
-        private static ContainerComponent Container(string name, Transform parent, Vector3 position, float yaw)
+        /// The kit marker of a container prefab: the host spawns and fills it every run.
+        private static void Container(string name, Transform parent, Vector3 position, float yaw)
         {
-            return Place(Load(name), parent, position, yaw, false).GetComponent<ContainerComponent>();
-        }
-
-        private static DungeonDirector.MonsterPlacement Monster(Transform parent, string name, Vector3 position, float yaw)
-        {
-            Transform point = BattleEditorUtility.CreateChild(name, parent, position).transform;
-            point.rotation = Quaternion.Euler(0f, yaw, 0f);
-
-            return new DungeonDirector.MonsterPlacement { Point = point, Prefab = DungeonSceneBuilder.LoadNetworkObject(name) };
+            CatacombRoomBuilder.Kit($"Container {name}", parent, position, yaw);
         }
 
         /// Props saved as prefabs that scenes place by name.

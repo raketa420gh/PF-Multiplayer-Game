@@ -73,9 +73,11 @@ namespace Game.Scripts.Dungeon
 
             ClassConfig config = _session.Class;
 
-            if (_shownClass != config.Id)
+            int shownClass = config.Id | (_session.Subclass << 16);
+
+            if (_shownClass != shownClass)
             {
-                _shownClass = config.Id;
+                _shownClass = shownClass;
                 BuildIcons(config);
                 _shownSkills = -1;
                 _shownLayout = ~_session.SpellLayout;

@@ -14,8 +14,6 @@ namespace Game.Scripts.Editor.Battle
     {
         public const string FighterPath = BattleEditorUtility.PrefabsFolder + "/Fighter.prefab";
         public const string BotPath = BattleEditorUtility.PrefabsFolder + "/BotFighter.prefab";
-        public const string DummyPath = BattleEditorUtility.PrefabsFolder + "/TrainingDummy.prefab";
-        public const string ShieldDummyPath = BattleEditorUtility.PrefabsFolder + "/ShieldDummy.prefab";
 
         /// Block hitbox riding on the animated weapon socket; Center/Rotation are the body-space block pose for static dummies.
         internal sealed class BlockBox
@@ -56,16 +54,13 @@ namespace Game.Scripts.Editor.Battle
         public static void Build()
         {
             Loadout[] loadouts = BuildWeapons(out GameObject arrow, out GameObject orb);
-            HitZoneConfig zones = BattleEditorUtility.LoadOrCreate<HitZoneConfig>($"{BattleEditorUtility.ConfigsFolder}/HitZones.asset");
 
             FighterParts parts = CreateFighter(loadouts, arrow, orb, 4, "Fighter");
             GameObject fighter = SavePrefab(parts.Root, FighterPath);
             BuildBot(fighter);
-            GameObject dummy = BuildDummy(zones, null, null);
-            BuildDummy(zones, loadouts[0], AssetDatabase.LoadAssetAtPath<GameObject>($"{BattleEditorUtility.PrefabsFolder}/Shield.prefab"));
 
             AssetDatabase.SaveAssets();
-            Debug.Log($"[{nameof(BattleContentBuilder)}] Content built: {fighter.name}, {dummy.name}");
+            Debug.Log($"[{nameof(BattleContentBuilder)}] Content built: {fighter.name}");
         }
 
         /// Builds weapon visuals and configs for the full catalog, in DungeonWeaponLibrary.CatalogOrder.
@@ -446,65 +441,6 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(root.AddComponent<BotBrainComponent>(), "_fighter", root.GetComponent<FighterComponent>());
 
             SavePrefab(root, BotPath);
-        }
-
-        private static GameObject BuildDummy(HitZoneConfig zones, Loadout shieldLoadout, GameObject shieldPrefab)
-        {
-            bool hasShield = shieldLoadout != null;
-            int hitboxLayer = LayerMask.NameToLayer(BattleEditorUtility.HitboxLayer);
-            Material straw = BattleEditorUtility.GetMaterial("DummyStraw", new Color(0.8f, 0.68f, 0.35f));
-            Material wood = BattleEditorUtility.GetMaterial("DummyWood", new Color(0.35f, 0.24f, 0.14f));
-
-            GameObject root = new GameObject(hasShield ? "ShieldDummy" : "TrainingDummy");
-            Transform parent = root.transform;
-            root.AddComponent<NetworkObject>();
-            HealthComponent health = root.AddComponent<HealthComponent>();
-            HitboxRoot hitboxRoot = root.AddComponent<HitboxRoot>();
-            DamageReceiverComponent receiver = root.AddComponent<DamageReceiverComponent>();
-            TrainingDummyComponent dummy = root.AddComponent<TrainingDummyComponent>();
-
-            // The mannequins of the animation packs are the dummies: the plain one stands in the T-pose, the shield one holds the block.
-            Transform visual = BattleEditorUtility.CreateChild("Visual", parent).transform;
-            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cylinder, "Post", visual, new Vector3(0f, 0.5f, -0.16f), Vector3.zero, new Vector3(0.1f, 0.5f, 0.1f), wood, true);
-            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Mount", visual, new Vector3(0f, 1f, -0.1f), Vector3.zero, new Vector3(0.08f, 0.08f, 0.16f), wood);
-            AnimationClip pose = hasShield ? AssetDatabase.LoadAssetAtPath<AnimationClip>(
-                $"{BattleEditorUtility.AnimationsFolder}/{shieldLoadout.Config.AnimationPrefix}{FighterAnimComponent.BlockSuffix}.anim") : null;
-            BattleCharacterBuilder.CreateFigure(root.name, hasShield, pose, 10f, straw, null).transform.SetParent(visual, false);
-
-            Transform hitboxes = BattleEditorUtility.CreateChild("Hitboxes", parent).transform;
-            CreateSphereHitbox(hitboxes, hitboxRoot, "Head", HitZone.Head, new Vector3(0f, 1.72f, 0f), 0.14f, hitboxLayer);
-            CreateBoxHitbox(hitboxes, hitboxRoot, "Torso", HitZone.Torso, new Vector3(0f, 1.25f, 0f), new Vector3(0.22f, 0.3f, 0.15f), hitboxLayer);
-            CreateBoxHitbox(hitboxes, hitboxRoot, "Legs", HitZone.Legs, new Vector3(0f, 0.48f, 0f), new Vector3(0.15f, 0.47f, 0.15f), hitboxLayer);
-
-            SerializedObject so = new SerializedObject(dummy);
-            BattleEditorUtility.Set(so, "_health", health);
-            BattleEditorUtility.Set(so, "_receiver", receiver);
-
-            if (hasShield)
-            {
-                BlockBox block = shieldLoadout.Block;
-                Hitbox blockHitbox = CreateBoxHitbox(hitboxes, hitboxRoot, "Block", HitZone.Block, block.Center, block.Extents, hitboxLayer);
-                blockHitbox.transform.localRotation = block.Rotation;
-                BattleEditorUtility.Set(blockHitbox, "_isRound", block.IsRound);
-
-                GameObject shield = (GameObject)PrefabUtility.InstantiatePrefab(shieldPrefab, visual);
-                shield.transform.SetLocalPositionAndRotation(block.Center - block.Rotation * block.LocalCenter, block.Rotation);
-
-                BattleEditorUtility.Set(so, "_blockWeapon", shieldLoadout.Config);
-                BattleEditorUtility.Set(so, "_blockHitbox", blockHitbox);
-            }
-
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            hitboxRoot.InitHitboxes();
-            hitboxRoot.BroadRadius = 1.5f;
-            hitboxRoot.Offset = new Vector3(0f, 1f, 0f);
-
-            SetupReceiver(receiver, health, hitboxRoot, zones);
-            BattleEditorUtility.Set(root.AddComponent<HitFeedbackComponent>(), "_receiver", receiver);
-            BattleEditorUtility.CreateBlocker(parent, 0.35f, 1.8f);
-
-            return SavePrefab(root, hasShield ? ShieldDummyPath : DummyPath);
         }
 
         internal static void SetupReceiver(DamageReceiverComponent receiver, HealthComponent health, HitboxRoot hitboxRoot, HitZoneConfig zones)

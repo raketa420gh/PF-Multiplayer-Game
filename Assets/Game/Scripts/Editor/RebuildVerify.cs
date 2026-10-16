@@ -19,7 +19,7 @@ namespace Game.Scripts.Editor
         private const int MaxLength = 200;
         private static readonly string[] Scenes =
         {
-            "Assets/Game/Scenes/BattleScene.unity", "Assets/Game/Scenes/DungeonScene.unity",
+            "Assets/Game/Scenes/DungeonScene.unity",
             "Assets/Game/Scenes/LobbyScene.unity", "Assets/Game/Scenes/CharacterSelectScene.unity"
         };
         private static readonly string[] PrefabFolders = { "Assets/Game/Prefabs" };

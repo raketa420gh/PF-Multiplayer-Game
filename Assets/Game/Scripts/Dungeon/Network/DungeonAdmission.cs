@@ -11,6 +11,7 @@ namespace Game.Scripts.Dungeon
     public sealed class DungeonAdmission : MonoBehaviour
     {
         public int Floor => _floor > 0 ? _floor : MatchComponent.EntryFloor;
+        public QueueMode Mode => _mode;
 
         [SerializeField]
         private NetworkEvents _networkEvents;
@@ -129,7 +130,7 @@ namespace Game.Scripts.Dungeon
                 Bind(runner);
 
             (QueueMode mode, int party, int _, byte floor) = DungeonTicket.Read(player == runner.LocalPlayer ? NetworkLaunch.LocalToken : runner.GetPlayerConnectionToken(player));
-            _teams[player] = mode == QueueMode.Trio && party != 0 ? party : -1 - player.PlayerId;
+            _teams[player] = mode != QueueMode.Solo && party != 0 ? party : -1 - player.PlayerId;
 
             if (_mode == QueueMode.Any)
                 _mode = mode;

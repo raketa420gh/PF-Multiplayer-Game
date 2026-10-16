@@ -25,6 +25,10 @@ namespace Game.Scripts.Dungeon
         public ClassConfig[] Classes => _classes;
         /// Bolts a crossbow loads from the bag; none means it never runs out.
         public ItemConfig Ammo => _ammo;
+        /// Turn of the model lying on the ground (shields: face up).
+        public Vector3 GroundEuler => _groundEuler;
+        /// Shift of the turned model that sets it on the ground.
+        public Vector3 GroundOffset => _groundOffset;
 
         [SerializeField]
         private WeaponConfig _weapon;
@@ -61,6 +65,12 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private ItemConfig _ammo;
+
+        [SerializeField]
+        private Vector3 _groundEuler;
+
+        [SerializeField]
+        private Vector3 _groundOffset;
 
         public override bool CanEquip(EquipSlot slot)
         {

@@ -42,8 +42,6 @@ namespace Game.Scripts.Editor.Battle
 
         private static readonly Dictionary<string, (ImpactSurface Body, ImpactSurface Block, Footwear Feet)> s_prefabs = new()
         {
-            ["Battle/TrainingDummy"] = (ImpactSurface.Wood, ImpactSurface.Clash, Footwear.Light),
-            ["Battle/ShieldDummy"] = (ImpactSurface.Wood, ImpactSurface.Shield, Footwear.Light),
             ["Dungeon/SkeletonWarrior"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
             ["Dungeon/SkeletonSwordsman"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
             ["Dungeon/SkeletonArcher"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),

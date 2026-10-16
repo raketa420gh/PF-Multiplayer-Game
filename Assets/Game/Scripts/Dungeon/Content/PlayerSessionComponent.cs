@@ -206,7 +206,7 @@ namespace Game.Scripts.Dungeon
         /// Stores the kit, stash, profile and build of the local player; they are what the next scene loads.
         public void SaveLocal()
         {
-            if (!HasInputAuthority || !HasLoadedKit || DungeonContext.Instance == null || DungeonContext.Instance.IsSandbox)
+            if (!HasInputAuthority || !HasLoadedKit || DungeonContext.Instance == null)
                 return;
 
             if (_savedKitVersion != _kit.Version)

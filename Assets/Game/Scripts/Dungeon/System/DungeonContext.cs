@@ -22,8 +22,6 @@ namespace Game.Scripts.Dungeon
         public DungeonDirector Director => _director;
         /// Generator of the floor laid out anew every run; null where every floor is fixed.
         public CatacombGenerator Catacombs => _catacombs;
-        /// Test ground: no lobby, no persistence of the kit, stash or profile.
-        public bool IsSandbox => _isSandbox;
 
         [SerializeField]
         private BattleContext _battle;
@@ -42,9 +40,6 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private CatacombGenerator _catacombs;
-
-        [SerializeField]
-        private bool _isSandbox;
 
         private static DungeonContext s_instance;
         private PlayerSessionComponent _localSession;

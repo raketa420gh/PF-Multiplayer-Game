@@ -170,8 +170,6 @@ namespace Game.Scripts.Editor.Dungeon
         internal static void BuildAudio(GameObject system, DungeonContext context)
         {
             GameObject go = BattleEditorUtility.CreateChild("Audio", system.transform);
-            AudioSource music = go.AddComponent<AudioSource>();
-            music.playOnAwake = false;
             AudioSource ambient = go.AddComponent<AudioSource>();
             ambient.playOnAwake = false;
             DungeonAudioComponent audio = go.AddComponent<DungeonAudioComponent>();
@@ -189,9 +187,7 @@ namespace Game.Scripts.Editor.Dungeon
             reverb.reverbPreset = AudioReverbPreset.StoneCorridor;
             reverb.minDistance = 4000f;
             reverb.maxDistance = 5000f;
-            BattleEditorUtility.Set(so, "_menuMusic", AssetDatabase.LoadAssetAtPath<AudioClip>(DungeonAudioBuilder.Path("Menu")));
             BattleEditorUtility.Set(so, "_ambient", AssetDatabase.LoadAssetAtPath<AudioClip>(DungeonAudioBuilder.Path("Ambient")));
-            BattleEditorUtility.Set(so, "_music", music);
             BattleEditorUtility.Set(so, "_ambientSource", ambient);
             so.ApplyModifiedPropertiesWithoutUndo();
         }

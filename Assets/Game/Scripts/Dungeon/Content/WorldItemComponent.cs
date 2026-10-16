@@ -140,7 +140,8 @@ namespace Game.Scripts.Dungeon
             _model.transform.localPosition = weaponClass switch
             {
                 null when isTorch => new Vector3(0f, 0.03f, 0f),
-                null or WeaponClass.Shield => Vector3.zero,
+                null => Vector3.zero,
+                WeaponClass.Shield => ((WeaponItemConfig)config).GroundOffset,
                 WeaponClass.Spellbook => new Vector3(0f, 0.02f, 0f),
                 _ => new Vector3(0f, 0.06f, 0f)
             };
@@ -149,7 +150,7 @@ namespace Game.Scripts.Dungeon
                 null when !isTorch => Quaternion.identity,
                 // The book's pages face away from the back of the hand that holds it: -x.
                 WeaponClass.Spellbook => Quaternion.Euler(0f, 0f, -90f),
-                WeaponClass.Shield => Quaternion.Euler(-90f, 0f, 0f),
+                WeaponClass.Shield => Quaternion.Euler(((WeaponItemConfig)config).GroundEuler),
                 _ => Quaternion.Euler(0f, 0f, 90f)
             };
 

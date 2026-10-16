@@ -10,7 +10,7 @@ using UnityEngine;
 namespace Game.Scripts.Editor.Battle
 {
     /// TEMPORARY, from .claude/skills/video-to-animation: copy into Assets/Game/Scripts/Editor/Battle for a play test in
-    /// BattleScene, delete it (and its .meta) afterwards. Holds the buttons for the local fighter and logs what combat does.
+    /// the dungeon, delete it (and its .meta) afterwards. Holds the buttons for the local fighter and logs what combat does.
     internal static class SwingPlayTest
     {
         private static string s_mode;

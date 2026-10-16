@@ -46,13 +46,7 @@ namespace Game.Scripts.Dungeon
         private DungeonSoundTakes[] _sounds;
 
         [SerializeField]
-        private AudioClip _menuMusic;
-
-        [SerializeField]
         private AudioClip _ambient;
-
-        [SerializeField]
-        private AudioSource _music;
 
         [SerializeField]
         private AudioSource _ambientSource;
@@ -85,15 +79,10 @@ namespace Game.Scripts.Dungeon
                 _sources[i] = source;
             }
 
-            _music.clip = _menuMusic;
-            _music.loop = true;
-            _music.volume = 0.35f;
-            _music.reverbZoneMix = 0f;
             _ambientSource.clip = _ambient;
             _ambientSource.loop = true;
             _ambientSource.volume = 0.45f;
             _ambientSource.reverbZoneMix = 0f;
-            _music.Play();
         }
 
         private void OnDestroy()
@@ -113,15 +102,9 @@ namespace Game.Scripts.Dungeon
             _isInDungeon = isInDungeon;
 
             if (isInDungeon)
-            {
-                _music.Stop();
                 _ambientSource.Play();
-            }
             else
-            {
                 _ambientSource.Stop();
-                _music.Play();
-            }
         }
 
         public static void Play(DungeonSound sound, Vector3 position, float volume = 1f, float pitch = 1f)

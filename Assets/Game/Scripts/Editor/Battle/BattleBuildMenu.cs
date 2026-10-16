@@ -12,7 +12,6 @@ namespace Game.Scripts.Editor.Battle
             WeaponTextureBuilder.Build();
             BattleContentBuilder.Build();
             CombatSoundBuilder.Build();
-            BattleSceneBuilder.Build();
         }
 
         [MenuItem("Tools/Game/Battle/Rebuild Animations And Content")]

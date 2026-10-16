@@ -5,31 +5,11 @@ using UnityEngine;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Synthesized dungeon sounds, the cave ambience and the tavern theme as 16-bit WAV assets. No external samples:
+    /// Synthesized dungeon sounds and the cave ambience as 16-bit WAV assets. No external samples:
     /// every sound is layered from struck, plucked, bowed and blown models of AudioSynth.
     internal static class DungeonAudioBuilder
     {
         public const string Folder = "Assets/Game/Audio/Dungeon";
-
-        private const float Beat = 0.5f;
-        private const float Bar = Beat * 4f;
-
-        private static readonly string[] s_melody =
-        {
-            "D5 - F5 E5 D5 - A4 -", "D5 E5 F5 G5 A5 - F5 -", "G5 - E5 D5 C5 - E5 -", "G5 E5 C5 E5 D5 - - .",
-            "D5 - F5 E5 D5 - A4 -", "C5 D5 E5 C5 A4 - C5 -", "E5 - G5 E5 D5 C5 B4 C5", "D5 - - - A4 - D5 .",
-            "A5 - A5 G5 F5 - C5 -", "G5 - G5 F5 E5 - C5 -", "F5 E5 D5 E5 F5 - A5 -", "E5 - C5 - A4 - - .",
-            "A5 - C6 A5 F5 - A5 -", "G5 - E5 G5 C6 - G5 -", "A5 G5 E5 C5 E5 - D5 C5", "D5 - - - - - . ."
-        };
-
-        /// Chord of every bar: bass root and fifth, then the triad for the strums.
-        private static readonly string[] s_chords =
-        {
-            "D2 A2 D4 F4 A4", "D2 A2 D4 F4 A4", "C2 G2 C4 E4 G4", "C2 G2 C4 E4 G4", "D2 A2 D4 F4 A4", "A1 E2 C4 E4 A4", "C2 G2 C4 E4 G4", "D2 A2 D4 F4 A4",
-            "F2 C3 C4 F4 A4", "C2 G2 C4 E4 G4", "D2 A2 D4 F4 A4", "A1 E2 C4 E4 A4", "F2 C3 C4 F4 A4", "C2 G2 C4 E4 G4", "A1 E2 C4 E4 A4", "D2 A2 D4 F4 A4"
-        };
-
-        private static readonly string[] s_flute = { "C5", "C5", "D5", "E5", "F5", "E5", "E5", "D5" };
 
         public static string Path(string name) => BattleAudioBuilder.Path(Folder, name, 0);
 
@@ -67,7 +47,6 @@ namespace Game.Scripts.Editor.Dungeon
             Write("Screech", 0, CreateScreech());
             AudioSynth.Write(Path("Portal"), CreatePortal(), null, true);
             AudioSynth.Write(Path("Ambient"), CreateAmbient(0), CreateAmbient(1), true);
-            AudioSynth.Write(Path("Menu"), CreateMenu(0), CreateMenu(1), true);
 
             AssetDatabase.Refresh();
             Debug.Log($"[{nameof(DungeonAudioBuilder)}] Audio built in {Folder}");
@@ -421,83 +400,6 @@ namespace Game.Scripts.Editor.Dungeon
                 chain.Add(AudioSynth.Strike(0.15f, 530 + i, (2100f + i * 310f, 40f, 1f), (3900f + i * 270f, 55f, 0.5f)), 0.5f + (float)random.NextDouble() * 0.5f, i * 0.11f);
 
             return sound.Add(chain.Reverb(1.8f, 0.6f), channel == 0 ? 0.035f : 0.06f, 15.5f, true);
-        }
-
-        /// Tavern tune in D dorian for one ear: a plucked lute over bass and strummed chords, a frame drum and tambourine,
-        /// and a flute holding long notes through the second half. Tails wrap around, so the loop has no seam.
-        private static float[] CreateMenu(int channel)
-        {
-            float length = s_melody.Length * Bar;
-            float[] dry = AudioSynth.Silence(length);
-            bool isLeft = channel == 0;
-
-            for (int bar = 0; bar < s_melody.Length; bar++)
-            {
-                float start = bar * Bar;
-                string[] melody = s_melody[bar].Split(' ');
-                string[] chord = s_chords[bar].Split(' ');
-
-                for (int i = 0; i < melody.Length; i++)
-                {
-                    if (melody[i] is "-" or ".")
-                        continue;
-
-                    int held = 1;
-
-                    while (i + held < melody.Length && melody[i + held] == "-")
-                        held++;
-
-                    dry.Add(AudioSynth.Pluck(Note(melody[i]), 0.5f + held * 0.4f, 0.9f + held * 0.3f, 0.4f, bar * 16 + i),
-                        isLeft ? 0.34f : 0.24f, start + i * Beat * 0.5f, true);
-                }
-
-                // Bass on the first and third beat, the chord strummed on the second and fourth.
-                for (int beat = 0; beat < 4; beat++)
-                {
-                    float at = start + beat * Beat;
-
-                    if (beat % 2 == 0)
-                    {
-                        dry.Add(AudioSynth.Pluck(Note(chord[beat / 2]), 1.2f, 1.4f, 0.3f, 900 + bar * 4 + beat).LowPass(900f), 0.42f, at, true);
-                        continue;
-                    }
-
-                    for (int i = 2; i < chord.Length; i++)
-                        dry.Add(AudioSynth.Pluck(Note(chord[i]), 0.7f, 0.7f, 0.45f, 1200 + bar * 16 + beat * 4 + i), isLeft ? 0.09f : 0.14f, at + (i - 2) * 0.018f, true);
-                }
-
-                // Frame drum: deep on one, lighter on the "and" of three; the tambourine answers on two and four.
-                foreach ((float beat, float gain) in new[] { (0f, 0.5f), (2.5f, 0.3f) })
-                {
-                    float[] skin = AudioSynth.Tone(0.3f, time => 58f + 45f * Mathf.Exp(-time * 35f), time => Mathf.Exp(-time * 14f));
-                    dry.Add(skin.Add(AudioSynth.Noise(0.05f, 1500 + bar).LowPass(900f).Decay(90f), 0.4f), gain, start + beat * Beat, true);
-                }
-
-                for (int i = 0; i < 8; i++)
-                {
-                    float[] jingle = AudioSynth.Noise(0.12f, 1600 + bar * 8 + i).HighPass(6000f).Decay(i % 4 == 2 ? 28f : 70f, 0.001f);
-                    dry.Add(jingle, (i % 4 == 2 ? 0.05f : 0.012f) * (isLeft ? 0.7f : 1f), start + i * Beat * 0.5f, true);
-                }
-
-                if (bar < s_melody.Length - s_flute.Length)
-                    continue;
-
-                float pitch = Note(s_flute[bar - (s_melody.Length - s_flute.Length)]);
-                float[] flute = AudioSynth.Tone(Bar, time => pitch * (1f + 0.006f * Mathf.Sin(time * 2f * Mathf.PI * 5f) * Mathf.Clamp01(time)),
-                    time => Mathf.Clamp01(time / 0.12f) * Mathf.Clamp01((Bar - time) / 0.25f), 0.25f);
-                float[] breath = AudioSynth.Noise(Bar, 1700 + bar).BandPass(pitch * 2f, 8f).Fade(0.1f, 0.25f);
-                dry.Add(flute.Add(breath, 0.5f), isLeft ? 0.075f : 0.05f, start, true);
-            }
-
-            // The room is rendered over two rounds of the tune; the second round carries the tail of the first.
-            float[] twice = new float[dry.Length * 2];
-            dry.CopyTo(twice, 0);
-            dry.CopyTo(twice, dry.Length);
-            float[] wet = twice.Reverb(1.1f, 0.22f, 0.4f, channel * 23);
-            float[] sound = new float[dry.Length];
-            Array.Copy(wet, dry.Length, sound, 0, dry.Length);
-
-            return sound.Drive(1.2f).Normalize(0.7f);
         }
     }
 }

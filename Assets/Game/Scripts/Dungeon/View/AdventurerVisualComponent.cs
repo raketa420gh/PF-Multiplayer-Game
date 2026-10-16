@@ -110,7 +110,7 @@ namespace Game.Scripts.Dungeon
                 return;
 
             AbilityConfig spell = _adventurer.ReadiedSpellConfig;
-            bool isLit = spell != null && _adventurer.Fighter.Health.IsAlive && _adventurer.Form == ShapeshiftForm.None;
+            bool isLit = spell != null && _adventurer.IsHoldingCast && _adventurer.Fighter.Health.IsAlive && _adventurer.Form == ShapeshiftForm.None;
 
             if (_handGlow.enabled != isLit)
                 _handGlow.enabled = isLit;

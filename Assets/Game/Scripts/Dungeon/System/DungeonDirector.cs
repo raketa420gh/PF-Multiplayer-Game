@@ -177,8 +177,9 @@ namespace Game.Scripts.Dungeon
 
                 if (IsGenerated(floor - 1))
                 {
-                    _match.SetSeed(_seed | 1);
-                    _catacombs.Generate(_seed | 1);
+                    bool isDevTest = _admission != null && _admission.Mode == QueueMode.DevTest;
+                    _match.SetSeed(_seed | 1, isDevTest);
+                    _catacombs.Generate(_seed | 1, isDevTest);
                     _catacombs.BakeNavMesh();
                 }
 

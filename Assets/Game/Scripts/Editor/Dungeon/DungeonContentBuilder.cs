@@ -161,6 +161,12 @@ namespace Game.Scripts.Editor.Dungeon
                         BattleEditorUtility.Set(so, "_lightRange", def.LightRange);
                         BattleEditorUtility.Set(so, "_isFocus", def.IsFocus);
                         BattleEditorUtility.Set(so, "_classes", LoadClasses(def));
+                        // Shields lie face up; the écu is built in its socket frame, so its turn is undone first.
+                        bool isShield = def.WeaponClass == WeaponClass.Shield;
+                        bool isEcu = isShield && DungeonWeaponLibrary.ShieldModels[def.ShieldIndex] == DungeonWeaponLibrary.SwordEcu;
+                        Quaternion ground = isShield ? Quaternion.Euler(-90f, 0f, 0f) * (isEcu ? Quaternion.Inverse(DungeonWeaponPrefabBuilder.EcuTurn) : Quaternion.identity) : Quaternion.identity;
+                        BattleEditorUtility.Set(so, "_groundEuler", ground.eulerAngles);
+                        BattleEditorUtility.Set(so, "_groundOffset", isShield && model != null ? GroundOffset(model, ground) : Vector3.zero);
                         break;
                     case ItemKind.Armor:
                         BattleEditorUtility.Set(so, "_slot", def.Slot);
@@ -1728,6 +1734,29 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_swingEuler", new Vector3(0f, 0f, 70f));
             so.ApplyModifiedPropertiesWithoutUndo();
             BattleContentBuilder.SavePrefab(root, Prefab("BladeTrap"));
+        }
+
+        /// Shift that sets the turned model on the ground, centered over the item's pivot.
+        private static Vector3 GroundOffset(GameObject model, Quaternion turn)
+        {
+            Vector3 min = Vector3.positiveInfinity;
+            Vector3 max = Vector3.negativeInfinity;
+
+            foreach (MeshFilter filter in model.GetComponentsInChildren<MeshFilter>(true))
+            {
+                Matrix4x4 matrix = Matrix4x4.Rotate(turn) * model.transform.worldToLocalMatrix * filter.transform.localToWorldMatrix;
+
+                foreach (Vector3 vertex in filter.sharedMesh.vertices)
+                {
+                    Vector3 point = matrix.MultiplyPoint3x4(vertex);
+                    min = Vector3.Min(min, point);
+                    max = Vector3.Max(max, point);
+                }
+            }
+
+            Vector3 center = (min + max) * 0.5f;
+
+            return new Vector3(-center.x, -min.y, -center.z);
         }
 
         private static string Sanitize(string name)

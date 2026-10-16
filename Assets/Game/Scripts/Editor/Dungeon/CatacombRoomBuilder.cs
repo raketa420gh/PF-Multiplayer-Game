@@ -14,10 +14,12 @@ namespace Game.Scripts.Editor.Dungeon
     /// the helpers here mirror the page's (B → Block, C → Column, L → Prop, M → Monster, K → Container, T → Trap, TO → Torch,
     /// S → Starts and so on) and take the same arguments in the same coordinates (x east, z north, yaw clockwise, metres from
     /// the middle of the room), so a room is copied over from the page as it stands. The layouts are in CatacombRoomLayouts.
-    /// Monsters, containers and traps are markers the host spawns at.
+    /// Monsters, containers and traps are markers the host spawns at. Rooms are put together of the kit (CatacombRoomBuilder.Kit)
+    /// and built only when their prefab is missing: from then on the prefabs are the user's to edit.
     internal static partial class CatacombRoomBuilder
     {
         public const string Folder = DungeonPropBuilder.PrefabsFolder + "/Catacombs";
+        public const string HallName = "GreatHall";
         public const int MapPixels = 144;
         public const float DoorWidth = 2f;
         /// A little above a head, and above the 2 m NavMesh agent standing on a quarter-metre walkway: the doorways carry doors.
@@ -40,7 +42,10 @@ namespace Game.Scripts.Editor.Dungeon
         private const float BarSpacing = 0.25f;
         private const float BarHeight = 3f;
         /// Rooms are built and photographed for their map far below everything else of the scene.
-        private static readonly Vector3 s_workshop = new(0f, -400f, 0f);
+        public static readonly Vector3 Workshop = new(0f, -400f, 0f);
+
+        /// Set by the menu: rooms, the hall and the kit are rebuilt from the layouts over the user's edits.
+        public static bool IsOverwriting;
 
         /// Medieval pack models standing in for the page's furniture; their fronts face local +Z.
         private static readonly Dictionary<string, string> s_models = new()
@@ -168,23 +173,26 @@ namespace Game.Scripts.Editor.Dungeon
         {
             public Layout Layout;
             public Transform Root;
-            public readonly List<DungeonDirector.MonsterPlacement> Monsters = new();
-            public readonly List<DungeonDirector.MonsterPlacement> Containers = new();
-            public readonly List<DungeonDirector.MonsterPlacement> Traps = new();
-            public Transform Start;
         }
 
         public static Result Build()
         {
             BattleEditorUtility.EnsureFolder(Folder);
-            Save(DungeonPropBuilder.Campfire(), "CatacombFire");
+            SaveNew(DungeonPropBuilder.Campfire, "CatacombFire");
+            GameObject[] sides = Enumerable.Range(0, 4).Select(doorways => SaveNew(() => Side(doorways), $"CatacombSide{doorways}")).ToArray();
+            GameObject post = SaveNew(Post, "CatacombPost");
+            List<Layout> layouts = Layouts().ToList();
+            BuildKit(layouts);
 
-            return new Result
-            {
-                Kinds = Layouts().Select(Realize).ToArray(),
-                Sides = Enumerable.Range(0, 4).Select(doorways => Save(Side(doorways), $"CatacombSide{doorways}")).ToArray(),
-                Post = Save(Post(), "CatacombPost")
-            };
+            return new Result { Kinds = layouts.Select(Realize).ToArray(), Sides = sides, Post = post };
+        }
+
+        /// Saves a piece only when its prefab is missing or the layouts overwrite edits.
+        private static GameObject SaveNew(System.Func<GameObject> create, string name, string folder = Folder)
+        {
+            GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>($"{folder}/{name}.prefab");
+
+            return existing != null && !IsOverwriting ? existing : Save(create(), name, folder);
         }
 
         // ---------- the page's helpers ----------
@@ -367,24 +375,25 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Kind Realize(Layout layout)
         {
+            CatacombRoomComponent existing = AssetDatabase.LoadAssetAtPath<CatacombRoomComponent>($"{Folder}/{layout.Name}.prefab");
+
+            if (existing != null && !IsOverwriting)
+                return new Kind { Prefab = existing, Weight = layout.Weight, Limit = layout.Limit };
+
             Partition(layout);
             Site room = new Site { Layout = layout, Root = new GameObject(layout.Name).transform };
-            room.Root.position = s_workshop;
+            room.Root.position = Workshop;
             Floor(room);
-            DungeonStructureBuilder.Block(room.Root, "Ceiling", Vector3.up * (Height + Thickness * 0.5f), new Vector3(Pitch, Thickness, Pitch), DungeonPropBuilder.Ashlar);
+            KitBlock("Ceiling", room.Root, Vector3.up * Height, new Vector3(Pitch, Thickness, Pitch));
 
             foreach (Item item in layout.Items)
                 Place(room, item, FloorAt(layout, item.X, item.Z));
 
-            Texture2D map = DungeonMinimapBuilder.Render(room.Root, s_workshop, Pitch * 0.5f, MapPixels, $"Catacomb{layout.Name}", true);
+            Texture2D map = DungeonMinimapBuilder.Render(room.Root, Workshop, Pitch * 0.5f, MapPixels, $"Catacomb{layout.Name}", true);
             SerializedObject so = new SerializedObject(room.Root.gameObject.AddComponent<CatacombRoomComponent>());
             BattleEditorUtility.Set(so, "_title", layout.Title);
             BattleEditorUtility.Set(so, "_isCorner", layout.IsCorner);
             BattleEditorUtility.Set(so, "_map", map);
-            BattleEditorUtility.Set(so, "_startSpots", room.Start);
-            SetPlacements(so.FindProperty("_monsters"), room.Monsters);
-            SetPlacements(so.FindProperty("_containers"), room.Containers);
-            SetPlacements(so.FindProperty("_traps"), room.Traps);
             so.ApplyModifiedPropertiesWithoutUndo();
             room.Root.position = Vector3.zero;
 
@@ -394,46 +403,44 @@ namespace Game.Scripts.Editor.Dungeon
         private static void Place(Site room, Item item, float y)
         {
             Transform root = room.Root;
+            Vector3 point = new Vector3(item.X, y, item.Z);
 
             switch (item.Shape)
             {
                 case Shape.Block:
-                    DungeonStructureBuilder.Block(root, item.IsColumn ? "Wall Column" : "Wall", new Vector3(item.X, item.H * 0.5f, item.Z), new Vector3(item.W, item.H, item.D),
-                        item.IsColumn ? DungeonPropBuilder.StoneWall : DungeonPropBuilder.Ashlar, item.R);
+                    KitBlock(item.IsColumn ? "Wall Column" : "Wall", root, new Vector3(item.X, 0f, item.Z), new Vector3(item.W, item.H, item.D), item.R);
                     break;
                 case Shape.Bars:
                     BuildBars(root, item);
                     break;
                 case Shape.Prop:
-                    BuildProp(root, item, y);
+                    if (s_kit[PropName(item)].TryGetComponent(out KitBlockComponent _))
+                        KitBlock(PropName(item), root, point, new Vector3(item.W, item.H, item.D), item.R, item.IsRound);
+                    else
+                        BuildProp(root, item, y);
                     break;
                 case Shape.Monster:
-                    room.Monsters.Add(MonsterPlacement(root, (Mob)item.Kind, new Vector3(item.X, y, item.Z), item.R));
-                    break;
                 case Shape.Container:
-                    room.Containers.Add(LootPlacement(root, (Loot)item.Kind, new Vector3(item.X, y, item.Z), item.R));
-                    break;
                 case Shape.Trap:
-                    string trap = (Snare)item.Kind == Snare.Spike ? "SpikeTrap" : "BladeTrap";
-                    room.Traps.Add(new DungeonDirector.MonsterPlacement { Point = Marker(root, $"Trap {trap}", new Vector3(item.X, y, item.Z), item.R), Prefab = DungeonSceneBuilder.LoadNetworkObject(trap) });
+                case Shape.Start:
+                    Kit(MarkerName(item), root, point, item.R);
+                    break;
+                case Shape.Light when (Glim)item.Kind is Glim.Torch or Glim.Candle or Glim.Brazier or Glim.Fire:
+                    Kit($"Light {(Glim)item.Kind}", root, point + Vector3.up * item.Y, item.R);
                     break;
                 case Shape.Light:
                     BuildLight(root, item, y);
                     break;
-                case Shape.Start:
-                    room.Start = Marker(root, "Start", new Vector3(item.X, y, item.Z), item.R);
-
-                    for (int i = -1; i <= 1; i++)
-                        BattleEditorUtility.CreateChild("Spot", room.Start, new Vector3(i * 1.2f, 0f, 0f)).transform.localRotation = Quaternion.identity;
-                    break;
                 case Shape.Water:
-                    BuildWater(root, item);
+                    Kit("Water", root, new Vector3(item.X, 0f, item.Z), 0f).transform.localScale = new Vector3(item.W / KitWater, 1f, item.D / KitWater);
                     break;
                 case Shape.Platform:
                     BuildPlatform(root, item);
                     break;
                 case Shape.Stairs:
-                    BuildStairs(root, item);
+                    GameObject stairs = Kit("Stairs", root, new Vector3(item.X, item.Y0, item.Z), item.R);
+                    stairs.GetComponent<KitStairsComponent>().SetSize(new Vector3(item.W, item.H, item.D));
+                    CatacombKit.Apply(stairs.GetComponent<KitStairsComponent>());
                     break;
                 case Shape.Rune:
                     BuildRune(root, item);
@@ -509,7 +516,7 @@ namespace Game.Scripts.Editor.Dungeon
                     Vector2 max = new Vector2(xs[i + 1], zs[j + 1]);
                     Vector2 middle = (min + max) * 0.5f;
                     Vector2 size = max - min;
-                    DungeonStructureBuilder.Block(room.Root, "Floor", new Vector3(middle.x, -depth - Thickness * 0.5f, middle.y), new Vector3(size.x, Thickness, size.y), DungeonPropBuilder.Flagstone);
+                    KitBlock("Floor", room.Root, new Vector3(middle.x, -depth - Thickness, middle.y), new Vector3(size.x, Thickness, size.y));
 
                     if (depth <= 0f)
                         continue;
@@ -523,10 +530,9 @@ namespace Game.Scripts.Editor.Dungeon
                         if (rise <= 0f)
                             continue;
 
-                        Vector3 center = new Vector3(di == 0 ? middle.x : di < 0 ? min.x + PitWall * 0.5f : max.x - PitWall * 0.5f, -depth + rise * 0.5f,
+                        Vector3 bottom = new Vector3(di == 0 ? middle.x : di < 0 ? min.x + PitWall * 0.5f : max.x - PitWall * 0.5f, -depth,
                             dj == 0 ? middle.y : dj < 0 ? min.y + PitWall * 0.5f : max.y - PitWall * 0.5f);
-                        Vector3 extent = new Vector3(di == 0 ? size.x : PitWall, rise, dj == 0 ? size.y : PitWall);
-                        DungeonPropBuilder.Shadowless(DungeonStructureBuilder.Block(room.Root, "Pit Wall", center, extent, DungeonPropBuilder.Ashlar));
+                        KitBlock("Pit Wall", room.Root, bottom, new Vector3(di == 0 ? size.x : PitWall, rise, dj == 0 ? size.y : PitWall));
                     }
                 }
             }
@@ -537,28 +543,22 @@ namespace Game.Scripts.Editor.Dungeon
             return values.Select(value => Mathf.Round(Mathf.Clamp(value, -edge, edge) * 1000f) / 1000f).Append(-edge).Append(edge).Distinct().OrderBy(value => value).ToArray();
         }
 
-        private static DungeonDirector.MonsterPlacement MonsterPlacement(Transform root, Mob kind, Vector3 point, float yaw)
+        /// Crossbowmen and mages are not in the game yet (DD-016): their markers take the nearest monster there is, to be pointed
+        /// at the real one when it comes. There is no urn yet either: a crate stands in for it.
+        private static string MonsterPrefab(Mob kind)
         {
-            // Crossbowmen and mages are not in the game yet (DD-016): their points take the nearest monster there is and keep
-            // their name, to be pointed at the real one when it comes.
-            (string prefab, bool isStandIn) = kind switch
+            return kind switch
             {
-                Mob.Archer => ("SkeletonArcher", false),
-                Mob.Crossbow => ("SkeletonArcher", true),
-                Mob.Warrior => ("SkeletonWarrior", false),
-                Mob.Mage => ("SkeletonArcher", true),
-                Mob.Skull => ("FlyingHead", false),
-                _ => ("SkeletonSwordsman", false)
+                Mob.Archer or Mob.Crossbow or Mob.Mage => "SkeletonArcher",
+                Mob.Warrior => "SkeletonWarrior",
+                Mob.Skull => "FlyingHead",
+                _ => "SkeletonSwordsman"
             };
-            string name = isStandIn ? $"Monster {kind} (stand-in {prefab}, DD-016)" : $"Monster {kind}";
-
-            return new DungeonDirector.MonsterPlacement { Point = Marker(root, name, point, yaw), Prefab = DungeonSceneBuilder.LoadNetworkObject(prefab) };
         }
 
-        private static DungeonDirector.MonsterPlacement LootPlacement(Transform root, Loot kind, Vector3 point, float yaw)
+        private static string LootPrefab(Loot kind)
         {
-            // There is no urn yet: a crate stands in for it.
-            string prefab = kind switch
+            return kind switch
             {
                 Loot.Rich => "GoldenChest",
                 Loot.Large => "LargeOakChest",
@@ -568,16 +568,30 @@ namespace Game.Scripts.Editor.Dungeon
                 Loot.Barrel => "Barrel",
                 _ => "Crate"
             };
-            string name = kind == Loot.Urn ? "Container Urn (stand-in Crate)" : $"Container {prefab}";
-
-            return new DungeonDirector.MonsterPlacement { Point = Marker(root, name, point, yaw), Prefab = DungeonSceneBuilder.LoadNetworkObject(prefab) };
         }
 
-        /// Furniture and rubble: a pack model where the page's piece has one of its size, otherwise a block of stone, metal or wood.
-        /// Anything taller than a step stops bodies with a box of the page's size. Named as a wall, so nothing stands on its top.
-        private static void BuildProp(Transform root, Item item, float y)
+        /// Kit marker of a monster, container, trap or start item.
+        private static string MarkerName(Item item)
         {
-            GameObject prop = BattleEditorUtility.CreateChild($"Wall Prop {item.Name}", root, new Vector3(item.X, y, item.Z));
+            return item.Shape switch
+            {
+                Shape.Monster => $"Monster {(Mob)item.Kind}",
+                Shape.Container => (Loot)item.Kind == Loot.Urn ? "Container Urn" : $"Container {LootPrefab((Loot)item.Kind)}",
+                Shape.Trap => $"Trap {(Snare)item.Kind}",
+                _ => "Start"
+            };
+        }
+
+        private static string PropName(Item item)
+        {
+            return $"Wall Prop {item.Name}";
+        }
+
+        /// Furniture and rubble: a pack model where the page's piece has one of its size, otherwise a kit block of stone, metal or
+        /// wood. Anything taller than a step stops bodies with a box of the page's size. Named as a wall, so nothing stands on its top.
+        private static GameObject BuildProp(Transform root, Item item, float y)
+        {
+            GameObject prop = BattleEditorUtility.CreateChild(PropName(item), root, new Vector3(item.X, y, item.Z));
             prop.transform.localRotation = Quaternion.Euler(0f, item.R, 0f);
             prop.isStatic = true;
 
@@ -592,6 +606,8 @@ namespace Game.Scripts.Editor.Dungeon
 
             if (s_clutter.Contains(item.Name))
                 DungeonPropBuilder.Shadowless(prop);
+
+            return prop;
         }
 
         /// The look of a prop: a pack model, a stack of them or a block of the page's size.
@@ -632,10 +648,12 @@ namespace Game.Scripts.Editor.Dungeon
                 : item.Name == "Кости" ? DungeonPropBuilder.Bone
                 : item.Name is "Спальник" or "Мешки" ? DungeonPropBuilder.WoodPlanks
                 : DungeonPropBuilder.DarkWood;
-            string key = $"CatacombProp_{(item.IsRound ? "Round" : "Box")}_{item.W:0.##}x{item.H:0.##}x{item.D:0.##}".Replace(',', '.');
-            DungeonMeshBuilder builder = new DungeonMeshBuilder(0.5f);
-            Mesh mesh = (item.IsRound ? builder.Cylinder(Vector3.up * item.H * 0.5f, item.W * 0.5f, item.H, 16) : builder.Box(Vector3.up * item.H * 0.5f, new Vector3(item.W, item.H, item.D))).Save(key);
-            DungeonPropBuilder.MeshObject("Body", prop, mesh, material, default, default, false);
+            KitBlockComponent block = prop.gameObject.AddComponent<KitBlockComponent>();
+            block.SetSize(new Vector3(item.W, item.H, item.D));
+            block.SetRound(item.IsRound);
+            prop.GetComponent<MeshRenderer>().sharedMaterial = material;
+            prop.GetComponent<MeshRenderer>().lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+            CatacombKit.Apply(block);
         }
 
         /// Wall-standing pieces turn their front to the room, away from the nearest wall.
@@ -758,39 +776,7 @@ namespace Game.Scripts.Editor.Dungeon
             float layer = (item.H + Thickness) / layers;
 
             for (int i = 0; i < layers; i++)
-                DungeonStructureBuilder.Block(root, "Platform", new Vector3(item.X, -Thickness + (i + 0.5f) * layer, item.Z), new Vector3(item.W, layer, item.D), DungeonPropBuilder.Ashlar);
-        }
-
-        /// Steps to see and a hidden convex ramp to walk, as the NavMesh and the character controllers need; hidden blocks under
-        /// the ramp, never above it, fill the space below, so the NavMesh finds no floor there.
-        private static void BuildStairs(Transform root, Item item)
-        {
-            int steps = Mathf.Max(2, Mathf.RoundToInt(item.H / 0.25f));
-            float run = item.D / steps;
-            float top = item.Y0 + item.H;
-            string key = $"CatacombStairs_{item.W:0.##}x{item.D:0.##}x{item.H:0.##}x{item.Y0:0.##}".Replace(',', '.');
-            DungeonMeshBuilder visual = new DungeonMeshBuilder(0.5f);
-
-            for (int i = 0; i < steps; i++)
-            {
-                float height = item.H * (i + 1) / steps;
-                visual.Box(new Vector3(0f, item.Y0 + height * 0.5f, -item.D * 0.5f + (i + 0.5f) * run), new Vector3(item.W, height, run));
-            }
-
-            Mesh ramp = new DungeonMeshBuilder(0.5f).Prism(item.W, new Vector2(-item.D * 0.5f, item.Y0), new Vector2(-item.D * 0.5f, item.Y0 + item.H / steps * 0.5f),
-                new Vector2(item.D * 0.5f - run * 0.5f, top), new Vector2(item.D * 0.5f, top), new Vector2(item.D * 0.5f, item.Y0)).Save(key + "_Ramp");
-            GameObject stairs = DungeonPropBuilder.MeshObject("Stairs", root, visual.Save(key), DungeonPropBuilder.Ashlar, new Vector3(item.X, 0f, item.Z), new Vector3(0f, item.R, 0f), false);
-            MeshCollider collider = stairs.AddComponent<MeshCollider>();
-            collider.sharedMesh = ramp;
-            collider.convex = true;
-            float rise = item.H / steps;
-
-            for (int i = 0; i < steps; i++)
-            {
-                BoxCollider filler = stairs.AddComponent<BoxCollider>();
-                filler.center = new Vector3(0f, item.Y0 + (i + 0.5f) * rise * 0.5f, -item.D * 0.5f + (i + 0.5f) * run);
-                filler.size = new Vector3(item.W, (i + 0.5f) * rise, run);
-            }
+                KitBlock("Platform", root, new Vector3(item.X, -Thickness + i * layer, item.Z), new Vector3(item.W, layer, item.D));
         }
 
         /// A glowing circle with a pentagram drawn on the floor.
@@ -817,28 +803,9 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonPropBuilder.MeshObject("Rune", root, builder.Save($"CatacombRune_{item.Radius:0.##}".Replace(',', '.')), material, new Vector3(item.X, 0.02f, item.Z), default, false);
         }
 
-        private static void SetPlacements(SerializedProperty property, List<DungeonDirector.MonsterPlacement> placements)
+        private static GameObject Save(GameObject root, string name, string folder = Folder)
         {
-            property.arraySize = placements.Count;
-
-            for (int i = 0; i < placements.Count; i++)
-            {
-                property.GetArrayElementAtIndex(i).FindPropertyRelative("Point").objectReferenceValue = placements[i].Point;
-                property.GetArrayElementAtIndex(i).FindPropertyRelative("Prefab").objectReferenceValue = placements[i].Prefab;
-            }
-        }
-
-        private static Transform Marker(Transform root, string name, Vector3 point, float yaw)
-        {
-            Transform marker = BattleEditorUtility.CreateChild(name, root, point).transform;
-            marker.localRotation = Quaternion.Euler(0f, yaw, 0f);
-
-            return marker;
-        }
-
-        private static GameObject Save(GameObject root, string name)
-        {
-            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, $"{Folder}/{name}.prefab");
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, $"{folder}/{name}.prefab");
             Object.DestroyImmediate(root);
 
             return prefab;

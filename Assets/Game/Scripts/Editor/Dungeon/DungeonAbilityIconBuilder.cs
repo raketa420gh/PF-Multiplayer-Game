@@ -16,6 +16,8 @@ namespace Game.Scripts.Editor.Dungeon
         /// Painted icons of abilities, perks and subclasses, one file per sanitized name.
         public const string PaintedFolder = "Assets/Game/Textures/Icons/Painted";
         private const int PaintedSize = 256;
+        /// Radius of the circle kept from a painted icon, as a share of half its width: the vignette corners are cut away.
+        private const float CircleShare = 0.9f;
         private const int Size = 128;
         /// Symbols are drawn slightly smaller than the square so the outline and the glow fit in.
         private const float Fit = 0.86f;
@@ -265,7 +267,7 @@ namespace Game.Scripts.Editor.Dungeon
             };
         }
 
-        /// A painted icon of that name when there is one, the drawn symbol otherwise.
+        /// A painted icon of that name when there is one, cut to the circle in its centre, the drawn symbol otherwise.
         public static Sprite BuildOrPainted(string name, string symbol, Color color)
         {
             string painted = $"{PaintedFolder}/{name}.png";
@@ -273,21 +275,40 @@ namespace Game.Scripts.Editor.Dungeon
             if (!File.Exists(painted))
                 return Build(name, symbol, color);
 
-            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(painted);
+            BattleEditorUtility.EnsureFolder(Folder);
+            Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            texture.LoadImage(File.ReadAllBytes(painted));
+            Color32[] pixels = texture.GetPixels32();
+            float half = texture.width * 0.5f;
+            float radius = half * CircleShare;
 
-            if (importer.textureType != TextureImporterType.Sprite || importer.maxTextureSize != PaintedSize)
+            for (int y = 0; y < texture.height; y++)
             {
-                importer.textureType = TextureImporterType.Sprite;
-                importer.spriteImportMode = SpriteImportMode.Single;
-                importer.alphaIsTransparency = true;
-                importer.mipmapEnabled = true;
-                importer.wrapMode = TextureWrapMode.Clamp;
-                importer.maxTextureSize = PaintedSize;
-                importer.textureCompression = TextureImporterCompression.CompressedHQ;
-                importer.SaveAndReimport();
+                for (int x = 0; x < texture.width; x++)
+                {
+                    float distance = new Vector2(x + 0.5f - half, y + 0.5f - texture.height * 0.5f).magnitude;
+                    int i = y * texture.width + x;
+                    pixels[i].a = (byte)(pixels[i].a * Mathf.Clamp01(radius - distance + 0.5f));
+                }
             }
 
-            return AssetDatabase.LoadAssetAtPath<Sprite>(painted);
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            string path = $"{Folder}/{name}.png";
+            File.WriteAllBytes(path, texture.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(texture);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = true;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.maxTextureSize = PaintedSize;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            importer.SaveAndReimport();
+
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
         /// Renders the symbol into `Folder/name.png` and returns it as a sprite.
