@@ -1596,7 +1596,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// A plank hinged at the root along local +Z, raised until the lever behind the hinge lowers it (Alchemy Lab).
         private static void BuildBridgeLever()
         {
-            const float length = 8.4f;
+            const float length = 5f;
             GameObject root = new GameObject("BridgeLever");
             root.AddComponent<NetworkObject>();
             Transform bridge = BattleEditorUtility.CreateChild("Bridge", root.transform).transform;
@@ -1619,8 +1619,8 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.SavePrefab(root, Prefab("BridgeLever"));
         }
 
-        /// Burns whoever stands in the 15 × 15 m moat sunk a quarter metre around the Alchemy Lab; bodies on the walkways and
-        /// the lab floor above it stay clear. The room draws the acid itself.
+        /// Burns whoever stands in the moat ring (out to ±10.5 m) sunk a quarter metre around the Alchemy Lab; bodies on the
+        /// walkways, the lab and wing floors above it stay clear. The room draws the acid itself.
         private static void BuildAcidMoat()
         {
             GameObject root = new GameObject("AcidMoat");
@@ -1629,7 +1629,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_kind", TrapKind.Caltrops);
             BattleEditorUtility.Set(so, "_damage", 8);
             BattleEditorUtility.Set(so, "_period", 0.5f);
-            BattleEditorUtility.Set(so, "_halfExtents", new Vector3(7.5f, 0.2f, 7.5f));
+            BattleEditorUtility.Set(so, "_halfExtents", new Vector3(10.5f, 0.2f, 10.5f));
             BattleEditorUtility.Set(so, "_center", new Vector3(0f, -0.22f, 0f));
             BattleEditorUtility.Set(so, "_victimMask", (LayerMask)(1 << LayerMask.NameToLayer(BattleEditorUtility.CharacterLayer)));
             BattleEditorUtility.Set(so, "_slowMagnitude", 30f);
