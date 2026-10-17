@@ -28,7 +28,7 @@ namespace Game.Scripts.Battle
             return surface;
         }
 
-        private static bool IsWood(Material material)
+        public static bool IsWood(Material material)
         {
             if (material == null)
                 return false;

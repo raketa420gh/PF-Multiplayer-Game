@@ -29,6 +29,19 @@ namespace Game.Scripts.Editor.Dungeon
         public static Material ShrineGlow => Emissive("ShrineGlow", new Color(0.9f, 0.8f, 0.4f), 2.5f);
         public static Material SwarmWall => TransparentUnlit("SwarmWall", new Color(0.12f, 0.02f, 0.1f, 0.45f));
 
+        /// Footsteps on the object's colliders sound as the surface.
+        public static void TagSurface(GameObject target, FootstepSurface surface)
+        {
+            BattleEditorUtility.Set(target.AddComponent<FootstepSurfaceTag>(), "_surface", surface);
+        }
+
+        /// Wooden walkable geometry sounds as wood (stairs as a wooden flight); stone needs no tag.
+        public static void TagWood(GameObject target, Material material, FootstepSurface surface = FootstepSurface.Wood)
+        {
+            if (WorldSurface.IsWood(material))
+                TagSurface(target, surface);
+        }
+
         public static Material Textured(string name, string texture, float tiling, float smoothness, float metallic = 0f)
         {
             BattleEditorUtility.EnsureFolder(MaterialsFolder);

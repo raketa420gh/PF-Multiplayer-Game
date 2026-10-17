@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using Game.Scripts.Dungeon;
 using UnityEngine;
 
 namespace Game.Scripts.Editor.Dungeon
@@ -20,7 +21,10 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject block = DungeonPropBuilder.MeshObject(name, parent, mesh, material, center, new Vector3(0f, yaw, 0f), false);
 
             if (hasCollider)
+            {
                 block.AddComponent<BoxCollider>();
+                DungeonPropBuilder.TagWood(block, material);
+            }
 
             return block;
         }
@@ -54,6 +58,7 @@ namespace Game.Scripts.Editor.Dungeon
             MeshCollider collider = stairs.AddComponent<MeshCollider>();
             collider.sharedMesh = ramp;
             collider.convex = true;
+            DungeonPropBuilder.TagWood(stairs, material, FootstepSurface.WoodStair);
 
             return stairs;
         }

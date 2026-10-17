@@ -545,6 +545,7 @@ namespace Game.Scripts.Editor.Dungeon
                 BoxCollider box = go.AddComponent<BoxCollider>();
                 box.center = Vector3.down * thickness * 0.5f;
                 box.size = size;
+                DungeonPropBuilder.TagWood(go, material);
             }
 
             return go;

@@ -1606,6 +1606,7 @@ namespace Game.Scripts.Editor.Dungeon
             BoxCollider deck = bridge.gameObject.AddComponent<BoxCollider>();
             deck.center = center;
             deck.size = size;
+            DungeonPropBuilder.TagSurface(bridge.gameObject, FootstepSurface.Wood);
             GameObject lever = DungeonPropBuilder.Lever(out Transform handle);
             lever.transform.SetParent(root.transform, false);
             lever.transform.localPosition = new Vector3(0f, 0f, -2.4f);

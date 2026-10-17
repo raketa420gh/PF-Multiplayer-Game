@@ -41,6 +41,8 @@ namespace Game.Scripts.Editor.Dungeon
         private const int WaterLayer = 2;
         private const float BarSpacing = 0.25f;
         private const float BarHeight = 3f;
+        /// The page's prop that footsteps on it sound as gravel.
+        private const string RubbleProp = "Обломки";
         /// Rooms are built and photographed for their map far below everything else of the scene.
         public static readonly Vector3 Workshop = new(0f, -400f, 0f);
 
@@ -602,6 +604,9 @@ namespace Game.Scripts.Editor.Dungeon
                 collider.size = new Vector3(item.W, item.H, item.D);
             }
 
+            if (item.Name == RubbleProp)
+                DungeonPropBuilder.TagSurface(prop, FootstepSurface.Rubble);
+
             Dress(prop.transform, item);
 
             if (s_clutter.Contains(item.Name))
@@ -765,6 +770,7 @@ namespace Game.Scripts.Editor.Dungeon
             trigger.isTrigger = true;
             trigger.center = Vector3.up * WaterDepth * 0.5f;
             trigger.size = new Vector3(item.W, WaterDepth, item.D);
+            DungeonPropBuilder.TagSurface(volume, FootstepSurface.Water);
             water.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 

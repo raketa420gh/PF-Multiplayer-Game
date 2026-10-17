@@ -11,33 +11,42 @@ namespace Game.Scripts.Dungeon
         Plate
     }
 
-    /// Recorded steps per kind of footwear.
+    /// What the foot lands on; untagged ground is stone. Order is serialized: only append.
+    public enum FootstepSurface : byte
+    {
+        Stone,
+        Wood,
+        WoodStair,
+        Jail,
+        Rubble,
+        Water,
+        Grass
+    }
+
+    /// Recorded steps per surface and kind of footwear; cloth and leather share the leather takes as in Dark and Darker,
+    /// heavy leather plays them lower.
     [CreateAssetMenu(menuName = "Game/Dungeon/Footstep Sound Config")]
     public sealed class FootstepSoundConfig : ScriptableObject
     {
         [SerializeField]
-        private AudioClip[] _bare = Array.Empty<AudioClip>();
+        private SurfaceSounds[] _surfaces = Array.Empty<SurfaceSounds>();
 
         [SerializeField]
-        private AudioClip[] _light = Array.Empty<AudioClip>();
+        private float _heavyPitch = 0.9f;
 
-        [SerializeField]
-        private AudioClip[] _heavy = Array.Empty<AudioClip>();
-
-        [SerializeField]
-        private AudioClip[] _plate = Array.Empty<AudioClip>();
-
-        public AudioClip Pick(Footwear footwear)
+        public AudioClip Pick(Footwear footwear, FootstepSurface surface)
         {
-            AudioClip[] clips = footwear switch
-            {
-                Footwear.Bare => _bare,
-                Footwear.Heavy => _heavy,
-                Footwear.Plate => _plate,
-                _ => _light
-            };
+            AudioClip[] clips = Find(surface)?.Get(footwear);
 
-            return clips.Length == 0 ? null : clips[UnityEngine.Random.Range(0, clips.Length)];
+            if (clips == null || clips.Length == 0)
+                clips = Find(FootstepSurface.Stone)?.Get(footwear);
+
+            return clips == null || clips.Length == 0 ? null : clips[UnityEngine.Random.Range(0, clips.Length)];
+        }
+
+        public float GetPitch(Footwear footwear)
+        {
+            return footwear == Footwear.Heavy ? _heavyPitch : 1f;
         }
 
         /// Boots decide the step: none is barefoot, cloth is soft leather, leather is heavy, plate clanks.
@@ -52,6 +61,39 @@ namespace Game.Scripts.Dungeon
                 ArmorType.Leather => Footwear.Heavy,
                 _ => Footwear.Light
             };
+        }
+
+        private SurfaceSounds Find(FootstepSurface surface)
+        {
+            return Array.Find(_surfaces, sounds => sounds.Surface == surface);
+        }
+
+        [Serializable]
+        private sealed class SurfaceSounds
+        {
+            [SerializeField]
+            private FootstepSurface _surface;
+
+            [SerializeField]
+            private AudioClip[] _bare = Array.Empty<AudioClip>();
+
+            [SerializeField]
+            private AudioClip[] _leather = Array.Empty<AudioClip>();
+
+            [SerializeField]
+            private AudioClip[] _plate = Array.Empty<AudioClip>();
+
+            public FootstepSurface Surface => _surface;
+
+            public AudioClip[] Get(Footwear footwear)
+            {
+                return footwear switch
+                {
+                    Footwear.Bare => _bare,
+                    Footwear.Plate => _plate,
+                    _ => _leather
+                };
+            }
         }
     }
 }

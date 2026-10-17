@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Editor.Battle
 {
-    /// Turns the recorded takes picked by the user (Audio/Battle/Weapons/<set>/<surface>_NN.wav, Audio/Dungeon/Steps/<footwear>_NN.wav)
+    /// Turns the recorded takes picked by the user (Audio/Battle/Weapons/<set>/<surface>_NN.wav, Audio/Dungeon/Steps/<bare|leather|plate>_<surface>_NN.wav)
     /// into sound configs and hands them to weapons, bodies, footsteps and the scenes' feedback.
     internal static class CombatSoundBuilder
     {
@@ -74,11 +74,17 @@ namespace Game.Scripts.Editor.Battle
             }
 
             SerializedObject steps = new SerializedObject(BattleEditorUtility.LoadOrCreate<FootstepSoundConfig>(FootstepsPath));
+            FootstepSurface[] surfaces = (FootstepSurface[])System.Enum.GetValues(typeof(FootstepSurface));
+            steps.FindProperty("_surfaces").arraySize = surfaces.Length;
+            KeepLoudness(StepsFolder);
 
-            foreach (string footwear in new[] { "bare", "light", "heavy", "plate" })
+            for (int i = 0; i < surfaces.Length; i++)
             {
-                AudioClip[] clips = Load(StepsFolder, footwear);
-                BattleEditorUtility.Set(steps, "_" + footwear, clips.Length > 0 ? clips : Load(StepsFolder, "light"));
+                string entry = $"_surfaces.Array.data[{i}]";
+                BattleEditorUtility.Set(steps, entry + "._surface", surfaces[i]);
+
+                foreach (string shoe in new[] { "bare", "leather", "plate" })
+                    BattleEditorUtility.Set(steps, $"{entry}._{shoe}", Load(StepsFolder, $"{shoe}_{surfaces[i].ToString().ToLowerInvariant()}"));
             }
 
             steps.ApplyModifiedPropertiesWithoutUndo();
@@ -174,6 +180,24 @@ namespace Game.Scripts.Editor.Battle
             string[] parts = fallback.Split('/');
 
             return Load($"{WeaponsFolder}/{parts[0]}", parts[1]);
+        }
+
+        /// The takes are levelled against each other as in Dark and Darker: the importer must not normalize them.
+        private static void KeepLoudness(string folder)
+        {
+            foreach (string file in Directory.GetFiles(folder, "*.wav"))
+            {
+                AssetImporter importer = AssetImporter.GetAtPath(file.Replace('\\', '/'));
+                SerializedObject so = new SerializedObject(importer);
+                SerializedProperty normalize = so.FindProperty("m_Normalize");
+
+                if (!normalize.boolValue)
+                    continue;
+
+                normalize.boolValue = false;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                importer.SaveAndReimport();
+            }
         }
 
         private static AudioClip[] Load(string folder, string category)

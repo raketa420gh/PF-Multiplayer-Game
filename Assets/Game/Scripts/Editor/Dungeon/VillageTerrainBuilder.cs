@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Scripts.Dungeon;
 using Game.Scripts.Editor.Battle;
 using UnityEditor;
 using UnityEngine;
@@ -72,6 +73,13 @@ namespace Game.Scripts.Editor.Dungeon
             go.isStatic = true;
             Terrain terrain = go.GetComponent<Terrain>();
             terrain.materialTemplate = TerrainMaterial();
+            SerializedObject steps = new SerializedObject(go.AddComponent<FootstepTerrainSurfaceTag>());
+            // Order of the layers above; dirt roads crunch as gravel, mud squelches as shallow water.
+            BattleEditorUtility.Set(steps, "_layers", new[] { FootstepSurface.Grass, FootstepSurface.Rubble, FootstepSurface.Water, FootstepSurface.Grass,
+                FootstepSurface.Stone, FootstepSurface.Stone, FootstepSurface.Water });
+            BattleEditorUtility.Set(steps, "_waterLevel", parent.position.y + VillageLayout.WaterLevel);
+            BattleEditorUtility.Set(steps, "_terrain", terrain);
+            steps.ApplyModifiedPropertiesWithoutUndo();
             // The mist swallows everything past ~110 m: nothing beyond it is drawn.
             terrain.heightmapPixelError = 5f;
             terrain.basemapDistance = 120f;
