@@ -1,0 +1,174 @@
+{
+ "name": "player_step_plate_water",
+ "about": "DaD Footsteps_1p Plate_WaterLow (measured as armor layer + water slosh layer summed): sabaton clink + splash 40-100 ms, slosh swelling to ~300 ms and fading by 1.2-2 s",
+ "reference": "(summed pairs of Plate_WaterLow short x long files)",
+ "target": [
+  -8.6,
+  -7.7,
+  -0.2,
+  -1.1,
+  -1.5,
+  -7.3
+ ],
+ "length_ms": 2000,
+ "variants": 12,
+ "seed": 6600,
+ "layers": [
+  {
+   "src": "metal_steps/*.wav",
+   "at_ms": [
+    8,
+    8
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "lp": 500
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/metal-small*.wav",
+   "at_ms": [
+    8,
+    12
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     14,
+     20
+    ]
+   }
+  },
+  {
+   "src": "water_splash_sand/splash*.wav",
+   "at_ms": [
+    40,
+    80
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 150,
+   "max_ms": 1900,
+   "snap": {
+    "hold": [
+     450,
+     650
+    ],
+    "tau": [
+     350,
+     450
+    ]
+   }
+  },
+  {
+   "src": "splash_slime/splash_*.ogg",
+   "at_ms": [
+    240,
+    330
+   ],
+   "gain_db": [
+    -6,
+    -2
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 200,
+   "max_ms": 600
+  },
+  {
+   "src": "splash_slime/splash_*.ogg",
+   "at_ms": [
+    30,
+    70
+   ],
+   "gain_db": [
+    -8,
+    -4
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 200,
+   "max_ms": 600
+  },
+  {
+   "src": "ezwa_splash/*/*.flac",
+   "at_ms": [
+    200,
+    600
+   ],
+   "gain_db": [
+    -20,
+    -14
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "count": [
+    1,
+    3
+   ],
+   "gap_ms": [
+    150,
+    300
+   ],
+   "until_ms": 1200,
+   "max_ms": 300
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/chainmail*.wav",
+   "at_ms": [
+    20,
+    120
+   ],
+   "gain_db": [
+    -28,
+    -22
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 300,
+   "max_ms": 450
+  }
+ ],
+ "match": 0.85,
+ "peak_db": -6,
+ "room": {
+  "db": -24,
+  "decay_ms": 200,
+  "len_ms": 1500,
+  "band": [
+   300,
+   6000
+  ]
+ },
+ "fade_ms": 600
+}

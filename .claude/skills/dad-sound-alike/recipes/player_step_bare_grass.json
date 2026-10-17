@@ -1,0 +1,119 @@
+{
+ "name": "player_step_bare_grass",
+ "about": "DaD Footsteps_1p Bare_Grass: soft skin thump into grass, leaf/blade swish decaying over ~300 ms, cloth rustle (Common_Layer stand-in)",
+ "reference": "D:/DaD_Sounds/Footsteps_1p/Bare_Grass_step",
+ "length_ms": 630,
+ "variants": 12,
+ "seed": 6000,
+ "layers": [
+  {
+   "src": "footsteps0/*.ogg",
+   "at_ms": [
+    20,
+    26
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 900,
+   "hp": 60,
+   "snap": {
+    "hold": [
+     25,
+     35
+    ],
+    "tau": [
+     16,
+     24
+    ]
+   }
+  },
+  {
+   "src": "rustle_leaves/rustle/*.flac",
+   "at_ms": [
+    20,
+    30
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 1500,
+   "max_ms": 550,
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     110,
+     150
+    ]
+   }
+  },
+  {
+   "src": "kdd_steps/leaves0*.ogg",
+   "at_ms": [
+    20,
+    28
+   ],
+   "gain_db": [
+    -9,
+    -5
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     30,
+     50
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    10,
+    60
+   ],
+   "gain_db": [
+    -28,
+    -22
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 150,
+   "max_ms": 450
+  }
+ ],
+ "room": {
+  "db": -24,
+  "decay_ms": 120,
+  "len_ms": 550,
+  "band": [
+   300,
+   8000
+  ]
+ },
+ "match": 0.85,
+ "fade_ms": 150,
+ "peak_db": -13
+}

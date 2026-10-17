@@ -1,0 +1,143 @@
+{
+ "name": "player_step_leather_grass",
+ "about": "DaD Footsteps_1p Leather_Grass: leather sole thump into grass, longer swish (toe roll) to ~400 ms, cloth rustle",
+ "reference": "D:/DaD_Sounds/Footsteps_1p/Leather_Grass_step",
+ "length_ms": 720,
+ "variants": 12,
+ "seed": 6100,
+ "layers": [
+  {
+   "src": "footsteps/footsteps/step_lth*.ogg",
+   "at_ms": [
+    8,
+    8
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     25,
+     35
+    ],
+    "tau": [
+     22,
+     30
+    ]
+   }
+  },
+  {
+   "src": "footsteps0/*.ogg",
+   "at_ms": [
+    8,
+    9
+   ],
+   "gain_db": [
+    2,
+    4
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "lp": 150,
+   "snap": {
+    "hold": [
+     25,
+     35
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "rustle_leaves/rustle/*.flac",
+   "at_ms": [
+    10,
+    25
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 1200,
+   "max_ms": 650,
+   "snap": {
+    "hold": [
+     80,
+     120
+    ],
+    "tau": [
+     150,
+     200
+    ]
+   }
+  },
+  {
+   "src": "kdd_steps/leaves0*.ogg",
+   "at_ms": [
+    90,
+    130
+   ],
+   "gain_db": [
+    -14,
+    -9
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     30,
+     50
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    10,
+    60
+   ],
+   "gain_db": [
+    -28,
+    -22
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 150,
+   "max_ms": 450
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 150,
+  "len_ms": 650,
+  "band": [
+   150,
+   8000
+  ]
+ },
+ "match": 0.85,
+ "fade_ms": 150,
+ "peak_db": -12
+}

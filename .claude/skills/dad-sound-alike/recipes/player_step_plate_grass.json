@@ -1,0 +1,133 @@
+{
+ "name": "player_step_plate_grass",
+ "about": "DaD Footsteps_1p Plate_Grass: heavy sabaton thump into turf, grass swish, faint armor tick and chainmail jingle",
+ "reference": "D:/DaD_Sounds/Footsteps_1p/Plate_Grass_step",
+ "length_ms": 560,
+ "variants": 12,
+ "seed": 6200,
+ "layers": [
+  {
+   "src": "metal_steps/*.wav",
+   "at_ms": [
+    6,
+    6
+   ],
+   "gain_db": [
+    -5,
+    -3
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "lp": 450
+  },
+  {
+   "src": "footsteps0/*.ogg",
+   "at_ms": [
+    12,
+    20
+   ],
+   "gain_db": [
+    -1,
+    1
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 600,
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     22,
+     30
+    ]
+   }
+  },
+  {
+   "src": "rustle_leaves/rustle/*.flac",
+   "at_ms": [
+    15,
+    25
+   ],
+   "gain_db": [
+    -9,
+    -5
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 1500,
+   "max_ms": 450,
+   "snap": {
+    "hold": [
+     50,
+     70
+    ],
+    "tau": [
+     70,
+     100
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/metal-small*.wav",
+   "at_ms": [
+    8,
+    14
+   ],
+   "gain_db": [
+    -18,
+    -13
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     12,
+     18
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/chainmail*.wav",
+   "at_ms": [
+    20,
+    120
+   ],
+   "gain_db": [
+    -28,
+    -22
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 300,
+   "max_ms": 450
+  }
+ ],
+ "room": {
+  "db": -24,
+  "decay_ms": 90,
+  "len_ms": 500,
+  "band": [
+   200,
+   8000
+  ]
+ },
+ "match": 0.85,
+ "fade_ms": 160,
+ "peak_db": -8.5
+}

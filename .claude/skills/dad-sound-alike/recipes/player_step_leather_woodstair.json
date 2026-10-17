@@ -1,0 +1,142 @@
+{
+ "name": "player_step_leather_woodstair",
+ "about": "DaD Footsteps_1p Leather_WoodStair: leather sole on stair: dull heel boom ~40-120 ms, tread creak/settle knocks 250-400 ms, long decay",
+ "reference": "D:/DaD_Sounds/Footsteps_1p/Leather_WoodStair_step",
+ "length_ms": 900,
+ "variants": 12,
+ "seed": 6400,
+ "layers": [
+  {
+   "src": "kdd_steps/wood0*.ogg",
+   "at_ms": [
+    20,
+    40
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -4,
+    -2
+   ],
+   "snap": {
+    "hold": [
+     35,
+     50
+    ],
+    "tau": [
+     35,
+     45
+    ]
+   }
+  },
+  {
+   "src": "footsteps/footsteps/step_lth*.ogg",
+   "at_ms": [
+    20,
+    40
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 1500,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     20,
+     28
+    ]
+   }
+  },
+  {
+   "src": "kdd_steps/wood0*.ogg",
+   "at_ms": [
+    100,
+    140
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     10,
+     16
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "wood_metal2/*/wood[12].wav",
+   "at_ms": [
+    240,
+    360
+   ],
+   "gain_db": [
+    -16,
+    -11
+   ],
+   "pitch": [
+    -6,
+    -3
+   ],
+   "lp": 1500,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   },
+   "chance": 0.7
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    10,
+    60
+   ],
+   "gain_db": [
+    -28,
+    -22
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 150,
+   "max_ms": 450
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 170,
+  "len_ms": 800,
+  "band": [
+   80,
+   1500
+  ]
+ },
+ "match": 0.9,
+ "fade_ms": 250,
+ "peak_db": -5
+}
