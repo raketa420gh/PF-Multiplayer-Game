@@ -1,0 +1,116 @@
+{
+ "name": "player_step_leather_rubble",
+ "about": "DaD Footsteps_1p Leather_Rubble: leather sole on rubble: mid crunch, pebble clicks 50-130 ms",
+ "reference": "D:/DaD_Sounds/Footsteps_1p/Leather_Rubble_step",
+ "length_ms": 600,
+ "variants": 12,
+ "seed": 5700,
+ "layers": [
+  {
+   "src": "snow_gravel/*/*gravel_[01]*.flac",
+   "at_ms": [
+    8,
+    10
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "max_ms": 260,
+   "snap": {
+    "hold": [
+     35,
+     50
+    ],
+    "tau": [
+     20,
+     28
+    ]
+   },
+   "hp": 400
+  },
+  {
+   "src": "footsteps/footsteps/step_lth*.ogg",
+   "at_ms": [
+    8,
+    10
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     10,
+     16
+    ],
+    "tau": [
+     16,
+     24
+    ]
+   }
+  },
+  {
+   "src": "kdd_steps/gravel.ogg",
+   "count": [
+    2,
+    4
+   ],
+   "at_ms": [
+    50,
+    70
+   ],
+   "gap_ms": [
+    20,
+    40
+   ],
+   "until_ms": 140,
+   "gain_db": [
+    -20,
+    -14
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "max_ms": 80
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    10,
+    60
+   ],
+   "gain_db": [
+    -28,
+    -22
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 150,
+   "max_ms": 450
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 100,
+  "len_ms": 500,
+  "band": [
+   200,
+   5000
+  ]
+ },
+ "match": 0.95,
+ "fade_ms": 150,
+ "peak_db": -4
+}

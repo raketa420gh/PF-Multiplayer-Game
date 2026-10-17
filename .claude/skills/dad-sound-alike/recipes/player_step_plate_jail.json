@@ -1,0 +1,128 @@
+{
+ "name": "player_step_plate_jail",
+ "about": "DaD Footsteps_1p Plate_Jail: sabaton on an iron grate: bright clang, grate rattles 100-450 ms, long ring",
+ "reference": "D:/DaD_Sounds/Footsteps_1p/Plate_Jail_step",
+ "length_ms": 1700,
+ "variants": 12,
+ "seed": 5500,
+ "layers": [
+  {
+   "src": "metal_steps/*.wav",
+   "at_ms": [
+    8,
+    8
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -1,
+    1
+   ]
+  },
+  {
+   "src": "wood_metal2/*/metal*.wav",
+   "at_ms": [
+    8,
+    12
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     10,
+     16
+    ],
+    "tau": [
+     35,
+     50
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/clink*.wav",
+   "count": [
+    1,
+    3
+   ],
+   "at_ms": [
+    100,
+    250
+   ],
+   "gap_ms": [
+    80,
+    160
+   ],
+   "until_ms": 450,
+   "gain_db": [
+    -28,
+    -20
+   ],
+   "pitch": [
+    -3,
+    2
+   ]
+  },
+  {
+   "src": "metal_impact/bong1.wav",
+   "at_ms": [
+    8,
+    12
+   ],
+   "gain_db": [
+    -22,
+    -18
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     150,
+     200
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    10,
+    60
+   ],
+   "gain_db": [
+    -28,
+    -22
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 150,
+   "max_ms": 450
+  }
+ ],
+ "room": {
+  "db": -24,
+  "decay_ms": 250,
+  "len_ms": 1500,
+  "band": [
+   300,
+   9000
+  ]
+ },
+ "match": 0.85,
+ "fade_ms": 300,
+ "peak_db": -6
+}

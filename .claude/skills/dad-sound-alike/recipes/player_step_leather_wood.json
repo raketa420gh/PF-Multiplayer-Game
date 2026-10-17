@@ -1,0 +1,122 @@
+{
+ "name": "player_step_leather_wood",
+ "about": "DaD Footsteps_1p Leather_Wood: leather sole on wood planks: boomy heel + toe 90-120 ms later",
+ "reference": "D:/DaD_Sounds/Footsteps_1p/Leather_Wood_step",
+ "length_ms": 710,
+ "variants": 12,
+ "seed": 5100,
+ "layers": [
+  {
+   "src": "kdd_steps/wood0*.ogg",
+   "at_ms": [
+    8,
+    8
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "footsteps/footsteps/step_lth*.ogg",
+   "at_ms": [
+    8,
+    10
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     25,
+     35
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "kdd_steps/wood0*.ogg",
+   "at_ms": [
+    90,
+    120
+   ],
+   "gain_db": [
+    -9,
+    -5
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "snap": {
+    "hold": [
+     10,
+     16
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "footsteps/footsteps/step_lth*.ogg",
+   "at_ms": [
+    92,
+    122
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     14,
+     20
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 150,
+  "len_ms": 650,
+  "band": [
+   80,
+   2000
+  ]
+ },
+ "match": 0.85,
+ "fade_ms": 177,
+ "peak_db": -3
+}

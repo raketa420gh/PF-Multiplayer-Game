@@ -1,0 +1,115 @@
+{
+ "name": "player_step_bare_jail",
+ "about": "DaD Footsteps_1p Bare_Jail: bare foot on an iron grate: soft thump + broadband metal ring with a long resonant tail",
+ "reference": "D:/DaD_Sounds/Footsteps_1p/Bare_Jail_step",
+ "length_ms": 1800,
+ "variants": 12,
+ "seed": 5300,
+ "layers": [
+  {
+   "src": "footsteps0/0[456]-*.ogg",
+   "at_ms": [
+    8,
+    8
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 600,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "wood_metal2/*/metal*.wav",
+   "at_ms": [
+    8,
+    12
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -6,
+    -3
+   ],
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     35,
+     50
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/bong1.wav",
+   "at_ms": [
+    8,
+    12
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     150,
+     200
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    10,
+    60
+   ],
+   "gain_db": [
+    -28,
+    -22
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 150,
+   "max_ms": 450
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 250,
+  "len_ms": 1600,
+  "band": [
+   150,
+   6000
+  ]
+ },
+ "match": 0.85,
+ "fade_ms": 300,
+ "peak_db": -8
+}

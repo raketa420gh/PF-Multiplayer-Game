@@ -1,0 +1,153 @@
+{
+ "name": "player_step_plate_rubble",
+ "about": "DaD Footsteps_1p Plate_Rubble: sabaton on rubble: crunch builds to a peak ~60 ms, metal edge, pebble scatter",
+ "reference": "D:/DaD_Sounds/Footsteps_1p/Plate_Rubble_step",
+ "length_ms": 800,
+ "variants": 12,
+ "seed": 5800,
+ "layers": [
+  {
+   "src": "snow_gravel/*/*gravel_[01]*.flac",
+   "at_ms": [
+    8,
+    10
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "max_ms": 300,
+   "snap": {
+    "hold": [
+     60,
+     80
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   },
+   "lp": 4000,
+   "hp": 800
+  },
+  {
+   "src": "metal_steps/*.wav",
+   "at_ms": [
+    40,
+    55
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   },
+   "lp": 500
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/metal-small*.wav",
+   "at_ms": [
+    40,
+    55
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     12,
+     18
+    ]
+   }
+  },
+  {
+   "src": "fantozzi/*/flac/*Stone*.flac",
+   "count": [
+    2,
+    4
+   ],
+   "at_ms": [
+    60,
+    90
+   ],
+   "gap_ms": [
+    30,
+    70
+   ],
+   "until_ms": 220,
+   "gain_db": [
+    -18,
+    -12
+   ],
+   "pitch": [
+    2,
+    6
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     2,
+     4
+    ],
+    "tau": [
+     4,
+     8
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    10,
+    60
+   ],
+   "gain_db": [
+    -28,
+    -22
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 150,
+   "max_ms": 450
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 130,
+  "len_ms": 650,
+  "band": [
+   200,
+   8000
+  ]
+ },
+ "match": 0.95,
+ "fade_ms": 200,
+ "peak_db": -4
+}

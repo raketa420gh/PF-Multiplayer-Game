@@ -1,0 +1,150 @@
+{
+ "name": "player_step_leather",
+ "about": "DaD Footsteps_1p Leather_Stone: dull leather sole heel, toe 80-110 ms later at a similar level, stone-room tail",
+ "reference": "D:/DaD_Sounds/Footsteps_1p/Leather_Stone",
+ "length_ms": 800,
+ "variants": 12,
+ "seed": 3000,
+ "layers": [
+  {
+   "src": "footsteps/footsteps/step_lth*.ogg",
+   "at_ms": [
+    8,
+    8
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     12,
+     18
+    ]
+   }
+  },
+  {
+   "src": "footsteps0/0[456]-*.ogg",
+   "at_ms": [
+    8,
+    9
+   ],
+   "gain_db": [
+    2,
+    4
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "lp": 150,
+   "snap": {
+    "hold": [
+     12,
+     18
+    ],
+    "tau": [
+     15,
+     22
+    ]
+   }
+  },
+  {
+   "src": "fantozzi/*/flac/*Stone*.flac",
+   "at_ms": [
+    8,
+    10
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "lp": 3000,
+   "snap": {
+    "hold": [
+     4,
+     8
+    ],
+    "tau": [
+     8,
+     14
+    ]
+   }
+  },
+  {
+   "src": "footsteps/footsteps/step_lth*.ogg",
+   "at_ms": [
+    80,
+    110
+   ],
+   "gain_db": [
+    -5,
+    -1
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     12,
+     18
+    ]
+   }
+  },
+  {
+   "src": "fantozzi/*/flac/*Stone*.flac",
+   "at_ms": [
+    82,
+    112
+   ],
+   "gain_db": [
+    -15,
+    -10
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 3000,
+   "snap": {
+    "hold": [
+     4,
+     8
+    ],
+    "tau": [
+     8,
+     14
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -24,
+  "decay_ms": 170,
+  "len_ms": 700,
+  "band": [
+   80,
+   4000
+  ]
+ },
+ "match": 0.9,
+ "fade_ms": 200,
+ "peak_db": -10
+}
