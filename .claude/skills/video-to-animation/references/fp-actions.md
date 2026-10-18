@@ -24,11 +24,11 @@ Dark footage: `--gamma 1.8` (default of `fp`). A spectated player (DaD death cam
 
 ## 2. Screen → root space
 
-FP camera: `BattleAnimationLibrary.Eye` = (0, 1.731, 0.115), looking +Z, vertical FOV 75 (tan 0.767, horizontal tan
+FP camera: `BattleAnimationLibrary.Eye` = (0, 1.67, 0.115), looking +Z, vertical FOV 75 (tan 0.767, horizontal tan
 1.364 at 16:9). DaD footage is 90 horizontal; matching the screen *fractions* is the requirement, so convert with ours:
 
 ```
-x = (2u - 1) * 1.364 * d        y = 1.731 - (2v - 1) * 0.767 * d        z = 0.115 + d
+x = (2u - 1) * 1.364 * d        y = 1.67 - (2v - 1) * 0.767 * d        z = 0.115 + d
 ```
 
 Start with d = 0.32 for a hand that fills ~12-15% of the screen width (DaD gloves are bulky; our bare hand reads the

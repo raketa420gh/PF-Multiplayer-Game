@@ -116,7 +116,7 @@ contradict (damage, block numbers, the peak-on-crosshair rule).
   `(0.17, 1.47, -0.06)`; a peak grip at 0.79 m left the hand 15 cm short and the swing spinning. "Main hand short"
   in the preview is this.
 - A thrust: put the windup, the peak and the end grip on one line along the direction the strike point is aimed at
-  the peak (elevation = asin((1.731 - grip y) / strike), about 20 degrees for a chest-high grip and a 1.45 m point)
+  the peak (elevation = asin((1.67 - grip y) / strike), about 20 degrees for a chest-high grip and a 1.45 m point)
   and give the windup and end that elevation. Otherwise the point travels across the blade, the swing counts as a
   cut and its edge spins to follow it.
 - Around the peak of a cut keep the neighbouring keys at the peak's re-aimed elevation (read it in the report): a

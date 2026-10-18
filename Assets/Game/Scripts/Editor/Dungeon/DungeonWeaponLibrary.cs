@@ -702,7 +702,9 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Vector3 OnScreen(float u, float v, float depth)
         {
-            return new Vector3((2f * u - 1f) * 1.364f * depth, 1.731f - (2f * v - 1f) * 0.767f * depth, 0.115f + depth);
+            Vector3 eye = BattleAnimationLibrary.Eye;
+
+            return new Vector3(eye.x + (2f * u - 1f) * 1.364f * depth, eye.y - (2f * v - 1f) * 0.767f * depth, eye.z + depth);
         }
 
         private static BodyPose Shifted(BodyPose pose, Vector3 offset)

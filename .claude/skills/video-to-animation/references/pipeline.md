@@ -25,7 +25,7 @@ the source's strike point, or the peak check fails for the variant.
 Root space in metres: the character stands at the origin facing **+Z**, **+X is its right**, +Y up.
 Blade yaw = `atan2(x, z)` (0 forward, +90 to the right, 180 straight back), elevation = `asin(y)`.
 
-- Eye (the crosshair is the ray from it along +Z): `(0, 1.731, 0.115)` (between the model's eyes).
+- Eye (the crosshair is the ray from it along +Z): `(0, 1.67, 0.115)` (between the model's eyes).
 - Right shoulder about `(0.17, 1.47, -0.06)`; the wrist reaches 0.59 m from it, the grip is 0.14 m past the wrist.
 - The main hand is always the right one; a left-handed weapon or an off-hand punch is the same clip mirrored.
 

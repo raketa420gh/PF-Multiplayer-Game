@@ -519,8 +519,18 @@ namespace Game.Scripts.Editor.Battle
             }
 
             SkinnedMeshRenderer body = BodySource(man, CcPrefix + "Body");
+            // The skin as the source skeleton poses it, which is what the binding carries over (not the mesh's own bind pose).
+            Mesh posed = new Mesh();
+            body.BakeMesh(posed);
+            float sole = float.MaxValue;
+
+            foreach (Vector3 vertex in posed.vertices)
+                sole = Mathf.Min(sole, body.transform.TransformPoint(vertex).y * scale);
+
+            Object.DestroyImmediate(posed);
+
             Material[] skin = Array.ConvertAll(body.sharedMaterials, material => material.name == "Std_Eyelash" ? null : ManSkinMaterial(material));
-            Renderer[] renderers = SplitBody(body, "Male", parent, bones, skin, BindMan(body, bones, scale, joints), Array.ConvertAll(body.bones, ManBone));
+            Renderer[] renderers = SplitBody(body, "Male", parent, bones, skin, BindMan(body, bones, scale, joints, sole), Array.ConvertAll(body.bones, ManBone));
             Material eye = ManEyeMaterial();
             Material teeth = BattleEditorUtility.GetMaterial("ManTeeth", new Color(0.86f, 0.82f, 0.74f), 0f, 0.6f);
             Material hair = HairMaterial("ManHair", ManHair, new Color(0.16f, 0.1f, 0.06f));
@@ -548,7 +558,7 @@ namespace Game.Scripts.Editor.Battle
                 }
 
                 string name = "Male_" + part;
-                CreateRenderer(name, renderers[region].transform, Extract(feature, name, triangles, bones, BindMan(feature, bones, scale, joints)), bones,
+                CreateRenderer(name, renderers[region].transform, Extract(feature, name, triangles, bones, BindMan(feature, bones, scale, joints, sole)), bones,
                     Array.FindAll(materials, material => material != null));
             }
 
@@ -756,8 +766,10 @@ namespace Game.Scripts.Editor.Battle
         }
 
         /// Character Creator skin on the character skeleton: arms, hands and fingers are fitted segment by segment to the authored
-        /// joints (turned and stretched along the bone); torso, legs and head keep their surface and only turn around the new joints.
-        private static (int[] map, Matrix4x4[] bind) BindMan(SkinnedMeshRenderer source, Transform[] bones, float scale, Dictionary<string, Vector3> joints)
+        /// joints (turned and stretched along the bone); legs are fitted by FitLeg; torso and head keep their surface and only turn around
+        /// the new joints. Sole is the lowest point of the scaled skin.
+        private static (int[] map, Matrix4x4[] bind) BindMan(SkinnedMeshRenderer source, Transform[] bones, float scale, Dictionary<string, Vector3> joints,
+            float sole)
         {
             Transform[] sourceBones = source.bones;
             Matrix4x4[] sourceBind = source.sharedMesh.bindposes;
@@ -777,10 +789,30 @@ namespace Game.Scripts.Editor.Battle
                         fit = Fit(joints[from + side], joints[to + side], Find(bones, from + side), Find(bones, to + side));
                 }
 
+                if (side.Length > 0)
+                    fit = FitLeg(name, side, bones, joints, sole) ?? fit;
+
                 bind[target] = Matrix4x4.Translate(-bones[target].position) * fit * Matrix4x4.Scale(Vector3.one * scale) * sourceBones[i].localToWorldMatrix * sourceBind[i];
             }
 
             return (boneMap, bind);
+        }
+
+        /// The skin's legs are longer than the skeleton's and left the soles 6-7 cm in the air: the thigh keeps the hip and reaches the
+        /// knee of the skeleton, the shin runs from that knee down to the ankle of the foot, and the foot with its toes is carried over
+        /// to the skeleton's foot, its sole on the ground. Null for a bone outside the legs.
+        private static Matrix4x4? FitLeg(string name, string side, Transform[] bones, Dictionary<string, Vector3> joints, float sole)
+        {
+            Vector3 feet = Find(bones, "foot" + side) - joints["foot" + side];
+            feet.y = -sole;
+
+            if (name == "thigh" + side)
+                return Fit(joints["thigh" + side], joints["calf" + side], joints["thigh" + side], Find(bones, "calf" + side));
+
+            if (name == "calf" + side)
+                return Fit(joints["calf" + side], joints["foot" + side], Find(bones, "calf" + side), joints["foot" + side] + feet);
+
+            return name == "foot" + side || name == "ball" + side ? Matrix4x4.Translate(feet) : null;
         }
 
         /// Maps a source segment onto a target segment: turned onto it and stretched along it, both starting at the same joint.
