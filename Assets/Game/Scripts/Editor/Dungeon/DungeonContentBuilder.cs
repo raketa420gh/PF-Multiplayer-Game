@@ -1198,13 +1198,15 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_displayName", "Dead Adventurer");
             BattleEditorUtility.Set(so, "_openVerb", "Loot");
             so.ApplyModifiedPropertiesWithoutUndo();
-            AddInteractCollider(root, new Vector3(0f, 0.3f, -0.55f), new Vector3(1f, 0.6f, 2f));
 
+            // Looted by looking at any bone of the body at rest, no box at the feet.
             CorpseComponent corpse = root.AddComponent<CorpseComponent>();
+            BattleEditorUtility.Set(container, "_corpse", corpse);
             so = new SerializedObject(corpse);
             BattleEditorUtility.Set(so, "_container", container);
             BattleEditorUtility.Set(so, "_inventory", inventory);
             BattleEditorUtility.Set(so, "_animator", animator);
+            BattleEditorUtility.Set(so, "_ragdoll", BattleRagdollBuilder.Build(animator, LayerMask.NameToLayer(InteractableLayer)));
             BattleEditorUtility.Set(so, "_model", model.GetComponent<CharacterModelComponent>());
             BattleEditorUtility.Set(so, "_pieceSet", pieceSet);
             BattleEditorUtility.Set(so, "_classes", classes);

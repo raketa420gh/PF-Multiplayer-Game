@@ -51,6 +51,7 @@ namespace Game.Scripts.Dungeon
         /// Setup without a known party: the adventurer is a team of one.
         public const int NoTeam = int.MinValue;
         private const float ContainerRange = 5f;
+        private const float KillingBlowTime = 0.5f;
         private const float CastReleaseTime = 0.35f;
         private const float RootTurnLimit = 90f;
         private const float QuickCastTime = 0.05f;
@@ -2386,10 +2387,15 @@ namespace Game.Scripts.Dungeon
             Vector3 position = transform.position;
             Quaternion rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
 
+            // The ragdoll is pushed only by the blow that killed, not by an earlier one before bleeding out.
+            DamageReceiverComponent receiver = _fighter.Receiver;
+            bool isStruck = (Runner.Tick - receiver.LastHitTick) * Runner.DeltaTime <= KillingBlowTime;
+
             Runner.Spawn(_corpsePrefab, position, rotation, PlayerRef.None, (_, corpse) =>
             {
                 CorpseComponent body = corpse.GetComponent<CorpseComponent>();
-                body.Setup(_inventory, _class, _session != null ? _session.DisplayName : "Adventurer");
+                body.Setup(_inventory, _class, _session != null ? _session.DisplayName : "Adventurer", Object.Id, _fighter.Move.Velocity,
+                    receiver.LastHitPoint, isStruck ? receiver.LastHitPush : Vector3.zero);
             });
 
             _inventory.Clear();
@@ -2405,10 +2411,17 @@ namespace Game.Scripts.Dungeon
 
             PhysicsScene scene = Runner.GetPhysicsScene();
 
-            if (!scene.Raycast(origin, direction, out RaycastHit hit, InteractRange, _interactMask, QueryTriggerInteraction.Collide))
-                return null;
+            InteractableComponent target = scene.Raycast(origin, direction, out RaycastHit hit, InteractRange, _interactMask, QueryTriggerInteraction.Collide)
+                ? hit.collider.GetComponentInParent<InteractableComponent>()
+                : null;
 
-            return hit.collider.GetComponentInParent<InteractableComponent>();
+            // Bodies come to rest differently on every client: for another player's look the server takes any body by the line of sight.
+            if (target != null || HasInputAuthority)
+                return target;
+
+            CorpseComponent corpse = CorpseComponent.FindAlong(origin, direction, InteractRange);
+
+            return corpse != null ? corpse.Container : null;
         }
 
         bool InventoryActionsComponent.IOwner.CanEquip(ItemConfig item, EquipSlot slot)

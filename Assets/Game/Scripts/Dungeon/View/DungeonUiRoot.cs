@@ -72,7 +72,8 @@ namespace Game.Scripts.Dungeon
             if (_session == null || _session.Object == null || !_session.Object.IsValid)
                 return;
 
-            if (_shownState != _session.State)
+            // The death screen waits while the owner watches their body fall.
+            if (_shownState != _session.State && !(_session.State == SessionState.Dead && CorpseComponent.IsDeathCamActive))
                 ApplyState();
 
             if (_session.State != SessionState.InDungeon || _adventurer == null)

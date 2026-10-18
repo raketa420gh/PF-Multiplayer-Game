@@ -68,6 +68,8 @@ namespace Game.Scripts.Battle
         public const float LandTime = 0.35f;
         public const float LandFadeTime = 0.2f;
 
+        public Animator Animator => _animator;
+
         [SerializeField]
         private FighterComponent _fighter;
 

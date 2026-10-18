@@ -6,10 +6,10 @@ namespace Game.Scripts.Dungeon
     /// Chest, coffin, barrel, corpse: a networked inventory that opens at once; its loot is then searched item by item.
     public sealed class ContainerComponent : InteractableComponent
     {
-        public override string Prompt => (IsOpen ? "Search" : _openVerb) + " " + _displayName;
+        public override string Prompt => (IsOpen ? "Search" : _openVerb) + " " + (_corpse != null ? _corpse.OwnerName.ToString() : _displayName);
         public override float HoldTime => 0f;
         /// A body can be looted only once it is dead.
-        public override bool IsAvailable => (_body == null || _body.IsDead) && (_hanged == null || _hanged.IsLootable);
+        public override bool IsAvailable => (_body == null || _body.IsDead) && (_hanged == null || _hanged.IsLootable) && (_corpse == null || _corpse.IsLootable);
         public InventoryComponent Inventory => _inventory;
         public LootTableConfig LootTable => _lootTable;
         public string DisplayName => _displayName;
@@ -46,6 +46,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField, Tooltip("Hanged bodies: a living one wakes up instead of being looted")]
         private HangedCorpseComponent _hanged;
+
+        [SerializeField, Tooltip("Adventurer bodies: searched once the ragdoll has come to rest")]
+        private CorpseComponent _corpse;
 
         private float _lidBlend;
 

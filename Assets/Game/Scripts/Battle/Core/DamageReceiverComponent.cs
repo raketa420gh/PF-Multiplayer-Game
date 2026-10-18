@@ -97,6 +97,10 @@ namespace Game.Scripts.Battle
         public int Team => _team;
         public DamageReceiverComponent LastAttacker => _lastAttacker;
         public HealthComponent Health => _health;
+        /// State authority: where the last hit landed, which way it drove (flat, unit or zero) and on which tick.
+        public Vector3 LastHitPoint => _lastHitPoint;
+        public Vector3 LastHitPush => _lastHitPush;
+        public int LastHitTick => _lastHitTick;
 
         [SerializeField]
         private HealthComponent _health;
@@ -123,6 +127,9 @@ namespace Game.Scripts.Battle
         private DamageReceiverComponent _lastAttacker;
         private int _renderedEvents;
         private int _team = NoTeam;
+        private Vector3 _lastHitPoint;
+        private Vector3 _lastHitPush;
+        private int _lastHitTick = int.MinValue / 2;
 
         public override void Spawned()
         {
@@ -196,6 +203,9 @@ namespace Game.Scripts.Battle
             if (hit.Attacker != null)
                 _lastAttacker = hit.Attacker;
 
+            _lastHitPoint = hit.Point;
+            _lastHitPush = hit.AttackerPosition == Vector3.zero ? Vector3.zero : Vector3.ProjectOnPlane(hit.Point - hit.AttackerPosition, Vector3.up).normalized;
+            _lastHitTick = Runner.Tick;
             _health.TakeDamage(damage);
 
             _events.Set(_eventCount % EventCapacity, new HitEventData
