@@ -20,6 +20,8 @@ namespace Game.Scripts.Battle
         public GUIStyle Header => _header;
         public GUIStyle Label => _label;
         public GUIStyle Hint => _hint;
+        /// Wrapped body text in full colour.
+        public GUIStyle Paragraph => _paragraph;
         public GUIStyle Tag => _tag;
         public GUIStyle Badge => _badge;
 
@@ -31,6 +33,7 @@ namespace Game.Scripts.Battle
         private readonly GUIStyle _header;
         private readonly GUIStyle _label;
         private readonly GUIStyle _hint;
+        private readonly GUIStyle _paragraph;
         private readonly GUIStyle _tag;
         private readonly GUIStyle _badge;
         private readonly GUIStyle _value;
@@ -52,6 +55,7 @@ namespace Game.Scripts.Battle
             _header.normal.textColor = Color.white;
             _hint = new GUIStyle(_label) { fontSize = 11, wordWrap = true };
             _hint.normal.textColor = Dim;
+            _paragraph = new GUIStyle(_label) { wordWrap = true };
             _tag = new GUIStyle(_hint) { alignment = TextAnchor.MiddleRight, wordWrap = false, fontStyle = FontStyle.Bold };
             _badge = new GUIStyle(_tag) { alignment = TextAnchor.MiddleCenter, padding = new RectOffset() };
             _badge.normal.textColor = Color.white;

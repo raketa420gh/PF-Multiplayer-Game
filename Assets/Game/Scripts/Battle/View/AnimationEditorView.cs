@@ -46,7 +46,7 @@ namespace Game.Scripts.Battle
         private const float HeaderHeight = 38f;
         private const float TimelineHeight = 140f;
         private const float InspectorWidth = 300f;
-        private const float HelpWidth = 380f;
+        private const float HelpWidth = 560f;
         private const float TrackLabelWidth = 96f;
         private const float RulerHeight = 18f;
         private const float RowHeight = 22f;
@@ -77,15 +77,58 @@ namespace Game.Scripts.Battle
         private static readonly Color s_rowColor = new(1f, 1f, 1f, 0.03f);
         private static readonly string[] s_layerNames = { "Legs", "Upper body" };
 
-        private static readonly string[] s_help =
+        private static readonly (string Title, string Text)[] s_help =
         {
-            "LMB joint / weapon / grip point — select,  empty space or Esc — deselect",
-            "Shift+LMB — add a joint to the selection,  B — add the bones below", "Drag a ring — rotate (E),  drag an arrow — move (W)",
-            "RMB — orbit,  wheel — zoom", "Space — play / pause,  , .  — frame,  [ ]  — previous / next key",
-            "K — key selection,  Shift+K — key pose", "X / Del — delete key,  with Shift — the whole pose",
-            "R — reset selection (or point rotation)", "C / V — copy / paste the selection (the whole pose if none)",
-            "G — snap the selected hand to the nearest grip point",
-            "Shift+drag the timeline — range,  I — in-betweens", "Z — undo,  Shift+Z — redo,  Tab — hide the editor"
+            ("Что это",
+                "Покадровая правка сгенерированных клипов (.anim). Ключ хранит поворот / сдвиг кости поверх исходного клипа. Save запекает правки " +
+                "в клип и в AnimationEdits.asset — пересборка анимаций вернёт их. Левые панели — оружие или предмет в руке и стейт, правая — плеер: " +
+                "скорость, повтор, вид из глаз (First person), наклон взгляда (Pitch), локомоция."),
+            ("Слои",
+                "Legs — ноги, Upper body — всё остальное; переключаются в шапке и выбором стейта. Кости другого слоя не выбираются. Клипы, которые " +
+                "игра играет зеркально (левша, Flip), и библиотечные дубли — только просмотр (read-only в заголовке)."),
+            ("Камера и окна",
+                "ПКМ — орбита, колесо — зум (над панелями колесо листает их). Tab — скрыть / показать редактор, F1 — эта справка."),
+            ("Выделение",
+                "ЛКМ по суставу, оружию или точке хвата — выбрать; по пустому месту или Esc — снять. Shift / Ctrl + ЛКМ — добавить или убрать кость. " +
+                "B — добавить все кости ниже выбранных (плечо → вся рука). В списке Bones: KEY — ключ на этом кадре, anim — ключи на других кадрах, " +
+                "grip — рука держится за оружие. Строка под рукой — оружие или предмет в ней."),
+            ("Позирование",
+                "E — кольца вращения: X красное, Y зелёное, Z синее (оси кости), белое — вокруг направления взгляда. W — стрелки перемещения по осям " +
+                "персонажа, квадрат в центре — в плоскости экрана. Кисть и стопа двигаются через IK (плечо + локоть, бедро + колено) и сохраняют свой " +
+                "поворот; другой сустав поворачивает родителя; таз сдвигается сам. В инспекторе — те же повороты и сдвиги слайдерами. R — вернуть " +
+                "выделение к клипу на этом кадре."),
+            ("Ключи",
+                "Любое изменение ставит ключ на текущем кадре, между ключами — интерполяция. K — ключ выделения (зафиксировать текущее значение), " +
+                "Shift+K — ключ на всех дорожках. X / Del — удалить ключ выделения, Shift+X — всей позы. Clear track — все ключи выбранных костей."),
+            ("Таймлайн",
+                "Клик и перетаскивание — перемотка. , и . — кадр назад / вперёд, [ и ] — предыдущий / следующий ключ (выделения, без него — любой). " +
+                "Space — пуск / пауза, |< и >| — первый / последний кадр. Ключ можно перетащить: в строке All tracks едут ключи всей позы на этом " +
+                "кадре, в нижней строке — только выделения."),
+            ("Копирование позы",
+                "C — копировать позу слоя (или только выделенные кости), как она стоит на кадре вместе с правками; оружие в руке копируется с рукой. " +
+                "V — вставить на текущий кадр, в том числе в другой клип: ключи ставятся только там, где поза отличается. Кнопка Paste показывает, " +
+                "откуда взята поза."),
+            ("Промежуточные кадры",
+                "Shift + перетаскивание по таймлайну — диапазон. I — заменить движение внутри диапазона плавным переходом между позами на его краях " +
+                "(ключ на каждом кадре). Ease — плавный старт и остановка; без него переход подхватывает скорость снаружи."),
+            ("Оружие в руке",
+                "Клик по оружию или его строка в списке — оружие двигается и вращается в ладони (ключи сокета). Перехваченная рука едет за ним, " +
+                "прикреплённая остаётся на нём."),
+            ("Хваты и точки",
+                "Вкладка Grip points — точки на оружии (Z вдоль клинка): Add point / Remove, слайдеры, Left / Right palm — взять точку из ладони, " +
+                "Reset turn — сбросить поворот. Рука: G — примагнитить к ближайшей точке, кнопки точек — к выбранной; Free regrip — рука скользит " +
+                "по оружию, оружие держит траекторию; Pin — вторая рука закреплена на оружии; From / To — кадры, где хват действует; Release — снять. " +
+                "Примагниченная рука следует за точкой во всех клипах этого оружия."),
+            ("Отображение",
+                "Aim ray — линия прицела из глаза, крест каждые 25 см (из глаз они складываются в перекрестие). Skeleton — суставы, Grip points — " +
+                "точки хвата, Baked clip — запечённый клип без наложенных правок (только просмотр)."),
+            ("История и сохранение",
+                "Z — отменить, Shift+Z — вернуть (до 100 шагов на клип). * в заголовке — есть несохранённые правки. Revert — вернуть сохранённое " +
+                "состояние клипа. Save — запечь все изменённые клипы сразу."),
+            ("Рецепт: поза из одного клипа в другой",
+                "Открыть клип A → нужный кадр (>| — последний) → Esc (снять выделение) → C. Открыть клип B → нужный кадр (|< — первый) → V. " +
+                "Чтобы переход в остальной клип был плавным — Shift-диапазон от этого кадра до места, где клип должен вернуться к своему движению, " +
+                "и I. Затем Save.")
         };
 
         private static readonly HumanBodyBones[] s_legBones =
@@ -128,6 +171,9 @@ namespace Game.Scripts.Battle
         private Rect _helpRect;
         private Vector2 _boneScroll;
         private Vector2 _pointScroll;
+        private Vector2 _helpScroll;
+        /// Clip and frame the copied pose comes from.
+        private string _clipboardSource;
         private Vector2 _lastMouse;
         private Vector2 _dragTangent;
         private Vector3 _moveTarget;
@@ -215,8 +261,8 @@ namespace Game.Scripts.Battle
             _test.SetViewportBlocked(isOverGui);
             UpdateMirroring();
 
-            if (Time.unscaledTime < _replayEnd && !_test.IsCurrent)
-                _test.Seek(_editLayer, _replayTime);
+            if (Time.unscaledTime < _replayEnd && !_test.IsCurrent(_editLayer))
+                SeekKeepingPlayback(_replayTime);
 
             if (_test.Layer != _testLayer)
                 _editLayer = (_testLayer = _test.Layer) == BaseLayer ? BaseLayer : UpperLayer;
@@ -243,8 +289,15 @@ namespace Game.Scripts.Battle
             if (_point != null && (!HasPoints() || _grips.Find(_point.Name) != _point))
                 _point = null;
 
-            if (Input.GetMouseButtonUp(0))
-                _isChanging = false;
+            // A release the GUI never saw (over another panel or outside the window) still ends every drag.
+            if (!Input.GetMouseButton(0))
+            {
+                _isChanging = _isScrubbing = _isSelectingRange = false;
+                _draggedKey = -1;
+            }
+
+            if (Input.GetKeyDown(KeyCode.F1))
+                _isHelpVisible = !_isHelpVisible;
 
             if (!_isOpen || _edit == null)
                 return;
@@ -293,25 +346,42 @@ namespace Game.Scripts.Battle
             DrawTimelinePanel();
             GUILayout.EndArea();
 
-            if (_isHelpVisible)
+            if (_edit != null)
             {
-                _helpRect = new Rect(left, _headerRect.yMax + Margin, HelpWidth, s_help.Length * 22f + 44f);
-                GUILayout.BeginArea(_helpRect, _skin.Panel);
-                GUILayout.Label("Shortcuts", _skin.Header);
-
-                foreach (string line in s_help)
-                    GUILayout.Label(line, _skin.Hint);
-
+                DrawPointLabels(scale);
+                _inspectorRect = new Rect(right - InspectorWidth, _headerRect.yMax + Margin, InspectorWidth, _timelineRect.y - _headerRect.yMax - Margin * 2f);
+                GUILayout.BeginArea(_inspectorRect, _skin.Panel);
+                DrawInspector();
                 GUILayout.EndArea();
             }
 
-            if (_edit == null)
-                return;
+            if (_isHelpVisible)
+                DrawHelp(left);
+        }
 
-            DrawPointLabels(scale);
-            _inspectorRect = new Rect(right - InspectorWidth, _headerRect.yMax + Margin, InspectorWidth, _timelineRect.y - _headerRect.yMax - Margin * 2f);
-            GUILayout.BeginArea(_inspectorRect, _skin.Panel);
-            DrawInspector();
+        /// Every feature of the editor by topic, in a scrolling window over the left of the viewport.
+        private void DrawHelp(float left)
+        {
+            _helpRect = new Rect(left, _headerRect.yMax + Margin, HelpWidth, _timelineRect.y - _headerRect.yMax - Margin * 2f);
+            GUILayout.BeginArea(_helpRect, _skin.Panel);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Справка по редактору", _skin.Header);
+            GUILayout.FlexibleSpace();
+
+            if (_skin.Button("Закрыть  F1", false, 100f))
+                _isHelpVisible = false;
+
+            GUILayout.EndHorizontal();
+            _helpScroll = GUILayout.BeginScrollView(_helpScroll);
+
+            foreach ((string title, string text) in s_help)
+            {
+                _skin.Separator();
+                GUILayout.Label(title, _skin.Header);
+                GUILayout.Label(text, _skin.Paragraph);
+            }
+
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
         }
 
@@ -517,10 +587,20 @@ namespace Game.Scripts.Battle
             return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
         }
 
+        /// A replay still under way follows the new frame, so a dropped state comes back here and not where the replay began.
         private void SetFrame(int frame)
         {
             _framePosition = _frame = Mathf.Clamp(frame, 0, _frameCount);
-            _test.Seek(_editLayer, Mathf.Clamp01(_frame / FrameRate / _test.GetLength(_editLayer)));
+            _replayTime = Mathf.Clamp01(_frame / FrameRate / _test.GetLength(_editLayer));
+            _test.Seek(_editLayer, _replayTime);
+        }
+
+        /// Puts the dropped state back on its time and lets it play on if it was playing.
+        private void SeekKeepingPlayback(float normalizedTime)
+        {
+            bool isPaused = _test.IsPaused;
+            _test.Seek(_editLayer, normalizedTime);
+            _test.SetPaused(isPaused);
         }
 
         private void JumpToKey(int direction)
@@ -1215,6 +1295,7 @@ namespace Game.Scripts.Battle
         private void CopyPose()
         {
             _clipboard.Clear();
+            _clipboardSource = $"{_edit.Clip.name} f{_frame}";
 
             if (_prop != NoBone)
             {
@@ -1435,7 +1516,7 @@ namespace Game.Scripts.Battle
                 _replayTime = Mathf.Clamp01(_frame / FrameRate / _test.GetLength(_editLayer));
 
             _replayEnd = Time.unscaledTime + ReplayWindow;
-            _test.Seek(_editLayer, _replayTime);
+            SeekKeepingPlayback(_replayTime);
         }
 
         private void DrawHeader()
@@ -1480,7 +1561,7 @@ namespace Game.Scripts.Battle
                 Save();
 
             GUI.enabled = true;
-            _isHelpVisible = _skin.Toggle(_isHelpVisible, "?", 28f);
+            _isHelpVisible = _skin.Toggle(_isHelpVisible, "Help  F1", 76f);
         }
 
         private void DrawTimelinePanel()
@@ -1562,7 +1643,7 @@ namespace Game.Scripts.Battle
 
             GUI.enabled = !_isShowingBaked && _clipboard.Count > 0;
 
-            if (_skin.Button("Paste  V"))
+            if (_skin.Button(_clipboard.Count > 0 ? $"Paste  V  ({_clipboardSource})" : "Paste  V"))
                 PastePose();
 
             GUI.enabled = !_isShowingBaked;
@@ -1661,13 +1742,13 @@ namespace Game.Scripts.Battle
                     current.Use();
 
                     break;
-                case EventType.MouseDrag when _isSelectingRange:
+                case EventType.MouseDrag when current.button == 0 && _isSelectingRange:
                     _rangeEnd = frame;
                     SetFrame(frame);
                     current.Use();
 
                     break;
-                case EventType.MouseDrag when _isScrubbing || _draggedKey >= 0:
+                case EventType.MouseDrag when current.button == 0 && (_isScrubbing || _draggedKey >= 0):
                     if (_draggedKey >= 0 && frame != _draggedKey)
                         MoveKeys(_draggedKey, frame);
 
@@ -1675,7 +1756,7 @@ namespace Game.Scripts.Battle
                     current.Use();
 
                     break;
-                case EventType.MouseUp:
+                case EventType.MouseUp when current.button == 0:
                     _isScrubbing = false;
                     _isSelectingRange = false;
                     _draggedKey = -1;

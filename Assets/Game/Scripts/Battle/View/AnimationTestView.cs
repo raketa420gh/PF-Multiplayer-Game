@@ -17,7 +17,6 @@ namespace Game.Scripts.Battle
         public bool IsPaused => _isPaused;
         /// The legs run a chain of states (a jump) instead of one state.
         public bool IsChained => _segment >= 0;
-        public bool IsCurrent => IsPlaying(_layer, out _);
         public WeaponConfig Weapon => _weapons[_weaponIndex];
         /// A belt item is in the hand instead of the weapon.
         public bool HasItem => _itemIndex >= 0;
@@ -262,7 +261,8 @@ namespace Game.Scripts.Battle
 
         public void Seek(float normalizedTime) => Seek(_layer, normalizedTime);
 
-        /// Seeks a layer without moving the focus; attack footwork is seeked through its attack, so both stay in step.
+        /// Seeks a layer without moving the focus; attack footwork is seeked through its attack, so both stay in step. The animator
+        /// takes the state at once, so the time read back right after is the new one, not last frame's.
         public void Seek(int layer, float normalizedTime)
         {
             _isPaused = true;
@@ -271,6 +271,13 @@ namespace Game.Scripts.Battle
                 layer = UpperLayer;
 
             Play(layer, _current[layer], normalizedTime);
+            _animator.Update(0f);
+        }
+
+        /// The layer plays the state picked for it, or is crossfading into it.
+        public bool IsCurrent(int layer)
+        {
+            return IsPlaying(layer, out _) || _animator.IsInTransition(layer) && _animator.GetNextAnimatorStateInfo(layer).IsName(_current[layer]);
         }
 
         /// The clip with the largest weight, so a blend tree reports the take that shapes the pose.
@@ -296,11 +303,12 @@ namespace Game.Scripts.Battle
             return clip != null ? clip.length : 1f;
         }
 
+        /// A loop seeked to its very end stays on the last frame instead of wrapping to the first.
         public float GetTime(int layer)
         {
             AnimatorStateInfo info = _animator.GetCurrentAnimatorStateInfo(layer);
 
-            return (info.loop ? Mathf.Repeat(info.normalizedTime, 1f) : Mathf.Clamp01(info.normalizedTime)) * GetLength(layer);
+            return (info.loop && info.normalizedTime > 1f ? Mathf.Repeat(info.normalizedTime, 1f) : Mathf.Clamp01(info.normalizedTime)) * GetLength(layer);
         }
 
         /// The line of sight in first person: from the eye through the crosshair.
