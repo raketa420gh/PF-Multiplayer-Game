@@ -59,9 +59,12 @@ namespace Game.Scripts.Battle
 
         private static readonly Collider[] s_water = new Collider[1];
         private float _fall;
+        private BodyConfig _body;
 
         public override void Spawned()
         {
+            _body = GetComponent<FighterBodyComponent>().Config;
+
             if (_blocker != null)
                 Physics.IgnoreCollision(_collider, _blocker);
 
@@ -82,8 +85,9 @@ namespace Game.Scripts.Battle
             transform.rotation = Quaternion.Euler(0f, look.y, 0f);
 
             float crouchTarget = isSeated ? SitCrouch : isCrouch ? 1f : 0f;
+            float crouch = CrouchAmount;
             CrouchAmount = Mathf.MoveTowards(CrouchAmount, crouchTarget, Runner.DeltaTime * (isInSeat ? SitCrouch / SitTime : 1f / _config.CrouchTransitionTime));
-            UpdateCollider();
+            UpdateCollider(CrouchAmount - crouch);
 
             if (IsDashing)
             {
@@ -200,11 +204,21 @@ namespace Game.Scripts.Battle
             return speed;
         }
 
-        private void UpdateCollider()
+        /// In the air a crouch tucks the legs instead of lowering the body: the feet come up by as much as the body model
+        /// drops, so the head and the eye stay where they were and the capsule shrinks from below.
+        private void UpdateCollider(float change)
         {
+            float lift = _controller.Grounded ? 0f : change * _body.CrouchDrop;
+
+            if (lift < 0f)
+                _collider.Move(Vector3.up * lift);
+
             float height = Mathf.Lerp(_config.StandHeight, _config.CrouchHeight, CrouchAmount);
             _collider.height = height;
             _collider.center = new Vector3(0f, height * 0.5f, 0f);
+
+            if (lift > 0f)
+                _collider.Move(Vector3.up * lift);
         }
     }
 }

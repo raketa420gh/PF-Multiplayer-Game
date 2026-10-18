@@ -56,6 +56,7 @@ namespace Game.Scripts.Editor.Battle
             Loadout[] loadouts = BuildWeapons(out GameObject arrow, out GameObject orb);
 
             FighterParts parts = CreateFighter(loadouts, arrow, orb, 4, "Fighter");
+            WidenPlayer(parts);
             GameObject fighter = SavePrefab(parts.Root, FighterPath);
             BuildBot(fighter);
 
@@ -269,6 +270,14 @@ namespace Game.Scripts.Editor.Battle
         }
 
         /// Assembles an unsaved fighter with the whole weapon catalog, hitboxes, animation, camera and views.
+        /// Players are a fifth wider than monsters of their size: two of them shoulder to shoulder keep some room between them.
+        internal static void WidenPlayer(FighterParts parts)
+        {
+            const float scale = 1.2f;
+            parts.Root.GetComponent<CharacterController>().radius *= scale;
+            parts.Move.Blocker.radius *= scale;
+        }
+
         internal static FighterParts CreateFighter(Loadout[] loadouts, GameObject arrow, GameObject magicOrb, int slotCount, string name)
         {
             BodyConfig bodyConfig = CreateBodyConfig();

@@ -228,11 +228,22 @@ namespace Game.Scripts.Editor.Battle
 
             AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
             stateMachine.defaultState = locomotion;
-            stateMachine.AddState(FighterAnimComponent.AirState).motion = air;
-            stateMachine.AddState(FighterAnimComponent.JumpState).motion = jump;
-            stateMachine.AddState(FighterAnimComponent.LandState).motion = land;
+            AddTuckedState(controller, FighterAnimComponent.AirState, air, crouchIdle);
+            AddTuckedState(controller, FighterAnimComponent.JumpState, jump, crouchIdle);
+            AddTuckedState(controller, FighterAnimComponent.LandState, land, crouchIdle);
             stateMachine.AddState(FighterAnimComponent.RestState).motion = rest;
             stateMachine.AddState(FighterAnimComponent.DeathState).motion = BattleEditorUtility.LoadLibraryClip("Death01");
+        }
+
+        /// A crouch in the air lifts the feet (FighterMoveComponent), not the held hips: the legs blend into the crouched pose.
+        private static void AddTuckedState(AnimatorController controller, string name, Motion motion, Motion tucked)
+        {
+            controller.CreateBlendTreeInController(name, out BlendTree tree, 0);
+            tree.blendType = BlendTreeType.Simple1D;
+            tree.blendParameter = FighterAnimComponent.CrouchParam;
+            tree.useAutomaticThresholds = false;
+            tree.AddChild(motion, 0f);
+            tree.AddChild(tucked, 1f);
         }
 
         /// Puts the legs of a library clip on the simulation body. The feet keep their place relative to the hips, while the
