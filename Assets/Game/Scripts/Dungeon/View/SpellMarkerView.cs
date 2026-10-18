@@ -11,6 +11,7 @@ namespace Game.Scripts.Dungeon
         private const float FillAlpha = 0.18f;
 
         private static Sprite s_sprite;
+        private static Material s_material;
 
         private SpriteRenderer _renderer;
 
@@ -19,6 +20,8 @@ namespace Game.Scripts.Dungeon
             SpellMarkerView marker = new GameObject("SpellMarker").AddComponent<SpellMarkerView>();
             marker._renderer = marker.gameObject.AddComponent<SpriteRenderer>();
             marker._renderer.sprite = GetSprite();
+            // A runtime sprite renderer gets URP's default sprite material only in the editor; a build leaves it without one.
+            marker._renderer.sharedMaterial = s_material ??= new Material(Shader.Find("Sprites/Default"));
             marker.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             marker.Hide();
 

@@ -2411,9 +2411,11 @@ namespace Game.Scripts.Dungeon
 
             PhysicsScene scene = Runner.GetPhysicsScene();
 
+            // A just despawned item keeps its collider until the end of the frame.
             InteractableComponent target = scene.Raycast(origin, direction, out RaycastHit hit, InteractRange, _interactMask, QueryTriggerInteraction.Collide)
-                ? hit.collider.GetComponentInParent<InteractableComponent>()
-                : null;
+                && hit.collider.GetComponentInParent<InteractableComponent>() is { Object: { IsValid: true } } found
+                    ? found
+                    : null;
 
             // Bodies come to rest differently on every client: for another player's look the server takes any body by the line of sight.
             if (target != null || HasInputAuthority)

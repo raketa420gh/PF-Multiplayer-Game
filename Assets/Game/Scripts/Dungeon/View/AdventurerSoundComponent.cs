@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Casting, item use, death, extraction, level-up and swarm damage sounds driven by networked state changes.
+    /// Item use, death, extraction, level-up and swarm damage sounds driven by networked state changes.
     public sealed class AdventurerSoundComponent : NetworkBehaviour
     {
         [SerializeField]
@@ -25,18 +25,8 @@ namespace Game.Scripts.Dungeon
             {
                 _pending = pending;
 
-                if (!_isFirst)
-                {
-                    switch (pending)
-                    {
-                        case PendingAction.Ability:
-                            DungeonAudioComponent.Play(DungeonSound.Cast, position, 0.7f);
-                            break;
-                        case PendingAction.Consumable:
-                            DungeonAudioComponent.Play(IsBandage() ? DungeonSound.Bandage : DungeonSound.Drink, position, 0.8f);
-                            break;
-                    }
-                }
+                if (!_isFirst && pending == PendingAction.Consumable)
+                    DungeonAudioComponent.Play(IsBandage() ? DungeonSound.Bandage : DungeonSound.Drink, position, 0.8f);
             }
 
             if (_adventurer.State != _state)
