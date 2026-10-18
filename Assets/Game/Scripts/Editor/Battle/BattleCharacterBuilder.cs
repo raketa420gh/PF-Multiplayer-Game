@@ -141,7 +141,6 @@ namespace Game.Scripts.Editor.Battle
             Material ranger = ClothMaterial(RangerMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_BaseColor"));
             ClothMaterial(PeasantAltMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_2_BaseColor"));
             ClothMaterial(RangerAltMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_3_BaseColor"));
-            OutfitDyeBuilder.Build();
             GameObject maleSource = LoadSource(MaleBodyPath);
             GameObject femaleSource = LoadSource(FemaleBodyPath);
             GameObject manSource = LoadSource(ManPath);

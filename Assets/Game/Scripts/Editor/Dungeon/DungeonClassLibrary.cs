@@ -121,7 +121,7 @@ namespace Game.Scripts.Editor.Dungeon
                     Perk("Voice", "Your war cries reach 50% farther.", "Heard over any steel.", PerkEffect.Voice, 0.5f, "a war horn of black horn with silver bands", 2)
                 },
                 Kit = new[] { ("Arming Sword", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Battle Axe", EquipSlot.Weapon2Main, 1, true),
-                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Bandage", EquipSlot.Utility1, 3, true), ("Torch", EquipSlot.Utility2, 1, true) },
+                    ("Veinworker Shirt", EquipSlot.Chest, 1, true), ("Veinworker Trousers", EquipSlot.Legs, 1, true), ("Veinworker Boots", EquipSlot.Feet, 1, true), ("Bandage", EquipSlot.Utility1, 3, true), ("Torch", EquipSlot.Utility2, 1, true) },
                 Weapons = new[] { WeaponClass.Sword, WeaponClass.Axe, WeaponClass.Mace, WeaponClass.Spear, WeaponClass.Dagger, WeaponClass.Shield, WeaponClass.Torch }
             };
         }
@@ -249,8 +249,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Perk("Long Chain", "Chain lightning leaps to one more body.", "Let it find them itself.", PerkEffect.LongChain, 1f, "a long branching chain of lightning", 2),
                     Perk("Quick Word", "Lightning spells are cast 15% faster.", "Thunder does not wait. Nor do I.", PerkEffect.QuickWord, 0.15f, "a mouth speaking a word that crackles with sparks", 2)
                 },
-                Kit = new[] { ("Spellbook", EquipSlot.Weapon1Main, 1, true), ("Magic Staff", EquipSlot.Weapon2Main, 1, true), ("Peasant Hood", EquipSlot.Head, 1, true),
-                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true),
+                Kit = new[] { ("Spellbook", EquipSlot.Weapon1Main, 1, true), ("Magic Staff", EquipSlot.Weapon2Main, 1, true), ("Veinworker Hood", EquipSlot.Head, 1, true),
+                    ("Veinworker Shirt", EquipSlot.Chest, 1, true), ("Veinworker Trousers", EquipSlot.Legs, 1, true), ("Veinworker Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true),
                     ("Bandage", EquipSlot.Utility2, 2, true), ("Torch", EquipSlot.Utility3, 1, true) },
                 Weapons = new[] { WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.CrystalBall, WeaponClass.Dagger, WeaponClass.Sword },
                 Focus = CastFocus.Magic
@@ -349,8 +349,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Stats("Sinewy", "+3 Strength.", "Lean is not weak.", "a lean sinewy forearm with bulging veins gripping a mace", 2, new StatModifier(StatType.Strength, 3f)),
                     Perk("Buzz", "While any of your mixtures works you take 15% less damage.", "Pain is duller in a daze.", PerkEffect.Buzz, 0.15f, "dilated eyes swirling with violet haze", 2)
                 },
-                Kit = new[] { ("Arming Sword", EquipSlot.Weapon1Main, 1, true), ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true),
-                    ("Peasant Boots", EquipSlot.Feet, 1, true), ("Potion of Healing", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 2, true), ("Torch", EquipSlot.Utility3, 1, true) },
+                Kit = new[] { ("Arming Sword", EquipSlot.Weapon1Main, 1, true), ("Veinworker Shirt", EquipSlot.Chest, 1, true), ("Veinworker Trousers", EquipSlot.Legs, 1, true),
+                    ("Veinworker Boots", EquipSlot.Feet, 1, true), ("Potion of Healing", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 2, true), ("Torch", EquipSlot.Utility3, 1, true) },
                 Weapons = new[] { WeaponClass.Sword, WeaponClass.Mace, WeaponClass.Dagger, WeaponClass.Staff, WeaponClass.Spear, WeaponClass.Torch }
             };
         }
@@ -479,7 +479,7 @@ namespace Game.Scripts.Editor.Dungeon
                     Perk("Take Back", "Killing a cursed foe restores 10% of your health.", "Given, and taken back.", PerkEffect.TakeBack, 10f, "a violet wisp of soul flowing from a corpse into an open hand", 2)
                 },
                 Kit = new[] { ("Morning Star", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Spellbook", EquipSlot.Weapon2Main, 1, true),
-                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true),
+                    ("Veinworker Shirt", EquipSlot.Chest, 1, true), ("Veinworker Trousers", EquipSlot.Legs, 1, true), ("Veinworker Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true),
                     ("Bandage", EquipSlot.Utility2, 2, true), ("Torch", EquipSlot.Utility3, 1, true) },
                 Weapons = new[] { WeaponClass.Mace, WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.Shield, WeaponClass.Torch },
                 Focus = CastFocus.Magic
@@ -571,8 +571,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Perk("Iron Stock", "+1 trap on the ground at once.", "Carries half a pood of iron on his back.", PerkEffect.IronStock, 1f, "a pack loaded with chains and iron traps", 2),
                     Perk("Prey in the Snare", "+15% damage to rooted and slowed targets.", "Caught? Don't struggle.", PerkEffect.SnaredPrey, 0.15f, "a creature tangled in a net struggling", 2)
                 },
-                Kit = new[] { ("Crossbow", EquipSlot.Weapon1Main, 1, true), ("Arming Sword", EquipSlot.Weapon2Main, 1, true), ("Peasant Hood", EquipSlot.Head, 1, true),
-                    ("Peasant Shirt", EquipSlot.Chest, 1, true), ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true),
+                Kit = new[] { ("Crossbow", EquipSlot.Weapon1Main, 1, true), ("Arming Sword", EquipSlot.Weapon2Main, 1, true), ("Veinworker Hood", EquipSlot.Head, 1, true),
+                    ("Veinworker Shirt", EquipSlot.Chest, 1, true), ("Veinworker Trousers", EquipSlot.Legs, 1, true), ("Veinworker Boots", EquipSlot.Feet, 1, true),
                     ("Throwing Knife", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 2, true), ("Torch", EquipSlot.Utility3, 1, true), ("Crossbow Bolts", EquipSlot.Head, 20, false) },
                 Weapons = new[] { WeaponClass.Bow, WeaponClass.Crossbow, WeaponClass.Sword, WeaponClass.Dagger, WeaponClass.Spear, WeaponClass.Axe, WeaponClass.Torch }
             };
@@ -664,8 +664,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Perk("Quick Hand", "Throwing weapons are thrown 25% faster.", "While you aim, I've already thrown.", PerkEffect.QuickThrow, 0.25f, "a blurred hand releasing a knife", 2),
                     Perk("Oiled Blades", "Blade Venom poisons with throwing weapons too.", "A scratch is enough.", PerkEffect.OiledBlades, 1f, "throwing knives coated in green poison oil", 2)
                 },
-                Kit = new[] { ("Arming Sword", EquipSlot.Weapon1Main, 1, true), ("Peasant Hood", EquipSlot.Head, 1, true), ("Peasant Shirt", EquipSlot.Chest, 1, true),
-                    ("Peasant Trousers", EquipSlot.Legs, 1, true), ("Peasant Boots", EquipSlot.Feet, 1, true), ("Throwing Knife", EquipSlot.Utility1, 2, true), ("Lockpick", EquipSlot.Utility2, 1, true),
+                Kit = new[] { ("Arming Sword", EquipSlot.Weapon1Main, 1, true), ("Veinworker Hood", EquipSlot.Head, 1, true), ("Veinworker Shirt", EquipSlot.Chest, 1, true),
+                    ("Veinworker Trousers", EquipSlot.Legs, 1, true), ("Veinworker Boots", EquipSlot.Feet, 1, true), ("Throwing Knife", EquipSlot.Utility1, 2, true), ("Lockpick", EquipSlot.Utility2, 1, true),
                     ("Bandage", EquipSlot.Utility3, 2, true), ("Torch", EquipSlot.Utility4, 1, true) },
                 Weapons = new[] { WeaponClass.Sword, WeaponClass.Dagger, WeaponClass.Crossbow, WeaponClass.Bow, WeaponClass.Spear, WeaponClass.Torch }
             };
