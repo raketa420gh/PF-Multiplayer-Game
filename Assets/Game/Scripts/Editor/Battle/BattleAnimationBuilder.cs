@@ -200,6 +200,8 @@ namespace Game.Scripts.Editor.Battle
             AnimationClip crouchBack = RecordLegs(rig, "CrouchBack", "Crouch_Fwd_Loop", crouch, -crouchSpeed * backpedal);
             AnimationClip crouchLeft = RecordWalk(rig, "CrouchLeft", 0.44f, Vector2.left, 0.26f, 0.08f, crouch);
             AnimationClip crouchRight = RecordWalk(rig, "CrouchRight", 0.44f, Vector2.right, 0.26f, 0.08f, crouch);
+            // Starts as the crouched idle, edited apart from it: the legs tucked in a crouch jump.
+            AnimationClip airTuck = RecordLegs(rig, "AirTuck", "Crouch_Idle_Loop", crouch);
             AnimationClip air = RecordLegs(rig, "Air", "Jump_Loop", 0f);
             AnimationClip jump = RecordLegs(rig, "Jump", "Jump_Rise", 0f);
             AnimationClip land = RecordLegs(rig, "Land", "Jump_Land", 0f, anchor: 1f);
@@ -228,9 +230,9 @@ namespace Game.Scripts.Editor.Battle
 
             AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
             stateMachine.defaultState = locomotion;
-            AddTuckedState(controller, FighterAnimComponent.AirState, air, crouchIdle);
-            AddTuckedState(controller, FighterAnimComponent.JumpState, jump, crouchIdle);
-            AddTuckedState(controller, FighterAnimComponent.LandState, land, crouchIdle);
+            AddTuckedState(controller, FighterAnimComponent.AirState, air, airTuck);
+            AddTuckedState(controller, FighterAnimComponent.JumpState, jump, airTuck);
+            AddTuckedState(controller, FighterAnimComponent.LandState, land, airTuck);
             stateMachine.AddState(FighterAnimComponent.RestState).motion = rest;
             stateMachine.AddState(FighterAnimComponent.DeathState).motion = BattleEditorUtility.LoadLibraryClip("Death01");
         }

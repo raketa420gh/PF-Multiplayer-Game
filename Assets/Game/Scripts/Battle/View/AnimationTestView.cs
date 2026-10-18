@@ -15,6 +15,8 @@ namespace Game.Scripts.Battle
 
         public int Layer => _layer;
         public bool IsPaused => _isPaused;
+        /// The legs run a chain of states (a jump) instead of one state.
+        public bool IsChained => _segment >= 0;
         public bool IsCurrent => IsPlaying(_layer, out _);
         public WeaponConfig Weapon => _weapons[_weaponIndex];
         /// A belt item is in the hand instead of the weapon.
@@ -30,6 +32,9 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private BodyConfig _body;
+
+        [SerializeField]
+        private MovementConfig _movement;
 
         [Tooltip("Indexed by WeaponSocket")]
         [SerializeField]
@@ -52,6 +57,8 @@ namespace Game.Scripts.Battle
         private const float OrbitFieldOfView = 45f;
         private const float FirstPersonFieldOfView = 75f;
         private const float OrbitHeight = 1.1f;
+        /// How long the legs stand after a landing before the jump chain starts over.
+        private const float ChainRest = 0.6f;
 
         private static readonly string[] s_layerNames = { "Legs", "Upper body", "Hit reaction" };
 
@@ -74,13 +81,38 @@ namespace Game.Scripts.Battle
             new[] { FighterAnimComponent.HitChestState, FighterAnimComponent.HitHeadState, FighterAnimComponent.HitStaggerState }
         };
 
+        /// A clip of the locomotion blend trees with the parameters that give it the whole weight.
+        private readonly struct MovePreset
+        {
+            public readonly string Name;
+            public readonly Vector2 Move;
+            public readonly float Crouch;
+
+            public MovePreset(string name, Vector2 move, float crouch) => (Name, Move, Crouch) = (name, move, crouch);
+        }
+
+        /// A base layer state of a chain, entered with the crossfade the game uses.
+        private readonly struct ChainSegment
+        {
+            public readonly string State;
+            public readonly float Duration;
+            public readonly float Fade;
+
+            public ChainSegment(string state, float duration, float fade) => (State, Duration, Fade) = (state, duration, fade);
+        }
+
         private readonly List<GameObject> _attachments = new();
         private readonly HashSet<AnimationClip> _flippedClips = new();
+        private readonly List<MovePreset> _movePresets = new();
+        private readonly List<ChainSegment> _chain = new();
         private readonly List<string> _weaponStates = new();
         private readonly string[] _current = { FighterAnimComponent.LocomotionState, string.Empty, string.Empty };
         private Transform[] _spineBones;
         private Transform _headBone;
         private MeleeAttackConfig _attack;
+        private string _chainName;
+        private float _chainTime;
+        private int _segment = -1;
         private Vector2 _weaponScroll;
         private Vector2 _stateScroll;
         private int _weaponIndex;
@@ -115,21 +147,19 @@ namespace Game.Scripts.Battle
         /// After every Awake: the animation editor swaps the controller for an override of it in its own.
         private void Start()
         {
-            CollectFlippedClips();
+            CollectControllerData();
         }
 
         private void Update()
         {
             _animator.speed = _isPaused ? 0f : _speed;
-            _animator.SetFloat(FighterAnimComponent.MoveXParam, _moveX);
-            _animator.SetFloat(FighterAnimComponent.MoveYParam, _moveY);
-            _animator.SetFloat(FighterAnimComponent.CrouchParam, _crouch);
-            _animator.SetFloat(FighterAnimComponent.ActionSpeedParam, 1f);
-            _animator.SetBool(FighterAnimComponent.MirrorParam, _weapons[_weaponIndex].IsMirrored && !HasItem);
-            _animator.SetLayerWeight(UpperLayer, _current[BaseLayer] == FighterAnimComponent.DeathState ? 0f : 1f);
-            _animator.SetLayerWeight(HitLayer, IsPlaying(HitLayer, out AnimatorStateInfo hit) && hit.normalizedTime < 1f ? _hitWeight : 0f);
+            ApplyParameters();
 
-            if (_isRepeating && IsPlaying(_layer, out AnimatorStateInfo info) && !info.loop && (info.normalizedTime - 1f) * GetLength(_layer) > _repeatPause)
+            if (IsChained && !_isPaused)
+                AdvanceChain(Time.deltaTime * _speed);
+
+            if (_isRepeating && !(IsChained && _layer == BaseLayer) && IsPlaying(_layer, out AnimatorStateInfo info) && !info.loop &&
+                (info.normalizedTime - 1f) * GetLength(_layer) > _repeatPause)
                 Play(_layer, _current[_layer]);
 
             UpdateOrbit();
@@ -212,6 +242,7 @@ namespace Game.Scripts.Battle
             GUILayout.BeginArea(new Rect(PanelWidth + Margin * 2f, Margin, PanelWidth, height), GUI.skin.box);
             _stateScroll = GUILayout.BeginScrollView(_stateScroll);
             DrawStates(_weapons[_weaponIndex].name, UpperLayer, _weaponStates);
+            DrawMovePresets();
 
             for (int layer = 0; layer < s_states.Length; layer++)
                 DrawStates(s_layerNames[layer], layer, s_states[layer]);
@@ -327,8 +358,9 @@ namespace Game.Scripts.Battle
             Play(UpperLayer, FighterAnimComponent.HoldState);
         }
 
-        /// Clips of the states that play mirrored whatever the weapon (the Flip parameter, always on in the game).
-        private void CollectFlippedClips()
+        /// Clips of the states that play mirrored whatever the weapon (the Flip parameter, always on in the game), and the
+        /// clips of the locomotion blend trees with the points where each one plays alone.
+        private void CollectControllerData()
         {
 #if UNITY_EDITOR
             RuntimeAnimatorController runtime = _animator.runtimeAnimatorController;
@@ -345,9 +377,108 @@ namespace Game.Scripts.Battle
                 {
                     if (child.state.mirrorParameterActive && child.state.mirrorParameter == FighterAnimComponent.FlipParam && child.state.motion is AnimationClip clip)
                         _flippedClips.Add(clip);
+
+                    if (child.state.name != FighterAnimComponent.LocomotionState || child.state.motion is not UnityEditor.Animations.BlendTree root)
+                        continue;
+
+                    foreach (UnityEditor.Animations.ChildMotion branch in root.children)
+                    {
+                        if (branch.motion is not UnityEditor.Animations.BlendTree tree)
+                            continue;
+
+                        foreach (UnityEditor.Animations.ChildMotion leaf in tree.children)
+                            _movePresets.Add(new MovePreset(leaf.motion.name, leaf.position, branch.threshold));
+                    }
                 }
             }
 #endif
+        }
+
+        private void ApplyParameters()
+        {
+            _animator.SetFloat(FighterAnimComponent.MoveXParam, _moveX);
+            _animator.SetFloat(FighterAnimComponent.MoveYParam, _moveY);
+            _animator.SetFloat(FighterAnimComponent.CrouchParam, _crouch);
+            _animator.SetFloat(FighterAnimComponent.ActionSpeedParam, 1f);
+            _animator.SetBool(FighterAnimComponent.MirrorParam, _weapons[_weaponIndex].IsMirrored && !HasItem);
+            _animator.SetLayerWeight(UpperLayer, _current[BaseLayer] == FighterAnimComponent.DeathState ? 0f : 1f);
+            _animator.SetLayerWeight(HitLayer, IsPlaying(HitLayer, out AnimatorStateInfo hit) && hit.normalizedTime < 1f ? _hitWeight : 0f);
+        }
+
+        private void SelectPreset(MovePreset preset)
+        {
+            (_moveX, _moveY, _crouch) = (preset.Move.x, preset.Move.y, preset.Crouch);
+            _layer = BaseLayer;
+            Play(BaseLayer, FighterAnimComponent.LocomotionState);
+        }
+
+        /// A jump in place as FighterAnimComponent plays it: the push-off while rising, the hanging legs while falling (the
+        /// times of a flight over flat ground under the movement config), the landing, then the legs back under the fighter.
+        private void StartJump(string name, float crouch)
+        {
+            float rise = _movement.JumpImpulse / -_movement.Gravity;
+            Play(BaseLayer, FighterAnimComponent.LocomotionState);
+            (_layer, _crouch, _chainName) = (BaseLayer, crouch, name);
+            _chain.Clear();
+            _chain.Add(new ChainSegment(FighterAnimComponent.JumpState, rise, FighterAnimComponent.FadeTime));
+            _chain.Add(new ChainSegment(FighterAnimComponent.AirState, rise, FighterAnimComponent.FadeTime));
+            _chain.Add(new ChainSegment(FighterAnimComponent.LandState, FighterAnimComponent.LandTime, FighterAnimComponent.FadeTime));
+            _chain.Add(new ChainSegment(FighterAnimComponent.LocomotionState, ChainRest, FighterAnimComponent.LandFadeTime));
+            SeekChain(0f);
+            _isPaused = false;
+        }
+
+        private float GetChainLength()
+        {
+            float length = 0f;
+
+            foreach (ChainSegment segment in _chain)
+                length += segment.Duration;
+
+            return length;
+        }
+
+        /// Crossfades into the segment the chain time has reached; past the end the chain starts over when repeating.
+        private void AdvanceChain(float deltaTime)
+        {
+            float length = GetChainLength();
+            _chainTime += deltaTime;
+
+            if (_chainTime >= length)
+                _chainTime = _isRepeating ? _chainTime - length : length;
+
+            int index = 0;
+
+            for (float end = _chain[0].Duration; index < _chain.Count - 1 && _chainTime >= end; end += _chain[index].Duration)
+                index++;
+
+            if (index == _segment)
+                return;
+
+            _segment = index;
+            _current[BaseLayer] = _chain[index].State;
+            _animator.CrossFadeInFixedTime(_chain[index].State, _chain[index].Fade, BaseLayer);
+        }
+
+        /// Replays the chain from its start up to the time, so the crossfades in between are the same as in playback.
+        private void SeekChain(float time)
+        {
+            _isPaused = true;
+            _animator.speed = 1f;
+            ApplyParameters();
+            _animator.Play(FighterAnimComponent.LocomotionState, BaseLayer, 0f);
+            _animator.Update(0f);
+            (_chainTime, _segment) = (0f, -1);
+            AdvanceChain(0f);
+
+            for (float elapsed = 0f; elapsed < time; elapsed += Frame)
+            {
+                float step = Mathf.Min(Frame, time - elapsed);
+                AdvanceChain(step);
+                _animator.Update(step);
+            }
+
+            _animator.speed = 0f;
         }
 
         private void ClearHands()
@@ -365,14 +496,20 @@ namespace Game.Scripts.Battle
                 _weaponStates.Add(state);
         }
 
-        /// An attack takes its footwork along, any other upper body state puts the legs back under the fighter.
+        /// An attack takes its footwork along, any other upper body state puts the legs back under the fighter. A state
+        /// played on the legs ends their chain.
         private void Play(int layer, string state, float normalizedTime = 0f)
         {
             _current[layer] = state;
             _animator.Play(state, layer, normalizedTime);
 
             if (layer != UpperLayer)
+            {
+                if (layer == BaseLayer)
+                    _segment = -1;
+
                 return;
+            }
 
             WeaponConfig weapon = _weapons[_weaponIndex];
             string attackPrefix = weapon.AnimationPrefix + FighterAnimComponent.AttackSuffix;
@@ -387,6 +524,7 @@ namespace Game.Scripts.Battle
             else
                 return;
 
+            _segment = -1;
             _animator.Play(_current[BaseLayer], BaseLayer, normalizedTime);
         }
 
@@ -431,31 +569,53 @@ namespace Game.Scripts.Battle
             }
         }
 
+        /// Every clip of the locomotion trees on its own, and the jump chains.
+        private void DrawMovePresets()
+        {
+            GUILayout.Label("Legs clips");
+
+            foreach (MovePreset preset in _movePresets)
+            {
+                bool isSelected = !IsChained && _current[BaseLayer] == FighterAnimComponent.LocomotionState &&
+                                  preset.Move == new Vector2(_moveX, _moveY) && preset.Crouch == _crouch;
+
+                if (Button(preset.Name, isSelected))
+                    SelectPreset(preset);
+            }
+
+            if (Button("Jump sequence", IsChained && _crouch == 0f))
+                StartJump("Jump sequence", 0f);
+
+            if (Button("Crouch jump", IsChained && _crouch == 1f))
+                StartJump("Crouch jump", 1f);
+        }
+
         private void DrawPlayback()
         {
-            float length = GetLength(_layer);
-            float time = GetTime(_layer);
+            bool isChain = IsChained && _layer == BaseLayer;
+            float length = isChain ? GetChainLength() : GetLength(_layer);
+            float time = isChain ? _chainTime : GetTime(_layer);
             AttackPhase phase = _layer == UpperLayer ? GetPhase(time) : AttackPhase.None;
 
-            GUILayout.Label($"{s_layerNames[_layer]}: {_current[_layer]}");
+            GUILayout.Label($"{s_layerNames[_layer]}: {(isChain ? $"{_chainName} > {_current[BaseLayer]}" : _current[_layer])}");
             GUILayout.Label($"{time:F2} / {length:F2} s   frame {Mathf.RoundToInt(time / Frame)}{(phase == AttackPhase.None ? string.Empty : "   " + phase)}");
 
             GUI.changed = false;
             float scrub = GUILayout.HorizontalSlider(time, 0f, length);
 
             if (GUI.changed)
-                Seek(scrub / length);
+                Scrub(isChain, scrub, length);
 
             GUILayout.BeginHorizontal();
 
             if (GUILayout.Button("<"))
-                Seek(Mathf.Max(0f, time - Frame) / length);
+                Scrub(isChain, Mathf.Max(0f, time - Frame), length);
 
             if (GUILayout.Button(_isPaused ? "Play" : "Pause"))
                 _isPaused = !_isPaused;
 
             if (GUILayout.Button(">"))
-                Seek(Mathf.Min(length, time + Frame) / length);
+                Scrub(isChain, Mathf.Min(length, time + Frame), length);
 
             GUILayout.EndHorizontal();
 
@@ -475,6 +635,14 @@ namespace Game.Scripts.Battle
 
             GUILayout.FlexibleSpace();
             GUILayout.Label("RMB drag: orbit, wheel: zoom");
+        }
+
+        private void Scrub(bool isChain, float time, float length)
+        {
+            if (isChain)
+                SeekChain(time);
+            else
+                Seek(time / length);
         }
 
         public static bool Button(string text, bool isSelected)

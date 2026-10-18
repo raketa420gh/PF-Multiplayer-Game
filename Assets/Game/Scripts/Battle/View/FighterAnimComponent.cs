@@ -62,6 +62,11 @@ namespace Game.Scripts.Battle
         public const string HitStaggerState = "HitStagger";
         /// How far the standing legs clips lower the hips below the bind pose.
         public const float IdleDrop = 0.03f;
+        /// Base layer timings, shared with the animation test scene so its jump chain runs as in the game.
+        public const float FadeTime = 0.1f;
+        public const float AirDelay = 0.15f;
+        public const float LandTime = 0.35f;
+        public const float LandFadeTime = 0.2f;
 
         [SerializeField]
         private FighterComponent _fighter;
@@ -76,13 +81,7 @@ namespace Game.Scripts.Battle
         private Transform _headBone;
 
         [SerializeField]
-        private float _fadeTime = 0.1f;
-
-        [SerializeField]
         private float _moveDamping = 0.1f;
-
-        [SerializeField]
-        private float _airDelay = 0.15f;
 
         [SerializeField]
         private float _hitFlinch = 10f;
@@ -104,12 +103,6 @@ namespace Game.Scripts.Battle
 
         [SerializeField, Tooltip("Upward speed that counts as a jump: the legs push off at once instead of waiting for the air delay")]
         private float _jumpSpeed = 2f;
-
-        [SerializeField]
-        private float _landTime = 0.35f;
-
-        [SerializeField]
-        private float _landFadeTime = 0.2f;
 
         private const int BaseLayer = 0;
         private const int UpperLayer = 1;
@@ -333,7 +326,7 @@ namespace Game.Scripts.Battle
 
             bool wasInAir = _baseState == s_air || _baseState == s_jump;
             bool isRising = !move.IsGrounded && move.Velocity.y > _jumpSpeed;
-            float fadeTime = _fadeTime;
+            float fadeTime = FadeTime;
             float time = 0f;
             int token = 0;
             int state;
@@ -342,7 +335,7 @@ namespace Game.Scripts.Battle
             {
                 state = s_death;
             }
-            else if (_airTime > _airDelay || isRising)
+            else if (_airTime > AirDelay || isRising)
             {
                 // The push-off plays once on the way up; from the top of the jump, or when walking off a ledge, the legs hang.
                 state = move.Velocity.y > 0f && (isRising || _baseState == s_jump) ? s_jump : s_air;
@@ -350,7 +343,7 @@ namespace Game.Scripts.Battle
             else if (wasInAir)
             {
                 state = s_land;
-                _landLeft = _landTime;
+                _landLeft = LandTime;
             }
             else if (_baseState == s_land && _landLeft > 0f)
             {
@@ -361,7 +354,7 @@ namespace Game.Scripts.Battle
                 CombatComponent combat = _fighter.Combat;
                 bool isStill = Mathf.Abs(velocity.x) + Mathf.Abs(velocity.z) < RestSpeed;
                 state = _isSeated ? s_rest : s_locomotion;
-                fadeTime = _baseState == s_land ? _landFadeTime : state == s_rest || _baseState == s_rest ? FighterMoveComponent.SitTime : _fadeTime;
+                fadeTime = _baseState == s_land ? LandFadeTime : state == s_rest || _baseState == s_rest ? FighterMoveComponent.SitTime : FadeTime;
 
                 // One who strikes without walking steps into the swing.
                 if (isStill && combat.State == CombatState.Attack)
@@ -387,7 +380,7 @@ namespace Game.Scripts.Battle
             _animator.SetLayerWeight(UpperLayer, _upperWeight);
 
             _hitTime = Mathf.Max(0f, _hitTime - deltaTime);
-            _animator.SetLayerWeight(HitLayer, Mathf.Clamp01(_hitTime / _fadeTime) * _hitReactionWeight * _upperWeight);
+            _animator.SetLayerWeight(HitLayer, Mathf.Clamp01(_hitTime / FadeTime) * _hitReactionWeight * _upperWeight);
 
             CombatComponent combat = _fighter.Combat;
             WeaponConfig weapon = combat.Weapon;
@@ -463,7 +456,7 @@ namespace Game.Scripts.Battle
 
             _upperState = state;
             _upperToken = token;
-            _animator.CrossFadeInFixedTime(state, _fadeTime, UpperLayer, time);
+            _animator.CrossFadeInFixedTime(state, FadeTime, UpperLayer, time);
         }
 
         private void UpdatePitch()

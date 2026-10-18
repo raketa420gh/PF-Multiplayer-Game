@@ -2473,9 +2473,7 @@ MonoBehaviour:
   - {fileID: 9205732188457005289}
   - {fileID: 767971802250053890}
   _headBone: {fileID: 2715780437241734247}
-  _fadeTime: 0.1
   _moveDamping: 0.1
-  _airDelay: 0.15
   _hitFlinch: 10
   _staggerFlinch: 22
   _flinchDecay: 9
@@ -2483,8 +2481,6 @@ MonoBehaviour:
   _hitReactionWeight: 0.7
   _staggerReactionTime: 0.6
   _jumpSpeed: 2
-  _landTime: 0.35
-  _landFadeTime: 0.2
 --- !u!114 &2101787869837535472
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2563,7 +2559,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Battle.HitFeedbackComponent
   _receiver: {fileID: 5764135376420335347}
   _combat: {fileID: 1504394065289897591}
-  _body: 1
+  _body: 2
   _blockSurface: 5
 --- !u!114 &3632545809473750300
 MonoBehaviour:
@@ -2708,9 +2704,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.FootstepComponent
   _fighter: {fileID: 1223876200443837376}
   _stride: 1.3
-  _sounds: {fileID: 0}
-  _footwear: 1
-  _inventory: {fileID: 0}
+  _sounds: {fileID: 11400000, guid: a97bb3003ade55149ab1fb0bb8a88380, type: 2}
+  _footwear: 0
+  _inventory: {fileID: 4430539527464221349}
 --- !u!1 &9074076895986608596
 GameObject:
   m_ObjectHideFlags: 0
