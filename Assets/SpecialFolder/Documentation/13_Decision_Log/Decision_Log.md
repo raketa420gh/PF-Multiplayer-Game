@@ -279,6 +279,17 @@ C, тон — мрачный dark fantasy. Минерал **Оссарит** р�
 - Таймер, порталы и рандом комнат объяснены Осыпью и якорями гильдии.
 - Механические ловушки — от империи, органические — от жилы.
 
+## DD-023 — Название игры: Marrowdeep
+**Date:** 2026-10-21
+**Status:** Accepted
+
+**Decision**
+Игра называется **Marrowdeep**.
+
+**Consequences**
+- `PlayerSettings.productName` = `Marrowdeep` (было `PF Multiplayer`): exe сборок называются `Marrowdeep.exe`, PlayerPrefs (персонажи, стэш, настройки) теперь лежат под `DefaultCompany\Marrowdeep` — старые сохранения не переносились.
+- Имя репозитория и папки проекта (`PF-Multiplayer-Game`) не меняется.
+
 ## Template
 
 ### DD-XXX — `[Title]`

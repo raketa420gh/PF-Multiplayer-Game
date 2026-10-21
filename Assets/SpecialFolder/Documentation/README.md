@@ -1,4 +1,6 @@
-# Multiplayer Extraction Game — Documentation
+# Marrowdeep — Documentation
+
+**Marrowdeep** — название игры (DD-023).
 
 Документация проекта разделена по доменам. **GDD отвечает на вопрос «что и зачем», техническая документация — «как», задачи — «что сделать».**
 

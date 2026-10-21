@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-21
+
+### Changed
+- DD-023: the game is named **Marrowdeep**.
+
 ## Unreleased — 2026-10-09
 
 ### Changed

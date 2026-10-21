@@ -8,13 +8,12 @@ Enter → Explore → Fight → Loot → Risk Decision → Extract/Die → Progr
 ```
 
 ## Must Have
-- [ ] 1 карта
+- [ ] 1 подземелье (7x7)
 - [ ] Solo
 - [ ] 1 playable character
 - [ ] movement
 - [ ] melee combat
-- [ ] 3–5 PvE enemies
-- [ ] 1 mini-boss
+- [ ] PvE enemies
 - [ ] loot
 - [ ] inventory
 - [ ] extraction
