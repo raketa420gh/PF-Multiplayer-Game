@@ -685,14 +685,14 @@ namespace Game.Scripts.Editor.Dungeon
             StatsView stats = BuildStats(dollPanel, new Vector2(0f, -462f), 460f, 105f, true, panel, out RectTransform statsTooltip);
 
             // Center: equipment sunburst and backpack.
-            RectTransform equipPanel = CreateRect("Equipment", panel, new Vector2(0f, 1f), new Vector2(530f, -40f), new Vector2(640f, 650f));
+            RectTransform equipPanel = CreateRect("Equipment", panel, new Vector2(0f, 1f), new Vector2(530f, -40f), new Vector2(640f, 500f));
             equipPanel.pivot = new Vector2(0f, 1f);
             CreateImage("Back", equipPanel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
-            // Each weapon set is a pair of hands side by side under the doll: a two-handed weapon spans both.
-            EquipSlotView main1 = Slot(equipPanel, EquipSlot.Weapon1Main, "I", new Vector2(14f, -460f), 2, 4, itemPrefab);
-            EquipSlotView off1 = Slot(equipPanel, EquipSlot.Weapon1Off, "I off", new Vector2(110f, -460f), 2, 4, itemPrefab);
-            EquipSlotView main2 = Slot(equipPanel, EquipSlot.Weapon2Main, "II", new Vector2(440f, -460f), 2, 4, itemPrefab);
-            EquipSlotView off2 = Slot(equipPanel, EquipSlot.Weapon2Off, "II off", new Vector2(536f, -460f), 2, 4, itemPrefab);
+            // Each weapon set is a pair of hands side by side beside the head, set I left and set II right: a two-handed weapon spans both.
+            EquipSlotView main1 = Slot(equipPanel, EquipSlot.Weapon1Main, "I", new Vector2(80f, -14f), 2, 4, itemPrefab);
+            EquipSlotView off1 = Slot(equipPanel, EquipSlot.Weapon1Off, "I off", new Vector2(176f, -14f), 2, 4, itemPrefab);
+            EquipSlotView main2 = Slot(equipPanel, EquipSlot.Weapon2Main, "II", new Vector2(376f, -14f), 2, 4, itemPrefab);
+            EquipSlotView off2 = Slot(equipPanel, EquipSlot.Weapon2Off, "II off", new Vector2(472f, -14f), 2, 4, itemPrefab);
             BattleEditorUtility.Set(main1, "_pair", off1);
             BattleEditorUtility.Set(main2, "_pair", off2);
             List<EquipSlotView> slots = new()
@@ -702,23 +702,23 @@ namespace Game.Scripts.Editor.Dungeon
                 main2,
                 off2,
                 Slot(equipPanel, EquipSlot.Head, "Head", new Vector2(276f, -14f), 2, 2, itemPrefab),
-                Slot(equipPanel, EquipSlot.Necklace, "Neck", new Vector2(372f, -36f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Back, "Cloak", new Vector2(170f, -110f), 2, 3, itemPrefab),
-                Slot(equipPanel, EquipSlot.Chest, "Chest", new Vector2(276f, -110f), 2, 3, itemPrefab),
-                Slot(equipPanel, EquipSlot.Hands, "Hands", new Vector2(382f, -110f), 2, 2, itemPrefab),
-                Slot(equipPanel, EquipSlot.Ring1, "Ring", new Vector2(222f, -256f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Legs, "Legs", new Vector2(276f, -256f), 2, 2, itemPrefab),
-                Slot(equipPanel, EquipSlot.Ring2, "Ring", new Vector2(382f, -256f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Feet, "Feet", new Vector2(276f, -352f), 2, 2, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility1, "3", new Vector2(120f, -300f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility2, "3", new Vector2(120f, -352f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility3, "3", new Vector2(120f, -404f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility4, "4", new Vector2(476f, -300f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility5, "4", new Vector2(476f, -352f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility6, "4", new Vector2(476f, -404f), 1, 1, itemPrefab)
+                Slot(equipPanel, EquipSlot.Necklace, "Neck", new Vector2(298f, -110f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Back, "Cloak", new Vector2(176f, -200f), 2, 3, itemPrefab),
+                Slot(equipPanel, EquipSlot.Chest, "Chest", new Vector2(276f, -162f), 2, 3, itemPrefab),
+                Slot(equipPanel, EquipSlot.Hands, "Hands", new Vector2(376f, -200f), 2, 2, itemPrefab),
+                Slot(equipPanel, EquipSlot.Ring1, "Ring", new Vector2(220f, -346f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Legs, "Legs", new Vector2(276f, -302f), 2, 2, itemPrefab),
+                Slot(equipPanel, EquipSlot.Ring2, "Ring", new Vector2(376f, -346f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Feet, "Feet", new Vector2(276f, -398f), 2, 2, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility1, "3", new Vector2(80f, -200f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility2, "3", new Vector2(80f, -252f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility3, "3", new Vector2(80f, -304f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility4, "4", new Vector2(516f, -200f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility5, "4", new Vector2(516f, -252f), 1, 1, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility6, "4", new Vector2(516f, -304f), 1, 1, itemPrefab)
             };
 
-            RectTransform bagPanel = CreateRect("BagPanel", panel, new Vector2(0f, 1f), new Vector2(530f, -710f), new Vector2(640f, 230f));
+            RectTransform bagPanel = CreateRect("BagPanel", panel, new Vector2(0f, 1f), new Vector2(530f, -560f), new Vector2(640f, 230f));
             bagPanel.pivot = new Vector2(0f, 1f);
             CreateImage("Back", bagPanel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
             TMP_Text bagTitle = CreateText("BagTitle", bagPanel, new Vector2(0f, 1f), new Vector2(16f, -8f), new Vector2(300f, 24f), 16f, TextAlignmentOptions.MidlineLeft);
@@ -902,13 +902,23 @@ namespace Game.Scripts.Editor.Dungeon
 
             LobbyHomeView home = BuildLobbyHome(panel, inputs);
             SkillsView skills = BuildSkills(panel, inputs);
-            SpellsView spells = BuildSpells(panel);
             InventoryView inventory = BuildInventory(panel, canvas, inputs, itemPrefab, cellPrefab, "Kit", false, 1, out CharacterPreviewView preview);
             RectTransform inventoryRect = (RectTransform)inventory.transform;
             inventoryRect.anchorMin = inventoryRect.anchorMax = inventoryRect.pivot = new Vector2(0.5f, 1f);
             inventoryRect.anchoredPosition = new Vector2(0f, -60f);
             inventory.transform.Find("Hints").gameObject.SetActive(false);
             StashPagesView stashPages = BuildStashPages(inventory);
+            // The backpack goes under the stash; the equipment panel grows to the height of that column, the slots in its middle.
+            RectTransform bagPanel = (RectTransform)inventory.transform.Find("BagPanel");
+            bagPanel.anchoredPosition = new Vector2(1200f, -500f);
+            bagPanel.sizeDelta = new Vector2(680f, 230f);
+            ((RectTransform)bagPanel.Find("Bag")).anchoredPosition = new Vector2(120f, -36f);
+            RectTransform equipment = (RectTransform)inventory.transform.Find("Equipment");
+            equipment.sizeDelta = new Vector2(640f, 690f);
+
+            foreach (EquipSlotView slot in equipment.GetComponentsInChildren<EquipSlotView>())
+                ((RectTransform)slot.transform).anchoredPosition += new Vector2(0f, -95f);
+
             MerchantsView merchants = BuildMerchants(panel);
 
             // Top bar: rank shield and the page tabs, each marked by a diamond tick on the rule.
@@ -920,7 +930,7 @@ namespace Game.Scripts.Editor.Dungeon
             rule.anchorMin = Vector2.zero;
             rule.anchorMax = new Vector2(1f, 0f);
 
-            string[] names = { "Lobby", "Skills", "Spells", "Stash", "Merchants" };
+            string[] names = { "Lobby", "Skills", "Stash", "Merchants" };
             Button[] tabs = new Button[names.Length];
 
             for (int i = 0; i < names.Length; i++)
@@ -947,13 +957,12 @@ namespace Game.Scripts.Editor.Dungeon
             SerializedObject so = new SerializedObject(view);
             BattleEditorUtility.Set(so, "_home", home);
             BattleEditorUtility.Set(so, "_skills", skills);
-            BattleEditorUtility.Set(so, "_spells", spells);
             BattleEditorUtility.Set(so, "_inventory", inventory);
             BattleEditorUtility.Set(so, "_inventoryPreview", preview);
             BattleEditorUtility.Set(so, "_tabs", tabs);
             BattleEditorUtility.Set(so, "_merchants", merchants);
             BattleEditorUtility.Set(so, "_stashPages", stashPages);
-            BattleEditorUtility.Set(so, "_pages", new DisplayableView[] { home, skills, spells, inventory, merchants });
+            BattleEditorUtility.Set(so, "_pages", new DisplayableView[] { home, skills, inventory, merchants });
             BattleEditorUtility.Set(so, "_rankText", rank);
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -1018,7 +1027,7 @@ namespace Game.Scripts.Editor.Dungeon
             fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
             fitter.aspectRatio = 16f / 9f;
             CharacterPreviewView preview = BuildPreview(backdrop, inputs, 5, 1920, 1080, out Camera camera);
-            BuildTavern(camera);
+            BuildSeatedTable(camera, preview, inputs);
             Image vignette = CreateImage("Vignette", page, center, Vector2.zero, Vector2.zero, Color.white);
             vignette.sprite = DungeonUiSpriteBuilder.Load("Vignette");
             Stretch(vignette.rectTransform, 0f);
@@ -1029,7 +1038,7 @@ namespace Game.Scripts.Editor.Dungeon
             helpTitle.text = "Need help?";
             helpTitle.color = s_gold;
             TMP_Text helpText = CreateText("Text", help, top, new Vector2(0f, -40f), new Vector2(250f, 100f), 15f, TextAlignmentOptions.Top);
-            helpText.text = "Press <b>H</b> to see the controls.\nPick perks and skills on the <b>Skills</b> tab, fill the wheels on <b>Spells</b>, pack the kit in the <b>Stash</b>.";
+            helpText.text = "Press <b>H</b> to see the controls.\nPick perks and skills on the <b>Skills</b> tab, fill the spell wheels on its <b>Spell Wheels</b> tab, pack the kit in the <b>Stash</b>.";
             helpText.color = s_text;
             CreateImage("RuleBottom", help, bottom, Vector2.zero, new Vector2(250f, 2f), s_frame);
 
@@ -1199,8 +1208,77 @@ namespace Game.Scripts.Editor.Dungeon
             Prop("StandRangerMale", new Vector3(-1.8f, 0f, -1.6f), 15f);
             Prop("StandPeasantFemale", new Vector3(1.8f, 0f, -1.6f), -15f);
             Prop("SkullPile", new Vector3(-1.1f, 0f, -2.3f), 0f);
+            DimFlames(set);
+            BattleEditorUtility.SetLayerRecursively(set.gameObject, root.gameObject.layer);
+        }
 
-            // Dungeon props are lit for big rooms; this close to the camera they would burn the picture out.
+        /// Seats the preview character on a stool at a table laid with candles and odds and ends, on a bare dark background. The character can't be turned.
+        private static void BuildSeatedTable(Camera camera, CharacterPreviewView preview, Inputs inputs)
+        {
+            const string controllerPath = "Assets/Game/Animations/Dungeon/LobbySeated.controller";
+            const float tableTop = 0.813f;
+            const float stoolHeight = 0.582f;
+            AnimationClip sitting = BattleEditorUtility.LoadLibraryClip("Sitting_Idle_Loop");
+            BattleEditorUtility.EnsureFolder("Assets/Game/Animations/Dungeon");
+            AssetDatabase.DeleteAsset(controllerPath);
+            UnityEditor.Animations.AnimatorController controller = UnityEditor.Animations.AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
+            controller.layers[0].stateMachine.AddState("Sitting").motion = sitting;
+
+            // The seat and the table follow the pose itself: hips over the stool top, the table edge right in front of the belly.
+            GameObject probe = (GameObject)PrefabUtility.InstantiatePrefab(inputs.PreviewRig);
+            Animator animator = probe.GetComponentInChildren<Animator>();
+            BattleEditorUtility.SampleClip(animator, sitting, 0f);
+            Vector3 hips = animator.GetBoneTransform(HumanBodyBones.Hips).position - probe.transform.position;
+            Vector3 head = animator.GetBoneTransform(HumanBodyBones.Head).position - probe.transform.position;
+            Object.DestroyImmediate(probe);
+
+            SerializedObject so = new SerializedObject(preview);
+            BattleEditorUtility.Set(so, "_canTurn", false);
+            BattleEditorUtility.Set(so, "_poseController", controller);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            Transform root = camera.transform.parent;
+            float tableZ = hips.z + 0.25f + 0.545f;
+            camera.transform.localPosition = new Vector3(0f, head.y + 0.45f, tableZ + 3.6f);
+            camera.transform.LookAt(root.position + new Vector3(0f, (tableTop + head.y) * 0.5f - 0.05f, hips.z + 0.3f));
+            camera.fieldOfView = 32f;
+            camera.farClipPlane = 30f;
+            camera.backgroundColor = s_lobbyBack;
+            UnityEngine.Rendering.Universal.UniversalAdditionalCameraData data = camera.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            data.renderPostProcessing = true;
+            data.antialiasing = UnityEngine.Rendering.Universal.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+            // The rig spawns turned 15 degrees aside; here it faces the camera.
+            root.Find("Stage").localRotation = Quaternion.Euler(0f, 15f, 0f);
+
+            Transform set = BattleEditorUtility.CreateChild("Tavern", root).transform;
+
+            Transform Prop(GameObject prefab, Vector3 position, float yaw)
+            {
+                GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, set);
+                instance.transform.localPosition = position;
+                instance.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+
+                return instance.transform;
+            }
+
+            void Item(string kit, float x, float z, float yaw) => Prop(DungeonKitBuilder.Load(kit), new Vector3(x, tableTop, tableZ + z), yaw);
+
+            // The camera looks down -Z, so +X is the left side of the picture.
+            Prop(AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("Table")), new Vector3(0f, 0f, tableZ), 180f);
+            Prop(DungeonKitBuilder.Load("Stool"), new Vector3(0f, 0f, hips.z - 0.05f), 0f).localScale = new Vector3(1f, (hips.y - 0.1f) / stoolHeight, 1f);
+            Prop(AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("CandleCluster")), new Vector3(0.85f, tableTop, tableZ - 0.1f), 0f);
+            Item("Book_Stack_1", 0.5f, -0.25f, 20f);
+            Item("Potion_1", 0.3f, 0.2f, 0f);
+            Item("Scroll_1", -0.1f, 0.3f, 75f);
+            Item("Mug", -0.45f, -0.2f, 140f);
+            Item("Coin_Pile_2", -0.7f, 0.15f, -30f);
+            DimFlames(set);
+            BattleEditorUtility.SetLayerRecursively(set.gameObject, root.gameObject.layer);
+        }
+
+        /// Dungeon props are lit for big rooms; this close to the camera they would burn the picture out.
+        private static void DimFlames(Transform set)
+        {
             foreach (FlickerLightComponent flicker in set.GetComponentsInChildren<FlickerLightComponent>())
             {
                 SerializedObject so = new SerializedObject(flicker);
@@ -1208,8 +1286,6 @@ namespace Game.Scripts.Editor.Dungeon
                 so.FindProperty("_amplitude").floatValue *= 0.5f;
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
-
-            BattleEditorUtility.SetLayerRecursively(set.gameObject, root.gameObject.layer);
         }
 
         /// "Perks and Skills" page laid out like Dark and Darker: attribute sheet, the doll in an arch with equipped slots, the class pools.
@@ -1225,9 +1301,24 @@ namespace Game.Scripts.Editor.Dungeon
             sheet.sprite = DungeonUiSpriteBuilder.Load("Panel");
             StatsView stats = BuildStats(sheet.rectTransform, new Vector2(0f, -34f), 530f, 130f, false, page, out RectTransform statsTooltip);
 
-            TMP_Text title = CreateText("Title", page, top, new Vector2(0f, -104f), new Vector2(620f, 34f), 23f, TextAlignmentOptions.Center);
-            title.text = "Perks and Skills";
-            title.color = s_gold;
+            // The title is a pair of tabs: the doll with the equipped perks and skills, or the spell wheels of a spell class.
+            string[] modes = { "Perks and Skills", "Spell Wheels" };
+            Button[] modeTabs = new Button[modes.Length];
+            // A class without spells has the first tab alone, centered.
+            RectTransform modeBar = CreateRect("Tabs", page, top, new Vector2(0f, -104f), new Vector2(620f, 40f));
+            HorizontalLayoutGroup modeLayout = modeBar.gameObject.AddComponent<HorizontalLayoutGroup>();
+            modeLayout.spacing = 20f;
+            modeLayout.childAlignment = TextAnchor.MiddleCenter;
+            modeLayout.childControlWidth = modeLayout.childControlHeight = modeLayout.childForceExpandWidth = modeLayout.childForceExpandHeight = false;
+
+            for (int i = 0; i < modes.Length; i++)
+            {
+                modeTabs[i] = CreateButton("Tab" + modes[i].Replace(" ", string.Empty), modeBar, top, Vector2.zero, new Vector2(300f, 40f), modes[i]);
+                modeTabs[i].image.sprite = DungeonUiSpriteBuilder.Load("Glow");
+                modeTabs[i].image.type = Image.Type.Simple;
+                modeTabs[i].GetComponentInChildren<TMP_Text>().fontSize = 23f;
+            }
+
             CreateImage("TitleRule", page, top, new Vector2(0f, -146f), new Vector2(620f, 2f), s_frame);
             // Subclass tabs under the title, the chosen one's description under them, right above the arch.
             Button[] subclassTabs = new Button[3];
@@ -1246,45 +1337,66 @@ namespace Game.Scripts.Editor.Dungeon
             TMP_Text subclassText = CreateText("SubclassText", page, top, new Vector2(0f, -194f), new Vector2(900f, 24f), 13f, TextAlignmentOptions.Center);
             subclassText.color = s_textDim;
 
-            RawImage doll = CreateRect("Doll", page, top, new Vector2(0f, -262f), new Vector2(520f, 700f)).gameObject.AddComponent<RawImage>();
+            RectTransform character = CreateRect("Character", page, center, Vector2.zero, Vector2.zero);
+            Stretch(character, 0f);
+            RawImage doll = CreateRect("Doll", character, top, new Vector2(0f, -262f), new Vector2(520f, 700f)).gameObject.AddComponent<RawImage>();
             CharacterPreviewView preview = BuildPreview(doll, inputs, 2, 520, 700, out Camera camera);
             camera.backgroundColor = s_lobbyBack;
-            CreateImage("Arch", page, top, new Vector2(0f, -226f), new Vector2(576f, 740f), line).sprite = DungeonUiSpriteBuilder.Load("Arch");
-            CreateImage("ArchBase", page, top, new Vector2(0f, -967f), new Vector2(470f, 2f), line);
+            CreateImage("Arch", character, top, new Vector2(0f, -226f), new Vector2(576f, 740f), line).sprite = DungeonUiSpriteBuilder.Load("Arch");
+            CreateImage("ArchBase", character, top, new Vector2(0f, -967f), new Vector2(470f, 2f), line);
 
             // Equipped perks sit on the arch posts, the two skills close it at the bottom.
             AbilityIconView[] perkSlots = new AbilityIconView[4];
             AbilityIconView[] skillSlots = new AbilityIconView[2];
 
             for (int i = 0; i < perkSlots.Length; i++)
-                perkSlots[i] = AbilityIcon("PerkSlot" + i, page, top, new Vector2(i < 2 ? -284f : 284f, i % 2 == 0 ? -574f : -768f), "Diamond", 104f);
+                perkSlots[i] = AbilityIcon("PerkSlot" + i, character, top, new Vector2(i < 2 ? -284f : 284f, i % 2 == 0 ? -574f : -768f), "Diamond", 104f);
 
             for (int i = 0; i < skillSlots.Length; i++)
-                skillSlots[i] = AbilityIcon("SkillSlot" + i, page, top, new Vector2(i == 0 ? -284f : 284f, -968f), "Square", 88f);
+                skillSlots[i] = AbilityIcon("SkillSlot" + i, character, top, new Vector2(i == 0 ? -284f : 284f, -968f), "Square", 88f);
 
+            // The pool stacks its sections from the top: perks, skills and, for a spell class, its spells.
             Image pool = CreateImage("Pool", page, Vector2.one, new Vector2(-20f, -96f), new Vector2(530f, 964f), Color.white);
             pool.sprite = DungeonUiSpriteBuilder.Load("Panel");
+            RectTransform content = CreateRect("Content", pool.rectTransform, top, Vector2.zero, Vector2.zero);
+            Stretch(content, 0f);
+            VerticalLayoutGroup stack = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            stack.padding = new RectOffset(30, 30, 9, 60);
+            stack.spacing = 14f;
+            stack.childControlWidth = stack.childControlHeight = stack.childForceExpandWidth = true;
+            stack.childForceExpandHeight = false;
 
-            RectTransform Section(string name, float y)
+            RectTransform Section(string name, float cell, int columns, Vector2 spacing)
             {
-                CreateImage(name + "Band", pool.rectTransform, top, new Vector2(0f, y), new Vector2(470f, 38f), new Color(0f, 0f, 0f, 0.35f));
-                TMP_Text header = CreateText(name + "Title", pool.rectTransform, top, new Vector2(0f, y), new Vector2(470f, 38f), 22f, TextAlignmentOptions.Center);
+                RectTransform section = CreateRect(name + "Section", content, top, Vector2.zero, Vector2.zero);
+                VerticalLayoutGroup group = section.gameObject.AddComponent<VerticalLayoutGroup>();
+                group.spacing = 10f;
+                group.childControlWidth = group.childControlHeight = group.childForceExpandWidth = true;
+                group.childForceExpandHeight = false;
+                Image band = CreateImage(name + "Band", section, top, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.35f));
+                band.gameObject.AddComponent<LayoutElement>().preferredHeight = 38f;
+                TMP_Text header = CreateText(name + "Title", band.rectTransform, center, Vector2.zero, Vector2.zero, 22f, TextAlignmentOptions.Center);
+                header.rectTransform.StretchFill();
                 header.text = name;
                 header.color = s_text;
-                RectTransform grid = CreateRect(name, pool.rectTransform, top, new Vector2(0f, y - 48f), new Vector2(470f, 222f));
+                RectTransform grid = CreateRect(name, section, top, Vector2.zero, Vector2.zero);
                 GridLayoutGroup layout = grid.gameObject.AddComponent<GridLayoutGroup>();
-                layout.cellSize = new Vector2(104f, 104f);
-                layout.spacing = new Vector2(18f, 14f);
+                layout.cellSize = new Vector2(cell, cell);
+                layout.spacing = spacing;
                 layout.childAlignment = TextAnchor.UpperCenter;
+                layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                layout.constraintCount = columns;
 
                 return grid;
             }
 
-            RectTransform perks = Section("Perks", -28f);
-            RectTransform skillRoot = Section("Skills", -336f);
-            TMP_Text hint = CreateText("Hint", pool.rectTransform, top, new Vector2(0f, -918f), new Vector2(470f, 40f), 12f, TextAlignmentOptions.Center);
-            hint.text = "Drag a perk or a skill onto a slot  ·  click a perk to equip or remove it  ·  LMB / RMB on a skill binds it to Q / E";
+            RectTransform perks = Section("Perks", 104f, 4, new Vector2(18f, 14f));
+            RectTransform skillRoot = Section("Skills", 104f, 4, new Vector2(18f, 14f));
+            // The spell keys hang under their squares, so the rows leave room for them.
+            RectTransform spellRoot = Section("Spells", 92f, 5, new Vector2(2f, 20f));            TMP_Text hint = CreateText("Hint", pool.rectTransform, top, new Vector2(0f, -918f), new Vector2(470f, 40f), 12f, TextAlignmentOptions.Center);
+            hint.text = "Drag a perk, a skill or a spell onto a slot  ·  click a perk to equip or remove it  ·  LMB / RMB on a skill binds it to Q / E, on a spell puts it into wheel I / II";
             hint.color = s_textDim;
+            SpellsView spells = BuildSpells(page, spellRoot);
             AbilityIconView perkIcon = AbilityIcon("PerkIcon", page, center, Vector2.zero, "Diamond", 104f);
             AbilityIconView skillIcon = AbilityIcon("SkillIcon", page, center, Vector2.zero, "Square", 88f);
             perkIcon.gameObject.SetActive(false);
@@ -1312,30 +1424,29 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_subclassTabs", subclassTabs);
             BattleEditorUtility.Set(so, "_subclassIcons", subclassIcons);
             BattleEditorUtility.Set(so, "_subclassText", subclassText);
+            BattleEditorUtility.Set(so, "_spells", spells);
+            BattleEditorUtility.Set(so, "_modeTabs", modeTabs);
+            BattleEditorUtility.Set(so, "_modeRoots", new[] { character.gameObject, spells.transform.Find("Wheels").gameObject });
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;
         }
 
-        /// "Spells" page in the look of the skills page: the wheels as rings of square slots around a hub on the left, the class spells
-        /// in a panel on the right.
-        private static SpellsView BuildSpells(RectTransform lobby)
+        /// "Spell Wheels" tab of the skills page: the wheels as rings of square slots around a hub between the attribute sheet and the pool;
+        /// the class spells go into the pool section the page passes in.
+        private static SpellsView BuildSpells(RectTransform skills, RectTransform spellRoot)
         {
             Vector2 center = new Vector2(0.5f, 0.5f);
             Vector2 top = new Vector2(0.5f, 1f);
             Color line = new Color(0.6f, 0.57f, 0.5f);
             Sprite disc = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
             Sprite circle = DungeonUiSpriteBuilder.Load("Circle");
-            RectTransform page = CreateRect("Spells", lobby, center, Vector2.zero, Vector2.zero);
+            RectTransform page = CreateRect("Spells", skills, center, Vector2.zero, Vector2.zero);
             Stretch(page, 0f);
-            // The wheels share the room left of the pool panel.
-            const float room = -275f;
+            RectTransform group = CreateRect("Wheels", page, center, Vector2.zero, Vector2.zero);
+            Stretch(group, 0f);
 
-            TMP_Text title = CreateText("Title", page, top, new Vector2(room, -104f), new Vector2(620f, 34f), 23f, TextAlignmentOptions.Center);
-            title.text = "Spell Wheels";
-            title.color = s_gold;
-            CreateImage("TitleRule", page, top, new Vector2(room, -146f), new Vector2(620f, 2f), s_frame);
-            TMP_Text info = CreateText("Info", page, top, new Vector2(room, -156f), new Vector2(900f, 24f), 13f, TextAlignmentOptions.Center);
+            TMP_Text info = CreateText("Info", group, top, new Vector2(0f, -232f), new Vector2(820f, 24f), 13f, TextAlignmentOptions.Center);
             info.text = $"Each wheel holds {ClassConfig.SpellWheelSize} spells  ·  wheel I opens with the memory skill put on Q, wheel II with the one on E";
             info.color = s_textDim;
 
@@ -1346,8 +1457,10 @@ namespace Game.Scripts.Editor.Dungeon
 
             for (int wheel = 0; wheel < wheels.Length; wheel++)
             {
-                RectTransform ring = CreateRect("Wheel" + (wheel + 1), page, top, new Vector2(room + (wheel * 2 - 1) * 290f, -560f), new Vector2(520f, 520f));
+                // Two full-size wheels don't fit between the sheet and the pool side by side.
+                RectTransform ring = CreateRect("Wheel" + (wheel + 1), group, top, new Vector2((wheel * 2 - 1) * 205f, -600f), new Vector2(520f, 520f));
                 ring.pivot = center;
+                ring.localScale = Vector3.one * 0.78f;
                 ring.gameObject.AddComponent<CanvasGroup>();
                 CreateImage("Disc", ring, center, Vector2.zero, new Vector2(500f, 500f), new Color(0f, 0f, 0f, 0.45f)).sprite = disc;
                 CreateImage("Rim", ring, center, Vector2.zero, new Vector2(500f, 500f), new Color(line.r, line.g, line.b, 0.5f)).sprite = circle;
@@ -1370,7 +1483,7 @@ namespace Game.Scripts.Editor.Dungeon
                 }
 
                 wheels[wheel] = ring.gameObject;
-                TMP_Text inactive = CreateText("Inactive" + (wheel + 1), page, top, ring.anchoredPosition, new Vector2(320f, 50f), 28f, TextAlignmentOptions.Center);
+                TMP_Text inactive = CreateText("Inactive" + (wheel + 1), group, top, ring.anchoredPosition, new Vector2(320f, 50f), 28f, TextAlignmentOptions.Center);
                 inactive.rectTransform.pivot = center;
                 inactive.text = "INACTIVE";
                 inactive.color = s_textDim;
@@ -1378,25 +1491,10 @@ namespace Game.Scripts.Editor.Dungeon
                 inactiveLabels[wheel] = inactive.gameObject;
             }
 
-            TMP_Text empty = CreateText("Empty", page, top, new Vector2(room, -540f), new Vector2(700f, 60f), 22f, TextAlignmentOptions.Center);
-            empty.text = "This class casts no spells";
-            empty.color = s_textDim;
-
-            TMP_Text hint = CreateText("Hint", page, top, new Vector2(room, -900f), new Vector2(900f, 40f), 13f, TextAlignmentOptions.Center);
+            TMP_Text hint = CreateText("Hint", group, top, new Vector2(0f, -900f), new Vector2(820f, 40f), 13f, TextAlignmentOptions.Center);
             hint.text = "Drag a spell onto a wheel slot  ·  click a slot or drag it off to remove the spell  ·  LMB / RMB on a spell puts it into wheel I / II";
             hint.color = s_textDim;
 
-            Image pool = CreateImage("Pool", page, Vector2.one, new Vector2(-20f, -96f), new Vector2(530f, 964f), Color.white);
-            pool.sprite = DungeonUiSpriteBuilder.Load("Panel");
-            CreateImage("SpellsBand", pool.rectTransform, top, new Vector2(0f, -28f), new Vector2(470f, 38f), new Color(0f, 0f, 0f, 0.35f));
-            TMP_Text header = CreateText("SpellsTitle", pool.rectTransform, top, new Vector2(0f, -28f), new Vector2(470f, 38f), 22f, TextAlignmentOptions.Center);
-            header.text = "Spells";
-            header.color = s_text;
-            RectTransform grid = CreateRect("SpellsGrid", pool.rectTransform, top, new Vector2(0f, -76f), new Vector2(470f, 840f));
-            GridLayoutGroup layout = grid.gameObject.AddComponent<GridLayoutGroup>();
-            layout.cellSize = new Vector2(104f, 104f);
-            layout.spacing = new Vector2(18f, 14f);
-            layout.childAlignment = TextAnchor.UpperCenter;
             AbilityIconView spellIcon = AbilityIcon("SpellIcon", page, center, Vector2.zero, "Square", 88f);
             spellIcon.gameObject.SetActive(false);
 
@@ -1409,12 +1507,12 @@ namespace Game.Scripts.Editor.Dungeon
             SpellsView view = page.gameObject.AddComponent<SpellsView>();
             SerializedObject so = new SerializedObject(view);
             BattleEditorUtility.Set(so, "_spellIconPrefab", spellIcon);
-            BattleEditorUtility.Set(so, "_spellsRoot", grid);
+            BattleEditorUtility.Set(so, "_spellsRoot", spellRoot);
+            BattleEditorUtility.Set(so, "_sectionRoot", spellRoot.parent.gameObject);
             BattleEditorUtility.Set(so, "_wheels", wheels);
             BattleEditorUtility.Set(so, "_wheelSlots", slots);
             BattleEditorUtility.Set(so, "_wheelTitles", wheelTitles);
             BattleEditorUtility.Set(so, "_inactiveLabels", inactiveLabels);
-            BattleEditorUtility.Set(so, "_emptyRoot", empty.gameObject);
             BattleEditorUtility.Set(so, "_tooltip", tooltip);
             BattleEditorUtility.Set(so, "_tooltipText", tooltipText);
             so.ApplyModifiedPropertiesWithoutUndo();

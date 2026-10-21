@@ -30,6 +30,12 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Degrees per dragged pixel")]
         private float _dragSpeed = 0.45f;
 
+        [SerializeField]
+        private bool _canTurn = true;
+
+        [SerializeField, Tooltip("Replaces the fighter controller with a still pose (the seated tavern character); no weapons are shown then")]
+        private RuntimeAnimatorController _poseController;
+
         private GameObject _rig;
         private Animator _animator;
         private CharacterModelComponent _model;
@@ -63,7 +69,7 @@ namespace Game.Scripts.Dungeon
             // Bound to a class only (character select): the bare body in the relaxed idle.
             if (_inventory == null)
             {
-                if (_animator != null)
+                if (_animator != null && _poseController == null)
                     _animator.SetLayerWeight(1, 0f);
 
                 return;
@@ -82,7 +88,9 @@ namespace Game.Scripts.Dungeon
             _shownVersion = _inventory.Version;
             _shownHands = hands;
             _dresser.Apply(_inventory);
-            ShowWeapon();
+
+            if (_poseController == null)
+                ShowWeapon();
         }
 
         /// Without an adventurer (tavern) the hands hold the first weapon set, the one a run starts with; in the dungeon they hold
@@ -121,7 +129,12 @@ namespace Game.Scripts.Dungeon
             _sockets[(int)WeaponSocket.RightShield] = FindSocket("RightHandShieldSocket");
             _sockets[(int)WeaponSocket.LeftShield] = FindSocket("LeftHandShieldSocket");
 
-            if (_animator != null)
+            if (_animator == null)
+                return;
+
+            if (_poseController != null)
+                _animator.runtimeAnimatorController = _poseController;
+            else
                 _animator.SetFloat("ActionSpeed", 1f);
         }
 
@@ -210,7 +223,7 @@ namespace Game.Scripts.Dungeon
         void IDragHandler.OnDrag(PointerEventData eventData)
         {
             // The camera faces the character: the front follows the cursor when the turn goes against the drag.
-            if (_rig != null)
+            if (_rig != null && _canTurn)
                 _rig.transform.Rotate(0f, -eventData.delta.x * _dragSpeed, 0f, Space.Self);
         }
     }

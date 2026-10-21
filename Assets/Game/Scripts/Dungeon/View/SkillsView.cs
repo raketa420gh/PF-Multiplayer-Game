@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace Game.Scripts.Dungeon
 {
     /// "Perks and Skills" page of the tavern: attribute sheet, the subclass tabs (while subclasses are enabled), the doll with the equipped
-    /// perk and skill slots, the pools of the class and the chosen subclass to pick from. Perks and skills are equipped by a click or by dragging them onto a slot of their kind.
+    /// perk and skill slots (or, on the second tab, the spell wheels), the pools of the class and the chosen subclass to pick from. Perks and skills are equipped by a click or by dragging them onto a slot of their kind.
     public sealed class SkillsView : DisplayableView
     {
         [SerializeField]
@@ -50,8 +50,18 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private TMP_Text _subclassText;
 
+        [SerializeField]
+        private SpellsView _spells;
+
+        [SerializeField, Tooltip("Perks and skills, spell wheels")]
+        private Button[] _modeTabs;
+
+        [SerializeField, Tooltip("Indexed like the mode tabs")]
+        private GameObject[] _modeRoots;
+
         private const int NoPerk = -1;
 
+        private static readonly Color s_idleTab = new(0.62f, 0.58f, 0.5f);
         private static readonly string[] s_skillKeys = { "Q", "E" };
         private readonly List<AbilityIconView> _perkIcons = new();
         private readonly List<AbilityIconView> _skillIcons = new();
@@ -92,9 +102,20 @@ namespace Game.Scripts.Dungeon
                 _subclassTabs[i].onClick.AddListener(() => OnSubclassClicked(subclass));
             }
 
+            for (int i = 0; i < _modeTabs.Length; i++)
+            {
+                int mode = i;
+                _modeTabs[i].onClick.AddListener(() => { DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.5f); SelectMode(mode); });
+            }
+
             _perkGhost = CreateGhost(_perkIconPrefab);
             _skillGhost = CreateGhost(_skillIconPrefab);
             _tooltip.gameObject.SetActive(false);
+        }
+
+        private void OnEnable()
+        {
+            SelectMode(0);
         }
 
         private void Update()
@@ -110,6 +131,8 @@ namespace Game.Scripts.Dungeon
                 _shownSubclass = -1;
                 Array.Fill(_slotPerks, NoPerk);
                 _preview.Bind(_session.Kit, config);
+                _modeTabs[1].gameObject.SetActive(config.HasSpellWheels);
+                SelectMode(0);
             }
 
             if (_shownSubclass != _session.Subclass)
@@ -133,6 +156,7 @@ namespace Game.Scripts.Dungeon
         {
             _session = session;
             _stats.Bind(stats);
+            _spells.Bind(session);
             _shownClass = -1;
             _shownSubclass = -1;
         }
@@ -142,6 +166,17 @@ namespace Game.Scripts.Dungeon
             base.Hide();
             _tooltip.gameObject.SetActive(false);
             StopDrag();
+        }
+
+        /// The doll with the equipped perks and skills, or the spell wheels; the pool on the right stays for both.
+        private void SelectMode(int mode)
+        {
+            for (int i = 0; i < _modeTabs.Length; i++)
+            {
+                _modeRoots[i].SetActive(i == mode);
+                _modeTabs[i].image.color = i == mode ? Color.white : Color.clear;
+                _modeTabs[i].GetComponentInChildren<TMP_Text>().color = i == mode ? Color.white : s_idleTab;
+            }
         }
 
         private AbilityIconView CreateGhost(AbilityIconView prefab)

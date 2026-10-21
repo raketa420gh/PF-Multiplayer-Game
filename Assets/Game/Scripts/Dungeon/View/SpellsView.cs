@@ -6,9 +6,9 @@ using UnityEngine.EventSystems;
 
 namespace Game.Scripts.Dungeon
 {
-    /// "Spells" page of the tavern: the spells of the class to pick from and the spell wheels as rings of slots. A spell goes into a wheel
+    /// Spells of the tavern skills page: the class spells in their pool section and the spell wheels tab as rings of slots. A spell goes into a wheel
     /// by dragging it onto one of its slots (or by LMB / RMB for wheel I / II); a slot clicked or dragged off the wheels frees its spell.
-    public sealed class SpellsView : DisplayableView
+    public sealed class SpellsView : MonoBehaviour
     {
         [SerializeField]
         private AbilityIconView _spellIconPrefab;
@@ -28,8 +28,8 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Shown over a wheel whose skill slot holds no spell memory")]
         private GameObject[] _inactiveLabels;
 
-        [SerializeField, Tooltip("Shown instead of the wheels to a class without spells")]
-        private GameObject _emptyRoot;
+        [SerializeField, Tooltip("Spells section of the skills pool, shown to a spell class only")]
+        private GameObject _sectionRoot;
 
         [SerializeField]
         private RectTransform _tooltip;
@@ -64,6 +64,12 @@ namespace Game.Scripts.Dungeon
             _ghost.SetSelected(true);
             _ghost.SetBadge(string.Empty);
             _tooltip.gameObject.SetActive(false);
+        }
+
+        private void OnDisable()
+        {
+            _tooltip.gameObject.SetActive(false);
+            StopDrag();
         }
 
         private void Update()
@@ -102,13 +108,6 @@ namespace Game.Scripts.Dungeon
         {
             _session = session;
             _shownClass = -1;
-        }
-
-        public override void Hide()
-        {
-            base.Hide();
-            _tooltip.gameObject.SetActive(false);
-            StopDrag();
         }
 
         private void Subscribe(AbilityIconView icon)
@@ -153,7 +152,7 @@ namespace Game.Scripts.Dungeon
                 _wheelTitles[wheel].text = isActive ? $"{config.Skills[skill].DisplayName} ({s_wheelKeys[wheel]})" : string.Empty;
             }
 
-            _emptyRoot.SetActive(!config.HasSpellWheels);
+            _sectionRoot.SetActive(config.HasSpellWheels);
         }
 
         /// Every slot shows the spell put into it: the wheel opens in the dungeon in the same order.
