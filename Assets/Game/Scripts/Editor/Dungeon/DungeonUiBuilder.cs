@@ -670,9 +670,11 @@ namespace Game.Scripts.Editor.Dungeon
                 Stretch(back.rectTransform, 0f);
             }
 
-            // Left: character doll in an arch frame plus attributes.
-            RectTransform dollPanel = CreateRect("Doll", panel, new Vector2(0f, 1f), new Vector2(40f, -40f), new Vector2(460f, 980f));
-            dollPanel.pivot = new Vector2(0f, 1f);
+            // Left: character doll in an arch frame plus attributes. In the lobby the attributes take the sheet of the Skills page
+            // and the doll tops the center column, over the equipment.
+            RectTransform dollPanel = fullscreen
+                ? CreateRect("Doll", panel, new Vector2(0f, 1f), new Vector2(40f, -40f), new Vector2(460f, 980f))
+                : CreateRect("Doll", panel, new Vector2(0f, 1f), new Vector2(565f, -36f), new Vector2(620f, 464f));
             CreateImage("Back", dollPanel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
             CreateImage("ArchFrame", dollPanel, new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(360f, 400f), s_frame).rectTransform.pivot = new Vector2(0.5f, 1f);
             RawImage previewImage = CreateRect("Preview", dollPanel, new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(352f, 392f)).gameObject.AddComponent<RawImage>();
@@ -682,7 +684,17 @@ namespace Game.Scripts.Editor.Dungeon
             TMP_Text titleText = CreateText("Title", dollPanel, new Vector2(0.5f, 1f), new Vector2(0f, -428f), new Vector2(400f, 30f), 24f, TextAlignmentOptions.Center);
             titleText.rectTransform.pivot = new Vector2(0.5f, 1f);
             titleText.color = s_gold;
-            StatsView stats = BuildStats(dollPanel, new Vector2(0f, -462f), 460f, 105f, true, panel, out RectTransform statsTooltip);
+            RectTransform statsTooltip;
+            StatsView stats;
+
+            if (fullscreen)
+                stats = BuildStats(dollPanel, new Vector2(0f, -462f), 460f, 105f, true, panel, out statsTooltip);
+            else
+            {
+                Image sheet = CreateImage("Stats", panel, new Vector2(0f, 1f), new Vector2(20f, -36f), new Vector2(530f, 964f), Color.white);
+                sheet.sprite = DungeonUiSpriteBuilder.Load("Panel");
+                stats = BuildStats(sheet.rectTransform, new Vector2(0f, -34f), 530f, 130f, false, panel, out statsTooltip);
+            }
 
             // Center: equipment sunburst and backpack.
             RectTransform equipPanel = CreateRect("Equipment", panel, new Vector2(0f, 1f), new Vector2(530f, -40f), new Vector2(640f, 500f));
@@ -908,16 +920,17 @@ namespace Game.Scripts.Editor.Dungeon
             inventoryRect.anchoredPosition = new Vector2(0f, -60f);
             inventory.transform.Find("Hints").gameObject.SetActive(false);
             StashPagesView stashPages = BuildStashPages(inventory);
-            // The backpack goes under the stash; the equipment panel grows to the height of that column, the slots in its middle.
+            // The backpack goes under the stash; the equipment sits under the doll down to the bottom of the stat sheet.
             RectTransform bagPanel = (RectTransform)inventory.transform.Find("BagPanel");
             bagPanel.anchoredPosition = new Vector2(1200f, -500f);
             bagPanel.sizeDelta = new Vector2(680f, 230f);
             ((RectTransform)bagPanel.Find("Bag")).anchoredPosition = new Vector2(120f, -36f);
             RectTransform equipment = (RectTransform)inventory.transform.Find("Equipment");
-            equipment.sizeDelta = new Vector2(640f, 690f);
+            equipment.anchoredPosition = new Vector2(565f, -508f);
+            equipment.sizeDelta = new Vector2(620f, 490f);
 
             foreach (EquipSlotView slot in equipment.GetComponentsInChildren<EquipSlotView>())
-                ((RectTransform)slot.transform).anchoredPosition += new Vector2(0f, -95f);
+                ((RectTransform)slot.transform).anchoredPosition += new Vector2(-10f, 5f);
 
             MerchantsView merchants = BuildMerchants(panel);
 
