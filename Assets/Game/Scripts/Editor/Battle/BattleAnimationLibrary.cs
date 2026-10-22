@@ -91,6 +91,9 @@ namespace Game.Scripts.Editor.Battle
         public bool IsHeldAcross;
         /// A round haft (staff): it has no edge to lead a cut with, so the hand keeps the roll the arm gives it.
         public bool IsRound;
+        /// How far (degrees) a weapon laid over by BodyPose.Lean may turn in the closed fist; the wrist and the arm take the
+        /// rest, so the fingers stay wrapped round the grip. 0 = the whole lean turns in the palm.
+        public float PalmLean;
         /// The edge faces the heel of the main hand, away from its knuckles: the hand at the butt of a polearm, which
         /// travels against the head, so the knuckles lead the hand's own way while the edge leads the head's.
         public bool IsEdgeBack;

@@ -186,19 +186,29 @@ namespace Game.Scripts.Editor.Dungeon
         private static WeaponDefinition CreateMorningStar()
         {
             // The middle of the ball.
-            const float head = 0.7f;
+            const float head = 0.55f;
             const int damage = 34;
             // How far the haft is laid over in the hand along a long arm.
             const float along = 70f;
+            // How far the haft stands up from the arm at the stop, turned about the ball: a fist cannot hold it along the forearm.
+            const float lift = 30f;
+
+            // The pose with the ball where it is and the haft raised about it: the hand and its elbow go down.
+            BodyPose Lift(float raise, Vector3 grip, float yaw, float elevation, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean)
+            {
+                Vector3 drop = Quaternion.Euler(-elevation, yaw, 0f) * Vector3.forward * head - Quaternion.Euler(-elevation - raise, yaw, 0f) * Vector3.forward * head;
+
+                return At(grip + drop, yaw, elevation + raise, torso, pitch, elbow + drop, offHand, lean);
+            }
 
             BodyPose idle = At(Cm(22f, 1.2f, 35f), 0f, 82f, 0f, 0f, Cm(30f, 1f, 5f), Cm(-30f, 1f, 15f));
             // Level over the head pointing left, the elbow out at shoulder height: the overhead swings turn it back from here.
             BodyPose over = At(Cm(20f, 1.9f, 10f), -90f, 5f, 10f, 0f, Cm(40f, 1.5f, 5f), Cm(-40f, 0.95f, 0f), 15f);
             // Where a swing sinks to after its stop, the arm still long.
-            BodyPose sunk = At(Cm(5f, 1.23f, 46f), -8f, -3f, -30f, 15f, Cm(26f, 1.17f, 20f), Cm(-38f, 0.95f, -25f), along);
-            BodyPose sunkLeft = At(Cm(-2f, 1.23f, 46f), -12f, -5f, -30f, 15f, Cm(22f, 1.16f, 18f), Cm(-38f, 0.95f, -25f), along);
+            BodyPose sunk = Lift(lift, Cm(5f, 1.23f, 46f), -8f, -3f, -30f, 15f, Cm(26f, 1.17f, 20f), Cm(-38f, 0.95f, -25f), along);
+            BodyPose sunkLeft = Lift(lift, Cm(-2f, 1.23f, 46f), -12f, -5f, -30f, 15f, Cm(22f, 1.16f, 18f), Cm(-38f, 0.95f, -25f), along);
             // The way back to rest: the elbow goes out to the right, then the head comes up.
-            BodyPose elbowOut = At(Cm(12f, 1.18f, 40f), -20f, 22f, -15f, 8f, Cm(38f, 1.1f, 15f), Cm(-38f, 1f, -8f), 40f);
+            BodyPose elbowOut = Lift(15f, Cm(12f, 1.18f, 40f), -20f, 22f, -15f, 8f, Cm(38f, 1.1f, 15f), Cm(-38f, 1f, -8f), 40f);
             BodyPose rising = At(Cm(20f, 1.18f, 35f), -20f, 55f, -5f, 0f, Cm(32f, 1.02f, 8f), Cm(-33f, 1f, 10f), 15f);
             BodyPose guard = At(Cm(15f, 1.72f, 28f), -50f, -20f, 0f, 0f, Cm(40f, 1.6f, 5f), Cm(-30f, 1f, 10f), 45f);
 
@@ -216,8 +226,8 @@ namespace Game.Scripts.Editor.Dungeon
                 },
                 // The elbow comes forward under the hand first, the forearm upright.
                 WindupPose = At(Cm(10f, 1.78f, 40f), 135f, 80f, -15f, 10f, Cm(20f, 1.45f, 30f), Cm(-33f, 0.92f, -30f), 50f),
-                MidPose = Peak(Cm(2f, 1.44f, 59f), -38f, 20f, Cm(10f, 1.4f, 28f), Cm(-35f, 0.9f, -42f), 50f),
-                EndPose = At(Cm(0f, 1.28f, 60f), -6f, -4f, -45f, 22f, Cm(8f, 1.3f, 28f), Cm(-35f, 0.9f, -45f), along),
+                MidPose = Peak(Cm(2f, 1.28f, 55f), -38f, 20f, Cm(12f, 1.15f, 25f), Cm(-35f, 0.9f, -42f), 50f),
+                EndPose = Lift(lift, Cm(0f, 1.28f, 56f), -6f, -4f, -45f, 22f, Cm(4f, 1.3f, 26f), Cm(-35f, 0.9f, -45f), along),
                 Return = new() { Via(63, sunk, 0.5f), Via(72, elbowOut), Via(82, rising) }
             };
             // The forearm folds across the throat to the left temple, the head hangs behind the left shoulder; the hand
@@ -227,9 +237,9 @@ namespace Game.Scripts.Editor.Dungeon
                 Windup = 48 * Footage, Active = 7 * Footage, Recovery = 35 * Footage, Damage = Mathf.RoundToInt(damage * 1.05f), MoveMultiplier = 0.7f, Launch = 1f,
                 Raise = new()
                 {
-                    Via(5, At(Cm(0f, 1.22f, 40f), -25f, 0f, -28f, 10f, Cm(28f, 1.2f, 18f), Cm(-38f, 0.95f, -15f), along)),
-                    Via(12, At(Cm(-3f, 1.3f, 35f), -50f, 8f, -12f, 5f, Cm(28f, 1.28f, 15f), Cm(-36f, 0.95f, -10f), 55f)),
-                    Via(18, At(Cm(-15f, 1.42f, 28f), -100f, 5f, -15f, 0f, Cm(18f, 1.4f, 25f), Cm(-33f, 0.95f, -20f), 45f)),
+                    Via(5, Lift(lift, Cm(0f, 1.22f, 40f), -25f, 0f, -28f, 10f, Cm(28f, 1.2f, 18f), Cm(-38f, 0.95f, -15f), along)),
+                    Via(12, Lift(25f, Cm(-3f, 1.3f, 35f), -50f, 8f, -12f, 5f, Cm(28f, 1.28f, 15f), Cm(-36f, 0.95f, -10f), 55f)),
+                    Via(18, Lift(25f, Cm(-15f, 1.42f, 28f), -100f, 5f, -15f, 0f, Cm(18f, 1.4f, 25f), Cm(-33f, 0.95f, -20f), 45f)),
                     Via(24, At(Cm(-19f, 1.56f, 24f), -150f, -12f, -20f, 0f, Cm(10f, 1.45f, 30f), Cm(-32f, 0.93f, -30f), 30f)),
                     Via(31, At(Cm(-20f, 1.69f, 18f), -160f, -25f, -20f, 0f, Cm(10f, 1.42f, 35f), Cm(-32f, 0.92f, -38f), 25f), 0.4f),
                     Via(40, At(Cm(-19f, 1.7f, 20f), -156f, -20f, -20f, 2f, Cm(10f, 1.42f, 35f), Cm(-32f, 0.92f, -38f), 25f), 0.5f),
@@ -237,12 +247,12 @@ namespace Game.Scripts.Editor.Dungeon
                     Via(46, At(Cm(0f, 1.6f, 42f), -95f, 25f, -25f, 8f, Cm(12f, 1.45f, 33f), Cm(-33f, 0.91f, -40f), 15f))
                 },
                 WindupPose = At(Cm(12f, 1.52f, 53f), -88f, 30f, -30f, 10f, Cm(12f, 1.43f, 28f), Cm(-34f, 0.9f, -42f), 5f),
-                MidPose = Peak(Cm(16f, 1.45f, 52f), -38f, 17f, Cm(16f, 1.4f, 24f), Cm(-35f, 0.9f, -45f), 55f),
-                EndPose = At(Cm(20f, 1.41f, 50f), 1f, 4f, -40f, 18f, Cm(20f, 1.37f, 20f), Cm(-35f, 0.9f, -45f), along),
+                MidPose = Peak(Cm(16f, 1.29f, 52f), -38f, 17f, Cm(18f, 1.15f, 22f), Cm(-35f, 0.9f, -45f), 55f),
+                EndPose = Lift(lift, Cm(20f, 1.41f, 50f), 1f, 4f, -40f, 18f, Cm(20f, 1.37f, 20f), Cm(-35f, 0.9f, -45f), along),
                 Return = new()
                 {
-                    Via(66, At(Cm(20f, 1.28f, 42f), 0f, -3f, -30f, 12f, Cm(30f, 1.2f, 18f), Cm(-38f, 0.95f, -25f), along), 0.5f),
-                    Via(76, At(Cm(20f, 1.2f, 40f), -10f, 30f, -10f, 5f, Cm(32f, 1.05f, 10f), Cm(-35f, 1f, -5f), 25f)),
+                    Via(66, Lift(lift, Cm(20f, 1.28f, 42f), 0f, -3f, -30f, 12f, Cm(30f, 1.2f, 18f), Cm(-38f, 0.95f, -25f), along), 0.5f),
+                    Via(76, Lift(15f, Cm(20f, 1.2f, 40f), -10f, 30f, -10f, 5f, Cm(32f, 1.05f, 10f), Cm(-35f, 1f, -5f), 25f)),
                     Via(84, At(Cm(21f, 1.2f, 37f), -5f, 62f, -3f, 0f, Cm(31f, 1.02f, 7f), Cm(-31f, 1f, 12f), 10f))
                 },
                 After = chop
@@ -253,7 +263,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Windup = 46 * Footage, Active = 10 * Footage, Recovery = 34 * Footage, Damage = Mathf.RoundToInt(damage * 1.1f), MoveMultiplier = 0.6f, Stagger = 0.35f, Launch = 1f,
                 Raise = new()
                 {
-                    Via(7, At(Cm(20f, 1.46f, 35f), -45f, 30f, -10f, 5f, Cm(38f, 1.2f, 10f), Cm(-37f, 0.95f, -15f), 50f)),
+                    Via(7, Lift(35f, Cm(20f, 1.46f, 35f), -45f, 30f, -10f, 5f, Cm(38f, 1.2f, 10f), Cm(-37f, 0.95f, -15f), 50f)),
                     Via(12, At(Cm(22f, 1.72f, 25f), -75f, 20f, 0f, 0f, Cm(40f, 1.38f, 5f), Cm(-39f, 0.95f, -5f), 40f)),
                     Via(17, over),
                     Via(27, At(Cm(18f, 1.95f, 10f), -120f, 0f, 15f, -5f, Cm(40f, 1.5f, 5f), Cm(-40f, 0.95f, 0f))),
@@ -262,8 +272,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Via(44, At(Cm(15f, 1.9f, 25f), 140f, 45f, 5f, 5f, Cm(32f, 1.55f, 20f), Cm(-35f, 0.93f, -22f), 15f))
                 },
                 WindupPose = At(Cm(15f, 1.8f, 37f), 100f, 65f, -10f, 10f, Cm(25f, 1.48f, 28f), Cm(-33f, 0.92f, -30f), 30f),
-                MidPose = Peak(Cm(0f, 1.44f, 56f), -35f, 20f, Cm(10f, 1.4f, 27f), Cm(-35f, 0.9f, -42f), 50f),
-                EndPose = At(Cm(-8f, 1.3f, 55f), -10f, -7f, -45f, 22f, Cm(4f, 1.3f, 26f), Cm(-35f, 0.9f, -45f), along),
+                MidPose = Peak(Cm(0f, 1.28f, 56f), -35f, 20f, Cm(12f, 1.15f, 25f), Cm(-35f, 0.9f, -42f), 50f),
+                EndPose = Lift(lift, Cm(-8f, 1.3f, 55f), -10f, -7f, -45f, 22f, Cm(4f, 1.3f, 26f), Cm(-35f, 0.9f, -45f), along),
                 Return = new() { Via(64, sunkLeft, 0.5f), Via(74, elbowOut), Via(83, rising) },
                 After = backhand
             };
@@ -282,8 +292,8 @@ namespace Game.Scripts.Editor.Dungeon
                 },
                 // The hand stays high while the head comes round it, then the arm drops and straightens.
                 WindupPose = At(Cm(15f, 1.82f, 40f), 95f, 40f, -10f, 10f, Cm(25f, 1.5f, 28f), Cm(-33f, 0.92f, -30f), 35f),
-                MidPose = Peak(Cm(0f, 1.45f, 56f), -35f, 20f, Cm(10f, 1.4f, 27f), Cm(-35f, 0.9f, -42f), 50f),
-                EndPose = At(Cm(-8f, 1.28f, 55f), -15f, -7f, -45f, 22f, Cm(4f, 1.3f, 26f), Cm(-35f, 0.9f, -45f), along),
+                MidPose = Peak(Cm(0f, 1.29f, 56f), -35f, 20f, Cm(12f, 1.15f, 25f), Cm(-35f, 0.9f, -42f), 50f),
+                EndPose = Lift(lift, Cm(-8f, 1.28f, 55f), -15f, -7f, -45f, 22f, Cm(4f, 1.3f, 26f), Cm(-35f, 0.9f, -45f), along),
                 Return = new() { Via(48, sunkLeft, 0.5f), Via(56, elbowOut), Via(64, rising) }
             };
 
@@ -299,10 +309,11 @@ namespace Game.Scripts.Editor.Dungeon
                 DisplayName = "Morning Star",
                 Kind = WeaponKind.OneHanded,
                 IsRound = true,
-                Reach = 1.35f,
+                PalmLean = 25f,
+                Reach = 1.2f,
                 DeflectDuration = 0.6f,
                 BladeBase = 0.1f,
-                BladeTip = 0.8f,
+                BladeTip = 0.65f,
                 Strike = head,
                 Idle = idle,
                 Attacks = new[] { chop, backhand, slant },
@@ -320,7 +331,7 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockLowered = At(Cm(14f, 1.6f, 25f), -50f, -18f, 0f, 0f, Cm(40f, 1.45f, 5f), Cm(-30f, 1f, 10f), 45f),
                 DeflectPose = At(Cm(34f, 1.62f, 10f), 45f, 63f, 12f, -6f, Cm(42f, 1.35f, 0f), Cm(-30f, 1f, 5f), 50f),
                 BlockSocket = WeaponSocket.RightHand,
-                BlockBoxCenter = new Vector3(0f, 0f, 0.45f),
+                BlockBoxCenter = new Vector3(0f, 0f, 0.3f),
                 BlockBoxExtents = new Vector3(0.08f, 0.08f, 0.35f)
             };
         }

@@ -129,17 +129,17 @@ namespace Game.Scripts.Editor.Dungeon
             const int spikes = 18;
 
             Material iron = WeaponMaterials.Iron;
-            Vector3 center = new Vector3(0f, 0f, 0.7f);
+            Vector3 center = new Vector3(0f, 0f, 0.55f);
             GameObject root = new GameObject("MorningStar");
             WeaponMesh mesh = new WeaponMesh();
 
             mesh.Revolve(WeaponMaterials.DarkWood, new[]
             {
-                new Vector2(-0.2f, 0.013f), new Vector2(-0.185f, 0.02f), new Vector2(-0.155f, 0.0165f), new Vector2(0.35f, 0.0155f), new Vector2(0.66f, 0.019f)
+                new Vector2(-0.085f, 0.013f), new Vector2(-0.075f, 0.02f), new Vector2(-0.06f, 0.0165f), new Vector2(0.25f, 0.0155f), new Vector2(0.51f, 0.019f)
             }, 10, 0.9f);
-            WeaponParts.Grip(mesh, WeaponMaterials.Leather, -0.045f, 0.11f, 0.0175f, 0.05f, 0.9f);
-            WeaponParts.Band(mesh, iron, 0.57f, 0.021f, 0.008f);
-            WeaponParts.Band(mesh, iron, 0.635f, 0.0225f, 0.012f);
+            WeaponParts.Grip(mesh, WeaponMaterials.Leather, -0.045f, 0.1f, 0.0175f, 0.05f, 0.9f);
+            WeaponParts.Band(mesh, iron, 0.42f, 0.021f, 0.008f);
+            WeaponParts.Band(mesh, iron, 0.485f, 0.0225f, 0.012f);
             mesh.Revolve(iron, WeaponParts.Ball(center.z, radius, 1f, 10), 14);
 
             // Spikes spread evenly over the ball; the one on top is the longest.

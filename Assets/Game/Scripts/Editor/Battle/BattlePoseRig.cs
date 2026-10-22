@@ -152,6 +152,7 @@ namespace Game.Scripts.Editor.Battle
         private SwivelCircle[][] _circles;
         private int _frame = -1;
         private WeaponSocket _offSocket = WeaponSocket.LeftHand;
+        private float _palmLean;
 
         public BattlePoseRig()
         {
@@ -206,6 +207,36 @@ namespace Game.Scripts.Editor.Battle
             return _socketRests[(int)socket] * Quaternion.AngleAxis(-lean, Vector3.right);
         }
 
+        /// WeaponDefinition.PalmLean of the weapon being posed.
+        public void SetPalmLean(float palmLean)
+        {
+            _palmLean = palmLean;
+        }
+
+        /// Where the main grip ends up once every muscle is inside the avatar's range: metres off the weapon and degrees the
+        /// haft stands off square in the fist. Leaves the rig in the clamped pose.
+        public Vector2 GetGripMiss(int bodyMuscleCount)
+        {
+            Transform socket = _sockets[(int)WeaponSocket.RightHand];
+            Vector3 position = socket.position;
+            Vector3 haft = socket.forward;
+            HumanPose pose = CaptureWithinLimits(bodyMuscleCount);
+            _handler.SetHumanPose(ref pose);
+            socket.localRotation = _socketRests[(int)WeaponSocket.RightHand];
+
+            return new Vector2(Vector3.Distance(socket.position, position), Vector3.Angle(socket.forward, haft));
+        }
+
+        /// The right and the left hand in the model's space once the rig takes a humanoid pose.
+        public Pose[] GetHands(HumanPose pose)
+        {
+            _handler.SetHumanPose(ref pose);
+            Transform model = _animator.transform;
+
+            return Array.ConvertAll(new[] { _rightArm.Hand, _leftArm.Hand },
+                hand => new Pose(model.InverseTransformPoint(hand.position), Quaternion.Inverse(model.rotation) * hand.rotation));
+        }
+
         public Vector3 GetShoulderPosition(bool isRight)
         {
             return (isRight ? _rightArm : _leftArm).Upper.position;
@@ -234,8 +265,9 @@ namespace Game.Scripts.Editor.Battle
             {
                 // An off hand on the haft wraps it at whatever roll its forearm comes from: the haft turns in the lower hand, and
                 // a roll tied to the edge bent that wrist back on itself whenever the edge turned through a cut.
-                _sockets[(int)WeaponSocket.RightHand].localRotation = GetSocketRotation(WeaponSocket.RightHand, pose.Lean);
-                SolveArm(_rightArm, _sockets[(int)WeaponSocket.RightHand], pose.Main, pose.Edge, false, pose.Lean * Mathf.Deg2Rad);
+                float lean = _palmLean > 0f ? Mathf.Clamp(pose.Lean, -_palmLean, _palmLean) : pose.Lean;
+                _sockets[(int)WeaponSocket.RightHand].localRotation = GetSocketRotation(WeaponSocket.RightHand, lean);
+                SolveArm(_rightArm, _sockets[(int)WeaponSocket.RightHand], pose.Main, pose.Edge, false, lean * Mathf.Deg2Rad);
                 _offSocket = pose.OffSocket;
                 SolveArm(_leftArm, _sockets[(int)pose.OffSocket], pose.Off, Vector3.zero, IsShared(pose), 0f);
             }

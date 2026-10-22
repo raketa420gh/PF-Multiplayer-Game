@@ -61,7 +61,12 @@ degrees whenever a cut turned the edge over.
 the line of the forearm. Footage with the haft along a long arm (the stop of a one-handed chop, a hand folded across
 the chest) cannot be held by the wrist alone — without the lean the fist hangs 70-90 degrees off the forearm and the
 elbow wings out. Lean ≈ 90 minus the angle between forearm and haft, 60-70 on a straight arm; it is interpolated
-between keys and goes into the clip as a rotation curve of both hand sockets (`CreateMorningStar` is the example).
+between keys and goes into the clip as a rotation curve of both hand sockets. A lean turns the haft in the palm, so
+the fist no longer wraps it: `WeaponDefinition.PalmLean` caps that (25 = a natural oblique grip) and the wrist and arm
+take the rest. A haft along a long arm then cannot be held at all (ulnar deviation is 40 at most): turn the haft about
+the head instead, hand lower, head where it was (`Lift` in `CreateMorningStar`, the example). `SwingPreview` reports
+"haft turned in the fist" and "main grip off the fist" after the clip's clamp; the build bakes the arms onto the hands
+under the controller's layers (`BakeArms`), so the fist stays on the grip whatever the legs layer does.
 The reports do not flag a twist muscle that flips sign for a frame or two (a visible twitch): after tuning leans or
 raised elbows, look for a frame-to-frame jump in the `muscles` columns of `report_<swing>.txt`.
 The roll of the weapon is worked out for you: in a cut the leading edge follows the path of the strike point. Give

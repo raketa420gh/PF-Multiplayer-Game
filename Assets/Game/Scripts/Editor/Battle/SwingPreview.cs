@@ -28,6 +28,9 @@ namespace Game.Scripts.Editor.Battle
         // Humanoid muscles run -1..1 between the avatar's limits; the clip clamps past that, and the forearm twists.
         private const float MaxTwist = 1f;
         private const float MaxElbowMiss = 30f;
+        // The fist round the grip once the clip clamps the muscles: off the weapon, and the haft off square in it.
+        private const float MaxGripMiss = 0.01f;
+        private const float MaxGripTurn = 30f;
 
         private sealed class Motion
         {
@@ -107,9 +110,9 @@ namespace Game.Scripts.Editor.Battle
             Transform offSocket = rig.Sockets[(int)poses[0].OffSocket];
             Vector3[] strike = new Vector3[poses.Length];
             Quaternion[] rotations = new Quaternion[poses.Length];
-            float[] worst = new float[9];
-            int[] worstFrame = new int[9];
-            StringBuilder table = new StringBuilder("frame | grip x y z | blade yaw elev | strike point x y z | reach miss main off | wrist main off | roll | elbow main x y z | elbow off x y z | twist main off | muscles main arm fore off arm fore\n");
+            float[] worst = new float[11];
+            int[] worstFrame = new int[11];
+            StringBuilder table = new StringBuilder("frame | grip x y z | blade yaw elev | strike point x y z | reach miss main off | wrist main off | roll | elbow main x y z | elbow off x y z | twist main off | muscles main arm fore off arm fore, main hand down-up in-out | grip off cm, haft turn\n");
 
             for (int frame = 0; frame < poses.Length; frame++)
             {
@@ -133,6 +136,11 @@ namespace Game.Scripts.Editor.Battle
                 };
                 Vector3 elbow = animator.GetBoneTransform(HumanBodyBones.RightLowerArm).position;
                 Vector3 offElbow = animator.GetBoneTransform(HumanBodyBones.LeftLowerArm).position;
+                // Read before the grip check: it leaves the rig clamped.
+                string muscles = FormattableString.Invariant(
+                    $"{Signed(rig, "Right Arm Twist In-Out"),5:0.00} {Signed(rig, "Right Forearm Twist In-Out"),5:0.00} {Signed(rig, "Left Arm Twist In-Out"),5:0.00} {Signed(rig, "Left Forearm Twist In-Out"),5:0.00} {Signed(rig, "Right Hand Down-Up"),5:0.00} {Signed(rig, "Right Hand In-Out"),5:0.00}");
+                Vector2 grip = rig.GetGripMiss(BattleAnimationBuilder.BodyMuscleCount);
+                values = values.Concat(new[] { grip.x, grip.y }).ToArray();
 
                 for (int i = 0; i < values.Length; i++)
                 {
@@ -144,7 +152,7 @@ namespace Game.Scripts.Editor.Battle
                 }
 
                 table.AppendLine(FormattableString.Invariant(
-                    $"{frame,3} | {socket.position.x,5:0.00} {socket.position.y,5:0.00} {socket.position.z,5:0.00} | {Mathf.Atan2(blade.x, blade.z) * Mathf.Rad2Deg,5:0} {Mathf.Asin(blade.y) * Mathf.Rad2Deg,4:0} | {strike[frame].x,5:0.00} {strike[frame].y,5:0.00} {strike[frame].z,5:0.00} | {values[3]:0.00} {values[4]:0.00} | {values[0],3:0} {values[1],3:0} | {values[2],3:0} | {elbow.x,5:0.00} {elbow.y,5:0.00} {elbow.z,5:0.00} | {offElbow.x,5:0.00} {offElbow.y,5:0.00} {offElbow.z,5:0.00} | {values[5],4:0.00} {values[6],4:0.00} | {Signed(rig, "Right Arm Twist In-Out"),5:0.00} {Signed(rig, "Right Forearm Twist In-Out"),5:0.00} {Signed(rig, "Left Arm Twist In-Out"),5:0.00} {Signed(rig, "Left Forearm Twist In-Out"),5:0.00}"));
+                    $"{frame,3} | {socket.position.x,5:0.00} {socket.position.y,5:0.00} {socket.position.z,5:0.00} | {Mathf.Atan2(blade.x, blade.z) * Mathf.Rad2Deg,5:0} {Mathf.Asin(blade.y) * Mathf.Rad2Deg,4:0} | {strike[frame].x,5:0.00} {strike[frame].y,5:0.00} {strike[frame].z,5:0.00} | {values[3]:0.00} {values[4]:0.00} | {values[0],3:0} {values[1],3:0} | {values[2],3:0} | {elbow.x,5:0.00} {elbow.y,5:0.00} {elbow.z,5:0.00} | {offElbow.x,5:0.00} {offElbow.y,5:0.00} {offElbow.z,5:0.00} | {values[5],4:0.00} {values[6],4:0.00} | {muscles} | {grip.x * 100f,4:0.0} {grip.y,3:0}"));
             }
 
             keyFrames = motion.Keys.Select(key => Mathf.RoundToInt(key.Time * FrameRate)).Distinct().ToArray();
@@ -171,6 +179,8 @@ namespace Game.Scripts.Editor.Battle
             Flag(summary, "off arm twist muscle at", worst[6], MaxTwist, worstFrame[6], "0.00");
             Flag(summary, "main elbow off the authored one by", worst[7], MaxElbowMiss, worstFrame[7], "0 deg");
             Flag(summary, "off elbow off the authored one by", worst[8], MaxElbowMiss, worstFrame[8], "0 deg");
+            Flag(summary, "main grip off the fist by", worst[9], MaxGripMiss, worstFrame[9], "0.000 m");
+            Flag(summary, "haft turned in the fist by", worst[10], MaxGripTurn, worstFrame[10], "0 deg");
 
             return summary.ToString();
         }
