@@ -203,7 +203,7 @@ from the menu call means the same thing. Errors of other weapons were there befo
 report, do not fix them. After the rebuild the active scene can be an untitled one: open the scenes by path.
 
 The training ground (`BattleScene`) was removed on 2026-10-16. Play test in the dungeon: back up the user's save
-first (see the play-test recipes in memory — the dungeon saves the kit), enter LobbyScene → queue "Dev Dungeon Test",
+first (see the play-test recipes in memory — the dungeon saves the kit), enter LobbyScene → start the Tangled Catacombs (Great Hall has a training dummy),
 put the weapon in the hand. Copy `$SKILL/assets/SwingPlayTest.cs` into
 `Assets/Game/Scripts/Editor/Battle/`, compile, enter play mode through the lobby, wait for the session, call
 `SwingPlayTest.Begin("<Display Name>", "combo" | "riposte" | "block", "Temp/footage/<name>")` by reflection, wait for

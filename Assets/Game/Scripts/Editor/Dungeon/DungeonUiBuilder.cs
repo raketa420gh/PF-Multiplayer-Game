@@ -1133,10 +1133,9 @@ namespace Game.Scripts.Editor.Dungeon
             resultBack.gameObject.SetActive(false);
 
             Texture floorMap = inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null;
-            (string title, string info, Texture picture, string scene, bool isDevTest)[] destinations =
+            (string title, string info, Texture picture, string scene)[] destinations =
             {
-                (DungeonSceneBuilder.Title, "The Tangled Catacombs · 7x7 rooms laid out anew every run around the Great Hall · dark crypts, skeletons, trapped corridors · 15 min · blue portals at 7:00, 10:00, 12:00, 14:30", floorMap, SceneTravel.DungeonScene, false),
-                (GameServer.Title(Game.Scripts.Dungeon.QueueMode.DevTest), "DEV · 2x2: the key room and the three rooms of DevDungeonTestConfig · Trio rules", floorMap, SceneTravel.DungeonScene, true)
+                (DungeonSceneBuilder.Title, "The Tangled Catacombs · 7x7 rooms laid out anew every run around the Great Hall · dark crypts, skeletons, trapped corridors · 15 min · blue portals at 7:00, 10:00, 12:00, 14:30", floorMap, SceneTravel.DungeonScene)
             };
 
             LobbyHomeView view = page.gameObject.AddComponent<LobbyHomeView>();
@@ -1171,7 +1170,6 @@ namespace Game.Scripts.Editor.Dungeon
                 BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].Info", destinations[i].info);
                 BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].Picture", destinations[i].picture);
                 BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].Scene", destinations[i].scene);
-                BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].IsDevTest", destinations[i].isDevTest);
             }
 
             so.ApplyModifiedPropertiesWithoutUndo();

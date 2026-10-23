@@ -8,11 +8,7 @@ using UnityEngine.AI;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// The Great Hall after the user's reference: a square hall of rough stone with four doors, banners, torches and chandeliers,
-    /// and a walled sanctum in the middle (openings east and west) holding the treasure around a brazier on a stepped plinth.
-    /// The hall around it is dressed with the Medieval Assets Pack, one purpose per stretch: an execution corner (north-west),
-    /// a prison cell (north-east), a library (west), an armoury (east), the guards' mess (south-west) and a store (south-east).
-    /// Skeletons and a flying head guard it; the escape portal opens at a random spot. Then the NavMesh and the map.
+    /// The Great Hall (BuildHall), being made anew: for now an empty test room. The escape portal opens at a random spot.
     /// The cursed village (VillageMapBuilder) is floor 1, cut from the game for now. Floor 2, sunk below it, is the Tangled
     /// Catacombs, where runs start: the hall is their key room in the middle of a 7x7 grid whose other rooms
     /// (CatacombRoomBuilder) CatacombGenerator lays out anew every run; two doorways on each side lead on.
@@ -31,7 +27,6 @@ namespace Game.Scripts.Editor.Dungeon
         public const float FloorDrop = -60f;
         public const float AgentRadius = 0.35f;
         public const string VillageNavMeshPath = "Assets/Game/Scenes/DungeonScene/VillageNavMesh.asset";
-        public const string DevTestConfigPath = "Assets/Game/Configs/Dungeon/DevDungeonTestConfig.asset";
 
         public static readonly string[] FloorTitles = { "Cursed Village", "Tangled Catacombs" };
         public static readonly float[] FloorSizes = { VillageLayout.Size, CatacombSize };
@@ -42,13 +37,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private const float WallThickness = DungeonPropBuilder.WallThickness;
         private const float Half = RoomSize * 0.5f;
-        private const float SanctumSize = 13.6f;
-        private const float SanctumGap = 3f;
         private const float DoorOffset = 8.4f;
-        private const float TorchHeight = 2.6f;
-        private const float CellHeight = 3.2f;
-        private const float CellThickness = 0.3f;
-        private const float TableTop = 0.9f;
 
         public static Transform Build(DungeonDirector director, out Texture2D[] floorMaps)
         {
@@ -122,7 +111,8 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         /// The Great Hall, the key room of the catacombs: its prefab placed in the middle cell, built first when it is missing.
-        /// Its chests and monsters are markers like the rooms'.
+        /// For now a test room: bare walls with the four double doorways, one big light in the middle, a pedestal of every
+        /// struck surface and a training dummy that sounds like an adventurer. Teams start here or next door.
         private static CatacombRoomComponent BuildHall(Transform floor, CatacombRoomBuilder.Result rooms)
         {
             string path = $"{CatacombRoomBuilder.Folder}/{CatacombRoomBuilder.HallName}.prefab";
@@ -136,50 +126,27 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonStructureBuilder.Block(hall, "Floor", Vector3.down * WallThickness * 0.5f, slab, DungeonPropBuilder.Flagstone);
             DungeonStructureBuilder.Block(hall, "Ceiling", Vector3.up * (Height + WallThickness * 0.5f), slab, DungeonPropBuilder.Ashlar);
 
-            for (int i = 1; i < 8; i++)
-                DungeonStructureBuilder.Block(hall, "Ceiling Beam", new Vector3(0f, Height - 0.2f, i * RoomSize / 8f - Half), new Vector3(RoomSize, 0.4f, 0.35f), DungeonPropBuilder.DarkWood, 0f, false);
-
             for (int i = 0; i < 4; i++)
+                Place(rooms.Sides[3], hall, Quaternion.Euler(0f, i * 90f, 0f) * new Vector3(0f, 0f, Half + WallThickness * 0.5f), i * 90f).name = "Wall Doorways";
+
+            Light light = Place(DungeonMedievalBuilder.Load("Chandelier"), hall, Vector3.up * (Height - 0.4f), 0f).GetComponentInChildren<Light>();
+            light.range = Pitch;
+            light.intensity = 40f;
+
+            (string name, Material material)[] pedestals =
             {
-                Quaternion side = Quaternion.Euler(0f, i * 90f, 0f);
-                float yaw = i * 90f;
-                Place(rooms.Sides[3], hall, side * new Vector3(0f, 0f, Half + WallThickness * 0.5f), yaw).name = "Wall Doorways";
-                Wall(hall, side * new Vector3(Half - 0.45f, 0f, Half - 0.45f), 0.9f, yaw, 0.9f, Height, "Wall Pilaster");
+                ("Stone", DungeonPropBuilder.Ashlar),
+                ("Wood", DungeonPropBuilder.WoodPlanks),
+                ("Hard Wood", BattleEditorUtility.GetMaterial("PedestalBeam", new Color(0.3f, 0.19f, 0.1f), 0f, 0.25f)),
+                ("Grass", BattleEditorUtility.GetMaterial("PedestalGrass", new Color(0.24f, 0.4f, 0.14f), 0f, 0.1f)),
+                ("Snow", BattleEditorUtility.GetMaterial("PedestalSnow", new Color(0.92f, 0.94f, 0.97f), 0f, 0.4f))
+            };
 
-                if (i % 2 == 0)
-                {
-                    foreach (float x in new[] { -DoorOffset, DoorOffset })
-                    {
-                        Torch(hall, "HallTorch", side * new Vector3(x - 2.4f, TorchHeight, Half), yaw + 180f);
-                        Torch(hall, "HallTorch", side * new Vector3(x + 2.4f, TorchHeight, Half), yaw + 180f);
-                    }
+            for (int i = 0; i < pedestals.Length; i++)
+                DungeonStructureBuilder.Block(hall, $"Wall Pedestal {pedestals[i].name}", new Vector3((i - 2) * 3f, 0.6f, 5f), new Vector3(1.2f, 1.2f, 1.2f), pedestals[i].material);
 
-                    foreach (float x in new[] { -3.4f, 3.4f })
-                        Banner(hall, "Large Banner", side * new Vector3(x, 0f, Half), yaw + 180f);
-                }
-                else
-                {
-                    foreach (float x in new[] { -2.4f, 2.4f })
-                        Torch(hall, "HallTorch", side * new Vector3(x, TorchHeight, Half), yaw + 180f);
-
-                    foreach (float x in new[] { -4.2f, 4.2f })
-                        Banner(hall, "Small Banner", side * new Vector3(x, 0f, Half), yaw + 180f);
-                }
-            }
-
-            foreach (Vector3 point in new[] { new Vector3(0f, 0f, 12.6f), new Vector3(0f, 0f, -12.6f), new Vector3(12.6f, 0f, 0f), new Vector3(-12.6f, 0f, 0f) })
-                Prop(hall, "Chandelier", point + Vector3.up * (Height - 0.4f));
-
-            BuildSanctum(hall);
-            BuildExecution(hall);
-            BuildPrison(hall);
-            BuildLibrary(hall);
-            BuildArmoury(hall);
-            BuildMess(hall);
-            BuildStore(hall);
-            CatacombRoomBuilder.Kit("Monster Archer", hall, new Vector3(0f, 0f, Half - 4f), 180f);
-            CatacombRoomBuilder.Kit("Monster Sword", hall, new Vector3(-9.5f, 0f, 0f), -90f);
-            CatacombRoomBuilder.Kit("Monster Skull", hall, new Vector3(Half - 4.5f, 0f, -3f), -90f);
+            Place(DungeonContentBuilder.BuildTrainingDummy(), hall, new Vector3(0f, 0f, -5f), 0f, false);
+            CatacombRoomBuilder.Kit("Start", hall, new Vector3(0f, 0f, -Half + 4f), 0f);
 
             Texture2D map = DungeonMinimapBuilder.Render(hall, hall.position, Pitch * 0.5f, CatacombRoomBuilder.MapPixels, $"Catacomb{CatacombRoomBuilder.HallName}", true);
             SerializedObject so = new SerializedObject(hall.gameObject.AddComponent<CatacombRoomComponent>());
@@ -192,7 +159,7 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         /// The generator of the catacombs on the hall's floor, with the rooms, the key room and, for the menus, the map of one
-        /// sample layout. The Dev Dungeon Test config is made once and left to the user.
+        /// sample layout.
         private static CatacombGenerator BuildCatacombs(Transform floor, CatacombRoomBuilder.Result rooms, CatacombRoomComponent hall, out Texture2D sampleMap)
         {
             CatacombGenerator generator = floor.gameObject.AddComponent<CatacombGenerator>();
@@ -201,7 +168,6 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_grid", CatacombGrid);
             BattleEditorUtility.Set(so, "_pitch", Pitch);
             BattleEditorUtility.Set(so, "_keyRoom", hall);
-            BattleEditorUtility.Set(so, "_devTest", BattleEditorUtility.LoadOrCreate<DevDungeonTestConfig>(DevTestConfigPath));
             BattleEditorUtility.Set(so, "_sides", rooms.Sides);
             BattleEditorUtility.Set(so, "_post", rooms.Post);
             BattleEditorUtility.Set(so, "_door", DungeonSceneBuilder.LoadNetworkObject("CatacombDoor"));
@@ -293,240 +259,6 @@ namespace Game.Scripts.Editor.Dungeon
         internal static GameObject Load(string name)
         {
             return AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab(name));
-        }
-
-        /// Walled room in the middle of the hall: openings east and west, the golden chest north and the large one south,
-        /// heaps of gold in two corners, candelabra by the chests and offerings on the plinth steps.
-        private static void BuildSanctum(Transform floor)
-        {
-            float half = SanctumSize * 0.5f;
-            float edge = half + WallThickness * 0.5f;
-            float segment = (SanctumSize - SanctumGap) * 0.5f;
-            float segmentCenter = (SanctumGap + segment) * 0.5f;
-
-            for (int i = 0; i < 4; i++)
-            {
-                Quaternion side = Quaternion.Euler(0f, i * 90f, 0f);
-                float yaw = i * 90f;
-
-                if (i % 2 == 0)
-                {
-                    Wall(floor, side * new Vector3(0f, 0f, edge), SanctumSize + WallThickness * 2f, yaw);
-                    Wall(floor, side * new Vector3(0f, 0f, edge + 0.45f), 1.2f, yaw, 0.3f, Height, "Wall Pilaster");
-                    Torch(floor, "SanctumTorch", side * new Vector3(-3.2f, TorchHeight, half), yaw + 180f);
-                    Torch(floor, "SanctumTorch", side * new Vector3(3.2f, TorchHeight, half), yaw + 180f);
-
-                    foreach (float x in new[] { -3.4f, 3.4f })
-                        Banner(floor, "Large Banner", side * new Vector3(x, 0f, half + WallThickness), yaw);
-                }
-                else
-                {
-                    foreach (float x in new[] { -segmentCenter, segmentCenter })
-                        Wall(floor, side * new Vector3(x, 0f, edge), segment, yaw);
-
-                    foreach (float x in new[] { -SanctumGap * 0.5f - 0.3f, SanctumGap * 0.5f + 0.3f })
-                        Wall(floor, side * new Vector3(x, 0f, edge), 0.6f, yaw, 1f, Height, "Wall Post");
-                }
-
-                Wall(floor, side * new Vector3(edge, 0f, edge), 1f, yaw, 1f, Height, "Wall Post");
-            }
-
-            Mesh plinth = new DungeonMeshBuilder(0.5f)
-                .Cylinder(new Vector3(0f, 0.1f, 0f), 1.5f, 0.2f, 8)
-                .Cylinder(new Vector3(0f, 0.3f, 0f), 1.1f, 0.2f, 8)
-                .Cylinder(new Vector3(0f, 0.5f, 0f), 0.75f, 0.2f, 8)
-                .Save("SanctumPlinth");
-            DungeonPropBuilder.MeshObject("Plinth", floor, plinth, DungeonPropBuilder.Ashlar, Vector3.zero, new Vector3(0f, 22.5f, 0f));
-            Place(Load("Brazier"), floor, Vector3.up * 0.6f, 0f);
-
-            Container("GoldenChest", floor, new Vector3(0f, 0f, half - 1.2f), 180f);
-            Container("LargeOakChest", floor, new Vector3(0f, 0f, 1.2f - half), 0f);
-            Container("SmallOakChest", floor, new Vector3(-5.3f, 0f, 5.3f), 135f);
-
-            foreach (float x in new[] { -1.6f, 1.6f })
-            {
-                Prop(floor, "Ornate Candle Stick", new Vector3(x, 0f, half - 0.9f));
-                Prop(floor, "Ornate Candle Stick", new Vector3(x, 0f, 0.9f - half));
-            }
-
-            Prop(floor, "Gold Pile", new Vector3(4.6f, 0f, 4.6f), 20f, 0.55f);
-            Prop(floor, "Gold Pile", new Vector3(-4.8f, 0f, -4.8f), 200f, 0.4f);
-            Prop(floor, "Diamond", new Vector3(3.5f, 0f, 5.7f), 15f);
-            Prop(floor, "Ruby", new Vector3(5.7f, 0f, 3.4f), 70f);
-            Prop(floor, "Saphire", new Vector3(-3.8f, 0f, -5.7f));
-            Prop(floor, "Necklace", new Vector3(1.4f, 0f, 4.4f), 30f);
-            Prop(floor, "Goblet", new Vector3(0.92f, 0.4f, 0f));
-            Prop(floor, "Silver Plate", new Vector3(0f, 0.2f, -1.3f));
-            Prop(floor, "Goblet with Gem", new Vector3(0f, 0.24f, -1.3f), 40f);
-
-            Prop(floor, "Wall Lever 01", new Vector3(edge + WallThickness * 0.5f, 1.3f, SanctumGap + 0.6f), 90f);
-            Prop(floor, "Wall Lever 02", new Vector3(-edge - WallThickness * 0.5f, 1.3f, -SanctumGap - 0.6f), -90f);
-        }
-
-        /// North-west: guillotine and rack in the middle, a cross of stocks and a shackle plank on the walls, a spiked pit.
-        private static void BuildExecution(Transform floor)
-        {
-            Prop(floor, "Guillotine", new Vector3(-13.6f, 0f, 12.6f), 90f);
-            Prop(floor, "Rack Stretcher", new Vector3(-12.4f, 0f, 9f), 90f);
-            Prop(floor, "X Stocks", new Vector3(-Half + 0.4f, 0f, 14.9f), 90f);
-            Prop(floor, "Shackle Plank", new Vector3(-12f, 2f, Half), 180f);
-            Banner(floor, "Large Banner", new Vector3(-14.6f, 0f, Half), 180f);
-            Prop(floor, "Floor Trap Tile", new Vector3(-Half + 0.9f, 0f, 12.45f));
-            Prop(floor, "Floor Trap Tile", new Vector3(-Half + 0.9f, 0f, 11.55f));
-            Prop(floor, "Bucket", new Vector3(-10.3f, 0f, 11.4f), 30f);
-            Prop(floor, "Big Candle", new Vector3(-Half + 0.9f, 0f, 13.5f));
-            Prop(floor, "Medium Candle", new Vector3(-11.4f, 0f, 14.6f));
-        }
-
-        /// North-east: a cell with a barred door and a bunk on chains; stocks and a gibbet cage outside.
-        private static void BuildPrison(Transform floor)
-        {
-            const float front = 12.2f;
-            const float side = 11.2f;
-            const float door = 13.4f;
-            const float doorHalf = 1.05f;
-            float back = Half - front;
-            float corner = side - CellThickness * 0.5f;
-
-            CellWall(floor, new Vector3(side, 0f, front + back * 0.5f), back, 90f);
-            CellWall(floor, new Vector3((corner + door - doorHalf) * 0.5f, 0f, front), door - doorHalf - corner, 0f);
-            CellWall(floor, new Vector3((door + doorHalf + Half) * 0.5f, 0f, front), Half - door - doorHalf, 0f);
-            DungeonStructureBuilder.Block(floor, "Wall Lintel", new Vector3(door, 2.75f, front), new Vector3(doorHalf * 2f, 0.9f, CellThickness), DungeonPropBuilder.Ashlar);
-            Place(Load("CellDoor"), floor, new Vector3(door, 0f, front), 0f, false);
-
-            Prop(floor, "Bed", new Vector3(14.6f, 1.2f, Half), 180f);
-            Prop(floor, "Pillow", new Vector3(15.4f, 0.52f, Half - 0.45f));
-            Prop(floor, "Shackle Plank", new Vector3(Half, 2f, 13.6f), -90f);
-            Prop(floor, "Bowl", new Vector3(12.2f, 0f, 15.9f));
-            Prop(floor, "Spoon", new Vector3(12.55f, 0f, 15.7f), 40f);
-            Prop(floor, "Bucket", new Vector3(Half - 0.5f, 0f, front + 0.6f));
-            Prop(floor, "Small Candle", new Vector3(11.7f, 0f, 16.4f));
-            Container("SmallOakChest", floor, new Vector3(Half - 0.7f, 0f, 14.6f), -90f);
-
-            Prop(floor, "Stocks", new Vector3(11.4f, 0f, 4.6f), 180f);
-            Prop(floor, "Cage", new Vector3(10.8f, 0f, 9.6f));
-            Prop(floor, "Wall Lever 03", new Vector3(5.7f, 1.3f, Half), 180f);
-        }
-
-        /// West: bookcases along the wall between the doorways, a reading table with scrolls and a candle.
-        private static void BuildLibrary(Transform floor)
-        {
-            const float x = -13.4f;
-            const float z = -5f;
-            const float wall = -Half + 0.26f;
-
-            Prop(floor, "Large Bookcase", new Vector3(wall, 0f, 3.4f), 90f);
-            Prop(floor, "Large Bookcase", new Vector3(wall, 0f, -5.6f), 90f);
-            Prop(floor, "Drawer Bookcase", new Vector3(wall, 0f, 5.6f), 90f);
-            Container("Bookshelf", floor, new Vector3(wall, 0f, -3.4f), 90f);
-            Prop(floor, "Medium Candle", new Vector3(wall, 1.76f, 5.3f));
-            Prop(floor, "Small Candle", new Vector3(wall, 1.76f, 5.9f));
-
-            Prop(floor, "Table", new Vector3(x, 0f, z), 90f);
-            Prop(floor, "Chair", new Vector3(x + 1f, 0f, z + 0.1f), -90f);
-            Prop(floor, "Stool", new Vector3(x - 1.2f, 0f, z - 0.5f));
-            Prop(floor, "Open Scroll", new Vector3(x + 0.1f, TableTop, z + 0.15f), 90f);
-            Prop(floor, "Large Scroll", new Vector3(x + 0.3f, TableTop + 0.045f, z - 0.9f), 0f, 1f, 90f);
-            Prop(floor, "Small Scroll", new Vector3(x - 0.25f, TableTop + 0.045f, z - 0.8f), 30f, 1f, 90f);
-            Prop(floor, "Folded Scroll", new Vector3(x - 0.2f, TableTop, z + 0.75f), 15f);
-            Prop(floor, "Big Candle", new Vector3(x + 0.3f, TableTop, z + 0.8f));
-        }
-
-        /// East: weapon racks either side of a shield, swords on a crate and leaning on the wall, a helmet on a crate.
-        private static void BuildArmoury(Transform floor)
-        {
-            float wall = Half - 0.3f;
-
-            Prop(floor, "Weapon Rack", new Vector3(wall, 0f, 3.4f), -90f);
-            Prop(floor, "Weapon Rack", new Vector3(wall, 0f, -3.4f), -90f);
-            Prop(floor, "Shield", new Vector3(Half - 0.25f, 4.2f, 0f), -90f);
-            Prop(floor, "Big Crate", new Vector3(15.2f, 0f, 5.4f), 90f);
-            Prop(floor, "Sword 01", new Vector3(15.05f, 0.75f, 4.8f), 0f, 1f, 90f);
-            Prop(floor, "Sword 02", new Vector3(15.35f, 0.75f, 4.85f), 0f, 1f, 90f);
-            Prop(floor, "Sword 03", new Vector3(Half - 0.29f, 0f, -4.7f), -90f, 1f, -14f);
-            Prop(floor, "Sword 04", new Vector3(Half - 0.29f, 0f, -5.3f), -90f, 1f, -12f);
-            Container("Crate", floor, new Vector3(15.4f, 0f, -11.2f), 10f);
-            Prop(floor, "Helmet", new Vector3(15.4f, 0.87f, -11.2f), -60f);
-            Container("Barrel", floor, new Vector3(14.2f, 0f, -11.4f), 40f);
-        }
-
-        /// South-west: a long table with benches, mugs, a jug and a supper; barrels and a crate in the corner.
-        private static void BuildMess(Transform floor)
-        {
-            const float x = -13f;
-            const float z = -12.6f;
-
-            Prop(floor, "Table", new Vector3(x, 0f, z));
-            Prop(floor, "Seat", new Vector3(x, 0f, z + 1f), 180f);
-            Prop(floor, "Seat", new Vector3(x, 0f, z - 1f));
-            Prop(floor, "Chair", new Vector3(x - 1.6f, 0f, z), 90f);
-            Prop(floor, "Stool", new Vector3(x + 1.7f, 0f, z + 0.2f));
-            Prop(floor, "Plate", new Vector3(x - 0.75f, TableTop, z - 0.2f));
-            Prop(floor, "Spoon", new Vector3(x - 0.7f, TableTop + 0.02f, z - 0.2f), 30f);
-            Prop(floor, "Big Ale Mug", new Vector3(x - 0.3f, TableTop, z + 0.25f), 200f);
-            Prop(floor, "Jug", new Vector3(x + 0.05f, TableTop, z - 0.1f));
-            Prop(floor, "Small Ale Mug", new Vector3(x + 0.45f, TableTop, z + 0.2f), 120f);
-            Prop(floor, "Bowl", new Vector3(x + 0.5f, TableTop, z - 0.3f));
-            Prop(floor, "Candle Stick", new Vector3(x + 0.85f, TableTop, z));
-            Banner(floor, "Small Banner", new Vector3(-14f, 0f, -Half), 0f);
-
-            Container("Barrel", floor, new Vector3(-Half + 0.9f, 0f, -Half + 0.9f), 0f);
-            Container("Barrel", floor, new Vector3(-Half + 1.95f, 0f, -Half + 0.75f), 50f);
-            Container("Crate", floor, new Vector3(-Half + 0.8f, 0f, -Half + 2.05f), 8f);
-            Prop(floor, "Big Crate", new Vector3(-11.6f, 0f, -Half + 0.5f));
-        }
-
-        /// South-east: barrels, crates stacked on a big one and a small chest.
-        private static void BuildStore(Transform floor)
-        {
-            Container("Barrel", floor, new Vector3(Half - 0.9f, 0f, -Half + 0.9f), 0f);
-            Container("Barrel", floor, new Vector3(Half - 1.95f, 0f, -Half + 0.75f), 70f);
-            Container("Barrel", floor, new Vector3(Half - 0.85f, 0f, -Half + 2f), 20f);
-            Container("Crate", floor, new Vector3(13.4f, 0f, -Half + 0.6f), 8f);
-            Container("SmallOakChest", floor, new Vector3(11.8f, 0f, -Half + 0.5f), 0f);
-            Prop(floor, "Big Crate", new Vector3(Half - 0.4f, 0f, -12.9f), 90f);
-            Prop(floor, "Crate", new Vector3(Half - 0.45f, 0.68f, -12.9f), 15f);
-            Banner(floor, "Small Banner", new Vector3(14f, 0f, -Half), 0f);
-            Prop(floor, "Ground Lever 01", new Vector3(-6f, 0f, -Half + 0.3f));
-            Prop(floor, "Ground Lever 02", new Vector3(6f, 0f, -Half + 0.3f));
-        }
-
-        /// Wall block standing on the floor; length runs along local X, thickness faces the room.
-        private static void Wall(Transform parent, Vector3 position, float length, float yaw, float thickness = WallThickness, float height = Height,
-            string name = "Wall")
-        {
-            DungeonStructureBuilder.Block(parent, name, position + Vector3.up * height * 0.5f, new Vector3(length, height, thickness), DungeonPropBuilder.Ashlar, yaw);
-        }
-
-        private static void CellWall(Transform parent, Vector3 position, float length, float yaw)
-        {
-            Wall(parent, position, length, yaw, CellThickness, CellHeight);
-        }
-
-        /// Torch in an iron bracket on the wall face; local +Z faces the room.
-        private static void Torch(Transform parent, string name, Vector3 position, float yaw)
-        {
-            Place(Load(name), parent, position, yaw);
-        }
-
-        /// The pack banners hang from their bar; the big ones reach down to the knees, the small ones to the chest.
-        private static void Banner(Transform parent, string name, Vector3 position, float yaw)
-        {
-            Place(DungeonMedievalBuilder.Load(name), parent, position + Vector3.up * (name == "Large Banner" ? 4.6f : 4.4f), yaw);
-        }
-
-        /// A pack prop; pitch tips it over along its local Z (scrolls and swords lying down, blades leaning on a wall).
-        private static void Prop(Transform parent, string name, Vector3 position, float yaw = 0f, float scale = 1f, float pitch = 0f)
-        {
-            GameObject prop = Place(DungeonMedievalBuilder.Load(name), parent, position, yaw);
-            prop.transform.localRotation = Quaternion.Euler(pitch, yaw, 0f);
-            prop.transform.localScale = Vector3.one * scale;
-        }
-
-        /// The kit marker of a container prefab: the host spawns and fills it every run.
-        private static void Container(string name, Transform parent, Vector3 position, float yaw)
-        {
-            CatacombRoomBuilder.Kit($"Container {name}", parent, position, yaw);
         }
 
         /// Props saved as prefabs that scenes place by name.

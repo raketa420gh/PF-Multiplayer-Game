@@ -79,7 +79,7 @@ namespace Game.Scripts.Dungeon
             {
                 string text = File.ReadAllText(argument).ToLowerInvariant();
                 s_isDedicated |= text.Contains("server");
-                s_mode = text.Contains("dev") ? QueueMode.DevTest : text.Contains("trio") ? QueueMode.Trio : text.Contains("solo") ? QueueMode.Solo : s_mode;
+                s_mode = text.Contains("trio") ? QueueMode.Trio : text.Contains("solo") ? QueueMode.Solo : s_mode;
             }
 #endif
         }
@@ -94,7 +94,6 @@ namespace Game.Scripts.Dungeon
             return mode switch
             {
                 QueueMode.Solo => "Solo",
-                QueueMode.DevTest => "Dev Dungeon Test 2x2",
                 _ => "Trio"
             };
         }

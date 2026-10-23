@@ -36,10 +36,6 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public int Seed { get; private set; }
 
-        /// Dev Dungeon Test: the floor holds only the rooms of DevDungeonTestConfig around the key room.
-        [Networked]
-        public NetworkBool IsDevTest { get; private set; }
-
         [Networked, Capacity(FloorCount)]
         private NetworkArray<Vector3> _floorCenters => default;
 
@@ -77,9 +73,8 @@ namespace Game.Scripts.Dungeon
             BeginFloor(firstFloor);
         }
 
-        public void SetSeed(int seed, bool isDevTest)
+        public void SetSeed(int seed)
         {
-            IsDevTest = isDevTest;
             Seed = seed;
         }
 

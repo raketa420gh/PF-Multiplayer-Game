@@ -1420,6 +1420,40 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.SavePrefab(root, Prefab(name));
         }
 
+        /// A linen mannequin standing like an adventurer, with an adventurer's hitboxes and flesh under the blade; it never dies.
+        internal static GameObject BuildTrainingDummy()
+        {
+            GameObject root = new GameObject("TrainingDummy");
+            root.AddComponent<NetworkObject>();
+            HealthComponent health = root.AddComponent<HealthComponent>();
+            HitboxRoot hitboxRoot = root.AddComponent<HitboxRoot>();
+            DamageReceiverComponent receiver = root.AddComponent<DamageReceiverComponent>();
+            BattleEditorUtility.Set(root.AddComponent<TrainingDummyComponent>(), "_health", health);
+            Material linen = BattleEditorUtility.GetMaterial("Mannequin", new Color(0.78f, 0.7f, 0.56f), 0f, 0.15f);
+            AnimationClip clip = BattleEditorUtility.LoadLibraryClip("Idle_Loop");
+            BattleCharacterBuilder.CreateFigure("TrainingDummy", false, clip, 0f, linen, linen).transform.SetParent(root.transform, false);
+
+            int hitboxLayer = LayerMask.NameToLayer(BattleEditorUtility.HitboxLayer);
+            Transform hitboxes = BattleEditorUtility.CreateChild("Hitboxes", root.transform).transform;
+            BattleContentBuilder.CreateSphereHitbox(hitboxes, hitboxRoot, "Head", HitZone.Head, new Vector3(0f, 1.66f, 0.06f), 0.14f, hitboxLayer);
+            BattleContentBuilder.CreateBoxHitbox(hitboxes, hitboxRoot, "Torso", HitZone.Torso, new Vector3(0f, 1.22f, 0f), new Vector3(0.22f, 0.3f, 0.15f), hitboxLayer);
+            BattleContentBuilder.CreateBoxHitbox(hitboxes, hitboxRoot, "Legs", HitZone.Legs, new Vector3(0f, 0.48f, 0f), new Vector3(0.15f, 0.47f, 0.15f), hitboxLayer);
+            hitboxRoot.InitHitboxes();
+            hitboxRoot.BroadRadius = 1.5f;
+            hitboxRoot.Offset = Vector3.up;
+            BattleContentBuilder.SetupReceiver(receiver, health, hitboxRoot, AssetDatabase.LoadAssetAtPath<HitZoneConfig>($"{BattleEditorUtility.ConfigsFolder}/HitZones.asset"));
+            BattleEditorUtility.Set(root.AddComponent<HitFeedbackComponent>(), "_receiver", receiver);
+
+            // Stops bodies, not blades: the character layer is outside the weapons' hit mask.
+            CapsuleCollider body = root.AddComponent<CapsuleCollider>();
+            body.center = Vector3.up * 0.9f;
+            body.height = 1.8f;
+            body.radius = 0.3f;
+            root.layer = LayerMask.NameToLayer(BattleEditorUtility.CharacterLayer);
+
+            return BattleContentBuilder.SavePrefab(root, Prefab("TrainingDummy"));
+        }
+
         /// The noose breaks the neck to one side and drops the head forward.
         private static void HangNeck(Animator animator)
         {

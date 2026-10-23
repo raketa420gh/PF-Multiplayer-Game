@@ -19,8 +19,6 @@ namespace Game.Scripts.Dungeon
             public Texture Picture;
             [Tooltip("Scene the Start button travels to")]
             public string Scene;
-            [Tooltip("Dev Dungeon Test: the 2x2 floor of DevDungeonTestConfig instead of the generated catacombs")]
-            public bool IsDevTest;
         }
 
         [SerializeField]
@@ -184,10 +182,10 @@ namespace Game.Scripts.Dungeon
             Destination destination = _destinations[_destination];
             bool isDungeon = destination.Scene == SceneTravel.DungeonScene;
             bool isLeader = runner.IsServer;
-            bool isPartyTooBig = Queue() == QueueMode.Solo && runner.ActivePlayers.Count() > 1;
+            bool isPartyTooBig = s_queue == QueueMode.Solo && runner.ActivePlayers.Count() > 1;
             bool isInParty = PartyService.IsInParty;
             _startButton.interactable &= !isDungeon || isLeader && !isPartyTooBig;
-            _queueButton.gameObject.SetActive(isDungeon && !destination.IsDevTest);
+            _queueButton.gameObject.SetActive(isDungeon);
             _queueText.text = $"Queue: <color=#ffd98c>{GameServer.Title(s_queue)}</color>  <size=75%><color=#9a9283>({(s_queue == QueueMode.Solo ? "alone" : "party of up to 3")})</color></size>";
             _createPartyButton.gameObject.SetActive(!isInParty);
             _joinPartyButton.gameObject.SetActive(!isInParty);
@@ -255,15 +253,9 @@ namespace Game.Scripts.Dungeon
             _session.SaveLocal();
 
             if (destination.Scene == SceneTravel.DungeonScene)
-                _session.RpcQueue(Queue());
+                _session.RpcQueue(s_queue);
             else
                 SceneTravel.Load(_session.Runner, destination.Scene, destination.Title);
-        }
-
-        /// The Dev Dungeon Test map has a queue of its own; the other dungeon maps take the chosen one.
-        private QueueMode Queue()
-        {
-            return _destinations[_destination].IsDevTest ? QueueMode.DevTest : s_queue;
         }
 
         /// Back to the character select; the class of a character is fixed when it is created.

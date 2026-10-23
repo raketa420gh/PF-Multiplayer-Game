@@ -12,6 +12,8 @@ namespace Game.Scripts.Editor.Dungeon
         private const double O = DoorOffset;
 
         private static readonly double[] s_corners = { -12.5, 12.5 };
+        /// Rooms the catacombs are laid out of: only those in work or approved.
+        private static readonly HashSet<string> s_pool = new() { "Labyrinth", "AlchemyLab" };
 
         private static IEnumerable<Layout> Layouts()
         {
@@ -293,7 +295,7 @@ namespace Game.Scripts.Editor.Dungeon
             At(4, (x, z) => Trap(Snare.Spike, x, z));
             At(5, (x, z) => Container(Loot.Urn, x, z));
 
-            return Room("Labyrinth", "Labyrinth", 0.6f, 2, false, items,
+            return Room("Labyrinth", "Labyrinth", 1f, 0, false, items,
                 Brazier(Middle(3), Middle(3)), Torch(0, 0), Torch(2, 0), Monster(Mob.Skull, Middle(0), Middle(5)), Monster(Mob.Skull, Middle(5), Middle(0)),
                 Monster(Mob.Sword, Middle(5), Middle(5), 225), Monster(Mob.Sword, Middle(0), Middle(0), 45), Starts(Middle(2), Middle(0), 0));
         }
@@ -387,7 +389,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout AlchemyLab()
         {
-            return Room("AlchemyLab", "Alchemy Lab", 0.6f, 2, false,
+            return Room("AlchemyLab", "Alchemy Lab", 1f, 0, false,
                 Platform(0, 0, 6, 6, 0.25), Prop(0, 0, 1.6, 1.6, 1, "Котёл", 0, true), Glow(0, 0, Hex("#5cff7a"), 8),
                 Platform(13.6, 13.6, 6.4, 6.4, 2.5), Stairs(7.4, 12.6, 2.4, 6, 2.5, 90), Prop(13.6, 10.6, 6.4, 0.4, 1, "Парапет"), Prop(10.6, 15.3, 0.4, 3, 1, "Парапет"),
                 Platform(-13.6, -13.6, 6.4, 6.4, 1), Stairs(-12.6, -9.4, 2.4, 2, 1, 180), Prop(-10.6, -13.6, 0.4, 6.4, 1, "Парапет"),

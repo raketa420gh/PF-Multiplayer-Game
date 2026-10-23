@@ -177,9 +177,8 @@ namespace Game.Scripts.Dungeon
 
                 if (IsGenerated(floor - 1))
                 {
-                    bool isDevTest = _admission != null && _admission.Mode == QueueMode.DevTest;
-                    _match.SetSeed(_seed | 1, isDevTest);
-                    _catacombs.Generate(_seed | 1, isDevTest);
+                    _match.SetSeed(_seed | 1);
+                    _catacombs.Generate(_seed | 1);
                     _catacombs.BakeNavMesh();
                 }
 
@@ -464,13 +463,15 @@ namespace Game.Scripts.Dungeon
             return _catacombs != null && _catacombs.Floor == floorIndex + 1;
         }
 
+        /// Teams start in the key room (the Great Hall) or a room next to it.
         private Transform[] Starts()
         {
             List<Transform> starts = new();
+            Vector3 hall = _catacombs.Rooms[0].transform.position;
 
             foreach (CatacombRoomComponent room in _catacombs.Rooms)
             {
-                if (room.StartSpots != null)
+                if (room.StartSpots != null && Vector3.Distance(room.transform.position, hall) < _catacombs.Pitch * 1.2f)
                     starts.Add(room.StartSpots);
             }
 

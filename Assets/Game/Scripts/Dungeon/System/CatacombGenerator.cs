@@ -10,8 +10,7 @@ namespace Game.Scripts.Dungeon
     /// The Tangled Catacombs: a square grid of rooms laid out anew from the match seed, the same on every peer. The key room
     /// (the Great Hall, a prefab placed in the scene) keeps the middle cell; the four corners get corner rooms turned so their blind
     /// sides face out, every other cell a random room turned a random quarter. Every side has two doorways; a random maze with a
-    /// few loops decides which of them open into the neighbours. Dev Dungeon Test lays a 2x2 grid of the key room and the three
-    /// rooms of its config, the rest is rock. The host bakes the NavMesh of the result.
+    /// few loops decides which of them open into the neighbours. The host bakes the NavMesh of the result.
     public sealed class CatacombGenerator : MonoBehaviour
     {
         [Serializable]
@@ -35,6 +34,7 @@ namespace Game.Scripts.Dungeon
 
         public int Floor => _floor;
         public int Grid => _grid;
+        public float Pitch => _pitch;
         public float Size => _grid * _pitch;
         public Texture2D Map => _map;
         /// Grows with every new layout, so views know to redraw.
@@ -60,9 +60,6 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField, Tooltip("Instance of the key room in the scene, in the middle cell")]
         private CatacombRoomComponent _keyRoom;
-
-        [SerializeField]
-        private DevDungeonTestConfig _devTest;
 
         [SerializeField, Tooltip("Side between two cells by its open doorways (bit 0 at local -X, bit 1 at +X); length runs along local X")]
         private GameObject[] _sides = new GameObject[4];
@@ -105,9 +102,6 @@ namespace Game.Scripts.Dungeon
         private const string KeyRoomSide = "Wall Doorways";
 
         private static readonly Vector2Int[] s_steps = { Vector2Int.right, Vector2Int.up, Vector2Int.left, Vector2Int.down };
-        /// Cells of DevDungeonTestConfig from the key room (east, north, north-east), and the turns that put a corner room's blind sides out.
-        private static readonly Vector2Int[] s_devCells = { Vector2Int.right, Vector2Int.up, Vector2Int.one };
-        private static readonly int[] s_devTurns = { 3, 1, 2 };
 
         private readonly List<CatacombRoomComponent> _rooms = new();
         private readonly List<Pose> _doorways = new();
@@ -123,7 +117,7 @@ namespace Game.Scripts.Dungeon
             MatchComponent match = DungeonContext.Instance != null ? DungeonContext.Instance.Match : null;
 
             if (match != null && match.Object != null && match.Object.IsValid && match.Seed != 0 && match.Seed != _seed)
-                Generate(match.Seed, match.IsDevTest);
+                Generate(match.Seed);
         }
 
         private void OnDestroy()
@@ -133,7 +127,7 @@ namespace Game.Scripts.Dungeon
         }
 
         /// Lays the rooms of the seed out; the old layout is gone at once.
-        public void Generate(int seed, bool isDevTest = false)
+        public void Generate(int seed)
         {
             _seed = seed;
             _version++;
@@ -154,7 +148,7 @@ namespace Game.Scripts.Dungeon
 
             _content = new GameObject("[Generated]").transform;
             _content.SetParent(transform, false);
-            Plan plan = isDevTest ? LayDevTest(seed) : Lay(seed);
+            Plan plan = Lay(seed);
             _titles = new string[plan.Rooms.Length];
             _titles[KeyCell] = _keyRoom.Title;
 
@@ -303,32 +297,6 @@ namespace Game.Scripts.Dungeon
             return plan;
         }
 
-        /// A 2x2 grid: the key room in its south-west and the three rooms of the config, both doorways open between neighbours;
-        /// a slot left empty takes a random room. Corner rooms turn their blind sides out, the others stand as authored.
-        public Plan LayDevTest(int seed)
-        {
-            System.Random random = new System.Random(seed);
-            Plan plan = NewPlan();
-            CatacombRoomComponent[] rooms = _devTest != null ? _devTest.Rooms() : new CatacombRoomComponent[s_devCells.Length];
-            int[] used = new int[_kinds.Length];
-            int[] cells = new int[s_devCells.Length];
-
-            for (int i = 0; i < s_devCells.Length; i++)
-            {
-                cells[i] = Neighbour(KeyCell, s_devCells[i]);
-                CatacombRoomComponent room = rooms[i] != null ? rooms[i] : _kinds[PickKind(random, used, false)].Prefab;
-                plan.Rooms[cells[i]] = room;
-                plan.Turns[cells[i]] = room.IsCorner ? s_devTurns[i] : 0;
-            }
-
-            Open(plan, KeyCell, cells[0], BothDoorways);
-            Open(plan, KeyCell, cells[1], BothDoorways);
-            Open(plan, cells[0], cells[2], BothDoorways);
-            Open(plan, cells[1], cells[2], BothDoorways);
-
-            return plan;
-        }
-
         /// Parchment map of a layout: the cell maps turned with their rooms, then the walls of the grid inked over them.
         public Texture2D Paint(Plan plan)
         {
@@ -410,7 +378,8 @@ namespace Game.Scripts.Dungeon
 
         private bool IsFree(int kind, int[] used, bool isCorner)
         {
-            return _kinds[kind].Prefab.IsCorner == isCorner && (_kinds[kind].Limit <= 0 || used[kind] < _kinds[kind].Limit);
+            // Without rooms of the right shape any room will do.
+            return (_kinds[kind].Prefab.IsCorner == isCorner || !Array.Exists(_kinds, k => k.Prefab.IsCorner == isCorner)) && (_kinds[kind].Limit <= 0 || used[kind] < _kinds[kind].Limit);
         }
 
         private int Neighbour(int cell, Vector2Int step)
