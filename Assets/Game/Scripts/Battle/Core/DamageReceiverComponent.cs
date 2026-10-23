@@ -47,6 +47,8 @@ namespace Game.Scripts.Battle
 
         /// Sound set of the striking weapon, see WeaponSoundConfig.Id.
         public byte Sound;
+        /// Only the haft of the weapon met the body, see WeaponSoundConfig.HandleShare.
+        public bool IsHandle;
         public DamageTag Tag;
         /// The victim's armor and resistances do not reduce the hit.
         public bool IgnoreArmor;
@@ -60,6 +62,7 @@ namespace Game.Scripts.Battle
         public HitZone Zone;
         public short Damage;
         public byte Sound;
+        public NetworkBool IsHandle;
     }
 
     public sealed class DamageReceiverComponent : NetworkBehaviour
@@ -215,7 +218,8 @@ namespace Game.Scripts.Battle
                 Result = result,
                 Zone = result == HitResult.Blocked ? HitZone.Block : hit.Zone,
                 Damage = (short)damage,
-                Sound = hit.Sound
+                Sound = hit.Sound,
+                IsHandle = hit.IsHandle && result == HitResult.Hit
             });
             _eventCount++;
 

@@ -15,6 +15,7 @@ namespace Game.Scripts.Battle
 
         private List<WeaponVisual>[] _visuals;
         private int _shownSlot = -1;
+        private WeaponConfig _shownWeapon;
         private bool _wasActivePhase;
 
         public override void Spawned()
@@ -43,6 +44,11 @@ namespace Game.Scripts.Battle
                 ShowSlot(slot);
 
             WeaponConfig weapon = _combat.Weapon;
+
+            if (weapon != _shownWeapon && _shownWeapon != null && BattleContext.Instance != null)
+                BattleContext.Instance.Feedback.PlayEquip(transform.position + Vector3.up * 1.2f, weapon.Sounds);
+
+            _shownWeapon = weapon;
             CombatState state = _combat.State;
             bool isActivePhase = _combat.Phase == AttackPhase.Active;
             bool isDrawn = state == CombatState.Draw;

@@ -122,7 +122,13 @@ namespace Game.Scripts.Dungeon
         public static void PlayUi(DungeonSound sound, float volume = 1f)
         {
             if (s_instance != null)
-                s_instance.PlayFlat(sound, volume);
+                s_instance.PlayFlat(s_instance.GetClip(sound), volume);
+        }
+
+        public static void PlayUi(AudioClip clip, float volume = 1f)
+        {
+            if (s_instance != null)
+                s_instance.PlayFlat(clip, volume);
         }
 
         private void PlayAt(DungeonSound sound, Vector3 position, float volume, float pitch)
@@ -148,10 +154,8 @@ namespace Game.Scripts.Dungeon
             source.Play();
         }
 
-        private void PlayFlat(DungeonSound sound, float volume)
+        private void PlayFlat(AudioClip clip, float volume)
         {
-            AudioClip clip = GetClip(sound);
-
             if (clip == null)
                 return;
 

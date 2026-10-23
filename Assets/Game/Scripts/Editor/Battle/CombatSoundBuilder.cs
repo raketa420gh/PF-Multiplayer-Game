@@ -23,8 +23,13 @@ namespace Game.Scripts.Editor.Battle
 
         private static readonly (string Category, string Field)[] s_categories =
         {
-            ("swing", "_swing"), ("flesh", "_flesh"), ("bone", "_bone"), ("plate", "_plate"), ("shield", "_shield"), ("clash", "_clash"), ("stone", "_stone"), ("wood", "_wood")
+            ("swing", "_swing"), ("flesh", "_flesh"), ("bone", "_bone"), ("plate", "_plate"), ("shield", "_shield"), ("clash", "_clash"), ("stone", "_stone"), ("wood", "_wood"),
+            ("head", "_head"), ("handle", "_handle"), ("grass", "_grass"), ("snow", "_snow"), ("woodhard", "_woodHard"),
+            ("equip", "_equip"), ("drop", "_drop"), ("pickup", "_pickup"), ("drag", "_drag"), ("place", "_place")
         };
+
+        /// Share of the trace from the grip that is the haft (WeaponSoundConfig.HandleShare); sets without one never hit with the handle.
+        private static readonly Dictionary<string, float> s_handleShares = new() { ["morning"] = 0.6f };
 
         /// Categories where the user kept no take borrow the nearest family's.
         private static readonly Dictionary<string, string> s_fallbacks = new()
@@ -58,6 +63,7 @@ namespace Game.Scripts.Editor.Battle
             {
                 SerializedObject so = new SerializedObject(BattleEditorUtility.LoadOrCreate<WeaponSoundConfig>($"{SoundsFolder}/{s_sets[i]}.asset"));
                 BattleEditorUtility.Set(so, "_id", i + 1);
+                BattleEditorUtility.Set(so, "_handleShare", s_handleShares.GetValueOrDefault(s_sets[i]));
 
                 foreach ((string category, string field) in s_categories)
                     BattleEditorUtility.Set(so, field, LoadTakes(s_sets[i], category));

@@ -154,6 +154,12 @@ namespace Game.Scripts.Battle
             PlayClip(_swingClips, position, Mathf.Lerp(_swingPitch.x, _swingPitch.y, Mathf.InverseLerp(_swingReach.x, _swingReach.y, reach)));
         }
 
+        public void PlayEquip(Vector3 position, WeaponSoundConfig sounds)
+        {
+            if (sounds != null)
+                PlayClip(sounds.Get(ItemSound.Equip), position);
+        }
+
         public void PlayShot(Vector3 position)
         {
             PlayClip(_shotClips, position);

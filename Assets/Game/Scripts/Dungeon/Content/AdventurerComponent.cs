@@ -1556,6 +1556,15 @@ namespace Game.Scripts.Dungeon
                 AbilityVfx.Burst(ability.Vfx, point, Mathf.Max(1f, ability.Radius), ability.Color);
         }
 
+        [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+        private void RpcItemSound(short itemId, ItemSound sound, Vector3 point)
+        {
+            ItemConfig item = _database.Get(itemId);
+
+            if (item != null)
+                DungeonAudioComponent.Play(item.PickSound(sound), point, 1f, Random.Range(0.96f, 1.04f));
+        }
+
         private float HealScale()
         {
             return 1f + DungeonFormulas.PowerBonus(_stats.MagicalPower) * 0.5f;
@@ -2514,6 +2523,12 @@ namespace Game.Scripts.Dungeon
             DropItem(stack);
         }
 
+        /// Host side: every client hears the item handled at the point, see ItemConfig.PickSound.
+        public void PlayItemSound(short itemId, ItemSound sound, Vector3 point)
+        {
+            RpcItemSound(itemId, sound, point);
+        }
+
         private void DropItem(ItemStack stack)
         {
             if (_worldItemPrefab == null)
@@ -2527,6 +2542,7 @@ namespace Game.Scripts.Dungeon
 
             Runner.Spawn(_worldItemPrefab, position, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f), PlayerRef.None,
                 (_, item) => item.GetComponent<WorldItemComponent>().Setup(stack));
+            RpcItemSound(stack.ItemId, ItemSound.Drop, position);
         }
 
         void InventoryActionsComponent.IOwner.OnLoadChunk(byte kind, byte chunk, byte chunkCount, byte[] data)

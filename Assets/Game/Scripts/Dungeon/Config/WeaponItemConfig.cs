@@ -9,6 +9,7 @@ namespace Game.Scripts.Dungeon
     {
         public override ItemKind Kind => ItemKind.Weapon;
         public WeaponConfig Weapon => _weapon;
+        public override WeaponSoundConfig Sounds => _weapon != null ? _weapon.Sounds : null;
         /// Combat configs of the weapon with a shield in the off hand, indexed by the shield's ShieldIndex; null = none.
         public WeaponConfig[] WeaponsWithShield => _weaponsWithShield;
         /// Which entry of the main weapon's WeaponsWithShield a shield selects: shields differ in model and block.

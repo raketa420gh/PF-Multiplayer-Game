@@ -236,6 +236,8 @@ namespace Game.Scripts.Battle
             public HitZone Zone;
             public Vector3 Point;
             public Vector3 Normal;
+            /// Farthest point along the trace, from the grip (0) to the tip (1), where a ray met the body.
+            public float Reach;
         }
 
         private static readonly List<LagCompensatedHit> s_hits = new(32);
@@ -652,14 +654,15 @@ namespace Game.Scripts.Battle
             for (int i = 0; i < TracePoints; i++)
             {
                 float alpha = i / (TracePoints - 1f);
-                CastRay(Vector3.Lerp(baseFrom, tipFrom, alpha), Vector3.Lerp(baseTo, tipTo, alpha));
+                CastRay(Vector3.Lerp(baseFrom, tipFrom, alpha), Vector3.Lerp(baseTo, tipTo, alpha), alpha);
             }
 
-            CastRay(baseTo, tipTo);
+            CastRay(baseTo, tipTo, -1f);
             ResolveTallies(weapon, attack);
         }
 
-        private void CastRay(Vector3 bindFrom, Vector3 bindTo)
+        /// Alpha is where along the weapon the ray sweeps; a negative one means the ray runs along the weapon itself.
+        private void CastRay(Vector3 bindFrom, Vector3 bindTo, float alpha)
         {
             Vector3 from = _body.UpperToWorld(bindFrom);
             Vector3 to = _body.UpperToWorld(bindTo);
@@ -687,11 +690,11 @@ namespace Game.Scripts.Battle
                     continue;
 
                 s_rayRoots.Add(root);
-                AddToTally(root, hit);
+                AddToTally(root, hit, alpha >= 0f ? alpha : hit.Distance / Mathf.Max(Vector3.Distance(from, to), 0.001f));
             }
         }
 
-        private static void AddToTally(HitboxRoot root, in LagCompensatedHit hit)
+        private static void AddToTally(HitboxRoot root, in LagCompensatedHit hit, float reach)
         {
             int index = FindTally(root);
             Tally tally = index >= 0 ? s_tallies[index] : new Tally { Root = root, Zone = HitZone.Legs };
@@ -713,6 +716,7 @@ namespace Game.Scripts.Battle
                 }
 
                 tally.BodyRays++;
+                tally.Reach = Mathf.Max(tally.Reach, reach);
             }
 
             if (index >= 0)
@@ -774,6 +778,7 @@ namespace Game.Scripts.Battle
                     DamageType = weapon.DamageType,
                     Attacker = _receiver,
                     Sound = weapon.SoundId,
+                    IsHandle = weapon.Sounds != null && tally.Reach < weapon.Sounds.HandleShare,
                     Tag = DamageTag.Melee
                 });
 
@@ -784,7 +789,7 @@ namespace Game.Scripts.Battle
             {
                 _worldHitPoint = _worldHit.Point;
                 _worldHitNormal = _worldHit.Normal;
-                _worldHitSurface = WorldSurface.Of(_worldHit.GameObject);
+                _worldHitSurface = WorldSurface.Of(_worldHit.GameObject, _worldHit.Point);
                 _worldHitCount++;
                 isDeflected = true;
             }

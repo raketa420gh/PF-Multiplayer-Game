@@ -48,9 +48,15 @@ namespace Game.Scripts.Battle
             if (hit.Result != HitResult.Hit)
                 return _combat != null ? _combat.Weapon.HasShield ? ImpactSurface.Shield : ImpactSurface.Clash : _blockSurface;
 
+            if (hit.IsHandle)
+                return ImpactSurface.Handle;
+
             ImpactSurface surface = _bodySource != null ? _bodySource.GetBodySurface(hit.Zone) : ImpactSurface.None;
 
-            return surface == ImpactSurface.None ? _body : surface;
+            if (surface == ImpactSurface.None)
+                surface = _body;
+
+            return surface == ImpactSurface.Flesh && hit.Zone == HitZone.Head ? ImpactSurface.Head : surface;
         }
 
         private void OnHitEvent(HitEventData hit)

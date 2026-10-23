@@ -129,6 +129,8 @@ namespace Game.Scripts.Dungeon
         public bool CanRollRarity => _canRollRarity;
         public Sprite Icon => _icon;
         public GameObject WorldModel => _worldModel;
+        /// Handling sounds of the item; only weapons have them, taken from their combat config.
+        public virtual WeaponSoundConfig Sounds => null;
 
         [SerializeField]
         private short _id;
@@ -173,6 +175,8 @@ namespace Game.Scripts.Dungeon
         private GameObject _worldModel;
 
         public virtual bool CanEquip(EquipSlot slot) => false;
+
+        public AudioClip PickSound(ItemSound sound) => WeaponSoundConfig.Pick(Sounds, sound);
     }
 
     /// Outfit looks go set by set in slot order (head, chest, hands, legs, feet); the item library counts on it.

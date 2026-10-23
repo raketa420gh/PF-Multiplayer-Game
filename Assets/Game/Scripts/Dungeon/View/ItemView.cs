@@ -1,3 +1,4 @@
+using Game.Scripts.Battle;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -105,6 +106,7 @@ namespace Game.Scripts.Dungeon
                 Mathf.Clamp(Mathf.FloorToInt((local.x + rect.pivot.x * rect.sizeDelta.x) / _cellSize), 0, _config.Width - 1),
                 Mathf.Clamp(Mathf.FloorToInt((rect.sizeDelta.y * (1f - rect.pivot.y) - local.y) / _cellSize), 0, _config.Height - 1));
             _group.alpha = 0.4f;
+            DungeonAudioComponent.PlayUi(_config.PickSound(ItemSound.Drag));
             _owner.BeginDrag(this, eventData);
         }
 

@@ -1,4 +1,5 @@
 using Fusion;
+using Game.Scripts.Battle;
 using UnityEngine;
 
 namespace Game.Scripts.Dungeon
@@ -108,7 +109,10 @@ namespace Game.Scripts.Dungeon
             ItemStack stack = Stack.WithLit(false);
 
             if (adventurer.Inventory.TryLoot(ref stack))
+            {
+                adventurer.PlayItemSound(Stack.ItemId, ItemSound.Pickup, transform.position);
                 Runner.Despawn(Object);
+            }
             else
                 Stack = stack.WithLit(Stack.IsLit);
         }

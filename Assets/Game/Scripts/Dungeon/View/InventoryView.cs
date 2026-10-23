@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Scripts.Battle;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -229,6 +230,8 @@ namespace Game.Scripts.Dungeon
                 else
                     _actions.RpcMove(item.Inventory.Id, item.BagIndex, grid.Inventory.Id, x, y);
 
+                DungeonAudioComponent.PlayUi(item.Config.PickSound(ItemSound.Place));
+
                 return;
             }
 
@@ -238,6 +241,8 @@ namespace Game.Scripts.Dungeon
                     _actions.RpcSwapEquipment(item.Slot, slot.Slot);
                 else
                     _actions.RpcEquip(item.Inventory.Id, item.BagIndex, slot.Slot);
+
+                DungeonAudioComponent.PlayUi(item.Config.PickSound(ItemSound.Place));
 
                 return;
             }
