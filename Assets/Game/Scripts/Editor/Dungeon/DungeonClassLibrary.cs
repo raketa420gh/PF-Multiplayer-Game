@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// Playable classes of the "Ashen Vein" lore (Documentation/03_World/Lore.md): base attributes, three subclasses each, shared and
+    /// Playable classes of the "Ashen Vein" lore (Docs/03_World/Lore.md): base attributes, three subclasses each, shared and
     /// subclass perks, skills and spells, starting kits. A build is 4 perks and 2 skills; a spell memory takes a skill slot. Shared
     /// skills come first in every pool, so the default build (skills 0 and 1) fits any subclass. No subclass keeps stacks.
     internal static class DungeonClassLibrary
