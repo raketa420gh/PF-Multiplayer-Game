@@ -252,7 +252,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Kit = new[] { ("Spellbook", EquipSlot.Weapon1Main, 1, true), ("Magic Staff", EquipSlot.Weapon2Main, 1, true), ("Veinworker Hood", EquipSlot.Head, 1, true),
                     ("Veinworker Shirt", EquipSlot.Chest, 1, true), ("Veinworker Trousers", EquipSlot.Legs, 1, true), ("Veinworker Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true),
                     ("Bandage", EquipSlot.Utility2, 2, true), ("Torch", EquipSlot.Utility3, 1, true) },
-                Weapons = new[] { WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.CrystalBall, WeaponClass.Dagger, WeaponClass.Sword },
+                Weapons = new[] { WeaponClass.Staff, WeaponClass.Spellbook, WeaponClass.Torch },
                 Focus = CastFocus.Magic
             };
         }
@@ -574,7 +574,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Kit = new[] { ("Crossbow", EquipSlot.Weapon1Main, 1, true), ("Arming Sword", EquipSlot.Weapon2Main, 1, true), ("Veinworker Hood", EquipSlot.Head, 1, true),
                     ("Veinworker Shirt", EquipSlot.Chest, 1, true), ("Veinworker Trousers", EquipSlot.Legs, 1, true), ("Veinworker Boots", EquipSlot.Feet, 1, true),
                     ("Throwing Knife", EquipSlot.Utility1, 2, true), ("Bandage", EquipSlot.Utility2, 2, true), ("Torch", EquipSlot.Utility3, 1, true), ("Crossbow Bolts", EquipSlot.Head, 20, false) },
-                Weapons = new[] { WeaponClass.Bow, WeaponClass.Crossbow, WeaponClass.Sword, WeaponClass.Dagger, WeaponClass.Spear, WeaponClass.Axe, WeaponClass.Torch }
+                Weapons = new[] { WeaponClass.Bow, WeaponClass.Crossbow, WeaponClass.Sword, WeaponClass.Spear, WeaponClass.Torch }
             };
         }
 
