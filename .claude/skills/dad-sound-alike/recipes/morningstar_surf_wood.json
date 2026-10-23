@@ -1,0 +1,154 @@
+{
+ "name": "morningstar_surf_wood",
+ "about": "DaD Morningstar hit on wood: iron head knock on a plank, resonant mid body ~5 dB/40 ms, a rebound/rattle 150-200 ms later about 10 dB down, wood room tail",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/04_HitSurface_Wood",
+ "length_ms": 750,
+ "variants": 12,
+ "seed": 7200,
+ "layers": [
+  {
+   "src": "wood_metal_100/wood_slam_0[1-4].ogg",
+   "at_ms": [
+    2,
+    2
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     25,
+     35
+    ],
+    "tau": [
+     22,
+     30
+    ]
+   }
+  },
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpactWood.flac",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     25,
+     35
+    ],
+    "tau": [
+     22,
+     30
+    ]
+   }
+  },
+  {
+   "src": "surface_slices/woodres_1[14].wav",
+   "at_ms": [
+    2,
+    6
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     60,
+     80
+    ]
+   },
+   "max_ms": 280
+  },
+  {
+   "src": "sfx_breaking/bfh1_metal_hit_0[3456].ogg",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 600,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     15,
+     22
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_hit_0[1-4].ogg",
+   "chance": 0.6,
+   "at_ms": [
+    150,
+    210
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     20,
+     35
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -27,
+  "decay_ms": 100,
+  "len_ms": 600,
+  "band": [
+   150,
+   5000
+  ]
+ },
+ "match": 0.6,
+ "fade_ms": 250,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 9000,
+  "db": 3
+ }
+}

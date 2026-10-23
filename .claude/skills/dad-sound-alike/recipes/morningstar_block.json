@@ -1,0 +1,220 @@
+{
+ "name": "morningstar_block",
+ "about": "DaD FX_Hit_ImpactGuard_Wooden for the morningstar: wood crack + low thump at ~10 ms, main weapon-on-haft hit at ~150 ms over a held low boom (~130 ms), then ~8 dB/40 ms fall and a quiet room tail",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/05_Block_Candidates",
+ "length_ms": 800,
+ "variants": 12,
+ "seed": 5100,
+ "layers": [
+  {
+   "src": "wood_crack_hit/wood_impact/crack0[7-9]*.flac",
+   "at_ms": [
+    4,
+    10
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/boom/*.wav",
+   "at_ms": [
+    0,
+    8
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     100,
+     120
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   },
+   "hp": 60
+  },
+  {
+   "src": "blockdrop_slices/haft/Mace_Spear_Haft_*.wav",
+   "at_ms": [
+    140,
+    150
+   ],
+   "gain_db": [
+    -9,
+    -7
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "hp": 120
+  },
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpact*.flac",
+   "at_ms": [
+    140,
+    150
+   ],
+   "gain_db": [
+    -10,
+    -8
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/thump/*.wav",
+   "at_ms": [
+    135,
+    145
+   ],
+   "gain_db": [
+    -7,
+    -5
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/boom/*.wav",
+   "at_ms": [
+    130,
+    140
+   ],
+   "gain_db": [
+    2,
+    4
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     120,
+     140
+    ],
+    "tau": [
+     34,
+     42
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/thump/*.wav",
+   "at_ms": [
+    215,
+    245
+   ],
+   "gain_db": [
+    -5,
+    -2
+   ],
+   "pitch": [
+    -4,
+    -2
+   ],
+   "lp": 1500,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/thump/*.wav",
+   "at_ms": [
+    75,
+    100
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -4,
+    -2
+   ],
+   "lp": 250,
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 4000,
+  "db": 3
+ },
+ "room": {
+  "db": -28,
+  "decay_ms": 110,
+  "len_ms": 600,
+  "band": [
+   80,
+   3000
+  ]
+ },
+ "match": 0.75,
+ "fade_ms": 200,
+ "peak_db": -1
+}

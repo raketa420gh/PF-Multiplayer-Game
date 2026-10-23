@@ -1,0 +1,155 @@
+{
+ "name": "morningstar_surf_snow",
+ "about": "DaD Morningstar hit on snow: muffled thump + bright snow crunch (0-80 ms), packed-snow crunches at ~160/290 ms about 15 dB down, then a long powdery settle -25..-45 dB fading out by 1.5 s",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/04_HitSurface_Snow",
+ "length_ms": 1650,
+ "variants": 12,
+ "seed": 7500,
+ "layers": [
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    10,
+    20
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "lp": 600,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     18,
+     24
+    ]
+   }
+  },
+  {
+   "src": "snow_walk/SnowWalk/SnowWalk*.ogg",
+   "at_ms": [
+    8,
+    16
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     5,
+     15
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "snow_walk/SnowWalk/SnowWalk*.ogg",
+   "at_ms": [
+    70,
+    110
+   ],
+   "gain_db": [
+    -20,
+    -17
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     40,
+     80
+    ],
+    "tau": [
+     70,
+     100
+    ]
+   }
+  },
+  {
+   "src": "snow_gravel/*/*gravel_and_ice_0[3689].flac",
+   "at_ms": [
+    150,
+    290
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 600,
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     30,
+     50
+    ]
+   }
+  },
+  {
+   "src": "snow_gravel/*/*gravel_and_ice_*.flac",
+   "count": [
+    2,
+    3
+   ],
+   "at_ms": [
+    60,
+    120
+   ],
+   "gap_ms": [
+    250,
+    400
+   ],
+   "until_ms": 900,
+   "gain_db": [
+    -30,
+    -26
+   ],
+   "pitch": [
+    2,
+    5
+   ],
+   "hp": 500,
+   "max_ms": 600
+  }
+ ],
+ "room": {
+  "db": -29,
+  "decay_ms": 250,
+  "len_ms": 1400,
+  "band": [
+   300,
+   12000
+  ]
+ },
+ "match": 0.6,
+ "fade_ms": 400,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 2500,
+  "db": 3
+ }
+}

@@ -1,0 +1,155 @@
+{
+ "name": "morningstar_surf_woodhard",
+ "about": "DaD Morningstar hit on hard wood (thick beams/doors): dense low knock held ~50 ms, steep drop ~14 dB/40 ms, then a quiet slow wooden resonance ~-38 dB to 450 ms",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/04_HitSurface_WoodHard",
+ "length_ms": 500,
+ "variants": 12,
+ "seed": 7300,
+ "layers": [
+  {
+   "src": "wood_metal_100/wood_slam_0[1-4].ogg",
+   "at_ms": [
+    2,
+    2
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     50,
+     65
+    ],
+    "tau": [
+     14,
+     18
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_hammer_0[12].ogg",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     30,
+     45
+    ],
+    "tau": [
+     14,
+     18
+    ]
+   },
+   "hp": 400
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    2,
+    2
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 250,
+   "snap": {
+    "hold": [
+     50,
+     65
+    ],
+    "tau": [
+     16,
+     20
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_metal_hit_0[3456].ogg",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 600,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     15,
+     22
+    ]
+   }
+  },
+  {
+   "src": "surface_slices/woodres_1[14].wav",
+   "at_ms": [
+    4,
+    8
+   ],
+   "gain_db": [
+    -32,
+    -28
+   ],
+   "pitch": [
+    -4,
+    -2
+   ],
+   "snap": {
+    "hold": [
+     60,
+     100
+    ],
+    "tau": [
+     150,
+     200
+    ]
+   },
+   "max_ms": 460
+  }
+ ],
+ "room": {
+  "db": -33,
+  "decay_ms": 120,
+  "len_ms": 450,
+  "band": [
+   150,
+   4000
+  ]
+ },
+ "match": 0.6,
+ "fade_ms": 120,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 9000,
+  "db": 9
+ }
+}

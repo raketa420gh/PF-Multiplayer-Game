@@ -1,0 +1,150 @@
+{
+ "name": "morningstar_hit_head",
+ "about": "DaD FX_Hit_Character_Headshot_Mace (Morningstar headshot): heavy low punch held ~300 ms + low meat impact + hard stone/wood knock transient (skull) + deep bone crunch + quiet splat and spike clink, room tail",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/_ref_split/head",
+ "length_ms": 1100,
+ "variants": 12,
+ "seed": 7200,
+ "layers": [
+  {
+   "src": "hits_heavy_body/*.flac",
+   "at_ms": [
+    2,
+    2
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     300,
+     330
+    ],
+    "tau": [
+     60,
+     75
+    ]
+   }
+  },
+  {
+   "src": "impact_meat/qubodupImpact/qubodupImpactMeat0*.flac",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -4,
+    -2
+   ],
+   "lp": 250,
+   "snap": {
+    "hold": [
+     250,
+     300
+    ],
+    "tau": [
+     60,
+     80
+    ]
+   }
+  },
+  {
+   "src": "impact_meat/qubodupImpact/qubodupImpact[SW]*.flac",
+   "at_ms": [
+    2,
+    2
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -3,
+    0
+   ]
+  },
+  {
+   "src": "deep_breaks/*.wav",
+   "at_ms": [
+    4,
+    12
+   ],
+   "gain_db": [
+    -6,
+    -4
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "max_ms": 700
+  },
+  {
+   "src": "wet_squish/impsplat/impactsplat0[1367]*.flac",
+   "at_ms": [
+    4,
+    10
+   ],
+   "gain_db": [
+    -12,
+    -9
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     60,
+     80
+    ],
+    "tau": [
+     140,
+     170
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/clink*.wav",
+   "at_ms": [
+    2,
+    6
+   ],
+   "gain_db": [
+    -18,
+    -14
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 800
+  }
+ ],
+ "room": {
+  "db": -15,
+  "decay_ms": 120,
+  "len_ms": 900,
+  "band": [
+   100,
+   6000
+  ]
+ },
+ "match": 0.75,
+ "fade_ms": 120,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 9000,
+  "db": 3
+ }
+}

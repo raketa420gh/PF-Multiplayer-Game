@@ -1,0 +1,124 @@
+{
+ "name": "morningstar_hit_handle",
+ "about": "DaD FX_Hit_Character_Mace_Handle (Morningstar shaft on body): short punch thump cut at ~180 ms + wooden shaft knock + wet body slap, short bright room tail",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/_ref_split/handle",
+ "length_ms": 600,
+ "variants": 12,
+ "seed": 7300,
+ "layers": [
+  {
+   "src": "hits_and_punches/hits/hit[12][235]*.flac",
+   "at_ms": [
+    2,
+    2
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "snap": {
+    "hold": [
+     165,
+     180
+    ],
+    "tau": [
+     15,
+     20
+    ]
+   }
+  },
+  {
+   "src": "impact_meat/qubodupImpact/qubodupImpactWood.flac",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     30,
+     45
+    ]
+   }
+  },
+  {
+   "src": "wood_crack_hit/wood_impact/impactwood1[124]*.flac",
+   "at_ms": [
+    2,
+    6
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     60,
+     100
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "wet_towel/wet_towel_on_body/*-0[1378]*.flac",
+   "at_ms": [
+    2,
+    5
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 200,
+   "snap": {
+    "hold": [
+     60,
+     90
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -14,
+  "decay_ms": 75,
+  "len_ms": 400,
+  "band": [
+   800,
+   9000
+  ]
+ },
+ "match": 0.7,
+ "fade_ms": 170,
+ "peak_db": -1
+}

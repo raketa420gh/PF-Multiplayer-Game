@@ -1,0 +1,211 @@
+{
+ "name": "morningstar_equip",
+ "about": "DaD Wp_Mace_Equip (Morningstar drawn into hand): ~0.5 s of leather/strap handling with chain-like rattle, 2-3 small iron clinks 100-150 ms apart, the main clank of the head at ~380 ms, then a fast settle; sometimes a knock right at the start",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/09_Equip",
+ "length_ms": 900,
+ "variants": 12,
+ "seed": 7300,
+ "layers": [
+  {
+   "src": "weapons_apparel/sfx/quiver-leather-squeeze-*.wav",
+   "at_ms": [
+    0,
+    30
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 900,
+   "lp": 8000,
+   "max_ms": 500
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/chainmail*.wav",
+   "at_ms": [
+    30,
+    140
+   ],
+   "gain_db": [
+    -14,
+    -9
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 900,
+   "lp": 8000,
+   "max_ms": 400
+  },
+  {
+   "src": "rpg80/item_misc_0[1-4].ogg",
+   "count": [
+    2,
+    3
+   ],
+   "at_ms": [
+    60,
+    140
+   ],
+   "gap_ms": [
+    100,
+    160
+   ],
+   "until_ms": 320,
+   "gain_db": [
+    -9,
+    -4
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 900,
+   "lp": 8000,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "rpg80/item_misc_0[1-4].ogg",
+   "at_ms": [
+    340,
+    420
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 700,
+   "lp": 8000,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     30,
+     45
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/metal-ringing.wav",
+   "at_ms": [
+    345,
+    425
+   ],
+   "gain_db": [
+    -20,
+    -15
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 1000,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/metal-small*.wav",
+   "count": [
+    1,
+    2
+   ],
+   "at_ms": [
+    430,
+    470
+   ],
+   "gap_ms": [
+    50,
+    80
+   ],
+   "until_ms": 540,
+   "gain_db": [
+    -10,
+    -5
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "hp": 900,
+   "lp": 8000,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     18,
+     26
+    ]
+   }
+  },
+  {
+   "src": "rpg80/item_misc_0[1-4].ogg",
+   "chance": 0.35,
+   "at_ms": [
+    20,
+    40
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 700,
+   "lp": 8000,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     40,
+     55
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -26,
+  "decay_ms": 50,
+  "len_ms": 400,
+  "band": [
+   500,
+   7000
+  ]
+ },
+ "match": 0.75,
+ "fade_ms": 150,
+ "peak_db": -1
+}

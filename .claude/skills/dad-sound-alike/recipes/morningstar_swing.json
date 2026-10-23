@@ -1,0 +1,103 @@
+{
+ "name": "morningstar_swing",
+ "about": "DaD Wp_MorningStar_Attack swing: heavy slow whoosh, peak ~140 ms, -18 dB by 260 ms, ~-30 dB tail to 450 ms. Real swing foley (Medieval SFX Weapon Textures) pitched down; two overlapping passes widen the peak, a further-down low pass adds weight",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/01_Swing",
+ "length_ms": 700,
+ "variants": 12,
+ "seed": 7100,
+ "layers": [
+  {
+   "src": "morningstar_swing_slices/pick/*.wav",
+   "at_ms": [
+    4,
+    12
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -5,
+    -4
+   ],
+   "hp": 70,
+   "snap": {
+    "hold": [
+     170,
+     190
+    ],
+    "tau": [
+     140,
+     170
+    ]
+   },
+   "max_ms": 520
+  },
+  {
+   "src": "morningstar_swing_slices/pick/*.wav",
+   "at_ms": [
+    45,
+    65
+   ],
+   "gain_db": [
+    -7,
+    -5
+   ],
+   "pitch": [
+    -5,
+    -3
+   ],
+   "hp": 90,
+   "snap": {
+    "hold": [
+     150,
+     170
+    ],
+    "tau": [
+     100,
+     120
+    ]
+   },
+   "max_ms": 480
+  },
+  {
+   "src": "morningstar_swing_slices/pick_short/*.wav",
+   "at_ms": [
+    30,
+    45
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -12,
+    -10
+   ],
+   "lp": 400,
+   "snap": {
+    "hold": [
+     180,
+     200
+    ],
+    "tau": [
+     120,
+     140
+    ]
+   },
+   "max_ms": 560
+  }
+ ],
+ "match": 0.6,
+ "fade_ms": 220,
+ "peak_db": -2,
+ "room": {
+  "db": -16,
+  "decay_ms": 150,
+  "len_ms": 500,
+  "band": [
+   150,
+   4000
+  ]
+ }
+}

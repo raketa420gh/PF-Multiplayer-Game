@@ -1,0 +1,141 @@
+{
+ "name": "morningstar_surf_grass",
+ "about": "DaD Morningstar hit on grass/soil: soft-attack dull earth thump peaking ~40 ms, slow ~5 dB/40 ms decay, grassy/soil rustle 20-300 ms about 12 dB down",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/04_HitSurface_Grass",
+ "length_ms": 900,
+ "variants": 12,
+ "seed": 7400,
+ "layers": [
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    15,
+    25
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "lp": 350,
+   "snap": {
+    "hold": [
+     20,
+     35
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   }
+  },
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpactMeat0[12].flac",
+   "at_ms": [
+    15,
+    25
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -5,
+    -3
+   ],
+   "lp": 2500,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   }
+  },
+  {
+   "src": "fantozzi/*/flac/*Sand*.flac",
+   "count": [
+    2,
+    3
+   ],
+   "at_ms": [
+    20,
+    40
+   ],
+   "gap_ms": [
+    70,
+    130
+   ],
+   "until_ms": 260,
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "hp": 700,
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     50,
+     70
+    ]
+   },
+   "max_ms": 300
+  },
+  {
+   "src": "snow_walk/SnowWalk/SnowWalk*.ogg",
+   "at_ms": [
+    15,
+    30
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 3000,
+   "snap": {
+    "hold": [
+     40,
+     80
+    ],
+    "tau": [
+     50,
+     80
+    ]
+   },
+   "max_ms": 400
+  }
+ ],
+ "shelf": {
+  "hz": 9000,
+  "db": 6
+ },
+ "room": {
+  "db": -38,
+  "decay_ms": 150,
+  "len_ms": 700,
+  "band": [
+   100,
+   3000
+  ]
+ },
+ "match": 0.6,
+ "fade_ms": 350,
+ "peak_db": -1
+}

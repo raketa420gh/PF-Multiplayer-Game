@@ -1,0 +1,209 @@
+{
+ "name": "morningstar_drop",
+ "about": "DaD Item_3D_FlangedMace_Drop for the morningstar: wooden haft taps the floor (~25 ms), the mace tips/scrapes for ~280 ms, the iron head lands at ~330 ms with a mid (0.5-1.5 kHz) ring held ~100 ms, then 2-3 smaller bounces/rattles to ~700 ms and a quick fade",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/06_DropGround",
+ "length_ms": 1000,
+ "variants": 12,
+ "seed": 5200,
+ "layers": [
+  {
+   "src": "breaking_falling/bfh1_wood_hit_0[13].ogg",
+   "at_ms": [
+    20,
+    28
+   ],
+   "gain_db": [
+    -5,
+    -3
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     30,
+     45
+    ],
+    "tau": [
+     40,
+     55
+    ]
+   }
+  },
+  {
+   "src": "metal27/*/metal_grit_01*.wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -14,
+    -12
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "hp": 400,
+   "lp": 2000,
+   "max_ms": 320
+  },
+  {
+   "src": "blockdrop_slices/ring/*.wav",
+   "at_ms": [
+    300,
+    308
+   ],
+   "gain_db": [
+    0,
+    1
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 550,
+   "snap": {
+    "hold": [
+     125,
+     145
+    ],
+    "tau": [
+     45,
+     55
+    ]
+   },
+   "lp": 2500
+  },
+  {
+   "src": "blockdrop_slices/ring/*.wav",
+   "at_ms": [
+    330,
+    345
+   ],
+   "gain_db": [
+    -7,
+    -4
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 550,
+   "snap": {
+    "hold": [
+     100,
+     120
+    ],
+    "tau": [
+     45,
+     55
+    ]
+   },
+   "lp": 2500
+  },
+  {
+   "src": "cast_iron/cast iron clangs - Marker #2[12].wav",
+   "at_ms": [
+    300,
+    308
+   ],
+   "gain_db": [
+    -20,
+    -17
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 550,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   },
+   "lp": 2500
+  },
+  {
+   "src": "metal_impact/thud[23].wav",
+   "count": [
+    3,
+    4
+   ],
+   "at_ms": [
+    460,
+    480
+   ],
+   "gap_ms": [
+    65,
+    90
+   ],
+   "until_ms": 720,
+   "gain_db": [
+    -14,
+    -9
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/clink[23].wav",
+   "count": [
+    3,
+    4
+   ],
+   "at_ms": [
+    470,
+    490
+   ],
+   "gap_ms": [
+    60,
+    90
+   ],
+   "until_ms": 730,
+   "gain_db": [
+    -17,
+    -12
+   ],
+   "pitch": [
+    -3,
+    1
+   ]
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 90,
+  "len_ms": 500,
+  "band": [
+   300,
+   5000
+  ]
+ },
+ "match": 0.8,
+ "fade_ms": 220,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 2000,
+  "db": -10
+ }
+}

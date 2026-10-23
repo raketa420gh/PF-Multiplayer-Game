@@ -1,0 +1,100 @@
+{
+ "name": "morningstar_pickup",
+ "about": "DaD Item_3D_FlangedMace_Pickup for the morningstar: silence ~80 ms, then 4-6 short iron clinks/handling knocks (1.5-4 kHz) spread to ~470 ms with a random loudest one, a quiet leather grip rub under them, fast fade",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/07_Pickup",
+ "length_ms": 800,
+ "variants": 12,
+ "seed": 5300,
+ "layers": [
+  {
+   "src": "blockdrop_slices/clink/*",
+   "at_ms": [
+    55,
+    110
+   ],
+   "gain_db": [
+    -6,
+    0
+   ],
+   "pitch": [
+    -5,
+    -1
+   ],
+   "hp": 750,
+   "snap": {
+    "hold": [
+     15,
+     35
+    ],
+    "tau": [
+     16,
+     24
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/clink/*",
+   "count": [
+    4,
+    6
+   ],
+   "at_ms": [
+    150,
+    210
+   ],
+   "gap_ms": [
+    55,
+    100
+   ],
+   "until_ms": 480,
+   "gain_db": [
+    -8,
+    0
+   ],
+   "pitch": [
+    -5,
+    -1
+   ],
+   "hp": 750,
+   "snap": {
+    "hold": [
+     12,
+     30
+    ],
+    "tau": [
+     15,
+     24
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    80,
+    120
+   ],
+   "gain_db": [
+    -22,
+    -18
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 700,
+   "max_ms": 350
+  }
+ ],
+ "room": {
+  "db": -24,
+  "decay_ms": 50,
+  "len_ms": 300,
+  "band": [
+   500,
+   8000
+  ]
+ },
+ "match": 1.0,
+ "fade_ms": 250,
+ "peak_db": -1
+}

@@ -1,0 +1,104 @@
+{
+ "name": "morningstar_surf_stone",
+ "about": "DaD Morningstar hit on stone (default surface): heavy iron head thud + bright stone crack, fast ~10 dB/40 ms decay, short dry room, no debris",
+ "reference": "D:/DaD_Sounds/MorningStar_Review/04_HitSurface_Stone_Default",
+ "length_ms": 330,
+ "variants": 12,
+ "seed": 7100,
+ "layers": [
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    2,
+    2
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 250,
+   "snap": {
+    "hold": [
+     25,
+     35
+    ],
+    "tau": [
+     22,
+     30
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_metal_hit_0[3456].ogg",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     20,
+     28
+    ]
+   },
+   "hp": 600
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[38].ogg",
+   "at_ms": [
+    2,
+    5
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     18,
+     26
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 60,
+  "len_ms": 300,
+  "band": [
+   400,
+   6000
+  ]
+ },
+ "match": 0.7,
+ "fade_ms": 120,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 9000,
+  "db": 4
+ }
+}
