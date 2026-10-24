@@ -387,8 +387,8 @@ namespace Game.Scripts.Editor.Dungeon
             };
         }
 
-        /// The spellbook of Dark and Darker, authored in the right hand and played mirrored: in the game it is the left
-        /// hand's. At rest it lies open on the palm, low in the view, its spine running ahead and the pages up. To block,
+        /// The spellbook of Dark and Darker, authored in the right hand and baked mirrored (IsLeftHanded): in the game it is
+        /// the left hand's. At rest it lies open on the palm, low in the view, its spine running ahead and the pages up. To block,
         /// the other hand folds it shut and both stand it up before the eyes, pinching its sides, the forearms rising from
         /// the bottom corners of the view. The one strike of the series takes it shut in both hands past the face to over
         /// the head, holds it there and brings it down upright on the crosshair at arm's length; the book hand alone brings
@@ -415,6 +415,7 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 Prefix = Spellbook,
                 DisplayName = "Spellbook",
+                IsLeftHanded = true,
                 Kind = WeaponKind.TwoHanded,
                 Reach = 1f,
                 DeflectDuration = 0.4f,

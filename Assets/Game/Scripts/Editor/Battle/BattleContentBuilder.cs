@@ -120,9 +120,8 @@ namespace Game.Scripts.Editor.Battle
                 for (int i = 0; i < order.Length; i++)
                 {
                     string name = order[i];
-                    bool isLeft = name is DungeonWeaponLibrary.SwordShieldLeft or DungeonWeaponLibrary.Spellbook;
                     WeaponDefinition definition = FindDefinition(definitions, name);
-                    loadouts[i] = CreateWeapon(sampler, name, definition, isLeft ? HandSide.Left : HandSide.Right, attachments[name]);
+                    loadouts[i] = CreateWeapon(sampler, name, definition, name == DungeonWeaponLibrary.SwordShieldLeft ? HandSide.Left : HandSide.Right, attachments[name]);
                 }
             }
 
@@ -526,7 +525,7 @@ namespace Game.Scripts.Editor.Battle
             public void SampleTrace(WeaponDefinition weapon, AttackDefinition attack, string state, out List<Vector3> traceBase, out List<Vector3> traceTip)
             {
                 int samples = Mathf.CeilToInt(attack.Duration * BattleAnimationBuilder.FrameRate);
-                Transform socket = _sockets[(int)(attack.IsOffHand ? WeaponSocket.LeftHand : WeaponSocket.RightHand)];
+                Transform socket = _sockets[(int)(attack.IsOffHand || weapon.IsLeftHanded ? WeaponSocket.LeftHand : WeaponSocket.RightHand)];
 
                 traceBase = new List<Vector3>(samples + 1);
                 traceTip = new List<Vector3>(samples + 1);
@@ -595,7 +594,7 @@ namespace Game.Scripts.Editor.Battle
             /// The box wraps the mesh of the attachment held in the block socket, so it matches the visible weapon exactly.
             public BlockBox SampleBlock(WeaponDefinition weapon, bool isMirrored, (GameObject prefab, WeaponSocket socket)[] attachments)
             {
-                WeaponSocket socketId = isMirrored ? Mirror(weapon.BlockSocket) : weapon.BlockSocket;
+                WeaponSocket socketId = isMirrored || weapon.IsLeftHanded ? Mirror(weapon.BlockSocket) : weapon.BlockSocket;
                 Bounds bounds = new Bounds(weapon.BlockBoxCenter, weapon.BlockBoxExtents * 2f);
 
                 foreach ((GameObject prefab, WeaponSocket socket) attachment in attachments)
@@ -605,7 +604,7 @@ namespace Game.Scripts.Editor.Battle
                 }
 
                 Play(weapon.Prefix + FighterAnimComponent.BlockSuffix, 1f);
-                Transform sampled = _sockets[(int)weapon.BlockSocket];
+                Transform sampled = _sockets[(int)(weapon.IsLeftHanded ? socketId : weapon.BlockSocket)];
                 Vector3 center = sampled.TransformPoint(bounds.center);
                 Quaternion rotation = sampled.rotation;
 

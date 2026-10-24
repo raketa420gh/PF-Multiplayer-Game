@@ -97,6 +97,9 @@ namespace Game.Scripts.Editor.Battle
         /// The edge faces the heel of the main hand, away from its knuckles: the hand at the butt of a polearm, which
         /// travels against the head, so the knuckles lead the hand's own way while the edge leads the head's.
         public bool IsEdgeBack;
+        /// Authored in the right hand like every weapon, its clips are baked mirrored: they play as they are, the weapon in the
+        /// left hand socket.
+        public bool IsLeftHanded;
         public BodyPose Idle;
         /// Breathing at rest: the idle sinks into this pose and back once per cycle (seconds of clip); no cycle = a still pose.
         public BodyPose IdleBreath;

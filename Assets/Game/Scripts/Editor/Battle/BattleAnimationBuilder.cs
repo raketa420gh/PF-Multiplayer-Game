@@ -70,9 +70,12 @@ namespace Game.Scripts.Editor.Battle
             s_held.Clear();
             BuildFirstPerson(rig, upper);
 
-            foreach (WeaponDefinition weapon in Game.Scripts.Editor.Dungeon.DungeonWeaponLibrary.CreateAll())
+            WeaponDefinition[] weapons = Game.Scripts.Editor.Dungeon.DungeonWeaponLibrary.CreateAll();
+
+            foreach (WeaponDefinition weapon in weapons)
                 BuildCast(rig, upper, weapon);
             BakeSockets(controller);
+            BakeLeftHanded(controller, weapons, true);
 
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
@@ -102,6 +105,7 @@ namespace Game.Scripts.Editor.Battle
             BuildFirstPerson(rig, upper);
             BuildHitReactions(controller.layers[2].stateMachine);
             BakeSockets(controller);
+            BakeLeftHanded(controller, weapons, false);
             BakeEdits();
 
             EditorUtility.SetDirty(controller);
@@ -120,6 +124,25 @@ namespace Game.Scripts.Editor.Battle
                 if (Array.IndexOf(AssetDatabase.GetDependencies(path, false), BattleEditorUtility.ControllerPath) >= 0)
                     AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             }
+        }
+
+        /// The clips of left-handed weapons (named from the prefix) turn into their mirror images; only the casts when only
+        /// those were recorded anew, or the rest would flip back.
+        private static void BakeLeftHanded(AnimatorController controller, IEnumerable<WeaponDefinition> weapons, bool isCastOnly)
+        {
+            string[] prefixes = weapons.Where(weapon => weapon.IsLeftHanded).Select(weapon => weapon.Prefix).ToArray();
+
+            if (prefixes.Length == 0)
+                return;
+
+            GameObject model = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath));
+            Animator animator = model.GetComponent<Animator>();
+            string[] sockets = BattlePoseRig.CreateSockets(animator).Select(socket => AnimationUtility.CalculateTransformPath(socket, animator.transform)).ToArray();
+            UnityEngine.Object.DestroyImmediate(model);
+
+            foreach (AnimationClip clip in controller.animationClips.Distinct().Where(clip => prefixes.Any(clip.name.StartsWith) && (!isCastOnly || IsWeaponCast(clip.name)) &&
+                         AssetDatabase.GetAssetPath(clip).StartsWith(BattleEditorUtility.AnimationsFolder)))
+                ClipMirror.Apply(clip, sockets);
         }
 
         /// Hand edits made in the animation test scene go back onto the freshly generated clips.

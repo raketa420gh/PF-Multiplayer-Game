@@ -315,7 +315,8 @@ namespace Game.Scripts.Editor.Battle
                 {
                     // Skinning is evaluated once per editor frame, so every moment gets a rig of its own.
                     using BattlePoseRig rig = new BattlePoseRig();
-                    BodyPose[] poses = Sample(rig, prefix, swing).Poses;
+                    Motion motion = Sample(rig, prefix, swing);
+                    BodyPose[] poses = motion.Poses;
                     int index = Mathf.Clamp(frame, 0, poses.Length - 1);
                     rig.Plan(poses, false);
                     rig.Apply(poses[index], index);
@@ -323,7 +324,7 @@ namespace Game.Scripts.Editor.Battle
                     // The clips are authored right-handed: a weapon the game plays mirrored is shown in the other hand, mirrored with it.
                     foreach (WeaponAttachment attachment in config != null ? config.Attachments : Array.Empty<WeaponAttachment>())
                     {
-                        bool isMirrored = config.IsMirrored;
+                        bool isMirrored = config.IsMirrored || motion.Weapon.IsLeftHanded;
                         GameObject instance = Object.Instantiate(attachment.Prefab, rig.Sockets[(int)(isMirrored ? Mirror(attachment.Socket) : attachment.Socket)], false);
                         instance.hideFlags = HideFlags.HideAndDontSave;
                         instance.transform.localScale = new Vector3(isMirrored ? -1f : 1f, 1f, 1f);
