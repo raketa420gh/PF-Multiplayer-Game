@@ -43,6 +43,18 @@ namespace Game.Scripts.Dungeon
         private TMP_Text _healthText;
 
         [SerializeField]
+        private Image _healthFlash;
+
+        [SerializeField]
+        private float _flashIn = 0.08f;
+
+        [SerializeField]
+        private float _flashOut = 0.55f;
+
+        [SerializeField]
+        private float _flashAlpha = 0.85f;
+
+        [SerializeField]
         private TMP_Text _nameText;
 
         [SerializeField]
@@ -114,6 +126,8 @@ namespace Game.Scripts.Dungeon
         private readonly StringBuilder _builder = new();
 
         private SpellMarkerView _marker;
+        private int _lastHealth = -1;
+        private float _flashTime = float.MaxValue;
 
         private void Awake()
         {
@@ -238,6 +252,7 @@ namespace Game.Scripts.Dungeon
             HealthComponent health = adventurer.Fighter.Health;
             _healthFill.fillAmount = health.Progress;
             _healthText.text = $"{health.CurrentHealth} / {health.MaxHealth}";
+            UpdateHealthFlash(health.CurrentHealth);
             PlayerSessionComponent session = adventurer.Session;
             string className = adventurer.SubclassConfig != null ? $"{adventurer.SubclassConfig.Name} {adventurer.Class.DisplayName}" : adventurer.Class.DisplayName;
             _nameText.text = session != null ? $"{session.DisplayName}  ·  {className} {session.Level}" : className;
@@ -246,6 +261,20 @@ namespace Game.Scripts.Dungeon
 
             float danger = adventurer.IsInSwarm ? 0.55f : Mathf.Lerp(0.45f, 0f, health.Progress * 2f);
             _vignette.color = new Color(adventurer.IsInSwarm ? 0.1f : 0.5f, 0f, adventurer.IsInSwarm ? 0.2f : 0f, danger);
+        }
+
+        /// Taken damage flashes a red glow under the bar: a quick rise, then a slow fade.
+        private void UpdateHealthFlash(int current)
+        {
+            if (_lastHealth >= 0 && current < _lastHealth)
+                _flashTime = 0f;
+
+            _lastHealth = current;
+            _flashTime += Time.deltaTime;
+            float alpha = _flashTime < _flashIn ? _flashTime / _flashIn : 1f - Mathf.Clamp01((_flashTime - _flashIn) / _flashOut);
+            Color color = _healthFlash.color;
+            color.a = Mathf.SmoothStep(0f, 1f, alpha) * _flashAlpha;
+            _healthFlash.color = color;
         }
 
         private void UpdateMatch(AdventurerComponent adventurer)

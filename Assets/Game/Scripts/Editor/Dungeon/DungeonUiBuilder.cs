@@ -427,7 +427,10 @@ namespace Game.Scripts.Editor.Dungeon
             cancel.text = "[F] Cancel";
             cancel.color = new Color(0.8f, 0.8f, 0.8f);
 
-            // Health bar with skill boxes at the sides, name above, belt and effects over it.
+            // Health bar with skill boxes at the sides, name above, belt and effects over it; a red glow flashes under it on taken damage.
+            Image healthFlash = CreateImage("HealthFlash", hud, bottom, new Vector2(0f, 40f), new Vector2(540f, 84f), new Color(0.9f, 0.05f, 0.03f, 0f));
+            healthFlash.sprite = DungeonUiSpriteBuilder.Load("SoftBar");
+            healthFlash.raycastTarget = false;
             CreateImage("HealthFrame", hud, bottom, new Vector2(0f, 40f), new Vector2(470f, 40f), s_frame);
             CreateImage("HealthBack", hud, bottom, new Vector2(0f, 40f), new Vector2(462f, 32f), new Color(0.06f, 0.03f, 0.02f, 0.95f));
             Image healthFill = CreateImage("HealthFill", hud, bottom, new Vector2(0f, 40f), new Vector2(452f, 22f), new Color(0.75f, 0.1f, 0.08f));
@@ -541,6 +544,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_context", inputs.Context);
             BattleEditorUtility.Set(so, "_healthFill", healthFill);
             BattleEditorUtility.Set(so, "_healthText", healthText);
+            BattleEditorUtility.Set(so, "_healthFlash", healthFlash);
             BattleEditorUtility.Set(so, "_nameText", nameText);
             BattleEditorUtility.Set(so, "_timerText", timer);
             BattleEditorUtility.Set(so, "_floorText", floor);

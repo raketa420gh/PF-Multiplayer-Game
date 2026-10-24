@@ -69,6 +69,8 @@ namespace Game.Scripts.Battle
         public const float LandFadeTime = 0.2f;
 
         public Animator Animator => _animator;
+        /// A let-go block is still coming down along its lower clip.
+        public bool IsLoweringBlock => _lowerLeft > 0f && _fighter.Combat.State == CombatState.Idle;
 
         [SerializeField]
         private FighterComponent _fighter;
@@ -180,7 +182,7 @@ namespace Game.Scripts.Battle
         private float _upperWeight = 1f;
         private float _lowerLeft;
         private float _landLeft;
-        private bool _isHeadHidden;
+        private bool _isFirstPerson;
         private bool _isSeated;
         private bool _isHolding;
         private bool _isHoldingTorch;
@@ -210,7 +212,7 @@ namespace Game.Scripts.Battle
             for (int i = 0; i < loadout.Length; i++)
                 _weaponStates[i] = CreateStates(loadout[i], _animator);
 
-            _isHeadHidden = HasInputAuthority;
+            _isFirstPerson = HasInputAuthority;
             _fighter.Receiver.OnHitEvent += OnHitEvent;
         }
 
@@ -267,7 +269,7 @@ namespace Game.Scripts.Battle
 
             _spineBones[0].rotation = Quaternion.AngleAxis(-_flinch, axis) * _spineBones[0].rotation;
 
-            if (_isHeadHidden)
+            if (_isFirstPerson)
                 _headBone.localScale = Vector3.zero;
 
             HoldUpperBody();
@@ -449,7 +451,8 @@ namespace Game.Scripts.Battle
             if (state == _upperState && token == _upperToken)
                 return;
 
-            if (combat.State == CombatState.Stagger)
+            // The first-person hands stay steady on the screen: only others see the recoil.
+            if (combat.State == CombatState.Stagger && !_isFirstPerson)
             {
                 _flinch = _staggerFlinch;
                 _hitTime = _staggerReactionTime;
@@ -481,7 +484,7 @@ namespace Game.Scripts.Battle
 
         private void OnHitEvent(HitEventData hit)
         {
-            if (hit.Result == HitResult.Blocked)
+            if (hit.Result == HitResult.Blocked || _isFirstPerson)
                 return;
 
             _flinch = Mathf.Max(_flinch, _hitFlinch);

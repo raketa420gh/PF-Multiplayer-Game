@@ -124,7 +124,8 @@ namespace Game.Scripts.Battle
                     CombatState.BlockRaise or CombatState.Block or CombatState.BlockImpact => _isBlockSlowIgnored ? 1f : Weapon.Block.MoveMultiplier,
                     CombatState.Draw => Weapon.Ranged.DrawMoveMultiplier,
                     CombatState.Deflected => _deflectedMoveMultiplier,
-                    CombatState.Stagger => _staggerMoveMultiplier,
+                    // Taken damage does not slow: only a broken guard or a stun does.
+                    CombatState.Stagger => IsHitStagger ? 1f : _staggerMoveMultiplier,
                     CombatState.Busy or CombatState.Equip => _busyMoveMultiplier,
                     _ => 1f
                 };
@@ -146,6 +147,10 @@ namespace Game.Scripts.Battle
 
         [Networked]
         public byte WeaponSlot { get; private set; }
+
+        /// The stagger under way comes from a taken hit, not a broken guard or a stun.
+        [Networked]
+        private NetworkBool IsHitStagger { get; set; }
 
         [SerializeField]
         private FighterBodyComponent _body;
@@ -602,6 +607,7 @@ namespace Game.Scripts.Battle
             AttackIndex = 0;
             IsRiposte = false;
             _comboQueued = false;
+            IsHitStagger = false;
             _stateDuration = duration;
         }
 
@@ -817,6 +823,7 @@ namespace Game.Scripts.Battle
             else if (staggerDuration > 0f)
             {
                 SetState(CombatState.Stagger, staggerDuration);
+                IsHitStagger = true;
             }
 
             UpdateBlockHitboxes();

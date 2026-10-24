@@ -69,7 +69,9 @@ namespace Game.Scripts.Battle
 
         private void OnHitEvent(HitEventData hit)
         {
-            _punch = hit.Result == HitResult.Blocked ? _hitPunch * 0.5f : _hitPunch;
+            // Taken damage does not jolt the view (the health bar flashes instead), only a blocked blow does.
+            if (hit.Result == HitResult.Blocked)
+                _punch = _hitPunch * 0.5f;
         }
     }
 }

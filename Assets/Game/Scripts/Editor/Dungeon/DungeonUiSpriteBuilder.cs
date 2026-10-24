@@ -25,6 +25,7 @@ namespace Game.Scripts.Editor.Dungeon
             Write("Shield", 128, 160, Shield);
             Write("Vignette", 256, 256, (p, half) => new Color(0f, 0f, 0f, DungeonTextureBuilder.Step(0.5f, 1.35f, (p / half).magnitude) * 0.92f));
             Write("Glow", 128, 64, (p, half) => new Color(1f, 0.8f, 0.45f, (1f - DungeonTextureBuilder.Step(0f, 1f, (p / half).magnitude)) * 0.55f));
+            Write("SoftBar", 256, 64, (p, half) => new Color(1f, 1f, 1f, 1f - DungeonTextureBuilder.Step(0f, 1f, Vector2.Max(new Vector2(Mathf.Abs(p.x), Mathf.Abs(p.y)) - half + Vector2.one * 24f, Vector2.zero).magnitude / 24f)));
             Write("Eye", 64, 64, Eye);
             Write("Hexagram", 512, 512, Hexagram);
             Write("Circle", 128, 128, (p, _) => Frame(p.magnitude));

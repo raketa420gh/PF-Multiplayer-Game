@@ -13,6 +13,7 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private Transform[] _sockets;
 
+        private FighterAnimComponent _anim;
         private List<WeaponVisual>[] _visuals;
         private int _shownSlot = -1;
         private WeaponConfig _shownWeapon;
@@ -21,6 +22,7 @@ namespace Game.Scripts.Battle
         public override void Spawned()
         {
             WeaponConfig[] loadout = _combat.Catalog;
+            _anim = GetComponent<FighterAnimComponent>();
             _visuals = new List<WeaponVisual>[loadout.Length];
 
             for (int i = 0; i < loadout.Length; i++)
@@ -55,7 +57,9 @@ namespace Game.Scripts.Battle
             bool hasArrow = isDrawn || state == CombatState.Idle && (!weapon.Ranged.IsManualReload || _combat.IsLoaded);
             Vector3 drawHand = _sockets[(int)(weapon.IsMirrored ? WeaponSocket.LeftHand : WeaponSocket.RightHand)].position;
 
-            bool isClosed = state is CombatState.BlockRaise or CombatState.Block or CombatState.BlockImpact or CombatState.Deflected;
+            // The book stays shut until the guard is down, as in the animation editor.
+            bool isClosed = state is CombatState.BlockRaise or CombatState.Block or CombatState.BlockImpact or CombatState.Deflected ||
+                            _anim != null && _anim.IsLoweringBlock;
             bool isAttack = state == CombatState.Attack;
 
             foreach (WeaponVisual visual in _visuals[slot])
