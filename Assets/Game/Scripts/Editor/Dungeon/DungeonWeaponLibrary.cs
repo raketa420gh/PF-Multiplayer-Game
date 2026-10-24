@@ -390,9 +390,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// The spellbook of Dark and Darker, authored in the right hand and baked mirrored (IsLeftHanded): in the game it is
         /// the left hand's. At rest it lies open on the palm, low in the view, its spine running ahead and the pages up. To block,
         /// the other hand folds it shut and both stand it up before the eyes, pinching its sides, the forearms rising from
-        /// the bottom corners of the view. The one strike of the series takes it shut in both hands past the face to over
-        /// the head, holds it there and brings it down upright on the crosshair at arm's length; the book hand alone brings
-        /// it back and opens it.
+        /// the bottom corners of the view. It never strikes: the book only blocks and casts.
         private static WeaponDefinition CreateSpellbook()
         {
             Vector3 across = Vector3.left;
@@ -401,9 +399,6 @@ namespace Game.Scripts.Editor.Dungeon
             BodyPose idle = OpenBook(new(0.085f, 1.54f, 0.47f), -3f, 40f, -2f, new(0.24f, 1.2f, 0.22f), new(-0.2f, 1.45f, 0.46f));
             BodyPose breath = OpenBook(new(0.085f, 1.55f, 0.47f), -3f, 42f, -2f, new(0.24f, 1.21f, 0.22f), new(-0.2f, 1.46f, 0.47f));
             BodyPose block = ShutBook(new(0.085f, 1.7f, 0.445f), across, Vector3.up, 0f);
-            BodyPose held = ShutBook(new(0.076f, 1.52f, 0.445f), across, Vector3.up, 0f);
-            held.Off = idle.Off;
-            held.OffOpen = idle.OffOpen;
             // Casting as in the footage: the book sinks to the bottom corner of the view while the free hand comes up from
             // the other one and holds the spell in its clawed fingers, palm forward; the release pulls the spell back low,
             // throws it forward with the hand open and lets the hand fall as the book comes back up.
@@ -443,37 +438,6 @@ namespace Game.Scripts.Editor.Dungeon
                     new(34 * Frame, Casting(idle, new(-0.2f, 1.6f, 0.56f), new(1f, 0f, -0.12f), new(0.1f, 0.6f, 0.8f), 0.9f)),
                     new(47 * Frame, Casting(idle, new(-0.25f, 1.35f, 0.42f), new(1f, 0f, 0f), new(0f, 0.5f, 0.85f), 0.6f)),
                     new(58 * Frame, idle)
-                },
-                Attacks = new[]
-                {
-                    new AttackDefinition
-                    {
-                        Windup = 47 * Footage, Active = 7 * Footage, Recovery = 47 * Footage,
-                        // The strikes of the footage are single ones: the next may only start as this one is back at the open book.
-                        ComboStart = 94 * Footage, ComboEnd = 101 * Footage,
-                        Damage = 18, MoveMultiplier = 0.7f, Stagger = 0.15f,
-                        Raise = new()
-                        {
-                            // Folded shut low before the chest, swung to the other side as both hands take it, then up past the
-                            // face to over the head, where it waits.
-                            Via(10, ShutBook(new(0.05f, 1.45f, 0.45f), across, Vector3.up, 0f)),
-                            Via(14, ShutBook(new(0f, 1.52f, 0.42f), across, Vector3.up, 0f)),
-                            Via(18, ShutBook(new(0.03f, 1.72f, 0.32f), across, new(0f, 0.95f, -0.3f), 0f)),
-                            Via(22, ShutBook(new(0.085f, 2f, 0.1f), across, new(0f, 0.5f, -0.87f), -5f), 0.5f),
-                            Via(42, ShutBook(new(0.085f, 2.05f, -0.03f), across, new(0f, 0.45f, -0.9f), -8f), 0.5f)
-                        },
-                        WindupPose = ShutBook(new(0.085f, 1.93f, 0.4f), across, new(0f, 0.6f, -0.8f), 0f),
-                        MidPose = ShutBook(new(0.06f, 1.671f, 0.5f), across, new(0f, 0.97f, -0.25f), 8f),
-                        EndPose = ShutBook(new(0.085f, 1.4f, 0.48f), across, new(0f, 0.85f, -0.5f), 8f),
-                        Return = new()
-                        {
-                            // Down out of the view, then back up shut in the book hand alone, held, and laid open on the palm.
-                            Via(62, ShutBook(new(0.085f, 1.22f, 0.42f), across, Vector3.up, 4f), 0.6f),
-                            Via(78, held, 0.5f),
-                            Via(86, held, 0.5f)
-                        },
-                        Launch = 1f
-                    }
                 },
                 CanBlock = true,
                 BlockRaise = 16 * Footage,

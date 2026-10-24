@@ -252,6 +252,11 @@ namespace Game.Scripts.Battle
 
         private void Update()
         {
+#if UNITY_EDITOR
+            // The editor Undo, even of a selection, puts the scene Animator back to its saved controller; Ctrl+Z here is the editor's own undo.
+            UnityEditor.Undo.ClearAll();
+#endif
+
             if (Input.GetKeyDown(KeyCode.Tab))
                 _isOpen = !_isOpen;
 
