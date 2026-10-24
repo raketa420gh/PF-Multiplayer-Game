@@ -141,11 +141,19 @@ namespace Game.Scripts.Battle
             }
 
             AnimationCurve[,] sockets = new AnimationCurve[moved.Count, s_socketCurves.Length];
+            // The edit starts from the socket where the source clip keys it, as the editor shows it: a mirrored clip does not
+            // key the left socket at its rest.
+            AnimationCurve[,] sourceSockets = new AnimationCurve[moved.Count, s_socketCurves.Length];
 
             for (int i = 0; i < moved.Count; i++)
             {
+                string path = AnimationUtility.CalculateTransformPath(moved[i], animator.transform);
+
                 for (int j = 0; j < s_socketCurves.Length; j++)
+                {
                     sockets[i, j] = new AnimationCurve();
+                    sourceSockets[i, j] = AnimationUtility.GetEditorCurve(source, EditorCurveBinding.FloatCurve(path, typeof(Transform), s_socketCurves[j]));
+                }
             }
 
             using HumanPoseHandler handler = new HumanPoseHandler(animator.avatar, animator.transform);
@@ -167,7 +175,13 @@ namespace Game.Scripts.Battle
                 handler.SetHumanPose(ref pose);
 
                 for (int i = 0; i < moved.Count; i++)
-                    moved[i].SetLocalPositionAndRotation(rests[i].position, rests[i].rotation);
+                {
+                    Pose start = sourceSockets[i, 0] == null ? rests[i] : new Pose(
+                        new Vector3(sourceSockets[i, 0].Evaluate(time), sourceSockets[i, 1].Evaluate(time), sourceSockets[i, 2].Evaluate(time)),
+                        new Quaternion(sourceSockets[i, 3].Evaluate(time), sourceSockets[i, 4].Evaluate(time), sourceSockets[i, 5].Evaluate(time),
+                            sourceSockets[i, 6].Evaluate(time)).normalized);
+                    moved[i].SetLocalPositionAndRotation(start.position, start.rotation);
+                }
 
                 edit.Apply(animator, isLoop && frame == frames ? 0f : frame);
                 handler.GetHumanPose(ref pose);
