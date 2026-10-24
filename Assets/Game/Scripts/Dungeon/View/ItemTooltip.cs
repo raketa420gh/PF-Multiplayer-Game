@@ -54,7 +54,8 @@ namespace Game.Scripts.Dungeon
                 case ConsumableItemConfig consumable:
                     s_builder.AppendLine(consumable.Effect switch
                     {
-                        ConsumableEffect.HealInstant => $"Heals {consumable.Magnitude + tier * 4f:0} after {consumable.UseTime:0.#}s",
+                        ConsumableEffect.HealInstant when consumable.IsFullHeal => $"Heals to full after {consumable.UseTime:0.#}s",
+                        ConsumableEffect.HealInstant => $"Recovers up to {consumable.Magnitude + tier * 4f:0} lost health after {consumable.UseTime:0.#}s",
                         ConsumableEffect.HealOverTime => $"Heals {consumable.Magnitude:0} over {Mathf.Max(1f, consumable.Duration - tier * 2.5f):0.#}s",
                         ConsumableEffect.Protection => $"Absorbs {consumable.Magnitude + tier * 5f:0} damage for {consumable.Duration:0}s",
                         ConsumableEffect.Invisibility => $"Invisible for {consumable.Duration + tier * 2f:0}s",

@@ -40,6 +40,9 @@ namespace Game.Scripts.Dungeon
         private Image _healthFill;
 
         [SerializeField]
+        private Image _recoverableFill;
+
+        [SerializeField]
         private TMP_Text _healthText;
 
         [SerializeField]
@@ -251,6 +254,7 @@ namespace Game.Scripts.Dungeon
         {
             HealthComponent health = adventurer.Fighter.Health;
             _healthFill.fillAmount = health.Progress;
+            _recoverableFill.fillAmount = health.RecoverableProgress;
             _healthText.text = $"{health.CurrentHealth} / {health.MaxHealth}";
             UpdateHealthFlash(health.CurrentHealth);
             PlayerSessionComponent session = adventurer.Session;

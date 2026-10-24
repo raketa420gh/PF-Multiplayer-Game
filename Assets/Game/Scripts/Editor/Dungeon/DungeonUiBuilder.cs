@@ -433,6 +433,8 @@ namespace Game.Scripts.Editor.Dungeon
             healthFlash.raycastTarget = false;
             CreateImage("HealthFrame", hud, bottom, new Vector2(0f, 40f), new Vector2(470f, 40f), s_frame);
             CreateImage("HealthBack", hud, bottom, new Vector2(0f, 40f), new Vector2(462f, 32f), new Color(0.06f, 0.03f, 0.02f, 0.95f));
+            Image recoverableFill = CreateImage("RecoverableFill", hud, bottom, new Vector2(0f, 40f), new Vector2(452f, 22f), new Color(0.75f, 0.1f, 0.08f, 0.35f));
+            MakeFilled(recoverableFill);
             Image healthFill = CreateImage("HealthFill", hud, bottom, new Vector2(0f, 40f), new Vector2(452f, 22f), new Color(0.75f, 0.1f, 0.08f));
             MakeFilled(healthFill);
             TMP_Text healthText = CreateText("HealthText", hud, bottom, new Vector2(0f, 40f), new Vector2(452f, 22f), 15f, TextAlignmentOptions.Center);
@@ -543,6 +545,7 @@ namespace Game.Scripts.Editor.Dungeon
             SerializedObject so = new SerializedObject(view);
             BattleEditorUtility.Set(so, "_context", inputs.Context);
             BattleEditorUtility.Set(so, "_healthFill", healthFill);
+            BattleEditorUtility.Set(so, "_recoverableFill", recoverableFill);
             BattleEditorUtility.Set(so, "_healthText", healthText);
             BattleEditorUtility.Set(so, "_healthFlash", healthFlash);
             BattleEditorUtility.Set(so, "_nameText", nameText);

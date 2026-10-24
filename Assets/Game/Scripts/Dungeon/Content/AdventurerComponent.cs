@@ -2063,8 +2063,11 @@ namespace Game.Scripts.Dungeon
 
             switch (item.Effect)
             {
+                case ConsumableEffect.HealInstant when item.IsFullHeal:
+                    _fighter.Health.Restore(_fighter.Health.MaxHealth);
+                    break;
                 case ConsumableEffect.HealInstant:
-                    HealSelf(Mathf.RoundToInt((item.Magnitude + tier * 4f) * _stats.PhysicalHealing * (1f + Perk(PerkEffect.BandageHealing))));
+                    RecoverSelf(Mathf.RoundToInt((item.Magnitude + tier * 4f) * _stats.PhysicalHealing * (1f + Perk(PerkEffect.BandageHealing))));
                     break;
                 case ConsumableEffect.HealOverTime:
                     float heal = item.Magnitude * _stats.MagicalHealing;
@@ -2089,9 +2092,10 @@ namespace Game.Scripts.Dungeon
             Consume(slot, stack);
         }
 
-        private void HealSelf(int heal)
+        /// A bandage brings back only the recoverable part of lost health.
+        private void RecoverSelf(int heal)
         {
-            _fighter.Health.Restore(_effects.ScaleHealing(heal));
+            _fighter.Health.Recover(_effects.ScaleHealing(heal));
 
             if (Perk(PerkEffect.PureBlood) > 0f)
                 _effects.Remove(StatusEffectKind.Poison);
@@ -2211,7 +2215,7 @@ namespace Game.Scripts.Dungeon
 
             if (_restTimer.Expired(Runner))
             {
-                _fighter.Health.Restore(1);
+                _fighter.Health.Recover(1);
                 _restTimer = TickTimer.CreateFromSeconds(Runner, RestHealInterval() / pace);
             }
         }
@@ -2363,7 +2367,7 @@ namespace Game.Scripts.Dungeon
             {
                 int tick = Mathf.FloorToInt(_swarmAccumulator);
                 _swarmAccumulator -= tick;
-                _fighter.Health.TakeDamage(tick);
+                _fighter.Health.TakeDamage(tick, HealthComponent.ZoneRecoverRatio);
             }
         }
 
