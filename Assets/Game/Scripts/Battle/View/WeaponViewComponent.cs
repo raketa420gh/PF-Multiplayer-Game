@@ -16,6 +16,7 @@ namespace Game.Scripts.Battle
         private FighterAnimComponent _anim;
         private List<WeaponVisual>[] _visuals;
         private int _shownSlot = -1;
+        private bool _isShownOut = true;
         private WeaponConfig _shownWeapon;
         private bool _wasActivePhase;
 
@@ -42,8 +43,10 @@ namespace Game.Scripts.Battle
         {
             int slot = _combat.WeaponIndex;
 
-            if (slot != _shownSlot)
-                ShowSlot(slot);
+            bool isOut = _combat.IsWeaponOut;
+
+            if (slot != _shownSlot || isOut != _isShownOut)
+                ShowSlot(slot, isOut);
 
             WeaponConfig weapon = _combat.Weapon;
 
@@ -61,12 +64,14 @@ namespace Game.Scripts.Battle
             bool isClosed = state is CombatState.BlockRaise or CombatState.Block or CombatState.BlockImpact or CombatState.Deflected ||
                             _anim != null && _anim.IsLoweringBlock;
             bool isAttack = state == CombatState.Attack;
+            bool isEquip = state == CombatState.Equip;
 
             foreach (WeaponVisual visual in _visuals[slot])
             {
                 visual.SetTrailActive(isActivePhase);
                 visual.SetDraw(isDrawn, drawHand, hasArrow);
-                visual.SetClosed(isClosed || isAttack && visual.IsShutInAttack(_combat.StateTime));
+                visual.SetClosed(isClosed || isAttack && visual.IsShutInAttack(_combat.StateTime) ||
+                                 isEquip && visual.IsShutInEquip(_combat.IsUnequipping, _combat.EquipClipTime));
             }
 
             if (isActivePhase && !_wasActivePhase && BattleContext.Instance != null)
@@ -75,13 +80,14 @@ namespace Game.Scripts.Battle
             _wasActivePhase = isActivePhase;
         }
 
-        private void ShowSlot(int slot)
+        private void ShowSlot(int slot, bool isOut)
         {
             if (_shownSlot >= 0)
                 SetSlotActive(_shownSlot, false);
 
-            SetSlotActive(slot, true);
+            SetSlotActive(slot, isOut);
             _shownSlot = slot;
+            _isShownOut = isOut;
         }
 
         private void SetSlotActive(int slot, bool isActive)

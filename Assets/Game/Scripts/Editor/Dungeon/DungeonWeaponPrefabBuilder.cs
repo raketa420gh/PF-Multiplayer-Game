@@ -353,6 +353,8 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(visual, "_bookClosed", closed.Attach(root.transform, "BookClosed", "Closed"));
             // The strike of the footage folds the book shut by video frame 7 and opens it again from frame 90 (clip = x0.75).
             BattleEditorUtility.Set(visual, "_attackShut", new Vector2(7f, 90f) * 0.75f / BattleAnimationBuilder.FrameRate);
+            BattleEditorUtility.Set(visual, "_equipOpen", DungeonWeaponLibrary.BookEquipOpen);
+            BattleEditorUtility.Set(visual, "_unequipShut", DungeonWeaponLibrary.BookUnequipShut);
             visual.SetClosed(false);
 
             return Save(root);

@@ -76,6 +76,14 @@ namespace Game.Scripts.Battle
         public MeleeAttackConfig Attack => IsRiposte ? Weapon.Riposte : Weapon.Attacks[AttackIndex];
         public float StateTime => Runner.SecondsSince(StateTick) * TimeScale;
         public float EquipTime => _equipTime;
+        /// The first part of an Equip: the weapon in the hand is being put away, the chosen one is taken out after it.
+        public bool IsUnequipping => State == CombatState.Equip && StateTime < _stateDuration;
+        /// Seconds into the clip of the part of an Equip under way.
+        public float EquipClipTime => IsUnequipping ? StateTime : StateTime - _stateDuration;
+        /// The weapon is in the hand, not yet taken out or already put away.
+        public bool IsWeaponOut => State != CombatState.Equip || (IsUnequipping
+            ? Weapon.UnequipTime <= 0f || StateTime < Weapon.UnequipHidden
+            : Weapon.EquipTime <= 0f || EquipClipTime >= Weapon.EquipShown);
         public bool IsComboWindowOpen => State == CombatState.Attack && Attack.IsComboWindow(StateTime);
         public bool IsComboQueued => _comboQueued;
         public float DrawPower => State == CombatState.Draw ? Weapon.Ranged.GetPower(StateTime) : 0f;
@@ -329,8 +337,12 @@ namespace Game.Scripts.Battle
             _slotWeapons.Set(slot, index);
             _slotsInitialized = true;
 
+            // The weapon in the slot is gone already: only the new one is taken out.
             if (isChanged && slot == WeaponSlot && State != CombatState.Busy)
+            {
+                _pendingSlot = WeaponSlot;
                 SetState(CombatState.Equip);
+            }
         }
 
         /// Switches sets as if the player pressed the slot key.
@@ -341,8 +353,7 @@ namespace Game.Scripts.Battle
             if (slot == WeaponSlot || State != CombatState.Idle)
                 return;
 
-            _pendingSlot = (byte)slot;
-            SetState(CombatState.Equip);
+            StartEquip(slot);
         }
 
         public void SetInitialSlot(int slot)
@@ -401,10 +412,12 @@ namespace Game.Scripts.Battle
                     break;
 
                 case CombatState.Equip:
-                    if (time >= _equipTime * 0.5f)
-                        WeaponSlot = _pendingSlot;
+                    if (time < _stateDuration)
+                        break;
 
-                    if (time >= _equipTime)
+                    WeaponSlot = _pendingSlot;
+
+                    if (time >= _stateDuration + GetEquipTime(Weapon.EquipTime))
                         SetState(CombatState.Idle);
                     break;
 
@@ -464,8 +477,7 @@ namespace Game.Scripts.Battle
 
             if (slot >= 0 && slot != WeaponSlot)
             {
-                _pendingSlot = (byte)slot;
-                SetState(CombatState.Equip);
+                StartEquip(slot);
             }
             else if (weapon.IsRanged && weapon.Ranged.IsManualReload)
             {
@@ -609,6 +621,18 @@ namespace Game.Scripts.Battle
             _comboQueued = false;
             IsHitStagger = false;
             _stateDuration = duration;
+        }
+
+        /// The weapon in the hand is put away along its own clip, or in half the plain equip time, before the slot changes.
+        private void StartEquip(int slot)
+        {
+            _pendingSlot = (byte)slot;
+            SetState(CombatState.Equip, GetEquipTime(Weapon.UnequipTime));
+        }
+
+        private float GetEquipTime(float clipTime)
+        {
+            return clipTime > 0f ? clipTime : _equipTime * 0.5f;
         }
 
         private int GetRequestedSlot(NetworkButtons buttons, NetworkButtons previous)

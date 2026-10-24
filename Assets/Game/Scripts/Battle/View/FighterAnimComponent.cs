@@ -16,6 +16,8 @@ namespace Game.Scripts.Battle
         public const string DeflectSuffix = "_Deflect";
         public const string DrawSuffix = "_Draw";
         public const string ReleaseSuffix = "_Release";
+        public const string EquipSuffix = "_Equip";
+        public const string UnequipSuffix = "_Unequip";
         public const string LocomotionState = "Locomotion";
         public const string AirState = "Air";
         public const string JumpState = "Jump";
@@ -161,6 +163,9 @@ namespace Game.Scripts.Battle
             public int Deflect;
             public int Draw;
             public int Release;
+            /// Taking the weapon out and putting it away; 0 = it has no clip for it and the idle plays.
+            public int Equip;
+            public int Unequip;
             /// The busy states in this weapon's own eyes: its own cast where it has one, the shared ones otherwise.
             public int[] Busy;
             public int[] Attacks;
@@ -288,6 +293,8 @@ namespace Game.Scripts.Battle
             if (animator.HasState(UpperLayer, release))
                 busy[ReleaseBusy] = release;
 
+            int equip = Animator.StringToHash(prefix + EquipSuffix);
+            int unequip = Animator.StringToHash(prefix + UnequipSuffix);
             int[] attacks = new int[weapon.Attacks.Length];
             int[] attackLegs = new int[attacks.Length];
 
@@ -306,6 +313,8 @@ namespace Game.Scripts.Battle
                 Deflect = Animator.StringToHash(prefix + DeflectSuffix),
                 Draw = Animator.StringToHash(prefix + DrawSuffix),
                 Release = Animator.StringToHash(prefix + ReleaseSuffix),
+                Equip = animator.HasState(UpperLayer, equip) ? equip : 0,
+                Unequip = animator.HasState(UpperLayer, unequip) ? unequip : 0,
                 Busy = busy,
                 Attacks = attacks,
                 AttackLegs = attackLegs,
@@ -423,6 +432,13 @@ namespace Game.Scripts.Battle
                 case CombatState.Reload:
                     state = states.Release;
                     token = combat.StateTick;
+                    break;
+                case CombatState.Equip:
+                    bool isUnequipping = combat.IsUnequipping;
+                    state = isUnequipping ? states.Unequip : states.Equip;
+                    state = state != 0 ? state : states.Idle;
+                    time = combat.EquipClipTime;
+                    token = combat.StateTick + (isUnequipping ? 0 : 1);
                     break;
                 case CombatState.Stagger:
                     state = states.Idle;

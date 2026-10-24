@@ -465,8 +465,15 @@ namespace Game.Scripts.Editor.Battle
             }
         }
 
+        /// The weapon's own first-person actions: its cast, taking it out and putting it away.
         private static void BuildCast(BattlePoseRig rig, AnimatorStateMachine stateMachine, WeaponDefinition weapon)
         {
+            if (weapon.EquipVia.Count > 0)
+                AddKeyed(rig, stateMachine, weapon.Prefix + FighterAnimComponent.EquipSuffix, weapon.EquipVia[^1].Time, SettleRoll(rig, weapon.EquipVia));
+
+            if (weapon.UnequipVia.Count > 0)
+                AddKeyed(rig, stateMachine, weapon.Prefix + FighterAnimComponent.UnequipSuffix, weapon.UnequipVia[^1].Time, SettleRoll(rig, weapon.UnequipVia));
+
             if (weapon.CastVia.Count == 0)
                 return;
 
@@ -477,7 +484,8 @@ namespace Game.Scripts.Editor.Battle
 
         private static bool IsWeaponCast(string name)
         {
-            return name.EndsWith(FighterAnimComponent.CastFirstPersonState) || name.EndsWith(FighterAnimComponent.CastReleaseFirstPersonState);
+            return name.EndsWith(FighterAnimComponent.CastFirstPersonState) || name.EndsWith(FighterAnimComponent.CastReleaseFirstPersonState) ||
+                   name.EndsWith(FighterAnimComponent.EquipSuffix) || name.EndsWith(FighterAnimComponent.UnequipSuffix);
         }
 
         private static void BuildSwing(BattlePoseRig rig, AnimatorStateMachine stateMachine, AnimatorStateMachine legs, WeaponDefinition weapon,

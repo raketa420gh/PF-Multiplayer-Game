@@ -35,7 +35,15 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private Vector2 _attackShut = new Vector2(0f, float.MaxValue);
 
+        /// Clip seconds at which the book taken out shut opens on the palm, and at which the book being put away is shut.
+        [SerializeField]
+        private float _equipOpen;
+
+        [SerializeField]
+        private float _unequipShut = float.MaxValue;
+
         public bool IsShutInAttack(float time) => time >= _attackShut.x && time < _attackShut.y;
+        public bool IsShutInEquip(bool isUnequipping, float time) => isUnequipping ? time >= _unequipShut : time < _equipOpen;
 
         public void SetTrailActive(bool isActive)
         {

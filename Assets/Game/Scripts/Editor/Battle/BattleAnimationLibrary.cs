@@ -137,6 +137,14 @@ namespace Game.Scripts.Editor.Battle
         /// The charged spell thrown and the hands back at the idle, in seconds from the release.
         public List<PoseKey> CastReleaseVia = new();
 
+        /// Taking the weapon out, in seconds from the start, ending on the idle pose; none = the idle plays for half the
+        /// plain equip time. The weapon appears in the hand at EquipShown.
+        public List<PoseKey> EquipVia = new();
+        public float EquipShown;
+        /// Putting it away, from the idle pose; it leaves the hand at UnequipHidden.
+        public List<PoseKey> UnequipVia = new();
+        public float UnequipHidden;
+
         public float DrawTime;
         public float ReloadTime;
         public bool IsManualReload;

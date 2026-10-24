@@ -45,6 +45,26 @@ namespace Game.Scripts.Editor.Dungeon
         private const float StaffButtEnd = -1.2f;
         /// From the spine of the shut book to its fore-edge: one hand holds each.
         private const float BookWidth = 0.17f;
+        /// The book taken out shut opens on the palm at frame 24 of the footage (D:\spellbook_show_hide_animation.mp4, 156-200),
+        /// the one put away is shut by frame 13 of its 36 (440-476) and gone below the view at 33.
+        public const float BookEquipOpen = 24f * Frame;
+        public const float BookUnequipShut = 13f * Frame;
+        /// A weapon taken out from over the shoulder is in the hand there by this time; the whole draw takes DrawTime.
+        private const float DrawReach = 13f * Frame;
+        private const float DrawTime = 36f * Frame;
+        /// The right arm of a draw over the shoulder: elbow, hand and the haft's elevation (over 90 = leant back). The shield
+        /// arm does the same mirrored.
+        private static readonly (float time, Vector3 elbow, Vector3 hand, float elevation, float slope)[] s_overShoulder =
+        {
+            (6f * Frame, Cm(40f, 1.3f, -15f), Cm(32f, 1.55f, 5f), 85f, 1f),
+            (10f * Frame, Cm(45f, 1.55f, -12f), Cm(30f, 1.85f, -22f), 160f, 1f),
+            // The elbow up by the shoulder, the forearm back over it, the fist behind the shoulder thumb down, as a hand
+            // closes on a haft there: thumb up wrung the forearm past its limit. The head hangs behind the back.
+            (DrawReach, Cm(38f, 1.7f, -5f), Cm(18f, 1.78f, -30f), -89f, 0.5f),
+            // Forward past the side of the head, the head swung up behind it.
+            (18f * Frame, Cm(50f, 1.55f, -20f), Cm(25f, 1.75f, -5f), 130f, 1f),
+            (26f * Frame, Cm(35f, 1.3f, -8f), Cm(25f, 1.5f, 25f), 95f, 1f)
+        };
 
         /// Catalog order = combat catalog index. Battle prefab slots 1-4 map to the first four entries; monsters find their
         /// weapon by name.
@@ -316,6 +336,8 @@ namespace Game.Scripts.Editor.Dungeon
                 BladeTip = 0.65f,
                 Strike = head,
                 Idle = idle,
+                EquipVia = OverShoulder(idle),
+                EquipShown = DrawReach,
                 Attacks = new[] { chop, backhand, slant },
                 Riposte = riposte,
                 CanBlock = true,
@@ -406,6 +428,15 @@ namespace Game.Scripts.Editor.Dungeon
             BodyPose sinking = OpenBook(new(0.09f, 1.42f, 0.45f), -3f, 32f, -2f, new(0.25f, 1.1f, 0.2f), Vector3.zero);
             BodyPose charged = Casting(lowered, new(-0.22f, 1.67f, 0.44f), new(0.97f, -0.05f, -0.1f), new(0.05f, 0.9f, 0.4f), 0.6f);
 
+            // The shut book between both hands, its head leant back by 'lean' and over to the book hand's other side by 'roll',
+            // the fore-edge turned away from the eye by 'yaw'.
+            BodyPose Shut(Vector3 hand, float lean, float roll, float yaw = 0f)
+            {
+                Quaternion turn = Quaternion.Euler(-lean, yaw, roll);
+
+                return ShutBook(hand, turn * across, turn * Vector3.up, 0f);
+            }
+
             return new WeaponDefinition
             {
                 Prefix = Spellbook,
@@ -423,6 +454,28 @@ namespace Game.Scripts.Editor.Dungeon
                 Idle = idle,
                 IdleBreath = breath,
                 IdleCycle = 160 * Footage,
+                // As in the footage (mirrored, the book hand is the left one there): the book comes up shut from below the view
+                // past the middle, stands up before the chest between both hands, opens on the palm and settles into the idle.
+                EquipVia = new()
+                {
+                    new(0f, Shut(new(-0.06f, 1.18f, 0.32f), 10f, 25f)),
+                    PoseKey.Flow(12 * Frame, Shut(new(0.055f, 1.505f, 0.42f), 5f, 8f, 20f), 1f),
+                    PoseKey.Flow(18 * Frame, Shut(new(0.085f, 1.54f, 0.43f), 12f, 0f, 25f), 0.7f),
+                    PoseKey.Flow(30 * Frame, OpenBook(new(0.11f, 1.52f, 0.46f), -3f, 50f, -2f, new(0.24f, 1.2f, 0.22f), new(-0.2f, 1.4f, 0.44f)), 1f),
+                    new(44 * Frame, idle)
+                },
+                // Back the same way: lifted a little, folded shut by the other hand, stood up and laid over sideways down
+                // into the far bottom corner and out of the view.
+                UnequipVia = new()
+                {
+                    new(0f, idle),
+                    PoseKey.Flow(6 * Frame, OpenBook(new(0.09f, 1.57f, 0.47f), -3f, 46f, -2f, new(0.24f, 1.22f, 0.22f), new(-0.16f, 1.5f, 0.48f)), 1f),
+                    PoseKey.Flow(14 * Frame, Shut(new(0.1f, 1.55f, 0.43f), 10f, 0f, 20f), 1f),
+                    PoseKey.Flow(20 * Frame, Shut(new(0.11f, 1.58f, 0.42f), 5f, 10f, 15f), 1f),
+                    PoseKey.Flow(28 * Frame, Shut(new(0f, 1.53f, 0.4f), 5f, 40f, 0f), 1.2f),
+                    new(36 * Frame, Shut(new(0f, 1.22f, 0.32f), 10f, 55f), Ease.Out)
+                },
+                UnequipHidden = 33 * Frame,
                 CastVia = new()
                 {
                     new(0f, idle),
@@ -462,6 +515,50 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockBoxCenter = new Vector3(0f, -0.03f, BookWidth * 0.5f),
                 BlockBoxExtents = new Vector3(0.04f, 0.13f, BookWidth * 0.5f)
             };
+        }
+
+        /// Taken out from over the right shoulder: the hand goes up on a bent elbow behind the shoulder, closes on the grip
+        /// there (the weapon appears at DrawReach), brings it forward past the head, the head up, and down into the idle.
+        /// The haft stands as upright as it can square to the forearm and the knuckles go on along it: an upright haft
+        /// left to the solve bent the wrist and twisted the arm round.
+        private static List<PoseKey> OverShoulder(BodyPose idle)
+        {
+            List<PoseKey> keys = new() { new(0f, idle) };
+
+            foreach ((float time, Vector3 elbow, Vector3 hand, float elevation, float slope) in s_overShoulder)
+            {
+                Vector3 forearm = hand - elbow;
+                Vector3 haft = Vector3.ProjectOnPlane(Quaternion.Euler(-elevation, 0f, 0f) * Vector3.forward, forearm);
+                BodyPose pose = Pose(hand, haft, 0f, 0f, elbow, idle.Off.Position, 0f);
+                pose.Main.Up = forearm;
+                keys.Add(PoseKey.Flow(time, pose, slope));
+            }
+
+            keys.Add(new PoseKey(DrawTime, idle));
+
+            return keys;
+        }
+
+        /// The shield arm of a draw over the shoulders, at the keys of OverShoulder: the forearm with the shield on it
+        /// carried as one piece from its rest to run from 'elbow' to 'hand', the mirror of the weapon arm, the fist turned
+        /// about it as the weapon hand's is (its thumb upright at rest goes where the haft would).
+        private static BodyPose ShieldOverShoulder(BodyPose rest, Vector3 elbow, Vector3 hand, float elevation)
+        {
+            Vector3 restElbow = rest.Off.ElbowWeight > 0f ? rest.Off.Elbow : new Vector3(-0.29f, 1.16f, -0.03f);
+            HandPose off = rest.Off;
+            Vector3 restForearm = off.Position - restElbow;
+            Vector3 forearm = hand - elbow;
+            Vector3 thumb = Vector3.ProjectOnPlane(Quaternion.Euler(-elevation, 0f, 0f) * Vector3.forward, forearm);
+            Quaternion turn = Quaternion.LookRotation(forearm, thumb) * Quaternion.Inverse(Quaternion.LookRotation(restForearm,
+                Vector3.ProjectOnPlane(Vector3.up, restForearm)));
+            off.Position = elbow + turn * (off.Position - restElbow);
+            off.Forward = turn * off.Forward;
+            off.Up = turn * off.Up;
+            off.Elbow = elbow;
+            off.ElbowWeight = 1f;
+            rest.Off = off;
+
+            return rest;
         }
 
         /// The book open on the palm of the book hand: the spine along the fingers at that yaw and elevation, the pages
@@ -1010,6 +1107,21 @@ namespace Game.Scripts.Editor.Dungeon
         {
             BodyPose carry = shield.Attacks[0].MidPose;
             List<AttackDefinition> attacks = new(weapon.Attacks);
+            // Both are taken out at once, the weapon over the right shoulder and the shield over the left.
+            List<PoseKey> draw = weapon.EquipVia.Count > 0 ? weapon.EquipVia : OverShoulder(weapon.Idle);
+            Vector3 mirror = new(-1f, 1f, 1f);
+
+            for (int i = 0; i < draw.Count; i++)
+            {
+                PoseKey key = draw[i];
+                bool isRest = i == 0 || i == draw.Count - 1;
+                key.Pose = Carry(key.Pose, isRest ? shield.Idle : ShieldOverShoulder(shield.Idle, Vector3.Scale(s_overShoulder[i - 1].elbow, mirror),
+                    Vector3.Scale(s_overShoulder[i - 1].hand, mirror), s_overShoulder[i - 1].elevation));
+                draw[i] = key;
+            }
+
+            weapon.EquipVia = draw;
+            weapon.EquipShown = DrawReach;
 
             if (weapon.Riposte != null)
                 attacks.Add(weapon.Riposte);

@@ -245,6 +245,10 @@ namespace Game.Scripts.Battle
         public string AnimationPrefix => _animationPrefix;
         public WeaponAttachment[] Attachments => _attachments;
         public float DeflectDuration => _deflectDuration;
+        public float EquipTime => _equipTime;
+        public float EquipShown => _equipShown;
+        public float UnequipTime => _unequipTime;
+        public float UnequipHidden => _unequipHidden;
         public float Reach => _reach;
         public MeleeAttackConfig[] Attacks => _attacks;
         public bool HasRiposte => _hasRiposte;
@@ -280,6 +284,19 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private float _deflectDuration = 0.6f;
+
+        [Header("Taking out and putting away (clip seconds; 0 = no clip of its own)")]
+        [SerializeField]
+        private float _equipTime;
+
+        [SerializeField, Tooltip("The weapon appears in the hand this far into the equip clip")]
+        private float _equipShown;
+
+        [SerializeField]
+        private float _unequipTime;
+
+        [SerializeField, Tooltip("The weapon leaves the hand this far into the unequip clip")]
+        private float _unequipHidden;
 
         [SerializeField]
         private float _reach = 1.6f;

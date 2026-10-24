@@ -80,6 +80,8 @@ namespace Game.Scripts.Editor.Battle
                 "lower" => BattleAnimationLibrary.BlockLowerKeys(weapon),
                 "cast" => weapon.CastVia,
                 "castrelease" => weapon.CastReleaseVia,
+                "equip" => weapon.EquipVia,
+                "unequip" => weapon.UnequipVia,
                 "ability" => BattleAnimationLibrary.AbilityKeys(),
                 "holdtorch" => new List<PoseKey> { new(0f, BattleAnimationLibrary.HoldTorch()), new(0.1f, BattleAnimationLibrary.HoldTorch()) },
                 "torchaim" => BattleAnimationLibrary.TorchAimKeys(),

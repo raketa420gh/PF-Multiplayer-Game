@@ -181,7 +181,12 @@ namespace Game.Scripts.Battle
             string upper = _current[UpperLayer];
             bool isDrawn = upper.EndsWith(FighterAnimComponent.DrawSuffix);
             bool hasArrow = isDrawn || upper.EndsWith(FighterAnimComponent.IdleSuffix);
-            bool isActive = GetPhase(GetTime(UpperLayer)) == AttackPhase.Active;
+            float time = GetTime(UpperLayer);
+            bool isActive = GetPhase(time) == AttackPhase.Active;
+            bool isEquip = upper.EndsWith(FighterAnimComponent.EquipSuffix);
+            bool isUnequip = upper.EndsWith(FighterAnimComponent.UnequipSuffix);
+            // As in the game: the weapon is out of the hand before the equip clip takes it out and once the unequip clip puts it away.
+            bool isOut = !(isEquip && time < weapon.EquipShown || isUnequip && time >= weapon.UnequipHidden);
             Vector3 drawHand = _sockets[(int)(weapon.IsMirrored ? WeaponSocket.LeftHand : WeaponSocket.RightHand)].position;
 
             foreach (GameObject attachment in _attachments)
@@ -189,9 +194,13 @@ namespace Game.Scripts.Battle
                 if (!attachment.TryGetComponent(out WeaponVisual visual))
                     continue;
 
+                if (attachment.activeSelf != isOut)
+                    attachment.SetActive(isOut);
+
                 visual.SetTrailActive(isActive);
                 visual.SetDraw(isDrawn, drawHand, hasArrow);
-                visual.SetClosed(upper.Contains(FighterAnimComponent.AttackSuffix) && visual.IsShutInAttack(GetTime(UpperLayer)) ||
+                visual.SetClosed(upper.Contains(FighterAnimComponent.AttackSuffix) && visual.IsShutInAttack(time) ||
+                                 (isEquip || isUnequip) && visual.IsShutInEquip(isUnequip, time) ||
                                  upper.Contains(FighterAnimComponent.BlockSuffix) ||
                                  upper.EndsWith(FighterAnimComponent.DeflectSuffix));
             }
@@ -349,7 +358,7 @@ namespace Game.Scripts.Battle
             foreach (string suffix in new[]
                      {
                          FighterAnimComponent.BlockSuffix, FighterAnimComponent.BlockImpactSuffix, FighterAnimComponent.BlockLowerSuffix, FighterAnimComponent.DeflectSuffix,
-                         FighterAnimComponent.DrawSuffix, FighterAnimComponent.ReleaseSuffix
+                         FighterAnimComponent.DrawSuffix, FighterAnimComponent.ReleaseSuffix, FighterAnimComponent.EquipSuffix, FighterAnimComponent.UnequipSuffix
                      })
                 AddWeaponState(prefix + suffix);
 

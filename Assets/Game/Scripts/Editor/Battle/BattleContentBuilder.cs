@@ -164,6 +164,10 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_mainHand", mainHand);
             BattleEditorUtility.Set(so, "_animationPrefix", definition.Prefix);
             BattleEditorUtility.Set(so, "_deflectDuration", definition.DeflectDuration);
+            BattleEditorUtility.Set(so, "_equipTime", definition.EquipVia.Count > 0 ? definition.EquipVia[^1].Time : 0f);
+            BattleEditorUtility.Set(so, "_equipShown", definition.EquipShown);
+            BattleEditorUtility.Set(so, "_unequipTime", definition.UnequipVia.Count > 0 ? definition.UnequipVia[^1].Time : 0f);
+            BattleEditorUtility.Set(so, "_unequipHidden", definition.UnequipHidden);
             BattleEditorUtility.Set(so, "_reach", definition.Reach);
             BattleEditorUtility.Set(so, "_damageType", DamageType.Physical);
             (int impact, int stability) = DungeonWeaponLibrary.Force(definition.DisplayName);
