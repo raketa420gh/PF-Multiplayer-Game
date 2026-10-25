@@ -194,11 +194,21 @@ namespace Game.Scripts.Battle
         private bool _isSocketsFlipped;
         private float _crouch;
         private float _spineHeight;
+        private Transform _hips;
+        private Transform[] _legs;
 
         private void Awake()
         {
             if (_spineBones.Length > 0)
                 _spineHeight = transform.InverseTransformPoint(_spineBones[0].position).y;
+
+            _hips = _animator.GetBoneTransform(HumanBodyBones.Hips);
+            _legs = new[]
+            {
+                _animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg), _animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg),
+                _animator.GetBoneTransform(HumanBodyBones.LeftFoot), _animator.GetBoneTransform(HumanBodyBones.RightUpperLeg),
+                _animator.GetBoneTransform(HumanBodyBones.RightLowerLeg), _animator.GetBoneTransform(HumanBodyBones.RightFoot)
+            };
 
             Transform right = _animator.GetBoneTransform(HumanBodyBones.RightHand);
             Transform left = _animator.GetBoneTransform(HumanBodyBones.LeftHand);
@@ -275,7 +285,7 @@ namespace Game.Scripts.Battle
             _spineBones[0].rotation = Quaternion.AngleAxis(-_flinch, axis) * _spineBones[0].rotation;
 
             if (_isFirstPerson)
-                _headBone.localScale = Vector3.zero;
+                _headBone.localScale = MirrorComponent.IsLocalReflected ? Vector3.one : Vector3.zero;
 
             HoldUpperBody();
         }
@@ -491,11 +501,43 @@ namespace Game.Scripts.Battle
 
         /// The legs clips bob the hips (breath, crouch, push-off, landing), the eye follows the body model and does not:
         /// the upper body is held at the model's height, so the arms stay put on the screen and others see the same motion.
+        /// The whole pelvis is moved (moving the spine alone stretches the skin between them), the feet stay planted by leg IK.
         private void HoldUpperBody()
         {
             Transform spine = _spineBones[0];
             float height = _spineHeight - IdleDrop - _fighter.Body.Config.CrouchDrop * _crouch;
-            spine.position += transform.up * ((height - transform.InverseTransformPoint(spine.position).y) * _upperWeight);
+            Vector3 offset = transform.up * ((height - transform.InverseTransformPoint(spine.position).y) * _upperWeight);
+
+            if (offset.sqrMagnitude < 1e-8f)
+                return;
+
+            if (_hips == null || _legs[2] == null || _legs[5] == null)
+            {
+                spine.position += offset;
+
+                return;
+            }
+
+            Vector3 leftFoot = _legs[2].position, rightFoot = _legs[5].position;
+            Quaternion leftRotation = _legs[2].rotation, rightRotation = _legs[5].rotation;
+            _hips.position += offset;
+            SolveLeg(_legs[0], _legs[1], _legs[2], leftFoot, leftRotation);
+            SolveLeg(_legs[3], _legs[4], _legs[5], rightFoot, rightRotation);
+        }
+
+        /// Two-bone IK: bends the knee in its current plane to reach the target, then aims the thigh at it.
+        private void SolveLeg(Transform upper, Transform lower, Transform foot, Vector3 target, Quaternion footRotation)
+        {
+            Vector3 thigh = lower.position - upper.position, shin = foot.position - lower.position;
+            float a = thigh.magnitude, b = shin.magnitude;
+            float c = Mathf.Clamp((target - upper.position).magnitude, Mathf.Abs(a - b) + 0.001f, a + b - 0.001f);
+            Vector3 axis = Vector3.Cross(thigh, shin);
+            axis = axis.sqrMagnitude > 1e-8f ? axis.normalized : transform.right;
+            float current = Vector3.Angle(-thigh, shin);
+            float desired = Mathf.Acos(Mathf.Clamp((a * a + b * b - c * c) / (2f * a * b), -1f, 1f)) * Mathf.Rad2Deg;
+            lower.rotation = Quaternion.AngleAxis(current - desired, axis) * lower.rotation;
+            upper.rotation = Quaternion.FromToRotation(foot.position - upper.position, target - upper.position) * upper.rotation;
+            foot.rotation = footRotation;
         }
 
         private void OnHitEvent(HitEventData hit)
