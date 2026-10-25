@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Game.Scripts.Battle
 {
@@ -196,6 +198,7 @@ namespace Game.Scripts.Battle
         private float _spineHeight;
         private Transform _hips;
         private Transform[] _legs;
+        private Renderer[] _headRenderers;
 
         private void Awake()
         {
@@ -229,11 +232,18 @@ namespace Game.Scripts.Battle
 
             _isFirstPerson = HasInputAuthority;
             _fighter.Receiver.OnHitEvent += OnHitEvent;
+
+            if (!_isFirstPerson)
+                return;
+
+            _headRenderers = FindHeadRenderers();
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
         {
             _fighter.Receiver.OnHitEvent -= OnHitEvent;
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
         }
 
         public override void Render()
@@ -538,6 +548,37 @@ namespace Game.Scripts.Battle
             lower.rotation = Quaternion.AngleAxis(current - desired, axis) * lower.rotation;
             upper.rotation = Quaternion.FromToRotation(foot.position - upper.position, target - upper.position) * upper.rotation;
             foot.rotation = footRotation;
+        }
+
+        /// Face, eyes, hair, beard, hood: renderers whose vertices mostly follow the head.
+        private Renderer[] FindHeadRenderers()
+        {
+            List<Renderer> result = new();
+
+            foreach (SkinnedMeshRenderer renderer in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                Transform[] bones = renderer.bones;
+                BoneWeight[] weights = renderer.sharedMesh.boneWeights;
+                int count = 0;
+
+                foreach (BoneWeight weight in weights)
+                    if (bones[weight.boneIndex0] != null && bones[weight.boneIndex0].IsChildOf(_headBone))
+                        count++;
+
+                if (count * 2 > weights.Length)
+                    result.Add(renderer);
+            }
+
+            return result.ToArray();
+        }
+
+        /// The head is unhidden for a mirror's camera; the player's own camera, inside the head, still skips it.
+        private void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            bool isHidden = MirrorComponent.IsLocalReflected && BattleContext.Instance != null && camera == BattleContext.Instance.Camera;
+
+            foreach (Renderer renderer in _headRenderers)
+                renderer.forceRenderingOff = isHidden;
         }
 
         private void OnHitEvent(HitEventData hit)
