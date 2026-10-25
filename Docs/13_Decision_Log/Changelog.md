@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-25
+
+### Changed
+- DD-024: the dungeon is a 5×5 grid of 25 unique rooms (was 7×7 with repeats) — decided, not implemented yet.
+
+### Added
+- Closed beta test scope: `12_Roadmap/Closed_Beta.md` — dedicated server, 6×3 classes, 5×5 dungeon with 25 rooms, skeleton undead + 2 minibosses + screamer, 12 weapons, cloth/leather sets, consumables, location traps, menus, items, containers.
+
 ## 2026-10-21
 
 ### Changed

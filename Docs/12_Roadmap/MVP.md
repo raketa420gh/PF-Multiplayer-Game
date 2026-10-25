@@ -8,7 +8,7 @@ Enter → Explore → Fight → Loot → Risk Decision → Extract/Die → Progr
 ```
 
 ## Must Have
-- [ ] 1 подземелье (7x7)
+- [ ] 1 подземелье (5×5, DD-024)
 - [ ] Solo
 - [ ] 1 playable character
 - [ ] movement
