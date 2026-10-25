@@ -71,8 +71,10 @@ namespace Game.Scripts.Battle
         /// Every weapon the prefab knows about; slots map onto this catalog.
         public WeaponConfig[] Catalog => _loadout;
         public int SlotCount => _slotCount;
-        /// While a weapon is put away it stays the one in the hand, though its slot may hold the empty hands already.
-        public int WeaponIndex => IsUnequipping ? _unequipWeapon : GetWeaponIndex(WeaponSlot);
+        /// While a weapon is put away it stays the one in the hand, though its slot may hold the empty hands already;
+        /// once it is away the chosen one is in the hand, before the tick that commits WeaponSlot.
+        public int WeaponIndex => State != CombatState.Equip ? GetWeaponIndex(WeaponSlot)
+            : IsUnequipping ? _unequipWeapon : GetWeaponIndex(_pendingSlot);
         public WeaponConfig Weapon => _loadout[WeaponIndex];
         public MeleeAttackConfig Attack => IsRiposte ? Weapon.Riposte : Weapon.Attacks[AttackIndex];
         public float StateTime => Runner.SecondsSince(StateTick) * TimeScale;
