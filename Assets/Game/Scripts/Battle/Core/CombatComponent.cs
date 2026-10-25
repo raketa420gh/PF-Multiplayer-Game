@@ -71,7 +71,8 @@ namespace Game.Scripts.Battle
         /// Every weapon the prefab knows about; slots map onto this catalog.
         public WeaponConfig[] Catalog => _loadout;
         public int SlotCount => _slotCount;
-        public int WeaponIndex => GetWeaponIndex(WeaponSlot);
+        /// While a weapon is put away it stays the one in the hand, though its slot may hold the empty hands already.
+        public int WeaponIndex => IsUnequipping ? _unequipWeapon : GetWeaponIndex(WeaponSlot);
         public WeaponConfig Weapon => _loadout[WeaponIndex];
         public MeleeAttackConfig Attack => IsRiposte ? Weapon.Riposte : Weapon.Attacks[AttackIndex];
         public float StateTime => Runner.SecondsSince(StateTick) * TimeScale;
@@ -209,6 +210,9 @@ namespace Game.Scripts.Battle
         private byte _pendingSlot { get; set; }
 
         [Networked]
+        private byte _unequipWeapon { get; set; }
+
+        [Networked]
         private NetworkBool _comboQueued { get; set; }
 
         [Networked]
@@ -330,19 +334,18 @@ namespace Game.Scripts.Battle
         }
 
         /// Assigns which catalog weapon a weapon slot holds. State authority only.
-        public void SetSlotWeapon(int slot, int catalogIndex)
+        /// isPutAway: the hands are emptied on purpose, so the weapon leaving them is put away along its clip.
+        public void SetSlotWeapon(int slot, int catalogIndex, bool isPutAway = false)
         {
             byte index = (byte)Mathf.Clamp(catalogIndex, 0, _loadout.Length - 1);
-            bool isChanged = !_slotsInitialized || _slotWeapons[slot] != index;
+            int previous = GetWeaponIndex(slot);
+            bool isInitialized = _slotsInitialized;
+            bool isChanged = !isInitialized || _slotWeapons[slot] != index;
             _slotWeapons.Set(slot, index);
             _slotsInitialized = true;
 
-            // The weapon in the slot is gone already: only the new one is taken out.
             if (isChanged && slot == WeaponSlot && State != CombatState.Busy)
-            {
-                _pendingSlot = WeaponSlot;
-                SetState(CombatState.Equip);
-            }
+                StartEquip(slot, previous, isPutAway && isInitialized);
         }
 
         /// Switches sets as if the player pressed the slot key.
@@ -353,7 +356,7 @@ namespace Game.Scripts.Battle
             if (slot == WeaponSlot || State != CombatState.Idle)
                 return;
 
-            StartEquip(slot);
+            StartEquip(slot, WeaponIndex, true);
         }
 
         public void SetInitialSlot(int slot)
@@ -477,7 +480,7 @@ namespace Game.Scripts.Battle
 
             if (slot >= 0 && slot != WeaponSlot)
             {
-                StartEquip(slot);
+                StartEquip(slot, WeaponIndex, true);
             }
             else if (weapon.IsRanged && weapon.Ranged.IsManualReload)
             {
@@ -623,11 +626,15 @@ namespace Game.Scripts.Battle
             _stateDuration = duration;
         }
 
-        /// The weapon in the hand is put away along its own clip, or in half the plain equip time, before the slot changes.
-        private void StartEquip(int slot)
+        /// Another weapon or item is taken out straight away; only when the hands are left empty is the one in them
+        /// put away first, along its own clip or in half the plain equip time.
+        private void StartEquip(int slot, int previousWeapon, bool canPutAway)
         {
+            WeaponConfig previous = _loadout[previousWeapon];
+            bool isPutAway = canPutAway && _loadout[GetWeaponIndex(slot)].IsBareHands && !previous.IsBareHands;
             _pendingSlot = (byte)slot;
-            SetState(CombatState.Equip, GetEquipTime(Weapon.UnequipTime));
+            _unequipWeapon = (byte)previousWeapon;
+            SetState(CombatState.Equip, isPutAway ? GetEquipTime(previous.UnequipTime) : 0f);
         }
 
         private float GetEquipTime(float clipTime)

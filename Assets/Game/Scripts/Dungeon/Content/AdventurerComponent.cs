@@ -841,8 +841,9 @@ namespace Game.Scripts.Dungeon
         private void ApplyWeaponSlots()
         {
             CombatComponent combat = _fighter.Combat;
-            combat.SetSlotWeapon(0, ResolveWeaponIndex(0, EquipSlot.Weapon1Main, EquipSlot.Weapon1Off));
-            combat.SetSlotWeapon(1, ResolveWeaponIndex(1, EquipSlot.Weapon2Main, EquipSlot.Weapon2Off));
+            // Only the holster key or sitting down empties the hands; a belt item is taken out over the weapon.
+            combat.SetSlotWeapon(0, ResolveWeaponIndex(0, EquipSlot.Weapon1Main, EquipSlot.Weapon1Off), IsHolstered);
+            combat.SetSlotWeapon(1, ResolveWeaponIndex(1, EquipSlot.Weapon2Main, EquipSlot.Weapon2Off), IsHolstered);
         }
 
         private ItemConfig GetAmmo(int slot)
