@@ -4,19 +4,20 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Plays footsteps by travelled distance; walking is quieter, as in Dark and Darker.
+    /// Plays footsteps at a cadence set by the ground speed; walking is quieter, as in Dark and Darker.
     public sealed class FootstepComponent : NetworkBehaviour
     {
         /// Level geometry and the water volumes on Ignore Raycast.
         private const int SurfaceMask = 1 | 1 << 2;
         private const float SurfaceProbe = 0.8f;
+        private const float MinSpeed = 0.3f;
 
         private static readonly RaycastHit[] s_hits = new RaycastHit[8];
 
         [SerializeField]
         private FighterComponent _fighter;
 
-        [SerializeField]
+        [SerializeField, Tooltip("Metres between two steps; the interval is stride / speed")]
         private float _stride = 1.3f;
 
         [SerializeField, Tooltip("Recorded steps; without them the synthesized pair plays")]
@@ -28,33 +29,23 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Optional: the boots in the Feet slot pick the footwear")]
         private InventoryComponent _inventory;
 
-        private Vector3 _lastPosition;
-        private float _travelled;
+        private float _lastStepTime = float.NegativeInfinity;
         private bool _toggle;
 
-        public override void Spawned()
-        {
-            _lastPosition = transform.position;
-        }
-
+        /// A foot is planted as soon as the body moves and then every stride / speed seconds: tapping the keys never steps
+        /// faster than a steady walk, and every class sounds the same at the same speed.
         public override void Render()
         {
-            Vector3 position = transform.position;
-            Vector3 delta = position - _lastPosition;
-            delta.y = 0f;
-            _lastPosition = position;
+            Vector3 velocity = _fighter.Move.Velocity;
+            velocity.y = 0f;
+            float speed = velocity.magnitude;
 
-            if (!_fighter.Move.IsGrounded || !_fighter.Health.IsAlive)
+            if (!_fighter.Move.IsGrounded || !_fighter.Health.IsAlive || speed < MinSpeed || Time.time - _lastStepTime < _stride / speed)
                 return;
 
-            _travelled += delta.magnitude;
-
-            if (_travelled < _stride)
-                return;
-
-            _travelled = 0f;
+            _lastStepTime = Time.time;
             _toggle = !_toggle;
-            float speed = delta.magnitude / Mathf.Max(Time.deltaTime, 0.001f);
+            Vector3 position = transform.position;
             float volume = Mathf.Clamp01(speed / 4.2f) * 0.3f + 0.08f;
             float pitch = Random.Range(0.92f, 1.08f);
             Footwear footwear = GetFootwear();
