@@ -263,8 +263,7 @@ namespace Game.Scripts.Dungeon
             int window = DungeonAdmission.WindowLeft(adventurer.Runner);
             _killText.text = $"Kills {adventurer.Kills}   XP +{adventurer.RunExperience}" + (window >= 0 ? $"\n<color=#9ab8d8>Late entry open {window / 60}:{window % 60:00}</color>" : string.Empty);
 
-            float danger = adventurer.IsInSwarm ? 0.55f : Mathf.Lerp(0.45f, 0f, health.Progress * 2f);
-            _vignette.color = new Color(adventurer.IsInSwarm ? 0.1f : 0.5f, 0f, adventurer.IsInSwarm ? 0.2f : 0f, danger);
+            _vignette.color = new Color(0.1f, 0f, 0.2f, adventurer.IsInSwarm ? 0.55f : 0f);
         }
 
         /// Taken damage flashes a red glow under the bar: a quick rise, then a slow fade.
