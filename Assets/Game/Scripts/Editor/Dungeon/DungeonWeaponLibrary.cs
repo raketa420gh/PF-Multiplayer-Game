@@ -765,11 +765,12 @@ namespace Game.Scripts.Editor.Dungeon
             pose.Off.Position = OnScreen(leftU, leftV, depth) + Vector3.Scale(fingers.normalized, new Vector3(-1f, 1f, 1f)) * 0.1f;
             pose.Main.Up = fingers.normalized;
 
-            // Raised, the forearms close together up to the elbows; on the way up the elbows come in from the sides.
+            // Raised, the forearms close together up to the elbows; on the way up the elbows come in from the sides. An elbow hint level
+            // with the shoulder (0.36 m under the fist since Eye is 1.67) flips the solve to straight arms.
             float side = Mathf.Lerp(0.03f, 0.15f, Mathf.InverseLerp(0.45f, 0.6f, rightV));
 
             return rightV < 0.5f
-                ? BattleAnimationLibrary.Elbows(pose, pose.Main.Position + new Vector3(side, -0.36f, -0.14f), pose.Off.Position + new Vector3(-side, -0.36f, -0.14f))
+                ? BattleAnimationLibrary.Elbows(pose, pose.Main.Position + new Vector3(side, -0.3f, -0.14f), pose.Off.Position + new Vector3(-side, -0.3f, -0.14f))
                 : pose;
         }
 
