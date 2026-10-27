@@ -41,6 +41,8 @@ namespace Game.Scripts.Editor.Dungeon
         private const float RaisedFistDrop = 0.27f;
         private const float StaffHands = -0.55f;
         private const float StaffReach = -0.62f;
+        private const float StaffBlockHands = -0.5f;
+        private const float StaffLean = 65f;
         private const float StaffButt = -0.9f;
         private const float StaffButtEnd = -1.2f;
         /// From the spine of the shut book to its fore-edge: one hand holds each.
@@ -1425,24 +1427,32 @@ namespace Game.Scripts.Editor.Dungeon
             // Carried like a walking stick in the right hand, a third of the way down from the head; only the riposte
             // takes it in both hands and strikes with the butt.
             BodyPose idle = PoseAt(new(0.25f, 1.18f, 0.38f), 0f, 80f, elbow: new(0.2f, 1f, 0.05f));
-            BodyPose parry = PoseAt(new(0.2f, 1.45f, 0.38f), 75f, 40f, offHand: StaffHands, elbow: new(0.25f, 1.2f, 0.05f), offElbow: new(-0.2f, 1.05f, 0.05f));
+            // The round haft slides obliquely in the fist where it points along the forearm.
+            BodyPose Leaned(BodyPose pose, float lean)
+            {
+                pose.Lean = lean;
+
+                return pose;
+            }
+
+            BodyPose parry = PoseAt(new(0.17f, 1.72f, 0.4f), 96f, 15f, offHand: StaffBlockHands, elbow: new(0.2f, 1.4f, 0.22f), offElbow: new(-0.3f, 1.3f, 0.15f));
 
             AttackDefinition backhand = new AttackDefinition
             {
                 Windup = 34 * Footage, Active = 7 * Footage, Recovery = 55 * Footage, Damage = 29, MoveMultiplier = 0.5f, Stagger = 0.25f, Launch = 1f,
                 Raise = new()
                 {
-                    Via(8, PoseAt(new(0.05f, 1.3f, 0.3f), -40f, 70f, -10f, elbow: new(0.2f, 1.15f, 0f))),
-                    Via(14, PoseAt(new(-0.1f, 1.38f, 0.12f), -150f, 30f, -20f, elbow: new(0.15f, 1.25f, 0.1f))),
-                    Via(20, PoseAt(new(-0.15f, 1.45f, 0.06f), -160f, 15f, -25f, offHand: 0.12f, elbow: new(0.1f, 1.4f, 0.28f), offElbow: new(-0.2f, 1.3f, 0.12f)), 0.4f),
-                    Via(30, PoseAt(new(-0.16f, 1.46f, 0.05f), -165f, 15f, -25f, offHand: 0.12f, elbow: new(0.1f, 1.4f, 0.28f), offElbow: new(-0.2f, 1.3f, 0.12f)), 0.5f)
+                    Via(8, PoseAt(new(0.02f, 1.32f, 0.3f), -40f, 72f, -10f, elbow: new(0.15f, 1.1f, 0.1f))),
+                    Via(13, PoseAt(new(-0.04f, 1.47f, 0.33f), -60f, 65f, -20f, elbow: new(0.12f, 1.35f, 0.2f))),
+                    Via(26, Leaned(PoseAt(new(-0.25f, 1.6f, 0.1f), -160f, 60f, -35f, elbow: new(0f, 1.4f, 0.25f)), StaffLean), 0.4f),
+                    Via(32, Leaned(PoseAt(new(-0.25f, 1.62f, 0.08f), -160f, 62f, -35f, elbow: new(0f, 1.42f, 0.25f)), StaffLean), 0.5f)
                 },
-                WindupPose = PoseAt(new(-0.1f, 1.5f, 0.35f), -100f, 75f, -15f, elbow: new(0.15f, 1.45f, 0.25f)),
+                WindupPose = Leaned(PoseAt(new(-0.1f, 1.55f, 0.22f), -110f, 58f, -25f, elbow: new(0.05f, 1.3f, 0.25f)), StaffLean * 0.5f),
                 MidPose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.OneHanded(new(0.1f, 1.44f, 0.6f), Vector3.forward, 10f), new(0.15f, 1.45f, 0.3f)),
-                EndPose = PoseAt(new(0.42f, 1.42f, 0.55f), -10f, 15f, 15f, elbow: new(0.35f, 1.45f, 0.25f)),
+                EndPose = Leaned(PoseAt(new(0.38f, 1.42f, 0.52f), -10f, 15f, 15f, elbow: new(0.35f, 1.45f, 0.25f)), StaffLean),
                 Return = new()
                 {
-                    Via(44, PoseAt(new(0.45f, 1.43f, 0.55f), 0f, 10f, 15f, elbow: new(0.35f, 1.45f, 0.25f)), 0.5f), Via(70, PoseAt(new(0.45f, 1.43f, 0.53f), 0f, 12f, 10f, elbow: new(0.35f, 1.45f, 0.25f)), 0.5f),
+                    Via(44, Leaned(PoseAt(new(0.4f, 1.43f, 0.52f), 0f, 10f, 15f, elbow: new(0.35f, 1.45f, 0.25f)), StaffLean), 0.5f), Via(70, Leaned(PoseAt(new(0.4f, 1.43f, 0.5f), 0f, 12f, 10f, elbow: new(0.35f, 1.45f, 0.25f)), StaffLean), 0.5f),
                     Via(80, PoseAt(new(0.38f, 1.3f, 0.48f), 0f, 20f, 8f, elbow: new(0.28f, 1.1f, 0.1f))), Via(88, PoseAt(new(0.36f, 1.24f, 0.42f), 0f, 55f, 5f, elbow: new(0.24f, 1.03f, 0.06f)))
                 }
             };
@@ -1451,18 +1461,23 @@ namespace Game.Scripts.Editor.Dungeon
                 Windup = 55 * Footage, Active = 9 * Footage, Recovery = 58 * Footage, Damage = 32, MoveMultiplier = 0.5f, Stagger = 0.25f, Launch = 1f,
                 Raise = new()
                 {
-                    Via(10, PoseAt(new(0.42f, 1.62f, 0.3f), 0f, 15f, 5f, elbow: new(0.38f, 1.45f, 0.15f))),
-                    Via(18, PoseAt(new(0.22f, 1.95f, 0.12f), -60f, 5f, elbow: new(0.4f, 1.65f, 0.12f))),
-                    Via(25, PoseAt(new(0.2f, 2f, 0.1f), -80f, -10f, elbow: new(0.45f, 1.68f, 0.2f)), 0.4f),
-                    Via(50, PoseAt(new(0.2f, 2f, 0.09f), -75f, -15f, elbow: new(0.45f, 1.68f, 0.2f)), 0.5f),
-                    Via(52.5f, PoseAt(new(0.2f, 1.98f, 0.12f), -75f, 30f, elbow: new(0.42f, 1.65f, 0.2f))), Via(54, PoseAt(new(0.16f, 1.82f, 0.26f), -50f, 70f, elbow: new(0.3f, 1.55f, 0.22f)))
+                    // The hand rises in front of the right side of the crown with the head hanging forward-left, then the
+                    // head swings up and over to lie behind the head.
+                    Via(8, Leaned(PoseAt(new(0.33f, 1.56f, 0.42f), -10f, 0f, 5f, elbow: new(0.3f, 1.38f, 0.2f)), StaffLean)),
+                    Via(14, Leaned(PoseAt(new(0.27f, 1.7f, 0.36f), -25f, -8f, elbow: new(0.3f, 1.42f, 0.2f)), StaffLean)),
+                    Via(20, PoseAt(new(0.24f, 1.78f, 0.37f), -40f, -12f, elbow: new(0.32f, 1.45f, 0.18f))),
+                    Via(28, PoseAt(new(0.23f, 1.79f, 0.37f), -46f, -15f, elbow: new(0.32f, 1.45f, 0.18f)), 0.4f),
+                    Via(41, PoseAt(new(0.14f, 1.88f, 0.24f), -55f, 0f, elbow: new(0.42f, 1.6f, 0.15f))),
+                    Via(46, PoseAt(new(0.1f, 1.88f, 0f), -70f, 10f, elbow: new(0.45f, 1.68f, 0.2f)), 0.4f),
+                    Via(49, PoseAt(new(0.12f, 1.88f, 0.02f), -68f, 8f, elbow: new(0.45f, 1.68f, 0.2f)), 0.5f),
+                    Via(52.5f, PoseAt(new(0.2f, 1.98f, 0.12f), -75f, 30f, elbow: new(0.42f, 1.65f, 0.2f))), Via(54, PoseAt(new(0.2f, 1.85f, 0.25f), -50f, 70f, elbow: new(0.3f, 1.75f, 0.1f)))
                 },
-                WindupPose = PoseAt(new(0.12f, 1.62f, 0.42f), 0f, 80f, elbow: new(0.15f, 1.5f, 0.25f)),
+                WindupPose = PoseAt(new(0.22f, 1.7f, 0.4f), 0f, 80f, elbow: new(0.25f, 1.78f, 0.05f)),
                 MidPose = BattleAnimationLibrary.Elbows(BattleAnimationLibrary.OneHanded(new(0.12f, 1.44f, 0.5f), Vector3.forward), new(0.15f, 1.32f, 0.25f)),
-                EndPose = PoseAt(new(0.04f, 1.18f, 0.55f), 0f, 25f, elbow: new(0.1f, 1.2f, 0.25f)),
+                EndPose = Leaned(PoseAt(new(0f, 1.38f, 0.53f), -10f, 20f, elbow: new(0.1f, 1.25f, 0.25f)), StaffLean),
                 Return = new()
                 {
-                    Via(68, PoseAt(new(0.03f, 1.18f, 0.55f), -10f, 15f, elbow: new(0.1f, 1.2f, 0.25f)), 0.5f), Via(95, PoseAt(new(0.04f, 1.19f, 0.53f), -15f, 18f, elbow: new(0.1f, 1.2f, 0.25f)), 0.5f),
+                    Via(68, Leaned(PoseAt(new(0f, 1.37f, 0.53f), -12f, 18f, elbow: new(0.1f, 1.24f, 0.25f)), StaffLean), 0.5f), Via(92, Leaned(PoseAt(new(0.02f, 1.28f, 0.52f), -15f, 5f, elbow: new(0.1f, 1.15f, 0.25f)), StaffLean), 0.5f),
                     Via(108, PoseAt(new(0.25f, 1.2f, 0.38f), 0f, 60f, elbow: new(0.15f, 1f, 0.05f)))
                 },
                 After = backhand
@@ -1517,8 +1532,8 @@ namespace Game.Scripts.Editor.Dungeon
                 BlockMove = 0.5f,
                 // The parry hold the riposte sets off from: across the chest, head up to the right.
                 Block = parry,
-                BlockHit = PoseAt(new(0.19f, 1.4f, 0.33f), 75f, 40f, pitch: -5f, offHand: StaffHands, elbow: new(0.25f, 1.15f, 0.03f), offElbow: new(-0.2f, 1f, 0.03f)),
-                BlockLowered = PoseAt(new(0.2f, 1.35f, 0.36f), 75f, 30f, offHand: StaffHands, elbow: new(0.25f, 1.12f, 0.03f), offElbow: new(-0.2f, 1f, 0.03f)),
+                BlockHit = PoseAt(new(0.16f, 1.69f, 0.35f), 96f, 17f, pitch: -5f, offHand: StaffBlockHands, elbow: new(0.2f, 1.38f, 0.17f), offElbow: new(-0.3f, 1.27f, 0.1f)),
+                BlockLowered = PoseAt(new(0.17f, 1.65f, 0.4f), 96f, 10f, offHand: StaffBlockHands, elbow: new(0.2f, 1.35f, 0.22f), offElbow: new(-0.3f, 1.22f, 0.15f)),
                 DeflectPose = PoseAt(new(0.3f, 1.55f, 0.15f), 20f, 75f, 15f, -8f),
                 BlockSocket = WeaponSocket.RightHand,
                 BlockBoxCenter = new Vector3(0f, 0f, (StaffButtEnd + 0.4f) * 0.5f),
