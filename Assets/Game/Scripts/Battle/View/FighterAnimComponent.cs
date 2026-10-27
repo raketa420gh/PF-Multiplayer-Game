@@ -18,6 +18,7 @@ namespace Game.Scripts.Battle
         public const string DeflectSuffix = "_Deflect";
         public const string DrawSuffix = "_Draw";
         public const string ReleaseSuffix = "_Release";
+        public const string ReloadSuffix = "_Reload";
         public const string EquipSuffix = "_Equip";
         public const string UnequipSuffix = "_Unequip";
         public const string LocomotionState = "Locomotion";
@@ -165,6 +166,8 @@ namespace Game.Scripts.Battle
             public int Deflect;
             public int Draw;
             public int Release;
+            /// Loading a weapon by hand; 0 = the release clip covers the reload.
+            public int Reload;
             /// Taking the weapon out and putting it away; 0 = it has no clip for it and the idle plays.
             public int Equip;
             public int Unequip;
@@ -315,6 +318,7 @@ namespace Game.Scripts.Battle
 
             int equip = Animator.StringToHash(prefix + EquipSuffix);
             int unequip = Animator.StringToHash(prefix + UnequipSuffix);
+            int reload = Animator.StringToHash(prefix + ReloadSuffix);
             int[] attacks = new int[weapon.Attacks.Length];
             int[] attackLegs = new int[attacks.Length];
 
@@ -333,6 +337,7 @@ namespace Game.Scripts.Battle
                 Deflect = Animator.StringToHash(prefix + DeflectSuffix),
                 Draw = Animator.StringToHash(prefix + DrawSuffix),
                 Release = Animator.StringToHash(prefix + ReleaseSuffix),
+                Reload = animator.HasState(UpperLayer, reload) ? reload : 0,
                 Equip = animator.HasState(UpperLayer, equip) ? equip : 0,
                 Unequip = animator.HasState(UpperLayer, unequip) ? unequip : 0,
                 Busy = busy,
@@ -450,6 +455,10 @@ namespace Game.Scripts.Battle
                     token = combat.StateTick;
                     break;
                 case CombatState.Reload:
+                    state = states.Reload != 0 ? states.Reload : states.Release;
+                    token = combat.StateTick;
+                    break;
+                case CombatState.Recoil:
                     state = states.Release;
                     token = combat.StateTick;
                     break;

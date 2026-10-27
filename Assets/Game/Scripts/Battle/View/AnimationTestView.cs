@@ -358,7 +358,7 @@ namespace Game.Scripts.Battle
             foreach (string suffix in new[]
                      {
                          FighterAnimComponent.BlockSuffix, FighterAnimComponent.BlockImpactSuffix, FighterAnimComponent.BlockLowerSuffix, FighterAnimComponent.DeflectSuffix,
-                         FighterAnimComponent.DrawSuffix, FighterAnimComponent.ReleaseSuffix, FighterAnimComponent.EquipSuffix, FighterAnimComponent.UnequipSuffix
+                         FighterAnimComponent.DrawSuffix, FighterAnimComponent.ReleaseSuffix, FighterAnimComponent.ReloadSuffix, FighterAnimComponent.EquipSuffix, FighterAnimComponent.UnequipSuffix
                      })
                 AddWeaponState(prefix + suffix);
 

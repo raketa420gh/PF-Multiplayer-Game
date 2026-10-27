@@ -130,6 +130,10 @@ namespace Game.Scripts.Editor.Battle
 
         public BodyPose DrawPose;
         public BodyPose ReleasePose;
+        /// The kick of a shot of a weapon loaded by hand, from the idle, in seconds; none = drawn, released and back to the idle.
+        public List<PoseKey> ReleaseVia = new();
+        /// Loading by hand, from the idle and back to it, in seconds; its length is the reload time.
+        public List<PoseKey> ReloadVia = new();
 
         /// A spell gathered in the free hand while this weapon is held, in seconds from the start: the clip ends on the
         /// charged pose, kept until the spell is let go. None = the shared cast.

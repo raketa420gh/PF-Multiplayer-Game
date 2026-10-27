@@ -227,6 +227,22 @@ namespace Game.Scripts.Editor.Dungeon
             return Save(root);
         }
 
+        /// Below the muzzle line, how far the knuckles of the fist on the crossbow's grip point (degrees): the fist holds the
+        /// wrist of the stock as a pistol grip, the stock over the thumb and running on past the knuckles, so a level stock
+        /// leaves the wrist straight on a forearm that rises to it.
+        public const float CrossbowGrip = 40f;
+
+        /// Socket space of the right hand (y = the knuckles, z = the thumb) from the crossbow's own (z = the muzzle, y = the top).
+        public static Matrix4x4 CrossbowInHand
+        {
+            get
+            {
+                Quaternion turn = Quaternion.AngleAxis(-CrossbowGrip, Vector3.right);
+
+                return Matrix4x4.TRS(turn * new Vector3(0f, 0f, 0.035f), Quaternion.LookRotation(turn * Vector3.up, turn * Vector3.forward), Vector3.one);
+            }
+        }
+
         public static GameObject BuildCrossbow()
         {
             const int steps = 12;
@@ -235,7 +251,7 @@ namespace Game.Scripts.Editor.Dungeon
             Material wood = WeaponMaterials.DarkWood;
             Material iron = WeaponMaterials.Iron;
             GameObject root = new GameObject("Crossbow");
-            WeaponMesh mesh = new WeaponMesh();
+            WeaponMesh mesh = new WeaponMesh { Matrix = CrossbowInHand };
 
             // Tiller: slim at the butt, deepest under the lock, with a groove rail on top for the bolt.
             mesh.Loft(wood, new[]

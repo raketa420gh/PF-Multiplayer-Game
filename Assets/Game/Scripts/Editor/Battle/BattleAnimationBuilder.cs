@@ -460,8 +460,11 @@ namespace Game.Scripts.Editor.Battle
                 float reloadTime = weapon.ReloadTime > 0f ? weapon.ReloadTime : BattleAnimationLibrary.ReloadTime;
                 AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.DrawSuffix, drawTime + 0.1f,
                     BattleAnimationLibrary.DrawKeys(weapon, drawTime));
-                AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.ReleaseSuffix, reloadTime,
-                    BattleAnimationLibrary.ReleaseKeys(weapon, reloadTime));
+                List<PoseKey> release = weapon.ReleaseVia.Count > 0 ? SettleRoll(rig, weapon.ReleaseVia) : BattleAnimationLibrary.ReleaseKeys(weapon, reloadTime);
+                AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.ReleaseSuffix, release[^1].Time, release);
+
+                if (weapon.ReloadVia.Count > 0)
+                    AddKeyed(rig, stateMachine, prefix + FighterAnimComponent.ReloadSuffix, weapon.ReloadVia[^1].Time, SettleRoll(rig, weapon.ReloadVia));
             }
         }
 

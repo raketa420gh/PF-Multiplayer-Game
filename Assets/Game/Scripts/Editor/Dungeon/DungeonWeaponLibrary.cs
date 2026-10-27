@@ -1538,16 +1538,76 @@ namespace Game.Scripts.Editor.Dungeon
             return BattleAnimationLibrary.Elbows(pose, elbow, offElbow);
         }
 
+        /// The crossbow of D:\crossbow_*.mp4, first person. Carried level low in the right hand, the prod across the bottom of
+        /// the view and the left hand off it. Taken up from the lower right rolled over and levelled down into the idle;
+        /// blocked with the prod stood on end at the left of the view, the left hand on the fore-stock. A shot kicks it back
+        /// a little; the reload tips the muzzle down, the left hand draws the string from the prod back to the nut and lays
+        /// a bolt in the groove. In the footage the right hand cocks it, here it keeps the grip the weapon hangs on.
         private static WeaponDefinition CreateCrossbow()
         {
+            float reload = 1.8f / 139f;
+            BodyPose idle = CrossbowPose(new(0.07f, 1.42f, 0.33f), -2f, 2f, 0f);
+            Vector3 rightElbow = new(0.25f, 1.25f, 0.1f);
+            Vector3 leftElbow = new(-0.2f, 1.25f, 0.3f);
+            BodyPose Cocking(float along) => CrossbowPose(new(0.04f, 1.52f, 0.25f), -8f, -20f, 12f, along, rightElbow, leftElbow);
+
             WeaponDefinition definition = BattleAnimationLibrary.CreateBow();
             definition.Prefix = Crossbow;
             definition.DisplayName = "Crossbow";
-            definition.Idle = BattleAnimationLibrary.TwoHanded(new(0.2f, 1.25f, 0.4f), new(0f, 0.15f, 1f), -0.28f, 10f);
-            definition.DrawPose = BattleAnimationLibrary.TwoHanded(new(0.16f, 1.52f, 0.36f), new(0f, 0.02f, 1f), -0.3f, 4f);
-            definition.ReleasePose = BattleAnimationLibrary.TwoHanded(new(0.16f, 1.5f, 0.3f), new(0f, 0.08f, 1f), -0.3f, 4f);
+            definition.Idle = idle;
+            definition.DrawPose = idle;
+            definition.ReleasePose = idle;
+            definition.EquipShown = 10 * Footage;
+            definition.EquipVia = new()
+            {
+                new(0f, CrossbowPose(new(0.25f, 1.05f, 0.2f), -10f, -25f, 40f)),
+                PoseKey.Flow(10 * Footage, CrossbowPose(new(0.28f, 1.18f, 0.22f), -10f, 15f, 65f), 1f),
+                PoseKey.Flow(22 * Footage, CrossbowPose(new(0.22f, 1.42f, 0.3f), -10f, 35f, 65f), 1f),
+                PoseKey.Flow(30 * Footage, CrossbowPose(new(0.14f, 1.45f, 0.33f), -5f, 15f, 40f), 1f),
+                PoseKey.Flow(40 * Footage, CrossbowPose(new(0.09f, 1.44f, 0.33f), -3f, 4f, 12f), 0.8f),
+                PoseKey.Flow(48 * Footage, CrossbowPose(new(0.07f, 1.42f, 0.33f), -2f, 1f, 3f), 0.6f),
+                new(59 * Footage, idle)
+            };
+            definition.CanBlock = true;
+            definition.BlockRaise = 18 * Footage;
+            definition.BlockLower = 18 * Footage;
+            definition.BlockMitigation = 0.6f;
+            definition.BlockImpact = 0.3f;
+            definition.BlockRecovery = 0.4f;
+            definition.BlockAngle = 70f;
+            definition.BlockMove = 0.5f;
+            definition.Block = CrossbowPose(new(0.15f, 1.52f, 0.37f), -78f, 22f, -90f, 0.42f, default, new(-0.25f, 1.45f, 0.35f));
+            definition.BlockHit = CrossbowPose(new(0.15f, 1.48f, 0.33f), -78f, 20f, -90f, 0.42f, default, new(-0.25f, 1.42f, 0.32f));
+            definition.BlockLowered = CrossbowPose(new(0.15f, 1.45f, 0.35f), -78f, 18f, -90f, 0.42f, default, new(-0.25f, 1.4f, 0.33f));
+            // On the way up the left hand turns its knuckles from the floor to the front before it closes on the stock.
+            BodyPose rising = CrossbowPose(new(0.11f, 1.47f, 0.36f), -40f, 12f, -45f, 0.3f, default, new(-0.25f, 1.3f, 0.3f));
+            rising.Off.Up = Vector3.ProjectOnPlane(new Vector3(0f, 0.3f, 1f), rising.Off.Forward).normalized;
+            definition.BlockVia = new() { PoseKey.Flow(8 * Footage, rising, 1.2f) };
+            definition.BlockSocket = WeaponSocket.RightHand;
+            definition.BlockBoxCenter = new Vector3(0f, 0.175f, -0.1f);
+            definition.BlockBoxExtents = new Vector3(0.25f, 0.3f, 0.25f);
+            definition.ReleaseVia = new()
+            {
+                new(0f, idle),
+                new(2 * Frame, CrossbowPose(new(0.07f, 1.45f, 0.33f), -2f, 4f, 0f), Ease.Out),
+                new(6 * Frame, CrossbowPose(new(0.07f, 1.425f, 0.3f), -2f, 1f, 0f)),
+                new(CombatComponent.RecoilTime, idle)
+            };
+            definition.ReloadVia = new()
+            {
+                new(0f, idle),
+                PoseKey.Flow(14 * reload, Cocking(0.3f), 0.6f),
+                PoseKey.Flow(24 * reload, Cocking(0.34f), 0.6f),
+                PoseKey.Flow(40 * reload, Cocking(0.25f), 1f),
+                PoseKey.Flow(60 * reload, Cocking(0.12f), 1f),
+                PoseKey.Flow(77 * reload, Cocking(0.08f), 0.5f),
+                PoseKey.Flow(89 * reload, WithBolt(CrossbowPose(new(0.09f, 1.47f, 0.3f), -4f, -10f, 0f), new(-0.08f, 1.28f, 0.3f)), 1f),
+                PoseKey.Flow(112 * reload, WithBolt(CrossbowPose(new(0.08f, 1.46f, 0.31f), -3f, -8f, 0f), new(0f, 1.47f, 0.42f)), 0.6f),
+                PoseKey.Flow(126 * reload, WithBolt(CrossbowPose(new(0.07f, 1.45f, 0.32f), -2f, -2f, 0f), new(0.03f, 1.49f, 0.52f)), 0.6f),
+                new(139 * reload, idle)
+            };
             definition.DrawTime = 0.3f;
-            definition.ReloadTime = 1.8f;
+            definition.ReloadTime = 139 * reload;
             definition.IsManualReload = true;
             definition.ArrowMinSpeed = 36f;
             definition.ArrowMaxSpeed = 40f;
@@ -1555,6 +1615,36 @@ namespace Game.Scripts.Editor.Dungeon
             definition.ArrowMaxDamage = 39;
 
             return definition;
+        }
+
+        /// A crossbow pose from its stock: the grip point, the muzzle as yaw and elevation, and roll about the stock, + raising
+        /// the right tip of the prod (the top then faces left). The fist holds the grip as DungeonWeaponPrefabBuilder.CrossbowInHand
+        /// has it; its forearm comes up from an elbow below and behind it. An off hand that far up the fore-stock wraps it from
+        /// above, the thumb toward the butt.
+        private static BodyPose CrossbowPose(Vector3 grip, float yaw, float elevation, float roll, float offHand = 0f, Vector3 elbow = default,
+            Vector3 offElbow = default)
+        {
+            Vector3 stock = Quaternion.Euler(-elevation, yaw, 0f) * Vector3.forward;
+            Vector3 top = Quaternion.AngleAxis(roll, stock) * Vector3.ProjectOnPlane(Vector3.up, stock).normalized;
+            float angle = DungeonWeaponPrefabBuilder.CrossbowGrip * Mathf.Deg2Rad;
+            Vector3 fist = grip - top * 0.035f;
+            BodyPose pose = BattleAnimationLibrary.OneHanded(fist, -Mathf.Sin(angle) * stock + Mathf.Cos(angle) * top, 0f, 0f);
+            pose.Edge = Mathf.Cos(angle) * stock + Mathf.Sin(angle) * top;
+
+            pose.Off = offHand > 0f
+                ? new HandPose(grip + stock * offHand + top * 0.03f, -stock, Vector3.ProjectOnPlane(Vector3.up, stock).normalized)
+                : new HandPose(pose.Off.Position, new Vector3(0.15f, 0f, 1f), new Vector3(0f, -1f, 0.15f));
+
+            return BattleAnimationLibrary.Elbows(pose, elbow == default ? fist + new Vector3(0.13f, -0.24f, -0.23f) : elbow, offElbow);
+        }
+
+        /// The free left hand pinching a bolt at the given point, palm down, the fingers forward.
+        private static BodyPose WithBolt(BodyPose pose, Vector3 hand)
+        {
+            pose.Off = new HandPose(hand, new Vector3(0.95f, 0f, -0.33f), new Vector3(0.3f, 0.4f, 0.85f));
+            pose.OffOpen = 0.3f;
+
+            return pose;
         }
     }
 }

@@ -17,7 +17,9 @@ namespace Game.Scripts.Battle
         Draw,
         Reload,
         Stagger,
-        Busy
+        Busy,
+        /// The kick of a shot from a weapon loaded by hand, before it is back at rest.
+        Recoil
     }
 
     public enum AttackPhase : byte
@@ -65,6 +67,8 @@ namespace Game.Scripts.Battle
         }
 
         public const byte NoWeapon = 255;
+        /// Seconds a weapon loaded by hand kicks after a shot; its release clip is as long.
+        public const float RecoilTime = 0.25f;
 
         public event Action<Vector3, Vector3, ImpactSurface> OnWorldHit;
 
@@ -443,6 +447,7 @@ namespace Game.Scripts.Battle
                 case CombatState.Deflected:
                 case CombatState.Stagger:
                 case CombatState.Busy:
+                case CombatState.Recoil:
                     if (time >= _stateDuration)
                         SetState(CombatState.Idle);
                     break;
@@ -483,6 +488,10 @@ namespace Game.Scripts.Battle
             if (slot >= 0 && slot != WeaponSlot)
             {
                 StartEquip(slot, WeaponIndex, true);
+            }
+            else if (weapon.IsRanged && isBlockHeld && weapon.Block.CanBlock)
+            {
+                SetState(CombatState.BlockRaise);
             }
             else if (weapon.IsRanged && weapon.Ranged.IsManualReload)
             {
@@ -580,7 +589,7 @@ namespace Game.Scripts.Battle
             if (ranged.IsManualReload)
             {
                 _loadedSlots &= (byte)~(1 << WeaponSlot);
-                SetState(CombatState.Idle);
+                SetState(CombatState.Recoil, RecoilTime);
 
                 return;
             }
