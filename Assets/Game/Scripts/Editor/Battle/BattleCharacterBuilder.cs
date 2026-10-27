@@ -16,6 +16,8 @@ namespace Game.Scripts.Editor.Battle
         public const string AnimationsPath2 = PacksFolder + "/Animations/UniversalAnimationLibrary2/Unity/UAL2_Standard.fbx";
         public const string PeasantMaterial = "OutfitPeasant";
         public const string PeasantAltMaterial = "OutfitPeasant2";
+        // The peasant atlas with leather grain instead of the weave, for the boots.
+        public const string PeasantBootsMaterial = "OutfitPeasantBoots";
         public const string RangerMaterial = "OutfitRanger";
         public const string RangerAltMaterial = "OutfitRanger3";
         public const string WoodMaterial = "DummyWood";
@@ -137,10 +139,10 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.EnsureFolder(BattleEditorUtility.MaterialsFolder);
             BattleEditorUtility.EnsureFolder(BattleEditorUtility.PrefabsFolder);
 
-            Material peasant = ClothMaterial(PeasantMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_BaseColor"));
-            Material ranger = ClothMaterial(RangerMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_BaseColor"));
-            ClothMaterial(PeasantAltMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_2_BaseColor"));
-            ClothMaterial(RangerAltMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_3_BaseColor"));
+            BuildCloth();
+            Material peasant = LoadMaterial(PeasantMaterial);
+            Material ranger = LoadMaterial(RangerMaterial);
+            Material boots = LoadMaterial(PeasantBootsMaterial);
             GameObject maleSource = LoadSource(MaleBodyPath);
             GameObject femaleSource = LoadSource(FemaleBodyPath);
             GameObject manSource = LoadSource(ManPath);
@@ -166,7 +168,7 @@ namespace Game.Scripts.Editor.Battle
                 for (int i = 0; i < s_parts.Length; i++)
                 {
                     (string outfit, string male, string female, BodyRegion region) = s_parts[i];
-                    Material cloth = outfit == "Peasant" ? peasant : ranger;
+                    Material cloth = male == "Peasant_Feet" ? boots : outfit == "Peasant" ? peasant : ranger;
                     covers[i] = region;
                     maleParts[i] = CreatePart(LoadOutfit(outfits, sources, "Male_" + outfit), "Male_" + male, outfitRoot, bones, scale, cloth, SkinMaterial("Male"));
                     femaleParts[i] = CreatePart(LoadOutfit(outfits, sources, "Female_" + outfit), "Female_" + female, outfitRoot, bones, scale, cloth, SkinMaterial("Female"));
@@ -194,6 +196,18 @@ namespace Game.Scripts.Editor.Battle
                 foreach (GameObject source in sources)
                     Object.DestroyImmediate(source);
             }
+        }
+
+        /// Outfit materials alone: the character prefab refers to them, so new detail shows without rebuilding it.
+        [MenuItem("Tools/Game/Battle/Build Cloth Materials")]
+        public static void BuildCloth()
+        {
+            ClothMaterial(PeasantMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_BaseColor"));
+            ClothMaterial(PeasantBootsMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_BaseColor"), ClothDetailBuilder.Leather);
+            ClothMaterial(RangerMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_BaseColor"));
+            ClothMaterial(PeasantAltMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_2_BaseColor"));
+            ClothMaterial(RangerAltMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_3_BaseColor"));
+            AssetDatabase.SaveAssets();
         }
 
         /// Static figure for props: the character dressed with the given parts, posed by one moment of a clip and baked into
@@ -958,9 +972,12 @@ namespace Game.Scripts.Editor.Battle
         }
 
         /// Cloth of an outfit: any base colour atlas over the normals and the mask of the pack.
-        public static Material ClothMaterial(string name, string outfit, string baseColor)
+        public static Material ClothMaterial(string name, string outfit, string baseColor, string detail = ClothDetailBuilder.Fabric)
         {
-            return TexturedMaterial(name, baseColor, PackTexture(outfit, $"T_{outfit}_Normal"), CreateMask(PackTexture(outfit, $"T_{outfit}_ORM"), true));
+            Material material = TexturedMaterial(name, baseColor, PackTexture(outfit, $"T_{outfit}_Normal"), CreateMask(PackTexture(outfit, $"T_{outfit}_ORM"), true));
+            ClothDetailBuilder.Apply(material, detail);
+
+            return material;
         }
 
         /// Another mask for a cloth material: dyed looks may turn cloth into metal.
@@ -1076,7 +1093,7 @@ namespace Game.Scripts.Editor.Battle
         }
 
         /// A texture read back at mask size through the GPU, so its import settings do not matter.
-        private static Color32[] ReadPixels(string sourcePath)
+        internal static Color32[] ReadPixels(string sourcePath)
         {
             SetLinear(sourcePath);
             RenderTexture target = RenderTexture.GetTemporary(MaskSize, MaskSize, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);

@@ -279,7 +279,8 @@ namespace Game.Scripts.Editor.Dungeon
                 piece.ArmorType = type;
                 piece.Slot = (EquipSlot)i;
                 piece.Visual = (ArmorVisual)((int)ArmorVisual.PeasantHead + index + i);
-                piece.Material = piece.Parts[0] <= OutfitPart.PeasantFeet ? peasantCloth : rangerCloth;
+                piece.Material = piece.Parts[0] == OutfitPart.PeasantFeet ? BattleCharacterBuilder.PeasantBootsMaterial
+                    : piece.Parts[0] < OutfitPart.PeasantFeet ? peasantCloth : rangerCloth;
                 piece.Glyph = glyphs[i];
                 piece.Color = color;
                 piece.Height = piece.Slot == EquipSlot.Chest ? 3 : 2;
