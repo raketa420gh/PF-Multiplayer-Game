@@ -171,7 +171,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             List<WeaponDefinition> all = new()
             {
-                BattleAnimationLibrary.CreateBow(),
+                CreateBow(),
                 CreateFists(),
                 CreateArmingSword(),
                 CreateBattleAxe(),
@@ -1534,6 +1534,106 @@ namespace Game.Scripts.Editor.Dungeon
             BodyPose pose = offHand == 0f
                 ? BattleAnimationLibrary.OneHanded(grip, blade, torso, pitch)
                 : BattleAnimationLibrary.TwoHanded(grip, blade, offHand, torso, pitch);
+
+            return BattleAnimationLibrary.Elbows(pose, elbow, offElbow);
+        }
+
+        /// The recurve bow of D:\recurvebow_*.mp4, first person (Docs/Tasks/BowAnimations.md). Carried low in the left fist, the upper
+        /// limb leaning right up through the view, the right hand off it. Taken up from the hip on the quiver side and swung up into
+        /// the idle; blocked flat across the chest, the right fist round the upper limb by the tip. A draw lowers and flattens the bow
+        /// to nock, then pulls it up canted to the anchor; a shot keeps the bow still a moment and lowers it back to the idle.
+        private static WeaponDefinition CreateBow()
+        {
+            float draw = BattleAnimationLibrary.FullDrawTime / 56f;
+            float release = BattleAnimationLibrary.ReloadTime / 44f;
+            Vector3 rest = new(0.2f, 1.05f, 0.15f);
+            Vector3 anchor = new(0.06f, 1.5f, 0.1f);
+            Vector3 low = new(-0.35f, 1.25f, 0.25f);
+            Vector3 drawElbow = new(0.32f, 1.55f, -0.15f);
+            Vector3 bowElbow = new(-0.3f, 1.45f, 0.3f);
+            Vector3 pullElbow = new(-0.34f, 1.4f, 0.28f);
+            Vector3 blockElbow = new(0.42f, 1.66f, 0.25f);
+            Vector3 blockOffElbow = new(-0.38f, 1.35f, 0.28f);
+            BodyPose idle = BowPose(OnScreen(0.468f, 0.869f, 0.396f), 43.5f, 15f, rest, default, low);
+            BodyPose drawn = BowPose(OnScreen(0.51f, 0.55f, 0.435f), 38f, 0f, anchor, drawElbow, bowElbow);
+            BodyPose loosed = BowPose(OnScreen(0.505f, 0.56f, 0.435f), 35f, 0f, new(0.18f, 1.38f, 0.2f), default, bowElbow, open: 0.8f);
+
+            WeaponDefinition definition = BattleAnimationLibrary.CreateBow();
+            definition.Idle = idle;
+            definition.EquipShown = Footage;
+            definition.EquipVia = new()
+            {
+                new(0f, BowPose(new(0.05f, 1f, 0.35f), 70f, 30f, rest, default, low)),
+                PoseKey.Flow(2 * Footage, BowPose(OnScreen(0.45f, 1.19f, 0.42f), 55f, 15f, rest, default, low), 1f),
+                PoseKey.Flow(8 * Footage, BowPose(OnScreen(0.31f, 1.19f, 0.366f), 54f, 15f, rest, default, low), 1f),
+                PoseKey.Flow(12 * Footage, BowPose(OnScreen(0.464f, 0.956f, 0.417f), 51f, 15f, rest, default, low), 1f),
+                PoseKey.Flow(16 * Footage, BowPose(OnScreen(0.47f, 0.871f, 0.417f), 48f, 15f, rest, default, low), 0.8f),
+                PoseKey.Flow(22 * Footage, BowPose(OnScreen(0.465f, 0.837f, 0.418f), 51f, 15f, rest, default, low), 0.5f),
+                new(32 * Footage, idle)
+            };
+            definition.CanBlock = true;
+            definition.BlockRaise = 20 * Footage;
+            definition.BlockLower = 26 * Footage;
+            definition.BlockMitigation = 0.6f;
+            definition.BlockImpact = 0.3f;
+            definition.BlockRecovery = 0.4f;
+            definition.BlockAngle = 70f;
+            definition.BlockMove = 0.5f;
+            definition.Block = BowPose(OnScreen(0.255f, 0.669f, 0.32f), 61f, 14f, default, blockElbow, blockOffElbow, 0.5f);
+            definition.BlockHit = BowPose(OnScreen(0.255f, 0.69f, 0.3f), 61f, 14f, default, blockElbow, blockOffElbow, 0.5f);
+            definition.BlockLowered = BowPose(OnScreen(0.26f, 0.7f, 0.31f), 61f, 14f, default, blockElbow, blockOffElbow, 0.5f);
+            // The bow pivots round the left fist, which dips and goes left-up, before the right hand closes on the limb.
+            definition.BlockVia = new()
+            {
+                PoseKey.Flow(6 * Footage, BowPose(OnScreen(0.422f, 0.863f, 0.322f), 42f, 18f, new(0.32f, 1.35f, 0.25f), default, pullElbow), 1f),
+                PoseKey.Flow(12 * Footage, BowPose(OnScreen(0.279f, 0.751f, 0.314f), 60f, 14f, default, blockElbow, blockOffElbow, 0.5f), 1f)
+            };
+            definition.BlockLowerVia = new()
+            {
+                PoseKey.Flow(4 * Footage, BowPose(OnScreen(0.353f, 0.766f, 0.292f), 48f, 17.5f, new(0.3f, 1.62f, 0.4f), default, bowElbow, open: 0.8f), 1f),
+                PoseKey.Flow(10 * Footage, BowPose(OnScreen(0.459f, 0.861f, 0.43f), 24.5f, 15f, rest, default, low), 1f),
+                PoseKey.Flow(18 * Footage, BowPose(OnScreen(0.447f, 0.866f, 0.377f), 45f, 16f, rest, default, low), 0.5f)
+            };
+            definition.BlockSocket = WeaponSocket.LeftHand;
+            definition.BlockBoxCenter = new Vector3(0f, -0.05f, 0.2f);
+            definition.BlockBoxExtents = new Vector3(0.15f, 0.15f, 0.5f);
+            definition.DrawPose = drawn;
+            definition.ReleasePose = loosed;
+            definition.DrawVia = new()
+            {
+                PoseKey.Flow(6 * draw, BowPose(OnScreen(0.47f, 1f, 0.36f), 62f, 15f, new(0.2f, 1.35f, 0.3f), default, low), 1f),
+                PoseKey.Flow(12 * draw, BowPose(OnScreen(0.45f, 1.1f, 0.36f), 72f, 12f, OnScreen(0.64f, 0.41f, 0.3f), default, low), 1f),
+                PoseKey.Flow(20 * draw, BowPose(OnScreen(0.51f, 0.81f, 0.38f), 65f, 15f, OnScreen(0.59f, 0.58f, 0.3f), default, new(-0.33f, 1.36f, 0.28f)), 1f),
+                PoseKey.Flow(30 * draw, BowPose(OnScreen(0.49f, 0.69f, 0.38f), 60f, 8f, new(0.14f, 1.5f, 0.28f), drawElbow, pullElbow), 1f),
+                PoseKey.Flow(40 * draw, BowPose(OnScreen(0.51f, 0.65f, 0.42f), 48f, 3f, new(0.09f, 1.5f, 0.15f), drawElbow, pullElbow), 0.8f)
+            };
+            definition.ReleaseVia = new()
+            {
+                new(0f, drawn),
+                new(4 * release, loosed, Ease.Out),
+                new(10 * release, loosed),
+                PoseKey.Flow(14 * release, BowPose(OnScreen(0.5f, 0.6f, 0.381f), 48f, 15f, rest, default, low), 1f),
+                PoseKey.Flow(28 * release, BowPose(OnScreen(0.507f, 0.778f, 0.45f), 36f, 15f, rest, default, low), 0.6f),
+                new(44 * release, idle)
+            };
+
+            return definition;
+        }
+
+        /// A bow pose: the left fist on the grip, the stave leaned ahead by lean and rolled by roll, + the top to the right, the
+        /// string toward the eye. The right hand at the given point, or with hold > 0 round the upper limb at that length from the
+        /// grip, the bow then lying with its string down.
+        private static BodyPose BowPose(Vector3 grip, float roll, float lean, Vector3 right, Vector3 elbow = default, Vector3 offElbow = default,
+            float hold = 0f, float open = 0.3f)
+        {
+            Vector3 stave = Quaternion.AngleAxis(-roll, Vector3.forward) * Quaternion.AngleAxis(lean, Vector3.right) * Vector3.up;
+            Vector3 face = hold > 0f ? new Vector3(0f, 0.6f, 1f) : Vector3.forward;
+            BodyPose pose = BattleAnimationLibrary.Bow(grip, stave, Vector3.ProjectOnPlane(face, stave).normalized, hold > 0f ? grip + stave * hold : right);
+
+            if (hold > 0f)
+                pose.Main.Forward = -stave;
+
+            pose.MainOpen = hold > 0f ? 0f : open;
 
             return BattleAnimationLibrary.Elbows(pose, elbow, offElbow);
         }

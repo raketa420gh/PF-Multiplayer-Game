@@ -20,22 +20,42 @@ MonoBehaviour:
   - _prefab: {fileID: 636974515079078465, guid: 1f2617ee3dd733e4aac701db3340e4b1, type: 3}
     _socket: 1
   _deflectDuration: 0
+  _isBareHands: 0
+  _equipTime: 0.40000004
+  _equipShown: 0.012500001
+  _unequipTime: 0
+  _unequipHidden: 0
   _reach: 0
   _attacks: []
+  _hasRiposte: 0
+  _riposte:
+    _windupTime: 0.3
+    _activeTime: 0.2
+    _recoveryTime: 0.4
+    _comboWindowStart: 0.4
+    _comboWindowEnd: 0.75
+    _damage: 20
+    _moveMultiplier: 0.6
+    _staggerDuration: 0
+    _traceSampleRate: 60
+    _traceBase: []
+    _traceTip: []
   _block:
-    _canBlock: 0
-    _raiseTime: 0.2
-    _mitigation: 1
-    _impactDuration: 0.25
-    _recoveryDuration: 0.35
+    _canBlock: 1
+    _raiseTime: 0.25000003
+    _mitigation: 0.6
+    _impactDuration: 0.3
+    _recoveryDuration: 0.4
     _stability: 1
     _breakDuration: 0.8
-    _angleTolerance: 100
-    _moveMultiplier: 0.55
+    _angleTolerance: 70
+    _moveMultiplier: 0.5
+    _lowerTime: 0.32500002
   _ranged:
     _minDrawTime: 0.35
     _fullDrawTime: 0.9
     _reloadTime: 0.6
+    _isManualReload: 0
     _minSpeed: 14
     _maxSpeed: 30
     _minDamage: 14
@@ -44,5 +64,6 @@ MonoBehaviour:
     _lifetime: 5
     _drawMoveMultiplier: 0.5
     _staggerDuration: 0.15
+  _sounds: {fileID: 0}
   _damageType: 0
   _impact: 3

@@ -130,6 +130,8 @@ namespace Game.Scripts.Editor.Battle
 
         public BodyPose DrawPose;
         public BodyPose ReleasePose;
+        /// The poses a draw passes from the idle to DrawPose, in seconds of the draw time: nocking, the pull.
+        public List<PoseKey> DrawVia = new();
         /// The kick of a shot of a weapon loaded by hand, from the idle, in seconds; none = drawn, released and back to the idle.
         public List<PoseKey> ReleaseVia = new();
         /// Loading by hand, from the idle and back to it, in seconds; its length is the reload time.
@@ -536,12 +538,12 @@ namespace Game.Scripts.Editor.Battle
 
         public static List<PoseKey> DrawKeys(WeaponDefinition weapon, float drawTime)
         {
-            return new List<PoseKey>
-            {
-                new(0f, weapon.Idle),
-                new(drawTime, weapon.DrawPose, Ease.Out),
-                new(drawTime + 0.1f, weapon.DrawPose)
-            };
+            List<PoseKey> keys = new() { new(0f, weapon.Idle) };
+            keys.AddRange(weapon.DrawVia);
+            keys.Add(new(drawTime, weapon.DrawPose, Ease.Out));
+            keys.Add(new(drawTime + 0.1f, weapon.DrawPose));
+
+            return keys;
         }
 
         public static List<PoseKey> ReleaseKeys(WeaponDefinition weapon, float reloadTime)

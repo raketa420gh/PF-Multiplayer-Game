@@ -66,7 +66,7 @@ namespace Game.Scripts.Battle
             if (_string == null)
                 return;
 
-            Vector3 nock = isDrawn ? handPosition : _nockRest.position;
+            Vector3 nock = isDrawn && IsOnString(handPosition) ? handPosition : _nockRest.position;
 
             _string.SetPosition(0, _stringTop.position);
             _string.SetPosition(1, nock);
@@ -76,6 +76,14 @@ namespace Game.Scripts.Battle
 
             if (hasArrow)
                 _arrow.SetPositionAndRotation(nock, Quaternion.LookRotation(transform.position - nock, transform.forward));
+        }
+
+        /// The draw hand pulls the string only from behind the bow, between its limbs: nocking, it is elsewhere.
+        private bool IsOnString(Vector3 handPosition)
+        {
+            Vector3 local = transform.InverseTransformPoint(handPosition);
+
+            return local.y < _nockRest.localPosition.y + 0.03f && Mathf.Abs(local.z) < 0.35f && Mathf.Abs(local.x) < 0.2f;
         }
     }
 }

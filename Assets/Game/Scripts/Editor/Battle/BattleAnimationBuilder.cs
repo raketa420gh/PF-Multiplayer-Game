@@ -527,6 +527,7 @@ namespace Game.Scripts.Editor.Battle
 
             SettleRoll(rig, weapon.BlockVia);
             SettleRoll(rig, weapon.BlockLowerVia);
+            SettleRoll(rig, weapon.DrawVia);
         }
 
         private static void SettleRoll(BattlePoseRig rig, ref BodyPose pose)

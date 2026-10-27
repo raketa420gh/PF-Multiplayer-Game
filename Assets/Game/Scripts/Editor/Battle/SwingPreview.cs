@@ -82,6 +82,7 @@ namespace Game.Scripts.Editor.Battle
                 "castrelease" => weapon.CastReleaseVia,
                 "equip" => weapon.EquipVia,
                 "unequip" => weapon.UnequipVia,
+                "draw" => BattleAnimationLibrary.DrawKeys(weapon, weapon.DrawTime > 0f ? weapon.DrawTime : BattleAnimationLibrary.FullDrawTime),
                 "release" => weapon.ReleaseVia,
                 "reload" => weapon.ReloadVia,
                 "ability" => BattleAnimationLibrary.AbilityKeys(),
