@@ -16,14 +16,15 @@ namespace Game.Scripts.Editor.Battle
         private const string TexturesFolder = "Assets/Game/Textures/Battle";
         private const int MaxSize = 1024;
 
-        /// Repeats per atlas: one atlas unit spans about 2.4 m of the outfit, a tile about 15 cm of linen or 40 cm of leather.
+        /// Repeats per atlas: one atlas unit spans about 2.4 m of the outfit, a tile about 15 cm of linen or 30 cm of leather.
         private static readonly (string name, float tiling, float normal, float albedo)[] s_sources =
         {
-            (Fabric, 16f, 1.5f, 0.6f), (Leather, 6f, 1.2f, 0.6f)
+            (Fabric, 16f, 1.5f, 0.6f), (Leather, 8f, 0.8f, 0.6f)
         };
 
         /// Gives the material the detail of a source; without the downloaded source the material stays as it is.
-        public static void Apply(Material material, string source)
+        /// The ORM keeps the detail off metal.
+        public static void Apply(Material material, string source, string ormPath)
         {
             (string name, float tiling, float normal, float albedo) = System.Array.Find(s_sources, entry => entry.name == source);
             string color = FindMap(name, "_BaseColor");
@@ -38,6 +39,7 @@ namespace Game.Scripts.Editor.Battle
 
             material.SetTexture("_DetailAlbedoMap", Albedo(name, color));
             material.SetTexture("_DetailNormalMap", Normal(normalMap));
+            material.SetTexture("_DetailMask", Mask(ormPath));
             material.SetTextureScale("_DetailAlbedoMap", Vector2.one * tiling);
             material.SetFloat("_DetailAlbedoMapScale", albedo);
             material.SetFloat("_DetailNormalMapScale", normal);
@@ -97,6 +99,34 @@ namespace Game.Scripts.Editor.Battle
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
             importer.sRGBTexture = false;
             importer.maxTextureSize = MaxSize;
+            importer.SaveAndReimport();
+
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
+        /// Detail mask (alpha, atlas UV): the ORM's metallic (blue) taken away, so buckles and studs stay plain metal.
+        private static Texture2D Mask(string ormPath)
+        {
+            string path = $"{TexturesFolder}/{Path.GetFileNameWithoutExtension(ormPath)}_DetailMask.png";
+
+            if (!File.Exists(path))
+            {
+                Color32[] colors = BattleCharacterBuilder.ReadPixels(ormPath);
+
+                for (int i = 0; i < colors.Length; i++)
+                    colors[i] = new Color32(255, 255, 255, (byte)(255 - colors[i].b));
+
+                int size = (int)Mathf.Sqrt(colors.Length);
+                Texture2D pixels = new Texture2D(size, size, TextureFormat.RGBA32, false, true);
+                pixels.SetPixels32(colors);
+                File.WriteAllBytes(path, pixels.EncodeToPNG());
+                Object.DestroyImmediate(pixels);
+                AssetDatabase.ImportAsset(path);
+            }
+
+            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.sRGBTexture = false;
+            importer.alphaSource = TextureImporterAlphaSource.FromInput;
             importer.SaveAndReimport();
 
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);

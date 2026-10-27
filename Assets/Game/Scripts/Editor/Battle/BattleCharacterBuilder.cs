@@ -204,9 +204,10 @@ namespace Game.Scripts.Editor.Battle
         {
             ClothMaterial(PeasantMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_BaseColor"));
             ClothMaterial(PeasantBootsMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_BaseColor"), ClothDetailBuilder.Leather);
-            ClothMaterial(RangerMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_BaseColor"));
+            // The ranger hood and bracers are leather.
+            ClothMaterial(RangerMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_BaseColor"), ClothDetailBuilder.Leather);
             ClothMaterial(PeasantAltMaterial, "Peasant", PackTexture("Peasant", "T_Peasant_2_BaseColor"));
-            ClothMaterial(RangerAltMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_3_BaseColor"));
+            ClothMaterial(RangerAltMaterial, "Ranger", PackTexture("Ranger", "T_Ranger_3_BaseColor"), ClothDetailBuilder.Leather);
             AssetDatabase.SaveAssets();
         }
 
@@ -974,8 +975,9 @@ namespace Game.Scripts.Editor.Battle
         /// Cloth of an outfit: any base colour atlas over the normals and the mask of the pack.
         public static Material ClothMaterial(string name, string outfit, string baseColor, string detail = ClothDetailBuilder.Fabric)
         {
-            Material material = TexturedMaterial(name, baseColor, PackTexture(outfit, $"T_{outfit}_Normal"), CreateMask(PackTexture(outfit, $"T_{outfit}_ORM"), true));
-            ClothDetailBuilder.Apply(material, detail);
+            string orm = PackTexture(outfit, $"T_{outfit}_ORM");
+            Material material = TexturedMaterial(name, baseColor, PackTexture(outfit, $"T_{outfit}_Normal"), CreateMask(orm, true));
+            ClothDetailBuilder.Apply(material, detail, orm);
 
             return material;
         }
