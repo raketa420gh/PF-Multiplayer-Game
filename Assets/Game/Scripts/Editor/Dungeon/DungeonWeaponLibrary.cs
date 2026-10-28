@@ -783,6 +783,27 @@ namespace Game.Scripts.Editor.Dungeon
             return new Vector3(eye.x + (2f * u - 1f) * 1.364f * depth, eye.y - (2f * v - 1f) * 0.767f * depth, eye.z + depth);
         }
 
+        /// A one-handed sword read off the screen: the crossguard at (u, v) that far ahead of the eye, the tip on the ray through
+        /// (tipU, tipV), the edge turned from square to the view (the flat to the camera, 0) to along it (edge on, 1).
+        private static BodyPose Sword(float u, float v, float depth, float tipU, float tipV, float edgeOn, float torso, Vector3 elbow, Vector3 offHand)
+        {
+            const float guardToTip = 0.8f;
+            const float gripToGuard = 0.1f;
+
+            Vector3 eye = BattleAnimationLibrary.Eye;
+            Vector3 guard = OnScreen(u, v, depth);
+            Vector3 ray = OnScreen(tipU, tipV, 1f) - eye;
+            Vector3 toEye = eye - guard;
+            float b = Vector3.Dot(toEye, ray);
+            float t = (-b + Mathf.Sqrt(b * b - ray.sqrMagnitude * (toEye.sqrMagnitude - guardToTip * guardToTip))) / ray.sqrMagnitude;
+            Vector3 blade = (eye + ray * t - guard).normalized;
+            Vector3 view = guard - eye;
+            BodyPose pose = Pose(guard - blade * gripToGuard, blade, torso, 5f, elbow, offHand, 0f);
+            pose.Edge = Vector3.Slerp(Vector3.Cross(view, blade).normalized, Vector3.ProjectOnPlane(view, blade).normalized, edgeOn);
+
+            return pose;
+        }
+
         private static BodyPose Shifted(BodyPose pose, Vector3 offset)
         {
             pose.Main.Position += offset;
@@ -847,7 +868,11 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static WeaponDefinition CreateArmingSword(string name, float bladeBase, float bladeTip, float reach, int damage)
         {
-            BodyPose idle = At(Cm(20f, 1.15f, 40f), 0f, 85f, 0f, 5f, Cm(25f, 1f, 10f), Cm(-25f, 1f, 5f));
+            Vector3 offHand = Cm(-25f, 1f, 5f);
+            Vector3 lowElbow = new(0.55f, 1.3f, 0.35f);
+            Vector3 blockElbow = new(0.5f, 1.55f, 0.2f);
+            // The footage's first frame: the blade upright at the right of the view, flat to the camera, the fist under the bottom edge.
+            BodyPose idle = Sword(0.72f, 0.8f, 0.45f, 0.72f, -0.3f, 0.3f, 0f, lowElbow, offHand);
             BodyPose upright = At(Cm(20f, 1.1f, 35f), 0f, 78f, 0f, 5f, Cm(25f, 1f, 10f), Cm(-25f, 1f, 5f), 10f);
             BodyPose levelLow = At(Cm(20f, 1f, 30f), 0f, 0f, 5f, 5f, Cm(25f, 1f, 5f), Cm(-25f, 1f, 5f), 30f);
             // The arm hangs out to the right and back after a cut down the right side.
@@ -964,16 +989,37 @@ namespace Game.Scripts.Editor.Dungeon
                 Attacks = new[] { forehand, backhand, thrust },
                 Riposte = riposte,
                 CanBlock = true,
-                BlockRaise = 0.2f,
+                BlockRaise = 14 * Footage,
+                // The fist rises out of the bottom right while the blade turns over to the left onto its edge, overshooting up-left.
+                BlockVia = new()
+                {
+                    PoseKey.Flow(2 * Footage, Sword(0.78f, 0.8f, 0.45f, 0.6f, -0.3f, 0.35f, 0f, lowElbow, offHand), 1f),
+                    PoseKey.Flow(4 * Footage, Sword(0.82f, 0.76f, 0.45f, 0.5f, -0.3f, 0.45f, -3f, lowElbow, offHand), 1f),
+                    PoseKey.Flow(6 * Footage, Sword(0.71f, 0.64f, 0.46f, 0.1f, -0.3f, 0.6f, -6f, new(0.45f, 1.3f, 0.2f), offHand), 1f),
+                    PoseKey.Flow(8 * Footage, Sword(0.7f, 0.47f, 0.45f, 0.1f, 0.24f, 0.9f, -10f, blockElbow, offHand), 1f),
+                    PoseKey.Flow(10 * Footage, Sword(0.72f, 0.38f, 0.45f, 0.22f, 0.42f, 1f, -10f, blockElbow, offHand), 0.6f),
+                    PoseKey.Flow(12 * Footage, Sword(0.73f, 0.41f, 0.45f, 0.27f, 0.45f, 1f, -10f, blockElbow, offHand), 0.6f)
+                },
+                BlockLower = 16 * Footage,
+                // The fist drops first with the tip held left of the crosshair, then the blade rises upright as the fist goes under the edge.
+                BlockLowerVia = new()
+                {
+                    PoseKey.Flow(1 * Footage, Sword(0.76f, 0.54f, 0.45f, 0.26f, 0.5f, 1f, -10f, blockElbow, offHand), 1f),
+                    PoseKey.Flow(3 * Footage, Sword(0.71f, 0.74f, 0.46f, 0.26f, 0.5f, 0.9f, -8f, blockElbow, offHand), 1f),
+                    PoseKey.Flow(5 * Footage, Sword(0.71f, 0.79f, 0.46f, 0.25f, 0.39f, 0.65f, -6f, new(0.45f, 1.3f, 0.2f), offHand), 1f),
+                    PoseKey.Flow(7 * Footage, Sword(0.74f, 0.82f, 0.45f, 0.44f, -0.3f, 0.45f, -3f, lowElbow, offHand), 1f),
+                    PoseKey.Flow(11 * Footage, Sword(0.73f, 0.8f, 0.45f, 0.51f, -0.3f, 0.35f, 0f, lowElbow, offHand), 1f),
+                    PoseKey.Flow(13 * Footage, Sword(0.72f, 0.8f, 0.45f, 0.63f, -0.3f, 0.3f, 0f, lowElbow, offHand), 0.6f)
+                },
                 BlockMitigation = 0.7f,
                 BlockImpact = 0.28f,
                 BlockRecovery = 0.4f,
                 BlockAngle = 80f,
                 BlockMove = 0.6f,
-                // The first frame of the riposte in the footage: low before the belly, the blade across the body to the left.
-                Block = At(Cm(15f, 1.1f, 40f), -55f, 25f, -15f, 5f, Cm(25f, 1f, 10f), Cm(-20f, 1f, 5f)),
-                BlockHit = At(Cm(13f, 1.06f, 34f), -58f, 20f, -15f, 0f, Cm(25f, 0.98f, 5f), Cm(-20f, 1f, 3f)),
-                BlockLowered = At(Cm(14f, 1.05f, 36f), -50f, 15f, -12f, 5f, Cm(25f, 0.97f, 8f), Cm(-22f, 1f, 5f)),
+                // The footage's hold: the blade level across the view at eye height, edge on, the tip left of the crosshair.
+                Block = Sword(0.74f, 0.42f, 0.45f, 0.3f, 0.5f, 1f, -10f, blockElbow, offHand),
+                BlockHit = Sword(0.74f, 0.45f, 0.45f, 0.3f, 0.53f, 1f, -10f, blockElbow, offHand),
+                BlockLowered = Sword(0.74f, 0.44f, 0.45f, 0.3f, 0.52f, 1f, -10f, blockElbow, offHand),
                 DeflectPose = At(Cm(34f, 1.62f, 10f), 45f, 63f, 12f, -6f, Cm(42f, 1.35f, 0f), Cm(-25f, 1f, 5f)),
                 BlockSocket = WeaponSocket.RightHand,
                 BlockBoxCenter = new Vector3(0f, 0f, (bladeBase + bladeTip) * 0.5f),
