@@ -1,0 +1,127 @@
+{
+ "name": "item_necklace_place",
+ "about": "DaD Item_2D_Necklace_Drop (also Item_3D_Drop_Necklace media): chain set down - jingle hit with a soft low-mid lay thud (150-500 Hz), settle slide/second jingle at ~180-300 ms, tail to ~0.6 s",
+ "reference": "D:/DaD_Sounds/Item_2D_Necklace_Drop",
+ "length_ms": 680,
+ "variants": 12,
+ "seed": 9200,
+ "layers": [
+  {
+   "src": "rpg80/chain_0*.ogg",
+   "at_ms": [
+    15,
+    50
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    0,
+    4
+   ],
+   "hp": 1200,
+   "max_ms": 300,
+   "snap": {
+    "hold": [
+     30,
+     60
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   },
+   "lp": 11000
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth.wav",
+   "at_ms": [
+    15,
+    45
+   ],
+   "gain_db": [
+    -14,
+    -8
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "lp": 900,
+   "hp": 120,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     30,
+     50
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/keys_0[4-7].ogg",
+   "at_ms": [
+    150,
+    260
+   ],
+   "gain_db": [
+    -10,
+    -5
+   ],
+   "pitch": [
+    1,
+    5
+   ],
+   "hp": 1800,
+   "max_ms": 300,
+   "snap": {
+    "hold": [
+     30,
+     60
+    ],
+    "tau": [
+     40,
+     70
+    ]
+   },
+   "lp": 11000
+  },
+  {
+   "src": "rpg80/chain_03.ogg",
+   "chance": 0.4,
+   "at_ms": [
+    300,
+    420
+   ],
+   "gain_db": [
+    -18,
+    -12
+   ],
+   "pitch": [
+    2,
+    5
+   ],
+   "hp": 2000,
+   "max_ms": 220
+  }
+ ],
+ "room": {
+  "db": -24,
+  "decay_ms": 60,
+  "len_ms": 300,
+  "band": [
+   800,
+   10000
+  ]
+ },
+ "match": 1.0,
+ "fade_ms": 120,
+ "peak_db": -5,
+ "shelf": {
+  "hz": 9000,
+  "db": -8
+ }
+}

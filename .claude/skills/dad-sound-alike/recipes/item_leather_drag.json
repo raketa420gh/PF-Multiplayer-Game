@@ -1,0 +1,121 @@
+{
+ "name": "item_leather_drag",
+ "about": "DaD Item_2D_LeatherChest_Drag: leather item grabbed with the cursor: short bright creak/squeak peaking 40-80 ms, falls ~15 dB per 40 ms, low floor; airy top",
+ "reference": "D:/DaD_Sounds/Item_2D_LeatherChest_Drag",
+ "length_ms": 420,
+ "variants": 12,
+ "seed": 8500,
+ "layers": [
+  {
+   "src": "leather_slices/sheath/*.wav",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     55,
+     70
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/quiver/*.wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -8,
+    -4
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     40,
+     55
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/sheath/*.wav",
+   "at_ms": [
+    170,
+    230
+   ],
+   "gain_db": [
+    -17,
+    -13
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 400,
+   "max_ms": 220
+  },
+  {
+   "src": "weapons_apparel/sfx/boots-leather-*.wav",
+   "at_ms": [
+    20,
+    50
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "lp": 300,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -34,
+  "decay_ms": 30,
+  "len_ms": 200,
+  "band": [
+   2000,
+   12000
+  ]
+ },
+ "match": 1.0,
+ "fade_ms": 40,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 11000,
+  "db": 10
+ }
+}

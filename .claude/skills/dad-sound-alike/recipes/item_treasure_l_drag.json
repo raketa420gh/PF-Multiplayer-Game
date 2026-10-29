@@ -1,0 +1,103 @@
+{
+ "name": "item_treasure_l_drag",
+ "about": "DaD Item_2D_Treasure_L_Drag (candelabrum/jug picked up with the cursor): soft resonant vessel knocks (150-500 Hz body), one near the start and a louder one at 150-300 ms, slow ring-down, no sharp click",
+ "reference": "D:/DaD_Sounds/Item_2D_Treasure_L_Drag",
+ "length_ms": 800,
+ "variants": 12,
+ "seed": 9500,
+ "layers": [
+  {
+   "src": "treasure_slices/clink_l/*",
+   "at_ms": [
+    10,
+    40
+   ],
+   "gain_db": [
+    -8,
+    -3
+   ],
+   "pitch": [
+    -4,
+    0
+   ],
+   "snap": {
+    "hold": [
+     15,
+     30
+    ],
+    "tau": [
+     50,
+     80
+    ]
+   },
+   "hp": 100,
+   "lp": 16000
+  },
+  {
+   "src": "treasure_slices/clink_l/*",
+   "at_ms": [
+    80,
+    200
+   ],
+   "gain_db": [
+    -6,
+    -1
+   ],
+   "pitch": [
+    -4,
+    0
+   ],
+   "snap": {
+    "hold": [
+     15,
+     30
+    ],
+    "tau": [
+     60,
+     90
+    ]
+   },
+   "count": [
+    1,
+    2
+   ],
+   "gap_ms": [
+    50,
+    110
+   ],
+   "until_ms": 280,
+   "hp": 100,
+   "lp": 16000
+  },
+  {
+   "src": "treasure_slices/rub/*",
+   "at_ms": [
+    0,
+    50
+   ],
+   "gain_db": [
+    -20,
+    -14
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 200,
+   "lp": 14000,
+   "max_ms": 400
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 70,
+  "len_ms": 350,
+  "band": [
+   150,
+   8000
+  ]
+ },
+ "match": 0.8,
+ "fade_ms": 200,
+ "peak_db": -4
+}

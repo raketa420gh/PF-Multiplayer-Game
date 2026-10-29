@@ -1,0 +1,278 @@
+{
+ "name": "item_potion_drop",
+ "about": "DaD Item_3D_Potion_Drop: empty glass bottle dropped on the floor - ringing glass hit at ~40 ms, a bounce as loud at 210-260 ms, a third at 380-440 ms, then 3-6 smaller bounces/rolls to ~1 s and faint tinkles to ~1.4 s, very quiet tail to 2 s",
+ "reference": "D:/DaD_Sounds/Item_3D_Potion_Drop",
+ "length_ms": 2100,
+ "variants": 12,
+ "seed": 9800,
+ "layers": [
+  {
+   "src": "glass_slices/vial/*",
+   "at_ms": [
+    30,
+    45
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 800,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     30,
+     45
+    ]
+   }
+  },
+  {
+   "src": "breaking_falling/bfh1_glass_hit_0*.ogg",
+   "at_ms": [
+    30,
+    45
+   ],
+   "gain_db": [
+    -6,
+    -2
+   ],
+   "pitch": [
+    -6,
+    -3
+   ],
+   "hp": 700,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     35,
+     50
+    ]
+   },
+   "lp": 5500
+  },
+  {
+   "src": "glass_slices/vial/*",
+   "at_ms": [
+    210,
+    260
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 800,
+   "snap": {
+    "hold": [
+     6,
+     12
+    ],
+    "tau": [
+     25,
+     40
+    ]
+   }
+  },
+  {
+   "src": "breaking_falling/bfh1_glass_hit_0*.ogg",
+   "at_ms": [
+    210,
+    260
+   ],
+   "gain_db": [
+    -9,
+    -4
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 700,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     30,
+     45
+    ]
+   },
+   "lp": 5500,
+   "chance": 0.7
+  },
+  {
+   "src": "glass_slices/vial/*",
+   "at_ms": [
+    380,
+    440
+   ],
+   "gain_db": [
+    -7,
+    -2
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 800,
+   "snap": {
+    "hold": [
+     5,
+     10
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "glass_slices/vial/*",
+   "at_ms": [
+    500,
+    560
+   ],
+   "gain_db": [
+    -15,
+    -7
+   ],
+   "pitch": [
+    1,
+    4
+   ],
+   "hp": 800,
+   "snap": {
+    "hold": [
+     3,
+     6
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   },
+   "count": [
+    2,
+    4
+   ],
+   "gap_ms": [
+    50,
+    120
+   ],
+   "until_ms": 650
+  },
+  {
+   "src": "glass_slices/tink/*",
+   "at_ms": [
+    750,
+    950
+   ],
+   "gain_db": [
+    -38,
+    -28
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 700,
+   "snap": {
+    "hold": [
+     3,
+     6
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   },
+   "count": [
+    2,
+    4
+   ],
+   "gap_ms": [
+    100,
+    220
+   ],
+   "until_ms": 1450,
+   "lp": 8000
+  },
+  {
+   "src": "ore_slices/stone/qubodupImpactStone.flac",
+   "at_ms": [
+    30,
+    45
+   ],
+   "gain_db": [
+    -30,
+    -26
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "lp": 140,
+   "snap": {
+    "hold": [
+     3,
+     6
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   }
+  },
+  {
+   "src": "ore_slices/stone/qubodupImpactStone.flac",
+   "at_ms": [
+    210,
+    260
+   ],
+   "gain_db": [
+    -30,
+    -26
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "lp": 140,
+   "snap": {
+    "hold": [
+     3,
+     6
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -30,
+  "decay_ms": 110,
+  "len_ms": 700,
+  "band": [
+   700,
+   7000
+  ]
+ },
+ "match": 0.9,
+ "fade_ms": 600,
+ "peak_db": -1
+}

@@ -1,0 +1,138 @@
+{
+ "name": "item_treasure_s_drop",
+ "about": "DaD Item_3D_Treasure_S_Drop (goblet falls to the floor): softer first contact ~30 ms, louder bounce at 120-340 ms, 1-3 small bounces after, dull (little above 4 kHz), tail to ~1.2 s",
+ "reference": "D:/DaD_Sounds/Item_3D_Treasure_S_Drop",
+ "length_ms": 1200,
+ "variants": 12,
+ "seed": 9400,
+ "layers": [
+  {
+   "src": "treasure_slices/thud_s/*",
+   "at_ms": [
+    20,
+    35
+   ],
+   "gain_db": [
+    -9,
+    -5
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     8,
+     15
+    ],
+    "tau": [
+     25,
+     40
+    ]
+   },
+   "hp": 80,
+   "lp": 3000
+  },
+  {
+   "src": "treasure_slices/thud_s/*",
+   "at_ms": [
+    120,
+    330
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     25,
+     45
+    ]
+   },
+   "hp": 80,
+   "lp": 3000
+  },
+  {
+   "src": "treasure_slices/clink_s/*",
+   "at_ms": [
+    120,
+    330
+   ],
+   "gain_db": [
+    -12,
+    -7
+   ],
+   "pitch": [
+    -5,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     30,
+     45
+    ]
+   },
+   "lp": 3000
+  },
+  {
+   "src": "treasure_slices/thud_s/*",
+   "at_ms": [
+    420,
+    520
+   ],
+   "gain_db": [
+    -12,
+    -3
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "snap": {
+    "hold": [
+     6,
+     12
+    ],
+    "tau": [
+     30,
+     60
+    ]
+   },
+   "count": [
+    1,
+    3
+   ],
+   "gap_ms": [
+    70,
+    160
+   ],
+   "until_ms": 950,
+   "hp": 100,
+   "lp": 2800
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 90,
+  "len_ms": 450,
+  "band": [
+   200,
+   3000
+  ]
+ },
+ "match": 0.8,
+ "fade_ms": 250,
+ "peak_db": -2
+}

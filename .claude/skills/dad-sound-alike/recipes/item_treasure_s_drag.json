@@ -1,0 +1,129 @@
+{
+ "name": "item_treasure_s_drag",
+ "about": "DaD Item_2D_Treasure_S_Drag (goblet/cutlery picked up with the cursor): thin precious-metal clink near the start, 1-2 more clinks at 130-230 ms (sometimes louder), fast decay to a -45 dB floor",
+ "reference": "D:/DaD_Sounds/Item_2D_Treasure_S_Drag",
+ "length_ms": 600,
+ "variants": 12,
+ "seed": 9100,
+ "layers": [
+  {
+   "src": "treasure_slices/clink_s/*",
+   "at_ms": [
+    0,
+    40
+   ],
+   "gain_db": [
+    -6,
+    0
+   ],
+   "pitch": [
+    -3,
+    2
+   ],
+   "snap": {
+    "hold": [
+     6,
+     14
+    ],
+    "tau": [
+     22,
+     35
+    ]
+   },
+   "hp": 150
+  },
+  {
+   "src": "treasure_slices/clink_s/*",
+   "at_ms": [
+    130,
+    210
+   ],
+   "gain_db": [
+    -10,
+    0
+   ],
+   "pitch": [
+    -3,
+    3
+   ],
+   "snap": {
+    "hold": [
+     6,
+     14
+    ],
+    "tau": [
+     22,
+     35
+    ]
+   },
+   "count": [
+    1,
+    2
+   ],
+   "gap_ms": [
+    30,
+    80
+   ],
+   "until_ms": 320,
+   "hp": 150
+  },
+  {
+   "src": "treasure_slices/thud_s/*",
+   "at_ms": [
+    0,
+    40
+   ],
+   "gain_db": [
+    -18,
+    -12
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "snap": {
+    "hold": [
+     6,
+     10
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   },
+   "chance": 0.6,
+   "hp": 100,
+   "lp": 4000
+  },
+  {
+   "src": "treasure_slices/rub/*",
+   "at_ms": [
+    0,
+    40
+   ],
+   "gain_db": [
+    -26,
+    -20
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "chance": 0.6,
+   "hp": 700,
+   "max_ms": 250
+  }
+ ],
+ "room": {
+  "db": -26,
+  "decay_ms": 60,
+  "len_ms": 300,
+  "band": [
+   600,
+   8000
+  ]
+ },
+ "match": 0.8,
+ "fade_ms": 120,
+ "peak_db": -2
+}

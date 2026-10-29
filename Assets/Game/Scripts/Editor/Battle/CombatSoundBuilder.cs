@@ -16,6 +16,8 @@ namespace Game.Scripts.Editor.Battle
         private const string WeaponsFolder = "Assets/Game/Audio/Battle/Weapons";
         private const string StepsFolder = "Assets/Game/Audio/Dungeon/Steps";
         private const string SoundsFolder = BattleEditorUtility.ConfigsFolder + "/Sounds";
+        private const string ItemsFolder = "Assets/Game/Audio/Dungeon/Items";
+        private const string ItemSoundsFolder = SoundsFolder + "/Items";
         private const string FootstepsPath = "Assets/Game/Configs/Dungeon/Footsteps.asset";
 
         /// Order is the network id: never reorder, only append.
@@ -105,6 +107,23 @@ namespace Game.Scripts.Editor.Battle
         public static WeaponSoundConfig[] LoadSets()
         {
             return s_sets.Select(LoadSet).ToArray();
+        }
+
+        /// Handling sounds of a non-weapon material (Audio/Dungeon/Items/<set>/<drop|pickup|drag|place>_NN.wav); no network id, items play them by item id.
+        public static WeaponSoundConfig LoadItemSet(string set)
+        {
+            string folder = $"{ItemsFolder}/{set}";
+            BattleEditorUtility.EnsureFolder(ItemSoundsFolder);
+
+            if (Directory.Exists(folder))
+                KeepLoudness(folder);
+
+            WeaponSoundConfig config = BattleEditorUtility.LoadOrCreate<WeaponSoundConfig>($"{ItemSoundsFolder}/{set}.asset");
+
+            foreach (string category in new[] { "drop", "pickup", "drag", "place" })
+                BattleEditorUtility.Set(config, "_" + category, Load(folder, category));
+
+            return config;
         }
 
         public static FootstepSoundConfig LoadFootsteps()
@@ -198,6 +217,11 @@ namespace Game.Scripts.Editor.Battle
             foreach (string file in Directory.GetFiles(folder, "*.wav"))
             {
                 AssetImporter importer = AssetImporter.GetAtPath(file.Replace('\\', '/'));
+
+                // Takes copied in after the last refresh are not imported yet.
+                if (importer == null)
+                    continue;
+
                 SerializedObject so = new SerializedObject(importer);
                 SerializedProperty normalize = so.FindProperty("m_Normalize");
 

@@ -1,0 +1,113 @@
+{
+ "name": "item_fabric_place",
+ "about": "DaD Item_2D_FabricChest_Drop: cloth laid into a cell: quick rustle at 20 ms, main soft flop 160-240 ms with a low body, one smaller fold at ~390 ms, fade by 600 ms",
+ "reference": "D:/DaD_Sounds/Item_2D_FabricChest_Drop",
+ "length_ms": 720,
+ "variants": 12,
+ "seed": 8200,
+ "layers": [
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    0,
+    5
+   ],
+   "gain_db": [
+    -12,
+    -9
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 40,
+   "lp": 8000,
+   "max_ms": 300
+  },
+  {
+   "src": "fabric_slices/*nt-[246]_0[0-9]*.wav",
+   "at_ms": [
+    150,
+    200
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 40,
+   "lp": 6000,
+   "max_ms": 400
+  },
+  {
+   "src": "fabric_slices/*nt-[135]_*.wav",
+   "at_ms": [
+    380,
+    450
+   ],
+   "gain_db": [
+    -22,
+    -19
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 60,
+   "lp": 6000,
+   "max_ms": 250
+  },
+  {
+   "src": "footsteps/footsteps/step_cloth*.ogg",
+   "at_ms": [
+    160,
+    200
+   ],
+   "gain_db": [
+    -5,
+    -3
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 60
+  },
+  {
+   "src": "fabric_slices/*h_0[4-7]_*.wav",
+   "at_ms": [
+    300,
+    330
+   ],
+   "gain_db": [
+    -13,
+    -9
+   ],
+   "hp": 150,
+   "count": [
+    1,
+    2
+   ],
+   "gap_ms": [
+    60,
+    100
+   ],
+   "until_ms": 440
+  }
+ ],
+ "room": {
+  "db": -30,
+  "decay_ms": 50,
+  "len_ms": 250,
+  "band": [
+   200,
+   4000
+  ]
+ },
+ "match": 0.8,
+ "fade_ms": 120,
+ "peak_db": -1
+}

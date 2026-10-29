@@ -1,0 +1,103 @@
+{
+ "name": "item_treasure_l_pickup",
+ "about": "DaD Item_3D_Treasure_L_Pickup (shares media with the 2D drag/drop): grab rub + soft resonant vessel knock, a second knock at 150-300 ms, slow ring-down",
+ "reference": "D:/DaD_Sounds/Item_3D_Treasure_L_Pickup",
+ "length_ms": 850,
+ "variants": 12,
+ "seed": 9700,
+ "layers": [
+  {
+   "src": "treasure_slices/clink_l/*",
+   "at_ms": [
+    15,
+    50
+   ],
+   "gain_db": [
+    -6,
+    0
+   ],
+   "pitch": [
+    -5,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     15,
+     30
+    ],
+    "tau": [
+     55,
+     85
+    ]
+   },
+   "hp": 100,
+   "lp": 16000
+  },
+  {
+   "src": "treasure_slices/clink_l/*",
+   "at_ms": [
+    90,
+    220
+   ],
+   "gain_db": [
+    -6,
+    -1
+   ],
+   "pitch": [
+    -5,
+    0
+   ],
+   "snap": {
+    "hold": [
+     15,
+     30
+    ],
+    "tau": [
+     55,
+     85
+    ]
+   },
+   "count": [
+    1,
+    2
+   ],
+   "gap_ms": [
+    50,
+    110
+   ],
+   "until_ms": 300,
+   "hp": 100,
+   "lp": 16000
+  },
+  {
+   "src": "treasure_slices/rub/*",
+   "at_ms": [
+    0,
+    40
+   ],
+   "gain_db": [
+    -20,
+    -14
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 200,
+   "lp": 14000,
+   "max_ms": 400
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 70,
+  "len_ms": 350,
+  "band": [
+   150,
+   8000
+  ]
+ },
+ "match": 0.8,
+ "fade_ms": 200,
+ "peak_db": -3
+}

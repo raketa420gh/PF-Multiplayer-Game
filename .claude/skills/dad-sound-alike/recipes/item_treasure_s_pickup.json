@@ -1,0 +1,129 @@
+{
+ "name": "item_treasure_s_pickup",
+ "about": "DaD Item_3D_Treasure_S_Pickup (shares most media with the 2D drag): thin-metal clink, 1-2 handling clinks at 90-230 ms, faint grab rub, fast decay",
+ "reference": "D:/DaD_Sounds/Item_3D_Treasure_S_Pickup",
+ "length_ms": 600,
+ "variants": 12,
+ "seed": 9300,
+ "layers": [
+  {
+   "src": "treasure_slices/clink_s/*",
+   "at_ms": [
+    10,
+    50
+   ],
+   "gain_db": [
+    -6,
+    0
+   ],
+   "pitch": [
+    -4,
+    1
+   ],
+   "snap": {
+    "hold": [
+     6,
+     14
+    ],
+    "tau": [
+     22,
+     35
+    ]
+   },
+   "hp": 150
+  },
+  {
+   "src": "treasure_slices/clink_s/*",
+   "at_ms": [
+    90,
+    200
+   ],
+   "gain_db": [
+    -10,
+    0
+   ],
+   "pitch": [
+    -4,
+    2
+   ],
+   "snap": {
+    "hold": [
+     6,
+     14
+    ],
+    "tau": [
+     22,
+     35
+    ]
+   },
+   "count": [
+    1,
+    2
+   ],
+   "gap_ms": [
+    35,
+    90
+   ],
+   "until_ms": 300,
+   "hp": 150
+  },
+  {
+   "src": "treasure_slices/thud_s/*",
+   "at_ms": [
+    10,
+    50
+   ],
+   "gain_db": [
+    -14,
+    -8
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   },
+   "chance": 0.7,
+   "hp": 100,
+   "lp": 4000
+  },
+  {
+   "src": "treasure_slices/rub/*",
+   "at_ms": [
+    0,
+    30
+   ],
+   "gain_db": [
+    -26,
+    -20
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "chance": 0.6,
+   "hp": 700,
+   "max_ms": 250
+  }
+ ],
+ "room": {
+  "db": -25,
+  "decay_ms": 60,
+  "len_ms": 300,
+  "band": [
+   500,
+   8000
+  ]
+ },
+ "match": 0.8,
+ "fade_ms": 120,
+ "peak_db": -2
+}

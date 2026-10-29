@@ -1,0 +1,167 @@
+{
+ "name": "item_treasure_l_drop",
+ "about": "DaD Item_3D_Treasure_L_Drop (candelabrum/jug falls to the floor): heavy broad metal impact ~25 ms, equally loud bounce at 150-270 ms, ringing tail -15..-30 dB to ~1.1 s",
+ "reference": "D:/DaD_Sounds/Item_3D_Treasure_L_Drop",
+ "length_ms": 1150,
+ "variants": 12,
+ "seed": 9800,
+ "layers": [
+  {
+   "src": "treasure_slices/thud_l/*",
+   "at_ms": [
+    15,
+    30
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   },
+   "hp": 60,
+   "lp": 14000
+  },
+  {
+   "src": "treasure_slices/clink_l/*",
+   "at_ms": [
+    15,
+    30
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "snap": {
+    "hold": [
+     12,
+     20
+    ],
+    "tau": [
+     45,
+     70
+    ]
+   },
+   "hp": 100,
+   "lp": 14000
+  },
+  {
+   "src": "treasure_slices/thud_l/*",
+   "at_ms": [
+    150,
+    270
+   ],
+   "gain_db": [
+    -8,
+    -3
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     50,
+     80
+    ]
+   },
+   "hp": 60,
+   "lp": 14000
+  },
+  {
+   "src": "treasure_slices/clink_l/*",
+   "at_ms": [
+    150,
+    270
+   ],
+   "gain_db": [
+    -9,
+    -4
+   ],
+   "pitch": [
+    -5,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   },
+   "hp": 100,
+   "lp": 14000
+  },
+  {
+   "src": "treasure_slices/thud_s/*",
+   "at_ms": [
+    380,
+    520
+   ],
+   "gain_db": [
+    -14,
+    -8
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     6,
+     12
+    ],
+    "tau": [
+     30,
+     50
+    ]
+   },
+   "chance": 0.6,
+   "count": [
+    1,
+    2
+   ],
+   "gap_ms": [
+    80,
+    160
+   ],
+   "until_ms": 800,
+   "hp": 80,
+   "lp": 4000
+  }
+ ],
+ "room": {
+  "db": -25,
+  "decay_ms": 90,
+  "len_ms": 500,
+  "band": [
+   120,
+   8000
+  ]
+ },
+ "match": 0.8,
+ "fade_ms": 450,
+ "peak_db": -1
+}

@@ -1,0 +1,148 @@
+{
+ "name": "item_leather_pickup",
+ "about": "DaD Item_3D_LeatherChest_Pickup: leather picked up from the floor: creak and/or leather thud at 40-80 ms, fast decay, quiet floor",
+ "reference": "D:/DaD_Sounds/Item_3D_LeatherChest_Pickup",
+ "length_ms": 420,
+ "variants": 12,
+ "seed": 8700,
+ "layers": [
+  {
+   "src": "leather_slices/sheath/*.wav",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -4,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     35,
+     55
+    ],
+    "tau": [
+     50,
+     65
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/sheath/*.wav",
+   "at_ms": [
+    150,
+    230
+   ],
+   "gain_db": [
+    -22,
+    -18
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 400,
+   "max_ms": 220
+  },
+  {
+   "src": "weapons_apparel/sfx/boots-leather-*.wav",
+   "at_ms": [
+    30,
+    60
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "lp": 300,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   },
+   "chance": 0.7
+  },
+  {
+   "src": "footsteps/footsteps/step_lth*.ogg",
+   "at_ms": [
+    40,
+    70
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 80,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     22,
+     30
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/quiver/*.wav",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -7,
+    -3
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -32,
+  "decay_ms": 40,
+  "len_ms": 200,
+  "band": [
+   500,
+   10000
+  ]
+ },
+ "match": 0.9,
+ "fade_ms": 60,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 11000,
+  "db": 5
+ }
+}

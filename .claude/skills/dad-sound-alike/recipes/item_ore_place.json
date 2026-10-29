@@ -1,0 +1,151 @@
+{
+ "name": "item_ore_place",
+ "about": "DaD Item_2D_Ore_Drop: clunk at ~15 ms, decays to -35 dB, then a second equally loud clunk at ~130-145 ms (the piece settles), ~5 dB/20 ms tail to ~450 ms; more 4-10k grit than the drag",
+ "reference": "D:/DaD_Sounds/Item_2D_Ore_Drop",
+ "length_ms": 520,
+ "variants": 12,
+ "seed": 9300,
+ "layers": [
+  {
+   "src": "ore_slices/clunk/*",
+   "at_ms": [
+    3,
+    6
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "hp": 350,
+   "snap": {
+    "hold": [
+     4,
+     8
+    ],
+    "tau": [
+     24,
+     32
+    ]
+   }
+  },
+  {
+   "src": "ore_slices/stone/*",
+   "at_ms": [
+    2,
+    5
+   ],
+   "gain_db": [
+    -13,
+    -10
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 100,
+   "snap": {
+    "hold": [
+     2,
+     4
+    ],
+    "tau": [
+     10,
+     14
+    ]
+   }
+  },
+  {
+   "src": "breaking_falling/bfh1_rock_hit_01.ogg",
+   "at_ms": [
+    3,
+    6
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    -3,
+    2
+   ],
+   "hp": 400,
+   "lp": 9000
+  },
+  {
+   "src": "ore_slices/clunk/*",
+   "at_ms": [
+    124,
+    136
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     3,
+     5
+    ],
+    "tau": [
+     13,
+     17
+    ]
+   }
+  },
+  {
+   "src": "breaking_falling/bfh1_rock_hit_01.ogg",
+   "at_ms": [
+    124,
+    136
+   ],
+   "gain_db": [
+    -8,
+    -4
+   ],
+   "pitch": [
+    -2,
+    3
+   ],
+   "hp": 500,
+   "lp": 9000
+  },
+  {
+   "src": "ore_slices/grit/*",
+   "at_ms": [
+    3,
+    6
+   ],
+   "gain_db": [
+    -21,
+    -16
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 4000,
+   "max_ms": 120
+  }
+ ],
+ "room": {
+  "db": -32,
+  "decay_ms": 50,
+  "len_ms": 350,
+  "band": [
+   400,
+   6000
+  ]
+ },
+ "match": 0.9,
+ "fade_ms": 120,
+ "peak_db": -1
+}

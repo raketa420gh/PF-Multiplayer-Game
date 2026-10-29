@@ -1,0 +1,115 @@
+{
+ "name": "item_fabric_pickup",
+ "about": "DaD Item_3D_FabricChest_Pickup: cloth picked up from the floor: rustle bed, a grab/flop between 40 and 200 ms, sometimes one more fold, fade",
+ "reference": "D:/DaD_Sounds/Item_3D_FabricChest_Pickup",
+ "length_ms": 650,
+ "variants": 12,
+ "seed": 8300,
+ "layers": [
+  {
+   "src": "fabric_slices/*nt-[135]_*.wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -10,
+    -7
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 40,
+   "lp": 8000,
+   "max_ms": 420
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    40,
+    180
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 40,
+   "lp": 8000,
+   "max_ms": 380
+  },
+  {
+   "src": "fabric_slices/*nt-[135]_*.wav",
+   "at_ms": [
+    300,
+    360
+   ],
+   "gain_db": [
+    -22,
+    -18
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 60,
+   "lp": 6000,
+   "max_ms": 320
+  },
+  {
+   "src": "footsteps/footsteps/step_cloth*.ogg",
+   "at_ms": [
+    60,
+    200
+   ],
+   "gain_db": [
+    -8,
+    -4
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 60,
+   "chance": 0.6
+  },
+  {
+   "src": "fabric_slices/*h_0[4-7]_*.wav",
+   "at_ms": [
+    250,
+    330
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "hp": 150,
+   "count": [
+    1,
+    2
+   ],
+   "gap_ms": [
+    60,
+    100
+   ],
+   "until_ms": 440,
+   "chance": 0.7
+  }
+ ],
+ "room": {
+  "db": -30,
+  "decay_ms": 50,
+  "len_ms": 250,
+  "band": [
+   200,
+   4000
+  ]
+ },
+ "match": 0.8,
+ "fade_ms": 120,
+ "peak_db": -1
+}

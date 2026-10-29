@@ -129,8 +129,8 @@ namespace Game.Scripts.Dungeon
         public bool CanRollRarity => _canRollRarity;
         public Sprite Icon => _icon;
         public GameObject WorldModel => _worldModel;
-        /// Handling sounds of the item; only weapons have them, taken from their combat config.
-        public virtual WeaponSoundConfig Sounds => null;
+        /// Handling sounds of the item: weapons take them from their combat config, the rest from their material's set.
+        public virtual WeaponSoundConfig Sounds => _sounds;
 
         [SerializeField]
         private short _id;
@@ -173,6 +173,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private GameObject _worldModel;
+
+        [SerializeField]
+        private WeaponSoundConfig _sounds;
 
         public virtual bool CanEquip(EquipSlot slot) => false;
 

@@ -1,0 +1,164 @@
+{
+ "name": "item_potion_pickup",
+ "about": "DaD Item_3D_Potion_Pickup: empty glass bottle picked off the floor - glass clink at ~20-40 ms decaying to -40 dB by ~160 ms, then 3-7 sparse small glass tinks/knocks -20..-35 dB spread to ~1 s, under a faint grab rustle",
+ "reference": "D:/DaD_Sounds/Item_3D_Potion_Pickup",
+ "length_ms": 1150,
+ "variants": 12,
+ "seed": 9700,
+ "layers": [
+  {
+   "src": "glass_slices/vial/*",
+   "at_ms": [
+    25,
+    45
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 450,
+   "snap": {
+    "hold": [
+     6,
+     10
+    ],
+    "tau": [
+     18,
+     26
+    ]
+   }
+  },
+  {
+   "src": "breaking_falling/bfh1_glass_hit_0*.ogg",
+   "at_ms": [
+    25,
+    45
+   ],
+   "gain_db": [
+    -8,
+    -3
+   ],
+   "pitch": [
+    -7,
+    -4
+   ],
+   "hp": 600,
+   "lp": 6000,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     22,
+     30
+    ]
+   }
+  },
+  {
+   "src": "glass_slices/bright/*",
+   "count": [
+    2,
+    4
+   ],
+   "at_ms": [
+    160,
+    220
+   ],
+   "gap_ms": [
+    120,
+    260
+   ],
+   "until_ms": 900,
+   "gain_db": [
+    -18,
+    -10
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     4,
+     8
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   }
+  },
+  {
+   "src": "glass_slices/tink/*",
+   "count": [
+    2,
+    4
+   ],
+   "at_ms": [
+    400,
+    600
+   ],
+   "gap_ms": [
+    150,
+    300
+   ],
+   "until_ms": 1080,
+   "gain_db": [
+    -24,
+    -14
+   ],
+   "pitch": [
+    -6,
+    -3
+   ],
+   "hp": 600,
+   "lp": 7000,
+   "snap": {
+    "hold": [
+     3,
+     6
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    0,
+    30
+   ],
+   "gain_db": [
+    -18,
+    -12
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": null,
+   "lp": 180,
+   "max_ms": 300
+  }
+ ],
+ "room": {
+  "db": -28,
+  "decay_ms": 110,
+  "len_ms": 500,
+  "band": [
+   500,
+   6000
+  ]
+ },
+ "match": 1.0,
+ "fade_ms": 200,
+ "peak_db": -1
+}

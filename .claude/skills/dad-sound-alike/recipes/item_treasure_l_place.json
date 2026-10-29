@@ -1,0 +1,104 @@
+{
+ "name": "item_treasure_l_place",
+ "about": "DaD Item_2D_Treasure_L_Drop (candelabrum/jug put into a cell): strong resonant vessel knock at ~40 ms, slow ring hovering in the -20s to ~0.3 s, often a second knock at 130-300 ms",
+ "reference": "D:/DaD_Sounds/Item_2D_Treasure_L_Drop",
+ "length_ms": 850,
+ "variants": 12,
+ "seed": 9600,
+ "layers": [
+  {
+   "src": "treasure_slices/clink_l_dark/*",
+   "at_ms": [
+    20,
+    45
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -4,
+    0
+   ],
+   "snap": {
+    "hold": [
+     10,
+     18
+    ],
+    "tau": [
+     60,
+     90
+    ]
+   },
+   "hp": 200,
+   "lp": 16000
+  },
+  {
+   "src": "treasure_slices/thud_l/*",
+   "at_ms": [
+    20,
+    45
+   ],
+   "gain_db": [
+    -18,
+    -12
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "snap": {
+    "hold": [
+     8,
+     15
+    ],
+    "tau": [
+     25,
+     40
+    ]
+   },
+   "hp": 220,
+   "lp": 2000
+  },
+  {
+   "src": "treasure_slices/clink_l_dark/*",
+   "at_ms": [
+    130,
+    300
+   ],
+   "gain_db": [
+    -14,
+    -3
+   ],
+   "pitch": [
+    -4,
+    1
+   ],
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     50,
+     80
+    ]
+   },
+   "chance": 0.7,
+   "hp": 100,
+   "lp": 16000
+  }
+ ],
+ "room": {
+  "db": -21,
+  "decay_ms": 90,
+  "len_ms": 450,
+  "band": [
+   150,
+   8000
+  ]
+ },
+ "match": 1.0,
+ "fade_ms": 200,
+ "peak_db": -2
+}

@@ -1,0 +1,85 @@
+{
+ "name": "item_fabric_drag",
+ "about": "DaD Item_2D_FabricChest_Drag: cloth item grabbed with the cursor: soft dark rustle swelling to ~140 ms, sustained lighter rustle to ~350 ms, fade; no sharp onsets",
+ "reference": "D:/DaD_Sounds/Item_2D_FabricChest_Drag",
+ "length_ms": 440,
+ "variants": 12,
+ "seed": 8100,
+ "layers": [
+  {
+   "src": "fabric_slices/*nt-[135]_*.wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 40,
+   "lp": 8000,
+   "max_ms": 400
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    30,
+    60
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 40,
+   "lp": 8000,
+   "max_ms": 300,
+   "snap": {
+    "hold": [
+     110,
+     140
+    ],
+    "tau": [
+     50,
+     70
+    ]
+   }
+  },
+  {
+   "src": "fabric_slices/*h_0[4-7]_*.wav",
+   "at_ms": [
+    160,
+    260
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "hp": 150,
+   "chance": 0.6
+  }
+ ],
+ "room": {
+  "db": -32,
+  "decay_ms": 40,
+  "len_ms": 200,
+  "band": [
+   200,
+   4000
+  ]
+ },
+ "match": 0.8,
+ "fade_ms": 60,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 8000,
+  "db": 3
+ }
+}

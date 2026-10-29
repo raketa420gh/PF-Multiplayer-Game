@@ -1,0 +1,131 @@
+{
+ "name": "item_potion_place",
+ "about": "Sibling DaD Item_2D_ExplosionBottle_Drop (Potion has no 2D Drop): glass bottle set into a cell - glassy knock at ~20 ms (150 Hz-4k), a second settle tap at 110-180 ms, often a third small tap at 250-310 ms, gone by ~0.5 s",
+ "reference": "D:/DaD_Sounds/Item_2D_ExplosionBottle_Drop",
+ "length_ms": 560,
+ "variants": 12,
+ "seed": 9600,
+ "layers": [
+  {
+   "src": "glass_slices/vial/*",
+   "at_ms": [
+    12,
+    20
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 100,
+   "snap": {
+    "hold": [
+     10,
+     16
+    ],
+    "tau": [
+     45,
+     60
+    ]
+   },
+   "lp": 6000
+  },
+  {
+   "src": "glass_slices/knock/*",
+   "at_ms": [
+    12,
+    20
+   ],
+   "gain_db": [
+    -8,
+    -4
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 100,
+   "snap": {
+    "hold": [
+     5,
+     10
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   },
+   "lp": 6000
+  },
+  {
+   "src": "glass_slices/vial/*",
+   "at_ms": [
+    100,
+    150
+   ],
+   "gain_db": [
+    -5,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 250,
+   "snap": {
+    "hold": [
+     6,
+     10
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   },
+   "lp": 6000
+  },
+  {
+   "src": "glass_slices/vial/*",
+   "at_ms": [
+    250,
+    310
+   ],
+   "gain_db": [
+    -16,
+    -9
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 250,
+   "chance": 0.75,
+   "snap": {
+    "hold": [
+     4,
+     8
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   },
+   "lp": 6000
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 110,
+  "len_ms": 400,
+  "band": [
+   400,
+   4000
+  ]
+ },
+ "match": 1.0,
+ "fade_ms": 120,
+ "peak_db": -1
+}

@@ -1,0 +1,152 @@
+{
+ "name": "item_leather_drop",
+ "about": "DaD Item_3D_LeatherChest_Drop: leather armour dropped in the world: heavy leather thud 40-160 ms with 2-3 flaps/creaks, a secondary flop ~400 ms ~10 dB down, decays to -60 dB by 600 ms",
+ "reference": "D:/DaD_Sounds/Item_3D_LeatherChest_Drop",
+ "length_ms": 920,
+ "variants": 12,
+ "seed": 8800,
+ "layers": [
+  {
+   "src": "weapons_apparel/sfx/boots-leather-*.wav",
+   "at_ms": [
+    70,
+    130
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 30,
+   "snap": {
+    "hold": [
+     100,
+     140
+    ],
+    "tau": [
+     80,
+     100
+    ]
+   }
+  },
+  {
+   "src": "footsteps/footsteps/step_lth*.ogg",
+   "at_ms": [
+    110,
+    150
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "hp": 50,
+   "count": [
+    2,
+    3
+   ],
+   "gap_ms": [
+    40,
+    70
+   ],
+   "until_ms": 270,
+   "snap": {
+    "hold": [
+     25,
+     35
+    ],
+    "tau": [
+     35,
+     45
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/quiver/*.wav",
+   "at_ms": [
+    20,
+    50
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 200,
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   }
+  },
+  {
+   "src": "footsteps/footsteps/step_lth*.ogg",
+   "at_ms": [
+    380,
+    420
+   ],
+   "gain_db": [
+    -18,
+    -14
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 50,
+   "snap": {
+    "hold": [
+     25,
+     35
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/sheath/*.wav",
+   "at_ms": [
+    150,
+    250
+   ],
+   "gain_db": [
+    -24,
+    -20
+   ],
+   "hp": 400,
+   "max_ms": 200
+  }
+ ],
+ "room": {
+  "db": -28,
+  "decay_ms": 120,
+  "len_ms": 500,
+  "band": [
+   200,
+   6000
+  ]
+ },
+ "match": 1.0,
+ "fade_ms": 300,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 2500,
+  "db": 5
+ }
+}

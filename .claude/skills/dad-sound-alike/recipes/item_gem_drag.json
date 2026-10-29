@@ -1,0 +1,129 @@
+{
+ "name": "item_gem_drag",
+ "about": "DaD Item_2D_Gem_Drag (also Item_3D_Gem_Pickup media): one bright glassy stone tick, 4-10 kHz, ~25 ms tau decay, gone by ~250 ms; no low end",
+ "reference": "D:/DaD_Sounds/Item_2D_Gem_Drag",
+ "length_ms": 320,
+ "variants": 12,
+ "seed": 8100,
+ "layers": [
+  {
+   "src": "breaking_falling/bfh1_glass_hit_*.ogg",
+   "at_ms": [
+    5,
+    15
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    4,
+    8
+   ],
+   "hp": 4500,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     45,
+     60
+    ]
+   },
+   "lp": 9000
+  },
+  {
+   "src": "rpg80/item_gem_0[23].ogg",
+   "at_ms": [
+    5,
+    20
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    2,
+    6
+   ],
+   "hp": 4500,
+   "snap": {
+    "hold": [
+     10,
+     15
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   },
+   "lp": 9000
+  },
+  {
+   "src": "breaking_falling/bfh1_glass_hit_*.ogg",
+   "chance": 0.35,
+   "at_ms": [
+    70,
+    130
+   ],
+   "gain_db": [
+    -20,
+    -14
+   ],
+   "pitch": [
+    4,
+    8
+   ],
+   "hp": 3000,
+   "snap": {
+    "hold": [
+     4,
+     6
+    ],
+    "tau": [
+     12,
+     18
+    ]
+   }
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/wood-small.wav",
+   "at_ms": [
+    3,
+    10
+   ],
+   "gain_db": [
+    -33,
+    -29
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "lp": 500,
+   "snap": {
+    "hold": [
+     10,
+     15
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 55,
+  "len_ms": 250,
+  "band": [
+   2500,
+   10000
+  ]
+ },
+ "match": 1.0,
+ "fade_ms": 60,
+ "peak_db": -1
+}
