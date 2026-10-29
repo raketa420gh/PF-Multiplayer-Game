@@ -467,11 +467,10 @@ namespace Game.Scripts.Dungeon
         private Transform[] Starts()
         {
             List<Transform> starts = new();
-            Vector3 hall = _catacombs.Rooms[0].transform.position;
 
             foreach (CatacombRoomComponent room in _catacombs.Rooms)
             {
-                if (room.StartSpots != null && Vector3.Distance(room.transform.position, hall) < _catacombs.Pitch * 1.2f)
+                if (room.StartSpots != null && _catacombs.IsNearKeyRoom(room.transform.position))
                     starts.Add(room.StartSpots);
             }
 

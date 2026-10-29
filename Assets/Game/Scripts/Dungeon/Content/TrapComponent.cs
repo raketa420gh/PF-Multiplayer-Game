@@ -9,7 +9,9 @@ namespace Game.Scripts.Dungeon
     {
         Spikes,
         SwingingBlade,
-        Caltrops
+        Caltrops,
+        /// Breathes out for ActiveTime every Period, hurting each Tick while it does; vents are out of step by where they stand.
+        Vent
     }
 
     /// Floor spikes trigger on contact with a cooldown; the blade swings on a cycle. Damage is applied by the host.
@@ -65,6 +67,12 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _slowDuration = 2f;
 
+        [SerializeField, Tooltip("Vent: seconds between hits while it breathes")]
+        private float _tick = 0.5f;
+
+        [SerializeField, Tooltip("Vent: plays while it breathes")]
+        private ParticleSystem _effect;
+
         [SerializeField, Tooltip("Snaps shut once and is gone; a trap set by a player never catches that player")]
         private bool _isSingleUse;
 
@@ -94,6 +102,19 @@ namespace Game.Scripts.Dungeon
 
         public override void Render()
         {
+            if (_effect != null)
+            {
+                bool isBreathing = IsArmed && IsBreathing(Runner.Tick * Runner.DeltaTime);
+
+                if (isBreathing != _effect.isEmitting)
+                {
+                    if (isBreathing)
+                        _effect.Play();
+                    else
+                        _effect.Stop();
+                }
+            }
+
             if (_moving == null)
                 return;
 
@@ -132,6 +153,16 @@ namespace Game.Scripts.Dungeon
                 {
                     _hitThisCycle.Clear();
                     _cooldown = TickTimer.CreateFromSeconds(Runner, _period);
+                }
+            }
+            else if (_kind == TrapKind.Vent)
+            {
+                isActive = IsBreathing(Runner.SimulationTime);
+
+                if (!isActive || _cooldown.ExpiredOrNotRunning(Runner))
+                {
+                    _hitThisCycle.Clear();
+                    _cooldown = TickTimer.CreateFromSeconds(Runner, _tick);
                 }
             }
             else if (_kind == TrapKind.SwingingBlade)
@@ -216,6 +247,13 @@ namespace Game.Scripts.Dungeon
 
             if (_slowMagnitude > 0f)
                 effects.Add(StatusEffectKind.Slow, _slowMagnitude, _slowDuration);
+        }
+
+        private bool IsBreathing(float time)
+        {
+            float offset = Mathf.Abs(transform.position.x * 7.3f + transform.position.z * 3.1f) % _period;
+
+            return (time + offset) % _period < _activeTime;
         }
 
         /// Bodies inside the trap, its owner left out.

@@ -109,13 +109,13 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         /// A finished map written as an asset: the parchment of a generated floor.
-        public static Texture2D Save(Texture2D map, string name)
+        public static Texture2D Save(Texture2D map, string name, bool isReadable = false)
         {
             BattleEditorUtilityShim.EnsureFolder(Folder);
             string path = $"{Folder}/{name}.png";
             File.WriteAllBytes(path, map.EncodeToPNG());
 
-            return Import(path, false);
+            return Import(path, isReadable);
         }
 
         private static Texture2D Import(string path, bool isReadable)

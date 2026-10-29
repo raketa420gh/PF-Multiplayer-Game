@@ -108,6 +108,7 @@ namespace Game.Scripts.Editor.Dungeon
             BuildAcidMoat();
             BuildSpikeTrap();
             BuildBladeTrap();
+            GreatHallContentBuilder.Build(loot["Treasury"]);
 
             AssetDatabase.SaveAssets();
             Debug.Log($"[{nameof(DungeonContentBuilder)}] Dungeon content built");
@@ -552,6 +553,11 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Gold Ore", 0.6f, 1, 2), ("Silver Chalice", 0.3f, 1, 1), ("Leather Scraps", 1f, 1, 2), ("Cloth Scraps", 1f, 1, 2), ("Metal Scraps", 0.8f, 1, 2),
                 ("Tiger's Eye", 0.3f, 1, 1), ("Agate", 0.4f, 1, 1), ("Silver Chain", 0.2f, 1, 1), ("Empty Bottle", 0.4f, 1, 1)
             }.Concat(Pieces(0.4f, "Veinworker")).ToArray();
+            (string name, float weight, int min, int max)[] treasury =
+            {
+                ("Gold Coins", 6f, 15, 25), ("Gold Coin Purse", 5f, 1, 2), ("Gold Coin Bag", 2f, 1, 1), ("Gold Ingot", 3f, 1, 3), ("Gold Ore", 2f, 2, 5),
+                ("Gold Crown", 0.6f, 1, 1), ("Gold Candelabrum", 1f, 1, 1), ("Gold Goblet", 1.5f, 1, 1), ("Gold Chalice", 1.5f, 1, 1), ("Gold Chain", 1f, 1, 1)
+            };
             // The warrior's own gear on top of what any monster carries (DD-016).
             (string name, float weight, int min, int max)[] warrior = monster.Concat(new (string, float, int, int)[]
             {
@@ -569,7 +575,9 @@ namespace Game.Scripts.Editor.Dungeon
                 // Corpses are searched like chests: a common monster carries a thing or two, the boss a golden chest's worth.
                 ["Monster"] = BuildLootTable(database, "Monster", monster, 1, 2, new[] { 25f, 55f, 15f, 4f, 1f, 0f, 0f }, 0.3f),
                 ["Warrior"] = BuildLootTable(database, "Warrior", warrior, 1, 3, new[] { 20f, 55f, 18f, 5f, 2f, 0f, 0f }, 0.15f),
-                ["Boss"] = BuildLootTable(database, "Boss", ornate, 3, 4, new[] { 0f, 0f, 30f, 35f, 22f, 10f, 3f }, 0f)
+                ["Boss"] = BuildLootTable(database, "Boss", ornate, 3, 4, new[] { 0f, 0f, 30f, 35f, 22f, 10f, 3f }, 0f),
+                // The piles of the Great Hall's treasury, the reward of its three seals.
+                ["Treasury"] = BuildLootTable(database, "Treasury", treasury, 3, 5, new[] { 0f, 10f, 35f, 30f, 17f, 6f, 2f }, 0f)
             };
         }
 
@@ -618,7 +626,7 @@ namespace Game.Scripts.Editor.Dungeon
             return inventory;
         }
 
-        private static BoxCollider AddInteractCollider(GameObject root, Vector3 center, Vector3 size)
+        internal static BoxCollider AddInteractCollider(GameObject root, Vector3 center, Vector3 size)
         {
             GameObject trigger = BattleEditorUtility.CreateChild("Interact", root.transform);
             trigger.layer = LayerMask.NameToLayer(InteractableLayer);
@@ -1334,7 +1342,7 @@ namespace Game.Scripts.Editor.Dungeon
             return BattleContentBuilder.SavePrefab(root, Prefab("Campfire"));
         }
 
-        private static void SetupContainer(GameObject root, string displayName, LootTableConfig table, Transform lid, Vector3 lidOpen, bool removeWhenEmpty, int width, int height)
+        internal static void SetupContainer(GameObject root, string displayName, LootTableConfig table, Transform lid, Vector3 lidOpen, bool removeWhenEmpty, int width, int height)
         {
             root.AddComponent<NetworkObject>();
             root.AddComponent<NetworkTransform>();

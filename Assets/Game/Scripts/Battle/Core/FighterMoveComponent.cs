@@ -100,6 +100,10 @@ namespace Game.Scripts.Battle
                 _controller.Jump();
 
             bool wasGrounded = _controller.Grounded;
+
+            if (wasGrounded)
+                Ride();
+
             float riseSpeed = _controller.Velocity.y;
             _controller.maxSpeed = GetSpeed(move, isWalk) * speedMultiplier * (IsWading() ? _waterMultiplier : 1f);
             _controller.Move(transform.rotation * new Vector3(move.x, 0f, move.y));
@@ -170,6 +174,27 @@ namespace Game.Scripts.Battle
 
             _collider.Move(Vector3.down * hit.distance);
             _controller.Grounded = true;
+        }
+
+        /// A body standing on a moving floor goes along with it; the controller is off for the move, so the floor that has
+        /// already risen this tick does not push it back.
+        private void Ride()
+        {
+            Vector3 origin = transform.position + Vector3.up * (_collider.radius + 0.05f);
+
+            if (!Runner.GetPhysicsScene().SphereCast(origin, _collider.radius * 0.9f, Vector3.down, out RaycastHit hit, SnapDistance, _groundMask, QueryTriggerInteraction.Ignore)
+                || hit.collider.GetComponentInParent<IMovingPlatform>() is not { } platform)
+                return;
+
+            Vector3 step = platform.GetStep(Runner.Tick);
+
+            if (step == Vector3.zero)
+                return;
+
+            _collider.enabled = false;
+            transform.position += step;
+            _collider.enabled = true;
+            _airborneTop = transform.position.y;
         }
 
         private void TrackFall(bool wasGrounded)

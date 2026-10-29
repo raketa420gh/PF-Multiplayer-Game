@@ -19,7 +19,6 @@ namespace Game.Scripts.Editor.Dungeon
     internal static partial class CatacombRoomBuilder
     {
         public const string Folder = DungeonPropBuilder.PrefabsFolder + "/Catacombs";
-        public const string HallName = "GreatHall";
         public const int MapPixels = 144;
         public const float DoorWidth = 2f;
         /// A little above a head, and above the 2 m NavMesh agent standing on a quarter-metre walkway: the doorways carry doors.

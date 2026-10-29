@@ -55,7 +55,8 @@ namespace Game.Scripts.Editor.Dungeon
         {
             GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             instance.transform.position = CatacombRoomBuilder.Workshop;
-            Texture2D map = DungeonMinimapBuilder.Render(instance.transform, CatacombRoomBuilder.Workshop, DungeonMapBuilder.Pitch * 0.5f, CatacombRoomBuilder.MapPixels, $"Catacomb{prefab.name}", true);
+            Texture2D map = prefab.name == CatacombRoomBuilder.HallName ? CatacombRoomBuilder.RenderHallMap(instance.transform)
+                : DungeonMinimapBuilder.Render(instance.transform, CatacombRoomBuilder.Workshop, DungeonMapBuilder.Pitch * 0.5f, CatacombRoomBuilder.MapPixels, $"Catacomb{prefab.name}", true);
             Object.DestroyImmediate(instance);
             SerializedObject so = new SerializedObject(prefab.GetComponent<CatacombRoomComponent>());
 

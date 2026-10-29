@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Fusion;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -8,7 +9,8 @@ using UnityEngine.AI;
 namespace Game.Scripts.Dungeon
 {
     /// The Tangled Catacombs: a square grid of rooms laid out anew from the match seed, the same on every peer. The key room
-    /// (the Great Hall, a prefab placed in the scene) keeps the middle cell; the four corners get corner rooms turned so their blind
+    /// (the Great Hall, a prefab placed in the scene) keeps the middle cell and, when it is long, the neighbour its turn points
+    /// to (its local +Z); the four corners get corner rooms turned so their blind
     /// sides face out, every other cell a random room turned a random quarter. Every side has two doorways; a random maze with a
     /// few loops decides which of them open into the neighbours. The host bakes the NavMesh of the result.
     public sealed class CatacombGenerator : MonoBehaviour
@@ -30,6 +32,9 @@ namespace Game.Scripts.Dungeon
             /// Doorways from a cell to its east / north neighbour: bit 0 the one nearer the south-west corner, bit 1 the other.
             public int[] East;
             public int[] North;
+            /// Quarter turns of the key room and the cells it covers, the middle one first.
+            public int KeyTurns;
+            public int[] KeyCells;
         }
 
         public int Floor => _floor;
@@ -60,6 +65,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField, Tooltip("Instance of the key room in the scene, in the middle cell")]
         private CatacombRoomComponent _keyRoom;
+
+        [SerializeField, Tooltip("The key room covers the middle cell and the next one along its local +Z; its map is twice as tall")]
+        private bool _isKeyRoomLong;
 
         [SerializeField, Tooltip("Side between two cells by its open doorways (bit 0 at local -X, bit 1 at +X); length runs along local X")]
         private GameObject[] _sides = new GameObject[4];
@@ -150,7 +158,10 @@ namespace Game.Scripts.Dungeon
             _content.SetParent(transform, false);
             Plan plan = Lay(seed);
             _titles = new string[plan.Rooms.Length];
-            _titles[KeyCell] = _keyRoom.Title;
+            _keyRoom.transform.SetPositionAndRotation(CellCenter(KeyCell), Quaternion.Euler(0f, plan.KeyTurns * 90f, 0f));
+
+            foreach (int cell in plan.KeyCells)
+                _titles[cell] = _keyRoom.Title;
 
             for (int cell = 0; cell < plan.Rooms.Length; cell++)
             {
@@ -209,7 +220,8 @@ namespace Game.Scripts.Dungeon
 
             NavMeshBuilder.CollectSources(transform, 1, NavMeshCollectGeometry.PhysicsColliders, 0, markups, sources);
             // Down to the floors of the pits, but not of the chasms: nothing walks down there.
-            Bounds bounds = new Bounds(transform.position + Vector3.up * 1f, new Vector3(Size + 2f, 16f, Size + 2f));
+            // Up to the top gallery of the hall, 24 m high, and down to its sealed chamber.
+            Bounds bounds = new Bounds(transform.position + Vector3.up * 9f, new Vector3(Size + 2f, 34f, Size + 2f));
             _navMesh = NavMesh.AddNavMeshData(NavMeshBuilder.BuildNavMeshData(settings, sources, bounds, Vector3.zero, Quaternion.identity));
         }
 
@@ -228,6 +240,13 @@ namespace Game.Scripts.Dungeon
             return z * _grid + x;
         }
 
+        /// In a cell of the key room or next to one.
+        public bool IsNearKeyRoom(Vector3 position)
+        {
+            return Vector3.Distance(position, CellCenter(KeyCell)) < _pitch * 1.2f
+                || _isKeyRoomLong && Vector3.Distance(position, _keyRoom.transform.TransformPoint(Vector3.forward * _pitch)) < _pitch * 1.2f;
+        }
+
         public string GetTitle(int cell)
         {
             return cell < _titles.Length ? _titles[cell] : string.Empty;
@@ -242,11 +261,18 @@ namespace Game.Scripts.Dungeon
             int count = _grid * _grid;
             int key = KeyCell;
             Plan plan = NewPlan();
+            plan.KeyTurns = _isKeyRoomLong ? random.Next(4) : 0;
+            // Turn 0 points the room north, 1 east, 2 south, 3 west.
+            plan.KeyCells = _isKeyRoomLong ? new[] { key, Neighbour(key, s_steps[(5 - plan.KeyTurns) % 4]) } : new[] { key };
             bool[] visited = new bool[count];
             Stack<int> stack = new();
             List<int> next = new();
-            visited[key] = true;
-            stack.Push(key);
+
+            foreach (int cell in plan.KeyCells)
+            {
+                visited[cell] = true;
+                stack.Push(cell);
+            }
 
             while (stack.Count > 0)
             {
@@ -282,15 +308,27 @@ namespace Game.Scripts.Dungeon
                     plan.North[cell] |= 1 << random.Next(2);
             }
 
-            foreach (Vector2Int step in s_steps)
-                Open(plan, key, Neighbour(key, step), BothDoorways);
+            foreach (int cell in plan.KeyCells)
+            {
+                foreach (Vector2Int step in s_steps)
+                {
+                    int neighbour = Neighbour(cell, step);
+
+                    if (!IsKey(plan, neighbour))
+                        Open(plan, cell, neighbour, BothDoorways);
+                    else if (neighbour == cell + 1)
+                        plan.East[cell] = 0;
+                    else if (neighbour == cell + _grid)
+                        plan.North[cell] = 0;
+                }
+            }
 
             int[] used = new int[_kinds.Length];
 
             for (int cell = 0; cell < count; cell++)
             {
                 int corner = CornerTurns(cell);
-                plan.Rooms[cell] = cell == key ? null : _kinds[PickKind(random, used, corner >= 0)].Prefab;
+                plan.Rooms[cell] = IsKey(plan, cell) ? null : _kinds[PickKind(random, used, corner >= 0)].Prefab;
                 plan.Turns[cell] = corner >= 0 ? corner : random.Next(4);
             }
 
@@ -306,9 +344,10 @@ namespace Game.Scripts.Dungeon
 
             for (int cell = 0; cell < plan.Rooms.Length; cell++)
             {
-                Texture2D source = cell == KeyCell ? _keyRoom.Map : plan.Rooms[cell] != null ? plan.Rooms[cell].Map : null;
+                int part = Array.IndexOf(plan.KeyCells, cell);
+                Color32[] source = part >= 0 ? KeyMapPart(part) : plan.Rooms[cell] != null && plan.Rooms[cell].Map != null ? plan.Rooms[cell].Map.GetPixels32() : null;
                 Color32 fill = IsFilled(plan, cell % _grid, cell / _grid) ? _parchment : _ink;
-                Blit(pixels, size, cell % _grid * n, cell / _grid * n, source != null ? source.GetPixels32() : null, n, plan.Turns[cell], fill);
+                Blit(pixels, size, cell % _grid * n, cell / _grid * n, source, n, part >= 0 ? plan.KeyTurns : plan.Turns[cell], fill);
             }
 
             for (int cell = 0; cell < plan.Rooms.Length; cell++)
@@ -316,10 +355,10 @@ namespace Game.Scripts.Dungeon
                 int x = cell % _grid;
                 int z = cell / _grid;
 
-                if (IsFilled(plan, x, z) || IsFilled(plan, x + 1, z))
+                if ((IsFilled(plan, x, z) || IsFilled(plan, x + 1, z)) && !(x < _grid - 1 && IsKey(plan, cell) && IsKey(plan, cell + 1)))
                     Line(pixels, size, x * n, z * n, true, x < _grid - 1 ? plan.East[cell] : 0);
 
-                if (IsFilled(plan, x, z) || IsFilled(plan, x, z + 1))
+                if ((IsFilled(plan, x, z) || IsFilled(plan, x, z + 1)) && !(IsKey(plan, cell) && IsKey(plan, cell + _grid)))
                     Line(pixels, size, x * n, z * n, false, z < _grid - 1 ? plan.North[cell] : 0);
 
                 if (x == 0 && IsFilled(plan, x, z))
@@ -402,6 +441,22 @@ namespace Game.Scripts.Dungeon
 
         private int KeyCell => _grid * _grid / 2;
 
+        private bool IsKey(Plan plan, int cell)
+        {
+            return cell >= 0 && Array.IndexOf(plan.KeyCells, cell) >= 0;
+        }
+
+        /// The key room's map holds one cell square per cell it covers, the middle cell's at the bottom.
+        private Color32[] KeyMapPart(int part)
+        {
+            int n = _cellPixels;
+
+            if (_keyRoom.Map == null || _keyRoom.Map.width != n || _keyRoom.Map.height < n * (part + 1))
+                return null;
+
+            return _keyRoom.Map.GetPixels(0, part * n, n, n).Select(color => (Color32)color).ToArray();
+        }
+
         private Plan NewPlan()
         {
             int count = _grid * _grid;
@@ -414,7 +469,7 @@ namespace Game.Scripts.Dungeon
         {
             int cell = z * _grid + x;
 
-            return x >= 0 && x < _grid && z >= 0 && z < _grid && (cell == KeyCell || plan.Rooms[cell] != null);
+            return x >= 0 && x < _grid && z >= 0 && z < _grid && (IsKey(plan, cell) || plan.Rooms[cell] != null);
         }
 
         /// The east and north sides of a cell, the west and south ones towards the border or rock; sides of the key room are its
@@ -426,10 +481,10 @@ namespace Game.Scripts.Dungeon
             Vector3 center = CellCenter(cell);
             float half = _pitch * 0.5f;
 
-            if (cell + 1 != KeyCell)
+            if (!(x < _grid - 1 && IsKey(plan, cell + 1)))
                 Side(center + Vector3.right * half, -90f, x < _grid - 1 ? plan.East[cell] : 0);
 
-            if (cell + _grid != KeyCell)
+            if (!IsKey(plan, cell + _grid))
                 Side(center + Vector3.forward * half, 0f, z < _grid - 1 ? plan.North[cell] : 0);
 
             if (!IsFilled(plan, x - 1, z))
@@ -442,16 +497,14 @@ namespace Game.Scripts.Dungeon
         /// The key room's own doorway sides that face rock give way to blind sides.
         private void WallKeyRoom(Plan plan)
         {
-            int x = KeyCell % _grid;
-            int z = KeyCell / _grid;
-
             foreach (Transform side in _keyRoom.transform)
             {
                 if (side.name != KeyRoomSide)
                     continue;
 
-                Vector3 local = side.localPosition;
-                bool isOpen = Mathf.Abs(local.x) > Mathf.Abs(local.z) ? IsFilled(plan, x + (int)Mathf.Sign(local.x), z) : IsFilled(plan, x, z + (int)Mathf.Sign(local.z));
+                int ahead = GetCell(side.position + side.forward);
+                int outside = IsKey(plan, ahead) ? GetCell(side.position - side.forward) : ahead;
+                bool isOpen = IsFilled(plan, outside % _grid, outside / _grid);
                 side.gameObject.SetActive(isOpen);
 
                 if (!isOpen)

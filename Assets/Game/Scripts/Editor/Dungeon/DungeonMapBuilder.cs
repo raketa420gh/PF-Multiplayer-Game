@@ -8,7 +8,8 @@ using UnityEngine.AI;
 
 namespace Game.Scripts.Editor.Dungeon
 {
-    /// The Great Hall (BuildHall), being made anew: for now an empty test room. The escape portal opens at a random spot.
+    /// The Great Hall (CatacombRoomBuilder.BuildHall): the empire's shaft, two cells long and four storeys high, from its
+    /// mockup. The escape portal opens at a random spot.
     /// The cursed village (VillageMapBuilder) is floor 1, cut from the game for now. Floor 2, sunk below it, is the Tangled
     /// Catacombs, where runs start: the hall is their key room in the middle of a 7x7 grid whose other rooms
     /// (CatacombRoomBuilder) CatacombGenerator lays out anew every run; two doorways on each side lead on.
@@ -53,7 +54,7 @@ namespace Game.Scripts.Editor.Dungeon
             VillageMapBuilder.Result upper = isVillageCut
                 ? new VillageMapBuilder.Result { Map = AssetDatabase.LoadAssetAtPath<Texture2D>($"{DungeonMinimapBuilder.Folder}/Floor1.png") }
                 : VillageMapBuilder.Build(village, spawns);
-            CatacombRoomComponent hall = BuildHall(floor, rooms);
+            CatacombRoomComponent hall = CatacombRoomBuilder.BuildHall(floor, rooms.Sides);
 
             Transform[] arrivals =
             {
@@ -110,54 +111,6 @@ namespace Game.Scripts.Editor.Dungeon
             return root;
         }
 
-        /// The Great Hall, the key room of the catacombs: its prefab placed in the middle cell, built first when it is missing.
-        /// For now a test room: bare walls with the four double doorways, one big light in the middle, a pedestal of every
-        /// struck surface and a training dummy that sounds like an adventurer. Teams start here or next door.
-        private static CatacombRoomComponent BuildHall(Transform floor, CatacombRoomBuilder.Result rooms)
-        {
-            string path = $"{CatacombRoomBuilder.Folder}/{CatacombRoomBuilder.HallName}.prefab";
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-
-            if (prefab != null && !CatacombRoomBuilder.IsOverwriting)
-                return Place(prefab, floor, Vector3.zero, 0f, false).GetComponent<CatacombRoomComponent>();
-
-            Transform hall = BattleEditorUtility.CreateChild(CatacombRoomBuilder.HallName, floor).transform;
-            Vector3 slab = new Vector3(Pitch, WallThickness, Pitch);
-            DungeonStructureBuilder.Block(hall, "Floor", Vector3.down * WallThickness * 0.5f, slab, DungeonPropBuilder.Flagstone);
-            DungeonStructureBuilder.Block(hall, "Ceiling", Vector3.up * (Height + WallThickness * 0.5f), slab, DungeonPropBuilder.Ashlar);
-
-            for (int i = 0; i < 4; i++)
-                Place(rooms.Sides[3], hall, Quaternion.Euler(0f, i * 90f, 0f) * new Vector3(0f, 0f, Half + WallThickness * 0.5f), i * 90f).name = "Wall Doorways";
-
-            Light light = Place(DungeonMedievalBuilder.Load("Chandelier"), hall, Vector3.up * (Height - 0.4f), 0f).GetComponentInChildren<Light>();
-            light.range = Pitch;
-            light.intensity = 40f;
-
-            (string name, Material material)[] pedestals =
-            {
-                ("Stone", DungeonPropBuilder.Ashlar),
-                ("Wood", DungeonPropBuilder.WoodPlanks),
-                ("Hard Wood", BattleEditorUtility.GetMaterial("PedestalBeam", new Color(0.3f, 0.19f, 0.1f), 0f, 0.25f)),
-                ("Grass", BattleEditorUtility.GetMaterial("PedestalGrass", new Color(0.24f, 0.4f, 0.14f), 0f, 0.1f)),
-                ("Snow", BattleEditorUtility.GetMaterial("PedestalSnow", new Color(0.92f, 0.94f, 0.97f), 0f, 0.4f))
-            };
-
-            for (int i = 0; i < pedestals.Length; i++)
-                DungeonStructureBuilder.Block(hall, $"Wall Pedestal {pedestals[i].name}", new Vector3((i - 2) * 3f, 0.6f, 5f), new Vector3(1.2f, 1.2f, 1.2f), pedestals[i].material);
-
-            Place(DungeonContentBuilder.BuildTrainingDummy(), hall, new Vector3(0f, 0f, -5f), 0f, false);
-            CatacombRoomBuilder.Kit("Start", hall, new Vector3(0f, 0f, -Half + 4f), 0f);
-
-            Texture2D map = DungeonMinimapBuilder.Render(hall, hall.position, Pitch * 0.5f, CatacombRoomBuilder.MapPixels, $"Catacomb{CatacombRoomBuilder.HallName}", true);
-            SerializedObject so = new SerializedObject(hall.gameObject.AddComponent<CatacombRoomComponent>());
-            BattleEditorUtility.Set(so, "_title", "Great Hall");
-            BattleEditorUtility.Set(so, "_map", map);
-            so.ApplyModifiedPropertiesWithoutUndo();
-            PrefabUtility.SaveAsPrefabAssetAndConnect(hall.gameObject, path, InteractionMode.AutomatedAction);
-
-            return hall.GetComponent<CatacombRoomComponent>();
-        }
-
         /// The generator of the catacombs on the hall's floor, with the rooms, the key room and, for the menus, the map of one
         /// sample layout.
         private static CatacombGenerator BuildCatacombs(Transform floor, CatacombRoomBuilder.Result rooms, CatacombRoomComponent hall, out Texture2D sampleMap)
@@ -168,6 +121,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_grid", CatacombGrid);
             BattleEditorUtility.Set(so, "_pitch", Pitch);
             BattleEditorUtility.Set(so, "_keyRoom", hall);
+            BattleEditorUtility.Set(so, "_isKeyRoomLong", true);
             BattleEditorUtility.Set(so, "_sides", rooms.Sides);
             BattleEditorUtility.Set(so, "_post", rooms.Post);
             BattleEditorUtility.Set(so, "_door", DungeonSceneBuilder.LoadNetworkObject("CatacombDoor"));

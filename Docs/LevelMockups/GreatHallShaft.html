@@ -1,0 +1,598 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Великий зал — Ствол Морнхейма</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed 3D viewport, floating tool rails left (layers/view) and right (inspector), status strip at the bottom. Single dark look on purpose: it is an editor viewport. */
+:root {
+  --ink: #0d1110;
+  --panel: #151b19ee;
+  --panel-solid: #161c1a;
+  --line: #2a3431;
+  --fg: #d9e2dc;
+  --dim: #8b9a93;
+  --acid: #7dff8f;
+  --amber: #ffb35c;
+  --danger: #ff6a4d;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--ink); color: var(--fg); font: 14px/1.4 var(--body); overflow: hidden; }
+#view { position: fixed; inset: 0; }
+#view canvas { display: block; outline: none; }
+.rail { position: fixed; top: max(12px, env(safe-area-inset-top, 0px)); max-height: calc(100% - 64px); overflow: auto; width: 248px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; backdrop-filter: blur(6px); z-index: 5; }
+#left { left: max(12px, env(safe-area-inset-left, 0px)); }
+#right { right: max(12px, env(safe-area-inset-right, 0px)); width: 280px; }
+.rail header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 12px 14px 8px; border-bottom: 1px solid var(--line); }
+h1 { margin: 0; font: 700 22px/1 var(--display); letter-spacing: .02em; text-transform: uppercase; }
+#roomSel { display: block; margin-top: 8px; width: 100%; font: 500 13px var(--body); color: var(--fg); background: #1e2724; border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; text-transform: none; letter-spacing: 0; }
+h1 small { display: block; margin-top: 4px; font: 500 11px/1 var(--mono); color: var(--dim); letter-spacing: 0; text-transform: none; }
+h2 { margin: 0 0 8px; font: 600 12px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+section { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+section:last-child { border-bottom: 0; }
+.seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+.seg.three { grid-template-columns: repeat(3, 1fr); }
+button, .chip { font: 500 13px/1 var(--body); color: var(--fg); background: #1e2724; border: 1px solid var(--line); border-radius: 4px; padding: 7px 8px; cursor: pointer; }
+button:hover { border-color: #46564f; }
+button[aria-pressed="true"] { background: #23362b; border-color: var(--acid); color: #eafff0; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--acid); outline-offset: 1px; }
+.layers { display: grid; gap: 2px; }
+.layers label { display: grid; grid-template-columns: 16px 12px 1fr auto; align-items: center; gap: 8px; padding: 3px 2px; cursor: pointer; }
+.layers input { margin: 0; accent-color: var(--acid); }
+.sw { width: 12px; height: 12px; border-radius: 2px; }
+.n { font: 400 11px var(--mono); color: var(--dim); }
+.row { display: flex; align-items: center; gap: 8px; }
+.row input[type=range] { flex: 1; accent-color: var(--acid); }
+.val { font: 500 12px var(--mono); min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+#info dl { display: grid; grid-template-columns: 74px 1fr; gap: 4px 10px; margin: 0; font-size: 13px; }
+#info dt { color: var(--dim); }
+#info dd { margin: 0; font: 400 12px var(--mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#info .big { font: 700 26px/1 var(--display); letter-spacing: .02em; }
+#info .sub { color: var(--dim); margin: 2px 0 10px; }
+#info p { margin: 8px 0 0; color: var(--dim); font-size: 13px; }
+textarea { width: 100%; box-sizing: border-box; min-height: 64px; resize: vertical; background: #0f1513; color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 8px; font: 13px/1.4 var(--body); }
+.list { display: grid; gap: 2px; max-height: 260px; overflow: auto; }
+.list button { display: grid; grid-template-columns: 40px 1fr auto; gap: 8px; text-align: left; background: transparent; border-color: transparent; padding: 5px 4px; }
+.list button:hover { background: #1e2724; }
+.list button[aria-pressed="true"] { background: #23362b; }
+.list .tag { font: 500 11px var(--mono); color: var(--acid); }
+.list .note-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); align-self: center; }
+#status { position: fixed; left: 0; right: 0; bottom: 0; display: flex; flex-wrap: wrap; gap: 4px 18px; padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); font: 12px var(--mono); color: var(--dim); background: linear-gradient(transparent, #0d1110dd 40%); pointer-events: none; z-index: 4; }
+#status b { color: var(--fg); font-weight: 500; }
+#labels { position: fixed; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; }
+.lbl { position: absolute; transform: translate(-50%, -100%); font: 600 12px/1 var(--display); letter-spacing: .04em; padding: 3px 5px; border-radius: 3px; background: #0d1110cc; border: 1px solid var(--line); white-space: nowrap; }
+.lbl.trap { color: var(--danger); border-color: #6b2c21; }
+.lbl.chest { color: #ffd76b; border-color: #6b5521; }
+.lbl.start { color: #7cc8ff; border-color: #21486b; }
+.lbl.sel { background: var(--acid); color: #062b10; border-color: var(--acid); }
+.lbl.minor { font-weight: 500; color: var(--dim); }
+#fpHint { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 6px; height: 6px; border-radius: 50%; border: 2px solid #fff9; z-index: 4; }
+.toggle-rail { display: none; }
+@media (max-width: 760px) {
+  .rail { width: auto; left: max(12px, env(safe-area-inset-left, 0px)) !important; right: max(12px, env(safe-area-inset-right, 0px)) !important; max-height: 46%; }
+  #right { top: auto; bottom: 44px; }
+  .rail.collapsed > :not(header) { display: none; }
+  .toggle-rail { display: inline-block; padding: 4px 8px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div id="view"></div>
+<div id="labels"></div>
+<div id="fpHint" hidden></div>
+
+<aside class="rail" id="left">
+  <header>
+    <h1>Великий зал<small>33.6 × 67.8 × 24 м · 1×2 модуля · макет v1</small><select id="roomSel" aria-label="Комната"><option value="AlchemyLab.html">AlchemyLab</option><option value="ArcherGalleries.html">ArcherGalleries</option><option value="BladeCorridors.html">BladeCorridors</option><option value="BonePit.html">BonePit</option><option value="BurialNiches.html">BurialNiches</option><option value="Chapel.html">Chapel</option><option value="Chasm.html">Chasm</option><option value="CollapsedHall.html">CollapsedHall</option><option value="CornerBarracks.html">CornerBarracks</option><option value="CornerShrine.html">CornerShrine</option><option value="CornerVault.html">CornerVault</option><option value="CornerWatch.html">CornerWatch</option><option value="Crypt.html">Crypt</option><option value="FloodedCistern.html">FloodedCistern</option><option value="FourChambers.html">FourChambers</option><option value="GreatHallShaft.html" selected>Великий зал (новый)</option><option value="GreatHall.html">GreatHall</option><option value="GuardRoom.html">GuardRoom</option><option value="Labyrinth.html">Labyrinth</option><option value="LordsTomb.html">LordsTomb</option><option value="Mausoleum.html">Mausoleum</option><option value="Ossuary.html">Ossuary</option><option value="PillaredHall.html">PillaredHall</option><option value="PrisonBlock.html">PrisonBlock</option><option value="Refectory.html">Refectory</option><option value="RitualCircle.html">RitualCircle</option><option value="SpikeGallery.html">SpikeGallery</option><option value="Storeroom.html">Storeroom</option><option value="SunkenPit.html">SunkenPit</option><option value="WellRest.html">WellRest</option></select></h1>
+    <button class="toggle-rail" data-collapse="left" aria-label="Свернуть панель">☰</button>
+  </header>
+  <section>
+    <h2>Вид</h2>
+    <div class="seg three">
+      <button id="vPersp" aria-pressed="true">3D</button>
+      <button id="vTop">Сверху</button>
+      <button id="vFp">Ходить</button>
+    </div>
+  </section>
+  <section>
+    <h2>Освещение</h2>
+    <div class="seg">
+      <button id="lGame" aria-pressed="false">Как в игре</button>
+      <button id="lPlan" aria-pressed="true">Схема</button>
+    </div>
+    <div class="row" style="margin-top:8px"><span class="n">Экспозиция</span><input id="expo" type="range" min="0.3" max="3" step="0.05" value="1"><span class="val" id="expoV">1.00</span></div>
+    <label class="row" style="margin-top:6px"><input id="ranges" type="checkbox"> <span>Радиусы ламп</span></label>
+    <label class="row" style="margin-top:4px"><input id="shadows" type="checkbox"> <span>Тени (тяжело)</span></label>
+  </section>
+  <section>
+    <h2>Срез по высоте</h2>
+    <div class="row"><input id="cut" type="range" min="-6.5" max="24.6" step="0.1" value="24.6"><span class="val" id="cutV">всё</span></div>
+    <div class="seg" style="margin-top:6px;grid-template-columns:repeat(6,1fr)">
+      <button data-cut="-0.6">−6</button><button data-cut="5.4">0</button><button data-cut="11.4">6</button><button data-cut="17.4">12</button><button data-cut="23.4">18</button><button data-cut="24.6">Всё</button>
+    </div>
+  </section>
+  <section>
+    <h2>Слои</h2>
+    <div class="layers" id="layers"></div>
+  </section>
+  <section id="mechPanel">
+    <h2>Механизмы</h2>
+    <p class="n" style="margin:0 0 4px">Пара клетей (одна цепь)</p>
+    <div class="seg"><button id="pB" aria-pressed="true">П1 ↑ · П2 ↓</button><button id="pA" aria-pressed="false">П1 ↓ · П2 ↑</button></div>
+    <p class="n" style="margin:8px 0 4px">Мост Весов</p>
+    <div class="seg"><button id="bUp" aria-pressed="true">Поднят</button><button id="bDown" aria-pressed="false">Опущен</button></div>
+    <p class="n" style="margin:8px 0 4px">Сброшено печатей</p>
+    <div class="seg" style="grid-template-columns:repeat(4,1fr)"><button data-seals="0" aria-pressed="true">0</button><button data-seals="1">1</button><button data-seals="2">2</button><button data-seals="3">3</button></div>
+    <p class="n" id="mechNote" style="margin:8px 0 0"></p>
+    <p id="bridgeNote" hidden></p>
+  </section>
+  <section>
+    <h2>Головоломка «Три печати»</h2>
+    <ol style="margin:0;padding-left:18px;font-size:12.5px;color:var(--dim);display:grid;gap:5px">
+      <li><b style="color:var(--fg)">Казна</b> в центре ствола закрыта плитой. Её держат три противовеса-<b style="color:var(--fg)">печати</b>, висящие над площадью. Каждый сброшенный поднимает плиту на треть.</li>
+      <li><b style="color:var(--fg)">Печать I</b> (ярус 1, двор): три кельи надзирателей подряд → шиповый лаз → рычаг. Простая, но с монстрами.</li>
+      <li><b style="color:var(--fg)">Печать II</b> (12 м, островок над казной): сначала «Ворот моста» в маятниковой галерее (между двумя маятниками) опускает мост на 40 с → назад под бойницами → по мосту на островок.</li>
+      <li><b style="color:var(--fg)">Печать III</b> (18 м, Воротная): туда только на <b style="color:var(--fg)">П2</b>. Но П2 и П1 на одной цепи: поднял П2 наверх — П1 упала вниз, и наоборот. Пока П2 вверху, её цепь держит <b style="color:var(--fg)">ходовую стену</b> открытой; кто-то вызвал П2 вниз — Воротная заперта с запада, обход по ярусу 3 через осыпные плиты.</li>
+      <li>Каждый сброс — противовес падает на площадь (метка, давит насмерть) и остаётся укрытием. Последнюю печать может сбросить кто угодно — казну забирает тот, кто ближе: PvP-приманка в центре карты.</li>
+      <li><b style="color:#6fa8ff">Тайник</b>: когда П2 уходит вверх, в дне её шахты видна трещина с синим отблеском → лаз в замурованное основание → −6 м, <b style="color:#6fa8ff">Нижняя печать</b> с запечатанной дверью.</li>
+    </ol>
+  </section>
+
+</aside>
+
+<aside class="rail" id="right">
+  <header>
+    <h2 style="margin:0">Инспектор</h2>
+    <button class="toggle-rail" data-collapse="right" aria-label="Свернуть панель">☰</button>
+  </header>
+  <section id="info"></section>
+  <section>
+    <h2>Объекты</h2>
+    <div class="list" id="list"></div>
+  </section>
+  <section>
+    <h2>Заметки к правкам</h2>
+    <div class="seg"><button id="copyNotes">Скопировать</button><button id="clearNotes">Очистить</button></div>
+    <p class="n" id="notesState" style="margin:8px 0 0">Кликни объект и напиши, что поменять. Потом скопируй все заметки и вставь в чат.</p>
+  </section>
+</aside>
+
+<div id="status"><span>Курсор <b id="cur">—</b></span><span id="hint">ЛКМ — выбрать · правая/колесо — орбита/зум · Shift+ЛКМ — пан</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// Unity is left-handed (+Z forward). Three is right-handed: map Unity (x,y,z) -> three (x,y,-z) and Unity yaw -> -yaw.
+const OBJS = [{"id":"E1","cat":"shell","name":"Стена","p":[-13.4,0,-17.1],"ry":0,"s":[8.0,6,0.6]},{"id":"E2","cat":"shell","name":"Стена","p":[0.0,0,-17.1],"ry":0,"s":[14.8,6,0.6]},{"id":"E3","cat":"shell","name":"Стена","p":[13.4,0,-17.1],"ry":0,"s":[8.0,6,0.6]},{"id":"E4","cat":"shell","name":"Проём (если открыт картой)","p":[-8.4,2.4,-17.1],"ry":0,"s":[2.0,3.6,0.6]},{"id":"E5","cat":"shell","name":"Проём (если открыт картой)","p":[8.4,2.4,-17.1],"ry":0,"s":[2.0,3.6,0.6]},{"id":"E6","cat":"shell","name":"Стена","p":[-13.4,0,51.3],"ry":0,"s":[8.0,6,0.6]},{"id":"E7","cat":"shell","name":"Стена","p":[0.0,0,51.3],"ry":0,"s":[14.8,6,0.6]},{"id":"E8","cat":"shell","name":"Стена","p":[13.4,0,51.3],"ry":0,"s":[8.0,6,0.6]},{"id":"E9","cat":"shell","name":"Проём (если открыт картой)","p":[-8.4,2.4,51.3],"ry":0,"s":[2.0,3.6,0.6]},{"id":"E10","cat":"shell","name":"Проём (если открыт картой)","p":[8.4,2.4,51.3],"ry":0,"s":[2.0,3.6,0.6]},{"id":"E11","cat":"shell","name":"Стена","p":[17.1,0,-13.1],"ry":0,"s":[0.6,6,7.4]},{"id":"E12","cat":"shell","name":"Стена","p":[17.1,0,0.0],"ry":0,"s":[0.6,6,14.8]},{"id":"E13","cat":"shell","name":"Стена","p":[17.1,0,17.1],"ry":0,"s":[0.6,6,15.4]},{"id":"E14","cat":"shell","name":"Стена","p":[17.1,0,34.2],"ry":0,"s":[0.6,6,14.8]},{"id":"E15","cat":"shell","name":"Стена","p":[17.1,0,47.3],"ry":0,"s":[0.6,6,7.4]},{"id":"E16","cat":"shell","name":"Проём (если открыт картой)","p":[17.1,2.4,-8.4],"ry":0,"s":[0.6,3.6,2.0]},{"id":"E17","cat":"shell","name":"Проём (если открыт картой)","p":[17.1,2.4,8.4],"ry":0,"s":[0.6,3.6,2.0]},{"id":"E18","cat":"shell","name":"Проём (если открыт картой)","p":[17.1,2.4,25.8],"ry":0,"s":[0.6,3.6,2.0]},{"id":"E19","cat":"shell","name":"Проём (если открыт картой)","p":[17.1,2.4,42.6],"ry":0,"s":[0.6,3.6,2.0]},{"id":"E20","cat":"shell","name":"Стена","p":[-17.1,0,-13.1],"ry":0,"s":[0.6,6,7.4]},{"id":"E21","cat":"shell","name":"Стена","p":[-17.1,0,0.0],"ry":0,"s":[0.6,6,14.8]},{"id":"E22","cat":"shell","name":"Стена","p":[-17.1,0,17.1],"ry":0,"s":[0.6,6,15.4]},{"id":"E23","cat":"shell","name":"Стена","p":[-17.1,0,34.2],"ry":0,"s":[0.6,6,14.8]},{"id":"E24","cat":"shell","name":"Стена","p":[-17.1,0,47.3],"ry":0,"s":[0.6,6,7.4]},{"id":"E25","cat":"shell","name":"Проём (если открыт картой)","p":[-17.1,2.4,-8.4],"ry":0,"s":[0.6,3.6,2.0]},{"id":"E26","cat":"shell","name":"Проём (если открыт картой)","p":[-17.1,2.4,8.4],"ry":0,"s":[0.6,3.6,2.0]},{"id":"E27","cat":"shell","name":"Проём (если открыт картой)","p":[-17.1,2.4,25.8],"ry":0,"s":[0.6,3.6,2.0]},{"id":"E28","cat":"shell","name":"Проём (если открыт картой)","p":[-17.1,2.4,42.6],"ry":0,"s":[0.6,3.6,2.0]},{"id":"U1","cat":"upper","name":"Стена 6–24 м","p":[0.0,6,-17.1],"ry":0,"s":[34.8,18.0,0.6]},{"id":"U2","cat":"upper","name":"Стена 6–24 м","p":[0.0,6,51.3],"ry":0,"s":[34.8,18.0,0.6]},{"id":"U3","cat":"upper","name":"Стена 6–24 м","p":[17.1,6,17.1],"ry":0,"s":[0.6,18.0,67.8]},{"id":"U4","cat":"upper","name":"Стена 6–24 м","p":[-17.1,6,17.1],"ry":0,"s":[0.6,18.0,67.8]},{"id":"K1","cat":"ceiling","name":"Свод","p":[0.0,24.0,17.1],"ry":0,"s":[34.8,0.6,69.0]},{"id":"F1","cat":"floor","name":"Пол","p":[0.0,-0.5,9.6],"ry":0,"s":[33.6,0.5,52.8]},{"id":"F2","cat":"floor","name":"Пол","p":[-15.4,-0.5,43.5],"ry":0,"s":[2.8,0.5,15.0]},{"id":"F3","cat":"floor","name":"Пол","p":[2.4,-0.5,43.5],"ry":0,"s":[28.8,0.5,15.0]},{"id":"F4","cat":"floor","name":"Пол основания клети","p":[-13.0,-0.5,37.0],"ry":0,"s":[2,0.5,2]},{"id":"F5","cat":"floor","name":"Пол основания клети","p":[-13.0,-0.5,48.25],"ry":0,"s":[2,0.5,5.5]},{"id":"A1","cat":"bwall","name":"Стена казны","p":[-3.7,0,0.0],"ry":0,"s":[0.6,5,8]},{"id":"A2","cat":"bwall","name":"Стена казны","p":[3.7,0,0.0],"ry":0,"s":[0.6,5,8]},{"id":"A3","cat":"bwall","name":"Стена казны","p":[0.0,0,-3.7],"ry":0,"s":[6.8,5,0.6]},{"id":"A4","cat":"bwall","name":"Стена казны","p":[-2.3,0,3.7],"ry":0,"s":[2.2,5,0.6]},{"id":"A5","cat":"bwall","name":"Стена казны","p":[2.3,0,3.7],"ry":0,"s":[2.2,5,0.6]},{"id":"A6","cat":"bwall","name":"Перемычка двери казны","p":[0.0,3.2,3.7],"ry":0,"s":[2.4,1.8,0.6]},{"id":"P1","cat":"platform","name":"Свод казны","p":[0.0,5,0.0],"ry":0,"s":[8,0.5,8],"note":"Крыша казны. На ней стоят 4 колонны площадки Весов. С земли не достать."},{"id":"M1","cat":"mech","name":"Плита казны","p":[0.0,0,3.7],"ry":0,"s":[2.4,3.2,0.4],"anim":{"k":"slab","axis":"y","a":0,"b":3.2},"note":"Каменная плита-дверь. Каждая сброшенная печать поднимает её на треть; после третьей проход открыт до конца матча. Поднимается медленно (~4 с на треть) — грохот слышно на всех ярусах."},{"id":"X1","cat":"chest","name":"Container GoldenChest","p":[0,0,-2.6],"ry":0,"s":[1.1,0.7,0.65],"note":"Награда головоломки."},{"id":"X2","cat":"chest","name":"Container LargeOakChest","p":[-2.6,0,0],"ry":90,"s":[1.1,0.7,0.65]},{"id":"X3","cat":"chest","name":"Container LargeOakChest","p":[2.6,0,0],"ry":270,"s":[1.1,0.7,0.65]},{"id":"G1","cat":"gold","name":"Куча золота","p":[-1.3,0,1.0],"ry":0,"s":[1.7,0.6,1.7],"round":true,"note":"Россыпь монет и слитков — подбираемое золото (несколько стаков)."},{"id":"G2","cat":"gold","name":"Куча золота","p":[1.4,0,1.4],"ry":0,"s":[1.3,0.45,1.3],"round":true},{"id":"G3","cat":"gold","name":"Куча золота","p":[0,0,-0.7],"ry":0,"s":[1.9,0.75,1.9],"round":true},{"id":"L1","cat":"light","name":"Свечи казны","kind":"candle","p":[0,2.4,0],"color":"#ffc280","i":2.5,"r":6},{"id":"C1","cat":"column","name":"Колонна площадки Весов","p":[-2.6,5.5,-2.6],"ry":0,"s":[0.9,6.0,0.9],"round":false},{"id":"C2","cat":"column","name":"Колонна площадки Весов","p":[-2.6,5.5,2.6],"ry":0,"s":[0.9,6.0,0.9],"round":false},{"id":"C3","cat":"column","name":"Колонна площадки Весов","p":[2.6,5.5,-2.6],"ry":0,"s":[0.9,6.0,0.9],"round":false},{"id":"C4","cat":"column","name":"Колонна площадки Весов","p":[2.6,5.5,2.6],"ry":0,"s":[0.9,6.0,0.9],"round":false},{"id":"P2","cat":"platform","name":"Площадка Весов","p":[0.0,11.5,0.0],"ry":0,"s":[6,0.5,6],"note":"Островок над казной на высоте 12 м. Попасть — только по мосту B1 с северной галереи яруса 2."},{"id":"W1","cat":"wall","name":"Парапет","p":[-2.85,12,0.0],"ry":0,"s":[0.3,1.0,6]},{"id":"W2","cat":"wall","name":"Парапет","p":[2.85,12,0.0],"ry":0,"s":[0.3,1.0,6]},{"id":"W3","cat":"wall","name":"Парапет","p":[0.0,12,-2.85],"ry":0,"s":[5.4,1.0,0.3]},{"id":"D1","cat":"prop","name":"Великие весы","p":[0,12,-0.8],"ry":0,"s":[1.8,2.2,1.8],"round":true,"note":"Имперские весы десятины: здесь взвешивали оссарит, поднятый из жилы."},{"id":"V1","cat":"lever","name":"Печать II (Весы)","p":[1.6,12,1.4],"ry":0,"s":[0.5,1.2,0.5],"seal":2,"note":"Вторая печать. Сбрасывает противовес M-II в шахту и поднимает плиту казны на треть."},{"id":"C5","cat":"column","name":"Опорный столп ствола","p":[-10.4,0,-10.4],"ry":0,"s":[1.6,24.0,1.6],"round":false},{"id":"C6","cat":"column","name":"Опорный столп ствола","p":[-10.4,0,10.4],"ry":0,"s":[1.6,24.0,1.6],"round":false},{"id":"C7","cat":"column","name":"Опорный столп ствола","p":[10.4,0,-10.4],"ry":0,"s":[1.6,24.0,1.6],"round":false},{"id":"C8","cat":"column","name":"Опорный столп ствола","p":[10.4,0,10.4],"ry":0,"s":[1.6,24.0,1.6],"round":false},{"id":"C9","cat":"column","name":"Колонна аркады","p":[-10.4,0,-3.5],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C10","cat":"column","name":"Колонна аркады","p":[10.4,0,-3.5],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C11","cat":"column","name":"Колонна галереи","p":[10.4,6,-3.5],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C12","cat":"column","name":"Колонна аркады","p":[-10.4,0,3.5],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C13","cat":"column","name":"Колонна аркады","p":[10.4,0,3.5],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C14","cat":"column","name":"Колонна галереи","p":[10.4,6,3.5],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C15","cat":"column","name":"Колонна аркады","p":[-3.5,0,-10.4],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C16","cat":"column","name":"Колонна аркады","p":[3.5,0,-10.4],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"M2","cat":"mech","name":"Колесо ствола","p":[0,20.6,0],"ry":0,"s":[9,0.8,9],"round":true,"note":"Огромное цепное колесо под сводом. Через него идут цепи трёх противовесов-печатей и плиты казны."},{"id":"M3","cat":"mech","name":"Противовес печати I","p":[-7,16,-7],"ry":0,"s":[2,2,2],"anim":{"k":"seal","n":1,"axis":"y","a":16,"b":0},"note":"Висит на 16 м. Рычаг печати 1 обрывает его — он падает на площадь (метка T) и остаётся на полу как укрытие."},{"id":"T1","cat":"trap","name":"Место падения противовеса","p":[-7,0,-7],"ry":0,"s":[2.6,0.04,2.6],"kind":"drop","note":"Новая ловушка: падающий противовес убивает всех под ним. За 1.5 с до удара — скрежет цепи и сыплется пыль."},{"id":"M4","cat":"mech","name":"Противовес печати II","p":[7,16,-7],"ry":0,"s":[2,2,2],"anim":{"k":"seal","n":2,"axis":"y","a":16,"b":0},"note":"Висит на 16 м. Рычаг печати 2 обрывает его — он падает на площадь (метка T) и остаётся на полу как укрытие."},{"id":"T2","cat":"trap","name":"Место падения противовеса","p":[7,0,-7],"ry":0,"s":[2.6,0.04,2.6],"kind":"drop","note":"Новая ловушка: падающий противовес убивает всех под ним. За 1.5 с до удара — скрежет цепи и сыплется пыль."},{"id":"M5","cat":"mech","name":"Противовес печати III","p":[-7,16,7],"ry":0,"s":[2,2,2],"anim":{"k":"seal","n":3,"axis":"y","a":16,"b":0},"note":"Висит на 16 м. Рычаг печати 3 обрывает его — он падает на площадь (метка T) и остаётся на полу как укрытие."},{"id":"T3","cat":"trap","name":"Место падения противовеса","p":[-7,0,7],"ry":0,"s":[2.6,0.04,2.6],"kind":"drop","note":"Новая ловушка: падающий противовес убивает всех под ним. За 1.5 с до удара — скрежет цепи и сыплется пыль."},{"id":"T4","cat":"trap","name":"Пыльная отдушина","p":[0,0,-7.5],"ry":0,"s":[1.4,0.15,1.4],"kind":"vent","note":"Новая ловушка: решётка в полу раз в 8 с выдыхает пепельную пыль жилы (1.5 с): урон 4/0.5 с и кашель (−20 % скорость действий)."},{"id":"T5","cat":"trap","name":"Пыльная отдушина","p":[8.6,0,2],"ry":0,"s":[1.4,0.15,1.4],"kind":"vent","note":"Новая ловушка: решётка в полу раз в 8 с выдыхает пепельную пыль жилы (1.5 с): урон 4/0.5 с и кашель (−20 % скорость действий)."},{"id":"T6","cat":"trap","name":"Пыльная отдушина","p":[-8.6,0,-1],"ry":0,"s":[1.4,0.15,1.4],"kind":"vent","note":"Новая ловушка: решётка в полу раз в 8 с выдыхает пепельную пыль жилы (1.5 с): урон 4/0.5 с и кашель (−20 % скорость действий)."},{"id":"L2","cat":"light","name":"Жаровня","kind":"fire","p":[0,1.3,-6],"color":"#ff8a3a","i":3.5,"r":10},{"id":"L3","cat":"light","name":"Жаровня","kind":"fire","p":[0,1.3,7],"color":"#ff8a3a","i":3.5,"r":10},{"id":"D2","cat":"prop","name":"Жаровня","p":[0,0,-6],"ry":0,"s":[1,1,1],"round":true},{"id":"D3","cat":"prop","name":"Жаровня","p":[0,0,7],"ry":0,"s":[1,1,1],"round":true},{"id":"D4","cat":"prop","name":"Рудная вагонетка","p":[13,0,-13],"ry":30,"s":[1.3,1.2,2.2]},{"id":"D5","cat":"prop","name":"Ящики","p":[-14.5,0,-14.5],"ry":0,"s":[1.8,1.4,1.8]},{"id":"D6","cat":"prop","name":"Погребальные носилки","p":[14.5,0,4],"ry":0,"s":[1.0,0.8,2.2]},{"id":"D7","cat":"prop","name":"Груда костей","p":[-13.5,0,12.5],"ry":0,"s":[2.2,0.8,2.2],"round":true},{"id":"X4","cat":"chest","name":"Container Crate","p":[13.8,0,-15.6],"ry":0,"s":[1.1,0.7,0.65]},{"id":"X5","cat":"chest","name":"Container Barrel","p":[-15.8,0,14.5],"ry":0,"s":[1.1,0.7,0.65]},{"id":"L4","cat":"light","name":"Факел","kind":"torch","p":[-16.4,2.6,-12],"color":"#ff9a45","i":3,"r":9},{"id":"L5","cat":"light","name":"Факел","kind":"torch","p":[16.4,2.6,-12],"color":"#ff9a45","i":3,"r":9},{"id":"L6","cat":"light","name":"Факел","kind":"torch","p":[-16.4,2.6,12],"color":"#ff9a45","i":3,"r":9},{"id":"L7","cat":"light","name":"Факел","kind":"torch","p":[16.4,2.6,12],"color":"#ff9a45","i":3,"r":9},{"id":"L8","cat":"light","name":"Факел","kind":"torch","p":[0,2.6,-16.4],"color":"#ff9a45","i":3,"r":9},{"id":"S1","cat":"stairs","name":"Западный подъём","p":[-15.6,0,-2.25],"ry":0,"s":[2.4,6,7.5],"note":"Земля → ярус 1 (западная галерея)."},{"id":"F6","cat":"floor","name":"Галерея яруса 1","p":[-12.2,5.5,0.15],"ry":0,"s":[4.4,0.5,33.9]},{"id":"F7","cat":"floor","name":"Галерея яруса 1","p":[-15.6,5.5,-11.4],"ry":0,"s":[2.4,0.5,10.8]},{"id":"F8","cat":"floor","name":"Галерея яруса 1","p":[-15.6,5.5,9.3],"ry":0,"s":[2.4,0.5,15.6]},{"id":"F9","cat":"floor","name":"Галерея яруса 1","p":[0.0,5.5,-13.4],"ry":0,"s":[20,0.5,6.8]},{"id":"F10","cat":"floor","name":"Галерея яруса 1","p":[13.4,5.5,0.15],"ry":0,"s":[6.8,0.5,33.9]},{"id":"W4","cat":"wall","name":"Парапет","p":[-10.2,6,3.55],"ry":0,"s":[0.4,1.0,27.1]},{"id":"W5","cat":"wall","name":"Парапет","p":[10.2,6,3.55],"ry":0,"s":[0.4,1.0,27.1]},{"id":"W6","cat":"wall","name":"Парапет","p":[0.0,6,-10.2],"ry":0,"s":[20,1.0,0.4]},{"id":"W7","cat":"wall","name":"Стена часовни","p":[-14.4,6,3.8],"ry":0,"s":[4.8,4,0.4]},{"id":"W8","cat":"wall","name":"Стена часовни","p":[-12.2,6,5.4],"ry":0,"s":[0.4,4,2.8]},{"id":"W9","cat":"wall","name":"Стена часовни","p":[-12.2,6,10.4],"ry":0,"s":[0.4,4,3.2]},{"id":"W10","cat":"wall","name":"Стена часовни","p":[-14.4,6,12.2],"ry":0,"s":[4.8,4,0.4]},{"id":"D8","cat":"prop","name":"Алтарь Собора","p":[-15.6,6,8],"ry":0,"s":[1.2,1.1,2.4]},{"id":"X6","cat":"chest","name":"Container SmallOakChest","p":[-14.2,6,11.2],"ry":180,"s":[1.1,0.7,0.65]},{"id":"L9","cat":"light","name":"Свечи часовни","kind":"candle","p":[-15.4,7.4,8],"color":"#ffc280","i":1.5,"r":5},{"id":"D9","cat":"prop","name":"Саркофаг","p":[-7.5,6,-14.6],"ry":0,"s":[1.1,1.0,2.3]},{"id":"D10","cat":"prop","name":"Саркофаг","p":[-2.5,6,-14.6],"ry":0,"s":[1.1,1.0,2.3]},{"id":"D11","cat":"prop","name":"Саркофаг","p":[2.5,6,-14.6],"ry":0,"s":[1.1,1.0,2.3]},{"id":"D12","cat":"prop","name":"Саркофаг","p":[7.5,6,-14.6],"ry":0,"s":[1.1,1.0,2.3]},{"id":"S2","cat":"stairs","name":"Восточный подъём","p":[15.6,6,-3.75],"ry":180,"s":[2.4,6,7.5],"note":"Ярус 1 → ярус 2 (восточная галерея)."},{"id":"L10","cat":"light","name":"Факел","kind":"torch","p":[-16.4,8.6,-12],"color":"#ff9a45","i":3,"r":9},{"id":"L11","cat":"light","name":"Факел","kind":"torch","p":[16.4,8.6,-12],"color":"#ff9a45","i":3,"r":9},{"id":"L12","cat":"light","name":"Факел","kind":"torch","p":[16.4,8.6,8],"color":"#ff9a45","i":3,"r":9},{"id":"L13","cat":"light","name":"Факел","kind":"torch","p":[0,8.6,-16.4],"color":"#ff9a45","i":3,"r":9},{"id":"F11","cat":"floor","name":"Восточная галерея яруса 2","p":[12.2,11.5,0.15],"ry":0,"s":[4.4,0.5,33.9]},{"id":"F12","cat":"floor","name":"Восточная галерея яруса 2","p":[15.6,11.5,-12.15],"ry":0,"s":[2.4,0.5,9.3]},{"id":"F13","cat":"floor","name":"Восточная галерея яруса 2","p":[15.6,11.5,7.05],"ry":0,"s":[2.4,0.5,20.1]},{"id":"F14","cat":"floor","name":"Северная галерея яруса 2","p":[-3.4,11.5,16.0],"ry":0,"s":[26.8,0.5,12]},{"id":"W11","cat":"wall","name":"Парапет","p":[10.2,12,-3.4],"ry":0,"s":[0.4,1.0,26.8]},{"id":"W12","cat":"wall","name":"Парапет","p":[-8.8,12,10.2],"ry":0,"s":[16.0,1.0,0.4]},{"id":"W13","cat":"wall","name":"Парапет","p":[5.4,12,10.2],"ry":0,"s":[9.2,1.0,0.4]},{"id":"W14","cat":"wall","name":"Парапет","p":[-3.9,12,21.8],"ry":0,"s":[19.8,1.0,0.4]},{"id":"B1","cat":"bridge","name":"Мост Весов","p":[0,12,10],"ry":180,"s":[1.6,0.25,7.4],"note":"Подъёмный мост с северной галереи на площадку Весов (7.4 м). Опускает «Ворот моста» V в нише маятниковой галереи; через 40 с поднимается сам."},{"id":"T7","cat":"trap","name":"Нажимная плита","p":[-6,12,15],"ry":0,"s":[1.2,0.06,1.2],"kind":"plate","note":"Новая ловушка: плита взводит бойницы в стенах — залп стрел поперёк галереи (по оси X) через 0.4 с."},{"id":"T8","cat":"trap","name":"Нажимная плита","p":[6,12,15],"ry":0,"s":[1.2,0.06,1.2],"kind":"plate","note":"Новая ловушка: плита взводит бойницы в стенах — залп стрел поперёк галереи (по оси X) через 0.4 с."},{"id":"T9","cat":"trap","name":"Бойница","p":[-16.65,12.9,15],"ry":0,"s":[0.3,0.5,1.4],"kind":"slit","note":"Стреляет вдоль галереи при нажатии любой из плит."},{"id":"T10","cat":"trap","name":"Бойница","p":[16.65,12.9,15],"ry":0,"s":[0.3,0.5,1.4],"kind":"slit","note":"Стреляет вдоль галереи при нажатии любой из плит."},{"id":"L14","cat":"light","name":"Факел","kind":"torch","p":[-16.4,14.6,14],"color":"#ff9a45","i":3,"r":9},{"id":"L15","cat":"light","name":"Факел","kind":"torch","p":[16.4,14.6,14],"color":"#ff9a45","i":3,"r":9},{"id":"L16","cat":"light","name":"Факел","kind":"torch","p":[16.4,14.6,-12],"color":"#ff9a45","i":3,"r":9},{"id":"L17","cat":"light","name":"Факел","kind":"torch","p":[16.4,14.6,3],"color":"#ff9a45","i":3,"r":9},{"id":"L18","cat":"light","name":"Свечи у весов","kind":"candle","p":[0,13.2,0],"color":"#ffc280","i":2,"r":7},{"id":"F15","cat":"floor","name":"Верхний обход","p":[-15.8,17.5,1.15],"ry":0,"s":[2.0,0.5,31.9]},{"id":"F16","cat":"floor","name":"Верхний обход","p":[15.8,17.5,1.15],"ry":0,"s":[2.0,0.5,31.9]},{"id":"F17","cat":"floor","name":"Верхний обход","p":[-12.9,17.5,-15.8],"ry":0,"s":[7.8,0.5,2.0]},{"id":"F18","cat":"floor","name":"Верхний обход","p":[12.9,17.5,-15.8],"ry":0,"s":[7.8,0.5,2.0]},{"id":"F19","cat":"floor","name":"Смотровая ниша","p":[0.0,17.5,-14.8],"ry":0,"s":[10,0.5,4.0],"note":"Ниша над южной галереей с сундуком — награда за проход по осыпным плитам."},{"id":"T11","cat":"trap","name":"Осыпная плита","p":[-7.0,17.5,-15.8],"ry":0,"s":[4,0.5,2.0],"kind":"collapse","walk":true,"note":"Новая ловушка: через 0.8 с после шага трескается и падает. Падение на южную галерею яруса 1 (12 м) — урон от падения, почти всегда смерть. Плита возвращается после Осыпи."},{"id":"T12","cat":"trap","name":"Осыпная плита","p":[7.0,17.5,-15.8],"ry":0,"s":[4,0.5,2.0],"kind":"collapse","walk":true,"note":"Новая ловушка: через 0.8 с после шага трескается и падает. Падение на южную галерею яруса 1 (12 м) — урон от падения, почти всегда смерть. Плита возвращается после Осыпи."},{"id":"W15","cat":"wall","name":"Парапет","p":[-14.65,18,1.3],"ry":0,"s":[0.3,1.0,31.6]},{"id":"W16","cat":"wall","name":"Парапет","p":[14.65,18,1.3],"ry":0,"s":[0.3,1.0,31.6]},{"id":"W17","cat":"wall","name":"Парапет","p":[-11.9,18,-14.65],"ry":0,"s":[5.8,1.0,0.3]},{"id":"W18","cat":"wall","name":"Парапет","p":[11.9,18,-14.65],"ry":0,"s":[5.8,1.0,0.3]},{"id":"W19","cat":"wall","name":"Парапет","p":[0.0,18,-12.65],"ry":0,"s":[10,1.0,0.3]},{"id":"X7","cat":"chest","name":"Container LargeOakChest","p":[0,18,-15.6],"ry":0,"s":[1.1,0.7,0.65]},{"id":"L19","cat":"light","name":"Факел","kind":"torch","p":[-16.4,20.6,0],"color":"#ff9a45","i":3,"r":9},{"id":"L20","cat":"light","name":"Факел","kind":"torch","p":[16.4,20.6,0],"color":"#ff9a45","i":3,"r":9},{"id":"L21","cat":"light","name":"Факел","kind":"torch","p":[0,20.6,-16.4],"color":"#ff9a45","i":3,"r":9},{"id":"A7","cat":"bwall","name":"Стена основания клети","p":[-14.3,0,43.2],"ry":0,"s":[0.6,5.5,15.6]},{"id":"A8","cat":"bwall","name":"Стена основания клети","p":[-7.7,0,43.2],"ry":0,"s":[0.6,5.5,15.6]},{"id":"A9","cat":"bwall","name":"Стена основания клети","p":[-11.0,0,35.7],"ry":0,"s":[6,5.5,0.6]},{"id":"V2","cat":"lever","name":"Рычаг вызова клети (изнутри)","p":[-9.2,0,37],"ry":270,"s":[0.5,1.2,0.5],"note":"Изнутри тайника: вызывает П2 наверх (П1 уходит вниз) — чтобы клеть не заперла игрока внизу."},{"id":"S3","cat":"stairs","name":"Лаз под клетью","p":[-11,0,41.75],"ry":0,"s":[2,6,7.5],"note":"Тайный спуск: дыра в треснувшей плите под клетью П2 (видна, только когда П2 ушла наверх) → лестница в замурованное основание."},{"id":"S4","cat":"stairs","name":"Лаз к Нижней печати","p":[-13,-6,41.75],"ry":180,"s":[2,6,7.5],"note":"Основание → −6 м, Нижняя печать."},{"id":"W20","cat":"wall","name":"Стена лаза","p":[-11.7,-6,41.0],"ry":0,"s":[0.4,6,6]},{"id":"Q1","cat":"secret","name":"Пол Нижней печати","p":[-8.0,-6.5,47.5],"ry":0,"s":[12,0.5,7.0]},{"id":"W21","cat":"wall","name":"Стена Нижней печати","p":[-6.95,-6,43.7],"ry":0,"s":[9.9,5.5,0.6]},{"id":"W22","cat":"wall","name":"Стена Нижней печати","p":[-1.7,-6,44.95],"ry":0,"s":[0.6,5.5,1.9]},{"id":"W23","cat":"wall","name":"Стена Нижней печати","p":[-1.7,-6,50.05],"ry":0,"s":[0.6,5.5,1.9]},{"id":"W24","cat":"wall","name":"Стена Нижней печати","p":[-1.7,-1.5,47.5],"ry":0,"s":[0.6,1.0,3.2]},{"id":"Q2","cat":"secret","name":"Запечатанная дверь","p":[-1.8,-6,47.5],"ry":0,"s":[0.4,4.5,3.2],"note":"Огромная дверь с печатью Морнхейма, проросшая жилами оссарита. Пока не открывается. Задел: Корень жилы / босс / следующий этаж."},{"id":"Q3","cat":"secret","name":"Жила оссарита","p":[-13.8,-6,48.0],"ry":0,"s":[0.4,4.5,4],"note":"Светящиеся прожилки — намёк, что жила растёт отсюда."},{"id":"Q4","cat":"secret","name":"Жила оссарита","p":[-4.05,-2.0,50.8],"ry":0,"s":[3.9,0.4,0.4]},{"id":"Q5","cat":"secret","name":"Останки жильщика","p":[-4.5,-6,46],"ry":20,"s":[1.8,0.4,0.8],"note":"Скелет с запиской: «Дверь гудит, когда клеть уходит вверх». Лор-зацепка."},{"id":"L22","cat":"light","name":"Свечение жилы","kind":"acid","p":[-6,-3.5,47.5],"color":"#6fa8ff","i":1.6,"r":9},{"id":"L23","cat":"light","name":"Отблеск в трещине","kind":"acid","p":[-11,4.5,43.5],"color":"#6fa8ff","i":0.5,"r":3},{"id":"S5","cat":"stairs","name":"Парадная лестница","p":[0,0,30.25],"ry":180,"s":[4,6,7.5],"note":"Двор → ярус 1, выходит к шахте."},{"id":"C17","cat":"column","name":"Столб двора","p":[-6.4,0,34],"ry":0,"s":[1.2,24.0,1.2],"round":false},{"id":"C18","cat":"column","name":"Столб двора","p":[-6.4,0,46],"ry":0,"s":[1.2,24.0,1.2],"round":false},{"id":"C19","cat":"column","name":"Колонна","p":[-6.4,0,21],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C20","cat":"column","name":"Колонна","p":[-6.4,0,27.5],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C21","cat":"column","name":"Столб двора","p":[6.4,0,34],"ry":0,"s":[1.2,24.0,1.2],"round":false},{"id":"C22","cat":"column","name":"Столб двора","p":[6.4,0,46],"ry":0,"s":[1.2,24.0,1.2],"round":false},{"id":"C23","cat":"column","name":"Колонна","p":[6.4,0,21],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C24","cat":"column","name":"Колонна","p":[6.4,0,27.5],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C25","cat":"column","name":"Колонна","p":[2.6,0,21],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"C26","cat":"column","name":"Колонна","p":[-2.6,0,21],"ry":0,"s":[0.8,5.5,0.8],"round":false},{"id":"D13","cat":"prop","name":"Весовая платформа","p":[0,0,40],"ry":0,"s":[4,0.3,4]},{"id":"D14","cat":"prop","name":"Груда руды","p":[-3.8,0,44],"ry":0,"s":[2,1,2],"round":true},{"id":"D15","cat":"prop","name":"Рудная вагонетка","p":[4.2,0,37],"ry":0,"s":[1.3,1.2,2.2]},{"id":"D16","cat":"prop","name":"Ящики","p":[10,0,49.5],"ry":0,"s":[2.2,1.4,1.6]},{"id":"D17","cat":"prop","name":"Ящики","p":[14.8,0,19],"ry":0,"s":[1.8,1.6,2.4]},{"id":"D18","cat":"prop","name":"Ворот (сломан)","p":[-15.6,0,20.5],"ry":0,"s":[1.6,1.4,2.4]},{"id":"D19","cat":"prop","name":"Жаровня","p":[-4.5,0,33],"ry":0,"s":[1,1,1],"round":true},{"id":"L24","cat":"light","name":"Жаровня","kind":"fire","p":[-4.5,1.3,33],"color":"#ff8a3a","i":3,"r":9},{"id":"D20","cat":"prop","name":"Жаровня","p":[4.5,0,33],"ry":0,"s":[1,1,1],"round":true},{"id":"L25","cat":"light","name":"Жаровня","kind":"fire","p":[4.5,1.3,33],"color":"#ff8a3a","i":3,"r":9},{"id":"X8","cat":"chest","name":"Container SmallOakChest","p":[-15.7,0,50.2],"ry":180,"s":[1.1,0.7,0.65],"note":"Приманка в тупике за шипами."},{"id":"T13","cat":"trap","name":"Шипы","p":[-15.7,0,47.5],"ry":0,"s":[2.2,0.1,2],"kind":"spikes","note":"Существующая ловушка Spikes."},{"id":"L26","cat":"light","name":"Факел","kind":"torch","p":[16.4,2.6,26],"color":"#ff9a45","i":3,"r":9},{"id":"L27","cat":"light","name":"Факел","kind":"torch","p":[16.4,2.6,40],"color":"#ff9a45","i":3,"r":9},{"id":"L28","cat":"light","name":"Факел","kind":"torch","p":[-16.4,2.6,28],"color":"#ff9a45","i":3,"r":9},{"id":"L29","cat":"light","name":"Факел","kind":"torch","p":[0,2.6,50.6],"color":"#ff9a45","i":3,"r":9},{"id":"W25","cat":"wall","name":"Стена шахты П1","p":[14.15,0,44.0],"ry":0,"s":[0.3,12,4]},{"id":"W26","cat":"wall","name":"Стена шахты П1","p":[12.15,0,46.15],"ry":0,"s":[4.3,12,0.3]},{"id":"W27","cat":"wall","name":"Стена шахты П1","p":[12.15,0,41.85],"ry":0,"s":[4.3,12,0.3]},{"id":"Z1","cat":"bars","name":"Решётка шахты П1","p":[9.9,6,44.0],"ry":0,"s":[0.2,4,4]},{"id":"W28","cat":"wall","name":"Стена шахты П2","p":[-14.15,6,43.5],"ry":0,"s":[0.3,12,5.6]},{"id":"W29","cat":"wall","name":"Стена шахты П2","p":[-12.15,6,46.45],"ry":0,"s":[4.3,12,0.3]},{"id":"W30","cat":"wall","name":"Стена шахты П2","p":[-12.15,6,40.55],"ry":0,"s":[4.3,12,0.3]},{"id":"Z2","cat":"bars","name":"Решётка шахты П2","p":[-9.9,8,43.5],"ry":0,"s":[0.2,8,5.6]},{"id":"H1","cat":"lift","name":"П1 Рудная клеть","p":[12,0,44],"ry":0,"s":[3.4,2.6,3.4],"anim":{"k":"p1","axis":"y","a":0,"b":12},"note":"Клеть 0 ↔ 12 м, выход на запад. Связана цепью с П2: когда П1 вверху — П2 внизу (6 м), и наоборот. Рычаг в клети и вызывные рычаги на остановках; ход 6 с."},{"id":"H2","cat":"lift","name":"П2 Гробовая клеть","p":[-12,6,43.5],"ry":0,"s":[3.4,2.6,5],"anim":{"k":"p2","axis":"y","a":18,"b":6},"note":"Клеть 6 ↔ 18 м, выход на восток. Противовес П1. Когда стоит вверху — её цепь держит ходовую стену M открытой. Когда внизу — закрывает собой дыру в плите (тайник)."},{"id":"V3","cat":"lever","name":"Вызов П1 (земля)","p":[9.2,0,41.2],"ry":270,"s":[0.5,1.2,0.5]},{"id":"V4","cat":"lever","name":"Вызов П1 (ярус 2)","p":[9.2,12,41.2],"ry":270,"s":[0.5,1.2,0.5]},{"id":"V5","cat":"lever","name":"Вызов П2 (ярус 1)","p":[-9.2,6,40.2],"ry":90,"s":[0.5,1.2,0.5]},{"id":"V6","cat":"lever","name":"Вызов П2 (ярус 3)","p":[-9.2,18,40.9],"ry":90,"s":[0.5,1.2,0.5]},{"id":"F20","cat":"floor","name":"Ярус 1 двора","p":[-9.4,5.5,25.55],"ry":0,"s":[14.8,0.5,16.9]},{"id":"F21","cat":"floor","name":"Ярус 1 двора","p":[9.4,5.5,25.55],"ry":0,"s":[14.8,0.5,16.9]},{"id":"F22","cat":"floor","name":"Площадка Парадной","p":[0.0,5.5,21.8],"ry":0,"s":[4,0.5,9.4]},{"id":"F23","cat":"floor","name":"Ярус 1 двора","p":[-15.4,5.5,42.5],"ry":0,"s":[2.8,0.5,17.0]},{"id":"F24","cat":"floor","name":"Ярус 1 двора","p":[-8.0,5.5,42.5],"ry":0,"s":[4,0.5,17.0]},{"id":"F25","cat":"floor","name":"Ярус 1 двора","p":[-12.0,5.5,37.35],"ry":0,"s":[4,0.5,6.7]},{"id":"F26","cat":"floor","name":"Ярус 1 двора","p":[-12.0,5.5,48.65],"ry":0,"s":[4,0.5,4.7]},{"id":"F27","cat":"floor","name":"Плита под клетью (треснувшая)","p":[-13.0,5.5,43.5],"ry":0,"s":[2,0.5,5.6]},{"id":"F28","cat":"floor","name":"Плита под клетью (треснувшая)","p":[-11.0,5.5,40.85],"ry":0,"s":[2,0.5,0.3]},{"id":"F29","cat":"floor","name":"Плита под клетью (треснувшая)","p":[-11.0,5.5,45.9],"ry":0,"s":[2,0.5,0.8]},{"id":"F30","cat":"floor","name":"Ярус 1 двора","p":[8.0,5.5,42.5],"ry":0,"s":[4,0.5,17.0]},{"id":"F31","cat":"floor","name":"Ярус 1 двора","p":[15.4,5.5,42.5],"ry":0,"s":[2.8,0.5,17.0]},{"id":"F32","cat":"floor","name":"Ярус 1 двора","p":[12.0,5.5,37.85],"ry":0,"s":[4,0.5,7.7]},{"id":"F33","cat":"floor","name":"Ярус 1 двора","p":[12.0,5.5,48.65],"ry":0,"s":[4,0.5,4.7]},{"id":"F34","cat":"floor","name":"Ярус 1 двора","p":[0.0,5.5,48.5],"ry":0,"s":[12,0.5,5.0]},{"id":"W31","cat":"wall","name":"Парапет над шахтой","p":[0.0,6,17.3],"ry":0,"s":[20,1.0,0.4]},{"id":"W32","cat":"wall","name":"Парапет","p":[-2.2,6,30.25],"ry":0,"s":[0.4,1.0,7.5]},{"id":"W33","cat":"wall","name":"Парапет","p":[2.2,6,30.25],"ry":0,"s":[0.4,1.0,7.5]},{"id":"W34","cat":"wall","name":"Парапет","p":[-6.2,6,40.0],"ry":0,"s":[0.4,1.0,12]},{"id":"W35","cat":"wall","name":"Парапет","p":[6.2,6,40.0],"ry":0,"s":[0.4,1.0,12]},{"id":"W36","cat":"wall","name":"Парапет","p":[0.0,6,45.8],"ry":0,"s":[12,1.0,0.4]},{"id":"W37","cat":"wall","name":"Парапет","p":[-4.2,6,34.2],"ry":0,"s":[3.6,1.0,0.4]},{"id":"W38","cat":"wall","name":"Парапет","p":[4.2,6,34.2],"ry":0,"s":[3.6,1.0,0.4]},{"id":"W39","cat":"wall","name":"Стена казарм","p":[-9.8,6,18.05],"ry":0,"s":[0.4,4,1.9]},{"id":"W40","cat":"wall","name":"Стена казарм","p":[-9.8,6,29.25],"ry":0,"s":[0.4,4,16.5]},{"id":"W41","cat":"wall","name":"Стена казарм","p":[-14.9,6,24.0],"ry":0,"s":[3.8,4,0.4]},{"id":"W42","cat":"wall","name":"Стена казарм","p":[-10.5,6,24.0],"ry":0,"s":[1,4,0.4]},{"id":"W43","cat":"wall","name":"Стена казарм","p":[-12.0,6,31.0],"ry":0,"s":[4,4,0.4]},{"id":"W44","cat":"wall","name":"Стена казарм","p":[-12.2,6,37.5],"ry":0,"s":[4.4,4,0.4]},{"id":"W45","cat":"wall","name":"Стена лаза","p":[-14.2,6,39.2],"ry":0,"s":[0.4,4,3.0]},{"id":"W46","cat":"wall","name":"Стена лаза","p":[-14.2,6,48.8],"ry":0,"s":[0.4,4,4.4]},{"id":"D21","cat":"prop","name":"Нары","p":[-13.5,6,20],"ry":0,"s":[2.2,0.9,1.0]},{"id":"D22","cat":"prop","name":"Нары","p":[-13.5,6,27.5],"ry":0,"s":[2.2,0.9,1.0]},{"id":"D23","cat":"prop","name":"Стол надзирателей","p":[-12.5,6,34.2],"ry":0,"s":[2.4,0.9,1.2]},{"id":"T14","cat":"trap","name":"Шипы","p":[-15.4,6,41],"ry":0,"s":[2.4,0.1,2],"kind":"spikes","note":"Существующая ловушка Spikes. Узкий лаз 2.8 м — не обойти."},{"id":"T15","cat":"trap","name":"Шипы","p":[-15.4,6,45],"ry":0,"s":[2.4,0.1,2],"kind":"spikes","note":"Существующая ловушка Spikes. Узкий лаз 2.8 м — не обойти."},{"id":"V7","cat":"lever","name":"Печать I (Мера)","p":[-15.4,6,50],"ry":180,"s":[0.5,1.2,0.5],"seal":1,"note":"Первая печать, в конце шипового лаза за тремя кельями надзирателей. Сбрасывает противовес M-I."},{"id":"L30","cat":"light","name":"Свеча у печати","kind":"candle","p":[-15.4,7.3,50.4],"color":"#ffc280","i":1.5,"r":5},{"id":"L31","cat":"light","name":"Факел","kind":"torch","p":[-16.4,8.6,20.5],"color":"#ff9a45","i":3,"r":9},{"id":"L32","cat":"light","name":"Факел","kind":"torch","p":[-16.4,8.6,27.5],"color":"#ff9a45","i":3,"r":9},{"id":"L33","cat":"light","name":"Факел","kind":"torch","p":[-16.4,8.6,34],"color":"#ff9a45","i":3,"r":9},{"id":"L34","cat":"light","name":"Факел","kind":"torch","p":[-6.4,8.6,48],"color":"#ff9a45","i":3,"r":9},{"id":"W47","cat":"wall","name":"Стена оружейной","p":[10.2,6,28.5],"ry":0,"s":[0.4,4,5]},{"id":"W48","cat":"wall","name":"Стена оружейной","p":[10.2,6,35.5],"ry":0,"s":[0.4,4,5]},{"id":"W49","cat":"wall","name":"Стена оружейной","p":[13.4,6,25.8],"ry":0,"s":[6.8,4,0.4]},{"id":"W50","cat":"wall","name":"Стена оружейной","p":[13.4,6,38.2],"ry":0,"s":[6.8,4,0.4]},{"id":"D24","cat":"prop","name":"Стойки с оружием","p":[16,6,32],"ry":0,"s":[0.8,2,5]},{"id":"X9","cat":"chest","name":"Container LargeOakChest","p":[15.4,6,36.6],"ry":270,"s":[1.1,0.7,0.65]},{"id":"D25","cat":"prop","name":"Бочки","p":[13,6,49.5],"ry":0,"s":[2.4,1.2,1.4]},{"id":"L35","cat":"light","name":"Факел","kind":"torch","p":[16.4,8.6,32],"color":"#ff9a45","i":3,"r":9},{"id":"L36","cat":"light","name":"Факел","kind":"torch","p":[16.4,8.6,46],"color":"#ff9a45","i":3,"r":9},{"id":"L37","cat":"light","name":"Факел","kind":"torch","p":[0,8.6,17.6],"color":"#ff9a45","i":3,"r":9},{"id":"F35","cat":"floor","name":"Маятниковая галерея","p":[-15.3,11.5,29.75],"ry":0,"s":[3.0,0.5,15.5]},{"id":"F36","cat":"floor","name":"Северо-западная площадка","p":[-11.9,11.5,38.95],"ry":0,"s":[9.8,0.5,2.9]},{"id":"P3","cat":"platform","name":"Цепной мост","p":[-0.5,11.5,39.0],"ry":0,"s":[13,0.5,2],"note":"Неподвижный мост на цепях через двор, 2 м, без перил посередине."},{"id":"F37","cat":"floor","name":"Ярус 2 восток","p":[8.0,11.5,36.5],"ry":0,"s":[4,0.5,29.0]},{"id":"F38","cat":"floor","name":"Ярус 2 восток","p":[12.0,11.5,29.4],"ry":0,"s":[4,0.5,24.6]},{"id":"F39","cat":"floor","name":"Ярус 2 восток","p":[15.4,11.5,34.05],"ry":0,"s":[2.8,0.5,33.9]},{"id":"F40","cat":"floor","name":"Ярус 2 восток","p":[12.0,11.5,48.65],"ry":0,"s":[4,0.5,4.7]},{"id":"W51","cat":"wall","name":"Стена маятниковой галереи","p":[-13.6,12,29.75],"ry":0,"s":[0.4,4,15.5]},{"id":"W52","cat":"wall","name":"Парапет","p":[6.2,12,30.0],"ry":0,"s":[0.4,1.0,16]},{"id":"W53","cat":"wall","name":"Парапет","p":[6.2,12,43.0],"ry":0,"s":[0.4,1.0,6]},{"id":"W54","cat":"wall","name":"Парапет","p":[-10.2,12,37.3],"ry":0,"s":[6.4,1.0,0.4]},{"id":"T16","cat":"trap","name":"Маятник","p":[-15.3,16,26],"ry":0,"s":[3,3,0.2],"kind":"blade","note":"Существующая ловушка SwingingBlade, качается поперёк галереи; обойти нельзя — только поймать ритм."},{"id":"T17","cat":"trap","name":"Маятник","p":[-15.3,16,34.5],"ry":0,"s":[3,3,0.2],"kind":"blade","note":"Существующая ловушка SwingingBlade, качается поперёк галереи; обойти нельзя — только поймать ритм."},{"id":"W55","cat":"wall","name":"Ниша ворота","p":[-16.5,12,30.25],"ry":0,"s":[0.6,3,2.5]},{"id":"V8","cat":"lever","name":"Ворот моста","p":[-15.8,12,30.25],"ry":90,"s":[0.5,1.2,0.5],"note":"Опускает мост B1 к площадке Весов на 40 с. Стоит между двумя маятниками — с любой стороны придётся пройти один."},{"id":"D26","cat":"prop","name":"Цепные барабаны","p":[13,12,30],"ry":0,"s":[2.4,1.6,3]},{"id":"L38","cat":"light","name":"Факел","kind":"torch","p":[-16.4,14.6,24],"color":"#ff9a45","i":3,"r":9},{"id":"L39","cat":"light","name":"Факел","kind":"torch","p":[-16.4,14.6,36.5],"color":"#ff9a45","i":3,"r":9},{"id":"L40","cat":"light","name":"Факел","kind":"torch","p":[16.4,14.6,30],"color":"#ff9a45","i":3,"r":9},{"id":"L41","cat":"light","name":"Факел","kind":"torch","p":[16.4,14.6,48],"color":"#ff9a45","i":3,"r":9},{"id":"L42","cat":"light","name":"Свеча на цепном мосту","kind":"candle","p":[0,13.2,39],"color":"#ffc280","i":1.5,"r":6},{"id":"F41","cat":"floor","name":"Верхний обход","p":[-15.8,17.5,28.8],"ry":0,"s":[2.0,0.5,23.4]},{"id":"F42","cat":"floor","name":"Верхняя площадка","p":[-15.4,17.5,45.75],"ry":0,"s":[2.8,0.5,10.5]},{"id":"F43","cat":"floor","name":"Верхняя площадка","p":[-12.0,17.5,48.8],"ry":0,"s":[4,0.5,4.4]},{"id":"F44","cat":"floor","name":"Верхняя площадка","p":[-8.0,17.5,45.75],"ry":0,"s":[4,0.5,10.5]},{"id":"F45","cat":"floor","name":"Верхний обход","p":[15.8,17.5,31.55],"ry":0,"s":[2.0,0.5,28.9]},{"id":"F46","cat":"floor","name":"Восточная площадка","p":[13.6,17.5,48.5],"ry":0,"s":[6.4,0.5,5.0]},{"id":"F47","cat":"floor","name":"Воротная","p":[2.3,17.5,48.5],"ry":0,"s":[15.4,0.5,5.0]},{"id":"W56","cat":"wall","name":"Парапет","p":[-14.65,18,28.8],"ry":0,"s":[0.3,1.0,23.4]},{"id":"W57","cat":"wall","name":"Парапет","p":[14.65,18,31.55],"ry":0,"s":[0.3,1.0,28.9]},{"id":"W58","cat":"wall","name":"Парапет","p":[-10.0,18,40.3],"ry":0,"s":[8,1.0,0.4]},{"id":"W59","cat":"wall","name":"Парапет","p":[-6.2,18,43.25],"ry":0,"s":[0.4,1.0,5.5]},{"id":"W60","cat":"wall","name":"Парапет Воротной","p":[2.3,18,46.2],"ry":0,"s":[15.4,1.0,0.4]},{"id":"W61","cat":"wall","name":"Стена Воротной","p":[-5.7,18,46.55],"ry":0,"s":[0.6,6.0,1.1]},{"id":"W62","cat":"wall","name":"Стена Воротной","p":[-5.7,18,50.45],"ry":0,"s":[0.6,6.0,1.1]},{"id":"W63","cat":"wall","name":"Стена Воротной","p":[-5.7,21.2,48.5],"ry":0,"s":[0.6,2.8,2.8]},{"id":"M6","cat":"mech","name":"Ходовая стена","p":[-5.7,18,48.5],"ry":0,"s":[0.5,3.2,2.8],"anim":{"k":"wall","axis":"z","a":48.5,"b":51.3},"note":"Плита на цепи клети П2: П2 вверху — стена уехала в карман (проход открыт), П2 уходит вниз — проход закрывается за 2 с. Кто вызвал П2 снизу — запер Воротную с запада; обход — через южный ярус 3 с осыпными плитами."},{"id":"W64","cat":"wall","name":"Стена Воротной","p":[10.2,18,46.75],"ry":0,"s":[0.4,6.0,1.5]},{"id":"W65","cat":"wall","name":"Стена Воротной","p":[10.2,18,50.25],"ry":0,"s":[0.4,6.0,1.5]},{"id":"W66","cat":"wall","name":"Перемычка","p":[10.2,20.4,48.5],"ry":0,"s":[0.4,3.6,2.0]},{"id":"D27","cat":"prop","name":"Ворот печати","p":[2,18,49],"ry":0,"s":[2.6,1.4,2.6],"round":true},{"id":"V9","cat":"lever","name":"Печать III (Ворот)","p":[5.2,18,49],"ry":270,"s":[0.5,1.2,0.5],"seal":3,"note":"Третья печать. Барабан ворота отпускает противовес M-III."},{"id":"L43","cat":"light","name":"Огонь Воротной","kind":"fire","p":[-1.5,19.3,49.6],"color":"#ff8a3a","i":2.5,"r":8},{"id":"L44","cat":"light","name":"Факел","kind":"torch","p":[-16.4,20.6,28],"color":"#ff9a45","i":3,"r":9},{"id":"L45","cat":"light","name":"Факел","kind":"torch","p":[-16.4,20.6,47],"color":"#ff9a45","i":3,"r":9},{"id":"L46","cat":"light","name":"Факел","kind":"torch","p":[16.4,20.6,30],"color":"#ff9a45","i":3,"r":9},{"id":"L47","cat":"light","name":"Факел","kind":"torch","p":[13.6,20.6,50.6],"color":"#ff9a45","i":3,"r":9},{"id":"R1","cat":"start","name":"Старт","p":[-13,0,-13],"ry":45,"s":[3,0.1,1]},{"id":"R2","cat":"start","name":"Старт","p":[13,0,-13],"ry":315,"s":[3,0.1,1]},{"id":"R3","cat":"start","name":"Старт","p":[-3,0,48.5],"ry":180,"s":[3,0.1,1]},{"id":"R4","cat":"start","name":"Старт","p":[13,0,30],"ry":270,"s":[3,0.1,1]},{"id":"N1","cat":"monster","name":"Monster Sword","p":[-5,0,-6.5],"ry":0,"s":[0.7,1.8,0.7],"prefab":"Sword"},{"id":"N2","cat":"monster","name":"Monster Sword","p":[5,0,8.5],"ry":180,"s":[0.7,1.8,0.7],"prefab":"Sword"},{"id":"N3","cat":"monster","name":"Monster Skull","p":[2.5,0,42],"ry":180,"s":[0.7,1.8,0.7],"prefab":"Skull"},{"id":"N4","cat":"monster","name":"Monster Sword","p":[-13,6,27.5],"ry":90,"s":[0.7,1.8,0.7],"prefab":"Sword"},{"id":"N5","cat":"monster","name":"Monster Sword","p":[13.5,6,32],"ry":270,"s":[0.7,1.8,0.7],"prefab":"Sword"},{"id":"N6","cat":"monster","name":"Monster Archer","p":[11.6,12,-8],"ry":270,"s":[0.7,1.8,0.7],"prefab":"Archer"},{"id":"N7","cat":"monster","name":"Monster Archer","p":[11.6,12,5],"ry":270,"s":[0.7,1.8,0.7],"prefab":"Archer"},{"id":"N8","cat":"monster","name":"Monster Archer","p":[8,12,30],"ry":270,"s":[0.7,1.8,0.7],"prefab":"Archer"},{"id":"N9","cat":"monster","name":"Monster Archer","p":[-15.8,18,25],"ry":90,"s":[0.7,1.8,0.7],"prefab":"Archer"},{"id":"N10","cat":"monster","name":"Monster Archer","p":[15.8,18,0],"ry":270,"s":[0.7,1.8,0.7],"prefab":"Archer"}];
+const SHELL = {"pieces":[]};
+const BRIDGE = null;
+const MAXY = 24.6, MINY = -6.6, ROOM = "GreatHallShaft";
+
+const CATS = {
+  floor:    { label: 'Пол',            color: '#6f6a5f' },
+  wall:     { label: 'Стены',          color: '#9a8f7c' },
+  bwall:    { label: 'Стены здания',   color: '#a39780' },
+  shell:    { label: 'Внешние стены',  color: '#7d7466' },
+  upper:    { label: 'Верх стен',      color: '#5b554c' },
+  column:   { label: 'Колонны',        color: '#b0a48c' },
+  platform: { label: 'Платформы',      color: '#8a6a45' },
+  stairs:   { label: 'Лестницы',       color: '#c2b49a' },
+  prop:     { label: 'Пропсы',         color: '#7f5b3a' },
+  acid:     { label: 'Кислота',        color: '#59e86c' },
+  ceiling:  { label: 'Потолок',        color: '#4a453e' },
+  bridge:   { label: 'Мост',           color: '#a07a4a' },
+  water:    { label: 'Вода',           color: '#3a8fb8' },
+  bars:     { label: 'Решётки',        color: '#6d7378' },
+  rune:     { label: 'Руна',           color: '#b07dff' },
+  monster:  { label: 'Монстры',        color: '#ff8fb0' },
+  chest:    { label: 'Сундуки',        color: '#ffd76b' },
+  trap:     { label: 'Ловушки/рычаги', color: '#ff6a4d' },
+  start:    { label: 'Старт',          color: '#7cc8ff' },
+  light:    { label: 'Свет',           color: '#ffb35c' },
+  fx:       { label: 'Эффекты',        color: '#7dff8f' },
+  labels:   { label: 'Подписи ID',     color: '#d9e2dc' },
+};
+
+Object.assign(CATS, {
+  lift:   { label: 'Клети',          color: '#4fa3a5' },
+  mech:   { label: 'Механизмы',      color: '#c47f3a' },
+  lever:  { label: 'Рычаги/печати',  color: '#ff9a3d' },
+  gold:   { label: 'Золото',         color: '#ffcc33' },
+  secret: { label: 'Тайник',         color: '#6fa8ff' },
+});
+function buildExtra(o, col) {
+  if (o.cat === 'lift') {
+    const [w, h, l] = o.s; const g = addMesh(o, new THREE.BoxGeometry(w, 0.2, l), stdMat(col), -0.1);
+    const pm = stdMat('#2d5e60');
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.15, h, 0.15), pm); p.position.set(sx * (w / 2 - 0.08), h / 2, sz * (l / 2 - 0.08)); g.add(p); });
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, l), new THREE.MeshStandardMaterial({ color: '#2d5e60', transparent: true, opacity: 0.5 })); roof.position.y = h; g.add(roof);
+    const ch = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4, 0.1), pm); ch.position.y = h + 2; g.add(ch); return g;
+  }
+  if (o.cat === 'lever') {
+    const g = addMesh(o, new THREE.BoxGeometry(0.45, 0.5, 0.3), stdMat(o.seal ? '#6a3a10' : '#5a2a20'), 0.25);
+    const hdl = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.9), stdMat(col, { emissive: o.seal ? '#a04a00' : '#5a1d0d' })); hdl.position.set(0, 0.8, 0); hdl.rotation.x = 0.5; g.add(hdl);
+    if (o.seal) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.05, 6, 32), stdMat('#ffb35c', { emissive: '#ff8a20', emissiveIntensity: 1.2 })); r.rotation.x = Math.PI / 2; r.position.y = 0.03; g.add(r); }
+    return g;
+  }
+  if (o.cat === 'gold') return addMesh(o, new THREE.ConeGeometry(o.s[0] / 2, o.s[1], 14), stdMat('#ffcc33', { emissive: '#7a5200', emissiveIntensity: 0.8, metalness: 0.6, roughness: 0.35 }), o.s[1] / 2);
+  if (o.cat === 'secret') {
+    const vein = /Жила/.test(o.name), door = /дверь/.test(o.name);
+    const m = vein ? stdMat('#6fa8ff', { emissive: '#3d7dff', emissiveIntensity: 1.6 }) : door ? stdMat('#3b4660', { emissive: '#1d3a7a', emissiveIntensity: 0.7 }) : stdMat(col === '#6fa8ff' && /Пол/.test(o.name) ? '#3e4656' : '#b8b0a0');
+    return addMesh(o, new THREE.BoxGeometry(...o.s), m, o.s[1] / 2);
+  }
+  if (o.cat === 'mech' && /Противовес/.test(o.name)) {
+    const g = addMesh(o, new THREE.BoxGeometry(...o.s), stdMat('#7a5a3a', { emissive: '#2a1200' }), o.s[1] / 2);
+    const ch = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4, 0.12), stdMat('#3a3530')); ch.position.y = o.s[1] + 2; g.add(ch); return g;
+  }
+  if (o.cat === 'trap' && o.kind) {
+    const k = o.kind, [w, h, l] = o.s;
+    if (k === 'drop') return addMesh(o, new THREE.CylinderGeometry(w / 2, w / 2, 0.04, 32), new THREE.MeshBasicMaterial({ color: '#ff6a4d', transparent: true, opacity: 0.35, depthWrite: false }), 0.02);
+    if (k === 'collapse') return addMesh(o, new THREE.BoxGeometry(w, h, l), stdMat('#9a5a48', { emissive: '#3a0d05' }), h / 2);
+    if (k === 'blade') {
+      const geo = new THREE.BoxGeometry(0.1, 2.4, 0.1); geo.translate(0, -1.2, 0);
+      const g = addMesh(o, geo, stdMat('#555b60'));
+      const b = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.35, 0.12), stdMat('#c9d0d6', { emissive: '#5a1206', metalness: 0.7, roughness: 0.3 })); b.position.y = -2.5; g.add(b);
+      o.swing = g; return g;
+    }
+    if (k === 'vent') {
+      const g = addMesh(o, new THREE.BoxGeometry(w, h, l), stdMat('#3a3632', { emissive: '#3a1006' }), h / 2);
+      const d = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 1.6, 3, 16, 1, true), new THREE.MeshBasicMaterial({ color: '#c8b8a0', transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+      d.position.y = 1.6; d.raycast = () => {}; g.add(d); o.dust = d; return g;
+    }
+    if (k === 'spikes') {
+      const g = addMesh(o, new THREE.BoxGeometry(w, h, l), stdMat('#5a2a20', { emissive: '#3a0d05' }), h / 2);
+      const sm = stdMat('#c0c0c0', { metalness: 0.6 });
+      for (let i = 0; i < 9; i++) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.45, 6), sm); c.position.set((i % 3 - 1) * w / 3, 0.3, (Math.floor(i / 3) - 1) * l / 3); g.add(c); }
+      return g;
+    }
+    return addMesh(o, new THREE.BoxGeometry(w, h, l), stdMat(k === 'plate' ? '#6a5e50' : '#8a2a1a', { emissive: '#5a1206' }), h / 2);
+  }
+  return null;
+}
+
+const hidden = new Set(['ceiling', 'upper', 'labels']);
+const CAT_NOTE = {
+  floor: 'Плита пола (KitBlock). Pivot снизу по центру.', wall: 'Стена (KitBlock).', shell: 'Внешняя стена/проём от генератора комнат (не в префабе).', bwall: 'Стена главного здания (0–12 м, до потолка).',
+  upper: 'Верхний ярус внешних стен 6–12 м.', column: 'Колонна.', platform: 'Платформа/перекрытие (KitBlock).', stairs: 'Лестница: поднимается вдоль своей +Z, pivot в центре основания.',
+  prop: 'Пропс-заглушка (KitBlock).', acid: 'Поверхность кислоты: урон при контакте.', ceiling: 'Потолочный элемент.', chest: 'Маркер контейнера.', trap: 'Маркер ловушки.', start: 'Точка старта игроков.',
+  light: 'Точечный источник.', fx: 'Эффект.', bridge: 'Подвижный мост.', water: 'Вода (KitWater), замедляет.', bars: 'Решётка 3 м.', rune: 'Руна на полу.', monster: 'Маркер спавна монстра.'
+};
+
+// ---------- scene ----------
+const view = document.getElementById('view');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.physicallyCorrectLights = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.localClippingEnabled = true;
+view.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#0d1110');
+const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 400);
+camera.position.set(62, 52, 34);
+const orbit = new THREE.OrbitControls(camera, renderer.domElement);
+orbit.target.set(0, 8, -17.1);
+orbit.enableDamping = true;
+orbit.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
+orbit.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+
+const clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), MAXY);
+renderer.clippingPlanes = [clip];
+
+const U = (x, y, z) => new THREE.Vector3(x, y, -z);
+const planHemi = new THREE.HemisphereLight('#e8efe9', '#3a3530', 2.2);
+const planSun = new THREE.DirectionalLight('#ffffff', 1.6); planSun.position.set(18, 40, 10);
+const gameAmb = new THREE.AmbientLight('#8fa3ff', 0.03);
+scene.add(planHemi, planSun, gameAmb);
+
+const grid = new THREE.GridHelper(90, 90, '#2f3b37', '#1d2522'); grid.position.set(0, MINY - 0.03, -17.1); scene.add(grid);
+const axes = new THREE.Group(); scene.add(axes);
+// compass: Unity +Z = north
+function textSprite(t, color, size = 1.4) {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 128; const g = c.getContext('2d');
+  g.fillStyle = color; g.font = '700 84px Barlow Condensed, Arial Narrow, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, 64, 70);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true })); s.scale.set(size, size, 1); return s;
+}
+[['+Z  С', 0, 55], ['−Z  Ю', 0, -21], ['+X  В', 21, 17.1], ['−X  З', -21, 17.1]].forEach(([t, x, z]) => { const s = textSprite(t.split('  ')[1], '#6f8079', 2.2); s.position.copy(U(x, MINY + 0.05, z)); axes.add(s); });
+
+const pickables = []; const byId = {}; const groups = {};
+Object.keys(CATS).forEach(k => { groups[k] = new THREE.Group(); scene.add(groups[k]); });
+
+function stdMat(hex, extra = {}) { return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.9, metalness: 0, ...extra }); }
+const edgeMat = new THREE.LineBasicMaterial({ color: '#0b0f0e', transparent: true, opacity: 0.55 });
+
+function addMesh(o, geo, mat, offY) {
+  const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true;
+  if (offY !== undefined) m.position.y = offY;
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 30), edgeMat); e.position.copy(m.position);
+  const g = new THREE.Group(); g.add(m, e);
+  g.position.copy(U(...o.p)); g.rotation.y = -THREE.MathUtils.degToRad(o.ry || 0);
+  g.userData.o = o; m.userData.o = o;
+  groups[o.cat].add(g); pickables.push(m); byId[o.id] = { o, group: g, mesh: m };
+  return g;
+}
+
+function build(o) {
+  const col = CATS[o.cat].color;
+  const ex = buildExtra(o, col); if (ex) return ex;
+  if (o.cat === 'stairs') {
+    const [w, h, l] = o.s; const steps = Math.max(2, Math.round(h / 0.25)); const run = l / steps; const geos = [];
+    const g = new THREE.Group(); const mat = stdMat(col);
+    for (let i = 0; i < steps; i++) { const hh = h * (i + 1) / steps; const b = new THREE.BoxGeometry(w, hh, run); b.translate(0, hh / 2, -(-l / 2 + (i + 0.5) * run)); geos.push(b); }
+    const merged = mergeBoxes(geos); return addMesh(o, merged, mat);
+  }
+  if (o.cat === 'acid') return addMesh(o, new THREE.BoxGeometry(o.s[0], 0.04, o.s[2]), stdMat('#2fbf45', { emissive: '#3dff5a', emissiveIntensity: 0.9, transparent: true, opacity: 0.85, roughness: 0.2 }), 0);
+  if (o.cat === 'fx') return addMesh(o, new THREE.CylinderGeometry(o.s[0] / 2, o.s[0] / 2, 0.03, 24), stdMat('#7dff8f', { emissive: '#7dff8f', emissiveIntensity: 2 }), 0);
+  if (o.cat === 'chest') { const g = addMesh(o, new THREE.BoxGeometry(1.1, 0.7, 0.65), stdMat('#9b6a2c', { emissive: '#3a2400' }), 0.35); o.s = [1.1, 0.7, 0.65]; return g; }
+  if (o.cat === 'start') { o.s = [3, 0.1, 1]; const g = addMesh(o, new THREE.BoxGeometry(3.2, 0.06, 1), stdMat('#2d74b8', { emissive: '#1b4e80' }), 0.03);
+    const a = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1, 3), stdMat('#7cc8ff', { emissive: '#2d74b8' })); a.rotation.x = -Math.PI / 2; a.position.set(0, 0.3, -0.9); g.add(a); return g; }
+  if (o.cat === 'trap') {
+    if (/Lever/.test(o.name)) { o.note = 'Рычаг (удержание 0.6 с) стоит 2.4 м позади шарнира моста B1.'; o.s = [0.5, 1.2, 0.5]; const geo = new THREE.BoxGeometry(0.5, 0.5, 0.3); geo.translate(0, 0, 2.4); const g = addMesh(o, geo, stdMat('#5a2a20'), 0.25);
+      const h = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.9), stdMat('#ff6a4d', { emissive: '#7a1d0d' })); h.position.set(0, 0.8, 2.4); h.rotation.x = 0.5; g.add(h); return g; }
+    o.note = 'Зона урона рва 21 × 21 м: 8 чистого урона каждые 0.5 с, замедление 30 % на 1 с. Покрывает и N/S-переходы (F2, F7).'; o.s = [21, 0.4, 21]; const g = addMesh(o, new THREE.BoxGeometry(21, 0.4, 21), new THREE.MeshBasicMaterial({ color: '#ff6a4d', transparent: true, opacity: 0.07, depthWrite: false }), -0.22); o.p = [o.p[0], o.p[1] - 0.42, o.p[2]]; g.position.y -= 0.0; return g;
+  }
+  if (o.cat === 'light') return buildLight(o);
+  if (o.cat === 'water') return addMesh(o, new THREE.BoxGeometry(o.s[0], o.s[1], o.s[2]), stdMat('#1d5a78', { transparent: true, opacity: 0.6, roughness: 0.15, emissive: '#0a2633' }), o.s[1] / 2);
+  if (o.cat === 'rune') return addMesh(o, new THREE.CylinderGeometry(o.s[0] / 2, o.s[0] / 2, 0.02, 48), stdMat('#5b3a8a', { emissive: '#7a3dff', emissiveIntensity: 0.6, transparent: true, opacity: 0.7 }), 0.01);
+  if (o.cat === 'monster') { o.s = [0.7, 1.8, 0.7]; o.note = (o.prefab || '').split('#')[0] || 'Монстр'; const g = addMesh(o, new THREE.CylinderGeometry(0.3, 0.35, 1.8, 10), stdMat('#c2456e', { emissive: '#4a0f22' }), 0.9);
+    const a = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 3), stdMat('#ff8fb0')); a.rotation.x = -Math.PI / 2; a.position.set(0, 1.2, -0.45); g.add(a); return g; }
+  if (o.cat === 'trap' && !/AcidMoat|Lever/.test(o.name)) { o.s = [1.2, 0.3, 1.2]; return addMesh(o, new THREE.BoxGeometry(1.2, 0.3, 1.2), stdMat('#8a2a1a', { emissive: '#5a1206' }), 0.15); }
+  if (o.cat === 'bridge') { const geo = new THREE.BoxGeometry(1.6, 0.25, o.s[2]); geo.translate(0, -0.125, -(o.s[2] / 2 - 0.3)); const g = addMesh(o, geo, stdMat(col)); g.rotation.order = 'YXZ'; return g; }
+  const [x, y, z] = o.s; const transparent = o.cat === 'upper' || o.cat === 'ceiling';
+  const geo = o.round ? new THREE.CylinderGeometry(x / 2, x / 2, y, 20) : new THREE.BoxGeometry(x, y, z);
+  return addMesh(o, geo, stdMat(col, transparent ? { transparent: true, opacity: 0.45 } : {}), y / 2);
+}
+function mergeBoxes(geos) {
+  const pos = [], nor = [], idx = []; let off = 0;
+  for (const g of geos) { const gi = g.toNonIndexed(); pos.push(...gi.attributes.position.array); nor.push(...gi.attributes.normal.array); }
+  const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); return out;
+}
+
+const lights = []; const LK = { torch: 6, candle: 8, acid: 10, main: 14, fire: 8, shaft: 10 };
+function buildLight(o) {
+  const g = new THREE.Group(); g.position.copy(U(...o.p)); g.userData.o = o; o.s = [0.3, 0.3, 0.3];
+  // Unity URP intensity -> candela-ish for three's physical point light
+  const k = LK[o.kind] || 8;
+  const L = new THREE.PointLight(o.color, o.i * k, o.r, 2); L.shadow.mapSize.set(512, 512); L.shadow.bias = -0.002; L.shadow.camera.near = 0.1;
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(o.kind === 'torch' ? 0.18 : 0.12, 12, 8), new THREE.MeshBasicMaterial({ color: o.color }));
+  bulb.userData.o = o; pickables.push(bulb);
+  const ring = new THREE.Mesh(new THREE.SphereGeometry(o.r, 24, 12), new THREE.MeshBasicMaterial({ color: o.color, wireframe: true, transparent: true, opacity: 0.12 }));
+  ring.visible = false; ring.raycast = () => {};
+  g.add(L, bulb, ring); groups.light.add(g); lights.push({ L, ring, o }); byId[o.id] = { o, group: g, mesh: bulb };
+  if (o.kind === 'torch') { const t = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.55), stdMat('#3a2a1a')); t.position.y = -0.45; g.add(t); }
+  return g;
+}
+
+OBJS.forEach(o => { if (!o.off) build(o); });
+(SHELL.pieces || []).forEach(build);
+let bridgeGroup = null;
+if (BRIDGE) { BRIDGE.forEach(build); }
+
+// ---------- layers UI ----------
+const layersEl = document.getElementById('layers');
+const count = c => OBJS.concat(SHELL.pieces || [], BRIDGE || []).filter(o => o.cat === c && !o.off).length;
+Object.entries(CATS).forEach(([k, c]) => {
+  const n = k === 'labels' ? '' : count(k); if (n === 0) return;
+  const l = document.createElement('label');
+  l.innerHTML = `<input type="checkbox" ${hidden.has(k) ? '' : 'checked'}><span class="sw" style="background:${c.color}"></span><span>${c.label}</span><span class="n">${n}</span>`;
+  l.querySelector('input').addEventListener('change', e => { e.target.checked ? hidden.delete(k) : hidden.add(k); applyLayers(); });
+  layersEl.appendChild(l);
+});
+function applyLayers() { Object.keys(groups).forEach(k => groups[k].visible = !hidden.has(k)); }
+applyLayers();
+
+// ---------- lighting modes ----------
+let mode = 'plan';
+function setMode(m) {
+  mode = m; const game = m === 'game';
+  planHemi.visible = planSun.visible = !game; gameAmb.visible = game;
+  lights.forEach(({ L }) => L.visible = game);
+  scene.background.set(game ? '#050706' : '#0d1110');
+  document.getElementById('lGame').setAttribute('aria-pressed', game); document.getElementById('lPlan').setAttribute('aria-pressed', !game);
+  renderer.toneMappingExposure = +document.getElementById('expo').value * (game ? 1 : 0.9);
+}
+document.getElementById('lGame').onclick = () => setMode('game');
+document.getElementById('lPlan').onclick = () => setMode('plan');
+document.getElementById('expo').oninput = e => { document.getElementById('expoV').textContent = (+e.target.value).toFixed(2); setMode(mode); };
+document.getElementById('ranges').onchange = e => lights.forEach(l => l.ring.visible = e.target.checked);
+document.getElementById('shadows').onchange = e => { renderer.shadowMap.enabled = e.target.checked; lights.forEach(({ L, o }) => L.castShadow = e.target.checked && (o.kind === 'torch' || o.kind === 'main'));
+  scene.traverse(n => { if (n.material) n.material.needsUpdate = true; }); };
+setMode('plan');
+
+// ---------- cut ----------
+const cutEl = document.getElementById('cut');
+function setCut(v) { cutEl.value = v; clip.constant = +v; document.getElementById('cutV').textContent = v >= MAXY ? 'всё' : (+v).toFixed(1) + ' м'; }
+cutEl.oninput = e => setCut(e.target.value);
+document.querySelectorAll('[data-cut]').forEach(b => b.onclick = () => setCut(b.dataset.cut));
+
+// ---------- bridge ----------
+let bridgeUp = true;
+function setBridge(up) {
+  bridgeUp = up; document.getElementById('bUp').setAttribute('aria-pressed', up); document.getElementById('bDown').setAttribute('aria-pressed', !up);
+  (BRIDGE || []).forEach(o => { const b = byId[o.id]; if (!b) return; b.group.rotation.x = up ? THREE.MathUtils.degToRad(65) : 0; });
+}
+document.getElementById('bUp').onclick = () => setBridge(true);
+document.getElementById('bDown').onclick = () => setBridge(false);
+document.getElementById('bridgeNote').textContent = SHELL.bridgeNote || '';
+
+// ---------- selection / inspector ----------
+const info = document.getElementById('info'), listEl = document.getElementById('list');
+let notes = {}; try { notes = JSON.parse(localStorage.getItem('mock-notes-' + ROOM) || '{}'); } catch (e) {}
+const saveNotes = () => { try { localStorage.setItem('mock-notes-' + ROOM, JSON.stringify(notes)); } catch (e) {} };
+let selected = null; const selBox = new THREE.BoxHelper(undefined, '#7dff8f'); selBox.visible = false; scene.add(selBox);
+const fmt = v => (+v).toFixed(2).replace(/\.?0+$/, '') || '0';
+function select(id) {
+  selected = id && byId[id] ? id : null; renderInfo(); renderList();
+  if (selected) { selBox.setFromObject(byId[id].group); selBox.visible = true; } else selBox.visible = false;
+}
+function renderInfo() {
+  if (!selected) { info.innerHTML = `<h2>Ничего не выбрано</h2><p>Кликни по объекту в сцене или в списке ниже. ID (W3, P5, L10…) удобно называть в чате: «сдвинь P5 на 2 м к северу».</p>
+    <p>Ярусы: земля 0, ярус 1 — 6 м, ярус 2 — 12 м, ярус 3 — 18 м, свод 24 м, тайник −6 м. Начало координат — центр ячейки-якоря (южная, всегда в центре карты), вторая ячейка — на +Z. Поворот всей комнаты: 0/90/180/270°. Внешние стены 6–24 м скрыты (слой «Верх стен»).</p>`; return; }
+  const o = byId[selected].o; const s = o.s || [0, 0, 0];
+  const top = o.cat === 'light' ? '' : `<dt>Верх</dt><dd>${fmt(o.p[1] + s[1])} м</dd>`;
+  const extra = o.cat === 'light' ? `<dt>Цвет</dt><dd><span class="sw" style="display:inline-block;vertical-align:-1px;background:${o.color}"></span> ${o.color}</dd><dt>Интенс.</dt><dd>${o.i}</dd><dt>Радиус</dt><dd>${o.r} м</dd>` :
+    `<dt>Размер</dt><dd>${s.map(fmt).join(' × ')}</dd>`;
+  info.innerHTML = `<div class="big">${o.id}</div><div class="sub">${o.name} · ${CATS[o.cat].label}</div>
+    <dl><dt>Позиция</dt><dd>${o.p.map(fmt).join(', ')}</dd>${o.ry ? `<dt>Поворот Y</dt><dd>${o.ry}°</dd>` : ''}${extra}${top}${o.prefab && typeof o.prefab === 'string' ? `<dt>Префаб</dt><dd>${o.prefab.split('#')[0]}</dd>` : ''}</dl>
+    <p>${o.note || CAT_NOTE[o.cat] || ''}</p>
+    <label for="noteBox" class="n" style="display:block;margin:10px 0 4px">Правка для ${o.id}</label>
+    <textarea id="noteBox" placeholder="Например: опустить на 0.5 м, заменить на решётку…">${notes[o.id] || ''}</textarea>`;
+  document.getElementById('noteBox').oninput = e => { const v = e.target.value.trim(); v ? notes[o.id] = e.target.value : delete notes[o.id]; saveNotes(); renderList(); };
+}
+const ORDER = ['monster', 'trap', 'chest', 'start', 'bridge', 'light', 'stairs', 'platform', 'bwall', 'wall', 'shell', 'column', 'prop', 'acid', 'water', 'bars', 'rune', 'floor', 'fx', 'upper', 'ceiling'];
+function renderList() {
+  const all = Object.values(byId).map(b => b.o).sort((a, b) => ORDER.indexOf(a.cat) - ORDER.indexOf(b.cat) || a.id.localeCompare(b.id, undefined, { numeric: true }));
+  listEl.innerHTML = '';
+  all.forEach(o => { const b = document.createElement('button'); b.setAttribute('aria-pressed', o.id === selected);
+    b.innerHTML = `<span class="tag">${o.id}</span><span>${o.name}</span>${notes[o.id] ? '<span class="note-dot" title="есть заметка"></span>' : '<span></span>'}`;
+    b.onclick = () => { select(o.id); focusOn(o.id); }; listEl.appendChild(b); });
+}
+function focusOn(id) { if (fp) return; const p = new THREE.Vector3(); new THREE.Box3().setFromObject(byId[id].group).getCenter(p); const d = camera.position.clone().sub(orbit.target); orbit.target.copy(p); camera.position.copy(p).add(d.setLength(Math.min(d.length(), 18))); }
+document.getElementById('copyNotes').onclick = async () => {
+  const txt = Object.entries(notes).map(([id, n]) => { const o = byId[id]?.o; return `${id} (${o ? o.name + ' @ ' + o.p.map(fmt).join(', ') : '?'}): ${n.trim()}`; }).join('\n') || 'Заметок нет';
+  const st = document.getElementById('notesState');
+  try { await navigator.clipboard.writeText(txt); st.textContent = `Скопировано: ${Object.keys(notes).length} заметок.`; }
+  catch (e) { st.innerHTML = ''; const t = document.createElement('textarea'); t.value = txt; st.appendChild(t); t.select(); }
+};
+document.getElementById('clearNotes').onclick = () => { const b = document.getElementById('clearNotes');
+  if (b.dataset.armed) { notes = {}; saveNotes(); renderInfo(); renderList(); b.textContent = 'Очистить'; delete b.dataset.armed; }
+  else { b.dataset.armed = 1; b.textContent = 'Точно?'; setTimeout(() => { b.textContent = 'Очистить'; delete b.dataset.armed; }, 2500); } };
+
+// ---------- picking & cursor readout ----------
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+function hit(ev) {
+  const r = renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  return ray.intersectObjects(pickables.filter(m => visibleChain(m)), false).find(h => h.point.y <= clip.constant + 0.01);
+}
+const visibleChain = m => { for (let n = m; n; n = n.parent) if (!n.visible) return false; return true; };
+let downAt = null;
+renderer.domElement.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', e => { if (fp || !downAt || e.button !== 0 || e.shiftKey) return; if (Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return; const h = hit(e); select(h ? h.object.userData.o.id : null); });
+renderer.domElement.addEventListener('pointermove', e => { if (fp) return; const h = hit(e); const c = document.getElementById('cur');
+  if (h) { const p = h.point; c.textContent = `x ${p.x.toFixed(1)}  y ${p.y.toFixed(2)}  z ${(-p.z).toFixed(1)}  · ${h.object.userData.o.id}`; renderer.domElement.style.cursor = 'pointer'; }
+  else { c.textContent = '—'; renderer.domElement.style.cursor = ''; } });
+// Shift+LMB pan
+renderer.domElement.addEventListener('pointerdown', e => { orbit.mouseButtons.LEFT = e.shiftKey ? THREE.MOUSE.PAN : null; }, true);
+
+// ---------- views ----------
+let fp = false; const keys = {}; let yaw = 0, pitch = 0; const EYE = 1.7;
+function setView(v) {
+  ['vPersp', 'vTop', 'vFp'].forEach(id => document.getElementById(id).setAttribute('aria-pressed', id === { persp: 'vPersp', top: 'vTop', fp: 'vFp' }[v]));
+  fp = v === 'fp'; orbit.enabled = !fp; document.getElementById('fpHint').hidden = !fp;
+  document.getElementById('hint').textContent = fp ? 'WASD — ходьба · Shift — бег · мышь (зажать ЛКМ) — обзор · Q/E — вниз/вверх (полёт) · F — выход' : 'ЛКМ — выбрать · правая/колесо — орбита/зум · Shift+ЛКМ — пан';
+  if (v === 'top') { orbit.target.set(0, 0, -17.1); camera.position.set(0, 105, -17.09); camera.up.set(0, 1, 0); }
+  if (v === 'persp') { orbit.target.set(0, 2, 0); camera.position.set(62, 52, 34); }
+  if (fp) { const s = OBJS.find(o => o.cat === 'start') || { p: [0, 0, -14], ry: 0 }; camera.position.copy(U(s.p[0], s.p[1] + EYE, s.p[2])); yaw = THREE.MathUtils.degToRad(-(s.ry || 0)) + Math.PI; pitch = 0; setCut(MAXY); }
+}
+document.getElementById('vPersp').onclick = () => setView('persp');
+document.getElementById('vTop').onclick = () => setView('top');
+document.getElementById('vFp').onclick = () => setView('fp');
+addEventListener('keydown', e => { if (e.target.tagName === 'TEXTAREA') return; keys[e.code] = true; if (e.code === 'KeyF') setView(fp ? 'persp' : 'fp'); });
+addEventListener('keyup', e => keys[e.code] = false);
+let dragging = false;
+renderer.domElement.addEventListener('pointerdown', e => { if (fp) { dragging = true; renderer.domElement.setPointerCapture(e.pointerId); } });
+renderer.domElement.addEventListener('pointerup', () => dragging = false);
+renderer.domElement.addEventListener('pointermove', e => { if (!fp || !dragging) return; yaw -= e.movementX * 0.004; pitch = Math.max(-1.45, Math.min(1.45, pitch - e.movementY * 0.004)); });
+let fly = false, vy = 0;
+const down = new THREE.Raycaster(); const side = new THREE.Raycaster();
+const solids = () => pickables.filter(m => visibleChain(m) && (m.userData.o.walk || !['light', 'fx', 'chest', 'start', 'trap', 'acid', 'ceiling', 'monster', 'water', 'rune', 'gold', 'lever'].includes(m.userData.o.cat)));
+function stepFp(dt) {
+  const sp = (keys.ShiftLeft || keys.ShiftRight ? 6 : 3) * dt;
+  const f = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), r = new THREE.Vector3(-f.z, 0, f.x);
+  const mv = new THREE.Vector3(); if (keys.KeyW) mv.add(f); if (keys.KeyS) mv.sub(f); if (keys.KeyD) mv.add(r); if (keys.KeyA) mv.sub(r);
+  if (keys.KeyQ || keys.KeyE) fly = true;
+  const S = solids();
+  if (mv.lengthSq()) { mv.setLength(sp);
+    // body collision at knee and chest height; knee rays ignore steps up to 0.45 m
+    const blocked = [0.5, 1.2].some(h => { side.set(new THREE.Vector3(camera.position.x, camera.position.y - EYE + h, camera.position.z), mv.clone().normalize()); side.far = sp + 0.35; return side.intersectObjects(S).length; });
+    if (!blocked || fly) camera.position.add(mv); }
+  if (fly) { if (keys.KeyE) camera.position.y += sp; if (keys.KeyQ) camera.position.y -= sp; }
+  else {
+    down.set(camera.position.clone().add(new THREE.Vector3(0, 0.0, 0)), new THREE.Vector3(0, -1, 0)); down.far = 30;
+    const h = down.intersectObjects(S).find(h => h.point.y < camera.position.y - EYE + 0.5);
+    const gy = h ? h.point.y : -0.85; const feet = camera.position.y - EYE;
+    if (feet > gy + 0.02) { vy -= 20 * dt; camera.position.y = Math.max(gy + EYE, camera.position.y + vy * dt); } else { vy = 0; camera.position.y = gy + EYE; }
+  }
+  camera.rotation.set(pitch, yaw, 0, 'YXZ');
+  const p = camera.position; document.getElementById('cur').textContent = `x ${p.x.toFixed(1)}  z ${(-p.z).toFixed(1)}  ноги ${(p.y - EYE).toFixed(2)} м${fly ? ' · полёт' : ''}`;
+}
+
+// ---------- labels ----------
+const labelsEl = document.getElementById('labels'); const labelEls = {};
+Object.values(byId).forEach(({ o }) => { const d = document.createElement('div'); const minor = !['trap', 'chest', 'start', 'stairs', 'bridge', 'monster', 'lift', 'lever', 'secret', 'gold'].includes(o.cat) && !(o.cat === 'mech' && o.anim);
+  d.className = 'lbl ' + o.cat + (minor ? ' minor' : ''); d.textContent = minor ? o.id : ['lift', 'lever', 'secret', 'gold', 'mech'].includes(o.cat) ? `${o.id} ${o.name}` : `${o.id} ${({ trap: /Lever/.test(o.name) ? 'Рычаг' : o.name.replace(/^Trap /, ''), chest: o.name.replace(/^Container /, ''), monster: o.name.replace(/^Monster /, ''), start: 'Старт', stairs: '↑' + o.s[1] + ' м', bridge: 'Мост' })[o.cat]}`;
+  labelsEl.appendChild(d); labelEls[o.id] = d; });
+const tmp = new THREE.Vector3(), box = new THREE.Box3();
+function placeLabels() {
+  const showMinor = !hidden.has('labels'), w = innerWidth, h = innerHeight;
+  for (const [id, d] of Object.entries(labelEls)) {
+    const b = byId[id]; const vis = visibleChain(b.group) && (b.o.p[1] <= clip.constant);
+    const important = !d.classList.contains('minor');
+    if (!vis || (!important && (fp || !showMinor))) { d.hidden = true; continue; }
+    box.setFromObject(b.group); box.getCenter(tmp); tmp.y = box.max.y + 0.15; tmp.project(camera);
+    if (tmp.z > 1) { d.hidden = true; continue; }
+    d.hidden = false; d.style.left = ((tmp.x + 1) / 2 * w) + 'px'; d.style.top = ((1 - tmp.y) / 2 * h) + 'px'; d.classList.toggle('sel', id === selected);
+  }
+}
+
+
+
+Object.assign(CAT_NOTE, { lift: 'Клеть подъёмника.', mech: 'Механизм.', lever: 'Рычаг (удержание 0.6 с).', gold: 'Подбираемое золото.', secret: 'Тайник.' });
+let pairUp = true, seals = 0, bridgeDown = false;
+const SPEED = { p1: 2, p2: 2, wall: 1.5, seal: 14, slab: 0.8 };
+function setBridge(up) {
+  bridgeDown = !up; document.getElementById('bUp').setAttribute('aria-pressed', up); document.getElementById('bDown').setAttribute('aria-pressed', !up);
+  OBJS.filter(o => o.cat === 'bridge').forEach(o => { const b = byId[o.id]; if (b) b.group.rotation.x = up ? THREE.MathUtils.degToRad(65) : 0; }); mechText();
+}
+function setPair(up) { pairUp = up; document.getElementById('pB').setAttribute('aria-pressed', up); document.getElementById('pA').setAttribute('aria-pressed', !up); mechText(); }
+function setSeals(n) { seals = n; document.querySelectorAll('[data-seals]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.seals === n)); mechText(); }
+function mechText() {
+  document.getElementById('mechNote').textContent = (pairUp ? 'П1 на 12 м, П2 на 6 м: ходовая стена Воротной закрыта, дыра под П2 закрыта клетью.' : 'П1 на земле, П2 на 18 м: ходовая стена открыта, в дне шахты П2 видна трещина-лаз.')
+    + (bridgeDown ? ' Мост опущен — островок доступен.' : ' Мост поднят.') + ` Плита казны: ${['закрыта', 'на трети', 'на двух третях', 'открыта'][seals]}.`;
+}
+document.getElementById('pA').onclick = () => setPair(false);
+document.getElementById('pB').onclick = () => setPair(true);
+document.querySelectorAll('[data-seals]').forEach(b => b.onclick = () => setSeals(+b.dataset.seals));
+const animated = OBJS.filter(o => o.anim);
+function animTarget(a) {
+  if (a.k === 'p1' || a.k === 'p2') return pairUp ? a.b : a.a;
+  if (a.k === 'wall') return pairUp ? a.a : a.b;
+  if (a.k === 'seal') return seals >= a.n ? a.b : a.a;
+  return a.a + (a.b - a.a) * seals / 3;
+}
+function stepMech(dt) {
+  animated.forEach(o => { const g = byId[o.id].group, a = o.anim, tg = animTarget(a), z = a.axis === 'z';
+    const cur = z ? -g.position.z : g.position.y; const d = tg - cur; const st = SPEED[a.k] * dt; const v = Math.abs(d) <= st ? tg : cur + Math.sign(d) * st;
+    if (z) g.position.z = -v; else g.position.y = v; });
+  OBJS.forEach((o, i) => { if (o.swing) o.swing.rotation.z = Math.sin(t * 2.2 + i) * 0.95;
+    if (o.dust) { const ph = (t + i * 2.7) % 8; o.dust.material.opacity = ph < 1.5 ? 0.35 * Math.sin(ph / 1.5 * Math.PI) : 0; } });
+}
+setPair(true); setSeals(0);
+
+// ---------- loop ----------
+function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+const clock = new THREE.Clock(); let t = 0;
+function loop() {
+  const dt = Math.min(clock.getDelta(), 0.05); t += dt;
+  if (fp) stepFp(dt); else orbit.update();
+  // flicker like FlickerLightComponent
+  lights.forEach(({ L, o }, i) => { if (o.kind !== 'acid') L.intensity = o.i * (LK[o.kind] || 8) * (1 + 0.25 * Math.sin(t * 9 + i * 1.7) * Math.sin(t * 3.1 + i)); });
+  stepMech(dt);
+  if (selected) selBox.setFromObject(byId[selected].group);
+  renderer.render(scene, camera); placeLabels();
+  requestAnimationFrame(loop);
+}
+setBridge(true); renderInfo(); renderList(); loop();
+document.getElementById('roomSel').onchange = e => location.href = e.target.value;
+document.querySelectorAll('[data-collapse]').forEach(b => b.onclick = () => document.getElementById(b.dataset.collapse).classList.toggle('collapsed'));
+</script>
+
+</body></html>
