@@ -130,8 +130,7 @@ namespace Game.Scripts.Battle
                 hit.Normal == Vector3.zero ? Quaternion.identity : Quaternion.LookRotation(hit.Normal));
             vfx.Play();
 
-            WeaponSoundConfig sounds = hit.Sound > 0 && hit.Sound <= _weaponSounds.Length ? _weaponSounds[hit.Sound - 1] : null;
-            PlayClip(GetClips(sounds, surface) ?? (hit.Result == HitResult.Hit ? _hitClips : _blockClips), hit.Point);
+            PlayClip(GetClips(GetSounds(hit.Sound), surface) ?? (hit.Result == HitResult.Hit ? _hitClips : _blockClips), hit.Point);
         }
 
         public void PlayWorldHit(Vector3 point, Vector3 normal, WeaponSoundConfig sounds, ImpactSurface surface)
@@ -160,9 +159,30 @@ namespace Game.Scripts.Battle
                 PlayClip(sounds.Get(ItemSound.Equip), position);
         }
 
-        public void PlayShot(Vector3 position)
+        /// A weapon with recorded shots sounds its own, heard close by the shooter and from afar by everyone else.
+        public void PlayShot(Vector3 position, WeaponSoundConfig sounds, bool isOwn)
         {
-            PlayClip(_shotClips, position);
+            AudioClip[] fire = sounds == null ? Array.Empty<AudioClip>() : isOwn ? sounds.Fire : sounds.FireFar;
+
+            if (fire.Length == 0)
+            {
+                PlayClip(_shotClips, position);
+
+                return;
+            }
+
+            PlayClip(fire, position);
+            PlayClip(isOwn ? sounds.Flight : sounds.FlightFar, position);
+        }
+
+        public void Play(AudioClip[] clips, Vector3 position)
+        {
+            PlayClip(clips, position);
+        }
+
+        public WeaponSoundConfig GetSounds(byte id)
+        {
+            return id > 0 && id <= _weaponSounds.Length ? _weaponSounds[id - 1] : null;
         }
 
         private static AudioClip[] GetClips(WeaponSoundConfig sounds, ImpactSurface surface)

@@ -19,13 +19,15 @@ namespace Game.Scripts.Editor.Battle
         private const string FootstepsPath = "Assets/Game/Configs/Dungeon/Footsteps.asset";
 
         /// Order is the network id: never reorder, only append.
-        private static readonly string[] s_sets = { "arming", "viking", "axe", "mace", "morning", "staff", "fists" };
+        private static readonly string[] s_sets = { "arming", "viking", "axe", "mace", "morning", "staff", "fists", "bow" };
 
         private static readonly (string Category, string Field)[] s_categories =
         {
             ("swing", "_swing"), ("flesh", "_flesh"), ("bone", "_bone"), ("plate", "_plate"), ("shield", "_shield"), ("clash", "_clash"), ("stone", "_stone"), ("wood", "_wood"),
             ("head", "_head"), ("handle", "_handle"), ("grass", "_grass"), ("snow", "_snow"), ("woodhard", "_woodHard"),
-            ("equip", "_equip"), ("drop", "_drop"), ("pickup", "_pickup"), ("drag", "_drag"), ("place", "_place")
+            ("equip", "_equip"), ("drop", "_drop"), ("pickup", "_pickup"), ("drag", "_drag"), ("place", "_place"),
+            ("draw", "_draw"), ("creak", "_creak"), ("hold", "_hold"), ("fire", "_fire"), ("firefar", "_fireFar"), ("flight", "_flight"),
+            ("flightfar", "_flightFar"), ("nock", "_nock"), ("restock", "_restock")
         };
 
         /// Share of the trace from the grip that is the haft (WeaponSoundConfig.HandleShare); sets without one never hit with the handle.
@@ -35,14 +37,15 @@ namespace Game.Scripts.Editor.Battle
         private static readonly Dictionary<string, string> s_fallbacks = new()
         {
             ["arming/clash"] = "viking/clash", ["arming/shield"] = "viking/shield", ["axe/clash"] = "viking/clash",
-            ["mace/clash"] = "mace/plate", ["morning/clash"] = "morning/plate", ["staff/stone"] = "staff/wood", ["fists/clash"] = "fists/flesh"
+            ["mace/clash"] = "mace/plate", ["morning/clash"] = "morning/plate", ["staff/stone"] = "staff/wood", ["fists/clash"] = "fists/flesh",
+            ["bow/bone"] = "bow/woodhard", ["bow/clash"] = "bow/plate", ["bow/shield"] = "bow/woodhard"
         };
 
         private static readonly Dictionary<string, string> s_weapons = new()
         {
             ["ArmingSword"] = "arming", ["SwordEcu"] = "arming", ["SwordShield"] = "arming", ["SwordShieldLeft"] = "arming",
             ["VikingSword"] = "viking", ["VikingEcu"] = "viking", ["VikingShield"] = "viking", ["BattleAxe"] = "axe",
-            ["MaceEcu"] = "mace", ["MaceShield"] = "mace", ["MorningStar"] = "morning", ["Staff"] = "staff", ["Fists"] = "fists"
+            ["MaceEcu"] = "mace", ["MaceShield"] = "mace", ["MorningStar"] = "morning", ["Staff"] = "staff", ["Fists"] = "fists", ["Bow"] = "bow"
         };
 
         private static readonly Dictionary<string, (ImpactSurface Body, ImpactSurface Block, Footwear Feet)> s_prefabs = new()
@@ -58,6 +61,7 @@ namespace Game.Scripts.Editor.Battle
         public static void Build()
         {
             BattleEditorUtility.EnsureFolder(SoundsFolder);
+            KeepLoudness($"{WeaponsFolder}/bow");
 
             for (int i = 0; i < s_sets.Length; i++)
             {
@@ -111,11 +115,11 @@ namespace Game.Scripts.Editor.Battle
         /// The feedback of every scene in the build gets the weapon table; scene builders set it on a rebuild.
         public static void ApplyToScenes()
         {
-            WeaponSoundConfig[] sets = LoadSets();
-
             foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
             {
                 UnityEngine.SceneManagement.Scene opened = EditorSceneManager.OpenScene(scene.path, OpenSceneMode.Single);
+                // Loaded after the scene opens: opening one unloads the sets loaded before and they would be saved as empty references.
+                WeaponSoundConfig[] sets = LoadSets();
                 bool isChanged = false;
 
                 foreach (GameObject root in opened.GetRootGameObjects())

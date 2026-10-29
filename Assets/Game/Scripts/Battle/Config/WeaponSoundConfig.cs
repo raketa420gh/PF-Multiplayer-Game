@@ -38,6 +38,18 @@ namespace Game.Scripts.Battle
         /// Network id of the set: index in the feedback's table plus one; zero means no set.
         public byte Id => _id;
         public AudioClip[] Swing => _swing;
+        /// Bows: the string taken back with the limbs creaking under it, then the hold at full draw.
+        public AudioClip[] Draw => _draw;
+        public AudioClip[] Creak => _creak;
+        public AudioClip[] Hold => _hold;
+        /// The shot as the shooter hears it and as everyone else does, each with the arrow's flight.
+        public AudioClip[] Fire => _fire;
+        public AudioClip[] FireFar => _fireFar;
+        public AudioClip[] Flight => _flight;
+        public AudioClip[] FlightFar => _flightFar;
+        /// The next arrow put on the string after a shot; the hip quiver refilled from the back.
+        public AudioClip[] Nock => _nock;
+        public AudioClip[] Restock => _restock;
         /// Share of the blade trace, from the grip, that is the haft: body hits landing only there sound as Handle.
         public float HandleShare => _handleShare;
 
@@ -100,6 +112,33 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private AudioClip[] _place = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _draw = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _creak = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _hold = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _fire = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _fireFar = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _flight = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _flightFar = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _nock = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _restock = Array.Empty<AudioClip>();
 
         /// A random take of the item sound, or null when the set has none.
         public static AudioClip Pick(WeaponSoundConfig sounds, ItemSound sound)

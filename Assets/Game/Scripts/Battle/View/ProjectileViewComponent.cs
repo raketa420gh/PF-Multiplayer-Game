@@ -108,7 +108,7 @@ namespace Game.Scripts.Battle
                     _isFresh[i] = true;
 
                     if (BattleContext.Instance != null)
-                        BattleContext.Instance.Feedback.PlayShot(data.Origin);
+                        BattleContext.Instance.Feedback.PlayShot(data.Origin, BattleContext.Instance.Feedback.GetSounds(data.Sound), HasInputAuthority);
 
                     if (isMagic && visual == _spells[i])
                         Restyle(i, data.KindValue);
@@ -136,14 +136,35 @@ namespace Game.Scripts.Battle
                 Hide(_orbs[i], visual);
                 Hide(_spells[i], visual);
 
-                if (isMagic && data.FinishTick > 0 && data.FireTick != _impactTicks[i])
+                if (data.FinishTick > 0 && data.FireTick != _impactTicks[i])
                 {
                     _impactTicks[i] = data.FireTick;
 
-                    if (!data.IsHidden)
+                    if (data.IsHidden)
+                        continue;
+
+                    if (isMagic)
                         AbilityVfx.Burst(GetStyle(data.KindValue), data.HitPoint, Mathf.Max(0.6f, data.Radius), default);
+                    else
+                        PlayStuck(data);
                 }
             }
+        }
+
+        /// An arrow stuck in the level sounds the surface it went into, if its bow has recorded hits.
+        private void PlayStuck(in ProjectileData data)
+        {
+            BattleFeedback feedback = BattleContext.Instance != null ? BattleContext.Instance.Feedback : null;
+            WeaponSoundConfig sounds = feedback != null ? feedback.GetSounds(data.Sound) : null;
+
+            if (sounds == null)
+                return;
+
+            Vector3 direction = data.GetVelocity((data.FinishTick - data.FireTick) * Runner.DeltaTime).normalized;
+            ImpactSurface surface = Physics.Raycast(data.HitPoint - direction * 0.2f, direction, out RaycastHit hit, 0.4f, _projectiles.HitMask, QueryTriggerInteraction.Ignore)
+                ? WorldSurface.Of(hit.collider.gameObject, data.HitPoint)
+                : ImpactSurface.Stone;
+            feedback.PlayWorldHit(data.HitPoint, -direction, sounds, surface);
         }
 
         private static VfxStyle GetStyle(ProjectileKind kind)

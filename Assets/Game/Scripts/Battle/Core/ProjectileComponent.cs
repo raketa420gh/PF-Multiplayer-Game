@@ -52,6 +52,8 @@ namespace Game.Scripts.Battle
         public byte Impact;
         public NetworkBool IsHidden;
         public ProjectileFlags Flags;
+        /// Sound set of the weapon that shot it (WeaponSoundConfig.Id), zero = none.
+        public byte Sound;
         /// Index of the ability that fired it in the shooter's list, NoAbility for a weapon shot.
         public byte Ability;
         /// Item that flew (a thrown weapon): it is left in the world where the projectile stops; 0 for none.
@@ -139,7 +141,7 @@ namespace Game.Scripts.Battle
         public void Fire(Vector3 origin, Vector3 velocity, float gravity, int damage, float staggerDuration,
             DamageType damageType = DamageType.Physical, ProjectileKind kind = ProjectileKind.Arrow,
             float radius = 0f, byte effect = 0, float effectMagnitude = 0f, float effectDuration = 0f, float lifeSteal = 0f, int impact = 3, float maxDistance = 0f, ProjectileFlags flags = ProjectileFlags.None, byte ability = ProjectileData.NoAbility,
-            short item = 0, byte itemRarity = 0)
+            short item = 0, byte itemRarity = 0, byte sound = 0)
         {
             _projectiles.Set(_fireCount % Capacity, new ProjectileData
             {
@@ -161,7 +163,8 @@ namespace Game.Scripts.Battle
                 Flags = flags,
                 Ability = ability,
                 Item = item,
-                ItemRarity = itemRarity
+                ItemRarity = itemRarity,
+                Sound = sound
             });
             _fireCount++;
         }
@@ -224,7 +227,8 @@ namespace Game.Scripts.Battle
                 DamageType = (DamageType)data.DamageType,
                 Attacker = _ownReceiver,
                 Tag = data.Tag,
-                IgnoreArmor = (data.Flags & ProjectileFlags.IgnoreArmor) != 0
+                IgnoreArmor = (data.Flags & ProjectileFlags.IgnoreArmor) != 0,
+                Sound = data.Sound
             });
 
             OnReceiverHit?.Invoke(data, receiver, isBlock ? HitZone.Block : zone, result);

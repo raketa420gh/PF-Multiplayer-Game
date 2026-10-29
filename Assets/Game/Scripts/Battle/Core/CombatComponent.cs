@@ -619,7 +619,8 @@ namespace Game.Scripts.Battle
                 float yaw = shot.Count > 1 ? Mathf.Lerp(-shot.Spread, shot.Spread, i / (shot.Count - 1f)) : 0f;
                 Vector3 direction = _body.AimRotation * Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
                 _projectiles.Fire(_body.EyePosition, direction * shot.Speed, shot.Gravity, shot.Damage, ranged.StaggerDuration, Weapon.DamageType,
-                    ProjectileKind.Arrow, effect: shot.Effect, effectMagnitude: shot.EffectMagnitude, effectDuration: shot.EffectDuration, impact: Weapon.Impact, flags: shot.Flags);
+                    ProjectileKind.Arrow, effect: shot.Effect, effectMagnitude: shot.EffectMagnitude, effectDuration: shot.EffectDuration, impact: Weapon.Impact, flags: shot.Flags,
+                    sound: Weapon.Sounds != null ? Weapon.Sounds.Id : (byte)0);
             }
 
             if (ranged.IsManualReload)

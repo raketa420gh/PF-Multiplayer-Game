@@ -19,6 +19,8 @@ namespace Game.Scripts.Battle
         private bool _isShownOut = true;
         private WeaponConfig _shownWeapon;
         private bool _wasActivePhase;
+        private CombatState _shownState;
+        private bool _wasFullDraw;
 
         public override void Spawned()
         {
@@ -78,6 +80,40 @@ namespace Game.Scripts.Battle
                 BattleContext.Instance.Feedback.PlaySwing(transform.position + Vector3.up * 1.4f, weapon.Reach, weapon.Sounds);
 
             _wasActivePhase = isActivePhase;
+            bool isFullDraw = isDrawn && _combat.DrawPower >= 1f;
+
+            if (weapon.Sounds != null && BattleContext.Instance != null)
+                PlayRangedSound(weapon.Sounds, state, isFullDraw && !_wasFullDraw);
+
+            _shownState = state;
+            _wasFullDraw = isFullDraw;
+        }
+
+        /// The bow's own sounds: the draw, the hold once it is full, the next arrow nocked, the quiver restocked.
+        private void PlayRangedSound(WeaponSoundConfig sounds, CombatState state, bool isFullNow)
+        {
+            BattleFeedback feedback = BattleContext.Instance.Feedback;
+            Vector3 position = transform.position + Vector3.up * 1.4f;
+
+            if (isFullNow)
+                feedback.Play(sounds.Hold, position);
+
+            if (state == _shownState)
+                return;
+
+            switch (state)
+            {
+                case CombatState.Draw:
+                    feedback.Play(sounds.Draw, position);
+                    feedback.Play(sounds.Creak, position);
+                    break;
+                case CombatState.Reload when !_combat.Weapon.Ranged.IsManualReload:
+                    feedback.Play(sounds.Nock, position);
+                    break;
+                case CombatState.Restock:
+                    feedback.Play(sounds.Restock, position);
+                    break;
+            }
         }
 
         private void ShowSlot(int slot, bool isOut)
