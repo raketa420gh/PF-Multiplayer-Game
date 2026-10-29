@@ -1,0 +1,113 @@
+{
+ "name": "bow_equip",
+ "variants": 12,
+ "about": "Wp_RecurveBow_Equip: bow pulled off the back - leather strap rub with a wooden knock at the start, quiet, then a second handling rub/tap ~450 ms",
+ "reference": "D:/DaD_Sounds/Wp_RecurveBow_Equip",
+ "length_ms": 800,
+ "seed": 8000,
+ "peak_db": -10,
+ "match": 0.7,
+ "fade_ms": 120,
+ "layers": [
+  {
+   "src": "weapons_apparel/sfx/quiver-leather-squeeze-*.wav",
+   "at_ms": [
+    130,
+    170
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 150,
+   "lp": 7000,
+   "max_ms": 250
+  },
+  {
+   "src": "rpg80/item_wood_0[13].ogg",
+   "at_ms": [
+    15,
+    30
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 200,
+   "lp": 6000,
+   "snap": {
+    "hold": [
+     10,
+     16
+    ],
+    "tau": [
+     18,
+     28
+    ]
+   }
+  },
+  {
+   "src": "weapons_apparel/sfx/sheath-squeeze-0*.wav",
+   "at_ms": [
+    380,
+    430
+   ],
+   "gain_db": [
+    -20,
+    -16
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 200,
+   "lp": 6000,
+   "max_ms": 250
+  },
+  {
+   "src": "rpg80/wood_0[235].ogg",
+   "at_ms": [
+    430,
+    480
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    -4,
+    0
+   ],
+   "hp": 200,
+   "lp": 6000,
+   "chance": 0.8,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -24,
+  "decay_ms": 60,
+  "len_ms": 400,
+  "band": [
+   200,
+   5000
+  ]
+ }
+}

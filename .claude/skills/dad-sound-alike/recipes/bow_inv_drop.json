@@ -1,0 +1,74 @@
+{
+ "name": "bow_inv_drop",
+ "variants": 12,
+ "about": "Item_2D_RecurveBow_Drop: inventory place - wood knock at 20-40 ms and a second one 60-120 ms later, mid/upper-mid, ~0.7 s",
+ "reference": "D:/DaD_Sounds/Item_2D_RecurveBow_Drop",
+ "length_ms": 740,
+ "seed": 10200,
+ "peak_db": -0.5,
+ "match": 0.8,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "rpg80/item_wood_0[13].ogg",
+   "at_ms": [
+    20,
+    30
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     10,
+     15
+    ],
+    "tau": [
+     12,
+     18
+    ]
+   }
+  },
+  {
+   "src": "rpg80/item_wood_0[123].ogg",
+   "at_ms": [
+    90,
+    110
+   ],
+   "gain_db": [
+    -5,
+    -2
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     10,
+     15
+    ],
+    "tau": [
+     18,
+     26
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -26,
+  "decay_ms": 60,
+  "len_ms": 300,
+  "band": [
+   400,
+   5000
+  ]
+ }
+}

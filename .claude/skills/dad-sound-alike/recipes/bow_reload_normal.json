@@ -1,0 +1,82 @@
+{
+ "name": "bow_reload_normal",
+ "variants": 12,
+ "about": "Wp_Quiver_Reload_Normal: quiet (-18 dB) fletching rustle with a small click at ~370 ms",
+ "reference": "D:/DaD_Sounds/Wp_Quiver_Reload_Normal",
+ "length_ms": 800,
+ "seed": 9000,
+ "peak_db": -18,
+ "match": 0.75,
+ "fade_ms": 150,
+ "layers": [
+  {
+   "src": "bow_slices/fletch/*.wav",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    4,
+    6
+   ],
+   "pitch": [
+    0,
+    1
+   ],
+   "hp": 200,
+   "max_ms": 780
+  },
+  {
+   "src": "bow_slices/set/scy_*.wav",
+   "at_ms": [
+    115,
+    140
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/set/eng_*.wav",
+   "at_ms": [
+    350,
+    390
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,94 @@
+{
+ "name": "bow_reload",
+ "variants": 12,
+ "about": "Wp_Quiver_Reload_1: arrow drawn out of a leather quiver - ~1 s of busy shaft rattle/scrape, bright (1.5-10 kHz)",
+ "reference": "D:/DaD_Sounds/Wp_Quiver_Reload_1",
+ "length_ms": 1200,
+ "seed": 8800,
+ "peak_db": -4,
+ "match": 0.75,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "weapons_apparel/sfx/arrow-grab-from-quiver-0[2457].wav",
+   "at_ms": [
+    20,
+    40
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ]
+  },
+  {
+   "src": "bow_slices/set/*.wav",
+   "at_ms": [
+    20,
+    35
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 400
+  },
+  {
+   "src": "bow_slices/nock/*.wav",
+   "at_ms": [
+    150,
+    190
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 400,
+   "count": [
+    2,
+    3
+   ],
+   "gap_ms": [
+    90,
+    130
+   ],
+   "until_ms": 400,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     25,
+     40
+    ]
+   }
+  },
+  {
+   "src": "weapons_apparel/sfx/arrow-feathers-0*.wav",
+   "at_ms": [
+    500,
+    700
+   ],
+   "gain_db": [
+    -8,
+    -4
+   ],
+   "pitch": [
+    -1,
+    1
+   ]
+  }
+ ]
+}

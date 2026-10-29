@@ -1,0 +1,123 @@
+{
+ "name": "bow_surf_stone",
+ "variants": 12,
+ "about": "FX_Hit Arrow_Default (stone): faint arrival tick, main sharp head-on-stone hit at ~80 ms, then 2-4 shaft/debris rattles to ~350 ms",
+ "reference": "D:/DaD_Sounds/FX_Hit_Arrow/Default",
+ "length_ms": 680,
+ "seed": 9300,
+ "peak_db": -0.5,
+ "match": 0.75,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "bow_slices/whiz/hpby_*.wav",
+   "at_ms": [
+    0,
+    0
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "hp": 1000,
+   "max_ms": 80
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    65,
+    80
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     30,
+     45
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_metal_hit_0[3456].ogg",
+   "at_ms": [
+    70,
+    85
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    1,
+    4
+   ],
+   "snap": {
+    "hold": [
+     10,
+     15
+    ],
+    "tau": [
+     20,
+     35
+    ]
+   }
+  },
+  {
+   "src": "rpg80/wood_0[1235].ogg",
+   "at_ms": [
+    140,
+    170
+   ],
+   "gain_db": [
+    -8,
+    -4
+   ],
+   "pitch": [
+    0,
+    4
+   ],
+   "count": [
+    2,
+    4
+   ],
+   "gap_ms": [
+    50,
+    110
+   ],
+   "until_ms": 380,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   7000
+  ]
+ }
+}

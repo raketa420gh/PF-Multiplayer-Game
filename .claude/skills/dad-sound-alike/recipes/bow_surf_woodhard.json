@@ -1,0 +1,105 @@
+{
+ "name": "bow_surf_woodhard",
+ "variants": 12,
+ "about": "FX_Hit Arrow_Wood_Hard: harder, shorter wood knock at ~60 ms, gone by ~150 ms, more 500-1500 Hz than soft wood",
+ "reference": "D:/DaD_Sounds/FX_Hit_Arrow/Wood_Hard",
+ "length_ms": 680,
+ "seed": 9500,
+ "peak_db": -0.5,
+ "match": 0.8,
+ "fade_ms": 250,
+ "layers": [
+  {
+   "src": "bow_slices/whiz/hpby_*.wav",
+   "at_ms": [
+    0,
+    0
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "hp": 800,
+   "max_ms": 50
+  },
+  {
+   "src": "wood_metal_100/wood_hammer_0[12].ogg",
+   "at_ms": [
+    50,
+    60
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "snap": {
+    "hold": [
+     25,
+     40
+    ],
+    "tau": [
+     15,
+     22
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_slam_0[1-4].ogg",
+   "at_ms": [
+    50,
+    60
+   ],
+   "gain_db": [
+    -5,
+    -2
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "snap": {
+    "hold": [
+     20,
+     35
+    ],
+    "tau": [
+     15,
+     22
+    ]
+   }
+  },
+  {
+   "src": "surface_slices/woodres_1[14].wav",
+   "at_ms": [
+    55,
+    65
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "max_ms": 120
+  }
+ ],
+ "room": {
+  "db": -32,
+  "decay_ms": 200,
+  "len_ms": 600,
+  "band": [
+   200,
+   4000
+  ]
+ }
+}

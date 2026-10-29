@@ -1,0 +1,136 @@
+{
+ "name": "bow_fire_3p",
+ "variants": 12,
+ "about": "Wp_RecurveBow_Fire, default switch state (short variant): bright string snap + air, ~150 ms then a fast drop - probably the other-player shot",
+ "reference": "D:/DaD_Sounds/Wp_RecurveBow_Fire/Short",
+ "length_ms": 380,
+ "seed": 8500,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 100,
+ "layers": [
+  {
+   "src": "bow_slices/shoot/*.wav",
+   "at_ms": [
+    0,
+    0
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "snap": {
+    "hold": [
+     110,
+     150
+    ],
+    "tau": [
+     30,
+     45
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/shoot/*.wav",
+   "at_ms": [
+    60,
+    95
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/whiz/hpby_*.wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    0,
+    2
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "hp": 800,
+   "max_ms": 160
+  },
+  {
+   "src": "bow_slices/whiz/hpby_*.wav",
+   "at_ms": [
+    55,
+    75
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "hp": 800,
+   "max_ms": 120
+  },
+  {
+   "src": "blockdrop_slices/thump/*.wav",
+   "at_ms": [
+    0,
+    5
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "lp": 900,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     30,
+     50
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 7000,
+  "db": 6
+ },
+ "room": {
+  "db": -16,
+  "decay_ms": 70,
+  "len_ms": 300,
+  "band": [
+   300,
+   9000
+  ]
+ }
+}

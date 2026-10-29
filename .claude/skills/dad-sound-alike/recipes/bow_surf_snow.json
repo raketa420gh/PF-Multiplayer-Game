@@ -1,0 +1,112 @@
+{
+ "name": "bow_surf_snow",
+ "variants": 12,
+ "about": "FX_Hit Arrow_Snow: soft crunchy thump at ~20 ms lasting ~70 ms, then a long quiet (-27..-35 dB) granular snow settle to ~1.6 s",
+ "reference": "D:/DaD_Sounds/FX_Hit_Arrow/Snow",
+ "length_ms": 1650,
+ "seed": 9700,
+ "peak_db": -0.5,
+ "match": 0.75,
+ "fade_ms": 400,
+ "layers": [
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    10,
+    20
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   }
+  },
+  {
+   "src": "snow_walk/SnowWalk/SnowWalk*.ogg",
+   "at_ms": [
+    10,
+    20
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     30,
+     45
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "snow_gravel/*/*gravel_and_ice_*.flac",
+   "at_ms": [
+    70,
+    100
+   ],
+   "gain_db": [
+    -22,
+    -18
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "max_ms": 1500
+  },
+  {
+   "src": "snow_gravel/*/*gravel_and_ice_0[3689].flac",
+   "at_ms": [
+    150,
+    350
+   ],
+   "gain_db": [
+    -22,
+    -16
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "max_ms": 300,
+   "chance": 0.6
+  },
+  {
+   "src": "snow_gravel/*/*gravel_and_ice_*.flac",
+   "at_ms": [
+    550,
+    750
+   ],
+   "gain_db": [
+    -22,
+    -18
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "max_ms": 1000
+  }
+ ]
+}

@@ -1,0 +1,149 @@
+{
+ "name": "bow_reload_2",
+ "variants": 12,
+ "about": "Wp_Quiver_Reload_2: longer quiver reload - grab (0-0.35 s), short gap, then the arrow handled and nocked with 4-6 small clicks to ~1.5 s",
+ "reference": "D:/DaD_Sounds/Wp_Quiver_Reload_2",
+ "length_ms": 1780,
+ "seed": 8900,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 250,
+ "layers": [
+  {
+   "src": "weapons_apparel/sfx/arrow-grab-from-quiver-0[136].wav",
+   "at_ms": [
+    20,
+    40
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "max_ms": 330
+  },
+  {
+   "src": "bow_slices/set/*.wav",
+   "at_ms": [
+    70,
+    90
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/nock/*.wav",
+   "at_ms": [
+    140,
+    170
+   ],
+   "gain_db": [
+    -8,
+    -4
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     15,
+     30
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/nock/*.wav",
+   "at_ms": [
+    400,
+    420
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 600,
+   "count": [
+    4,
+    6
+   ],
+   "gap_ms": [
+    150,
+    260
+   ],
+   "until_ms": 1300,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     15,
+     30
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/fletch/*.wav",
+   "at_ms": [
+    450,
+    550
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    0,
+    1
+   ],
+   "hp": 1500,
+   "max_ms": 700
+  },
+  {
+   "src": "bow_slices/set/*.wav",
+   "at_ms": [
+    1150,
+    1250
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 500
+  }
+ ]
+}

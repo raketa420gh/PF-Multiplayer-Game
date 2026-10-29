@@ -1,0 +1,73 @@
+{
+ "name": "bow_draw",
+ "variants": 12,
+ "about": "Wp_RecurveBow_Ready_1 (same media as LongBow/SurvivalBow Ready_1): a bright nock click, ~150 ms of quiet, then fletching/string slide rising to the end",
+ "reference": "D:/DaD_Sounds/Wp_RecurveBow_Ready_1",
+ "length_ms": 940,
+ "seed": 8100,
+ "peak_db": -8,
+ "match": 0.75,
+ "fade_ms": 80,
+ "layers": [
+  {
+   "src": "bow_slices/set/*.wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     12,
+     18
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/fletch/*.wav",
+   "at_ms": [
+    130,
+    170
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 1500,
+   "max_ms": 480
+  },
+  {
+   "src": "bow_slices/draw/eng_*.wav",
+   "at_ms": [
+    200,
+    300
+   ],
+   "gain_db": [
+    -20,
+    -15
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "hp": 1500,
+   "max_ms": 350
+  }
+ ]
+}

@@ -1,0 +1,45 @@
+{
+ "name": "bow_arrow_flight_3p",
+ "variants": 12,
+ "about": "Wp_Projectile_Arrow, default state (short variant): broadband arrow whizz peaking 50-100 ms, fast decay by ~400 ms",
+ "reference": "D:/DaD_Sounds/Wp_Projectile_Arrow/Short",
+ "length_ms": 720,
+ "seed": 8700,
+ "peak_db": -0.5,
+ "match": 0.9,
+ "fade_ms": 250,
+ "layers": [
+  {
+   "src": "bow_slices/whiz/hpby_*.wav",
+   "at_ms": [
+    20,
+    30
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "max_ms": 280
+  },
+  {
+   "src": "bow_slices/whiz/hpass_*.wav",
+   "at_ms": [
+    20,
+    40
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "max_ms": 550
+  }
+ ]
+}

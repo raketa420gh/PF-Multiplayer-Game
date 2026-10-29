@@ -1,0 +1,87 @@
+{
+ "name": "bow_creak",
+ "variants": 12,
+ "about": "Wp_RecurveBow_Ready_Creak: wooden limb creaks while drawing, several onsets over ~1 s, mid-heavy (150-1500 Hz), no highs",
+ "reference": "D:/DaD_Sounds/Wp_RecurveBow_Ready_Creak",
+ "length_ms": 1150,
+ "seed": 8200,
+ "peak_db": -14,
+ "match": 0.8,
+ "fade_ms": 150,
+ "layers": [
+  {
+   "src": "bow_slices/draw/scy_*.wav",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -10,
+    -7
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 150,
+   "lp": 2500,
+   "max_ms": 1100
+  },
+  {
+   "src": "bow_slices/draw/scy_*.wav",
+   "at_ms": [
+    10,
+    30
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 150,
+   "lp": 2500,
+   "max_ms": 260,
+   "count": [
+    3,
+    5
+   ],
+   "gap_ms": [
+    160,
+    300
+   ],
+   "until_ms": 950,
+   "snap": {
+    "hold": [
+     60,
+     110
+    ],
+    "tau": [
+     50,
+     80
+    ]
+   }
+  },
+  {
+   "src": "tinysized/sfx-cc0/floor-creak-01.wav",
+   "at_ms": [
+    300,
+    700
+   ],
+   "gain_db": [
+    -12,
+    -6
+   ],
+   "pitch": [
+    -3,
+    3
+   ],
+   "hp": 150,
+   "lp": 2500,
+   "chance": 0.4,
+   "max_ms": 300
+  }
+ ]
+}

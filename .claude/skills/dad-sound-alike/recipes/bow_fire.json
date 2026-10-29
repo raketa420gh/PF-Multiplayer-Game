@@ -1,0 +1,107 @@
+{
+ "name": "bow_fire",
+ "variants": 12,
+ "about": "Wp_RecurveBow_Fire, switch state 1752637612 (long variant): string release + heavy low limb thump that holds ~300 ms, then a 1.2 s dark decay",
+ "reference": "D:/DaD_Sounds/Wp_RecurveBow_Fire/Long",
+ "length_ms": 1500,
+ "seed": 8400,
+ "peak_db": -0.5,
+ "match": 0.8,
+ "fade_ms": 400,
+ "layers": [
+  {
+   "src": "bow_slices/shoot/*.wav",
+   "at_ms": [
+    25,
+    40
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "lp": 3500
+  },
+  {
+   "src": "blockdrop_slices/thump/*.wav",
+   "at_ms": [
+    35,
+    50
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -6,
+    -3
+   ],
+   "lp": 700,
+   "snap": {
+    "hold": [
+     150,
+     230
+    ],
+    "tau": [
+     120,
+     160
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/shoot/*.wav",
+   "at_ms": [
+    35,
+    50
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -14,
+    -11
+   ],
+   "lp": 600,
+   "snap": {
+    "hold": [
+     220,
+     300
+    ],
+    "tau": [
+     200,
+     260
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/pass/heavy_*.wav",
+   "at_ms": [
+    60,
+    100
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -9,
+    -6
+   ],
+   "lp": 1200,
+   "max_ms": 700
+  }
+ ],
+ "room": {
+  "db": -14,
+  "decay_ms": 350,
+  "len_ms": 1300,
+  "band": [
+   50,
+   700
+  ]
+ }
+}

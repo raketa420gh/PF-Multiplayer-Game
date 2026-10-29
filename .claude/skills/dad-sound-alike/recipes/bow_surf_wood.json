@@ -1,0 +1,120 @@
+{
+ "name": "bow_surf_wood",
+ "variants": 12,
+ "about": "FX_Hit Arrow_Wood: arrow thunks into soft wood at ~50 ms, the body (shaft quiver) holds ~100 ms, then decays by ~250 ms; 150-500 Hz heavy",
+ "reference": "D:/DaD_Sounds/FX_Hit_Arrow/Wood",
+ "length_ms": 770,
+ "seed": 9400,
+ "peak_db": -0.5,
+ "match": 0.8,
+ "fade_ms": 250,
+ "layers": [
+  {
+   "src": "bow_slices/whiz/hpby_*.wav",
+   "at_ms": [
+    0,
+    0
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "hp": 800,
+   "max_ms": 75
+  },
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpactWood.flac",
+   "at_ms": [
+    70,
+    80
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "hp": 150,
+   "lp": 6000,
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_hit_0[1-4].ogg",
+   "at_ms": [
+    70,
+    80
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 150,
+   "lp": 6000,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/shoot/*.wav",
+   "at_ms": [
+    75,
+    90
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -8,
+    -5
+   ],
+   "hp": 150,
+   "lp": 1500,
+   "snap": {
+    "hold": [
+     60,
+     90
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -30,
+  "decay_ms": 250,
+  "len_ms": 700,
+  "band": [
+   150,
+   3000
+  ]
+ }
+}

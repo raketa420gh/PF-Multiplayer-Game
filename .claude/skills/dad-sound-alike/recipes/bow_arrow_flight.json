@@ -1,0 +1,73 @@
+{
+ "name": "bow_arrow_flight",
+ "variants": 12,
+ "about": "Wp_Projectile_Arrow, state 1752637612 (long variant): low arrow whoom rising over ~200 ms, held to ~650 ms, decaying by 1.4 s; almost nothing above 1.5 kHz",
+ "reference": "D:/DaD_Sounds/Wp_Projectile_Arrow/Long",
+ "length_ms": 1400,
+ "seed": 8600,
+ "peak_db": -0.5,
+ "match": 0.85,
+ "fade_ms": 500,
+ "layers": [
+  {
+   "src": "bow_slices/pass/heavy_*.wav",
+   "at_ms": [
+    0,
+    30
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -10,
+    -7
+   ],
+   "hp": 120,
+   "lp": 1400
+  },
+  {
+   "src": "bow_slices/pass/heavy_*.wav",
+   "at_ms": [
+    100,
+    180
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -11,
+    -8
+   ],
+   "hp": 120,
+   "lp": 1400
+  },
+  {
+   "src": "swishes/swishes/swish-*.wav",
+   "at_ms": [
+    80,
+    180
+   ],
+   "gain_db": [
+    -8,
+    -4
+   ],
+   "pitch": [
+    -10,
+    -6
+   ],
+   "hp": 120,
+   "lp": 1200
+  }
+ ],
+ "room": {
+  "db": -18,
+  "decay_ms": 250,
+  "len_ms": 1000,
+  "band": [
+   80,
+   1200
+  ]
+ }
+}

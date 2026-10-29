@@ -1,0 +1,113 @@
+{
+ "name": "bow_hit_body",
+ "variants": 12,
+ "about": "FX_Hit_Character switch state Arrow: arrow into flesh - meaty punch with a wet thud, ~150 ms dense then fast decay, broadband",
+ "reference": "D:/DaD_Sounds/FX_Hit_Character_Arrow",
+ "length_ms": 640,
+ "seed": 9100,
+ "peak_db": -0.5,
+ "match": 0.75,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "impact_meat/qubodupImpact/qubodupImpactMeat0*.flac",
+   "at_ms": [
+    5,
+    10
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     60,
+     90
+    ],
+    "tau": [
+     35,
+     50
+    ]
+   }
+  },
+  {
+   "src": "hits_and_punches/hits/hit1[2-8]*.flac",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     30,
+     45
+    ]
+   }
+  },
+  {
+   "src": "wet_squish/impsplat/impactsplat0[1367]*.flac",
+   "at_ms": [
+    30,
+    60
+   ],
+   "gain_db": [
+    -8,
+    -4
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "max_ms": 220
+  },
+  {
+   "src": "bow_slices/set/scy_*.wav",
+   "at_ms": [
+    0,
+    5
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     10,
+     15
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 110,
+  "len_ms": 500,
+  "band": [
+   100,
+   5000
+  ]
+ }
+}

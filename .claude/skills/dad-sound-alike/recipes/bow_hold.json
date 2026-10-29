@@ -1,0 +1,88 @@
+{
+ "name": "bow_hold",
+ "variants": 12,
+ "about": "Wp_RecurveBow_Loop_Creak: held at full draw - 2-3 short low creaks with near-silence between, very dark (nothing above 4 kHz)",
+ "reference": "D:/DaD_Sounds/Wp_RecurveBow_Loop_Creak",
+ "length_ms": 750,
+ "seed": 8300,
+ "peak_db": -19,
+ "match": 0.8,
+ "fade_ms": 80,
+ "layers": [
+  {
+   "src": "bow_slices/draw/scy_*.wav",
+   "at_ms": [
+    5,
+    15
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "hp": 150,
+   "lp": 1800,
+   "max_ms": 260,
+   "snap": {
+    "hold": [
+     70,
+     100
+    ],
+    "tau": [
+     50,
+     70
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/draw/scy_*.wav",
+   "at_ms": [
+    280,
+    330
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 150,
+   "lp": 1800,
+   "max_ms": 200,
+   "snap": {
+    "hold": [
+     50,
+     80
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   }
+  },
+  {
+   "src": "bow_slices/draw/scy_*.wav",
+   "at_ms": [
+    520,
+    600
+   ],
+   "gain_db": [
+    -12,
+    -6
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 150,
+   "lp": 1800,
+   "max_ms": 150,
+   "chance": 0.5
+  }
+ ]
+}

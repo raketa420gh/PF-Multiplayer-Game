@@ -1,0 +1,154 @@
+{
+ "name": "bow_hit_head",
+ "variants": 12,
+ "about": "FX_Hit_Character_Headshot_Arrow: small hit at 20 ms, then the main heavy crunch at ~110 ms with bone, long decaying tail",
+ "reference": "D:/DaD_Sounds/FX_Hit_Character_Headshot_Arrow",
+ "length_ms": 830,
+ "seed": 9200,
+ "peak_db": -0.5,
+ "match": 0.75,
+ "fade_ms": 250,
+ "layers": [
+  {
+   "src": "impact_meat/qubodupImpact/qubodupImpactMeat0*.flac",
+   "at_ms": [
+    10,
+    20
+   ],
+   "gain_db": [
+    0,
+    2
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     12,
+     18
+    ]
+   }
+  },
+  {
+   "src": "hits_and_punches/hits/hit1[2-8]*.flac",
+   "at_ms": [
+    60,
+    70
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   }
+  },
+  {
+   "src": "hits_and_punches/hits/hit1[2-8]*.flac",
+   "at_ms": [
+    85,
+    95
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     50,
+     70
+    ]
+   }
+  },
+  {
+   "src": "hits_heavy_body/*.flac",
+   "at_ms": [
+    60,
+    70
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     60,
+     90
+    ],
+    "tau": [
+     70,
+     100
+    ]
+   }
+  },
+  {
+   "src": "deep_breaks/*.wav",
+   "at_ms": [
+    85,
+    100
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "max_ms": 350
+  },
+  {
+   "src": "wet_squish/impsplat/impactsplat0[1367]*.flac",
+   "at_ms": [
+    100,
+    140
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "max_ms": 300
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 120,
+  "len_ms": 600,
+  "band": [
+   100,
+   5000
+  ]
+ }
+}

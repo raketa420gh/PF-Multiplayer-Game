@@ -1,0 +1,74 @@
+{
+ "name": "bow_inv_drag",
+ "variants": 12,
+ "about": "Item_2D_RecurveBow_Drag: inventory pick - wooden tick at 20 ms with a smaller second tick 40-100 ms later, fast decay, ~0.5 s",
+ "reference": "D:/DaD_Sounds/Item_2D_RecurveBow_Drag",
+ "length_ms": 530,
+ "seed": 10100,
+ "peak_db": -0.5,
+ "match": 0.8,
+ "fade_ms": 120,
+ "layers": [
+  {
+   "src": "rpg80/item_wood_0[23].ogg",
+   "at_ms": [
+    15,
+    25
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     12,
+     18
+    ]
+   }
+  },
+  {
+   "src": "rpg80/wood_0[125].ogg",
+   "at_ms": [
+    40,
+    70
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     12,
+     18
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -26,
+  "decay_ms": 70,
+  "len_ms": 300,
+  "band": [
+   400,
+   6000
+  ]
+ }
+}

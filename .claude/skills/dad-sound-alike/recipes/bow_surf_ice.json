@@ -1,0 +1,134 @@
+{
+ "name": "bow_surf_ice",
+ "variants": 12,
+ "about": "FX_Hit Arrow_Ice: faint tick at 20 ms, main icy crack/clink at ~100 ms, decays to -25 dB by 200 ms, glassy tail with a small extra crackle ~0.8 s",
+ "reference": "D:/DaD_Sounds/FX_Hit_Arrow/Ice",
+ "length_ms": 1300,
+ "seed": 9800,
+ "peak_db": -0.5,
+ "match": 0.75,
+ "fade_ms": 350,
+ "layers": [
+  {
+   "src": "bow_slices/whiz/hpby_*.wav",
+   "at_ms": [
+    0,
+    0
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "hp": 1000,
+   "max_ms": 45
+  },
+  {
+   "src": "sfx_breaking/bfh1_glass_hit_0[12].ogg",
+   "at_ms": [
+    70,
+    80
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     20,
+     35
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    70,
+    80
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     30,
+     45
+    ]
+   }
+  },
+  {
+   "src": "snow_gravel/*/*gravel_and_ice_*.flac",
+   "at_ms": [
+    180,
+    260
+   ],
+   "gain_db": [
+    -32,
+    -27
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "max_ms": 900
+  },
+  {
+   "src": "sfx_breaking/bfh1_glass_falling_0*.ogg",
+   "at_ms": [
+    300,
+    350
+   ],
+   "gain_db": [
+    -24,
+    -19
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "max_ms": 150,
+   "chance": 0.7
+  },
+  {
+   "src": "sfx_breaking/bfh1_glass_falling_0*.ogg",
+   "at_ms": [
+    750,
+    900
+   ],
+   "gain_db": [
+    -20,
+    -14
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "max_ms": 250,
+   "chance": 0.6
+  }
+ ],
+ "shelf": {
+  "hz": 7000,
+  "db": 8
+ }
+}
