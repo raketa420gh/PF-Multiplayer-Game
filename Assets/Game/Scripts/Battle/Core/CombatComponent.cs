@@ -93,6 +93,7 @@ namespace Game.Scripts.Battle
             : Weapon.EquipTime <= 0f || EquipClipTime >= Weapon.EquipShown);
         public bool IsComboWindowOpen => State == CombatState.Attack && Attack.IsComboWindow(StateTime);
         public bool IsComboQueued => _comboQueued;
+        public bool IsSeriesReady => Runner.Tick >= _seriesReadyTick;
         public float DrawPower => State == CombatState.Draw ? Weapon.Ranged.GetPower(StateTime) : 0f;
         public float BusyProgress => State == CombatState.Busy && _stateDuration > 0f ? Mathf.Clamp01(StateTime / _stateDuration) : 0f;
         public float BusyTimeLeft => State == CombatState.Busy ? Mathf.Max(0f, _stateDuration - StateTime) : 0f;
@@ -220,6 +221,10 @@ namespace Game.Scripts.Battle
 
         [Networked]
         private NetworkBool _comboQueued { get; set; }
+
+        /// Tick from which a new series may start after the last one was swung through to its end.
+        [Networked]
+        private int _seriesReadyTick { get; set; }
 
         [Networked]
         private float _stateDuration { get; set; }
@@ -454,7 +459,7 @@ namespace Game.Scripts.Battle
 
                 case CombatState.BlockRaise:
                 case CombatState.Block:
-                    if (isAttackPressed)
+                    if (isAttackPressed && IsSeriesReady)
                         StartAttack(0);
                     else if (!isBlockHeld)
                         SetState(CombatState.Idle);
@@ -505,7 +510,7 @@ namespace Game.Scripts.Battle
                 if (isAttackHeld)
                     SetState(CombatState.Draw);
             }
-            else if (isAttackPressed)
+            else if (isAttackPressed && IsSeriesReady)
             {
                 StartAttack(0);
             }
@@ -515,12 +520,14 @@ namespace Game.Scripts.Battle
             }
         }
 
-        /// Holding the attack button keeps queueing the next swing, so the series loops until released.
+        /// Holding the attack button keeps queueing the next swing up to the last of the series; once that one is over
+        /// a new series waits out the weapon's combo cooldown.
         private void SimulateAttack(WeaponConfig weapon, float time, bool isAttackHeld)
         {
             MeleeAttackConfig attack = Attack;
+            bool isLast = !IsRiposte && AttackIndex == weapon.Attacks.Length - 1;
 
-            if (isAttackHeld && attack.IsComboWindow(time))
+            if (isAttackHeld && !isLast && attack.IsComboWindow(time))
                 _comboQueued = true;
 
             if (HasStateAuthority)
@@ -530,11 +537,19 @@ namespace Game.Scripts.Battle
                 return;
 
             if (_comboQueued && time >= attack.ActiveEnd)
-                StartAttack(IsRiposte ? 0 : (AttackIndex + 1) % weapon.Attacks.Length);
+                StartAttack(IsRiposte ? 0 : AttackIndex + 1);
             else if (time >= attack.Duration)
-                SetState(CombatState.Idle);
+                EndAttack(weapon, isLast, CombatState.Idle);
             else if (_isBlockHeld && weapon.Block.CanBlock && time >= attack.ActiveEnd + attack.RecoveryTime * 0.5f)
-                SetState(CombatState.BlockRaise);
+                EndAttack(weapon, isLast, CombatState.BlockRaise);
+        }
+
+        private void EndAttack(WeaponConfig weapon, bool isLast, CombatState state)
+        {
+            if (isLast)
+                _seriesReadyTick = Runner.Tick + Mathf.CeilToInt(weapon.ComboCooldown / Runner.DeltaTime);
+
+            SetState(state);
         }
 
         private void StartAttack(int index)

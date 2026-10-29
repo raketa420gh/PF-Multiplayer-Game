@@ -252,6 +252,7 @@ namespace Game.Scripts.Battle
         public float UnequipHidden => _unequipHidden;
         public float Reach => _reach;
         public MeleeAttackConfig[] Attacks => _attacks;
+        public float ComboCooldown => _comboCooldown;
         public bool HasRiposte => _hasRiposte;
         public MeleeAttackConfig Riposte => _riposte;
         public BlockConfig Block => _block;
@@ -307,6 +308,10 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private MeleeAttackConfig[] _attacks = Array.Empty<MeleeAttackConfig>();
+
+        /// Pause after the last swing of the series before a new series may start.
+        [SerializeField]
+        private float _comboCooldown = 1f;
 
         [SerializeField]
         private bool _hasRiposte;
