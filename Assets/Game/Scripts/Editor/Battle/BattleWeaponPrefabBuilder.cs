@@ -22,6 +22,8 @@ namespace Game.Scripts.Editor.Battle
     /// Weapon visuals as generated meshes. Local axes: +Z blade / stave, +Y leading edge (knuckles), origin at the grip.
     internal static class BattleWeaponPrefabBuilder
     {
+        private const float BowStep = 0.01f;
+
         private enum Guard
         {
             Cross,
@@ -198,41 +200,38 @@ namespace Game.Scripts.Editor.Battle
             return Save(root);
         }
 
+        /// The recurve bow of DaD: flat dark limbs bending back from a thick riser and curling forward again at the tips, the string
+        /// lying on the curl. Cord wraps on the grip and halfway up each limb, brass collars at the ends of the grip.
         public static GameObject BuildBow()
         {
-            const int steps = 24;
-            const float halfLength = 0.7f;
+            const float brace = 0.2f;
 
             GameObject root = new GameObject("Bow");
             Transform parent = root.transform;
             WeaponMesh mesh = new WeaponMesh();
-            List<Vector3> path = new(steps + 1);
-            List<Vector2> radii = new(steps + 1);
+            List<Vector3> limb = BowLimb(out int contact);
+            float scale = (BowHalf(contact * BowStep).y - brace) / limb[contact].y;
 
-            // A D-section stave: thick at the handle, thinning along limbs that curl forward again at the tips.
-            for (int i = 0; i <= steps; i++)
+            for (int i = 0; i < limb.Count; i++)
+                limb[i] = Vector3.Scale(limb[i], new Vector3(1f, scale, 1f));
+
+            BowSweep(mesh, WeaponMaterials.DarkWood, limb, 0, limb.Count - 1, 0f);
+            BowSweep(mesh, WeaponMaterials.String, limb, 0, 8, 0.0015f);
+            BowSweep(mesh, WeaponMaterials.Brass, limb, 8, 9, 0.0025f);
+            BowSweep(mesh, WeaponMaterials.String, limb, 30, 35, 0.0012f);
+
+            foreach (float side in new[] { -1f, 1f })
             {
-                float t = i / (float)steps * 2f - 1f;
-                float limb = Mathf.Abs(t);
-                float recurve = Mathf.Pow(Mathf.Clamp01((limb - 0.82f) / 0.18f), 2f) * 0.02f;
-                float z = t * halfLength;
-                path.Add(new Vector3(0f, -0.45f * z * z + recurve, z));
-                radii.Add(new Vector2(Mathf.Lerp(0.015f, 0.007f, limb), Mathf.Lerp(0.013f, 0.0055f, limb)));
-            }
-
-            mesh.Tube(WeaponMaterials.Yew, path, radii, 8, Vector3.up);
-            WeaponParts.Grip(mesh, WeaponMaterials.Leather, -0.065f, 0.065f, 0.0165f, 0.06f, 0.95f);
-
-            for (int side = -1; side <= 1; side += 2)
-            {
-                Vector3 tip = path[side < 0 ? 0 : steps];
-                mesh.Rod(WeaponMaterials.Horn, tip - new Vector3(0f, 0f, side * 0.012f), tip + new Vector3(0f, 0.006f, side * 0.022f), 0.0085f, 0.004f, 6);
+                Vector3 tip = Vector3.Scale(limb[^1], new Vector3(1f, 1f, side));
+                Vector3 end = Vector3.Scale(limb[^2], new Vector3(1f, 1f, side));
+                mesh.Rod(WeaponMaterials.Horn, end, tip + (tip - end) * 1.5f, 0.006f, 0.0035f, 6);
             }
 
             mesh.Attach(parent, "Bow");
 
-            Transform top = BattleEditorUtility.CreateChild("StringTop", parent, new Vector3(0f, -0.2f, 0.69f)).transform;
-            Transform bottom = BattleEditorUtility.CreateChild("StringBottom", parent, new Vector3(0f, -0.2f, -0.69f)).transform;
+            Vector3 contactPoint = limb[contact] - Vector3.up * BowHalf(contact * BowStep).y;
+            Transform top = BattleEditorUtility.CreateChild("StringTop", parent, contactPoint).transform;
+            Transform bottom = BattleEditorUtility.CreateChild("StringBottom", parent, Vector3.Scale(contactPoint, new Vector3(1f, 1f, -1f))).transform;
             Transform nock = BattleEditorUtility.CreateChild("NockRest", parent, new Vector3(0f, -0.2f, 0f)).transform;
             Transform arrow = BattleEditorUtility.CreateChild("Arrow", parent, nock.localPosition).transform;
             arrow.localRotation = Quaternion.LookRotation(Vector3.up, Vector3.forward);
@@ -255,6 +254,64 @@ namespace Game.Scripts.Editor.Battle
             visual.ApplyModifiedPropertiesWithoutUndo();
 
             return Save(root);
+        }
+
+        /// Centre line of the upper half, one point per centimetre of arc from the grip: straight riser, the limb bending back
+        /// toward the string, the tip curling forward again. 'contact' is where the curl turns parallel to the string.
+        private static List<Vector3> BowLimb(out int contact)
+        {
+            List<Vector3> points = new() { Vector3.zero };
+            float angle = 0f;
+            contact = 0;
+
+            for (int i = 1; i <= 68; i++)
+            {
+                float s = i * BowStep;
+                float previous = angle;
+                angle += (s <= 0.1f ? 0f : s <= 0.5f ? 1.9f : -6.5f) * BowStep;
+                points.Add(points[^1] + new Vector3(0f, -Mathf.Sin(angle), Mathf.Cos(angle)) * BowStep);
+
+                if (previous > 0f && angle <= 0f)
+                    contact = i;
+            }
+
+            return points;
+        }
+
+        /// Half width across the bow and half thickness in its plane: a deep riser, then flat limbs tapering to the tips.
+        private static Vector2 BowHalf(float s)
+        {
+            float riser = Mathf.InverseLerp(0.2f, 0.09f, s);
+            float limb = Mathf.InverseLerp(0.2f, 0.68f, s);
+
+            return Vector2.Lerp(new Vector2(Mathf.Lerp(0.018f, 0.009f, limb), Mathf.Lerp(0.0065f, 0.0042f, limb)), new Vector2(0.015f, 0.017f), riser);
+        }
+
+        /// Sweeps the chamfered limb section along stations 'from'..'to' of both halves, grown by 'grow' for wraps and collars.
+        private static void BowSweep(WeaponMesh mesh, Material material, IReadOnlyList<Vector3> limb, int from, int to, float grow)
+        {
+            foreach (float side in new[] { -1f, 1f })
+            {
+                List<Vector3[]> rings = new(to - from + 1);
+
+                for (int i = from; i <= to; i++)
+                {
+                    Vector3 tangent = (limb[Mathf.Min(i + 1, limb.Count - 1)] - limb[Mathf.Max(i - 1, 0)]).normalized;
+                    Vector3 normal = new Vector3(0f, tangent.z, -tangent.y);
+                    Vector3 center = limb[i];
+                    Vector3[] ring = WeaponParts.BoxRing(0f, BowHalf(i * BowStep) + Vector2.one * grow, Vector2.zero, 0.35f);
+
+                    for (int j = 0; j < ring.Length; j++)
+                        ring[j] = Vector3.Scale(center + Vector3.right * ring[j].x + normal * ring[j].y, new Vector3(1f, 1f, side));
+
+                    rings.Add(ring);
+                }
+
+                if (side < 0f)
+                    rings.Reverse();
+
+                mesh.Loft(material, rings, WeaponMesh.Hard);
+            }
         }
 
         private static SwordShape GetShape(SwordStyle style)
