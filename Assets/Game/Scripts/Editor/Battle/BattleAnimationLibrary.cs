@@ -154,6 +154,8 @@ namespace Game.Scripts.Editor.Battle
         public float DrawTime;
         public float ReloadTime;
         public bool IsManualReload;
+        /// Arrows at the hip of a bow; ReloadVia then refills them on the reload key instead of loading by hand.
+        public int QuiverSize;
         public float ArrowMinSpeed;
         public float ArrowMaxSpeed;
         public int ArrowMinDamage;

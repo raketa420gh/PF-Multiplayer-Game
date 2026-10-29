@@ -1617,6 +1617,9 @@ namespace Game.Scripts.Editor.Dungeon
             Vector3 pullElbow = new(-0.34f, 1.4f, 0.28f);
             Vector3 blockElbow = new(0.42f, 1.66f, 0.25f);
             Vector3 blockOffElbow = new(-0.38f, 1.35f, 0.28f);
+            Vector3 quiverElbow = new(0.42f, 1.35f, 0.2f);
+            Vector3 reachElbow = new(0.4f, 1.5f, 0.2f);
+            Vector3 hipElbow = new(-0.42f, 1.25f, 0.05f);
             BodyPose idle = BowPose(OnScreen(0.468f, 0.869f, 0.396f), 43.5f, 15f, rest, default, low);
             BodyPose drawn = BowPose(OnScreen(0.51f, 0.55f, 0.435f), 38f, 0f, anchor, drawElbow, bowElbow);
             BodyPose loosed = BowPose(OnScreen(0.505f, 0.56f, 0.435f), 35f, 0f, new(0.18f, 1.38f, 0.2f), default, bowElbow, open: 0.8f);
@@ -1678,6 +1681,34 @@ namespace Game.Scripts.Editor.Dungeon
                 PoseKey.Flow(14 * release, BowPose(OnScreen(0.5f, 0.6f, 0.381f), 48f, 15f, rest, default, low), 1f),
                 PoseKey.Flow(28 * release, BowPose(OnScreen(0.507f, 0.778f, 0.45f), 36f, 15f, rest, default, low), 0.6f),
                 new(44 * release, idle)
+            };
+            // D:\bow_reload.mp4 from frame 26: the bow drops low and upright, the right hand reaches over the shoulder into the back
+            // quiver, pulls a fistful of arrows out past the right of the view and lowers them down to the hip; the bow swings back up.
+            BodyPose Lowered(Vector3 right, Vector3 elbow = default) => BowPose(new(-0.46f, 1.11f, 0.35f), 36f, 30f, right, elbow, hipElbow);
+            // The raised fist points back at the quiver, square to the upright forearm.
+            BodyPose Reach(BodyPose pose)
+            {
+                pose.Main.Forward = new Vector3(0f, 0.3f, -1f);
+
+                return pose;
+            }
+
+            definition.QuiverSize = 10;
+            definition.ReloadVia = new()
+            {
+                new(0f, idle),
+                PoseKey.Flow(4 * Footage, BowPose(OnScreen(0.44f, 0.93f, 0.4f), 38f, 15f, rest, default, low), 1f),
+                PoseKey.Flow(10 * Footage, BowPose(new(-0.45f, 1.17f, 0.35f), 36f, 25f, new(0.32f, 1.45f, 0.2f), default, hipElbow), 1f),
+                PoseKey.Flow(18 * Footage, BowPose(new(-0.48f, 1.12f, 0.35f), 38f, 32f, new(0.33f, 1.5f, 0.38f), quiverElbow, hipElbow), 1f),
+                PoseKey.Flow(24 * Footage, Reach(Lowered(new(0.26f, 1.78f, 0.05f), reachElbow)), 1f),
+                PoseKey.Flow(27 * Footage, Lowered(OnScreen(0.7f, 0.3f, 0.25f), new(0.32f, 1.52f, 0.4f)), 1f),
+                PoseKey.Flow(32 * Footage, Lowered(OnScreen(0.72f, 0.65f, 0.3f), quiverElbow), 1f),
+                PoseKey.Flow(36 * Footage, Lowered(OnScreen(0.72f, 0.95f, 0.3f), quiverElbow), 0.6f),
+                PoseKey.Flow(60 * Footage, Lowered(new(0.25f, 1.05f, 0.2f)), 0.6f),
+                PoseKey.Flow(100 * Footage, Lowered(rest), 0.5f),
+                PoseKey.Flow(128 * Footage, Lowered(rest), 0.5f),
+                PoseKey.Flow(148 * Footage, BowPose(OnScreen(0.38f, 0.95f, 0.4f), 40f, 15f, rest, default, low), 1f),
+                new(159 * Footage, idle)
             };
 
             return definition;

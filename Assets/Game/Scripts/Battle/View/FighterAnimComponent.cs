@@ -455,7 +455,11 @@ namespace Game.Scripts.Battle
                     token = combat.StateTick;
                     break;
                 case CombatState.Reload:
-                    state = states.Reload != 0 ? states.Reload : states.Release;
+                    state = weapon.Ranged.IsManualReload && states.Reload != 0 ? states.Reload : states.Release;
+                    token = combat.StateTick;
+                    break;
+                case CombatState.Restock:
+                    state = states.Reload != 0 ? states.Reload : states.Idle;
                     token = combat.StateTick;
                     break;
                 case CombatState.Recoil:

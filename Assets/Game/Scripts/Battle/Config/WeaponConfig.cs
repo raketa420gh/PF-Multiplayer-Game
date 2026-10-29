@@ -184,6 +184,9 @@ namespace Game.Scripts.Battle
         public float FullDrawTime => _fullDrawTime;
         public float ReloadTime => _reloadTime;
         public bool IsManualReload => _isManualReload;
+        /// Arrows ready at the hip; zero = no quiver, every draw has an arrow.
+        public int QuiverSize => _quiverSize;
+        public float RestockTime => _restockTime;
         public float MinSpeed => _minSpeed;
         public float MaxSpeed => _maxSpeed;
         public int MinDamage => _minDamage;
@@ -204,6 +207,12 @@ namespace Game.Scripts.Battle
 
         [SerializeField, Tooltip("Crossbows: a press looses the bolt at once, the reload key loads the next one")]
         private bool _isManualReload;
+
+        [SerializeField, Tooltip("Bows: arrows ready at the hip, the reload key refills them from the back quiver; 0 = never runs out")]
+        private int _quiverSize;
+
+        [SerializeField]
+        private float _restockTime = 2.5f;
 
         [SerializeField]
         private float _minSpeed = 14f;

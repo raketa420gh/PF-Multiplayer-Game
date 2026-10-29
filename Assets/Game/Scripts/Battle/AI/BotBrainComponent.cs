@@ -254,6 +254,8 @@ namespace Game.Scripts.Battle
                 return;
             }
 
+            input.Buttons.Set(PlayerInputButtons.Reload, combat.State == CombatState.Idle && combat.QuiverArrows == 0);
+
             if (combat.State == CombatState.Draw)
             {
                 if (combat.DrawPower < 1f)

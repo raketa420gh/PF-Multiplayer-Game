@@ -57,7 +57,7 @@ namespace Game.Scripts.Battle
             CombatState state = _combat.State;
             bool isActivePhase = _combat.Phase == AttackPhase.Active;
             bool isDrawn = state == CombatState.Draw;
-            bool hasArrow = isDrawn || state == CombatState.Idle && (!weapon.Ranged.IsManualReload || _combat.IsLoaded);
+            bool hasArrow = isDrawn || state == CombatState.Idle && (weapon.Ranged.IsManualReload ? _combat.IsLoaded : _combat.QuiverArrows > 0);
             Vector3 drawHand = _sockets[(int)(weapon.IsMirrored ? WeaponSocket.LeftHand : WeaponSocket.RightHand)].position;
 
             // The book stays shut until the guard is down, as in the animation editor.

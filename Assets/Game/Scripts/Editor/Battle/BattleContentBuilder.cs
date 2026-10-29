@@ -209,6 +209,10 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_ranged._fullDrawTime", definition.DrawTime > 0f ? definition.DrawTime : BattleAnimationLibrary.FullDrawTime);
             BattleEditorUtility.Set(so, "_ranged._reloadTime", definition.ReloadTime > 0f ? definition.ReloadTime : BattleAnimationLibrary.ReloadTime);
             BattleEditorUtility.Set(so, "_ranged._isManualReload", definition.IsManualReload);
+            BattleEditorUtility.Set(so, "_ranged._quiverSize", definition.QuiverSize);
+
+            if (definition.QuiverSize > 0)
+                BattleEditorUtility.Set(so, "_ranged._restockTime", definition.ReloadVia[^1].Time);
             BattleEditorUtility.Set(so, "_ranged._minSpeed", definition.ArrowMinSpeed > 0f ? definition.ArrowMinSpeed : BattleAnimationLibrary.ArrowMinSpeed);
             BattleEditorUtility.Set(so, "_ranged._maxSpeed", definition.ArrowMaxSpeed > 0f ? definition.ArrowMaxSpeed : BattleAnimationLibrary.ArrowMaxSpeed);
             BattleEditorUtility.Set(so, "_ranged._minDamage", definition.ArrowMinDamage > 0 ? definition.ArrowMinDamage : 14);
