@@ -1610,7 +1610,7 @@ namespace Game.Scripts.Editor.Dungeon
             float draw = BattleAnimationLibrary.FullDrawTime / 56f;
             float release = BattleAnimationLibrary.ReloadTime / 44f;
             Vector3 rest = new(0.2f, 1.05f, 0.15f);
-            Vector3 anchor = new(0.06f, 1.5f, 0.1f);
+            Vector3 anchor = new(0.2f, 1.37f, -0.12f);
             Vector3 low = new(-0.35f, 1.25f, 0.25f);
             Vector3 drawElbow = new(0.32f, 1.55f, -0.15f);
             Vector3 bowElbow = new(-0.3f, 1.45f, 0.3f);
@@ -1621,8 +1621,9 @@ namespace Game.Scripts.Editor.Dungeon
             Vector3 reachElbow = new(0.4f, 1.5f, 0.2f);
             Vector3 hipElbow = new(-0.42f, 1.25f, 0.05f);
             BodyPose idle = BowPose(OnScreen(0.468f, 0.869f, 0.396f), 43.5f, 15f, rest, default, low);
-            BodyPose drawn = BowPose(OnScreen(0.51f, 0.55f, 0.435f), 38f, 0f, anchor, drawElbow, bowElbow);
-            BodyPose loosed = BowPose(OnScreen(0.505f, 0.56f, 0.435f), 35f, 0f, new(0.18f, 1.38f, 0.2f), default, bowElbow, open: 0.8f);
+            // Full draw as DaD shows it: the fist under the crosshair, the arrow from below right of the eye, its head just past the stave.
+            BodyPose drawn = BowPose(OnScreen(0.491f, 0.618f, 0.46f), 42f, 0f, anchor, new(0.3f, 1.6f, -0.4f), bowElbow);
+            BodyPose loosed = BowPose(OnScreen(0.486f, 0.628f, 0.46f), 39f, 0f, new(0.24f, 1.36f, -0.16f), default, bowElbow, open: 0.8f);
 
             WeaponDefinition definition = BattleAnimationLibrary.CreateBow();
             definition.Idle = idle;
@@ -1693,22 +1694,25 @@ namespace Game.Scripts.Editor.Dungeon
                 return pose;
             }
 
+            // The footage played 1.3 times slower: its restock read too quick in play.
+            float restock = Footage * 1.3f;
+
             definition.QuiverSize = 10;
             definition.ReloadVia = new()
             {
                 new(0f, idle),
-                PoseKey.Flow(4 * Footage, BowPose(OnScreen(0.44f, 0.93f, 0.4f), 38f, 15f, rest, default, low), 1f),
-                PoseKey.Flow(10 * Footage, BowPose(new(-0.45f, 1.17f, 0.35f), 36f, 25f, new(0.32f, 1.45f, 0.2f), default, hipElbow), 1f),
-                PoseKey.Flow(18 * Footage, BowPose(new(-0.48f, 1.12f, 0.35f), 38f, 32f, new(0.33f, 1.5f, 0.38f), quiverElbow, hipElbow), 1f),
-                PoseKey.Flow(24 * Footage, Reach(Lowered(new(0.26f, 1.78f, 0.05f), reachElbow)), 1f),
-                PoseKey.Flow(27 * Footage, Lowered(OnScreen(0.7f, 0.3f, 0.25f), new(0.32f, 1.52f, 0.4f)), 1f),
-                PoseKey.Flow(32 * Footage, Lowered(OnScreen(0.72f, 0.65f, 0.3f), quiverElbow), 1f),
-                PoseKey.Flow(36 * Footage, Lowered(OnScreen(0.72f, 0.95f, 0.3f), quiverElbow), 0.6f),
-                PoseKey.Flow(60 * Footage, Lowered(new(0.25f, 1.05f, 0.2f)), 0.6f),
-                PoseKey.Flow(100 * Footage, Lowered(rest), 0.5f),
-                PoseKey.Flow(128 * Footage, Lowered(rest), 0.5f),
-                PoseKey.Flow(148 * Footage, BowPose(OnScreen(0.38f, 0.95f, 0.4f), 40f, 15f, rest, default, low), 1f),
-                new(159 * Footage, idle)
+                PoseKey.Flow(4 * restock, BowPose(OnScreen(0.44f, 0.93f, 0.4f), 38f, 15f, rest, default, low), 1f),
+                PoseKey.Flow(10 * restock, BowPose(new(-0.45f, 1.17f, 0.35f), 36f, 25f, new(0.32f, 1.45f, 0.2f), default, hipElbow), 1f),
+                PoseKey.Flow(18 * restock, BowPose(new(-0.48f, 1.12f, 0.35f), 38f, 32f, new(0.33f, 1.5f, 0.38f), quiverElbow, hipElbow), 1f),
+                PoseKey.Flow(24 * restock, Reach(Lowered(new(0.26f, 1.78f, 0.05f), reachElbow)), 1f),
+                PoseKey.Flow(27 * restock, Lowered(OnScreen(0.7f, 0.3f, 0.25f), new(0.32f, 1.52f, 0.4f)), 1f),
+                PoseKey.Flow(32 * restock, Lowered(OnScreen(0.72f, 0.65f, 0.3f), quiverElbow), 1f),
+                PoseKey.Flow(36 * restock, Lowered(OnScreen(0.72f, 0.95f, 0.3f), quiverElbow), 0.6f),
+                PoseKey.Flow(60 * restock, Lowered(new(0.25f, 1.05f, 0.2f)), 0.6f),
+                PoseKey.Flow(100 * restock, Lowered(rest), 0.5f),
+                PoseKey.Flow(128 * restock, Lowered(rest), 0.5f),
+                PoseKey.Flow(148 * restock, BowPose(OnScreen(0.38f, 0.95f, 0.4f), 40f, 15f, rest, default, low), 1f),
+                new(159 * restock, idle)
             };
 
             return definition;

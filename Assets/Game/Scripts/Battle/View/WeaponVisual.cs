@@ -23,6 +23,10 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private Transform _arrow;
 
+        /// How far up the stave from the grip the arrow lies: on the fist, not through it.
+        [SerializeField]
+        private float _arrowRest = 0.06f;
+
         [Header("Book")]
         [SerializeField]
         private GameObject _bookOpen;
@@ -75,15 +79,16 @@ namespace Game.Scripts.Battle
             _arrow.gameObject.SetActive(hasArrow);
 
             if (hasArrow)
-                _arrow.SetPositionAndRotation(nock, Quaternion.LookRotation(transform.position - nock, transform.forward));
+                _arrow.SetPositionAndRotation(nock, Quaternion.LookRotation(transform.position + transform.forward * _arrowRest - nock, transform.forward));
         }
 
-        /// The draw hand pulls the string only from behind the bow, between its limbs: nocking, it is elsewhere.
+        /// The draw hand pulls the string only from behind the bow, between its limbs: nocking, it is elsewhere. At full draw
+        /// the anchor is off the bow's plane (it is seen edge on, the arrow coming from below the eye, as in DaD).
         private bool IsOnString(Vector3 handPosition)
         {
             Vector3 local = transform.InverseTransformPoint(handPosition);
 
-            return local.y < _nockRest.localPosition.y + 0.03f && Mathf.Abs(local.z) < 0.35f && Mathf.Abs(local.x) < 0.2f;
+            return local.y < _nockRest.localPosition.y + 0.03f && Mathf.Abs(local.z) < 0.35f && Mathf.Abs(local.x) < 0.4f;
         }
     }
 }
