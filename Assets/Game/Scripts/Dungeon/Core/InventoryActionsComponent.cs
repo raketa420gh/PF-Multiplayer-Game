@@ -107,6 +107,7 @@ namespace Game.Scripts.Dungeon
 
             ItemStack stack = from.Bag[fromIndex];
             ItemConfig config = from.GetConfig(stack);
+            slot = InventoryComponent.GetHandSlot(config, slot);
 
             if (config == null || stack.IsHidden || !config.CanEquip(slot) || _inventory.IsSlotBlocked(slot))
                 return;
@@ -144,13 +145,18 @@ namespace Game.Scripts.Dungeon
         public void RpcSwapEquipment(EquipSlot first, EquipSlot second)
         {
             ItemStack a = _inventory.GetEquipped(first);
+            second = InventoryComponent.GetHandSlot(_inventory.GetConfig(a), second);
             ItemStack b = _inventory.GetEquipped(second);
 
-            if (!a.IsEmpty && !_inventory.CanEquip(a, second) || !b.IsEmpty && !_inventory.CanEquip(b, first))
+            if (first == second || !a.IsEmpty && !_inventory.CanEquip(a, second) || !b.IsEmpty && !_inventory.CanEquip(b, first) || _inventory.IsSlotBlocked(second))
                 return;
 
             _inventory.SetEquipment(first, b);
             _inventory.SetEquipment(second, a);
+            _inventory.OnMainHandEquipped(first, out ItemStack displacedFirst);
+            _inventory.OnMainHandEquipped(second, out ItemStack displacedSecond);
+            ReturnItem(_inventory, displacedFirst, -1, -1);
+            ReturnItem(_inventory, displacedSecond, -1, -1);
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]

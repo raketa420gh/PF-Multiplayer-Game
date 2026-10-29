@@ -187,7 +187,8 @@ namespace Game.Scripts.Dungeon
             }
             else if (slot != null)
             {
-                slot.SetHighlight(_dragged.Config.CanEquip(slot.Slot) && !_primary.IsSlotBlocked(slot.Slot), true);
+                EquipSlot target = InventoryComponent.GetHandSlot(_dragged.Config, slot.Slot);
+                slot.SetHighlight(_dragged.Config.CanEquip(target) && !_primary.IsSlotBlocked(target), true);
             }
         }
 

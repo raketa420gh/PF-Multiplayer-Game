@@ -320,7 +320,9 @@ namespace Game.Scripts.Dungeon
         {
             CombatComponent combat = adventurer.Fighter.Combat;
             bool isCrossbow = combat.Weapon.Ranged.IsManualReload;
-            int bolts = isCrossbow ? adventurer.CountAmmo(combat.WeaponSlot) : combat.QuiverArrows;
+            int ammo = adventurer.CountAmmo(combat.WeaponSlot);
+            int bolts = isCrossbow ? ammo : combat.QuiverArrows;
+            string count = bolts == int.MaxValue ? string.Empty : isCrossbow ? $"  bolts {bolts}" : ammo < int.MaxValue ? $"  arrows {bolts}/{ammo}" : $"  arrows {bolts}";
             string state = combat.State switch
             {
                 CombatState.Idle => (isCrossbow ? !combat.IsLoaded : bolts == 0) ? "[R] reload" : string.Empty,
@@ -332,7 +334,7 @@ namespace Game.Scripts.Dungeon
             ItemConfig held = adventurer.HasBeltItemInHand ? inventory.GetConfig(inventory.GetEquipped((EquipSlot)adventurer.BeltSlot)) : null;
             _weaponText.text = held != null
                 ? $"{held.DisplayName}  <size=70%>{(state.Length > 0 ? state : held is ConsumableItemConfig { IsLight: true } ? "[RMB] hold to throw  [X] put away" : "[LMB] use  [RMB] put away")}</size>"
-                : $"{combat.Weapon.DisplayName}  <size=70%>{state}{(bolts < int.MaxValue ? $"  {(isCrossbow ? "bolts" : "arrows")} {bolts}" : string.Empty)}</size>";
+                : $"{combat.Weapon.DisplayName}  <size=70%>{state}{count}</size>";
 
             int activeSlot = adventurer.HasBeltItemInHand ? 2 + (adventurer.BeltSlot - (int)EquipSlot.Utility1) / AdventurerComponent.BeltGroupSize
                 : adventurer.IsHolstered ? -1 : combat.WeaponSlot;

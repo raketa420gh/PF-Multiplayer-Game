@@ -87,6 +87,13 @@ namespace Game.Scripts.Dungeon
             owner.RefreshTooltip(this);
         }
 
+        /// A dimmed copy that neither drags nor shows a tooltip: drops fall through to the slot under it.
+        public void SetGhost(bool isGhost)
+        {
+            _group.alpha = isGhost ? 0.4f : 1f;
+            _group.blocksRaycasts = !isGhost;
+        }
+
         public void SetSearchProgress(float progress)
         {
             _searchFill.fillAmount = progress;

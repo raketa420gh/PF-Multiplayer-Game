@@ -471,6 +471,14 @@ namespace Game.Scripts.Dungeon
             return weapon != null && weapon.IsTwoHanded;
         }
 
+        /// A two-handed weapon dropped on either hand of a set goes to its main hand.
+        public static EquipSlot GetHandSlot(ItemConfig config, EquipSlot slot)
+        {
+            bool isTwoHanded = config is WeaponItemConfig { IsTwoHanded: true };
+
+            return isTwoHanded && slot is EquipSlot.Weapon1Off or EquipSlot.Weapon2Off ? slot - 1 : slot;
+        }
+
         public void OnMainHandEquipped(EquipSlot mainSlot, out ItemStack displaced)
         {
             displaced = default;

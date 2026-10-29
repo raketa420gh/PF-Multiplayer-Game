@@ -147,7 +147,8 @@ namespace Game.Scripts.Editor.Dungeon
                 SetModifiers(so, "_modifiers", def.Modifiers);
                 GameObject model = ResolveModel(def, weapons, outfitModels, out float zoom, out Vector3 euler, out Vector3 shift);
                 BattleEditorUtility.Set(so, "_worldModel", def.Kind == ItemKind.Armor ? null : model);
-                BattleEditorUtility.Set(so, "_icon", model != null ? DungeonIconBuilder.Render(model, Sanitize(def.Name), zoom, euler, shift) : null);
+                BattleEditorUtility.Set(so, "_sounds", def.Sounds != null ? CombatSoundBuilder.LoadItemSet(def.Sounds) : null);
+                BattleEditorUtility.Set(so, "_icon", model != null ? DungeonIconBuilder.Render(model, Sanitize(def.Name), def.Width, def.Height, zoom, euler, shift, def.Kind == ItemKind.Armor) : null);
 
                 switch (def.Kind)
                 {
@@ -201,8 +202,8 @@ namespace Game.Scripts.Editor.Dungeon
             // Ammunition may come later in the list than its weapon.
             for (int i = 0; i < defs.Count; i++)
             {
-                if (defs[i].Ammo != null)
-                    BattleEditorUtility.Set(configs[i], "_ammo", configs[defs.FindIndex(def => def.Name == defs[i].Ammo)]);
+                if (configs[i] is WeaponItemConfig)
+                    BattleEditorUtility.Set(configs[i], "_ammo", (defs[i].Ammo ?? new string[0]).Select(name => configs[defs.FindIndex(def => def.Name == name)]).ToArray());
             }
 
             ItemDatabase database = BattleEditorUtility.LoadOrCreate<ItemDatabase>(DatabasePath);
@@ -227,7 +228,6 @@ namespace Game.Scripts.Editor.Dungeon
             switch (def.Kind)
             {
                 case ItemKind.Weapon:
-                    euler = new Vector3(0f, 0f, 0f);
                     string prefix = def.WeaponPrefix ?? (def.WeaponClass == WeaponClass.Shield ? DungeonWeaponLibrary.ShieldModels[def.ShieldIndex] : null);
 
                     if (prefix == null || !weapons.TryGetValue(prefix, out WeaponConfig weapon))
@@ -238,18 +238,14 @@ namespace Game.Scripts.Editor.Dungeon
                         bool isShield = attachment.Socket is WeaponSocket.LeftShield or WeaponSocket.RightShield;
 
                         if (def.WeaponClass == WeaponClass.Shield == isShield)
-                        {
-                            euler = isShield ? new Vector3(-90f, 0f, 0f) : new Vector3(0f, -90f, -45f);
-
                             return attachment.Prefab;
-                        }
                     }
 
                     return null;
                 case ItemKind.Armor:
                     // The figure stands with its arms spread: sleeves are cropped to the body, of a pair of bracers one is shown.
                     bool hasSleeves = def.Parts != null && System.Array.Exists(def.Parts, part => part is OutfitPart.PeasantArms or OutfitPart.RangerArms);
-                    zoom = def.Slot == EquipSlot.Hands ? 4.2f : hasSleeves ? 2.2f : 1.1f;
+                    zoom = def.Slot == EquipSlot.Hands ? 7f : hasSleeves ? 2.4f : 1.1f;
                     shift = def.Slot == EquipSlot.Hands ? Vector3.left * 0.8f : Vector3.zero;
 
                     return outfitModels.GetValueOrDefault(def.Visual);
@@ -510,9 +506,15 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Gold Coins", 8f, 3, 14), ("Bandage", 4f, 1, 3), ("Torch", 2f, 1, 1), ("Potion of Healing", 3f, 1, 2), ("Potion of Protection", 1.5f, 1, 1), ("Lockpick", 1.5f, 1, 2),
                 ("Ale", 1f, 1, 1), ("Throwing Knife", 1f, 1, 2), ("Francisca Axe", 0.8f, 1, 2), ("Campfire Kit", 0.6f, 1, 1),
                 ("Arming Sword", 1f, 1, 1), ("Viking Sword", 0.5f, 1, 1), ("Morning Star", 0.8f, 1, 1), ("Round Shield", 0.8f, 1, 1), ("Écu", 0.4f, 1, 1),
-                ("Crossbow", 0.4f, 1, 1), ("Crossbow Bolts", 1.2f, 4, 12), ("Magic Staff", 0.5f, 1, 1), ("Battle Axe", 0.4f, 1, 1),
+                ("Crossbow", 0.4f, 1, 1), ("Crossbow Bolts", 1.2f, 4, 12), ("Arrows", 1.2f, 5, 20),("Magic Staff", 0.5f, 1, 1), ("Battle Axe", 0.4f, 1, 1),
                 ("Ruby", 0.5f, 1, 1), ("Emerald", 0.5f, 1, 1), ("Sapphire", 0.5f, 1, 1), ("Gold Goblet", 0.5f, 1, 1),
-                ("Potion of Invisibility", 0.6f, 1, 1), ("Silver Chalice", 0.6f, 1, 1), ("Gold Ore", 0.8f, 1, 3), ("Silver Ingot", 0.3f, 1, 1)
+                ("Potion of Invisibility", 0.6f, 1, 1), ("Silver Chalice", 0.6f, 1, 1), ("Gold Ore", 0.8f, 1, 3), ("Silver Ingot", 0.3f, 1, 1),
+                ("Gold Chalice", 0.3f, 1, 1), ("Silver Candlestick", 0.4f, 1, 1), ("Gold Candelabrum", 0.15f, 1, 1), ("Silver Candelabrum", 0.15f, 1, 1),
+                ("Gold Jug", 0.15f, 1, 1), ("Silver Jug", 0.3f, 1, 1), ("Gold Fork", 0.3f, 1, 1), ("Silver Fork", 0.6f, 1, 1), ("Gold Spoon", 0.3f, 1, 1),
+                ("Silver Spoon", 0.6f, 1, 1), ("Tiger's Eye", 0.5f, 1, 1), ("Agate", 0.6f, 1, 1), ("Gold Chain", 0.2f, 1, 1), ("Silver Chain", 0.4f, 1, 1),
+                ("Gold Bracelet", 0.2f, 1, 1), ("Silver Bracelet", 0.4f, 1, 1), ("Leather Scraps", 1.2f, 1, 3), ("Simple Leather", 0.6f, 1, 2),
+                ("Thick Leather", 0.3f, 1, 1), ("Cloth Scraps", 1.2f, 1, 3), ("Simple Cloth", 0.6f, 1, 2), ("Sturdy Cloth", 0.3f, 1, 1),
+                ("Metal Scraps", 1.2f, 1, 3), ("Metal Ingot", 0.3f, 1, 1), ("Empty Bottle", 0.8f, 1, 1)
             }.Concat(Pieces(0.9f, "Veinworker")).ToArray();
             (string name, float weight, int min, int max)[] ornate = new (string, float, int, int)[]
             {
@@ -520,28 +522,35 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Gold Candlestick", 2f, 1, 1), ("Gold Goblet", 2f, 1, 1), ("Ancient Scroll", 1.5f, 1, 1),
                 ("Battle Axe", 0.8f, 1, 1), ("Crossbow", 0.8f, 1, 1), ("Magic Staff", 0.8f, 1, 1), ("Surgical Kit", 1.5f, 1, 1),
                 ("Morning Star", 0.8f, 1, 1), ("Arming Sword", 0.6f, 1, 1), ("Viking Sword", 0.6f, 1, 1), ("Round Shield", 0.6f, 1, 1), ("Écu", 0.6f, 1, 1),
-                ("Troll's Blood", 1f, 1, 1), ("Potion of Invisibility", 1f, 1, 2), ("Gold Crown", 0.5f, 1, 1), ("Gold Ingot", 1f, 1, 2), ("Pearl Necklace", 1f, 1, 1)
+                ("Troll's Blood", 1f, 1, 1), ("Potion of Invisibility", 1f, 1, 2), ("Gold Crown", 0.5f, 1, 1), ("Gold Ingot", 1f, 1, 2), ("Pearl Necklace", 1f, 1, 1),
+                ("Gold Chalice", 1.5f, 1, 1), ("Silver Candlestick", 1f, 1, 1), ("Gold Candelabrum", 1f, 1, 1), ("Silver Candelabrum", 1f, 1, 1), ("Gold Jug", 1f, 1, 1),
+                ("Silver Jug", 1f, 1, 1), ("Gold Fork", 0.8f, 1, 1), ("Silver Fork", 0.6f, 1, 1), ("Gold Spoon", 0.8f, 1, 1), ("Silver Spoon", 0.6f, 1, 1),
+                ("Tiger's Eye", 1.5f, 1, 3), ("Agate", 1.5f, 1, 3), ("Gold Chain", 1f, 1, 1), ("Silver Chain", 1f, 1, 1), ("Gold Bracelet", 1f, 1, 1), ("Silver Bracelet", 1f, 1, 1)
             }.Concat(Pieces(0.6f, "Veinworker")).ToArray();
             (string name, float weight, int min, int max)[] coffin =
             {
                 ("Gold Coins", 5f, 2, 10), ("Ruby", 1f, 1, 1), ("Sapphire", 1f, 1, 1), ("Ancient Scroll", 1f, 1, 1),
                 ("Arming Sword", 0.8f, 1, 1), ("Veinworker Hood", 0.8f, 1, 1), ("Bandage", 2f, 1, 2), ("Gold Goblet", 1f, 1, 1),
-                ("Silver Chalice", 1f, 1, 1), ("Pearl Necklace", 0.5f, 1, 1), ("Troll's Blood", 0.4f, 1, 1)
+                ("Silver Chalice", 1f, 1, 1), ("Pearl Necklace", 0.5f, 1, 1), ("Troll's Blood", 0.4f, 1, 1),
+                ("Gold Chain", 0.5f, 1, 1), ("Silver Chain", 0.5f, 1, 1), ("Gold Bracelet", 0.5f, 1, 1), ("Silver Bracelet", 0.5f, 1, 1), ("Gold Chalice", 0.4f, 1, 1),
+                ("Agate", 0.5f, 1, 1), ("Cloth Scraps", 1f, 1, 3), ("Sturdy Cloth", 0.4f, 1, 1), ("Leather Scraps", 0.6f, 1, 2)
             };
             (string name, float weight, int min, int max)[] barrel =
             {
                 ("Gold Coins", 4f, 1, 6), ("Bandage", 3f, 1, 2), ("Torch", 2f, 1, 1), ("Potion of Healing", 2f, 1, 1), ("Ale", 2f, 1, 2), ("Throwing Knife", 1f, 1, 2), ("Lockpick", 1f, 1, 1),
-                ("Crossbow Bolts", 1.5f, 4, 10)
+                ("Crossbow Bolts", 1.5f, 4, 10), ("Arrows", 1.5f, 5, 15),("Empty Bottle", 2f, 1, 1), ("Cloth Scraps", 1.5f, 1, 3), ("Leather Scraps", 1f, 1, 3), ("Metal Scraps", 1.5f, 1, 3),
+                ("Simple Cloth", 0.6f, 1, 2), ("Simple Leather", 0.6f, 1, 2), ("Metal Ingot", 0.2f, 1, 1), ("Silver Fork", 0.4f, 1, 1), ("Silver Spoon", 0.4f, 1, 1)
             };
             (string name, float weight, int min, int max)[] bookshelf = new (string, float, int, int)[]
             {
                 ("Ancient Scroll", 4f, 1, 2), ("Potion of Protection", 2f, 1, 1), ("Potion of Healing", 2f, 1, 1), ("Gold Coins", 2f, 2, 8), ("Magic Staff", 0.5f, 1, 1), ("Sapphire", 1f, 1, 1),
-                ("Potion of Invisibility", 1.5f, 1, 1)
+                ("Potion of Invisibility", 1.5f, 1, 1), ("Silver Candlestick", 0.6f, 1, 1), ("Empty Bottle", 0.8f, 1, 1), ("Simple Cloth", 0.4f, 1, 1), ("Agate", 0.4f, 1, 1)
             };
             (string name, float weight, int min, int max)[] monster = new (string, float, int, int)[]
             {
                 ("Gold Coins", 5f, 1, 6), ("Bandage", 2f, 1, 1), ("Ruby", 0.5f, 1, 1), ("Potion of Healing", 1f, 1, 1),
-                ("Gold Ore", 0.6f, 1, 2), ("Silver Chalice", 0.3f, 1, 1)
+                ("Gold Ore", 0.6f, 1, 2), ("Silver Chalice", 0.3f, 1, 1), ("Leather Scraps", 1f, 1, 2), ("Cloth Scraps", 1f, 1, 2), ("Metal Scraps", 0.8f, 1, 2),
+                ("Tiger's Eye", 0.3f, 1, 1), ("Agate", 0.4f, 1, 1), ("Silver Chain", 0.2f, 1, 1), ("Empty Bottle", 0.4f, 1, 1)
             }.Concat(Pieces(0.4f, "Veinworker")).ToArray();
             // The warrior's own gear on top of what any monster carries (DD-016).
             (string name, float weight, int min, int max)[] warrior = monster.Concat(new (string, float, int, int)[]

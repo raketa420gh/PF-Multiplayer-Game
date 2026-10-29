@@ -580,20 +580,26 @@ namespace Game.Scripts.Dungeon
             _effects.Remove(StatusEffectKind.FlareShot);
         }
 
-        /// Bolts lie in the bag; a weapon without ammunition set never runs out.
+        /// Bolts and arrows lie in the bag; a weapon without ammunition set never runs out.
         public int CountAmmo(int slot)
         {
-            ItemConfig ammo = GetAmmo(slot);
+            ItemConfig[] ammo = GetAmmo(slot);
+            int count = 0;
 
-            return ammo != null ? _inventory.CountOf(ammo.Id) : int.MaxValue;
+            foreach (ItemConfig item in ammo)
+                count += _inventory.CountOf(item.Id);
+
+            return ammo.Length > 0 ? count : int.MaxValue;
         }
 
+        /// Loose arrows go before a quiver.
         public void ConsumeAmmo(int slot)
         {
-            ItemConfig ammo = GetAmmo(slot);
-
-            if (ammo != null)
-                _inventory.Remove(ammo.Id, 1);
+            foreach (ItemConfig item in GetAmmo(slot))
+            {
+                if (_inventory.Remove(item.Id, 1) > 0)
+                    return;
+            }
         }
 
         public AbilityConfig GetSkill(int slot)
@@ -846,11 +852,11 @@ namespace Game.Scripts.Dungeon
             combat.SetSlotWeapon(1, ResolveWeaponIndex(1, EquipSlot.Weapon2Main, EquipSlot.Weapon2Off), IsHolstered);
         }
 
-        private ItemConfig GetAmmo(int slot)
+        private ItemConfig[] GetAmmo(int slot)
         {
             WeaponItemConfig weapon = _inventory.GetEquippedConfig<WeaponItemConfig>(slot == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main);
 
-            return weapon != null ? weapon.Ammo : null;
+            return weapon != null ? weapon.Ammo : System.Array.Empty<ItemConfig>();
         }
 
         private int ResolveWeaponIndex(int set, EquipSlot mainSlot, EquipSlot offSlot)

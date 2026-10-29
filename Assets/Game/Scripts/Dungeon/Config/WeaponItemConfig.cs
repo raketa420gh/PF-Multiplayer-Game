@@ -24,8 +24,8 @@ namespace Game.Scripts.Dungeon
         public bool IsFocus => _isFocus;
         /// Classes that may wield the weapon on top of its weapon class; empty means every class allowed that weapon class.
         public ClassConfig[] Classes => _classes;
-        /// Bolts a crossbow loads from the bag; none means it never runs out.
-        public ItemConfig Ammo => _ammo;
+        /// Ammunition taken from the bag in this order (loose arrows before a quiver); none means it never runs out.
+        public ItemConfig[] Ammo => _ammo;
         /// Turn of the model lying on the ground (shields: face up).
         public Vector3 GroundEuler => _groundEuler;
         /// Shift of the turned model that sets it on the ground.
@@ -65,7 +65,7 @@ namespace Game.Scripts.Dungeon
         private ClassConfig[] _classes = Array.Empty<ClassConfig>();
 
         [SerializeField]
-        private ItemConfig _ammo;
+        private ItemConfig[] _ammo = Array.Empty<ItemConfig>();
 
         [SerializeField]
         private Vector3 _groundEuler;

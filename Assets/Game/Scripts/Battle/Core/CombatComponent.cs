@@ -115,8 +115,8 @@ namespace Game.Scripts.Battle
         public bool IsBlocking => State == CombatState.Block;
         /// A weapon loaded by hand has a bolt on the string.
         public bool IsLoaded => (_loadedSlots & (1 << WeaponSlot)) != 0;
-        /// Arrows left at the hip of a bow with a quiver; a weapon without one never runs out.
-        public int QuiverArrows => Weapon.IsRanged && Weapon.Ranged.QuiverSize > 0 ? Weapon.Ranged.QuiverSize - _spentArrows[WeaponSlot] : int.MaxValue;
+        /// Arrows left at the hip of a bow with a quiver, no more than the bag still has; a weapon without one never runs out.
+        public int QuiverArrows => Weapon.IsRanged && Weapon.Ranged.QuiverSize > 0 ? Mathf.Min(Weapon.Ranged.QuiverSize - _spentArrows[WeaponSlot], CountAmmo()) : int.MaxValue;
 
         public AttackPhase Phase
         {
@@ -528,7 +528,7 @@ namespace Game.Scripts.Battle
             {
                 if (isAttackHeld && QuiverArrows > 0)
                     SetState(CombatState.Draw);
-                else if (isReloadPressed && QuiverArrows < weapon.Ranged.QuiverSize && HasAmmo())
+                else if (isReloadPressed && QuiverArrows < Mathf.Min(weapon.Ranged.QuiverSize, CountAmmo()))
                     SetState(CombatState.Restock, weapon.Ranged.RestockTime / (_shotModifier?.ReloadSpeed ?? 1f));
             }
             else if (isAttackPressed && IsSeriesReady)
@@ -593,7 +593,7 @@ namespace Game.Scripts.Battle
 
         private void ReleaseDraw(RangedConfig ranged, float time)
         {
-            if (time < ranged.MinDrawTime)
+            if (time < ranged.MinDrawTime || QuiverArrows <= 0)
             {
                 SetState(CombatState.Idle);
 
@@ -632,7 +632,12 @@ namespace Game.Scripts.Battle
             }
 
             if (ranged.QuiverSize > 0)
+            {
                 _spentArrows.Set(WeaponSlot, (byte)(_spentArrows[WeaponSlot] + 1));
+
+                if (HasStateAuthority)
+                    _shotModifier?.ConsumeAmmo(WeaponSlot);
+            }
 
             SetState(CombatState.Reload, shot.ReloadTime);
         }
@@ -649,20 +654,21 @@ namespace Game.Scripts.Battle
             _loadedSlots |= (byte)(1 << WeaponSlot);
         }
 
-        /// Arrows from the back quiver fill the one at the hip, as many as the bag still has.
+        /// Arrows from the bag fill the hip, as many as the bag still has; each one leaves the bag only when it is shot.
         private void Restock()
         {
-            int count = Mathf.Min(_spentArrows[WeaponSlot], _shotModifier?.CountAmmo(WeaponSlot) ?? int.MaxValue);
-
-            for (int i = 0; i < count && HasStateAuthority && _shotModifier != null; i++)
-                _shotModifier.ConsumeAmmo(WeaponSlot);
-
-            _spentArrows.Set(WeaponSlot, (byte)(_spentArrows[WeaponSlot] - count));
+            int size = Weapon.Ranged.QuiverSize;
+            _spentArrows.Set(WeaponSlot, (byte)(size - Mathf.Min(size, CountAmmo())));
         }
 
         private bool HasAmmo()
         {
-            return _shotModifier == null || _shotModifier.CountAmmo(WeaponSlot) > 0;
+            return CountAmmo() > 0;
+        }
+
+        private int CountAmmo()
+        {
+            return _shotModifier?.CountAmmo(WeaponSlot) ?? int.MaxValue;
         }
 
         private float GetReloadTime(RangedConfig ranged)

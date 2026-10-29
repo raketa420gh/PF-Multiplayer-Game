@@ -22,33 +22,30 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private ItemView _item;
 
-        /// The off-hand slot beside a main-hand one: a two-handed weapon in this slot spans both.
-        [SerializeField]
-        private EquipSlotView _pair;
-
         public void Setup(EquipSlot slot, string label)
         {
             _slot = slot;
             _label.text = label;
         }
 
+        /// A two-handed weapon lies in the main hand; the off hand beside it shows the same weapon dimmed and out of reach.
         public void Bind(InventoryView owner, InventoryComponent inventory)
         {
-            ItemStack stack = inventory.GetEquipped(_slot);
+            bool isBlocked = inventory.IsSlotBlocked(_slot);
+            EquipSlot source = isBlocked ? _slot - 1 : _slot;
+            ItemStack stack = inventory.GetEquipped(source);
             ItemConfig config = inventory.GetConfig(stack);
             bool hasItem = config != null;
 
-            bool isSpanned = _pair != null && inventory.IsSlotBlocked(_pair.Slot);
-            float width = isSpanned ? _pair.Rect.anchoredPosition.x + _pair.Rect.sizeDelta.x - Rect.anchoredPosition.x : Rect.sizeDelta.x;
-            ((RectTransform)_item.transform).sizeDelta = new Vector2(width, Rect.sizeDelta.y);
-            gameObject.SetActive(!inventory.IsSlotBlocked(_slot));
+            ((RectTransform)_item.transform).sizeDelta = Rect.sizeDelta;
             _item.gameObject.SetActive(hasItem);
+            _item.SetGhost(isBlocked);
             _label.gameObject.SetActive(!hasItem);
 
             if (hasItem)
-                _item.Bind(owner, inventory, stack, config, -1, _slot, 0f);
+                _item.Bind(owner, inventory, stack, config, -1, source, 0f);
 
-            _background.color = inventory.IsSlotBlocked(_slot) ? new Color(0.25f, 0.1f, 0.1f, 0.8f) : new Color(0f, 0f, 0f, 0.6f);
+            _background.color = isBlocked ? new Color(0.25f, 0.1f, 0.1f, 0.8f) : new Color(0f, 0f, 0f, 0.6f);
         }
 
         public void SetHighlight(bool isValid, bool isActive)

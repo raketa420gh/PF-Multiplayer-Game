@@ -712,8 +712,6 @@ namespace Game.Scripts.Editor.Dungeon
             EquipSlotView off1 = Slot(equipPanel, EquipSlot.Weapon1Off, "I off", new Vector2(176f, -14f), 2, 4, itemPrefab);
             EquipSlotView main2 = Slot(equipPanel, EquipSlot.Weapon2Main, "II", new Vector2(376f, -14f), 2, 4, itemPrefab);
             EquipSlotView off2 = Slot(equipPanel, EquipSlot.Weapon2Off, "II off", new Vector2(472f, -14f), 2, 4, itemPrefab);
-            BattleEditorUtility.Set(main1, "_pair", off1);
-            BattleEditorUtility.Set(main2, "_pair", off2);
             List<EquipSlotView> slots = new()
             {
                 main1,

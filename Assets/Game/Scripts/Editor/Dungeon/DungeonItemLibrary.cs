@@ -19,6 +19,8 @@ namespace Game.Scripts.Editor.Dungeon
         public ItemRarity Rarity = ItemRarity.Common;
         public bool RollsRarity;
         public string Description = string.Empty;
+        /// Material whose handling sounds the item plays (CombatSoundBuilder.LoadItemSet); null = none or the weapon's own.
+        public string Sounds;
         public List<StatModifier> Modifiers = new();
 
         public string WeaponPrefix;
@@ -31,7 +33,7 @@ namespace Game.Scripts.Editor.Dungeon
         public float MovePenalty;
         public float LightRange;
         public bool IsFocus;
-        public string Ammo;
+        public string[] Ammo;
 
         public EquipSlot Slot;
         public ArmorType ArmorType;
@@ -178,12 +180,17 @@ namespace Game.Scripts.Editor.Dungeon
         private const string Wizard = "Wizard";
         private const string Confessor = "Confessor";
         private const string Bolts = "Crossbow Bolts";
+        private const string Arrows = "Arrows";
+        private const string Quiver = "Quiver";
 
         private static readonly Color s_steel = new(0.8f, 0.82f, 0.88f);
         private static readonly Color s_wood = new(0.65f, 0.45f, 0.25f);
         private static readonly Color s_potion = new(0.9f, 0.25f, 0.3f);
         private static readonly Color s_gold = new(1f, 0.82f, 0.3f);
         private static readonly Color s_silver = new(0.85f, 0.86f, 0.9f);
+        private static readonly Color s_leather = new(0.55f, 0.36f, 0.2f);
+        private static readonly Color s_linen = new(0.85f, 0.8f, 0.68f);
+        private static readonly Color s_iron = new(0.55f, 0.56f, 0.58f);
 
         private static readonly OutfitPart[] s_hood = { OutfitPart.RangerHood };
         private static readonly OutfitPart[] s_bracers = { OutfitPart.RangerBracers };
@@ -197,7 +204,7 @@ namespace Game.Scripts.Editor.Dungeon
             {
                 Weapon("Arming Sword", DungeonWeaponLibrary.ArmingSword, WeaponClass.Sword, 1, 3, 20f, "Sw", s_steel, 25, "A reliable one-handed sword. Pairs with a shield."),
                 Weapon("Battle Axe", DungeonWeaponLibrary.BattleAxe, WeaponClass.Axe, 2, 4, 30f, "Ax", s_steel, 50, "Two-handed double axe. A cut, a backswing and an overhead chop.", twoHanded: true),
-                Weapon("Crossbow", DungeonWeaponLibrary.Crossbow, WeaponClass.Crossbow, 2, 3, 50f, "Xb", s_wood, 55, "Hard-hitting bolt. Press R to load a bolt from the bag.", twoHanded: true, ammo: Bolts),
+                Weapon("Crossbow", DungeonWeaponLibrary.Crossbow, WeaponClass.Crossbow, 2, 3, 50f, "Xb", s_wood, 55, "Hard-hitting bolt. Press R to load a bolt from the bag.", twoHanded: true, ammo: new[] { Bolts }),
                 Weapon("Magic Staff", DungeonWeaponLibrary.Staff, WeaponClass.Staff, 1, 4, 20f, "St", new Color(0.5f, 0.7f, 1f), 50, "Caster focus. Also a decent club.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 4f) }, classes: new[] { Wizard, Confessor }),
                 Weapon("Round Shield", null, WeaponClass.Shield, 2, 3, 13f, "Sh", s_wood, 30, "Blocks with a one-handed weapon in the main hand.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 20f) }),
                 Weapon("Spellbook", DungeonWeaponLibrary.Spellbook, WeaponClass.Spellbook, 2, 2, 10f, "Bk", new Color(0.55f, 0.35f, 0.75f), 40, "Magical focus. Hold it to cast readied spells or block with it; it cannot strike.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 2f) }),
@@ -216,12 +223,12 @@ namespace Game.Scripts.Editor.Dungeon
                 Treasure("Gold Coins", 1, 1, 25, 1, "$", s_gold),
                 Treasure("Gold Coin Purse", 1, 1, 1, 100, "$$", s_gold),
                 Treasure("Gold Coin Bag", 2, 2, 1, 500, "$$$", s_gold),
-                Treasure("Ruby", 1, 1, 3, 12, "Gm", new Color(0.95f, 0.2f, 0.25f), true),
-                Treasure("Emerald", 1, 1, 3, 12, "Gm", new Color(0.2f, 0.85f, 0.35f), true),
-                Treasure("Sapphire", 1, 1, 3, 12, "Gm", new Color(0.25f, 0.4f, 0.95f), true),
-                Treasure("Diamond", 1, 1, 3, 25, "Dm", new Color(0.9f, 0.95f, 1f), true),
-                Treasure("Gold Goblet", 1, 1, 1, 35, "Gb", s_gold),
-                Treasure("Gold Candlestick", 1, 1, 1, 50, "Cs", s_gold),
+                Treasure("Ruby", 1, 1, 3, 12, "Gm", new Color(0.95f, 0.2f, 0.25f), true, "gem"),
+                Treasure("Emerald", 1, 1, 3, 12, "Gm", new Color(0.2f, 0.85f, 0.35f), true, "gem"),
+                Treasure("Sapphire", 1, 1, 3, 12, "Gm", new Color(0.25f, 0.4f, 0.95f), true, "gem"),
+                Treasure("Diamond", 1, 1, 3, 25, "Dm", new Color(0.9f, 0.95f, 1f), true, "gem"),
+                Treasure("Gold Goblet", 1, 1, 1, 35, "Gb", s_gold, sounds: "treasure_s"),
+                Treasure("Gold Candlestick", 1, 1, 1, 50, "Cs", s_gold, sounds: "treasure_s"),
                 Treasure("Ancient Scroll", 1, 1, 3, 60, "Sc", new Color(0.85f, 0.75f, 0.5f), true),
 
                 // Second wave of Dark and Darker gear.
@@ -230,12 +237,12 @@ namespace Game.Scripts.Editor.Dungeon
                 Consumable("Troll's Blood", ConsumableEffect.HealOverTime, 45f, 30f, DrinkTime, 1, "Tb", new Color(0.35f, 0.75f, 0.3f), 40, "Thick green blood. Slowly knits even grave wounds."),
                 Consumable("Potion of Invisibility", ConsumableEffect.Invisibility, 0f, 8f, DrinkTime, 2, "Po", new Color(0.8f, 0.85f, 0.95f), 30, "Monsters and players lose sight of you for a few seconds."),
 
-                Treasure("Silver Chalice", 1, 1, 1, 28, "Ch", s_silver),
+                Treasure("Silver Chalice", 1, 1, 1, 28, "Ch", s_silver, sounds: "treasure_s"),
                 Treasure("Gold Crown", 2, 2, 1, 220, "Cr", s_gold),
-                Treasure("Gold Ingot", 1, 1, 3, 90, "In", s_gold),
-                Treasure("Silver Ingot", 1, 1, 3, 50, "In", s_silver),
-                Treasure("Pearl Necklace", 1, 1, 1, 80, "Pn", new Color(0.95f, 0.93f, 0.88f), true),
-                Treasure("Gold Ore", 1, 1, 5, 18, "Or", new Color(0.8f, 0.65f, 0.3f))
+                Treasure("Gold Ingot", 1, 1, 3, 90, "In", s_gold, sounds: "ore"),
+                Treasure("Silver Ingot", 1, 1, 3, 50, "In", s_silver, sounds: "ore"),
+                Treasure("Pearl Necklace", 1, 1, 1, 80, "Pn", new Color(0.95f, 0.93f, 0.88f), true, "necklace"),
+                Treasure("Gold Ore", 1, 1, 5, 18, "Or", new Color(0.8f, 0.65f, 0.3f), sounds: "ore")
             };
 
             // New items go to the end: item ids are list positions and saved stashes refer to them.
@@ -260,6 +267,46 @@ namespace Game.Scripts.Editor.Dungeon
             items.Add(Consumable("Torch", ConsumableEffect.Light, 5f, 60f, 0f, 1, "To", new Color(1f, 0.6f, 0.25f), 3,
                 "Hold it in the left hand to light the dark around you. Throw it down to light a spot: it burns until the fuel runs out.",
                 1, 2));
+            // The recurve bow: 10 arrows at the hip, R restocks them from the arrows in the bag.
+            items.Add(Weapon("Recurve Bow", DungeonWeaponLibrary.Bow, WeaponClass.Bow, 2, 4, 30f, "Bw", s_wood, 50,
+                "Draw, hold and loose. Every shot spends an arrow from the bag; ten ride at the hip, press R to restock them.", twoHanded: true,
+                ammo: new[] { Arrows, Quiver }));
+            // Valuables and raw materials looted from the catacombs; only sold for now.
+            items.AddRange(new[]
+            {
+                Treasure("Gold Chalice", 1, 1, 1, 40, "Ch", s_gold, sounds: "treasure_s"),
+                Treasure("Silver Candlestick", 1, 1, 1, 30, "Cs", s_silver, sounds: "treasure_s"),
+                Treasure("Gold Candelabrum", 2, 2, 1, 90, "Cb", s_gold, sounds: "treasure_l"),
+                Treasure("Silver Candelabrum", 2, 2, 1, 55, "Cb", s_silver, sounds: "treasure_l"),
+                Treasure("Gold Jug", 1, 2, 1, 70, "Jg", s_gold, sounds: "treasure_l"),
+                Treasure("Silver Jug", 1, 2, 1, 42, "Jg", s_silver, sounds: "treasure_l"),
+                Treasure("Gold Fork", 1, 1, 1, 15, "Fk", s_gold, sounds: "treasure_s"),
+                Treasure("Silver Fork", 1, 1, 1, 9, "Fk", s_silver, sounds: "treasure_s"),
+                Treasure("Gold Spoon", 1, 1, 1, 14, "Sp", s_gold, sounds: "treasure_s"),
+                Treasure("Silver Spoon", 1, 1, 1, 8, "Sp", s_silver, sounds: "treasure_s"),
+                Treasure("Tiger's Eye", 1, 1, 3, 10, "Te", new Color(0.75f, 0.5f, 0.15f), true, "gem"),
+                Treasure("Gold Chain", 1, 1, 1, 45, "Cn", s_gold, sounds: "necklace"),
+                Treasure("Silver Chain", 1, 1, 1, 26, "Cn", s_silver, sounds: "necklace"),
+                Treasure("Gold Bracelet", 1, 1, 1, 40, "Br", s_gold, sounds: "necklace"),
+                Treasure("Silver Bracelet", 1, 1, 1, 22, "Br", s_silver, sounds: "necklace"),
+                Treasure("Agate", 1, 1, 3, 8, "Ag", new Color(0.55f, 0.6f, 0.7f), true, "gem"),
+                Treasure("Leather Scraps", 1, 1, 5, 2, "Ls", s_leather, sounds: "leather"),
+                Treasure("Simple Leather", 1, 1, 5, 5, "Le", s_leather, sounds: "leather"),
+                Treasure("Thick Leather", 1, 2, 1, 14, "Tl", new Color(0.4f, 0.25f, 0.13f), sounds: "leather"),
+                Treasure("Cloth Scraps", 1, 1, 5, 2, "Cl", s_linen, sounds: "fabric"),
+                Treasure("Simple Cloth", 1, 1, 5, 4, "Cl", s_linen, sounds: "fabric"),
+                Treasure("Sturdy Cloth", 1, 2, 1, 12, "Sc", new Color(0.55f, 0.5f, 0.38f), sounds: "fabric"),
+                Treasure("Metal Scraps", 1, 1, 5, 3, "Ms", s_iron, sounds: "ore"),
+                Treasure("Metal Ingot", 1, 1, 1, 20, "In", s_iron, sounds: "ore"),
+                Treasure("Empty Bottle", 1, 1, 1, 2, "Bt", new Color(0.45f, 0.6f, 0.45f), sounds: "potion")
+            });
+            // Bow ammunition: loose arrows are spent first, then the quiver; an empty quiver is gone.
+            ItemDef arrows = Treasure(Arrows, 1, 3, 20, 1, "Ar", s_wood);
+            arrows.Description = "Bow ammunition: every shot takes one arrow from the bag.";
+            ItemDef quiver = Treasure(Quiver, 1, 3, 50, 1, "Qv", s_leather);
+            quiver.Description = "Fifty arrows packed tight. The bow draws from it once the loose arrows run out.";
+            items.Add(arrows);
+            items.Add(quiver);
 
             return items;
         }
@@ -300,7 +347,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static ItemDef Weapon(string name, string prefix, WeaponClass weaponClass, int width, int height, float movePenalty, string glyph,
             Color color, int value, string description, bool twoHanded = false, bool offHand = false, float light = 0f,
-            StatModifier[] modifiers = null, string[] classes = null, bool focus = false, string ammo = null, int shieldIndex = 0)
+            StatModifier[] modifiers = null, string[] classes = null, bool focus = false, string[] ammo = null, int shieldIndex = 0)
         {
             return new ItemDef
             {
@@ -330,12 +377,13 @@ namespace Game.Scripts.Editor.Dungeon
             };
         }
 
-        private static ItemDef Treasure(string name, int width, int height, int stack, int value, string glyph, Color color, bool rolls = false)
+        private static ItemDef Treasure(string name, int width, int height, int stack, int value, string glyph, Color color, bool rolls = false,
+            string sounds = null)
         {
             return new ItemDef
             {
                 Name = name, Kind = ItemKind.Treasure, Width = width, Height = height, Stack = stack, Value = value, Glyph = glyph, Color = color,
-                RollsRarity = rolls, Description = "Sells for gold back in town."
+                RollsRarity = rolls, Sounds = sounds, Description = "Sells for gold back in town."
             };
         }
     }
