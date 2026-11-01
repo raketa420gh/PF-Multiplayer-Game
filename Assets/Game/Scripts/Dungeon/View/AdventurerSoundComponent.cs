@@ -26,7 +26,7 @@ namespace Game.Scripts.Dungeon
                 _pending = pending;
 
                 if (!_isFirst && pending == PendingAction.Consumable)
-                    DungeonAudioComponent.Play(IsBandage() ? DungeonSound.Bandage : DungeonSound.Drink, position, 0.8f);
+                    DungeonAudioComponent.Play(IsBandage() ? DungeonSound.Bandage : DungeonSound.Drink, position, 0.8f, 1f, transform);
             }
 
             if (_adventurer.State != _state)
@@ -34,7 +34,7 @@ namespace Game.Scripts.Dungeon
                 _state = _adventurer.State;
 
                 if (!_isFirst && _state == AdventurerState.Dead)
-                    DungeonAudioComponent.Play(DungeonSound.Death, position, 1f);
+                    DungeonAudioComponent.Play(DungeonSound.Death, position, 1f, 1f, transform);
                 else if (!_isFirst && _state is AdventurerState.Extracted or AdventurerState.Descended && HasInputAuthority)
                     DungeonAudioComponent.PlayUi(DungeonSound.Extract, 0.8f);
             }

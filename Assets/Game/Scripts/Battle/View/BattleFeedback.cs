@@ -71,6 +71,8 @@ namespace Game.Scripts.Battle
         private float[] _popupTimes;
         private int _nextPopup;
         private AudioSource[] _voices;
+        private Transform[] _emitters;
+        private Vector3[] _offsets;
         private int _nextVoice;
 
         private void Awake()
@@ -85,6 +87,8 @@ namespace Game.Scripts.Battle
             }
 
             _voices = new AudioSource[_voiceCount];
+            _emitters = new Transform[_voiceCount];
+            _offsets = new Vector3[_voiceCount];
 
             for (int i = 0; i < _voiceCount; i++)
             {
@@ -103,6 +107,12 @@ namespace Game.Scripts.Battle
 
         private void LateUpdate()
         {
+            for (int i = 0; i < _voiceCount; i++)
+            {
+                if (_emitters[i] != null && _voices[i].isPlaying)
+                    _voices[i].transform.position = _emitters[i].position + _offsets[i];
+            }
+
             Quaternion rotation = BattleContext.Instance.Camera.transform.rotation;
 
             for (int i = 0; i < _popupCount; i++)
@@ -141,43 +151,43 @@ namespace Game.Scripts.Battle
         }
 
         /// Recorded swings carry their own weight; the synthesized fallback drops in pitch with reach, as long weapons move more air.
-        public void PlaySwing(Vector3 position, float reach, WeaponSoundConfig sounds)
+        public void PlaySwing(Vector3 position, float reach, WeaponSoundConfig sounds, Transform emitter = null)
         {
             if (sounds != null && sounds.Swing.Length > 0)
             {
-                PlayClip(sounds.Swing, position);
+                PlayClip(sounds.Swing, position, 1f, emitter);
 
                 return;
             }
 
-            PlayClip(_swingClips, position, Mathf.Lerp(_swingPitch.x, _swingPitch.y, Mathf.InverseLerp(_swingReach.x, _swingReach.y, reach)));
+            PlayClip(_swingClips, position, Mathf.Lerp(_swingPitch.x, _swingPitch.y, Mathf.InverseLerp(_swingReach.x, _swingReach.y, reach)), emitter);
         }
 
-        public void PlayEquip(Vector3 position, WeaponSoundConfig sounds)
+        public void PlayEquip(Vector3 position, WeaponSoundConfig sounds, Transform emitter = null)
         {
             if (sounds != null)
-                PlayClip(sounds.Get(ItemSound.Equip), position);
+                PlayClip(sounds.Get(ItemSound.Equip), position, 1f, emitter);
         }
 
         /// A weapon with recorded shots sounds its own, heard close by the shooter and from afar by everyone else.
-        public void PlayShot(Vector3 position, WeaponSoundConfig sounds, bool isOwn)
+        public void PlayShot(Vector3 position, WeaponSoundConfig sounds, bool isOwn, Transform emitter = null)
         {
             AudioClip[] fire = sounds == null ? Array.Empty<AudioClip>() : isOwn ? sounds.Fire : sounds.FireFar;
 
             if (fire.Length == 0)
             {
-                PlayClip(_shotClips, position);
+                PlayClip(_shotClips, position, 1f, emitter);
 
                 return;
             }
 
-            PlayClip(fire, position);
-            PlayClip(isOwn ? sounds.Flight : sounds.FlightFar, position);
+            PlayClip(fire, position, 1f, emitter);
+            PlayClip(isOwn ? sounds.Flight : sounds.FlightFar, position, 1f, emitter);
         }
 
-        public void Play(AudioClip[] clips, Vector3 position)
+        public void Play(AudioClip[] clips, Vector3 position, Transform emitter = null)
         {
-            PlayClip(clips, position);
+            PlayClip(clips, position, 1f, emitter);
         }
 
         public WeaponSoundConfig GetSounds(byte id)
@@ -214,12 +224,14 @@ namespace Game.Scripts.Battle
             popup.gameObject.SetActive(true);
         }
 
-        private void PlayClip(AudioClip[] clips, Vector3 position, float pitch = 1f)
+        private void PlayClip(AudioClip[] clips, Vector3 position, float pitch = 1f, Transform emitter = null)
         {
             if (clips.Length == 0)
                 return;
 
             AudioSource voice = _voices[_nextVoice];
+            _emitters[_nextVoice] = emitter;
+            _offsets[_nextVoice] = emitter != null ? position - emitter.position : Vector3.zero;
             _nextVoice = (_nextVoice + 1) % _voices.Length;
             voice.transform.position = position;
             voice.pitch = pitch * UnityEngine.Random.Range(1f - _pitchSpread, 1f + _pitchSpread);

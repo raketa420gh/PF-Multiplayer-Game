@@ -53,7 +53,7 @@ namespace Game.Scripts.Battle
             WeaponConfig weapon = _combat.Weapon;
 
             if (weapon != _shownWeapon && _shownWeapon != null && BattleContext.Instance != null)
-                BattleContext.Instance.Feedback.PlayEquip(transform.position + Vector3.up * 1.2f, weapon.Sounds);
+                BattleContext.Instance.Feedback.PlayEquip(transform.position + Vector3.up * 1.2f, weapon.Sounds, transform);
 
             _shownWeapon = weapon;
             CombatState state = _combat.State;
@@ -77,7 +77,7 @@ namespace Game.Scripts.Battle
             }
 
             if (isActivePhase && !_wasActivePhase && BattleContext.Instance != null)
-                BattleContext.Instance.Feedback.PlaySwing(transform.position + Vector3.up * 1.4f, weapon.Reach, weapon.Sounds);
+                BattleContext.Instance.Feedback.PlaySwing(transform.position + Vector3.up * 1.4f, weapon.Reach, weapon.Sounds, transform);
 
             _wasActivePhase = isActivePhase;
             bool isFullDraw = isDrawn && _combat.DrawPower >= 1f;
@@ -96,7 +96,7 @@ namespace Game.Scripts.Battle
             Vector3 position = transform.position + Vector3.up * 1.4f;
 
             if (isFullNow)
-                feedback.Play(sounds.Hold, position);
+                feedback.Play(sounds.Hold, position, transform);
 
             if (state == _shownState)
                 return;
@@ -104,14 +104,14 @@ namespace Game.Scripts.Battle
             switch (state)
             {
                 case CombatState.Draw:
-                    feedback.Play(sounds.Draw, position);
-                    feedback.Play(sounds.Creak, position);
+                    feedback.Play(sounds.Draw, position, transform);
+                    feedback.Play(sounds.Creak, position, transform);
                     break;
                 case CombatState.Reload when !_combat.Weapon.Ranged.IsManualReload:
-                    feedback.Play(sounds.Nock, position);
+                    feedback.Play(sounds.Nock, position, transform);
                     break;
                 case CombatState.Restock:
-                    feedback.Play(sounds.Restock, position);
+                    feedback.Play(sounds.Restock, position, transform);
                     break;
             }
         }

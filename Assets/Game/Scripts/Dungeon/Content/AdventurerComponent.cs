@@ -1545,7 +1545,7 @@ namespace Game.Scripts.Dungeon
                 return;
 
             AbilityConfig ability = _abilities[index];
-            DungeonAudioComponent.Play(ability.CastSound, transform.position + Vector3.up, 1f, Random.Range(0.96f, 1.04f));
+            DungeonAudioComponent.Play(ability.CastSound, transform.position + Vector3.up, 1f, Random.Range(0.96f, 1.04f), transform);
             AbilityVfx.Cast(ability.Vfx, transform, ability.Color);
         }
 
@@ -1569,7 +1569,7 @@ namespace Game.Scripts.Dungeon
             ItemConfig item = _database.Get(itemId);
 
             if (item != null)
-                DungeonAudioComponent.Play(item.PickSound(sound), point, 1f, Random.Range(0.96f, 1.04f));
+                DungeonAudioComponent.Play(item.PickSound(sound), point, 1f, Random.Range(0.96f, 1.04f), transform);
         }
 
         private float HealScale()

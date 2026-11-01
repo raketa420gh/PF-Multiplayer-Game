@@ -108,7 +108,7 @@ namespace Game.Scripts.Battle
                     _isFresh[i] = true;
 
                     if (BattleContext.Instance != null)
-                        BattleContext.Instance.Feedback.PlayShot(data.Origin, BattleContext.Instance.Feedback.GetSounds(data.Sound), HasInputAuthority);
+                        BattleContext.Instance.Feedback.PlayShot(data.Origin, BattleContext.Instance.Feedback.GetSounds(data.Sound), HasInputAuthority, HasInputAuthority ? transform : null);
 
                     if (isMagic && visual == _spells[i])
                         Restyle(i, data.KindValue);

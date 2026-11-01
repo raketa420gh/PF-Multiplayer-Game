@@ -52,9 +52,9 @@ namespace Game.Scripts.Dungeon
             AudioClip clip = _sounds != null ? _sounds.Pick(footwear, GetSurface(position)) : null;
 
             if (clip != null)
-                DungeonAudioComponent.Play(clip, position, volume, pitch * _sounds.GetPitch(footwear));
+                DungeonAudioComponent.Play(clip, position, volume, pitch * _sounds.GetPitch(footwear), transform);
             else
-                DungeonAudioComponent.Play(_toggle ? DungeonSound.Footstep : DungeonSound.FootstepB, position, volume, pitch);
+                DungeonAudioComponent.Play(_toggle ? DungeonSound.Footstep : DungeonSound.FootstepB, position, volume, pitch, transform);
         }
 
         private Footwear GetFootwear()

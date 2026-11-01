@@ -59,6 +59,8 @@ namespace Game.Scripts.Dungeon
 
         private static DungeonAudioComponent s_instance;
         private AudioSource[] _sources;
+        private Transform[] _emitters;
+        private Vector3[] _offsets;
         private int _next;
         private bool _isInDungeon;
 
@@ -66,6 +68,8 @@ namespace Game.Scripts.Dungeon
         {
             s_instance = this;
             _sources = new AudioSource[_voices];
+            _emitters = new Transform[_voices];
+            _offsets = new Vector3[_voices];
 
             for (int i = 0; i < _voices; i++)
             {
@@ -76,6 +80,7 @@ namespace Game.Scripts.Dungeon
                 source.rolloffMode = AudioRolloffMode.Linear;
                 source.minDistance = 1.5f;
                 source.maxDistance = 24f;
+                source.dopplerLevel = 0f;
                 _sources[i] = source;
             }
 
@@ -107,16 +112,26 @@ namespace Game.Scripts.Dungeon
                 _ambientSource.Stop();
         }
 
-        public static void Play(DungeonSound sound, Vector3 position, float volume = 1f, float pitch = 1f)
+        /// Sounds of a body stay with it: a voice left behind in the world is heard from the side the body walked away from.
+        private void LateUpdate()
         {
-            if (s_instance != null)
-                s_instance.PlayAt(sound, position, volume, pitch);
+            for (int i = 0; i < _sources.Length; i++)
+            {
+                if (_emitters[i] != null && _sources[i].isPlaying)
+                    _sources[i].transform.position = _emitters[i].position + _offsets[i];
+            }
         }
 
-        public static void Play(AudioClip clip, Vector3 position, float volume = 1f, float pitch = 1f)
+        public static void Play(DungeonSound sound, Vector3 position, float volume = 1f, float pitch = 1f, Transform emitter = null)
+        {
+            if (s_instance != null)
+                s_instance.PlayAt(sound, position, volume, pitch, emitter);
+        }
+
+        public static void Play(AudioClip clip, Vector3 position, float volume = 1f, float pitch = 1f, Transform emitter = null)
         {
             if (s_instance != null && clip != null)
-                s_instance.PlayAt(clip, position, volume, pitch);
+                s_instance.PlayAt(clip, position, volume, pitch, emitter);
         }
 
         public static void PlayUi(DungeonSound sound, float volume = 1f)
@@ -131,19 +146,21 @@ namespace Game.Scripts.Dungeon
                 s_instance.PlayFlat(clip, volume);
         }
 
-        private void PlayAt(DungeonSound sound, Vector3 position, float volume, float pitch)
+        private void PlayAt(DungeonSound sound, Vector3 position, float volume, float pitch, Transform emitter)
         {
             AudioClip clip = GetClip(sound);
 
             if (clip == null)
                 return;
 
-            PlayAt(clip, position, volume, pitch);
+            PlayAt(clip, position, volume, pitch, emitter);
         }
 
-        private void PlayAt(AudioClip clip, Vector3 position, float volume, float pitch)
+        private void PlayAt(AudioClip clip, Vector3 position, float volume, float pitch, Transform emitter)
         {
             AudioSource source = _sources[_next];
+            _emitters[_next] = emitter;
+            _offsets[_next] = emitter != null ? position - emitter.position : Vector3.zero;
             _next = (_next + 1) % _sources.Length;
             source.transform.position = position;
             source.spatialBlend = 1f;
@@ -160,6 +177,7 @@ namespace Game.Scripts.Dungeon
                 return;
 
             AudioSource source = _sources[_next];
+            _emitters[_next] = null;
             _next = (_next + 1) % _sources.Length;
             source.spatialBlend = 0f;
             source.reverbZoneMix = 0f;

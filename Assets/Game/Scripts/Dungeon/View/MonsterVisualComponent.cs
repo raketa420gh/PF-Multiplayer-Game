@@ -40,7 +40,7 @@ namespace Game.Scripts.Dungeon
             if (state != _state)
             {
                 if (state == Game.Scripts.Battle.CombatState.Attack)
-                    DungeonAudioComponent.Play(_monster.Config.Voice, position, 0.9f, Random.Range(0.9f, 1.1f));
+                    DungeonAudioComponent.Play(_monster.Config.Voice, position, 0.9f, Random.Range(0.9f, 1.1f), transform);
 
                 _state = state;
             }
@@ -48,7 +48,7 @@ namespace Game.Scripts.Dungeon
             bool isAlive = _monster.Fighter.Health.IsAlive;
 
             if (_wasAlive && !isAlive)
-                DungeonAudioComponent.Play(_monster.Config.Voice, position, 1f, 0.7f);
+                DungeonAudioComponent.Play(_monster.Config.Voice, position, 1f, 0.7f, transform);
 
             _wasAlive = isAlive;
 
@@ -56,7 +56,7 @@ namespace Game.Scripts.Dungeon
             if (isAlive && !_monster.Config.IsCharger && Time.time >= _nextIdleVoice)
             {
                 _nextIdleVoice = Time.time + Random.Range(6f, 16f);
-                DungeonAudioComponent.Play(_monster.Config.Voice, position, 0.35f, Random.Range(0.8f, 1f));
+                DungeonAudioComponent.Play(_monster.Config.Voice, position, 0.35f, Random.Range(0.8f, 1f), transform);
             }
         }
     }
