@@ -28,6 +28,13 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static readonly string[] s_hallStone = { "Саркофаг", "Весовая платформа", "Великие весы" };
 
+        /// The six outer sides of the hall: the middle of each and its yaw, local +Z running out of the room.
+        private static readonly (Vector3 position, float yaw)[] s_hallSides =
+        {
+            (new Vector3(0f, 0f, -Pitch * 0.5f), 180f), (new Vector3(Pitch * 0.5f, 0f, 0f), 90f), (new Vector3(-Pitch * 0.5f, 0f, 0f), 270f),
+            (new Vector3(0f, 0f, Pitch * 1.5f), 0f), (new Vector3(Pitch * 0.5f, 0f, Pitch), 90f), (new Vector3(-Pitch * 0.5f, 0f, Pitch), 270f)
+        };
+
         public static CatacombRoomComponent BuildHall(Transform floor, GameObject[] sides)
         {
             string path = $"{Folder}/{HallName}.prefab";
@@ -50,15 +57,10 @@ namespace Game.Scripts.Editor.Dungeon
             Kit("Trap HallMachinery", hall, Vector3.zero, 0f);
 
             // The two doorways of each of the six outer sides, as the generator expects of the key room; above them the walls go on.
-            (Vector3 position, float yaw)[] doorways =
-            {
-                (new Vector3(0f, 0f, -Pitch * 0.5f), 180f), (new Vector3(Pitch * 0.5f, 0f, 0f), 90f), (new Vector3(-Pitch * 0.5f, 0f, 0f), 270f),
-                (new Vector3(0f, 0f, Pitch * 1.5f), 0f), (new Vector3(Pitch * 0.5f, 0f, Pitch), 90f), (new Vector3(-Pitch * 0.5f, 0f, Pitch), 270f)
-            };
-
-            foreach ((Vector3 position, float yaw) in doorways)
+            foreach ((Vector3 position, float yaw) in s_hallSides)
                 DungeonMapBuilder.Place(sides[3], hall, position, yaw).name = "Wall Doorways";
 
+            HallThresholds(hall);
             KitBlock("Ceiling", hall, new Vector3(0f, HallHeight, Pitch * 0.5f), new Vector3(Pitch, Thickness, Pitch * 2f));
 
             SerializedObject so = new SerializedObject(hall.gameObject.AddComponent<CatacombRoomComponent>());
@@ -68,6 +70,24 @@ namespace Game.Scripts.Editor.Dungeon
             PrefabUtility.SaveAsPrefabAssetAndConnect(hall.gameObject, path, InteractionMode.AutomatedAction);
 
             return hall.GetComponent<CatacombRoomComponent>();
+        }
+
+        /// The hall's floor ends at its walls and a neighbour's at the middle of the side: a slab under each doorway closes the
+        /// slit between them, which the NavMesh would not cross.
+        public static void HallThresholds(Transform hall)
+        {
+            const float Depth = 0.5f;
+
+            foreach ((Vector3 position, float yaw) in s_hallSides)
+            {
+                Quaternion rotation = Quaternion.Euler(0f, yaw, 0f);
+
+                foreach (float sign in new[] { -1f, 1f })
+                {
+                    Vector3 bottom = position + rotation * new Vector3(sign * DoorOffset, -Depth, -Thickness * 0.25f);
+                    KitBlock("Floor", hall, bottom, new Vector3(DoorWidth + JambWidth, Depth, Thickness * 0.5f), yaw);
+                }
+            }
         }
 
         /// Map of the hall's two cells stacked, its first cell at the bottom, as the generator cuts it.

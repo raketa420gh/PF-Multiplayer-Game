@@ -43,6 +43,7 @@ namespace Game.Scripts.Editor.Dungeon
             try
             {
                 DungeonBuildMenu.BuildScene();
+                CatacombRoomSeparator.SeparateAll();
             }
             finally
             {

@@ -108,6 +108,7 @@ namespace Game.Scripts.Dungeon
         private const int NotWalkable = 1;
         private const int BothDoorways = 3;
         private const string KeyRoomSide = "Wall Doorways";
+        private const string UpperWall = "Wall Upper";
 
         private static readonly Vector2Int[] s_steps = { Vector2Int.right, Vector2Int.up, Vector2Int.left, Vector2Int.down };
 
@@ -159,6 +160,7 @@ namespace Game.Scripts.Dungeon
             Plan plan = Lay(seed);
             _titles = new string[plan.Rooms.Length];
             _keyRoom.transform.SetPositionAndRotation(CellCenter(KeyCell), Quaternion.Euler(0f, plan.KeyTurns * 90f, 0f));
+            CatacombRoomComponent[] placed = new CatacombRoomComponent[plan.Rooms.Length];
 
             foreach (int cell in plan.KeyCells)
                 _titles[cell] = _keyRoom.Title;
@@ -171,8 +173,12 @@ namespace Game.Scripts.Dungeon
                 CatacombRoomComponent room = Instantiate(plan.Rooms[cell], CellCenter(cell), Quaternion.Euler(0f, plan.Turns[cell] * 90f, 0f), _content);
                 _titles[cell] = room.Title;
                 _rooms.Add(room);
+                placed[cell] = room;
                 PlaceSides(plan, cell);
             }
+
+            for (int cell = 0; cell < placed.Length; cell++)
+                ShareUpperWalls(plan, placed, cell);
 
             WallKeyRoom(plan);
 
@@ -492,6 +498,29 @@ namespace Game.Scripts.Dungeon
 
             if (!IsFilled(plan, x, z - 1))
                 Side(center + Vector3.back * half, 0f, 0);
+        }
+
+        /// Both sides of a border raise their wall in one place, which would flicker: the lower cell keeps its upper wall, and
+        /// the key room's walls, that go on up there, replace any.
+        private void ShareUpperWalls(Plan plan, CatacombRoomComponent[] placed, int cell)
+        {
+            if (placed[cell] == null)
+                return;
+
+            Transform room = placed[cell].transform;
+
+            foreach (Transform part in room)
+            {
+                if (part.name != UpperWall)
+                    continue;
+
+                Vector3 outward = part.position - room.position;
+                outward.y = 0f;
+                int other = GetCell(room.position + outward.normalized * _pitch);
+
+                if (other != cell && (IsKey(plan, other) || other < cell && placed[other] != null && placed[other].transform.Find(UpperWall) != null))
+                    part.gameObject.SetActive(false);
+            }
         }
 
         /// The key room's own doorway sides that face rock give way to blind sides.

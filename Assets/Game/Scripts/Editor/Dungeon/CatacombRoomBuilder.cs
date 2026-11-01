@@ -31,6 +31,7 @@ namespace Game.Scripts.Editor.Dungeon
         private const float Thickness = DungeonPropBuilder.WallThickness;
         private const float Half = DungeonMapBuilder.RoomSize * 0.5f;
         private const float JambWidth = 0.4f;
+        private const float PostGap = 0.01f;
         private const float ArchHeight = 0.4f;
         private const float TorchHeight = 2.6f;
         private const float PitWall = 0.3f;
@@ -860,7 +861,8 @@ namespace Game.Scripts.Editor.Dungeon
         private static GameObject Post()
         {
             GameObject root = new GameObject("CatacombPost");
-            DungeonStructureBuilder.Block(root.transform, "Wall Post", Vector3.up * Height * 0.5f, new Vector3(Thickness + 0.2f, Height, Thickness + 0.2f), DungeonPropBuilder.Ashlar);
+            // A touch lower than the walls and the hall's first storey floor, so its top shares no plane with them.
+            DungeonStructureBuilder.Block(root.transform, "Wall Post", Vector3.up * (Height - PostGap) * 0.5f, new Vector3(Thickness + 0.2f, Height - PostGap, Thickness + 0.2f), DungeonPropBuilder.Ashlar);
 
             return root;
         }
