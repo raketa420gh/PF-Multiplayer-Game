@@ -3,11 +3,17 @@
 ## 2026-11-02
 
 ### Changed
+- The generator lays every room once: `Limit` is gone, a pool smaller than the floor logs an error and starts a new round (DD-025).
+- 20 new rooms approved and added to the pool, 43 ordinary and 5 corner rooms in all; the atlas uses the same rule.
+- Stairs fixed in Fungus Terraces, Anatomy Theatre, Forge and Grave Furrows; the mockup check now tests both ends of every flight and rotated blocks by their real shape.
 - 20 catacomb modules redesigned from the atlas review notes; together with Crypt, Ossuary, Pillared Hall and Blade Corridors, 24 room prefabs are now built from their mockups (DD-026).
 - All 28 rooms are in the generator's pool, existing limits kept: repeats stay until the 20 new rooms exist.
 - Rooms span −10…+24 m; the NavMesh bake and the cell map follow.
 
 ### Added
+- Short story of every module in `Lore.md` and in the atlas.
+- Doors below the ground level stand on a threshold like the upper ones, the NavMesh passes them.
+- `Build Missing Rooms` menu; `Apply Mockups` also writes the room pool to the scene.
 - `Apply Mockups` and `Check Rooms` menus, mockup kit in `Docs/LevelMockups/Atlas/tools`.
 - Room mechanisms: levers, ordered levers and floor plates, secret slabs, lifts, monsters dropping on a wrong step; interior wooden doors and double doors.
 
