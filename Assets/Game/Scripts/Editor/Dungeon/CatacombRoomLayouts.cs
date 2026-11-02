@@ -13,15 +13,24 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static readonly double[] s_corners = { -12.5, 12.5 };
 
+        /// Rooms that exist only as atlas mockups: no items here, the prefab is built from the mockup. 43 ordinary rooms fill a 7x7
+        /// floor without a repeat.
+        private static readonly string[] s_mockupRooms =
+        {
+            "Forge", "Haulage Spiral", "Stope Workings", "Pump Works", "Mint", "Grave Furrows", "Fungus Terraces", "Bone Archive", "Anatomy Theatre", "Survey Hall",
+            "Armory", "Tribunal", "Checkpoint", "Barbican", "Arena", "Miners Row", "Aqueduct", "Bell Tower", "Sleepers Warren", "Colossus Works"
+        };
+
         private static IEnumerable<Layout> Layouts()
         {
-            return new[]
+            IEnumerable<Layout> rooms = new[]
             {
                 Crypt(), Ossuary(), PillaredHall(), BladeCorridors(), SpikeGallery(), GuardRoom(), Chapel(), SunkenPit(), FourChambers(), PrisonBlock(),
                 FloodedCistern(), Mausoleum(), RitualCircle(), CollapsedHall(), ArcherGalleries(), Labyrinth(), BurialNiches(), Storeroom(), LordsTomb(),
-                WellRest(), Chasm(), Refectory(), AlchemyLab(),
-                CornerWatch(), CornerShrine(), BonePit(), CornerBarracks(), CornerVault()
+                WellRest(), Chasm(), Refectory(), AlchemyLab()
             };
+
+            return rooms.Concat(s_mockupRooms.Select(room => Room(room.Replace(" ", ""), room, 1f, false))).Concat(new[] { CornerWatch(), CornerShrine(), BonePit(), CornerBarracks(), CornerVault() });
         }
 
         private static IEnumerable<Item> Grid(IEnumerable<double> xs, IEnumerable<double> zs, System.Func<double, double, Item> item)
@@ -31,7 +40,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout Crypt()
         {
-            return Room("Crypt", "Crypt", 1.2f, 0, false,
+            return Room("Crypt", "Crypt", 1.2f, false,
                 Column(-5.5, 5.5), Column(5.5, -5.5), Column(5.5, 5.5, 1.2, 1.6), Column(-5.5, -5.5, 1.2, 2.4),
                 Block(7.8, 3.6, 1.1, 5, 1.1, 131), Prop(9.9, 1.6, 1.4, 1.2, 0.6, "Обломки", 20), Prop(6.6, 6.7, 1.2, 1, 0.5, "Обломки", 60),
                 Block(-3.1, -6.5, 1.1, 5, 1.1, 112), Prop(-0.4, -7.6, 1.3, 1.3, 0.6, "Обломки", 35), Prop(-7, -4.2, 1, 1, 0.5, "Обломки", 10),
@@ -43,7 +52,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout Ossuary()
         {
-            return Room("Ossuary", "Ossuary", 1f, 0, false,
+            return Room("Ossuary", "Ossuary", 1f, false,
                 Symmetric(new[] { -13.5, -4, 4, 13.5 }.Select(x => Block(x, H - 1.6, 3.2, 0.5, 3, 90)), Skulls(15.4, 15.4, 1.2),
                     Block(6.5, 0, 0.5, 4.5, 2.2), Column(10.5, 4.5, 1), Skulls(9.5, 9.5, 1.3), Prop(10, -7, 2.2, 0.6, 1.1, "Кости", 30)),
                 Container(Loot.Small, 0, 15.6, 180), Container(Loot.Coffin, 0, -15.4, 0), Skulls(15.6, 0, 1.4), Skulls(-15.6, 0, 1.4),
@@ -54,7 +63,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             double[] rows = { -12.6, -4.2, 4.2, 12.6 };
 
-            return Room("PillaredHall", "Pillared Hall", 1f, 0, false,
+            return Room("PillaredHall", "Pillared Hall", 1f, false,
                 Grid(rows, rows, (x, z) => Column(x, z)),
                 Brazier(0, 0), Container(Loot.Large, -15, 15, 135), Container(Loot.Barrel, 15.2, -15.2), Container(Loot.Crate, 13.8, -15.4, 20), Skulls(15, 15),
                 Monster(Mob.Archer, O, O, 225), Monster(Mob.Sword, -O, -O, 45), Monster(Mob.Warrior, -O, O, 135), Starts(0, -12, 0));
@@ -62,7 +71,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout BladeCorridors()
         {
-            return Room("BladeCorridors", "Blade Corridors", 0.8f, 3, false,
+            return Room("BladeCorridors", "Blade Corridors", 0.8f, false,
                 Symmetric(Block(13.35, 13.35, 6.9, 6.9), Block(0, 13.35, 13.8, 6.9), Block(-3.95, 5.95, 5.9, 1.9), Block(3.95, 5.95, 5.9, 1.9), Trap(Snare.Blade, 0, O, 90)),
                 Trap(Snare.Spike, 0, 0), Container(Loot.Large, 2.5, 2.5, 225), Candle(-2.6, 2.6), Monster(Mob.Sword, -2.4, -2.4, 45),
                 Monster(Mob.Skull, -O, 13, 180), Monster(Mob.Skull, O, -13, 0));
@@ -75,7 +84,7 @@ namespace Game.Scripts.Editor.Dungeon
             const double ps = 1;
             const double ring = (o + H) / 2;
 
-            return Room("SpikeGallery", "Spike Gallery", 0.7f, 5, false,
+            return Room("SpikeGallery", "Spike Gallery", 0.7f, false,
                 Block(0, (o + n) / 2, o * 2, o - n), Block(-(o + ps) / 2, -(o + n) / 2, o - ps, o - n), Block((o + ps) / 2, -(o + n) / 2, o - ps, o - n),
                 Block(-(o + n) / 2, 0, o - n, n * 2), Block((o + n) / 2, 0, o - n, n * 2),
                 new[] { (ring, ring), (-ring, ring), (ring, -ring), (-ring, -ring), (ring, 0), (-ring, 0), (0, ring), (0, -ring), (0, -9.0) }.Select(p => Trap(Snare.Spike, p.Item1, p.Item2)),
@@ -84,7 +93,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout GuardRoom()
         {
-            return Room("GuardRoom", "Guard Room", 1f, 0, false,
+            return Room("GuardRoom", "Guard Room", 1f, false,
                 new[] { (-4.0, 4.0), (4.0, -4.0) }.SelectMany(t => new[]
                 {
                     Prop(t.Item1, t.Item2, 1.8, 0.9, 0.8, "Стол"), Prop(t.Item1, t.Item2 + 1, 1.6, 0.4, 0.45, "Лавка"), Prop(t.Item1, t.Item2 - 1, 1.6, 0.4, 0.45, "Лавка"),
@@ -103,7 +112,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout Chapel()
         {
-            return Room("Chapel", "Chapel", 0.8f, 3, false,
+            return Room("Chapel", "Chapel", 0.8f, false,
                 Platform(0, 13, 12, 7.6, 0.25), Prop(0, 13.5, 3, 1.2, 1.1, "Алтарь"), Candle(-1.2, 13.5, 1.1), Candle(1.2, 13.5, 1.1), Candle(-4.5, 12), Candle(4.5, 12),
                 Grid(new[] { -3.5, 3.5 }, new[] { 4, 1.5, -1, -3.5, -6 }, (x, z) => Prop(x, z, 4.5, 0.6, 0.9, "Скамья")),
                 Grid(new[] { -11.5, 11.5 }, new[] { -12.0, -4, 4, 12 }, (x, z) => Column(x, z)),
@@ -114,7 +123,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout SunkenPit()
         {
-            return Room("SunkenPit", "Sunken Pit", 0.8f, 3, false,
+            return Room("SunkenPit", "Sunken Pit", 0.8f, false,
                 Pit(0, 0, 12, 12, 3), Stairs(0, 3.5, 2.6, 5, 3, 0, -3), Stairs(0, -3.5, 2.6, 5, 3, 180, -3),
                 Symmetric(Prop(-3.75, 6.2, 4.5, 0.4, 1, "Парапет"), Prop(3.75, 6.2, 4.5, 0.4, 1, "Парапет"), Prop(0, 10.5, 3, 0.4, 1, "Парапет")),
                 Grid(s_corners, s_corners, (x, z) => Column(x, z)),
@@ -125,7 +134,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout FourChambers()
         {
-            return Room("FourChambers", "Four Chambers", 1f, 0, false,
+            return Room("FourChambers", "Four Chambers", 1f, false,
                 Symmetric(Segment(5, 5, 5, 10), Segment(5, 12, 5, H), Segment(5, 5, H, 5)),
                 Brazier(0, 0), Torch(0, 0), Torch(1, 0), Torch(2, 0), Torch(3, 0),
                 Container(Loot.Large, 14.5, 14.5, 225), Monster(Mob.Warrior, 11, 9, 225),
@@ -137,7 +146,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout PrisonBlock()
         {
-            return Room("PrisonBlock", "Prison Block", 0.8f, 3, false,
+            return Room("PrisonBlock", "Prison Block", 0.8f, false,
                 Symmetric(Segment(6.7, 10.1, 6.7, H, 0.5), Segment(-6.7, 10.1, -6.7, H, 0.5), Segment(0, 10.1, 0, H, 0.4),
                     Bars(-6.45, 10.1, -4, 10.1), Bars(-2.8, 10.1, 2.8, 10.1), Bars(4, 10.1, 6.45, 10.1),
                     Segment(10.1, 10.1, 10.1, H, 0.5), Bars(10.35, 10.1, 12.9, 10.1), Bars(14.1, 10.1, H, 10.1), TorchAt(6.95, 13.4, 90)),
@@ -150,7 +159,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout FloodedCistern()
         {
-            return Room("FloodedCistern", "Flooded Cistern", 0.6f, 2, false,
+            return Room("FloodedCistern", "Flooded Cistern", 0.6f, false,
                 Water(0, 0, 2 * H, 2 * H), Platform(O, 0, 3, 2 * H, 0.25), Platform(-O, 0, 3, 2 * H, 0.25), Platform(0, O, 2 * H, 3, 0.25), Platform(0, -O, 2 * H, 3, 0.25),
                 Platform(0, 0, 6, 6, 0.25),
                 new[] { (0, 13), (0, -13), (13, 0), (-13, 0), (13, 13), (-13, 13), (13, -13), (-13, -13), (4.4, 4.4), (-4.4, 4.4), (4.4, -4.4), (-4.4, -4.4) }.Select(p => Column(p.Item1, p.Item2)),
@@ -162,7 +171,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout Mausoleum()
         {
-            return Room("Mausoleum", "Mausoleum", 0.6f, 2, false,
+            return Room("Mausoleum", "Mausoleum", 0.6f, false,
                 Segment(-5, 5, 5, 5, 0.8, 4.5), Segment(-5, -5, -5, 5, 0.8, 4.5), Segment(5, -5, 5, 5, 0.8, 4.5), Segment(-5, -5, -1.2, -5, 0.8, 4.5), Segment(1.2, -5, 5, -5, 0.8, 4.5),
                 Container(Loot.Rich, 0, 1.5, 180), Candle(-2.5, 2.5), Candle(2.5, 2.5), Trap(Snare.Spike, 0, -3.5),
                 Grid(s_corners, s_corners, (x, z) => Column(x, z, 1.2, 3)),
@@ -173,7 +182,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout RitualCircle()
         {
-            return Room("RitualCircle", "Ritual Circle", 0.6f, 2, false,
+            return Room("RitualCircle", "Ritual Circle", 0.6f, false,
                 Rune(0, 0, 6.5), Prop(0, 0, 2, 2, 0.8, "Жертвенник"),
                 Enumerable.Range(0, 8).Select(i => Candle(5.5 * System.Math.Sin(i * 45 * System.Math.PI / 180), 5.5 * System.Math.Cos(i * 45 * System.Math.PI / 180))),
                 Grid(s_corners, s_corners, (x, z) => Column(x, z, 1.6)),
@@ -183,7 +192,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout CollapsedHall()
         {
-            return Room("CollapsedHall", "Collapsed Hall", 1f, 0, false,
+            return Room("CollapsedHall", "Collapsed Hall", 1f, false,
                 Block(-3, 11, 6, 4, 2.6, 25), Prop(-12, 3, 3, 3, 1.2, "Обломки", 10), Prop(3, 12.5, 3, 2, 1, "Обломки", 40), Block(3, -10, 5, 3, 3, -20),
                 Prop(12.5, -2, 2.5, 2.5, 1, "Обломки", 15), Block(1.5, 3.5, 1.4, 8, 1.4, 65), Block(-12.5, -12.8, 4, 4.5, 4, 15), Prop(12.5, 12.5, 3, 3, 1.2, "Обломки", 30),
                 Block(-2, -3, 4, 2.5, 2.2, -8),
@@ -194,7 +203,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout ArcherGalleries()
         {
-            return Room("ArcherGalleries", "Archer Galleries", 0.8f, 3, false,
+            return Room("ArcherGalleries", "Archer Galleries", 0.8f, false,
                 Symmetric(Platform(0, 14.3, 13.4, 5, 2.5), Stairs(0, 8.8, 2.4, 6, 2.5, 0), Prop(-3.95, 11.95, 5.5, 0.4, 1, "Парапет"), Prop(3.95, 11.95, 5.5, 0.4, 1, "Парапет"), Torch(0, -4)),
                 Prop(12.6, 12.6, 3, 0.8, 1.2, "Укрытие", 45), Prop(-12.6, 12.6, 3, 0.8, 1.2, "Укрытие", 135), Prop(-12.6, -12.6, 3, 0.8, 1.2, "Укрытие", 45),
                 Container(Loot.Large, -15.5, -4, 90), Container(Loot.Small, 4, 15.8, 180), Container(Loot.Barrel, 15.5, 15.5),
@@ -293,7 +302,7 @@ namespace Game.Scripts.Editor.Dungeon
             At(4, (x, z) => Trap(Snare.Spike, x, z));
             At(5, (x, z) => Container(Loot.Urn, x, z));
 
-            return Room("Labyrinth", "Labyrinth", 1f, 0, false, items,
+            return Room("Labyrinth", "Labyrinth", 1f, false, items,
                 Brazier(Middle(3), Middle(3)), Torch(0, 0), Torch(2, 0), Monster(Mob.Skull, Middle(0), Middle(5)), Monster(Mob.Skull, Middle(5), Middle(0)),
                 Monster(Mob.Sword, Middle(5), Middle(5), 225), Monster(Mob.Sword, Middle(0), Middle(0), 45), Starts(Middle(2), Middle(0), 0));
         }
@@ -318,7 +327,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout BurialNiches()
         {
-            return Room("BurialNiches", "Burial Niches", 1f, 0, false,
+            return Room("BurialNiches", "Burial Niches", 1f, false,
                 new[] { -12.0, -5, 5, 12 }.SelectMany(x => new[] { Block(x, 0, 1.6, 13.2), Block(x, 12.35, 1.6, 4.3), Block(x, -12.35, 1.6, 4.3) }),
                 Container(Loot.Coffin, 6.6, 0, 0), Container(Loot.Coffin, -10.4, 2, 0), Container(Loot.Coffin, 15.9, -3, 0), Container(Loot.Coffin, -15.9, 3, 0),
                 Container(Loot.Urn, -3.4, 12.5), Container(Loot.Urn, 3.4, -12.5), Container(Loot.Urn, 14.5, 12.5),
@@ -329,7 +338,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout Storeroom()
         {
-            return Room("Storeroom", "Storeroom", 1f, 0, false,
+            return Room("Storeroom", "Storeroom", 1f, false,
                 Crates(-3, 3, 4, 3), Crates(3.5, -2.5, 3, 4), Crates(-3.5, 13.5, 4, 3), Prop(3.5, 14, 3, 2.5, 2.2, "Бочки"), Crates(13.5, -3, 3, 5), Crates(-13.5, 3, 3, 5),
                 Crates(2, -13.5, 5, 3), Crates(13.5, 13.5, 3, 3, 1.6), Crates(-12, -12, 2.4, 2.4),
                 Container(Loot.Barrel, 11.2, 15.6), Container(Loot.Crate, -15.5, 15.5), Container(Loot.Barrel, 15.5, -15.5), Container(Loot.Crate, -3, -12.5),
@@ -339,7 +348,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout LordsTomb()
         {
-            return Room("LordsTomb", "Lord's Tomb", 0.4f, 1, false,
+            return Room("LordsTomb", "Lord's Tomb", 0.4f, false,
                 Platform(0, 1, 12, 10, 1), Stairs(0, -5, 4, 2, 1, 0), Container(Loot.Rich, 0, 3, 180), Brazier(-4.5, 5), Brazier(4.5, 5),
                 Column(-11.5, 2.5), Column(11.5, 2.5), Column(-11.5, -2.5), Column(11.5, -2.5),
                 Container(Loot.Coffin, 15.4, 0, 0), Container(Loot.Coffin, -15.4, 0, 0), Torch(1, 0), Torch(3, 0), Torch(0, 0),
@@ -348,7 +357,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout WellRest()
         {
-            return Room("WellRest", "Well Rest", 0.6f, 2, false,
+            return Room("WellRest", "Well Rest", 0.6f, false,
                 Platform(0, 0, 6, 6, 0.25),
                 Platform(13.6, 13.6, 6.4, 6.4, 1), Stairs(12.6, 9.4, 2.4, 2, 1, 0), Prop(10.6, 13.6, 0.4, 6.4, 1, "Парапет"), Prop(15.3, 10.6, 3, 0.4, 1, "Парапет"),
                 Container(Loot.Small, 15.2, 15.2, 225), Candle(12, 15.6),
@@ -363,7 +372,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// Flying skulls walk like everyone else here, so the two the page hangs over the abyss wait on its ledges.
         private static Layout Chasm()
         {
-            return Room("Chasm", "Chasm", 0.5f, 2, false,
+            return Room("Chasm", "Chasm", 0.5f, false,
                 Symmetric(Pit(12.6, 12.6, 5.4, 5.4, 12), Pit(0, 12.6, 13.8, 5.4, 12), Pit(4.95, 3.95, 3.9, 5.9, 12), Pit(2, 4.95, 2, 3.9, 12)),
                 Container(Loot.Rich, 1.5, 1.5, 225), Brazier(-1.5, -1.5), Monster(Mob.Warrior, -1.5, 1.5, 135),
                 Monster(Mob.Skull, 12.6, 16, 180), Monster(Mob.Skull, -12.6, -16, 0), Monster(Mob.Archer, 16, 0, 270), Monster(Mob.Crossbow, -16, 0, 90),
@@ -372,7 +381,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout Refectory()
         {
-            return Room("Refectory", "Refectory", 0.8f, 3, false,
+            return Room("Refectory", "Refectory", 0.8f, false,
                 new[] { -3.0, 3 }.SelectMany(x => new[] { Prop(x, 0, 1.2, 11, 0.8, "Стол"), Prop(x - 1.1, 0, 0.4, 11, 0.45, "Лавка"), Prop(x + 1.1, 0, 0.4, 11, 0.45, "Лавка") }),
                 Prop(0, 15.9, 4.5, 1.6, 2.8, "Очаг"), Fire(0, 14.6),
                 Prop(13.4, -15.8, 5, 1.2, 0.9, "Разделочный стол"), Container(Loot.Barrel, 15.8, -12.5), Container(Loot.Barrel, 15.8, -11.6), Container(Loot.Crate, 12, -12.5),
@@ -387,7 +396,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout AlchemyLab()
         {
-            return Room("AlchemyLab", "Alchemy Lab", 1f, 0, false,
+            return Room("AlchemyLab", "Alchemy Lab", 1f, false,
                 Platform(0, 0, 6, 6, 0.25), Prop(0, 0, 1.6, 1.6, 1, "Котёл", 0, true), Glow(0, 0, Hex("#5cff7a"), 8),
                 Platform(13.6, 13.6, 6.4, 6.4, 2.5), Stairs(7.4, 12.6, 2.4, 6, 2.5, 90), Prop(13.6, 10.6, 6.4, 0.4, 1, "Парапет"), Prop(10.6, 15.3, 0.4, 3, 1, "Парапет"),
                 Platform(-13.6, -13.6, 6.4, 6.4, 1), Stairs(-12.6, -9.4, 2.4, 2, 1, 180), Prop(-10.6, -13.6, 0.4, 6.4, 1, "Парапет"),
@@ -401,7 +410,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout CornerWatch()
         {
-            return Room("CornerWatch", "Corner Watch", 1f, 1, true,
+            return Room("CornerWatch", "Corner Watch", 1f, true,
                 Platform(-11, -11, 11.6, 11.6, 2.5), Stairs(-11, -2.2, 2.4, 6, 2.5, 180), Stairs(-2.2, -11, 2.4, 6, 2.5, 270),
                 Prop(-14.5, -5.4, 4.6, 0.4, 1, "Парапет"), Prop(-7.5, -5.4, 4.6, 0.4, 1, "Парапет"), Prop(-5.4, -14.5, 0.4, 4.6, 1, "Парапет"), Prop(-5.4, -7.5, 0.4, 4.6, 1, "Парапет"),
                 Container(Loot.Large, -15.5, -15.5, 45), Brazier(-12, -12), Prop(4, 4, 3, 0.8, 1.2, "Укрытие", 45),
@@ -411,7 +420,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout CornerShrine()
         {
-            return Room("CornerShrine", "Corner Shrine", 1f, 1, true,
+            return Room("CornerShrine", "Corner Shrine", 1f, true,
                 Platform(-12.5, -12.5, 8.6, 8.6, 0.25), Prop(-13, -13, 2.4, 1.2, 1.1, "Алтарь", 45), Candle(-12, -14, 1.1), Candle(-14, -12, 1.1), Container(Loot.Rich, -15.4, -15.4, 45),
                 Column(-6, -14, 1.2, 3), Column(-14, -6, 1.2, 3),
                 new[] { -5.5, -3, -0.5 }.Select(d => Prop(d, d, 6, 0.6, 0.9, "Скамья", 45)),
@@ -421,7 +430,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout BonePit()
         {
-            return Room("BonePit", "Bone Pit", 1f, 1, true,
+            return Room("BonePit", "Bone Pit", 1f, true,
                 Pit(-9, -9, 12, 12, 4), Stairs(-9, -7, 2.6, 8, 4, 0, -4),
                 Skulls(-13, -6, 1.5), Skulls(-5, -13, 1.5), Skulls(-13, -13, 1.2), Container(Loot.Large, -12, -13.5, 45), Container(Loot.Coffin, -5.5, -9, 0), Candle(-11, -11),
                 Monster(Mob.Skull, -12, -9, 90), Monster(Mob.Skull, -9, -12, 0), Monster(Mob.Skull, -6, -5, 225),
@@ -430,7 +439,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout CornerBarracks()
         {
-            return Room("CornerBarracks", "Corner Barracks", 1f, 1, true,
+            return Room("CornerBarracks", "Corner Barracks", 1f, true,
                 new[] { -7.0, -4, -1, 2, 5, 8 }.Select(x => Prop(x, -15.7, 1, 2.1, 0.6, "Койка")),
                 new[] { -7.0, -4, -1, 2, 5, 8, 11 }.Select(z => Prop(-15.7, z, 2.1, 1, 0.6, "Койка")),
                 Prop(2, 2, 4, 1.2, 0.8, "Стол"), Prop(2, 3.1, 4, 0.4, 0.45, "Лавка"), Prop(2, 0.9, 4, 0.4, 0.45, "Лавка"), Candle(2, 2, 0.8),
@@ -447,7 +456,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Layout CornerVault()
         {
-            return Room("CornerVault", "Corner Vault", 1f, 1, true,
+            return Room("CornerVault", "Corner Vault", 1f, true,
                 Segment(-7, -H, -7, -7, 0.8), Segment(-H, -7, -12, -7, 0.8), Segment(-10, -7, -7, -7, 0.8),
                 Container(Loot.Rich, -14, -14, 45), Container(Loot.Large, -10, -14.5, 0), Trap(Snare.Spike, -11, -8.6), Candle(-14.5, -11),
                 Column(-3, 3), Column(3, -3), TorchAt(-6.6, -12, 90), Torch(0, 0), Torch(1, 0),

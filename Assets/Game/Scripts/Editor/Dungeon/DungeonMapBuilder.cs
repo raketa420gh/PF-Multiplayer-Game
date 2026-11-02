@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Linq;
 using Game.Scripts.Dungeon;
 using Game.Scripts.Editor.Battle;
 using Unity.AI.Navigation;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -129,23 +131,37 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_doorOffset", CatacombRoomBuilder.DoorOffset);
             BattleEditorUtility.Set(so, "_cellPixels", CatacombRoomBuilder.MapPixels);
             BattleEditorUtility.Set(so, "_agentRadius", AgentRadius);
-            SerializedProperty kinds = so.FindProperty("_kinds");
-            kinds.arraySize = rooms.Kinds.Length;
-
-            for (int i = 0; i < rooms.Kinds.Length; i++)
-            {
-                SerializedProperty kind = kinds.GetArrayElementAtIndex(i);
-                kind.FindPropertyRelative("Prefab").objectReferenceValue = rooms.Kinds[i].Prefab;
-                kind.FindPropertyRelative("Weight").floatValue = rooms.Kinds[i].Weight;
-                kind.FindPropertyRelative("Limit").intValue = rooms.Kinds[i].Limit;
-            }
-
+            SetKinds(so, rooms.Kinds);
             so.ApplyModifiedPropertiesWithoutUndo();
             Texture2D sample = generator.Paint(generator.Lay(1));
             sampleMap = DungeonMinimapBuilder.Save(sample, "Floor2");
             Object.DestroyImmediate(sample);
 
             return generator;
+        }
+
+        /// The rooms of the generator in DungeonScene, without rebuilding the scene.
+        public static void SetRoomPool(System.Func<CatacombRoomBuilder.Kind[]> rooms)
+        {
+            UnityEngine.SceneManagement.Scene scene = EditorSceneManager.OpenScene(DungeonSceneBuilder.ScenePath);
+            CatacombGenerator generator = scene.GetRootGameObjects().Select(root => root.GetComponentInChildren<CatacombGenerator>(true)).First(found => found != null);
+            SerializedObject so = new SerializedObject(generator);
+            SetKinds(so, rooms());
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        private static void SetKinds(SerializedObject so, CatacombRoomBuilder.Kind[] rooms)
+        {
+            SerializedProperty kinds = so.FindProperty("_kinds");
+            kinds.arraySize = rooms.Length;
+
+            for (int i = 0; i < rooms.Length; i++)
+            {
+                SerializedProperty kind = kinds.GetArrayElementAtIndex(i);
+                kind.FindPropertyRelative("Prefab").objectReferenceValue = rooms[i].Prefab;
+                kind.FindPropertyRelative("Weight").floatValue = rooms[i].Weight;
+            }
         }
 
         private static void SetMonsters(SerializedObject so, string layout, DungeonDirector.MonsterPlacement[] monsters)

@@ -20,8 +20,6 @@ namespace Game.Scripts.Dungeon
         {
             public CatacombRoomComponent Prefab;
             public float Weight = 1f;
-            [Tooltip("At most this many per layout; 0 = any number")]
-            public int Limit;
         }
 
         /// Room prefab (null = the key room or rock), quarter turns and open doorways of every cell, row by row from the south-west corner.
@@ -400,19 +398,24 @@ namespace Game.Scripts.Dungeon
             return x == 0 ? (z == 0 ? 0 : 1) : (z == 0 ? 3 : 2);
         }
 
+        /// No room twice on a floor; a pool smaller than the floor starts a new round only once every room of it has been laid.
         private int PickKind(System.Random random, int[] used, bool isCorner)
         {
+            int round = Enumerable.Range(0, _kinds.Length).Where(i => Fits(i, isCorner)).Min(i => used[i]);
             float total = 0f;
 
+            if (round > 0)
+                Debug.LogError($"Catacombs: too few {(isCorner ? "corner" : "ordinary")} rooms for the floor, repeating them");
+
             for (int i = 0; i < _kinds.Length; i++)
-                total += IsFree(i, used, isCorner) ? _kinds[i].Weight : 0f;
+                total += IsFree(i, used, isCorner, round) ? _kinds[i].Weight : 0f;
 
             float roll = (float)random.NextDouble() * total;
             int kind = 0;
 
             for (int i = 0; i < _kinds.Length; i++)
             {
-                if (!IsFree(i, used, isCorner))
+                if (!IsFree(i, used, isCorner, round))
                     continue;
 
                 kind = i;
@@ -427,10 +430,15 @@ namespace Game.Scripts.Dungeon
             return kind;
         }
 
-        private bool IsFree(int kind, int[] used, bool isCorner)
+        private bool IsFree(int kind, int[] used, bool isCorner, int round)
+        {
+            return Fits(kind, isCorner) && used[kind] == round;
+        }
+
+        private bool Fits(int kind, bool isCorner)
         {
             // Without rooms of the right shape any room will do.
-            return (_kinds[kind].Prefab.IsCorner == isCorner || !Array.Exists(_kinds, k => k.Prefab.IsCorner == isCorner)) && (_kinds[kind].Limit <= 0 || used[kind] < _kinds[kind].Limit);
+            return _kinds[kind].Prefab.IsCorner == isCorner || !Array.Exists(_kinds, k => k.Prefab.IsCorner == isCorner);
         }
 
         private int Neighbour(int cell, Vector2Int step)

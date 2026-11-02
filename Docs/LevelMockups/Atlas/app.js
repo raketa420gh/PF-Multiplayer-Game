@@ -278,7 +278,7 @@ function openRoom(name) {
   ['roomBox', 'objBox', 'labelsBox'].forEach(id => { $(id).hidden = false; });
   const e = ENTRIES.find(r => r.name === name), n = noteOf(name), c = counts(name);
   $('roomTitle').textContent = title(name);
-  $('roomSub').textContent = `${e.pool ? 'в игре' : 'префаб не в пуле'}${e.corner ? ' · угловая' : ''}${name === M.key ? ' · ключевая' : ` · вес ${e.weight}${e.limit ? `, до ${e.limit} шт.` : ''}`} · ☠ ${c.monster} ▣ ${c.chest} ▲ ${c.trap}`;
+  $('roomSub').textContent = `${e.pool ? 'в игре' : 'префаб не в пуле'}${e.corner ? ' · угловая' : ''}${name === M.key ? ' · ключевая' : ` · вес ${e.weight}`} · ☠ ${c.monster} ▣ ${c.chest} ▲ ${c.trap}`;
   $('verdict').innerHTML = Object.entries(VERDICTS).map(([k, l]) => `<button data-s="${k}" aria-pressed="${n.status === k}">${l}</button>`).join('');
   document.querySelectorAll('#verdict button').forEach(b => { b.onclick = () => { n.status = n.status === b.dataset.s ? '' : b.dataset.s; saveNotes(); openVerdict(n); }; });
   $('roomNote').value = n.note;
@@ -302,7 +302,7 @@ function select(o) {
 function renderInfo() {
   const o = state.selected, info = $('info');
   if (state.screen !== 'room') return;
-  if (!o) { info.innerHTML = `<h2>Описание</h2><div class="sub" style="margin:0">${(ATLAS.titles[state.room] || {}).desc || 'Кликни объект, чтобы увидеть размеры и написать правку.'}</div>`; return; }
+  if (!o) { const story = (ATLAS.titles[state.room] || {}).story; info.innerHTML = `${story ? `<h2>История</h2><div class="sub" style="margin:0 0 12px">${story}</div>` : ''}<h2>Описание</h2><div class="sub" style="margin:0">${(ATLAS.titles[state.room] || {}).desc || 'Кликни объект, чтобы увидеть размеры и написать правку.'}</div>`; return; }
   const n = noteOf(state.room), s = o.s;
   info.innerHTML = `<h2>${CATS[o.cat].label} · ${o.id}</h2><div class="big">${OBJECT_NAMES[o.name] || o.name}</div><div class="sub"></div><dl><dt>Позиция</dt><dd>${o.p.map(fmt).join(', ')}</dd>${s ? `<dt>Размер</dt><dd>${s.map(fmt).join(' × ')}</dd><dt>Верх</dt><dd>${fmt(o.p[1] + s[1])} м</dd>` : `<dt>Цвет</dt><dd>${o.color}</dd><dt>Сила</dt><dd>${o.i}</dd><dt>Радиус</dt><dd>${o.r} м</dd>`}${o.ry ? `<dt>Поворот</dt><dd>${fmt(o.ry)}°</dd>` : ''}</dl><textarea id="objNote" placeholder="Что поменять в этом объекте"></textarea>`;
   const t = $('objNote'); t.value = n.objs[o.id] || '';
@@ -349,7 +349,7 @@ function placeLabels() {
 
 // --- Экран подземелья ---
 function kindsOf() {
-  return ENTRIES.filter(r => r.name !== M.key && state.pool.has(r.name)).map(r => ({ name: r.name, weight: r.pool ? 1 : r.weight, limit: r.pool ? 0 : r.limit, corner: r.corner }));
+  return ENTRIES.filter(r => r.name !== M.key && state.pool.has(r.name)).map(r => ({ name: r.name, weight: r.weight, corner: r.corner }));
 }
 
 function generate() {
@@ -390,7 +390,7 @@ function renderPool() {
   $('pool').innerHTML = '';
   ENTRIES.filter(r => r.name !== M.key).forEach(r => {
     const l = document.createElement('label');
-    l.innerHTML = `<input type="checkbox" ${state.pool.has(r.name) ? 'checked' : ''}><span>${title(r.name)}</span><span class="n">${r.corner ? 'угл' : r.limit ? `≤${r.limit}` : ''}</span>`;
+    l.innerHTML = `<input type="checkbox" ${state.pool.has(r.name) ? 'checked' : ''}><span>${title(r.name)}</span><span class="n">${r.corner ? 'угл' : ''}</span>`;
     l.querySelector('input').onchange = e => { if (e.target.checked) state.pool.add(r.name); else state.pool.delete(r.name); poolChanged(); };
     $('pool').appendChild(l);
   });

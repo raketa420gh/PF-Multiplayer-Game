@@ -31,21 +31,31 @@ namespace Game.Scripts.Editor.Dungeon
         {
             List<Layout> layouts = Layouts().ToList();
             PrepareKit(layouts);
-            int built = 0;
 
-            foreach (Layout layout in layouts)
-            {
-                if (IsMockup(layout.Name))
-                {
-                    ApplyMockup(layout);
-                    built++;
-                }
-            }
+            foreach (Layout layout in layouts.Where(layout => IsMockup(layout.Name)))
+                ApplyMockup(layout);
 
+            FinishRooms(layouts);
+        }
+
+        /// Only the rooms without a prefab are built: the others keep their assets, and the scene gets the whole pool.
+        [MenuItem("Tools/Game/Dungeon/Catacombs/Build Missing Rooms")]
+        public static void BuildMissingRooms()
+        {
+            List<Layout> layouts = Layouts().ToList();
+            PrepareKit(layouts);
+            layouts.ForEach(layout => Realize(layout));
+            FinishRooms(layouts);
+        }
+
+        /// The pool is read last: the separation saves the prefabs anew and opening the scene unloads assets, both leave older references null.
+        private static void FinishRooms(List<Layout> layouts)
+        {
             AssetDatabase.SaveAssets();
             CatacombRoomSeparator.SeparateAll();
             Fusion.Editor.NetworkProjectConfigUtilities.RebuildPrefabTable();
-            Debug.Log($"Mockups applied: {built} rooms");
+            DungeonMapBuilder.SetRoomPool(() => layouts.Select(Realize).ToArray());
+            Debug.Log($"Mockups applied: {layouts.Count} rooms");
         }
 
         private static void PrepareKit(List<Layout> layouts)
@@ -106,7 +116,7 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
             room.Root.position = Vector3.zero;
 
-            return new Kind { Prefab = Save(room.Root.gameObject, layout.Name).GetComponent<CatacombRoomComponent>(), Weight = layout.Weight, Limit = layout.Limit };
+            return new Kind { Prefab = Save(room.Root.gameObject, layout.Name).GetComponent<CatacombRoomComponent>(), Weight = layout.Weight };
         }
 
         private static void PlaceMockupItem(Site room, HallItem item)
@@ -210,11 +220,11 @@ namespace Game.Scripts.Editor.Dungeon
             Kit(kit, root, point, item.name == "Torch" ? TorchYaw(item) : 0f);
         }
 
-        /// A wall under an upper storey ends level with its floor, and a wall's top cuts the NavMesh: a door up there stands on a
+        /// A wall under any storey but the ground one ends level with its floor, and a wall's top cuts the NavMesh: a door there stands on a
         /// low threshold across the wall.
         private static Vector3 UpperDoorway(Transform root, HallItem item)
         {
-            if (item.Position.y <= 0f)
+            if (Mathf.Approximately(item.Position.y, 0f))
                 return item.Position;
 
             KitBlock("Floor", root, item.Position, new Vector3(item.Size.x, ThresholdHeight, ThresholdDepth), item.ry);

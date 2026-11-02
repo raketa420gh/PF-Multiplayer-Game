@@ -3,6 +3,6 @@ const fs = require('fs'), path = require('path'), { validate } = require('./vali
 for (const name of process.argv.slice(2)) {
   const ATLAS = { room: (n, a) => { ATLAS.items = a; } };
   new Function('ATLAS', fs.readFileSync(path.join(__dirname, '..', 'data', `${name}.js`), 'utf8'))(ATLAS);
-  const { errors, stats } = validate({ name, items: ATLAS.items, corner: false });
-  console.log(name, JSON.stringify(stats)); errors.forEach(e => console.log('  ✗', e));
+  const { errors, warnings, stats } = validate({ name, items: ATLAS.items, corner: require(path.join(__dirname, 'rooms', `${name}.js`)).options?.corner });
+  console.log(name, JSON.stringify(stats)); errors.forEach(e => console.log('  ✗', e)); warnings.forEach(e => console.log('  !', e));
 }

@@ -9,6 +9,11 @@ const footprint = o => {
   const w = o.s[0] * c + o.s[2] * s, d = o.s[0] * s + o.s[2] * c;
   return [o.p[0] - w / 2, o.p[2] - d / 2, o.p[0] + w / 2, o.p[2] + d / 2];
 };
+// Точка внутри повёрнутого прямоугольника: описанный прямоугольник закрывал бы диагональным граням лишнее.
+const inside = (o, x, z) => {
+  const yaw = (o.ry || 0) * Math.PI / 180, dx = x - o.p[0], dz = z - o.p[2];
+  return Math.abs(dx * Math.cos(yaw) - dz * Math.sin(yaw)) <= o.s[0] / 2 && Math.abs(dx * Math.sin(yaw) + dz * Math.cos(yaw)) <= o.s[2] / 2;
+};
 const SOLID = new Set(['wall', 'column', 'floor', 'platform', 'pit', 'ceiling', 'upper', 'bars']);
 
 function buildColumns(items, isOpen) {
@@ -17,7 +22,7 @@ function buildColumns(items, isOpen) {
     const [a, b, c, d] = footprint(o);
     for (let i = Math.max(0, toI(a + 1e-3)); i <= Math.min(N - 1, toI(c - 1e-3)); i++)
       for (let j = Math.max(0, toI(b + 1e-3)); j <= Math.min(N - 1, toI(d - 1e-3)); j++)
-        if (toV(i) >= a && toV(i) <= c && toV(j) >= b && toV(j) <= d) fn(i, j);
+        if (toV(i) >= a && toV(i) <= c && toV(j) >= b && toV(j) <= d && ((o.ry || 0) % 90 === 0 || inside(o, toV(i), toV(j)))) fn(i, j);
   };
   for (const o of items) {
     if (!o.s) continue;
@@ -143,6 +148,18 @@ function validate(room) {
     for (let t = 0; t <= steps && clear; t++) clear = !blocked(x1 + (x2 - x1) * t / steps, z1 + (z2 - z1) * t / steps);
     sight += clear ? 1 : 0;
   }
+  // Оба конца марша: сразу за торцом должна быть доступная поверхность на его высоте, иначе марш обрывается, даже если обе части достижимы иначе.
+  const landed = (o, sign, y) => {
+    const yaw = (o.ry || 0) * Math.PI / 180, dx = Math.sin(yaw), dz = Math.cos(yaw), far = o.s[2] / 2, f = footprint(o);
+    for (let u = -o.s[0] / 2 - 1; u <= o.s[0] / 2 + 1 + 1e-6; u += 0.2) for (let d = -0.3; d <= 1; d += 0.2) {
+      const x = o.p[0] + dx * sign * (far + d) + dz * u, z = o.p[2] + dz * sign * (far + d) - dx * u, c = idx(toI(x), toI(z));
+      if (x >= f[0] && x <= f[2] && z >= f[1] && z <= f[3]) continue;
+      if ((open.get(c) || []).some(v => Math.abs(v - y) <= 0.31 && seenOpen.has(`${c}|${Math.round(v * 100)}`))) return true;
+    }
+    return false;
+  };
+  const dangling = items.filter(o => o.cat === 'stairs').flatMap(o => [[-1, o.p[1], 'низ'], [1, o.p[1] + o.s[1], 'верх']].filter(([sign, y]) => !landed(o, sign, y)).map(([, y, end]) => `${o.id} (${o.p[0]}, ${o.p[2]}) ry${o.ry || 0} ${end} ${y}`));
+  dangling.forEach(d => warnings.push(`марш обрывается: ${d}`));
   const floors = [...new Set([...seenOpen].map(k => Math.round(+k.split('|')[1] / 50) / 2))].length;
   const levels = [...closedY].filter(y => Number.isInteger(y * 4)).sort((a, b) => a - b);
   const cat = c => items.filter(o => o.cat === c).length;

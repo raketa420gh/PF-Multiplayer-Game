@@ -30,8 +30,8 @@ namespace Game.Scripts.Editor.Dungeon
             string folder = Path.Combine(Application.dataPath, "..", MockupFolder);
             Directory.CreateDirectory(folder);
             List<Layout> layouts = Layouts().ToList();
-            List<string> entries = layouts.Select(layout => Entry(layout.Name, layout.Title, layout.Weight, layout.Limit, layout.IsCorner, true)).ToList();
-            entries.Add(Entry(HallName, "Great Hall", 0f, 0, false, true));
+            List<string> entries = layouts.Select(layout => Entry(layout.Name, layout.Title, layout.Weight, layout.IsCorner, true)).ToList();
+            entries.Add(Entry(HallName, "Great Hall", 0f, false, true));
             int written = 0;
 
             foreach (string name in layouts.Select(layout => layout.Name).Append(HallName))
@@ -45,9 +45,9 @@ namespace Game.Scripts.Editor.Dungeon
             Debug.Log($"Mockups exported: {written} of {entries.Count} rooms to {MockupFolder}");
         }
 
-        private static string Entry(string name, string title, float weight, int limit, bool isCorner, bool isInPool)
+        private static string Entry(string name, string title, float weight, bool isCorner, bool isInPool)
         {
-            return $"{{\"name\":\"{name}\",\"title\":\"{title.Replace("\"", "'")}\",\"weight\":{Number(weight)},\"limit\":{limit},\"corner\":{Lower(isCorner)},\"pool\":{Lower(isInPool)}}}";
+            return $"{{\"name\":\"{name}\",\"title\":\"{title.Replace("\"", "'")}\",\"weight\":{Number(weight)},\"corner\":{Lower(isCorner)},\"pool\":{Lower(isInPool)}}}";
         }
 
         private static GameObject Prefab(string name)

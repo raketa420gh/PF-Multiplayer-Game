@@ -40,7 +40,7 @@
   const BOTH = 3;
   const float = Math.fround;
 
-  // kinds: [{ name, weight, limit, corner }] в порядке _kinds сцены.
+  // kinds: [{ name, weight, corner }] в порядке _kinds сцены.
   function lay(seed, { grid = 7, loops = 0.25, isLong = true, kinds }) {
     const random = new DotNetRandom(seed), count = grid * grid, key = Math.floor(count / 2);
     const neighbour = (cell, step) => {
@@ -81,13 +81,16 @@
 
     const used = new Array(kinds.length).fill(0);
     const hasShape = isCorner => kinds.some(k => k.corner === isCorner);
-    const isFree = (i, isCorner) => (kinds[i].corner === isCorner || !hasShape(isCorner)) && (kinds[i].limit <= 0 || used[i] < kinds[i].limit);
+    const fits = (i, isCorner) => kinds[i].corner === isCorner || !hasShape(isCorner);
+    const roundOf = isCorner => Math.min(...kinds.map((k, i) => fits(i, isCorner) ? used[i] : Infinity));
+    const isFree = (i, isCorner, round) => fits(i, isCorner) && used[i] === round;
     const pick = isCorner => {
+      const round = roundOf(isCorner);
       let total = 0;
-      kinds.forEach((k, i) => { if (isFree(i, isCorner)) total = float(total + float(k.weight)); });
+      kinds.forEach((k, i) => { if (isFree(i, isCorner, round)) total = float(total + float(k.weight)); });
       let roll = float(float(random.nextDouble()) * total), kind = 0;
       for (let i = 0; i < kinds.length; i++) {
-        if (!isFree(i, isCorner)) continue;
+        if (!isFree(i, isCorner, round)) continue;
         kind = i;
         roll = float(roll - float(kinds[i].weight));
         if (roll <= 0) break;

@@ -68,7 +68,6 @@ namespace Game.Scripts.Editor.Dungeon
         {
             public CatacombRoomComponent Prefab;
             public float Weight;
-            public int Limit;
         }
 
         public sealed class Result
@@ -166,7 +165,6 @@ namespace Game.Scripts.Editor.Dungeon
             public string Name;
             public string Title;
             public float Weight;
-            public int Limit;
             public bool IsCorner;
             public List<Item> Items;
         }
@@ -199,7 +197,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         // ---------- the page's helpers ----------
 
-        private static Layout Room(string name, string title, float weight, int limit, bool isCorner, params object[] parts)
+        private static Layout Room(string name, string title, float weight, bool isCorner, params object[] parts)
         {
             List<Item> items = new();
 
@@ -211,13 +209,13 @@ namespace Game.Scripts.Editor.Dungeon
                     items.AddRange(((IEnumerable)part).Cast<Item>());
             }
 
-            return new Layout { Name = name, Title = title, Weight = weight, Limit = limit, IsCorner = isCorner, Items = items };
+            return new Layout { Name = name, Title = title, Weight = weight, IsCorner = isCorner, Items = items };
         }
 
         /// The items and their turns by one, two and three quarters.
         private static IEnumerable<Item> Symmetric(params object[] parts)
         {
-            List<Item> items = Room(null, null, 0f, 0, false, parts).Items;
+            List<Item> items = Room(null, null, 0f, false, parts).Items;
 
             return Enumerable.Range(0, 4).SelectMany(quarters => items.Select(item => item.Turn(quarters))).ToList();
         }
@@ -380,7 +378,7 @@ namespace Game.Scripts.Editor.Dungeon
             CatacombRoomComponent existing = AssetDatabase.LoadAssetAtPath<CatacombRoomComponent>($"{Folder}/{layout.Name}.prefab");
 
             if (existing != null && !IsOverwriting)
-                return new Kind { Prefab = existing, Weight = layout.Weight, Limit = layout.Limit };
+                return new Kind { Prefab = existing, Weight = layout.Weight };
 
             if (IsMockup(layout.Name))
                 return ApplyMockup(layout);
@@ -402,7 +400,7 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
             room.Root.position = Vector3.zero;
 
-            return new Kind { Prefab = Save(room.Root.gameObject, layout.Name).GetComponent<CatacombRoomComponent>(), Weight = layout.Weight, Limit = layout.Limit };
+            return new Kind { Prefab = Save(room.Root.gameObject, layout.Name).GetComponent<CatacombRoomComponent>(), Weight = layout.Weight };
         }
 
         private static void Place(Site room, Item item, float y)
