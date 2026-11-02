@@ -186,7 +186,7 @@ namespace Game.Scripts.Editor.Dungeon
             List<Layout> layouts = Layouts().ToList();
             BuildKit(layouts);
 
-            return new Result { Kinds = layouts.Where(layout => s_pool.Contains(layout.Name)).Select(Realize).ToArray(), Sides = sides, Post = post };
+            return new Result { Kinds = layouts.Select(Realize).ToArray(), Sides = sides, Post = post };
         }
 
         /// Saves a piece only when its prefab is missing or the layouts overwrite edits.
@@ -381,6 +381,9 @@ namespace Game.Scripts.Editor.Dungeon
 
             if (existing != null && !IsOverwriting)
                 return new Kind { Prefab = existing, Weight = layout.Weight, Limit = layout.Limit };
+
+            if (IsMockup(layout.Name))
+                return ApplyMockup(layout);
 
             Partition(layout);
             Site room = new Site { Layout = layout, Root = new GameObject(layout.Name).transform };

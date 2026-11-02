@@ -97,6 +97,7 @@ namespace Game.Scripts.Editor.Dungeon
             const float catacombLeaf = CatacombRoomBuilder.DoorWidth - 0.04f;
             BuildDoor("CatacombDoor", DungeonPropBuilder.DoorLeaf(catacombLeaf, CatacombRoomBuilder.DoorHeight - 0.04f, "CatacombDoorLeaf"), -catacombLeaf * 0.5f,
                 CatacombRoomBuilder.DoorWidth, true);
+            BuildHalfDoor();
             BuildPortal("EscapePortal", PortalKind.Escape, DungeonPropBuilder.PortalBlue, true);
             BuildPortal("DescendPortal", PortalKind.Descend, DungeonPropBuilder.PortalRed, false);
             BuildShrine(ShrineKind.Health, 100f, 0f);
@@ -1529,6 +1530,13 @@ namespace Game.Scripts.Editor.Dungeon
             SetupContainer(root, "Bookshelf", table, null, Vector3.zero, false, 5, 2);
             AddInteractCollider(root, new Vector3(0f, 0.9f, 0.1f), new Vector3(1.4f, 1.9f, 0.8f));
             BattleContentBuilder.SavePrefab(root, Prefab("Bookshelf"));
+        }
+
+        /// One leaf of a double door: two of them, turned to each other, fill a doorway of the catacombs.
+        public static void BuildHalfDoor()
+        {
+            const float leaf = CatacombRoomBuilder.DoorWidth * 0.5f - 0.02f;
+            BuildDoor("CatacombDoorHalf", DungeonPropBuilder.DoorLeaf(leaf, CatacombRoomBuilder.DoorHeight - 0.04f, "CatacombDoorHalfLeaf"), -leaf * 0.5f, CatacombRoomBuilder.DoorWidth * 0.5f, true);
         }
 
         private static void BuildDoor(string name, GameObject leaf, float hingeX = -1.05f, float width = 2.2f, bool isSpawned = false)

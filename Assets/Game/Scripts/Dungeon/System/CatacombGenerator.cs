@@ -108,7 +108,7 @@ namespace Game.Scripts.Dungeon
         private const int NotWalkable = 1;
         private const int BothDoorways = 3;
         private const string KeyRoomSide = "Wall Doorways";
-        private const string UpperWall = "Wall Upper";
+        public const string UpperWall = "Wall Upper";
 
         private static readonly Vector2Int[] s_steps = { Vector2Int.right, Vector2Int.up, Vector2Int.left, Vector2Int.down };
 
@@ -226,8 +226,8 @@ namespace Game.Scripts.Dungeon
 
             NavMeshBuilder.CollectSources(transform, 1, NavMeshCollectGeometry.PhysicsColliders, 0, markups, sources);
             // Down to the floors of the pits, but not of the chasms: nothing walks down there.
-            // Up to the top gallery of the hall, 24 m high, and down to its sealed chamber.
-            Bounds bounds = new Bounds(transform.position + Vector3.up * 9f, new Vector3(Size + 2f, 34f, Size + 2f));
+            // Up to the top gallery of the hall, 24 m high, and down to the deepest storeys of the rooms, 10 m under the floor.
+            Bounds bounds = new Bounds(transform.position + Vector3.up * 7.5f, new Vector3(Size + 2f, 37f, Size + 2f));
             _navMesh = NavMesh.AddNavMeshData(NavMeshBuilder.BuildNavMeshData(settings, sources, bounds, Vector3.zero, Quaternion.identity));
         }
 

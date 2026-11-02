@@ -12,8 +12,6 @@ namespace Game.Scripts.Editor.Dungeon
         private const double O = DoorOffset;
 
         private static readonly double[] s_corners = { -12.5, 12.5 };
-        /// Rooms the catacombs are laid out of: only those in work or approved.
-        private static readonly HashSet<string> s_pool = new() { "Labyrinth", "AlchemyLab" };
 
         private static IEnumerable<Layout> Layouts()
         {

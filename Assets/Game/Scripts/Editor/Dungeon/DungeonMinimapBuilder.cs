@@ -10,6 +10,8 @@ namespace Game.Scripts.Editor.Dungeon
         public const string Folder = "Assets/Game/Textures/Minimap";
         private const int Size = 1024;
 
+        private const float UpperStorey = 3f;
+
         public static Texture2D Render(Transform floor, float floorY, string name)
         {
             return Render(floor, Vector3.up * floorY, DungeonMapBuilder.WorldSize * 0.5f, Size, name, false);
@@ -31,7 +33,8 @@ namespace Game.Scripts.Editor.Dungeon
 
             foreach (MeshRenderer renderer in floor.GetComponentsInChildren<MeshRenderer>())
             {
-                bool isCeiling = renderer.gameObject.name.StartsWith("Ceiling");
+                // The map of a room is its ground storey: what stands on the storeys above stays off it.
+                bool isCeiling = renderer.gameObject.name.StartsWith("Ceiling") || isReadable && renderer.bounds.min.y > center.y + UpperStorey;
                 // Walls of pits outline the drop, so a pit reads on the map.
                 bool isWall = renderer.gameObject.name.StartsWith("Wall") || renderer.gameObject.name.StartsWith("Pit Wall");
 

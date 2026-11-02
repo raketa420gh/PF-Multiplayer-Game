@@ -22,6 +22,11 @@ namespace Game.Scripts.Editor.Dungeon
         public string color;
         public float i;
         public float r;
+        /// Place in a room's sequence, offset of an opening slab, what a lever drives and how far a lift goes.
+        public int order;
+        public float[] open;
+        public string action;
+        public float travel;
 
         public Vector3 Position => new(p[0], p[1], p[2]);
         public Vector3 Size => s is { Length: 3 } ? new Vector3(s[0], s[1], s[2]) : Vector3.zero;
