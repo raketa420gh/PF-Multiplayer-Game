@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-11-02
+
+### Changed
+- 20 catacomb modules redesigned from the atlas review notes; together with Crypt, Ossuary, Pillared Hall and Blade Corridors, 24 room prefabs are now built from their mockups (DD-026).
+- All 28 rooms are in the generator's pool, existing limits kept: repeats stay until the 20 new rooms exist.
+- Rooms span −10…+24 m; the NavMesh bake and the cell map follow.
+
+### Added
+- `Apply Mockups` and `Check Rooms` menus, mockup kit in `Docs/LevelMockups/Atlas/tools`.
+- Room mechanisms: levers, ordered levers and floor plates, secret slabs, lifts, monsters dropping on a wrong step; interior wooden doors and double doors.
+
+## 2026-11-01
+
+### Changed
+- DD-025: the dungeon stays 7×7, with no repeated rooms: 43 regular, 4 corner rooms and the 2-cell Mornheim Shaft. Replaces DD-024 (5×5) — decided, not implemented yet.
+
+### Added
+- Working roadmap: `12_Roadmap/Roadmap.md` — blockouts of all rooms, then props and dummy mobs, then the base monster pool.
+
 ## 2026-10-25
 
 ### Changed

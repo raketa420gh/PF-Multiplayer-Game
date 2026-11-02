@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Атлас катакомб</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --ink: #0d1110; --panel: #151b19f2; --solid: #161c1a; --line: #2a3431; --fg: #d9e2dc; --dim: #8b9a93;
+  --acid: #7dff8f; --amber: #ffb35c; --danger: #ff6a4d;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif; --body: "Barlow", "Segoe UI", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--ink); color: var(--fg); font: 14px/1.4 var(--body); overflow: hidden; }
+#top { position: fixed; inset: 0 0 auto 0; height: 48px; display: flex; align-items: center; gap: 14px; padding: 0 14px; background: var(--solid); border-bottom: 1px solid var(--line); z-index: 5; }
+#top h1 { margin: 0; font: 700 21px/1 var(--display); letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; }
+.tabs { display: flex; gap: 4px; }
+#crumb { color: var(--dim); font: 500 13px var(--mono); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spacer { flex: 1; }
+button, select, input[type=number], input[type=search] { font: 500 13px/1 var(--body); color: var(--fg); background: #1e2724; border: 1px solid var(--line); border-radius: 4px; padding: 7px 8px; }
+button { cursor: pointer; }
+button:hover { border-color: #46564f; }
+button[aria-pressed="true"] { background: #23362b; border-color: var(--acid); color: #eafff0; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--acid); outline-offset: 1px; }
+#gallery { position: fixed; inset: 48px 0 0 0; overflow: auto; padding: 14px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; align-items: center; }
+.filters input { width: 200px; }
+.filters .n { margin-left: 6px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); gap: 12px; }
+.card { display: block; width: 100%; padding: 0; text-align: left; background: var(--solid); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.card:hover { border-color: var(--acid); }
+.card canvas { display: block; width: 100%; aspect-ratio: 1; background: #0a0d0c; }
+.card .body { padding: 9px 10px 10px; display: grid; gap: 4px; }
+.card b { font: 700 18px/1.1 var(--display); letter-spacing: .02em; }
+.card .en { font: 400 11px var(--mono); color: var(--dim); }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; min-height: 18px; }
+.tag { font: 500 11px/1 var(--mono); padding: 3px 5px; border-radius: 3px; border: 1px solid var(--line); color: var(--dim); }
+.tag.live { color: #062b10; background: var(--acid); border-color: var(--acid); }
+.tag.ok { color: var(--acid); border-color: #2f6b3c; }
+.tag.rework { color: var(--amber); border-color: #6b5521; }
+.tag.no { color: var(--danger); border-color: #6b2c21; }
+.tag.note { color: var(--amber); }
+.stats { font: 400 11px var(--mono); color: var(--dim); }
+#stage { position: fixed; inset: 48px 0 0 0; }
+#view, #plan { position: absolute; inset: 0; }
+#view canvas, #plan { display: block; outline: none; }
+#plan { width: 100%; height: 100%; background: #0a0d0c; cursor: grab; }
+#labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.lbl { position: absolute; transform: translate(-50%, -100%); font: 600 12px/1 var(--display); letter-spacing: .04em; padding: 3px 5px; border-radius: 3px; background: #0d1110cc; border: 1px solid var(--line); white-space: nowrap; }
+.lbl.trap { color: var(--danger); border-color: #6b2c21; }
+.lbl.chest { color: #ffd76b; border-color: #6b5521; }
+.lbl.start { color: #7cc8ff; border-color: #21486b; }
+.lbl.monster { color: #ff9a90; }
+.rail { position: absolute; top: 12px; max-height: calc(100% - 56px); overflow: auto; width: 256px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; backdrop-filter: blur(6px); }
+#left { left: 12px; }
+#right { right: 12px; width: 292px; }
+.rail section { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.rail section:last-child { border-bottom: 0; }
+h2 { margin: 0 0 8px; font: 600 12px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+.seg.three { grid-template-columns: repeat(3, 1fr); }
+.layers { display: grid; gap: 2px; }
+.layers label { display: grid; grid-template-columns: 16px 12px 1fr auto; align-items: center; gap: 8px; padding: 3px 2px; cursor: pointer; }
+.layers input, .pool input { margin: 0; accent-color: var(--acid); }
+.sw { width: 12px; height: 12px; border-radius: 2px; }
+.n { font: 400 11px var(--mono); color: var(--dim); }
+.row { display: flex; align-items: center; gap: 8px; }
+.row input[type=range] { flex: 1; min-width: 0; accent-color: var(--acid); }
+.val { font: 500 12px var(--mono); min-width: 46px; text-align: right; }
+.levels { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.levels button { padding: 5px 6px; font: 500 11px var(--mono); }
+dl { display: grid; grid-template-columns: 74px 1fr; gap: 4px 10px; margin: 0; }
+dt { color: var(--dim); }
+dd { margin: 0; font: 400 12px var(--mono); overflow-wrap: anywhere; }
+.big { font: 700 26px/1 var(--display); letter-spacing: .02em; }
+.sub { color: var(--dim); margin: 3px 0 10px; font-size: 13px; }
+textarea { width: 100%; min-height: 62px; margin-top: 8px; resize: vertical; background: #0f1513; color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 8px; font: 13px/1.4 var(--body); }
+.list { display: grid; gap: 1px; max-height: 240px; overflow: auto; }
+.list button { display: grid; grid-template-columns: 46px 1fr auto; gap: 8px; text-align: left; background: transparent; border-color: transparent; padding: 5px 4px; }
+.list button:hover { background: #1e2724; }
+.list .id { font: 500 11px var(--mono); color: var(--acid); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); align-self: center; }
+.pool { display: grid; gap: 1px; max-height: 300px; overflow: auto; margin-top: 8px; }
+.pool label { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: center; padding: 2px; cursor: pointer; font-size: 13px; }
+#warn { color: var(--amber); font-size: 12px; margin: 8px 0 0; }
+.bars { display: grid; gap: 3px; margin-top: 8px; }
+.bars div { display: grid; grid-template-columns: 1fr auto; font-size: 12px; }
+.bars span:last-child { font: 400 12px var(--mono); color: var(--dim); }
+#status { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-wrap: wrap; gap: 4px 18px; padding: 7px 14px; background: #0d1110d9; border-top: 1px solid var(--line); font: 400 12px var(--mono); color: var(--dim); }
+#status b { color: var(--fg); font-weight: 500; }
+[hidden] { display: none !important; }
+@media (max-width: 760px) { .rail { width: calc(100% - 24px) !important; max-height: 42%; left: 12px; right: 12px; } #right { top: auto; bottom: 40px; } #top { overflow-x: auto; } }
+</style>
+</head>
+<body>
+<header id="top">
+  <h1>Атлас катакомб</h1>
+  <div class="tabs"><button id="tabRooms">Модули</button><button id="tabDungeon">Подземелье</button></div>
+  <span id="crumb"></span>
+  <span class="spacer"></span>
+  <button id="prev" hidden aria-label="Предыдущий модуль">←</button>
+  <button id="next" hidden aria-label="Следующий модуль">→</button>
+  <button id="copyAll">Скопировать правки</button>
+</header>
+
+<main id="gallery">
+  <div class="filters" id="filters"></div>
+  <div class="cards" id="cards"></div>
+</main>
+
+<div id="stage" hidden>
+  <div id="view"></div>
+  <canvas id="plan"></canvas>
+  <div id="labels"></div>
+  <aside class="rail" id="left">
+    <section id="genBox" hidden>
+      <h2>Генерация</h2>
+      <div class="row"><input id="seed" type="number" style="flex:1;min-width:0" aria-label="Сид"><button id="roll">Новый сид</button></div>
+      <div class="row" style="margin-top:8px"><span class="n">Петли</span><input id="loops" type="range" min="0" max="1" step="0.05"><span class="val" id="loopsV"></span></div>
+      <h2 style="margin-top:12px">Пул комнат</h2>
+      <div class="seg"><button id="poolGame">Как в игре</button><button id="poolAll">Все комнаты</button></div>
+      <p id="warn" hidden></p>
+      <div class="pool" id="pool"></div>
+    </section>
+    <section>
+      <h2>Вид</h2>
+      <div class="seg three" id="views"></div>
+    </section>
+    <section id="lightBox">
+      <h2>Освещение</h2>
+      <div class="seg"><button id="lGame">Как в игре</button><button id="lPlan">Схема</button></div>
+      <div class="row" style="margin-top:8px"><span class="n">Экспозиция</span><input id="expo" type="range" min="0.3" max="3" step="0.05" value="1"><span class="val" id="expoV">1.00</span></div>
+      <label class="row" style="margin-top:6px"><input id="ranges" type="checkbox"> <span>Радиусы ламп</span></label>
+      <label class="row" style="margin-top:4px" id="labelsBox"><input id="showLabels" type="checkbox" checked> <span>Подписи</span></label>
+    </section>
+    <section>
+      <h2>Срез по высоте</h2>
+      <div class="row"><input id="cut" type="range" step="0.1"><span class="val" id="cutV"></span></div>
+      <div class="levels" id="levels"></div>
+    </section>
+    <section>
+      <h2>Слои</h2>
+      <div class="layers" id="layers"></div>
+    </section>
+  </aside>
+  <aside class="rail" id="right">
+    <section id="roomBox">
+      <div class="big" id="roomTitle"></div>
+      <div class="sub" id="roomSub"></div>
+      <div class="seg three" id="verdict"></div>
+      <textarea id="roomNote" placeholder="Что поменять в модуле целиком"></textarea>
+    </section>
+    <section id="info"></section>
+    <section id="objBox">
+      <h2>Объекты</h2>
+      <input id="objFind" type="search" placeholder="Поиск" style="width:100%;margin-bottom:6px" aria-label="Поиск объектов">
+      <div class="list" id="list"></div>
+    </section>
+    <section id="statBox" hidden></section>
+  </aside>
+  <div id="status"><span id="cur"></span><span id="hint"></span></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>window.ATLAS = { rooms: {}, room(name, objs) { this.rooms[name] = objs; } };</script>
+<script src="data/manifest.js"></script>
+<script src="data/titles.js"></script>
+<script src="generator.js"></script>
+<script src="viewer.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
