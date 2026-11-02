@@ -9,7 +9,7 @@ using UnityEngine.AI;
 namespace Game.Scripts.Dungeon
 {
     /// The Tangled Catacombs: a square grid of rooms laid out anew from the match seed, the same on every peer. The key room
-    /// (the Great Hall, a prefab placed in the scene) keeps the middle cell and, when it is long, the neighbour its turn points
+    /// (the Great Hall) keeps the middle cell and, when it is long, the neighbour its turn points
     /// to (its local +Z); the four corners get corner rooms turned so their blind
     /// sides face out, every other cell a random room turned a random quarter. Every side has two doorways; a random maze with a
     /// few loops decides which of them open into the neighbours. The host bakes the NavMesh of the result.
@@ -45,6 +45,9 @@ namespace Game.Scripts.Dungeon
         /// Grows with every new layout, so views know to redraw.
         public int Version => _version;
         public IReadOnlyList<CatacombRoomComponent> Rooms => _rooms;
+        /// The key room of the layout and the cells it covers; null before the first layout.
+        public CatacombRoomComponent KeyRoom => _hall;
+        public int[] KeyCells => _keyCells;
         /// Parent of every generated room, side and post; null before the first layout.
         public Transform Content => _content;
         /// Every open doorway of the layout, the key room's too: the host hangs a door in each.
@@ -63,7 +66,7 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private RoomKind[] _kinds;
 
-        [SerializeField, Tooltip("Instance of the key room in the scene, in the middle cell")]
+        [SerializeField, Tooltip("Key room prefab, laid out like any room: an instance in the scene would be batched where it was built and could not turn")]
         private CatacombRoomComponent _keyRoom;
 
         [SerializeField, Tooltip("The key room covers the middle cell and the next one along its local +Z; its map is twice as tall")]
@@ -116,6 +119,8 @@ namespace Game.Scripts.Dungeon
         private readonly List<Pose> _doorways = new();
         private string[] _titles = Array.Empty<string>();
         private Transform _content;
+        private CatacombRoomComponent _hall;
+        private int[] _keyCells;
         private Texture2D _map;
         private NavMeshDataInstance _navMesh;
         private int _seed;
@@ -141,7 +146,6 @@ namespace Game.Scripts.Dungeon
             _seed = seed;
             _version++;
             _rooms.Clear();
-            _rooms.Add(_keyRoom);
 
             if (_content != null)
             {
@@ -159,7 +163,9 @@ namespace Game.Scripts.Dungeon
             _content.SetParent(transform, false);
             Plan plan = Lay(seed);
             _titles = new string[plan.Rooms.Length];
-            _keyRoom.transform.SetPositionAndRotation(CellCenter(KeyCell), Quaternion.Euler(0f, plan.KeyTurns * 90f, 0f));
+            _keyCells = plan.KeyCells;
+            _hall = Instantiate(_keyRoom, CellCenter(KeyCell), Quaternion.Euler(0f, plan.KeyTurns * 90f, 0f), _content);
+            _rooms.Add(_hall);
             CatacombRoomComponent[] placed = new CatacombRoomComponent[plan.Rooms.Length];
 
             foreach (int cell in plan.KeyCells)
@@ -250,7 +256,7 @@ namespace Game.Scripts.Dungeon
         public bool IsNearKeyRoom(Vector3 position)
         {
             return Vector3.Distance(position, CellCenter(KeyCell)) < _pitch * 1.2f
-                || _isKeyRoomLong && Vector3.Distance(position, _keyRoom.transform.TransformPoint(Vector3.forward * _pitch)) < _pitch * 1.2f;
+                || _isKeyRoomLong && Vector3.Distance(position, _hall.transform.TransformPoint(Vector3.forward * _pitch)) < _pitch * 1.2f;
         }
 
         public string GetTitle(int cell)
@@ -526,7 +532,7 @@ namespace Game.Scripts.Dungeon
         /// The key room's own doorway sides that face rock give way to blind sides.
         private void WallKeyRoom(Plan plan)
         {
-            foreach (Transform side in _keyRoom.transform)
+            foreach (Transform side in _hall.transform)
             {
                 if (side.name != KeyRoomSide)
                     continue;

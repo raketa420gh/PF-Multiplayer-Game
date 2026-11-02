@@ -42,7 +42,7 @@ namespace Game.Scripts.Editor.Dungeon
             HallMarkers();
 
             if (existing != null && !IsOverwriting)
-                return DungeonMapBuilder.Place(existing, floor, Vector3.zero, 0f, false).GetComponent<CatacombRoomComponent>();
+                return existing.GetComponent<CatacombRoomComponent>();
 
             foreach (string stone in s_hallStone)
                 s_stone.Add(stone);
@@ -67,9 +67,10 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_title", HallTitle);
             BattleEditorUtility.Set(so, "_map", RenderHallMap(hall));
             so.ApplyModifiedPropertiesWithoutUndo();
-            PrefabUtility.SaveAsPrefabAssetAndConnect(hall.gameObject, path, InteractionMode.AutomatedAction);
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(hall.gameObject, path);
+            UnityEngine.Object.DestroyImmediate(hall.gameObject);
 
-            return hall.GetComponent<CatacombRoomComponent>();
+            return prefab.GetComponent<CatacombRoomComponent>();
         }
 
         /// The hall's floor ends at its walls and a neighbour's at the middle of the side: a slab under each doorway closes the

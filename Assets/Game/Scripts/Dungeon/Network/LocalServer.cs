@@ -46,13 +46,15 @@ namespace Game.Scripts.Dungeon
             return true;
         }
 
-        /// A build older than the code or the scenes has other scene NetworkObjects (Fusion "Behaviour count mismatch"): host instead.
+        /// A build older than the code, the scenes or the prefabs has other scene NetworkObjects (Fusion "Behaviour count mismatch")
+        /// or other rooms than the clients walk through: host instead. A build may leave the exe as it was, its code is always new.
         private static bool IsStale(string path)
         {
 #if UNITY_EDITOR
-            DateTime built = File.GetLastWriteTime(path);
+            DateTime built = File.GetLastWriteTime(Path.Combine(Path.ChangeExtension(path, null) + "_Data", "Managed", "Assembly-CSharp.dll"));
             string stale = UnityEditor.EditorBuildSettings.scenes.Select(scene => scene.path)
                 .Append("Library/ScriptAssemblies/Assembly-CSharp.dll")
+                .Concat(Directory.EnumerateFiles("Assets/Game/Prefabs/Dungeon", "*.prefab", SearchOption.AllDirectories))
                 .FirstOrDefault(file => File.Exists(file) && File.GetLastWriteTime(file) > built);
 
             if (stale == null)

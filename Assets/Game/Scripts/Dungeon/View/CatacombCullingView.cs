@@ -69,7 +69,7 @@ namespace Game.Scripts.Dungeon
                 _lights[i] = part.GetComponentsInChildren<Light>(true);
                 _flames[i] = part.GetComponentsInChildren<ParticleSystem>(true);
                 _flickers[i] = part.GetComponentsInChildren<FlickerLightComponent>(true);
-                _cells[i] = Cells(part.position);
+                _cells[i] = _catacombs.KeyRoom != null && part == _catacombs.KeyRoom.transform ? _catacombs.KeyCells : Cells(part.position);
                 _shown[i] = true;
             }
         }
