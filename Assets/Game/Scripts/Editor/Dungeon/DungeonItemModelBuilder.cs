@@ -36,6 +36,9 @@ namespace Game.Scripts.Editor.Dungeon
                 case ItemKind.Treasure:
                     BuildTreasure(def, parent);
                     break;
+                case ItemKind.Pouch:
+                    BuildPouch(parent);
+                    break;
                 default:
                     Object.DestroyImmediate(root);
 
@@ -128,6 +131,16 @@ namespace Game.Scripts.Editor.Dungeon
                     BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Hook", parent, new Vector3(0.03f, 0.02f, 0.11f), new Vector3(0f, 30f, 0f), new Vector3(0.04f, 0.006f, 0.006f), steel);
                     break;
             }
+        }
+
+        /// Worn leather belt pouch: a flat body, a flap over its top and a strap loop behind.
+        private static void BuildPouch(Transform parent)
+        {
+            Material leather = BattleEditorUtility.GetMaterial("WornLeather", new Color(0.36f, 0.24f, 0.13f), 0f, 0.2f);
+            Material dark = BattleEditorUtility.GetMaterial("Leather", new Color(0.25f, 0.15f, 0.08f));
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Body", parent, new Vector3(0f, 0.06f, 0f), Vector3.zero, new Vector3(0.14f, 0.12f, 0.06f), leather);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Flap", parent, new Vector3(0f, 0.105f, 0.032f), new Vector3(-12f, 0f, 0f), new Vector3(0.145f, 0.06f, 0.012f), dark);
+            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Strap", parent, new Vector3(0f, 0.08f, -0.034f), Vector3.zero, new Vector3(0.05f, 0.1f, 0.008f), dark);
         }
 
         private static void BuildTreasure(ItemDef def, Transform parent)

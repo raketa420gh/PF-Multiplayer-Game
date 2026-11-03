@@ -7,13 +7,28 @@ namespace Game.Scripts.Dungeon
     /// Networked grid inventory (bag) plus equipment slots. All mutations run on the state authority.
     public sealed class InventoryComponent : NetworkBehaviour
     {
-        public const int Capacity = 60;
+        public const int Capacity = 100;
         public const int EquipmentCapacity = (int)EquipSlot.Count;
 
         public event Action OnChanged;
 
         public int Width => _width;
+        /// Rows of the bag itself; the pouch cells follow in rows of their own (see Rows).
         public int Height => _height;
+        public int Rows => _height + (PouchCells + _width - 1) / _width;
+        /// Bag cells the worn belt pouches add.
+        public int PouchCells
+        {
+            get
+            {
+                int cells = 0;
+
+                for (EquipSlot slot = EquipSlot.Pouch1; _hasEquipment && slot <= EquipSlot.Pouch2; slot++)
+                    cells += GetEquippedConfig<PouchItemConfig>(slot) is { } pouch ? pouch.Cells : 0;
+
+                return cells;
+            }
+        }
         public bool HasEquipment => _hasEquipment;
         public NetworkArray<ItemStack> Bag => _bag;
         public NetworkArray<ItemStack> Equipment => _equipment;
@@ -118,25 +133,33 @@ namespace Game.Scripts.Dungeon
             return -1;
         }
 
+        public bool IsCellOpen(int x, int y, int pouchCells)
+        {
+            return x >= 0 && y >= 0 && x < _width && (y < _height || (y - _height) * _width + x < pouchCells);
+        }
+
+        /// An item lies either in the bag or in the pouch cells, never across both.
         public bool CanPlace(ItemConfig config, int x, int y, int ignoreIndex = -1)
         {
-            if (x < 0 || y < 0 || x + config.Width > _width || y + config.Height > _height)
-                return false;
+            return CanPlace(config, x, y, ignoreIndex, PouchCells);
+        }
 
+        /// A pouch comes off (or gives way to one with the given cells) only while no item lies on the cells it would close.
+        public bool CanTakeOff(EquipSlot slot, int replacementCells = 0)
+        {
+            int cells = GetEquippedConfig<PouchItemConfig>(slot) is { } pouch ? pouch.Cells : 0;
+
+            return cells <= replacementCells || FitsPouchCells(PouchCells - cells + replacementCells);
+        }
+
+        /// False when some item would be left on pouch cells that the given count no longer opens.
+        public bool FitsPouchCells(int pouchCells)
+        {
             for (int i = 0; i < Capacity; i++)
             {
-                if (i == ignoreIndex)
-                    continue;
+                ItemStack stack = _bag[i];
 
-                ItemStack other = _bag[i];
-
-                if (other.IsEmpty)
-                    continue;
-
-                ItemConfig otherConfig = GetConfig(other);
-
-                if (x < other.X + otherConfig.Width && x + config.Width > other.X &&
-                    y < other.Y + otherConfig.Height && y + config.Height > other.Y)
+                if (!stack.IsEmpty && stack.Y + GetConfig(stack).Height > _height && !IsAreaOpen(GetConfig(stack), stack.X, stack.Y, pouchCells))
                     return false;
             }
 
@@ -531,6 +554,16 @@ namespace Game.Scripts.Dungeon
             int count = bagCount + equipmentCount;
             int size = count > 0 && buffer.Length < count * ItemStack.ByteSize ? ItemStack.LegacyByteSize : ItemStack.ByteSize;
 
+            // The equipment goes first: the pouches open the cells the bag items may lie on.
+            for (int i = 0, equipmentOffset = bagCount * size; i < equipmentCount; i++, equipmentOffset += size)
+            {
+                ItemStack stack = ItemStack.Read(buffer, equipmentOffset, size);
+                EquipSlot slot = (EquipSlot)stack.X;
+
+                if (slot < EquipSlot.Count && CanEquip(stack, slot))
+                    _equipment.Set((int)slot, stack.At(0, 0));
+            }
+
             for (int i = 0; i < bagCount; i++, offset += size)
             {
                 ItemStack stack = ItemStack.Read(buffer, offset, size);
@@ -540,25 +573,60 @@ namespace Game.Scripts.Dungeon
                     TryAdd(stack);
             }
 
-            for (int i = 0; i < equipmentCount; i++, offset += size)
-            {
-                ItemStack stack = ItemStack.Read(buffer, offset, size);
-                EquipSlot slot = (EquipSlot)stack.X;
+            Version++;
+        }
 
-                if (slot < EquipSlot.Count && CanEquip(stack, slot))
-                    _equipment.Set((int)slot, stack.At(0, 0));
+        private bool IsAreaOpen(ItemConfig config, int x, int y, int pouchCells)
+        {
+            if (y < _height && y + config.Height > _height)
+                return false;
+
+            for (int cy = y; cy < y + config.Height; cy++)
+            {
+                for (int cx = x; cx < x + config.Width; cx++)
+                {
+                    if (!IsCellOpen(cx, cy, pouchCells))
+                        return false;
+                }
             }
 
-            Version++;
+            return true;
+        }
+
+        private bool CanPlace(ItemConfig config, int x, int y, int ignoreIndex, int pouchCells)
+        {
+            if (!IsAreaOpen(config, x, y, pouchCells))
+                return false;
+
+            for (int i = 0; i < Capacity; i++)
+            {
+                if (i == ignoreIndex)
+                    continue;
+
+                ItemStack other = _bag[i];
+
+                if (other.IsEmpty)
+                    continue;
+
+                ItemConfig otherConfig = GetConfig(other);
+
+                if (x < other.X + otherConfig.Width && x + config.Width > other.X &&
+                    y < other.Y + otherConfig.Height && y + config.Height > other.Y)
+                    return false;
+            }
+
+            return true;
         }
 
         private bool TryFindCell(ItemConfig config, out int x, out int y)
         {
-            for (y = 0; y <= _height - config.Height; y++)
+            int pouchCells = PouchCells;
+
+            for (y = 0; y <= Rows - config.Height; y++)
             {
                 for (x = 0; x <= _width - config.Width; x++)
                 {
-                    if (CanPlace(config, x, y))
+                    if (CanPlace(config, x, y, -1, pouchCells))
                         return true;
                 }
             }

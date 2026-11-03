@@ -390,8 +390,9 @@ namespace Game.Scripts.Dungeon
             for (int i = 0; i < _skills.Length; i++)
             {
                 // The spell wheel slot shows the readied spell instead of the wheel itself.
-                bool isWheel = i < skillCount && adventurer.Abilities[i].Kind == AbilityKind.SpellMemory && adventurer.ReadiedSpellConfig != null;
-                UpdateAbility(_skills[i], adventurer, isWheel ? skillCount + adventurer.ReadiedSpell : i, i < skillCount);
+                int ability = adventurer.GetSkillAbility(i);
+                bool isWheel = ability >= 0 && adventurer.Abilities[ability].Kind == AbilityKind.SpellMemory && adventurer.ReadiedSpellConfig != null;
+                UpdateAbility(_skills[i], adventurer, isWheel ? skillCount + adventurer.ReadiedSpell : ability, ability >= 0);
             }
 
             for (int i = 0; i < _spells.Length; i++)

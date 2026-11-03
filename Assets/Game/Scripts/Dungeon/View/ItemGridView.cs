@@ -26,6 +26,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _cellSize = 48f;
 
+        [SerializeField, Tooltip("Space between the bag and the pouch cells under it")]
+        private float _pouchGap = 12f;
+
         private static readonly Color s_cellColor = new(0.16f, 0.14f, 0.11f, 0.85f);
         private readonly List<ItemView> _items = new();
         private readonly List<Image> _cells = new();
@@ -34,6 +37,7 @@ namespace Game.Scripts.Dungeon
         private int _shownVersion = -1;
         private int _builtWidth = -1;
         private int _builtHeight = -1;
+        private int _builtPouchCells = -1;
 
         public void Bind(InventoryView owner, InventoryComponent inventory)
         {
@@ -81,6 +85,7 @@ namespace Game.Scripts.Dungeon
                 ItemView view = GetView(used++);
                 view.gameObject.SetActive(true);
                 view.Bind(_owner, _inventory, stack, config, i, EquipSlot.Count, _cellSize);
+                ((RectTransform)view.transform).anchoredPosition = CellPosition(stack.X, stack.Y);
             }
         }
 
@@ -97,10 +102,11 @@ namespace Game.Scripts.Dungeon
         public bool TryGetCell(Vector2 screenPosition, Camera camera, out int x, out int y)
         {
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_cellsRoot, screenPosition, camera, out Vector2 local);
+            float bagBottom = _inventory.Height * _cellSize;
             x = Mathf.FloorToInt(local.x / _cellSize);
-            y = Mathf.FloorToInt(-local.y / _cellSize);
+            y = -local.y < bagBottom ? Mathf.FloorToInt(-local.y / _cellSize) : _inventory.Height + Mathf.FloorToInt((-local.y - bagBottom - _pouchGap) / _cellSize);
 
-            return x >= 0 && y >= 0 && x < _inventory.Width && y < _inventory.Height;
+            return x >= 0 && y >= 0 && x < _inventory.Width && y < _inventory.Rows;
         }
 
         public void Highlight(int x, int y, int width, int height, bool isValid)
@@ -120,9 +126,12 @@ namespace Game.Scripts.Dungeon
                 cell.color = s_cellColor;
         }
 
+        /// The bag rows, then the rows of the pouch cells a little lower; closed pouch cells are hidden.
         private void BuildCells()
         {
-            if (_builtWidth == _inventory.Width && _builtHeight == _inventory.Height)
+            int pouchCells = _inventory.PouchCells;
+
+            if (_builtWidth == _inventory.Width && _builtHeight == _inventory.Height && _builtPouchCells == pouchCells)
                 return;
 
             foreach (Image cell in _cells)
@@ -131,8 +140,10 @@ namespace Game.Scripts.Dungeon
             _cells.Clear();
             _builtWidth = _inventory.Width;
             _builtHeight = _inventory.Height;
+            _builtPouchCells = pouchCells;
+            int rows = _inventory.Rows;
 
-            for (int y = 0; y < _builtHeight; y++)
+            for (int y = 0; y < rows; y++)
             {
                 for (int x = 0; x < _builtWidth; x++)
                 {
@@ -140,14 +151,19 @@ namespace Game.Scripts.Dungeon
                     RectTransform rect = cell.rectTransform;
                     rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
                     rect.sizeDelta = new Vector2(_cellSize - 2f, _cellSize - 2f);
-                    rect.anchoredPosition = new Vector2(x * _cellSize + 1f, -y * _cellSize - 1f);
-                    cell.gameObject.SetActive(true);
+                    rect.anchoredPosition = CellPosition(x, y) + new Vector2(1f, -1f);
+                    cell.gameObject.SetActive(_inventory.IsCellOpen(x, y, pouchCells));
                     _cells.Add(cell);
                 }
             }
 
-            Rect.sizeDelta = new Vector2(_builtWidth * _cellSize, _builtHeight * _cellSize);
+            Rect.sizeDelta = new Vector2(_builtWidth * _cellSize, rows * _cellSize + (rows > _builtHeight ? _pouchGap : 0f));
             ClearHighlight();
+        }
+
+        private Vector2 CellPosition(int x, int y)
+        {
+            return new Vector2(x * _cellSize, -y * _cellSize - (y >= _inventory.Height ? _pouchGap : 0f));
         }
 
         private ItemView GetView(int index)

@@ -94,6 +94,7 @@ namespace Game.Scripts.Dungeon
             {
                 Subscribe(slot);
                 slot.OnDropped += OnDropped;
+                slot.OnClicked += OnSkillSlotClicked;
             }
 
             for (int i = 0; i < _subclassTabs.Length; i++)
@@ -419,6 +420,17 @@ namespace Game.Scripts.Dungeon
         {
             DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.5f);
             _session?.RpcSelectSkill((byte)(button == PointerEventData.InputButton.Right ? 1 : 0), (byte)icon.Index);
+        }
+
+        /// RMB on a filled skill slot empties it.
+        private void OnSkillSlotClicked(AbilityIconView icon, PointerEventData.InputButton button)
+        {
+            if (button != PointerEventData.InputButton.Right || icon.Index < 0 || _session == null)
+                return;
+
+            DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.5f);
+            _tooltip.gameObject.SetActive(false);
+            _session.RpcSelectSkill((byte)Array.IndexOf(_skillSlots, icon), PlayerSessionComponent.NoSkill);
         }
 
         private void OnHovered(AbilityIconView icon, bool isHovered)

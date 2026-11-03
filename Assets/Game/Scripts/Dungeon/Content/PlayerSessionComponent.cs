@@ -23,7 +23,11 @@ namespace Game.Scripts.Dungeon
         public const byte LoadKit = 0;
         /// Stash pages load as kinds LoadStash … LoadStash + StashPages - 1.
         public const byte LoadStash = 1;
-        public const int StashPages = 4;
+        public const int StashPages = 2;
+        /// Pages the player may use; the rest are shown locked.
+        public const int OpenStashPages = 1;
+        /// Skill slot left empty (Q or E binds nothing).
+        public const byte NoSkill = byte.MaxValue;
 
         public event Action OnStateChanged;
 
@@ -35,14 +39,14 @@ namespace Game.Scripts.Dungeon
         public ClassConfig Class => FindClass(ClassId);
         public MerchantConfig[] Merchants => _merchants;
         public ItemConfig Currency => _currency;
-        /// Coins the player can pay with: every stash page and the kit bag together.
+        /// Coins the player can pay with: every open stash page and the kit bag together.
         public int Coins
         {
             get
             {
                 int coins = _kit.CountOf(_currency.Id);
 
-                foreach (InventoryComponent stash in _stashes)
+                foreach (InventoryComponent stash in OpenStashes)
                     coins += stash.CountOf(_currency.Id);
 
                 return coins;
@@ -104,6 +108,8 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         public byte Subclass { get; private set; }
+
+        private IEnumerable<InventoryComponent> OpenStashes => _stashes.Take(OpenStashPages);
 
         [SerializeField]
         private InventoryComponent _kit;
@@ -336,8 +342,18 @@ namespace Game.Scripts.Dungeon
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcSelectSkill(byte slot, byte index)
         {
-            if (State != SessionState.Lobby || !Class.IsSkillAvailable(index, Subclass))
+            if (State != SessionState.Lobby || (index != NoSkill && !Class.IsSkillAvailable(index, Subclass)))
                 return;
+
+            if (index == NoSkill)
+            {
+                if (slot == 0)
+                    SkillA = NoSkill;
+                else
+                    SkillB = NoSkill;
+
+                return;
+            }
 
             bool isShared = IsSharedSkill(Class, index);
 
@@ -423,7 +439,7 @@ namespace Game.Scripts.Dungeon
 
             int left = merchant.Price;
 
-            foreach (InventoryComponent stash in _stashes)
+            foreach (InventoryComponent stash in OpenStashes)
                 left -= stash.Remove(_currency.Id, left);
 
             _kit.Remove(_currency.Id, left);
@@ -434,7 +450,7 @@ namespace Game.Scripts.Dungeon
         public void RpcSell(NetworkBehaviourId source, int index)
         {
             if (State != SessionState.Lobby || !Runner.TryFindBehaviour(source, out NetworkBehaviour behaviour) || behaviour is not InventoryComponent from
-                || (from != _kit && Array.IndexOf(_stashes, from) < 0))
+                || (from != _kit && !IsOpenStash(from)))
                 return;
 
             ItemStack stack = from.Bag[index];
@@ -448,7 +464,7 @@ namespace Game.Scripts.Dungeon
         {
             ItemStack stack = _kit.GetEquipped(slot);
 
-            if (State != SessionState.Lobby || !CanSell(stack) || !HasRoomInStash(_currency))
+            if (State != SessionState.Lobby || !CanSell(stack) || !HasRoomInStash(_currency) || !_kit.CanTakeOff(slot))
                 return;
 
             _kit.SetEquipment(slot, default);
@@ -463,7 +479,7 @@ namespace Game.Scripts.Dungeon
 
         public bool HasRoomInStash(ItemConfig item)
         {
-            return Array.Exists(_stashes, stash => stash.HasRoom(item));
+            return Array.Exists(_stashes, stash => IsOpenStash(stash) && stash.HasRoom(item));
         }
 
         /// Puts a stack on the first page with a free spot for it, so a stack is never split over pages.
@@ -471,7 +487,7 @@ namespace Game.Scripts.Dungeon
         {
             ItemConfig config = _kit.GetConfig(stack);
 
-            foreach (InventoryComponent stash in _stashes)
+            foreach (InventoryComponent stash in OpenStashes)
             {
                 if (config != null && stash.HasRoom(config) && stash.TryAdd(stack))
                     return true;
@@ -529,10 +545,11 @@ namespace Game.Scripts.Dungeon
             PerkMask &= config.AvailablePerkMask(Subclass);
             FitSpells(config);
 
-            if (!config.IsSkillAvailable(SkillA, Subclass))
+            // A slot emptied on purpose stays empty.
+            if (SkillA != NoSkill && !config.IsSkillAvailable(SkillA, Subclass))
                 SkillA = FreeSkill(config, SkillB);
 
-            if (!config.IsSkillAvailable(SkillB, Subclass) || (SkillB == SkillA && !IsSharedSkill(config, SkillA)))
+            if (SkillB != NoSkill && (!config.IsSkillAvailable(SkillB, Subclass) || (SkillB == SkillA && !IsSharedSkill(config, SkillA))))
                 SkillB = FreeSkill(config, SkillA);
         }
 
@@ -559,6 +576,13 @@ namespace Game.Scripts.Dungeon
             }
 
             SpellLayout = layout;
+        }
+
+        private bool IsOpenStash(InventoryComponent inventory)
+        {
+            int page = Array.IndexOf(_stashes, inventory);
+
+            return page >= 0 && page < OpenStashPages;
         }
 
         /// The spell memory may sit in both skill slots: each opens its own wheel.
@@ -666,7 +690,7 @@ namespace Game.Scripts.Dungeon
 
         bool InventoryActionsComponent.IOwner.CanAccess(InventoryComponent other)
         {
-            return Array.IndexOf(_stashes, other) >= 0 && State == SessionState.Lobby;
+            return IsOpenStash(other) && State == SessionState.Lobby;
         }
 
         void InventoryActionsComponent.IOwner.OnUseItem(InventoryComponent source, int bagIndex)

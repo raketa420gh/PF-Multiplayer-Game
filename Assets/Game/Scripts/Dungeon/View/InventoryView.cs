@@ -299,7 +299,7 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
-            for (int y = 0; y < target.Height; y++)
+            for (int y = 0; y < target.Rows; y++)
             {
                 for (int x = 0; x < target.Width; x++)
                 {

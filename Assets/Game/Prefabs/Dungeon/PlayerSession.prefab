@@ -35,8 +35,6 @@ Transform:
   - {fileID: 6834482322207155968}
   - {fileID: 3827612676319298906}
   - {fileID: 32489588436656370}
-  - {fileID: 873377513674064846}
-  - {fileID: 1945004305212188488}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1219934746585621003
@@ -62,8 +60,6 @@ MonoBehaviour:
   - {fileID: 3599268834228270933}
   - {fileID: 9067435854123686893}
   - {fileID: 2909367197175391755}
-  - {fileID: 1319857806141763149}
-  - {fileID: 5746134450118675953}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2578686942752714804
 MonoBehaviour:
@@ -118,8 +114,6 @@ MonoBehaviour:
   _stashes:
   - {fileID: 9067435854123686893}
   - {fileID: 2909367197175391755}
-  - {fileID: 1319857806141763149}
-  - {fileID: 5746134450118675953}
   _actions: {fileID: 2578686942752714804}
   _classes:
   - {fileID: 11400000, guid: a3ad824b8c244544d85f83f610412b0c, type: 2}
@@ -179,57 +173,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.InventoryComponent
   _Version: 0
   _database: {fileID: 11400000, guid: 364dabe54c6a016409ffcb66e712c795, type: 2}
-  _width: 12
-  _height: 5
-  _hasEquipment: 0
---- !u!1 &4562300625364698839
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 873377513674064846}
-  - component: {fileID: 1319857806141763149}
-  m_Layer: 0
-  m_Name: Stash3
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &873377513674064846
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4562300625364698839}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7908780038807299910}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1319857806141763149
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4562300625364698839}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0fca4803aee23124eb7c27b3b67f3b03, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.InventoryComponent
-  _Version: 0
-  _database: {fileID: 11400000, guid: 364dabe54c6a016409ffcb66e712c795, type: 2}
-  _width: 12
-  _height: 5
+  _width: 10
+  _height: 10
   _hasEquipment: 0
 --- !u!1 &4656145045382417416
 GameObject:
@@ -326,55 +271,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.InventoryComponent
   _Version: 0
   _database: {fileID: 11400000, guid: 364dabe54c6a016409ffcb66e712c795, type: 2}
-  _width: 12
-  _height: 5
-  _hasEquipment: 0
---- !u!1 &8295309774051386580
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1945004305212188488}
-  - component: {fileID: 5746134450118675953}
-  m_Layer: 0
-  m_Name: Stash4
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1945004305212188488
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8295309774051386580}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7908780038807299910}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5746134450118675953
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8295309774051386580}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0fca4803aee23124eb7c27b3b67f3b03, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.InventoryComponent
-  _Version: 0
-  _database: {fileID: 11400000, guid: 364dabe54c6a016409ffcb66e712c795, type: 2}
-  _width: 12
-  _height: 5
+  _width: 10
+  _height: 10
   _hasEquipment: 0

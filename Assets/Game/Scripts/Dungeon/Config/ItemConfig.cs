@@ -10,7 +10,8 @@ namespace Game.Scripts.Dungeon
         Armor,
         Consumable,
         Utility,
-        Treasure
+        Treasure,
+        Pouch
     }
 
     public enum ItemRarity : byte
@@ -45,6 +46,9 @@ namespace Game.Scripts.Dungeon
         Utility4,
         Utility5,
         Utility6,
+        /// Belt pouches: each opens its cells in a row of their own under the bag.
+        Pouch1,
+        Pouch2,
         Count
     }
 

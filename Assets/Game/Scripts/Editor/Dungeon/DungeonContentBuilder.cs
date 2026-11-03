@@ -131,6 +131,7 @@ namespace Game.Scripts.Editor.Dungeon
                     ItemKind.Armor => BattleEditorUtility.LoadOrCreate<ArmorItemConfig>(path),
                     ItemKind.Consumable => BattleEditorUtility.LoadOrCreate<ConsumableItemConfig>(path),
                     ItemKind.Utility => BattleEditorUtility.LoadOrCreate<UtilityItemConfig>(path),
+                    ItemKind.Pouch => BattleEditorUtility.LoadOrCreate<PouchItemConfig>(path),
                     _ => BattleEditorUtility.LoadOrCreate<TreasureItemConfig>(path)
                 };
 
@@ -194,6 +195,9 @@ namespace Game.Scripts.Editor.Dungeon
                         BattleEditorUtility.Set(so, "_isBlade", def.Name == "Throwing Knife");
                         BattleEditorUtility.Set(so, "_damage", def.Damage);
                         BattleEditorUtility.Set(so, "_useTime", def.UseTime);
+                        break;
+                    case ItemKind.Pouch:
+                        BattleEditorUtility.Set(so, "_cells", def.Cells);
                         break;
                 }
 
@@ -1284,7 +1288,7 @@ namespace Game.Scripts.Editor.Dungeon
             InventoryComponent[] stashes = new InventoryComponent[PlayerSessionComponent.StashPages];
 
             for (int i = 0; i < stashes.Length; i++)
-                stashes[i] = AddInventory(root, database, 12, 5, false, i == 0 ? "Stash" : "Stash" + (i + 1));
+                stashes[i] = AddInventory(root, database, 10, 10, false, i == 0 ? "Stash" : "Stash" + (i + 1));
 
             InventoryActionsComponent actions = root.AddComponent<InventoryActionsComponent>();
             BattleEditorUtility.Set(actions, "_inventory", kit);

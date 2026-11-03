@@ -38,8 +38,13 @@ namespace Game.Scripts.Dungeon
             for (int i = 0; i < _tabs.Length; i++)
             {
                 int page = i;
+                bool isOpen = page < PlayerSessionComponent.OpenStashPages;
+                _tabs[i].interactable = isOpen;
+                _tabs[i].GetComponentInChildren<TMP_Text>().text = isOpen ? $"Page {page + 1}" : $"Page {page + 1}  <size=80%>(locked)</size>";
                 _tabs[i].onClick.AddListener(() => OnTabClicked(page));
-                _tabs[i].GetComponent<ItemDropZone>().OnDropped += item => MoveToPage(item, page);
+
+                if (isOpen)
+                    _tabs[i].GetComponent<ItemDropZone>().OnDropped += item => MoveToPage(item, page);
             }
 
             _sellZone.OnPreview += OnSellPreview;
@@ -66,7 +71,7 @@ namespace Game.Scripts.Dungeon
             _inventory.SetOther(_session.Stashes[page], $"Stash · page {page + 1}");
 
             for (int i = 0; i < _tabs.Length; i++)
-                _tabs[i].image.color = i == page ? _activeTab : _idleTab;
+                _tabs[i].image.color = i == page ? _activeTab : i < PlayerSessionComponent.OpenStashPages ? _idleTab : _idleTab * 0.6f;
         }
 
         private void MoveToPage(ItemView item, int page)
@@ -76,7 +81,7 @@ namespace Game.Scripts.Dungeon
             if (item.Inventory == target)
                 return;
 
-            for (int y = 0; y < target.Height; y++)
+            for (int y = 0; y < target.Rows; y++)
             {
                 for (int x = 0; x < target.Width; x++)
                 {

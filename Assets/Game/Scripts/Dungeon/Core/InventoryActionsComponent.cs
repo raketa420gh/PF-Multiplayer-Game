@@ -116,6 +116,9 @@ namespace Game.Scripts.Dungeon
                 return;
 
             ItemStack previous = _inventory.GetEquipped(slot);
+
+            if (!_inventory.CanTakeOff(slot, config is PouchItemConfig pouch ? pouch.Cells : 0))
+                return;
             from.RemoveAt(fromIndex);
             _inventory.SetEquipment(slot, stack.At(0, 0));
             _inventory.OnMainHandEquipped(slot, out ItemStack displaced);
@@ -132,13 +135,14 @@ namespace Game.Scripts.Dungeon
 
             ItemStack stack = _inventory.GetEquipped(slot);
 
-            if (stack.IsEmpty)
+            if (stack.IsEmpty || !_inventory.CanTakeOff(slot, 0))
                 return;
 
-            bool placed = x >= 0 ? to.TryPlaceAt(stack, x, y) : to.TryAdd(stack);
+            // Off first: a pouch must not land on the cells it opens itself.
+            _inventory.SetEquipment(slot, default);
 
-            if (placed)
-                _inventory.SetEquipment(slot, default);
+            if (!(x >= 0 ? to.TryPlaceAt(stack, x, y) : to.TryAdd(stack)))
+                _inventory.SetEquipment(slot, stack);
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
@@ -176,7 +180,7 @@ namespace Game.Scripts.Dungeon
         {
             ItemStack stack = _inventory.GetEquipped(slot);
 
-            if (stack.IsEmpty)
+            if (stack.IsEmpty || !_inventory.CanTakeOff(slot, 0))
                 return;
 
             _inventory.SetEquipment(slot, default);

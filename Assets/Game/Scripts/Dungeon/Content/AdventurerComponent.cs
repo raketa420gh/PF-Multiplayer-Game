@@ -359,6 +359,8 @@ namespace Game.Scripts.Dungeon
         private readonly List<AbilityConfig> _abilities = new();
         private readonly List<NetworkObject> _traps = new();
         private readonly AbilityConfig[] _skills = new AbilityConfig[2];
+        /// Ability index of the skill in each slot (Q, E), -1 for an empty slot.
+        private readonly int[] _skillAbilities = { -1, -1 };
         private int _skillCount;
         private readonly AdventurerStats _stats = new();
         private ClassConfig _class;
@@ -519,13 +521,16 @@ namespace Game.Scripts.Dungeon
         private void BuildAbilityList()
         {
             _abilities.Clear();
-            _skills[0] = _class.Skills.Length > 0 ? _class.Skills[Mathf.Clamp(SkillA, 0, _class.Skills.Length - 1)] : null;
-            _skills[1] = _class.Skills.Length > 1 ? _class.Skills[Mathf.Clamp(SkillB, 0, _class.Skills.Length - 1)] : null;
+            _skills[0] = SkillA < _class.Skills.Length ? _class.Skills[SkillA] : null;
+            _skills[1] = SkillB < _class.Skills.Length ? _class.Skills[SkillB] : null;
 
-            foreach (AbilityConfig skill in _skills)
+            // An empty slot leaves no gap: the key of each listed skill is kept apart.
+            for (int slot = 0; slot < _skills.Length; slot++)
             {
-                if (skill != null)
-                    _abilities.Add(skill);
+                _skillAbilities[slot] = _skills[slot] != null ? _abilities.Count : -1;
+
+                if (_skills[slot] != null)
+                    _abilities.Add(_skills[slot]);
             }
 
             _skillCount = _abilities.Count;
@@ -605,6 +610,12 @@ namespace Game.Scripts.Dungeon
         public AbilityConfig GetSkill(int slot)
         {
             return slot < _skills.Length ? _skills[slot] : null;
+        }
+
+        /// Ability index of the skill on the given slot (Q, E), -1 when the slot is empty.
+        public int GetSkillAbility(int slot)
+        {
+            return slot < _skillAbilities.Length ? _skillAbilities[slot] : -1;
         }
 
         public int SkillCount => _skillCount;
@@ -929,9 +940,11 @@ namespace Game.Scripts.Dungeon
 
             bool isBeltInHand = SimulateBelt(buttons, previous);
 
-            for (int i = 0; i < _skillCount; i++)
+            for (int slot = 0; slot < _skillAbilities.Length; slot++)
             {
-                if (buttons.WasPressed(previous, PlayerInputButtons.Skill1 + i) && _abilities[i].Kind is not (AbilityKind.SpellMemory or AbilityKind.Shapeshift))
+                int i = _skillAbilities[slot];
+
+                if (i >= 0 && buttons.WasPressed(previous, PlayerInputButtons.Skill1 + slot) && _abilities[i].Kind is not (AbilityKind.SpellMemory or AbilityKind.Shapeshift))
                     TryUseAbility(i);
             }
 

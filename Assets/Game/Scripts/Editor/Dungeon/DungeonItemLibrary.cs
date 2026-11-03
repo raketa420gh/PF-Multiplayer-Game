@@ -54,6 +54,9 @@ namespace Game.Scripts.Editor.Dungeon
 
         public UtilityKind Utility;
         public int Damage;
+
+        /// Belt pouches: bag cells they add.
+        public int Cells;
     }
 
     internal sealed class AbilityDef
@@ -307,6 +310,11 @@ namespace Game.Scripts.Editor.Dungeon
             quiver.Description = "Fifty arrows packed tight. The bow draws from it once the loose arrows run out.";
             items.Add(arrows);
             items.Add(quiver);
+            items.Add(new ItemDef
+            {
+                Name = "Tattered Pouch", Kind = ItemKind.Pouch, Width = 1, Height = 1, Value = 15, Glyph = "Pc", Color = s_leather, Sounds = "leather", Cells = 4,
+                Description = "A worn belt pouch. Worn in a pouch slot, it adds 4 bag cells."
+            });
 
             return items;
         }

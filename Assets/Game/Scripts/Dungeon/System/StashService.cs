@@ -24,6 +24,8 @@ namespace Game.Scripts.Dungeon
         private const string SubclassKey = "subclass";
         /// Version of the item list the saves refer to, see Migrate.
         private const int ItemsVersion = 4;
+        /// Stash pages saves had before the stash became fewer, bigger pages; see MergeLegacyPages.
+        private const int LegacyStashPages = 4;
 
         public static int Slot => s_slot;
 
@@ -41,6 +43,7 @@ namespace Game.Scripts.Dungeon
         static StashService()
         {
             Migrate();
+            MergeLegacyPages();
         }
 
         public static bool HasCharacter(int slot) => PlayerPrefs.HasKey(Key(slot, ClassKey));
@@ -173,7 +176,7 @@ namespace Game.Scripts.Dungeon
             {
                 Migrate(Key(slot, KitKey), version);
 
-                for (int page = 0; page < PlayerSessionComponent.StashPages; page++)
+                for (int page = 0; page < LegacyStashPages; page++)
                     Migrate(StashPageKey(slot, page), version);
             }
 
@@ -210,6 +213,54 @@ namespace Game.Scripts.Dungeon
             }
 
             PlayerPrefs.SetString(key, Convert.ToBase64String(result.ToArray()));
+        }
+
+        /// Items of the pages past the current count move onto the remaining pages in turn (the bigger pages take them, overlapping
+        /// spots are repacked on load); the old keys are deleted.
+        private static void MergeLegacyPages()
+        {
+            for (int slot = 0; slot < SlotCount; slot++)
+            {
+                for (int page = PlayerSessionComponent.StashPages; page < LegacyStashPages; page++)
+                {
+                    string key = StashPageKey(slot, page);
+
+                    if (!PlayerPrefs.HasKey(key))
+                        continue;
+
+                    string target = StashPageKey(slot, page % PlayerSessionComponent.StashPages);
+                    byte[] merged = AppendBag(Load(target), Load(key));
+
+                    if (merged != null)
+                        PlayerPrefs.SetString(target, Convert.ToBase64String(merged));
+
+                    PlayerPrefs.DeleteKey(key);
+                }
+            }
+
+            PlayerPrefs.Save();
+        }
+
+        /// Bag items of both (equipment-free) saves; null when the second adds nothing or the two use different item formats.
+        private static byte[] AppendBag(byte[] first, byte[] second)
+        {
+            int firstCount = first.Length < 2 ? 0 : first[0];
+            int secondCount = second.Length < 2 ? 0 : second[0];
+
+            if (secondCount == 0)
+                return null;
+
+            int size = (second.Length - 2) / secondCount;
+
+            if (firstCount > 0 && (first.Length - 2) / firstCount != size)
+                return null;
+
+            byte[] result = new byte[2 + (firstCount + secondCount) * size];
+            result[0] = (byte)(firstCount + secondCount);
+            Array.Copy(first, 2, result, 2, firstCount * size);
+            Array.Copy(second, 2, result, 2 + firstCount * size, secondCount * size);
+
+            return result;
         }
 
         /// The removed clothes sat in three runs of the old list: 17-36, 59 and 72-97.

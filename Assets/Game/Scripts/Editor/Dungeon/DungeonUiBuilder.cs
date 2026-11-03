@@ -735,14 +735,17 @@ namespace Game.Scripts.Editor.Dungeon
                 Slot(equipPanel, EquipSlot.Utility6, "4", new Vector2(516f, -304f), 1, 1, itemPrefab)
             };
 
-            RectTransform bagPanel = CreateRect("BagPanel", panel, new Vector2(0f, 1f), new Vector2(530f, -560f), new Vector2(640f, 230f));
+            RectTransform bagPanel = CreateRect("BagPanel", panel, new Vector2(0f, 1f), new Vector2(530f, -560f), new Vector2(640f, 290f));
             bagPanel.pivot = new Vector2(0f, 1f);
             CreateImage("Back", bagPanel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
             TMP_Text bagTitle = CreateText("BagTitle", bagPanel, new Vector2(0f, 1f), new Vector2(16f, -8f), new Vector2(300f, 24f), 16f, TextAlignmentOptions.MidlineLeft);
             bagTitle.rectTransform.pivot = new Vector2(0f, 1f);
             bagTitle.text = "Backpack";
             bagTitle.color = s_gold;
-            ItemGridView bag = Grid(bagPanel, "Bag", new Vector2(100f, -36f), itemPrefab, cellPrefab);
+            ItemGridView bag = Grid(bagPanel, "Bag", new Vector2(110f, -36f), itemPrefab, cellPrefab);
+            // The belt pouches sit left of the row of cells they open under the bag.
+            slots.Add(Slot(bagPanel, EquipSlot.Pouch1, "Pch", PouchSlotPosition(bag, 0), 1, 1, itemPrefab));
+            slots.Add(Slot(bagPanel, EquipSlot.Pouch2, "Pch", PouchSlotPosition(bag, 1), 1, 1, itemPrefab));
             TMP_Text valueText = CreateText("Value", bagPanel, new Vector2(1f, 1f), new Vector2(-16f, -8f), new Vector2(300f, 24f), 14f, TextAlignmentOptions.MidlineRight);
             valueText.rectTransform.pivot = new Vector2(1f, 1f);
 
@@ -889,6 +892,12 @@ namespace Game.Scripts.Editor.Dungeon
             return view;
         }
 
+        /// Pouch slot left of the pouch row of the bag (Cell rows of the bag, the grid's pouch gap, then the row).
+        private static Vector2 PouchSlotPosition(ItemGridView bag, int index)
+        {
+            return bag.Rect.anchoredPosition + new Vector2(-(2 - index) * (Cell + 4f) - 6f, -(4f * Cell + 12f));
+        }
+
         private static ItemGridView Grid(RectTransform parent, string name, Vector2 position, ItemView itemPrefab, Image cellPrefab)
         {
             RectTransform rect = CreateRect(name, parent, new Vector2(0f, 1f), position, new Vector2(Cell * 10f, Cell * 4f));
@@ -920,22 +929,8 @@ namespace Game.Scripts.Editor.Dungeon
             LobbyHomeView home = BuildLobbyHome(panel, inputs);
             SkillsView skills = BuildSkills(panel, inputs);
             InventoryView inventory = BuildInventory(panel, canvas, inputs, itemPrefab, cellPrefab, "Kit", false, 1, out CharacterPreviewView preview);
-            RectTransform inventoryRect = (RectTransform)inventory.transform;
-            inventoryRect.anchorMin = inventoryRect.anchorMax = inventoryRect.pivot = new Vector2(0.5f, 1f);
-            inventoryRect.anchoredPosition = new Vector2(0f, -60f);
-            inventory.transform.Find("Hints").gameObject.SetActive(false);
+            LayoutLobbyStash(inventory);
             StashPagesView stashPages = BuildStashPages(inventory);
-            // The backpack goes under the stash; the equipment sits under the doll down to the bottom of the stat sheet.
-            RectTransform bagPanel = (RectTransform)inventory.transform.Find("BagPanel");
-            bagPanel.anchoredPosition = new Vector2(1200f, -500f);
-            bagPanel.sizeDelta = new Vector2(680f, 230f);
-            ((RectTransform)bagPanel.Find("Bag")).anchoredPosition = new Vector2(120f, -36f);
-            RectTransform equipment = (RectTransform)inventory.transform.Find("Equipment");
-            equipment.anchoredPosition = new Vector2(565f, -508f);
-            equipment.sizeDelta = new Vector2(620f, 490f);
-
-            foreach (EquipSlotView slot in equipment.GetComponentsInChildren<EquipSlotView>())
-                ((RectTransform)slot.transform).anchoredPosition += new Vector2(-10f, 5f);
 
             MerchantsView merchants = BuildMerchants(panel);
 
@@ -987,7 +982,78 @@ namespace Game.Scripts.Editor.Dungeon
             return view;
         }
 
-        /// Stash page tabs under the stash grid and the sell counter below them.
+        /// Stash tab of the tavern over the whole screen under the top bar: the attribute sheet where the Skills page has it, the doll
+        /// with the equipment beside it and the backpack under both in the middle, the stash on the right edge.
+        private static void LayoutLobbyStash(InventoryView inventory)
+        {
+            Vector2 top = new Vector2(0.5f, 1f);
+            Vector2 topLeft = new Vector2(0f, 1f);
+            Vector2 topRight = Vector2.one;
+            RectTransform panel = (RectTransform)inventory.transform;
+            panel.anchorMin = Vector2.zero;
+            panel.anchorMax = Vector2.one;
+            panel.pivot = top;
+            // Lowered by the top bar as a whole, so its centre (the drag ghost's origin) stays where it was.
+            panel.offsetMin = new Vector2(0f, -60f);
+            panel.offsetMax = new Vector2(0f, -60f);
+            panel.Find("Hints").gameObject.SetActive(false);
+
+            // The middle column spans from the sheet (20 + 530 + 20) to the stash (470 + 20 + 10 from the right edge).
+            const float middleLeft = 35f - 425f;
+            const float height = 490f;
+            RectTransform doll = (RectTransform)panel.Find("Doll");
+            Place(doll, top, topLeft, new Vector2(middleLeft, -36f), new Vector2(240f, height));
+            Place((RectTransform)doll.Find("ArchFrame"), top, top, new Vector2(0f, -14f), new Vector2(224f, 420f));
+            RawImage preview = doll.Find("Preview").GetComponent<RawImage>();
+            Place(preview.rectTransform, top, top, new Vector2(0f, -18f), new Vector2(216f, 412f));
+            ResizeTexture((RenderTexture)preview.texture, 216, 412);
+            Place((RectTransform)doll.Find("Title"), top, top, new Vector2(0f, -442f), new Vector2(236f, 30f));
+
+            RectTransform equipment = (RectTransform)panel.Find("Equipment");
+            Place(equipment, top, topLeft, new Vector2(middleLeft + 250f, -36f), new Vector2(600f, height));
+
+            foreach (EquipSlotView slot in equipment.GetComponentsInChildren<EquipSlotView>())
+                ((RectTransform)slot.transform).anchoredPosition += new Vector2(-30f, 5f);
+
+            RectTransform bagPanel = (RectTransform)panel.Find("BagPanel");
+            Place(bagPanel, top, topLeft, new Vector2(middleLeft, -36f - height - 10f), new Vector2(850f, 1000f - 46f - height));
+            ItemGridView bag = bagPanel.Find("Bag").GetComponent<ItemGridView>();
+            bag.Rect.anchoredPosition = new Vector2(205f, -70f);
+
+            for (int i = 0; i < 2; i++)
+                ((RectTransform)bagPanel.Find("Slot" + (EquipSlot)((int)EquipSlot.Pouch1 + i))).anchoredPosition = PouchSlotPosition(bag, i);
+
+            TMP_Text pouches = CreateText("PouchesTitle", bagPanel, topLeft, PouchSlotPosition(bag, 0) + new Vector2(-10f, 26f), new Vector2(120f, 22f), 13f,
+                TextAlignmentOptions.MidlineLeft);
+            pouches.text = "Belt pouches";
+            pouches.color = s_textDim;
+            TMP_Text hints = CreateText("Hints", bagPanel, new Vector2(0.5f, 0f), new Vector2(0f, 16f), new Vector2(820f, 44f), 13f, TextAlignmentOptions.Center);
+            hints.text = "[Drag] move   [R Click] equip / unequip   [Shift + L Click] to the stash and back   [Ctrl + Drag] split a stack\n" +
+                "A belt pouch opens its cells under the backpack; it comes off only while they are empty";
+            hints.color = s_textDim;
+
+            RectTransform other = (RectTransform)panel.Find("OtherPanel");
+            Place(other, topRight, topRight, new Vector2(-20f, -36f), new Vector2(470f, 964f));
+            ((RectTransform)other.Find("Other")).anchoredPosition = new Vector2(15f, -50f);
+        }
+
+        private static void Place(RectTransform rect, Vector2 anchor, Vector2 pivot, Vector2 position, Vector2 size)
+        {
+            rect.anchorMin = rect.anchorMax = anchor;
+            rect.pivot = pivot;
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+        }
+
+        private static void ResizeTexture(RenderTexture texture, int width, int height)
+        {
+            texture.Release();
+            texture.width = width;
+            texture.height = height;
+            EditorUtility.SetDirty(texture);
+        }
+
+        /// Stash page tabs under the stash grid and the sell counter at the bottom of the stash panel.
         private static StashPagesView BuildStashPages(InventoryView inventory)
         {
             Transform other = inventory.transform.Find("OtherPanel");
@@ -996,20 +1062,19 @@ namespace Game.Scripts.Editor.Dungeon
 
             for (int i = 0; i < tabs.Length; i++)
             {
-                tabs[i] = CreateButton("Page" + (i + 1), other, topLeft, new Vector2(16f + i * 96f, -284f), new Vector2(88f, 34f), $"Page {i + 1}");
+                tabs[i] = CreateButton("Page" + (i + 1), other, topLeft, new Vector2(15f + i * 150f, -504f), new Vector2(142f, 34f), $"Page {i + 1}");
                 ((RectTransform)tabs[i].transform).pivot = topLeft;
                 tabs[i].gameObject.AddComponent<ItemDropZone>();
             }
 
-            TMP_Text coins = CreateText("Coins", other, new Vector2(1f, 1f), new Vector2(-16f, -284f), new Vector2(240f, 34f), 18f, TextAlignmentOptions.MidlineRight);
+            TMP_Text coins = CreateText("Coins", other, new Vector2(1f, 1f), new Vector2(-15f, -504f), new Vector2(150f, 34f), 18f, TextAlignmentOptions.MidlineRight);
             coins.rectTransform.pivot = new Vector2(1f, 1f);
             coins.color = s_gold;
 
-            Image counter = CreateImage("Sell", other, topLeft, new Vector2(16f, -334f), new Vector2(648f, 88f), new Color(0.12f, 0.09f, 0.05f, 0.95f));
-            counter.rectTransform.pivot = topLeft;
+            Image counter = CreateImage("Sell", other, new Vector2(0.5f, 0f), new Vector2(0f, 15f), new Vector2(440f, 140f), new Color(0.12f, 0.09f, 0.05f, 0.95f));
             counter.raycastTarget = true;
             ItemDropZone sellZone = counter.gameObject.AddComponent<ItemDropZone>();
-            CreateImage("Frame", counter.rectTransform, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(648f, 2f), s_frame).rectTransform.pivot = new Vector2(0.5f, 1f);
+            CreateImage("Frame", counter.rectTransform, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(440f, 2f), s_frame).rectTransform.pivot = new Vector2(0.5f, 1f);
             TMP_Text sellText = CreateText("Text", counter.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, 20f, TextAlignmentOptions.Center);
             Stretch(sellText.rectTransform, 8f);
             sellText.color = new Color(0.85f, 0.8f, 0.7f);
@@ -1336,40 +1401,48 @@ namespace Game.Scripts.Editor.Dungeon
             }
 
             CreateImage("TitleRule", page, top, new Vector2(0f, -146f), new Vector2(620f, 2f), s_frame);
-            // Subclass tabs under the title, the chosen one's description under them, right above the arch.
-            Button[] subclassTabs = new Button[3];
-
-            Image[] subclassIcons = new Image[subclassTabs.Length];
-
-            for (int i = 0; i < subclassTabs.Length; i++)
-            {
-                subclassTabs[i] = CreateButton("Subclass" + i, page, top, new Vector2((i - 1) * 196f, -156f), new Vector2(184f, 34f), string.Empty);
-                subclassIcons[i] = CreateImage("Icon", (RectTransform)subclassTabs[i].transform, new Vector2(0f, 0.5f), new Vector2(18f, 0f), new Vector2(30f, 30f), Color.white);
-                subclassIcons[i].raycastTarget = false;
-                subclassIcons[i].preserveAspect = true;
-                subclassTabs[i].GetComponentInChildren<TMP_Text>().margin = new Vector4(30f, 0f, 0f, 0f);
-            }
-
-            TMP_Text subclassText = CreateText("SubclassText", page, top, new Vector2(0f, -194f), new Vector2(900f, 24f), 13f, TextAlignmentOptions.Center);
+            // The chosen subclass's description under the title, above the arch.
+            TMP_Text subclassText = CreateText("SubclassText", page, top, new Vector2(0f, -160f), new Vector2(900f, 24f), 13f, TextAlignmentOptions.Center);
             subclassText.color = s_textDim;
 
             RectTransform character = CreateRect("Character", page, center, Vector2.zero, Vector2.zero);
             Stretch(character, 0f);
-            RawImage doll = CreateRect("Doll", character, top, new Vector2(0f, -262f), new Vector2(520f, 700f)).gameObject.AddComponent<RawImage>();
-            CharacterPreviewView preview = BuildPreview(doll, inputs, 2, 520, 700, out Camera camera);
+            RawImage doll = CreateRect("Doll", character, top, new Vector2(0f, -205f), new Vector2(480f, 590f)).gameObject.AddComponent<RawImage>();
+            CharacterPreviewView preview = BuildPreview(doll, inputs, 2, 480, 590, out Camera camera);
             camera.backgroundColor = s_lobbyBack;
-            CreateImage("Arch", character, top, new Vector2(0f, -226f), new Vector2(576f, 740f), line).sprite = DungeonUiSpriteBuilder.Load("Arch");
-            CreateImage("ArchBase", character, top, new Vector2(0f, -967f), new Vector2(470f, 2f), line);
+            CreateImage("Arch", character, top, new Vector2(0f, -190f), new Vector2(532f, 620f), line).sprite = DungeonUiSpriteBuilder.Load("Arch");
+            CreateImage("ArchBase", character, top, new Vector2(0f, -811f), new Vector2(440f, 2f), line);
 
-            // Equipped perks sit on the arch posts, the two skills close it at the bottom.
+            // Round subclass buttons stand under the doll's feet, their names under them.
+            Sprite disc = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+            Button[] subclassTabs = new Button[3];
+            Image[] subclassIcons = new Image[subclassTabs.Length];
+
+            for (int i = 0; i < subclassTabs.Length; i++)
+            {
+                subclassTabs[i] = CreateButton("Subclass" + i, page, top, new Vector2((i - 1) * 150f, -828f), new Vector2(60f, 60f), string.Empty);
+                subclassTabs[i].image.sprite = disc;
+                subclassTabs[i].image.type = Image.Type.Simple;
+                RectTransform tabRect = (RectTransform)subclassTabs[i].transform;
+                CreateImage("Rim", tabRect, center, Vector2.zero, new Vector2(60f, 60f), line).sprite = DungeonUiSpriteBuilder.Load("Circle");
+                subclassIcons[i] = CreateImage("Icon", tabRect, center, Vector2.zero, new Vector2(40f, 40f), Color.white);
+                subclassIcons[i].preserveAspect = true;
+                TMP_Text name = subclassTabs[i].GetComponentInChildren<TMP_Text>();
+                name.rectTransform.anchorMin = name.rectTransform.anchorMax = name.rectTransform.pivot = new Vector2(0.5f, 0f);
+                name.rectTransform.anchoredPosition = new Vector2(0f, -24f);
+                name.rectTransform.sizeDelta = new Vector2(150f, 22f);
+                name.fontSize = 14f;
+            }
+
+            // The equipped perks in a row under the subclasses, between the two skills (Q left, E right).
             AbilityIconView[] perkSlots = new AbilityIconView[4];
             AbilityIconView[] skillSlots = new AbilityIconView[2];
 
             for (int i = 0; i < perkSlots.Length; i++)
-                perkSlots[i] = AbilityIcon("PerkSlot" + i, character, top, new Vector2(i < 2 ? -284f : 284f, i % 2 == 0 ? -574f : -768f), "Diamond", 104f);
+                perkSlots[i] = AbilityIcon("PerkSlot" + i, character, top, new Vector2((i - 1.5f) * 122f, -992f), "Diamond", 104f);
 
             for (int i = 0; i < skillSlots.Length; i++)
-                skillSlots[i] = AbilityIcon("SkillSlot" + i, character, top, new Vector2(i == 0 ? -284f : 284f, -968f), "Square", 88f);
+                skillSlots[i] = AbilityIcon("SkillSlot" + i, character, top, new Vector2(i == 0 ? -330f : 330f, -984f), "Square", 88f);
 
             // The pool stacks its sections from the top: perks, skills and, for a spell class, its spells.
             Image pool = CreateImage("Pool", page, Vector2.one, new Vector2(-20f, -96f), new Vector2(530f, 964f), Color.white);
@@ -1410,7 +1483,7 @@ namespace Game.Scripts.Editor.Dungeon
             RectTransform skillRoot = Section("Skills", 104f, 4, new Vector2(18f, 14f));
             // The spell keys hang under their squares, so the rows leave room for them.
             RectTransform spellRoot = Section("Spells", 92f, 5, new Vector2(2f, 20f));            TMP_Text hint = CreateText("Hint", pool.rectTransform, top, new Vector2(0f, -918f), new Vector2(470f, 40f), 12f, TextAlignmentOptions.Center);
-            hint.text = "Drag a perk, a skill or a spell onto a slot  ·  click a perk to equip or remove it  ·  LMB / RMB on a skill binds it to Q / E, on a spell puts it into wheel I / II";
+            hint.text = "Drag a perk, a skill or a spell onto a slot  ·  click a perk to equip or remove it  ·  LMB / RMB on a skill binds it to Q / E, RMB on a Q / E slot empties it, LMB / RMB on a spell puts it into wheel I / II";
             hint.color = s_textDim;
             SpellsView spells = BuildSpells(page, spellRoot);
             AbilityIconView perkIcon = AbilityIcon("PerkIcon", page, center, Vector2.zero, "Diamond", 104f);
@@ -1507,7 +1580,7 @@ namespace Game.Scripts.Editor.Dungeon
                 inactiveLabels[wheel] = inactive.gameObject;
             }
 
-            TMP_Text hint = CreateText("Hint", group, top, new Vector2(0f, -900f), new Vector2(820f, 40f), 13f, TextAlignmentOptions.Center);
+            TMP_Text hint = CreateText("Hint", group, top, new Vector2(0f, -990f), new Vector2(820f, 40f), 13f, TextAlignmentOptions.Center);
             hint.text = "Drag a spell onto a wheel slot  ·  click a slot or drag it off to remove the spell  ·  LMB / RMB on a spell puts it into wheel I / II";
             hint.color = s_textDim;
 
