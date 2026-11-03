@@ -61,6 +61,7 @@ namespace Game.Scripts.Dungeon
             bolt._light.color = new Color(0.6f, 0.75f, 1f);
             bolt._light.range = isStrike ? 12f : 6f;
             bolt._light.intensity = bolt._intensity;
+            DungeonLightLayers.Set(bolt._light, DungeonLightLayers.Everything);
             bolt._line.widthMultiplier = bolt._width;
             DungeonAudioComponent.Play(DungeonSound.Cast, to, isStrike ? 1f : 0.5f, isStrike ? 0.5f : 1.6f);
         }

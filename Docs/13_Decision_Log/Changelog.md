@@ -3,6 +3,7 @@
 ## 2026-11-02
 
 ### Changed
+- Catacomb lighting reworked in every module: neighbourhoods of lamps become baked, switchable or dark places (DD-027).
 - The generator lays every room once: `Limit` is gone, a pool smaller than the floor logs an error and starts a new round (DD-025).
 - 20 new rooms approved and added to the pool, 43 ordinary and 5 corner rooms in all; the atlas uses the same rule.
 - Stairs fixed in Fungus Terraces, Anatomy Theatre, Forge and Grave Furrows; the mockup check now tests both ends of every flight and rotated blocks by their real shape.
@@ -11,6 +12,9 @@
 - Rooms span −10…+24 m; the NavMesh bake and the cell map follow.
 
 ### Added
+- Lamps anyone can put out or light with F, networked, a part of them starts cold.
+- Per-prefab lightmaps for rooms: `Bake Room Lightmaps`, `Balance Room Lighting`, `Let Prefab Lights Reach Baked Stone` menus.
+- Mouse sensitivity in Settings, kept between launches.
 - Short story of every module in `Lore.md` and in the atlas.
 - Doors below the ground level stand on a threshold like the upper ones, the NavMesh passes them.
 - `Build Missing Rooms` menu; `Apply Mockups` also writes the room pool to the scene.

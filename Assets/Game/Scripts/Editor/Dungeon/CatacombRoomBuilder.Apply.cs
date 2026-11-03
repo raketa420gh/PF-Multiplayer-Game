@@ -53,6 +53,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             AssetDatabase.SaveAssets();
             CatacombRoomSeparator.SeparateAll();
+            BalanceRooms();
             Fusion.Editor.NetworkProjectConfigUtilities.RebuildPrefabTable();
             DungeonMapBuilder.SetRoomPool(() => layouts.Select(Realize).ToArray());
             Debug.Log($"Mockups applied: {layouts.Count} rooms");
@@ -68,6 +69,31 @@ namespace Game.Scripts.Editor.Dungeon
 
             foreach (string stone in new[] { "Саркофаг", "Весовая платформа" })
                 s_stone.Add(stone);
+
+            foreach (string lamp in CatacombRoomLighting.Switchable)
+            {
+                CatacombRoomLighting.BuildLamp(lamp);
+                Marker(CatacombRoomLighting.SwitchMarker + lamp, CatacombMarkerKind.Trap, CatacombRoomLighting.LampPrefab(lamp));
+            }
+        }
+
+        [MenuItem("Tools/Game/Dungeon/Catacombs/Balance Room Lighting")]
+        public static void BalanceLighting()
+        {
+            PrepareKit(Layouts().ToList());
+            BalanceRooms();
+            Fusion.Editor.NetworkProjectConfigUtilities.RebuildPrefabTable();
+        }
+
+        private static void BalanceRooms()
+        {
+            foreach (string path in CatacombLightBaker.RoomPaths())
+            {
+                GameObject room = PrefabUtility.LoadPrefabContents(path);
+                CatacombRoomLighting.Balance(room.transform, (name, position, yaw) => Kit(name, room.transform, position, yaw));
+                PrefabUtility.SaveAsPrefabAsset(room, path);
+                PrefabUtility.UnloadPrefabContents(room);
+            }
         }
 
         private static string MockupPath(string name)

@@ -645,6 +645,7 @@ namespace Game.Scripts.Dungeon
                     light.range = 10f;
                     light.intensity = 2.6f;
                     light.shadows = LightShadows.None;
+                    DungeonLightLayers.Set(light, DungeonLightLayers.Everything);
 
                     return true;
                 case StatusEffectKind.FireWeapon:

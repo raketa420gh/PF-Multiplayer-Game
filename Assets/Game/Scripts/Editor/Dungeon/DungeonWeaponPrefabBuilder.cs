@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Game.Scripts.Battle;
+using Game.Scripts.Dungeon;
 using Game.Scripts.Editor.Battle;
 using UnityEditor;
 using UnityEngine;
@@ -221,6 +222,7 @@ namespace Game.Scripts.Editor.Dungeon
             light.color = new Color(0.5f, 0.75f, 1f);
             light.range = 3f;
             light.intensity = 1.2f;
+            DungeonLightLayers.Set(light, DungeonLightLayers.Everything);
             light.shadows = LightShadows.None;
             root.AddComponent<WeaponVisual>();
 
@@ -477,6 +479,7 @@ namespace Game.Scripts.Editor.Dungeon
             light.type = LightType.Point;
             light.range = 5f;
             light.intensity = 2.5f;
+            DungeonLightLayers.Set(light, DungeonLightLayers.Everything);
             light.shadows = LightShadows.None;
 
             TrailRenderer trail = root.AddComponent<TrailRenderer>();

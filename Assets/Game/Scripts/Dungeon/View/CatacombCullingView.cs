@@ -30,6 +30,8 @@ namespace Game.Scripts.Dungeon
 
         private void LateUpdate()
         {
+            CatacombLampComponent.SetViewer(_camera.transform.position);
+
             if (_catacombs.Version != _version)
                 Cache();
 

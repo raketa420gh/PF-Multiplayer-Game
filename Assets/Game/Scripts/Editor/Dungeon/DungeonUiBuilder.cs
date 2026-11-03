@@ -2081,25 +2081,13 @@ namespace Game.Scripts.Editor.Dungeon
             Button resume = CreateButton("Resume", main, center, new Vector2(0f, 0f), new Vector2(260f, 48f), "Resume");
             Button settings = CreateButton("Settings", main, center, new Vector2(0f, -64f), new Vector2(260f, 48f), "Settings");
 
-            RectTransform page = CreateImage("Settings", panel, center, Vector2.zero, new Vector2(460f, 240f), s_panel).rectTransform;
+            RectTransform page = CreateImage("Settings", panel, center, Vector2.zero, new Vector2(460f, 320f), s_panel).rectTransform;
             TMP_Text pageTitle = CreateText("Title", page, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(420f, 50f), 30f, TextAlignmentOptions.Center);
             pageTitle.text = "Settings";
             pageTitle.color = s_gold;
-            TMP_Text volumeText = CreateText("Volume", page, center, new Vector2(0f, 26f), new Vector2(380f, 30f), 20f, TextAlignmentOptions.Left);
-            volumeText.color = s_text;
-            Slider slider = DefaultControls.CreateSlider(new DefaultControls.Resources
-            {
-                standard = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd"),
-                background = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd"),
-                knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd")
-            }).GetComponent<Slider>();
-            RectTransform sliderRect = (RectTransform)slider.transform;
-            sliderRect.SetParent(page, false);
-            sliderRect.anchorMin = sliderRect.anchorMax = center;
-            sliderRect.anchoredPosition = new Vector2(0f, -10f);
-            sliderRect.sizeDelta = new Vector2(380f, 24f);
-            slider.fillRect.GetComponent<Image>().color = s_gold;
-            Button back = CreateButton("Back", page, center, new Vector2(0f, -78f), new Vector2(200f, 44f), "Back");
+            Slider slider = CreateSetting("Volume", page, 66f, out TMP_Text volumeText);
+            Slider sensitivity = CreateSetting("Sensitivity", page, -14f, out TMP_Text sensitivityText);
+            Button back = CreateButton("Back", page, center, new Vector2(0f, -118f), new Vector2(200f, 44f), "Back");
 
             PauseMenuView view = panel.gameObject.AddComponent<PauseMenuView>();
             SerializedObject so = new SerializedObject(view);
@@ -2110,10 +2098,34 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_backButton", back);
             BattleEditorUtility.Set(so, "_volumeSlider", slider);
             BattleEditorUtility.Set(so, "_volumeText", volumeText);
+            BattleEditorUtility.Set(so, "_sensitivitySlider", sensitivity);
+            BattleEditorUtility.Set(so, "_sensitivityText", sensitivityText);
             so.ApplyModifiedPropertiesWithoutUndo();
             page.gameObject.SetActive(false);
 
             return view;
+        }
+
+        /// A caption over a slider, the caption's centre at y.
+        private static Slider CreateSetting(string name, RectTransform page, float y, out TMP_Text caption)
+        {
+            Vector2 center = new Vector2(0.5f, 0.5f);
+            caption = CreateText(name, page, center, new Vector2(0f, y), new Vector2(380f, 30f), 20f, TextAlignmentOptions.Left);
+            caption.color = s_text;
+            Slider slider = DefaultControls.CreateSlider(new DefaultControls.Resources
+            {
+                standard = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd"),
+                background = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd"),
+                knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd")
+            }).GetComponent<Slider>();
+            RectTransform rect = (RectTransform)slider.transform;
+            rect.SetParent(page, false);
+            rect.anchorMin = rect.anchorMax = center;
+            rect.anchoredPosition = new Vector2(0f, y - 36f);
+            rect.sizeDelta = new Vector2(380f, 24f);
+            slider.fillRect.GetComponent<Image>().color = s_gold;
+
+            return slider;
         }
 
         /// Full floor map on M: parchment with the names of the modules, the player's arrow on top.

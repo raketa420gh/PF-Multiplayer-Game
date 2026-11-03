@@ -5002,8 +5002,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6252255883456869425}
   - component: {fileID: 3696430787870655644}
-  - component: {fileID: 8837377824374006870}
   - component: {fileID: 6793236325253021378}
+  - component: {fileID: 8837377824374006870}
   m_Layer: 0
   m_Name: Light
   m_TagString: Untagged
@@ -5075,7 +5075,7 @@ Light:
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_RenderingLayerMask: 1
+  m_RenderingLayerMask: 3
   m_Lightmapping: 4
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
@@ -5091,22 +5091,6 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!114 &8837377824374006870
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8199941546109624245}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f375fb4f1eaf91b46a1779a9be18969e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.FlickerLightComponent
-  _light: {fileID: 3696430787870655644}
-  _baseIntensity: 3
-  _amplitude: 0.75
-  _speed: 9
 --- !u!114 &6793236325253021378
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5127,7 +5111,7 @@ MonoBehaviour:
   m_SoftShadowQuality: 0
   m_RenderingLayersMask:
     serializedVersion: 0
-    m_Bits: 1
+    m_Bits: 3
   m_ShadowRenderingLayersMask:
     serializedVersion: 0
     m_Bits: 1
@@ -5136,3 +5120,19 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &8837377824374006870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8199941546109624245}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f375fb4f1eaf91b46a1779a9be18969e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.FlickerLightComponent
+  _light: {fileID: 3696430787870655644}
+  _baseIntensity: 3
+  _amplitude: 0.75
+  _speed: 9

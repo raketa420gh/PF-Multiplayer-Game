@@ -191,6 +191,7 @@ namespace Game.Scripts.Editor.Dungeon
             light.intensity = intensity;
             light.shadows = shadows ? LightShadows.Soft : LightShadows.None;
             light.shadowStrength = 0.8f;
+            DungeonLightLayers.Set(light, DungeonLightLayers.Everything);
 
             if (flicker)
             {

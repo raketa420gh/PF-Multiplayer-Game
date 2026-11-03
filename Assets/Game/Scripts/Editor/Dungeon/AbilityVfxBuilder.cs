@@ -305,6 +305,7 @@ namespace Game.Scripts.Editor.Dungeon
             light.type = LightType.Point;
             light.range = 1f;
             light.intensity = 1f;
+            DungeonLightLayers.Set(light, DungeonLightLayers.Everything);
             light.color = Color.white;
             light.shadows = LightShadows.None;
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(go, $"{PrefabsFolder}/VfxLight.prefab");

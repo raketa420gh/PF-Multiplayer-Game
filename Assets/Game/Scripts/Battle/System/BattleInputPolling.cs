@@ -12,9 +12,6 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private NetworkEvents _networkEvents;
 
-        [SerializeField]
-        private float _sensitivity = 2f;
-
         private const float MaxPitch = 90f;
 
         private Vector2 _look;
@@ -63,12 +60,12 @@ namespace Game.Scripts.Battle
 
             if (!_isLookFrozen)
             {
-                _look.y = Mathf.Repeat(_look.y + Input.GetAxisRaw("Mouse X") * _sensitivity, 360f);
+                _look.y = Mathf.Repeat(_look.y + Input.GetAxisRaw("Mouse X") * MouseSettings.Sensitivity, 360f);
 
                 if (_yawLimit >= 0f)
                     _look.y = Mathf.Repeat(_yawCenter + Mathf.Clamp(Mathf.DeltaAngle(_yawCenter, _look.y), -_yawLimit, _yawLimit), 360f);
 
-                _look.x = Mathf.Clamp(_look.x - Input.GetAxisRaw("Mouse Y") * _sensitivity, -MaxPitch, MaxPitch);
+                _look.x = Mathf.Clamp(_look.x - Input.GetAxisRaw("Mouse Y") * MouseSettings.Sensitivity, -MaxPitch, MaxPitch);
             }
 
             Accumulate(PlayerInputButtons.Primary, Input.GetMouseButton(0));

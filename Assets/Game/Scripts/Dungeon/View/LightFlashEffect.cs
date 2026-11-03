@@ -34,6 +34,7 @@ namespace Game.Scripts.Dungeon
             flash._light.color = color;
             flash._light.range = range;
             flash._light.intensity = Intensity;
+            DungeonLightLayers.Set(flash._light, DungeonLightLayers.Everything);
             DungeonAudioComponent.Play(DungeonSound.Cast, position, 0.7f, 1.3f);
         }
     }
