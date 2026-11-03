@@ -1,0 +1,143 @@
+{
+ "name": "dagger_swing",
+ "variants": 12,
+ "about": "Wp_RondelDagger_Attack_Whoosh (short blade swish part; the 3 long dark cloth whooshes left out): quick low-heavy air swish peaking ~40-60 ms, -30 dB by ~120 ms, gone by ~300 ms",
+ "reference": "D:/DaD_Sounds/Dagger_Review/swing",
+ "length_ms": 400,
+ "seed": 11000,
+ "peak_db": -2,
+ "match": 0.7,
+ "fade_ms": 120,
+ "layers": [
+  {
+   "src": "dagger_slices/swing/dsw_*.wav",
+   "at_ms": [
+    12,
+    22
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 40,
+   "snap": {
+    "hold": [
+     50,
+     70
+    ],
+    "tau": [
+     45,
+     55
+    ]
+   }
+  },
+  {
+   "src": "dagger_slices/swing/dsw_*.wav",
+   "at_ms": [
+    45,
+    65
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "hp": 40,
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   }
+  },
+  {
+   "src": "swishes/swishes/swish-*.wav",
+   "at_ms": [
+    30,
+    50
+   ],
+   "gain_db": [
+    -12,
+    -9
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 80
+  },
+  {
+   "src": "morningstar_swing_slices/Dagger_Swing_*.wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -12,
+    -9
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "hp": 40,
+   "lp": 2000,
+   "snap": {
+    "hold": [
+     150,
+     180
+    ],
+    "tau": [
+     45,
+     55
+    ]
+   }
+  },
+  {
+   "src": "dagger_slices/swing/ssw_*.wav",
+   "at_ms": [
+    25,
+    45
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "hp": 40,
+   "snap": {
+    "hold": [
+     60,
+     80
+    ],
+    "tau": [
+     45,
+     55
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 70,
+  "len_ms": 300,
+  "band": [
+   60,
+   2000
+  ]
+ }
+}

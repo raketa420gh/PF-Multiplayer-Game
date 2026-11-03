@@ -1,0 +1,100 @@
+{
+ "name": "dagger_drag",
+ "variants": 12,
+ "about": "Item_2D_Knife_Drag: inventory pick - light bright steel shing (4-10 kHz lead, nothing below 1.5 kHz) at 20-60 ms, -25 dB by 100 ms, -35..-40 tail to 300 ms, ~0.55 s",
+ "reference": "D:/DaD_Sounds/Dagger_Review/drag",
+ "length_ms": 580,
+ "seed": 12300,
+ "peak_db": -1,
+ "match": 0.8,
+ "fade_ms": 150,
+ "layers": [
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    0,
+    8
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 2500,
+   "snap": {
+    "hold": [
+     50,
+     65
+    ],
+    "tau": [
+     35,
+     45
+    ]
+   }
+  },
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpactWood.flac",
+   "at_ms": [
+    0,
+    8
+   ],
+   "gain_db": [
+    -24,
+    -20
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 150,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "dagger_slices/sheath/sheathf_*.wav",
+   "at_ms": [
+    50,
+    80
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 2500,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -24,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   2000,
+   14000
+  ]
+ }
+}

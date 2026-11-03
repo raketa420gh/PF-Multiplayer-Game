@@ -1,0 +1,126 @@
+{
+ "name": "dagger_pickup",
+ "variants": 12,
+ "about": "Item_3D_Knife_PickUp (2 live media): hand grabs the knife - a broadband handling knock at ~20 ms with a light steel tick, then a quieter cloth/steel rustle to ~200 ms, gone ~0.5 s",
+ "reference": "D:/DaD_Sounds/Dagger_Review/pickup",
+ "length_ms": 550,
+ "seed": 12200,
+ "peak_db": -1,
+ "match": 0.7,
+ "fade_ms": 150,
+ "layers": [
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    0,
+    6
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 800,
+   "max_ms": 300,
+   "snap": {
+    "hold": [
+     60,
+     90
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/thud[23].wav",
+   "at_ms": [
+    0,
+    5
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    0,
+    8
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     6,
+     10
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "dagger_slices/sheath/sheathf_*.wav",
+   "at_ms": [
+    90,
+    160
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "hp": 1500,
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -28,
+  "decay_ms": 70,
+  "len_ms": 350,
+  "band": [
+   400,
+   10000
+  ]
+ }
+}

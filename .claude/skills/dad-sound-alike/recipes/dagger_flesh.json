@@ -1,0 +1,183 @@
+{
+ "name": "dagger_flesh",
+ "variants": 12,
+ "about": "FX_Hit_Character switch state Dagger: bright stab - steel slicing in (4-10 kHz lead) with a short meat punch, dense ~80 ms, drop to -25 dB, a second wet slice ~200 ms, gone by ~400 ms",
+ "reference": "D:/DaD_Sounds/Dagger_Review/flesh",
+ "length_ms": 700,
+ "seed": 11100,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    0,
+    4
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1500,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "tinysized/sfx-cc0/apple-cut-*.wav",
+   "at_ms": [
+    0,
+    6
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     50,
+     70
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "impact_meat/qubodupImpact/qubodupImpactMeat0*.flac",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "lp": 800,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "wet_squish/impsplat/impactsplat0[1367]*.flac",
+   "at_ms": [
+    4,
+    12
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "tinysized/sfx-cc0/apple-cut-*.wav",
+   "at_ms": [
+    135,
+    165
+   ],
+   "gain_db": [
+    -5,
+    -2
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 1000,
+   "max_ms": 260,
+   "snap": {
+    "hold": [
+     120,
+     150
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "dagger_slices/sheath/sheathf_*.wav",
+   "at_ms": [
+    160,
+    200
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 2500,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 8000,
+  "db": 8
+ },
+ "room": {
+  "db": -26,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   800,
+   12000
+  ]
+ }
+}

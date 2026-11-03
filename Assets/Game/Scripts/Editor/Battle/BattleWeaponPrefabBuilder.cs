@@ -349,7 +349,7 @@ namespace Game.Scripts.Editor.Battle
                     shape.HasLugs = true;
                     break;
                 case SwordStyle.Rondel:
-                    shape.Thickness = 0.0036f;
+                    shape.Thickness = 0.008f;
                     shape.Taper = 0.45f;
                     shape.Point = 0.3f;
                     shape.Ridge = 0.05f;

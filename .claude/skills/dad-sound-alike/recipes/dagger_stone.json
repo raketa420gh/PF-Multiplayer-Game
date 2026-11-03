@@ -1,0 +1,178 @@
+{
+ "name": "dagger_stone",
+ "variants": 12,
+ "about": "FX_Hit Dagger_Default, the long sub-container (5 media): ~40 ms pre-roll, then a bright steel-point clink on stone (1.5-4 kHz lead), -18 dB in 40 ms, a held -22 dB ring/scrape to ~120 ms, then a long quiet -50..-55 dB ring to 1.2 s",
+ "reference": "D:/DaD_Sounds/Dagger_Review/stone",
+ "length_ms": 1300,
+ "seed": 11300,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 500,
+ "layers": [
+  {
+   "src": "sfx_breaking/bfh1_metal_hit_0[16].ogg",
+   "at_ms": [
+    40,
+    50
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 700,
+   "snap": {
+    "hold": [
+     6,
+     10
+    ],
+    "tau": [
+     16,
+     22
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/clink[23]*.wav",
+   "at_ms": [
+    40,
+    50
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 800,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[38].ogg",
+   "at_ms": [
+    40,
+    46
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     15,
+     22
+    ]
+   }
+  },
+  {
+   "src": "tinysized/sfx-cc0/metal-knife-scrape-0[12].wav",
+   "at_ms": [
+    55,
+    70
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "max_ms": 200,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/bing1.wav",
+   "at_ms": [
+    40,
+    50
+   ],
+   "gain_db": [
+    -26,
+    -22
+   ],
+   "pitch": [
+    0,
+    4
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     150,
+     200
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    40,
+    44
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 250,
+   "snap": {
+    "hold": [
+     15,
+     20
+    ],
+    "tau": [
+     20,
+     25
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -32,
+  "decay_ms": 90,
+  "len_ms": 500,
+  "band": [
+   800,
+   8000
+  ]
+ }
+}

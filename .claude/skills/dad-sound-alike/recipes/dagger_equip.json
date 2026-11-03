@@ -1,0 +1,83 @@
+{
+ "name": "dagger_equip",
+ "variants": 12,
+ "about": "Wp_CastillonDagger_UnEquip (its Equip media are all stale) + Wp_Rapier_Equip: bright steel slide out of a sheath (1.5-24 kHz, nothing below 500 Hz), ~0.3-0.5 s, a click/shing at the end",
+ "reference": "D:/DaD_Sounds/Dagger_Review/equip",
+ "length_ms": 550,
+ "seed": 12000,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 150,
+ "layers": [
+  {
+   "src": "weapons_apparel/sfx/knife-unsheathe-0[234].wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 800,
+   "max_ms": 300
+  },
+  {
+   "src": "dagger_slices/draw/draw*.wav",
+   "at_ms": [
+    50,
+    110
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1000,
+   "snap": {
+    "hold": [
+     40,
+     70
+    ],
+    "tau": [
+     35,
+     50
+    ]
+   }
+  },
+  {
+   "src": "weapons_apparel/sfx/belt-buckle-*.wav",
+   "at_ms": [
+    0,
+    40
+   ],
+   "gain_db": [
+    -18,
+    -14
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "hp": 1500,
+   "chance": 0.5,
+   "max_ms": 200
+  }
+ ],
+ "room": {
+  "db": -26,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   1500,
+   12000
+  ]
+ }
+}

@@ -315,6 +315,9 @@ namespace Game.Scripts.Editor.Dungeon
                 Name = "Tattered Pouch", Kind = ItemKind.Pouch, Width = 1, Height = 1, Value = 15, Glyph = "Pc", Color = s_leather, Sounds = "leather", Cells = 4,
                 Description = "A worn belt pouch. Worn in a pouch slot, it adds 4 bag cells."
             });
+            // Dark and Darker's rondel dagger: a stiff spike of a blade between two discs, quick thrusts at the gaps of armour.
+            items.Add(Weapon("Misericorde", DungeonWeaponLibrary.Misericorde, WeaponClass.Dagger, 1, 2, 8f, "Rd", s_steel, 25,
+                "A narrow stabbing dagger between a disc guard and a disc pommel. Quick thrusts; pairs with a shield."));
 
             return items;
         }

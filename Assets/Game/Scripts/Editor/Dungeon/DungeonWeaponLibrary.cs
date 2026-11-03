@@ -29,6 +29,9 @@ namespace Game.Scripts.Editor.Dungeon
         public const string VikingShield = "VikingShield";
         public const string VikingEcu = "VikingEcu";
         public const string Torch = "Torch";
+        public const string Misericorde = "Misericorde";
+        public const string MisericordeShield = "MisericordeShield";
+        public const string MisericordeEcu = "MisericordeEcu";
 
         private const float AxeHead = 0.8f;
         /// A long axe is held at the butt with the off hand, this far down the haft from the main hand.
@@ -72,7 +75,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// weapon by name.
         public static readonly string[] CatalogOrder =
         {
-            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, BearClaws, PantherClaws, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu, Torch
+            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, BearClaws, PantherClaws, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu, Torch, Misericorde, MisericordeShield, MisericordeEcu
         };
 
         /// The entry whose shield is the model of a shield item, by its ShieldIndex: the round shield, the écu.
@@ -92,7 +95,8 @@ namespace Game.Scripts.Editor.Dungeon
         {
             (ArmingSword, CreateArmingSword, new[] { SwordShield, SwordEcu }),
             (MorningStar, CreateMorningStar, new[] { MaceShield, MaceEcu }),
-            (VikingSword, CreateVikingSword, new[] { VikingShield, VikingEcu })
+            (VikingSword, CreateVikingSword, new[] { VikingShield, VikingEcu }),
+            (Misericorde, CreateMisericorde, new[] { MisericordeShield, MisericordeEcu })
         };
 
         /// Catalog entries that play another entry's clips (its prefix) with a model, reach and damage of their own.
@@ -108,7 +112,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 4), ["Rat Bite"] = (1, 1), ["Arming Sword"] = (4, 3), ["Morning Star"] = (6, 3), ["Magic Staff"] = (4, 4),
             ["Round Shield"] = (1, 7), ["Écu"] = (1, 8), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2),
-            ["Bear Claws"] = (7, 4), ["Viking Sword"] = (5, 3), ["Torch"] = (2, 1)
+            ["Bear Claws"] = (7, 4), ["Viking Sword"] = (5, 3), ["Torch"] = (2, 1), ["Misericorde"] = (2, 2)
         };
 
         /// A weapon with a shield hits with the weapon's Impact and blocks with the shield's Stability.
@@ -185,7 +189,8 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateRatBite(),
                 CreateMorningStar(),
                 CreateVikingSword(),
-                CreateTorch()
+                CreateTorch(),
+                CreateMisericorde()
             };
 
             // Every pair is built from a definition of its own: WithShield changes the poses it is given.
@@ -408,6 +413,180 @@ namespace Game.Scripts.Editor.Dungeon
                 Strike = 0.35f,
                 Idle = idle,
                 Attacks = new[] { right, left }
+            };
+        }
+
+        /// The rondel dagger of Dark and Darker (D:\rondel_dagger_attack_1_2.mp4, D:\rondel_dagger_block.mp4), first person: carried
+        /// point up at the right of the view, the fist under the bottom edge, the free fist raised at the lower left and dropped
+        /// out of the view by every action. Two thrusts: from the lower right corner up into the crosshair, then down and round
+        /// below the view to rise from under the crosshair, the pommel to the eye. The block lays the blade across the face,
+        /// point left; a blocked hit is answered with the first thrust.
+        private static WeaponDefinition CreateMisericorde()
+        {
+            const int damage = 20;
+            const float bladeBase = 0.08f;
+            const float bladeTip = 0.38f;
+            // From the hand to the disc guard and on to the point.
+            const float toGuard = 0.06f;
+            const float toTip = 0.32f;
+            // How far past the peak along the thrust line the windup starts and the hold ends.
+            const float drawBack = 0.25f;
+            const float hold = 0.02f;
+            // The blade laid along the forearm in a thrust: the footage has them parallel on the screen.
+            const float along = 60f;
+
+            Vector3 lowElbow = new(0.32f, 1.2f, 0.12f);
+            Vector3 blockElbow = new(0.45f, 1.55f, 0.32f);
+            const float blockLean = 30f;
+            Vector3 offRaised = OnScreen(0.35f, 0.82f, 0.36f);
+            Vector3 offLow = Cm(-25f, 1f, 5f);
+
+            BodyPose Dagger(float u, float v, float depth, float tipU, float tipV, Vector3 elbow, Vector3 offHand, float lean = 0f, float torso = 0f)
+            {
+                BodyPose pose = Sword(u, v, depth, tipU, tipV, 0f, torso, elbow, offHand, toTip, toGuard);
+                // A square spike: the knuckles ahead and a little down whichever way it points, so the roll never flips.
+                pose.Edge = Vector3.ProjectOnPlane(new Vector3(0f, -0.3f, 1f), pose.Main.Forward).normalized;
+                pose.Lean = lean;
+
+                // The free fist raised at rest or on its way there: thumb on top, the knuckles up and the curled fingers toward the middle.
+                if (offHand != offLow)
+                    pose.Off.Forward = Vector3.ProjectOnPlane(new Vector3(0.4f, 1f, 0.2f), pose.Off.Up).normalized;
+
+                return pose;
+            }
+
+            // Across the face: the knuckles ahead, nearly level.
+            BodyPose Across(BodyPose pose)
+            {
+                pose.Edge = Vector3.ProjectOnPlane(new Vector3(0f, -0.1f, 1f), pose.Main.Forward).normalized;
+
+                return pose;
+            }
+
+            // A thrust: the blade's line through the grip at the peak, the windup that far back along it and the hold just past it.
+            (BodyPose windup, BodyPose peak, BodyPose end) Thrust(float u, float v, float depth, float torso, Vector3 elbow, Vector3 windupElbow, float lean)
+            {
+                Vector3 grip = OnScreen(u, v, depth);
+                Vector3 eye = BattleAnimationLibrary.Eye;
+                float ahead = Mathf.Sqrt(bladeTip * bladeTip - (grip.x * grip.x + (eye.y - grip.y) * (eye.y - grip.y)));
+                Vector3 line = new Vector3(-grip.x, eye.y - grip.y, ahead).normalized;
+                float yaw = Mathf.Atan2(line.x, line.z) * Mathf.Rad2Deg;
+                float elevation = Mathf.Asin(line.y) * Mathf.Rad2Deg;
+
+                return (At(grip - line * drawBack, yaw, elevation, torso + 10f, 0f, windupElbow, offLow, lean),
+                    Peak(grip, torso, 5f, elbow, offLow, lean),
+                    At(grip + line * hold, yaw, elevation, torso - 3f, 6f, elbow, offLow, lean));
+            }
+
+            BodyPose idle = Dagger(0.71f, 0.87f, 0.26f, 0.63f, 0.17f, lowElbow, offRaised);
+            // Low at the right, the point up and leaning in, the fist under the edge: where both thrusts sink back to.
+            BodyPose sunk = Dagger(0.71f, 0.98f, 0.3f, 0.64f, 0.65f, lowElbow, offLow, 35f);
+            (BodyPose windupRight, BodyPose peakRight, BodyPose endRight) = Thrust(0.6f, 0.6f, 0.45f, -5f, Cm(20f, 1.53f, 25f), Cm(35f, 1.38f, -25f), along);
+            (BodyPose windupUnder, BodyPose peakUnder, BodyPose endUnder) = Thrust(0.57f, 0.67f, 0.45f, 0f, Cm(25f, 1.3f, 25f), Cm(28f, 1.3f, -22f), along);
+            // The way back from a thrust at the crosshair: along the line, then down to the right with the point still in.
+            BodyPose drawnRight = Dagger(0.83f, 0.83f, 0.34f, 0.59f, 0.59f, Cm(36f, 1.2f, 5f), offLow, 60f);
+            BodyPose turning = Dagger(0.81f, 0.95f, 0.32f, 0.7f, 0.67f, lowElbow, offLow, 50f);
+            // Back up to the rest pose from under the view.
+            BodyPose rising = Dagger(0.675f, 0.96f, 0.3f, 0.575f, 0.38f, lowElbow, offLow);
+            BodyPose nearRest = Dagger(0.7f, 0.87f, 0.26f, 0.6f, 0.15f, lowElbow, Vector3.Lerp(offLow, offRaised, 0.5f));
+            // Tipped over to the left and slid down off the right edge: the start of the first thrust and of the riposte.
+            BodyPose tipping = Dagger(0.86f, 0.9f, 0.3f, 0.71f, 0.27f, lowElbow, offLow);
+            BodyPose aside = Dagger(0.97f, 0.79f, 0.32f, 0.78f, 0.47f, Cm(38f, 1.2f, 0f), offLow, 30f);
+            // Cocked low at the right out of the view, the point toward the middle: the first thrust hangs here.
+            BodyPose cocked = At(Cm(40f, 1.3f, 5f), -30f, 15f, 15f, 0f, Cm(40f, 1.2f, -20f), offLow, 60f);
+            // Under the view, the point already ahead: the second thrust rises from here, the pommel to the eye.
+            BodyPose below = At(Cm(15f, 1.15f, 25f), -5f, 35f, 0f, 5f, lowElbow, offLow, 50f);
+            // Dropping out of the view after the second thrust, still pommel first.
+            BodyPose falling = At(Cm(22f, 1.12f, 22f), 0f, 15f, 0f, 5f, lowElbow, offLow, 20f);
+
+            // From the lower right corner up along its own line into the crosshair, held there a moment.
+            AttackDefinition right = new AttackDefinition
+            {
+                Windup = 23 * Footage, Active = 7 * Footage, Recovery = 44 * Footage, Damage = damage, MoveMultiplier = 0.85f, Launch = 1f,
+                Raise = new() { Via(6, tipping), Via(10, aside), Via(14, cocked, 0.4f), Via(21, cocked, 0.4f) },
+                WindupPose = windupRight,
+                MidPose = peakRight,
+                EndPose = endRight,
+                Return = new() { Via(36, drawnRight), Via(42, turning), Via(50, sunk, 0.6f), Via(64, rising), Via(70, nearRest) }
+            };
+            // Drawn back down to the right, the point turned up, round under the view to point ahead and up into the crosshair
+            // from under it, the pommel to the eye.
+            AttackDefinition under = new AttackDefinition
+            {
+                Windup = 28 * Footage, Active = 6 * Footage, Recovery = 46 * Footage, Damage = Mathf.RoundToInt(damage * 1.05f), MoveMultiplier = 0.85f, Launch = 1f,
+                Raise = new() { Via(7, drawnRight), Via(14, turning), Via(19, sunk), Via(24, below, 0.5f) },
+                WindupPose = windupUnder,
+                MidPose = peakUnder,
+                EndPose = endUnder,
+                Return = new() { Via(40, At(OnScreen(0.6f, 0.82f, 0.4f), -5f, 15f, 0f, 5f, Cm(30f, 1.15f, 15f), offLow, 20f)), Via(46, falling), Via(52, sunk, 0.6f), Via(64, rising), Via(74, nearRest) },
+                After = right
+            };
+            // From the guard before the face down off the right edge and up the first thrust's line.
+            AttackDefinition riposte = new AttackDefinition
+            {
+                Windup = 18 * Footage, Active = 8 * Footage, Recovery = 44 * Footage, Damage = Mathf.RoundToInt(damage * 1.5f), MoveMultiplier = 0.6f, Stagger = 0.3f, Launch = 1f,
+                Raise = new() { Via(4, Dagger(0.78f, 0.7f, 0.36f, 0.55f, 0.55f, Cm(40f, 1.3f, 10f), offLow, blockLean, -6f)), Via(7, aside), Via(12, cocked, 0.5f) },
+                WindupPose = windupRight,
+                MidPose = peakRight,
+                EndPose = endRight,
+                Return = new() { Via(34, drawnRight), Via(40, turning), Via(47, sunk, 0.6f), Via(60, rising), Via(66, nearRest) }
+            };
+
+            foreach (AttackDefinition attack in new[] { right, under, riposte })
+            {
+                attack.ComboStart = attack.Windup + attack.Active * 0.5f;
+                attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
+            }
+
+            // The footage's hold: the blade across the face just under the crosshair, the point left and a little low, the fist
+            // above the right of the view, the forearm level from the right edge.
+            BodyPose block = Across(Dagger(0.605f, 0.43f, 0.4f, 0.375f, 0.595f, blockElbow, offLow, blockLean, -12f));
+
+            return new WeaponDefinition
+            {
+                Prefix = Misericorde,
+                DisplayName = "Misericorde",
+                Kind = WeaponKind.OneHanded,
+                // A square spike of a blade: no edge leads.
+                IsRound = true,
+                Reach = 1f,
+                DeflectDuration = 0.5f,
+                BladeBase = bladeBase,
+                BladeTip = bladeTip,
+                Idle = idle,
+                Attacks = new[] { right, under },
+                Riposte = riposte,
+                CanBlock = true,
+                // Tipped left and swung up out of the bottom right, the point sweeping over the upper left down to level.
+                BlockRaise = 17 * Footage,
+                BlockVia = new()
+                {
+                    PoseKey.Flow(6 * Footage, Dagger(0.72f, 0.85f, 0.28f, 0.63f, 0.3f, lowElbow, offLow), 1f),
+                    PoseKey.Flow(8 * Footage, Dagger(0.725f, 0.8f, 0.3f, 0.56f, 0.13f, lowElbow, offLow), 1f),
+                    PoseKey.Flow(10 * Footage, Dagger(0.7f, 0.69f, 0.33f, 0.475f, 0.2f, Cm(40f, 1.3f, 10f), offLow), 1f),
+                    PoseKey.Flow(12 * Footage, Dagger(0.69f, 0.6f, 0.36f, 0.4f, 0.31f, Cm(42f, 1.4f, 12f), offLow, 0f, -6f), 1f),
+                    PoseKey.Flow(14 * Footage, Across(Dagger(0.635f, 0.45f, 0.39f, 0.41f, 0.49f, blockElbow, offLow, blockLean, -12f)), 0.7f)
+                },
+                BlockLower = 13 * Footage,
+                BlockLowerVia = new()
+                {
+                    PoseKey.Flow(2 * Footage, Dagger(0.72f, 0.62f, 0.38f, 0.5f, 0.6f, blockElbow, offLow), 1f),
+                    PoseKey.Flow(5 * Footage, Dagger(0.82f, 0.86f, 0.34f, 0.55f, 0.38f, Cm(40f, 1.3f, 10f), offLow), 1f),
+                    PoseKey.Flow(7 * Footage, Dagger(0.8f, 0.92f, 0.32f, 0.625f, 0.27f, lowElbow, offLow), 1f),
+                    PoseKey.Flow(9 * Footage, Dagger(0.75f, 0.9f, 0.3f, 0.65f, 0.29f, lowElbow, Vector3.Lerp(offLow, offRaised, 0.5f)), 0.6f)
+                },
+                BlockMitigation = 0.6f,
+                BlockImpact = 0.25f,
+                BlockRecovery = 0.35f,
+                BlockAngle = 70f,
+                BlockMove = 0.7f,
+                Block = block,
+                BlockHit = Across(Dagger(0.605f, 0.46f, 0.4f, 0.375f, 0.625f, blockElbow, offLow, blockLean, -12f)),
+                BlockLowered = Across(Dagger(0.605f, 0.45f, 0.4f, 0.375f, 0.615f, blockElbow, offLow, blockLean, -12f)),
+                DeflectPose = Dagger(0.8f, 0.6f, 0.36f, 0.75f, 0.1f, Cm(40f, 1.35f, 5f), offLow),
+                BlockSocket = WeaponSocket.RightHand,
+                BlockBoxCenter = new Vector3(0f, 0f, (bladeBase + bladeTip) * 0.5f),
+                BlockBoxExtents = new Vector3(0.05f, 0.05f, (bladeTip - bladeBase) * 0.5f)
             };
         }
 
@@ -786,11 +965,9 @@ namespace Game.Scripts.Editor.Dungeon
         /// A one-handed sword read off the screen: the crossguard at (u, v) that far ahead of the eye, the tip on the ray through
         /// (tipU, tipV), the edge turned from square to the view (the flat to the camera, 0) to along it (edge on, 1),
         /// and on past the edge to the other flat (-1).
-        private static BodyPose Sword(float u, float v, float depth, float tipU, float tipV, float edgeOn, float torso, Vector3 elbow, Vector3 offHand)
+        private static BodyPose Sword(float u, float v, float depth, float tipU, float tipV, float edgeOn, float torso, Vector3 elbow, Vector3 offHand,
+            float guardToTip = 0.8f, float gripToGuard = 0.1f)
         {
-            const float guardToTip = 0.8f;
-            const float gripToGuard = 0.1f;
-
             Vector3 eye = BattleAnimationLibrary.Eye;
             Vector3 guard = OnScreen(u, v, depth);
             Vector3 ray = OnScreen(tipU, tipV, 1f) - eye;

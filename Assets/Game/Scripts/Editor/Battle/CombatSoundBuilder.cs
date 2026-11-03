@@ -21,7 +21,7 @@ namespace Game.Scripts.Editor.Battle
         private const string FootstepsPath = "Assets/Game/Configs/Dungeon/Footsteps.asset";
 
         /// Order is the network id: never reorder, only append.
-        private static readonly string[] s_sets = { "arming", "viking", "axe", "mace", "morning", "staff", "fists", "bow" };
+        private static readonly string[] s_sets = { "arming", "viking", "axe", "mace", "morning", "staff", "fists", "bow", "dagger" };
 
         private static readonly (string Category, string Field)[] s_categories =
         {
@@ -40,14 +40,16 @@ namespace Game.Scripts.Editor.Battle
         {
             ["arming/clash"] = "viking/clash", ["arming/shield"] = "viking/shield", ["axe/clash"] = "viking/clash",
             ["mace/clash"] = "mace/plate", ["morning/clash"] = "morning/plate", ["staff/stone"] = "staff/wood", ["fists/clash"] = "fists/flesh",
-            ["bow/bone"] = "bow/woodhard", ["bow/clash"] = "bow/plate", ["bow/shield"] = "bow/woodhard"
+            ["bow/bone"] = "bow/woodhard", ["bow/clash"] = "bow/plate", ["bow/shield"] = "bow/woodhard",
+            ["dagger/bone"] = "arming/bone", ["dagger/plate"] = "arming/plate"
         };
 
         private static readonly Dictionary<string, string> s_weapons = new()
         {
             ["ArmingSword"] = "arming", ["SwordEcu"] = "arming", ["SwordShield"] = "arming", ["SwordShieldLeft"] = "arming",
             ["VikingSword"] = "viking", ["VikingEcu"] = "viking", ["VikingShield"] = "viking", ["BattleAxe"] = "axe",
-            ["MaceEcu"] = "mace", ["MaceShield"] = "mace", ["MorningStar"] = "morning", ["Staff"] = "staff", ["Fists"] = "fists", ["Bow"] = "bow"
+            ["MaceEcu"] = "mace", ["MaceShield"] = "mace", ["MorningStar"] = "morning", ["Staff"] = "staff", ["Fists"] = "fists", ["Bow"] = "bow",
+            ["Misericorde"] = "dagger", ["MisericordeShield"] = "dagger", ["MisericordeEcu"] = "dagger"
         };
 
         private static readonly Dictionary<string, (ImpactSurface Body, ImpactSurface Block, Footwear Feet)> s_prefabs = new()

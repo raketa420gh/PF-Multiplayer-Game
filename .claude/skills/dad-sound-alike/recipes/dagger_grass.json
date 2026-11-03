@@ -1,0 +1,168 @@
+{
+ "name": "dagger_grass",
+ "variants": 12,
+ "about": "FX_Hit Dagger_Grass: soft-attack earth thump (<150 Hz lead) peaking ~40-60 ms with bright grass/soil rustle (1.5-24 kHz only ~5 dB down), -30 dB by 100 ms, rustly -30..-40 tail to 300 ms, gone ~700 ms",
+ "reference": "D:/DaD_Sounds/Dagger_Review/grass",
+ "length_ms": 850,
+ "seed": 11600,
+ "peak_db": -1,
+ "match": 0.65,
+ "fade_ms": 300,
+ "layers": [
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    8,
+    14
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "lp": 200,
+   "snap": {
+    "hold": [
+     40,
+     50
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "fantozzi/*/flac/*Sand*.flac",
+   "at_ms": [
+    4,
+    12
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1500,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   },
+   "max_ms": 300
+  },
+  {
+   "src": "fantozzi/*/flac/*Sand*.flac",
+   "at_ms": [
+    90,
+    140
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 1500,
+   "count": [
+    1,
+    2
+   ],
+   "gap_ms": [
+    60,
+    110
+   ],
+   "until_ms": 260,
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   },
+   "max_ms": 250
+  },
+  {
+   "src": "snow_walk/SnowWalk/SnowWalk*.ogg",
+   "at_ms": [
+    5,
+    15
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 3000,
+   "snap": {
+    "hold": [
+     40,
+     80
+    ],
+    "tau": [
+     50,
+     80
+    ]
+   },
+   "max_ms": 400
+  },
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    20,
+    28
+   ],
+   "gain_db": [
+    -18,
+    -14
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 2000,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     12,
+     16
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 6000,
+  "db": 6
+ },
+ "room": {
+  "db": -42,
+  "decay_ms": 100,
+  "len_ms": 500,
+  "band": [
+   300,
+   8000
+  ]
+ }
+}

@@ -1,0 +1,105 @@
+{
+ "name": "dagger_clash",
+ "variants": 12,
+ "about": "FX_Hit_ImpactGuard_Rapier (no dagger guard/block event; thin-blade clash picked over OnehandedSword): instant bright blade-on-blade ring (1.5-10 kHz) with some low body, slow ~2-3 dB/20 ms decay, -20 dB at 200 ms, ring floor -26..-30 dB past 400 ms, fades over 1.4 s",
+ "reference": "D:/DaD_Sounds/Dagger_Review/clash_rapier",
+ "length_ms": 1450,
+ "seed": 11900,
+ "peak_db": -1,
+ "match": 0.8,
+ "fade_ms": 600,
+ "layers": [
+  {
+   "src": "weapons_apparel/sfx/sword-knife-clash-*.wav",
+   "at_ms": [
+    0,
+    4
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "max_ms": 1400
+  },
+  {
+   "src": "weapons_apparel/sfx/sword-knife-clash-*.wav",
+   "at_ms": [
+    20,
+    45
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "max_ms": 1000
+  },
+  {
+   "src": "sfx_breaking/bfh1_metal_hit_0[24].ogg",
+   "at_ms": [
+    0,
+    4
+   ],
+   "gain_db": [
+    -6,
+    -4
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     100,
+     130
+    ],
+    "tau": [
+     70,
+     90
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/thump/*.wav",
+   "at_ms": [
+    0,
+    4
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 600,
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -24,
+  "decay_ms": 200,
+  "len_ms": 1000,
+  "band": [
+   300,
+   9000
+  ]
+ }
+}

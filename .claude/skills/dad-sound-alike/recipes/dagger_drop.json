@@ -1,0 +1,192 @@
+{
+ "name": "dagger_drop",
+ "variants": 12,
+ "about": "Item_3D_Knife_Drop: small steel knife hits the floor - bright clink at 0-40 ms (-17 dB under its own peak range), 1-2 bounce clinks 180-400 ms at a similar level, quick decays, ~1.2 s",
+ "reference": "D:/DaD_Sounds/Dagger_Review/drop",
+ "length_ms": 1250,
+ "seed": 12100,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 300,
+ "layers": [
+  {
+   "src": "sfx_breaking/bfh1_metal_falling_0[345].ogg",
+   "at_ms": [
+    5,
+    15
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/clink*.wav",
+   "at_ms": [
+    5,
+    20
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 600,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[38].ogg",
+   "at_ms": [
+    5,
+    10
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     15,
+     20
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    5,
+    10
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "lp": 300,
+   "snap": {
+    "hold": [
+     10,
+     15
+    ],
+    "tau": [
+     20,
+     25
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/clink*.wav",
+   "at_ms": [
+    180,
+    320
+   ],
+   "gain_db": [
+    -6,
+    0
+   ],
+   "pitch": [
+    1,
+    4
+   ],
+   "hp": 800,
+   "count": [
+    1,
+    2
+   ],
+   "gap_ms": [
+    90,
+    150
+   ],
+   "until_ms": 480,
+   "snap": {
+    "hold": [
+     8,
+     15
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "dagger_slices/sheath/sheathf_*.wav",
+   "at_ms": [
+    190,
+    330
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 1500,
+   "chance": 0.6,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     15,
+     25
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 9000,
+  "db": 5
+ },
+ "room": {
+  "db": -26,
+  "decay_ms": 90,
+  "len_ms": 500,
+  "band": [
+   500,
+   10000
+  ]
+ }
+}

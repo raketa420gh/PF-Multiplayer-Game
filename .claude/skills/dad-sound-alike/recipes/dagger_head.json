@@ -1,0 +1,182 @@
+{
+ "name": "dagger_head",
+ "variants": 12,
+ "about": "FX_Hit_Character_Headshot_Dagger: broadband stab into the skull - bright steel + bone crunch held ~120 ms, a second bony crack ~200-250 ms, -30 dB by 300 ms, tail gone ~550 ms",
+ "reference": "D:/DaD_Sounds/Dagger_Review/head",
+ "length_ms": 650,
+ "seed": 11200,
+ "peak_db": -1,
+ "match": 0.85,
+ "fade_ms": 150,
+ "layers": [
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    0,
+    4
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "weapons_apparel/sfx/knife-sheathe-0[135].wav",
+   "at_ms": [
+    0,
+    6
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1500,
+   "max_ms": 250,
+   "snap": {
+    "hold": [
+     60,
+     100
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   }
+  },
+  {
+   "src": "hits_heavy_body/*.flac",
+   "at_ms": [
+    0,
+    4
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "deep_breaks/*.wav",
+   "at_ms": [
+    2,
+    8
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "snap": {
+    "hold": [
+     180,
+     220
+    ],
+    "tau": [
+     40,
+     55
+    ]
+   }
+  },
+  {
+   "src": "tinysized/sfx-cc0/apple-cut-*.wav",
+   "at_ms": [
+    0,
+    6
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     60,
+     90
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "deep_breaks/*.wav",
+   "at_ms": [
+    130,
+    200
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    2,
+    5
+   ],
+   "hp": 800,
+   "max_ms": 200,
+   "snap": {
+    "hold": [
+     50,
+     80
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 5000,
+  "db": 6
+ },
+ "room": {
+  "db": -24,
+  "decay_ms": 90,
+  "len_ms": 500,
+  "band": [
+   300,
+   10000
+  ]
+ }
+}

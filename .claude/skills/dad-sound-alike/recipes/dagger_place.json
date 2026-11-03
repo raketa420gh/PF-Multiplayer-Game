@@ -1,0 +1,117 @@
+{
+ "name": "dagger_place",
+ "variants": 12,
+ "about": "Item_2D_Knife_Drop: inventory place - faint lead-in, then one bright steel click at 100-170 ms (1.5-24 kHz), -14 dB in 20 ms, -50 dB by +80 ms, ~0.45 s",
+ "reference": "D:/DaD_Sounds/Dagger_Review/place",
+ "length_ms": 450,
+ "seed": 12400,
+ "peak_db": -1,
+ "match": 0.8,
+ "fade_ms": 120,
+ "layers": [
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -20,
+    -16
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 2500,
+   "max_ms": 120
+  },
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    100,
+    160
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 3000,
+   "snap": {
+    "hold": [
+     50,
+     70
+    ],
+    "tau": [
+     18,
+     24
+    ]
+   }
+  },
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpactWood.flac",
+   "at_ms": [
+    110,
+    150
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 500,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     15,
+     20
+    ]
+   }
+  },
+  {
+   "src": "dagger_slices/sheath/sheathf_*.wav",
+   "at_ms": [
+    140,
+    190
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 2500,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     15,
+     20
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -28,
+  "decay_ms": 50,
+  "len_ms": 300,
+  "band": [
+   1500,
+   14000
+  ]
+ }
+}

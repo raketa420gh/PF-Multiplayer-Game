@@ -1,0 +1,140 @@
+{
+ "name": "dagger_shield",
+ "variants": 12,
+ "about": "FX_Hit Shield_Dagger: a quiet glancing scrape 20-100 ms (-25..-12 dB), then the main bright steel-on-shield clank at ~120 ms (4-10 kHz lead) with a ~100 ms held ring, -25 dB by 260 ms, -45 dB by 380 ms",
+ "reference": "D:/DaD_Sounds/Dagger_Review/shield",
+ "length_ms": 1100,
+ "seed": 11800,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 500,
+ "layers": [
+  {
+   "src": "tinysized/sfx-cc0/metal-knife-scrape-0[12].wav",
+   "at_ms": [
+    10,
+    20
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "max_ms": 130,
+   "snap": {
+    "hold": [
+     70,
+     90
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "weapons_apparel/sfx/sword-knife-clash-0[1-5].wav",
+   "at_ms": [
+    25,
+    45
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "max_ms": 100
+  },
+  {
+   "src": "weapons_apparel/sfx/sword-knife-clash-0[1-5].wav",
+   "at_ms": [
+    110,
+    125
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     90,
+     110
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_slam_0[1-4].ogg",
+   "at_ms": [
+    110,
+    125
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/thump/*.wav",
+   "at_ms": [
+    110,
+    125
+   ],
+   "gain_db": [
+    -14,
+    -11
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 1500,
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -24,
+  "decay_ms": 120,
+  "len_ms": 700,
+  "band": [
+   500,
+   10000
+  ]
+ }
+}
