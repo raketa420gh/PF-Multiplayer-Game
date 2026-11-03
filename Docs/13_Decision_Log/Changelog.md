@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-03
+
+### Changed
+- Roadmap: new stage 0 "Core mechanics" comes first: each class's main weapon (equip, attacks, block, hit sounds), then class skills, then a two-player playtest. Room blockouts count as done; what is left in stage 1 is polish and no longer blocks later stages.
+- Stage 0 also covers the shared consumables (healing and protection potions, bandages, surgical kit, campfire, throwing knives, francisca, torch, ale, invisibility potion; a Molotov-like flask is undecided) and doors and chests, with one playtest at the end; equipment opens stage 4, after the monster pool.
+- Favourite weapon per class in `Classes.md`: Mercenary Arming Sword + Écu, Wizard Magic Staff, Alchemist undecided, Confessor Morning Star, Huntsman bows and crossbows, Knave dagger (not made yet). Starting kits on paper: Mercenary takes the Écu instead of the Round Shield, Confessor starts without a shield.
+- Wizard renamed Librarian (Библиотекарь): a class name hints at what the prospector did above before the vein; he kept the College library and read the forbidden books of Mornheim from its vault. The class config asset is renamed with its GUID kept.
+
 ## 2026-11-02
 
 ### Changed

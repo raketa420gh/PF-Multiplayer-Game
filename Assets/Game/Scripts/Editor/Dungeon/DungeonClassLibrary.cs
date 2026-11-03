@@ -17,7 +17,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new[]
             {
                 CreateMercenary(),
-                CreateWizard(),
+                CreateLibrarian(),
                 CreateAlchemist(),
                 CreateConfessor(),
                 CreateHuntsman(),
@@ -126,8 +126,8 @@ namespace Game.Scripts.Editor.Dungeon
             };
         }
 
-        /// An outcast bookman: one spell wheel of five, charges back only by a campfire. Spirit is damage, Knowledge is casting pace and charges.
-        private static ClassDef CreateWizard()
+        /// An outcast librarian: one spell wheel of five, charges back only by a campfire. Spirit is damage, Knowledge is casting pace and charges.
+        private static ClassDef CreateLibrarian()
         {
             Color arcane = new Color(0.62f, 0.5f, 0.95f);
             Color fire = new Color(1f, 0.45f, 0.12f);
@@ -136,7 +136,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             return new ClassDef
             {
-                Id = 1, Name = "Wizard", Description = "An outcast bookman: the College above teaches magic by the canon, he went for the forbidden books of Mornheim and was thrown out. One wheel of spells that come back only by a campfire. Fragile in melee.",
+                Id = 1, Name = "Librarian", Description = "An outcast librarian: he kept the College library above, read the forbidden books of Mornheim from its own vault and was thrown out. One wheel of spells that come back only by a campfire. Fragile in melee.",
                 Stats = new ClassStats(8, 10, 23, 21, 15, 13), Color = arcane, Body = Color.white,
                 Subclasses = new[]
                 {
