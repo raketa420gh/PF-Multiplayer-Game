@@ -1,0 +1,134 @@
+{
+ "name": "skeleton_crossbow_reload",
+ "about": "DaD Monsters_SkeletonCrossBow_Reload_1..4 laid on our 1.8 s cocking: grab click, ratcheting string pull, latch click, bolt set",
+ "target": [
+  -26.5,
+  -13,
+  -4.5,
+  -1.3,
+  -2.8,
+  -8
+ ],
+ "length_ms": 1800,
+ "seed": 3200,
+ "layers": [
+  {
+   "src": "metal_interactions/metal_interactions/metal_interaction*.*",
+   "at_ms": [
+    20,
+    50
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 300,
+   "max_ms": 300
+  },
+  {
+   "src": "bow_slices/draw/scy*.wav",
+   "at_ms": [
+    200,
+    260
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "hp": 300,
+   "max_ms": 800
+  },
+  {
+   "src": "accessory/sfx/keyhole-lockbox-turn-*.*",
+   "count": [
+    3,
+    5
+   ],
+   "at_ms": [
+    230,
+    280
+   ],
+   "gap_ms": [
+    110,
+    170
+   ],
+   "until_ms": 900,
+   "gain_db": [
+    -6,
+    -2
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 500,
+   "max_ms": 140
+  },
+  {
+   "src": "accessory/sfx/keyhole-lockbox-unlock-*.*",
+   "at_ms": [
+    960,
+    1020
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "hp": 400,
+   "max_ms": 350
+  },
+  {
+   "src": "weapons_apparel/sfx/arrow-grab-from-quiver-0*.wav",
+   "at_ms": [
+    1120,
+    1180
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 300
+  },
+  {
+   "src": "bow_slices/set/*.wav",
+   "at_ms": [
+    1450,
+    1550
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 400
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 80,
+  "len_ms": 400
+ },
+ "match": 0.65,
+ "fade_ms": 150,
+ "peak_db": -1,
+ "variants": 12
+}

@@ -1,0 +1,59 @@
+{
+ "name": "skeleton_attack_whoosh",
+ "about": "DaD Monsters_Skeleton_Attack: heavy low swing whoosh 0.55 s, peak ~120 ms, 150-500 Hz",
+ "reference": "D:/DaD_Sounds/Monsters_Skeleton_Attack",
+ "target": [
+  -4.9,
+  0,
+  -5.6,
+  -15.3,
+  -16.6,
+  -23.9
+ ],
+ "length_ms": 560,
+ "seed": 2700,
+ "layers": [
+  {
+   "src": "morningstar_swing_slices/Sabre_Swing_*.wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 60,
+   "lp": 5000
+  },
+  {
+   "src": "swishes/swishes/swish-[2-9].wav",
+   "at_ms": [
+    90,
+    130
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 100,
+   "chance": 0.6
+  }
+ ],
+ "match": 0.7,
+ "fade_ms": 150,
+ "peak_db": -1,
+ "variants": 12,
+ "shelf": {
+  "hz": 6000,
+  "db": 10
+ }
+}

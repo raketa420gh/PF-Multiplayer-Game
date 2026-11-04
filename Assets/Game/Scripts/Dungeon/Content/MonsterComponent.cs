@@ -17,6 +17,10 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public NetworkBool IsRewarded { get; private set; }
 
+        /// The brain has a target: clients voice the alert on its rise and keep the idle mutter for calm times.
+        [Networked]
+        public NetworkBool IsAlerted { get; private set; }
+
         [SerializeField]
         private MonsterConfig _config;
 
@@ -95,6 +99,8 @@ namespace Game.Scripts.Dungeon
         {
             Floor = floor;
         }
+
+        public void SetAlerted(bool isAlerted) => IsAlerted = isAlerted;
 
         public float GetDamageMultiplier(DamageType type)
         {

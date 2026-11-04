@@ -1,0 +1,85 @@
+{
+ "name": "skeleton_voice_pain",
+ "about": "DaD Monsters_Skeleton_Voice_Pain: sharp rasped yelp, 0.6-1.2 s, bright 1.5-4k",
+ "reference": "D:/DaD_Sounds/Monsters_Skeleton_Voice_Pain",
+ "target": [
+  -27.6,
+  -15.5,
+  -0.4,
+  -1.6,
+  -7.1,
+  -13.8
+ ],
+ "length_ms": 950,
+ "seed": 2200,
+ "layers": [
+  {
+   "src": "growls16/monster.1[2-6].ogg",
+   "at_ms": [
+    10,
+    20
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     120,
+     220
+    ],
+    "tau": [
+     180,
+     320
+    ]
+   }
+  },
+  {
+   "src": "voice_slices/monster-snarl-attack_0[3-4].wav",
+   "at_ms": [
+    10,
+    30
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    2,
+    4
+   ],
+   "hp": 400,
+   "max_ms": 600
+  },
+  {
+   "src": "bones_rattle/*.ogg",
+   "at_ms": [
+    0,
+    8
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 600
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 100,
+  "len_ms": 500
+ },
+ "match": 0.7,
+ "fade_ms": 180,
+ "peak_db": -1,
+ "variants": 12
+}

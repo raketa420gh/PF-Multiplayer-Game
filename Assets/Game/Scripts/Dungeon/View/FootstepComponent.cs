@@ -29,6 +29,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Optional: the boots in the Feet slot pick the footwear")]
         private InventoryComponent _inventory;
 
+        [SerializeField, Tooltip("A body's own steps on any surface (bony skeleton feet); they win over the footwear table")]
+        private AudioClip[] _ownSteps = System.Array.Empty<AudioClip>();
+
         private float _lastStepTime = float.NegativeInfinity;
         private bool _toggle;
 
@@ -49,9 +52,12 @@ namespace Game.Scripts.Dungeon
             float volume = Mathf.Clamp01(speed / 4.2f) * 0.3f + 0.08f;
             float pitch = Random.Range(0.92f, 1.08f);
             Footwear footwear = GetFootwear();
+            AudioClip own = MonsterSoundConfig.Pick(_ownSteps);
             AudioClip clip = _sounds != null ? _sounds.Pick(footwear, GetSurface(position)) : null;
 
-            if (clip != null)
+            if (own != null)
+                DungeonAudioComponent.Play(own, position, volume + 0.1f, pitch, transform);
+            else if (clip != null)
                 DungeonAudioComponent.Play(clip, position, volume, pitch * _sounds.GetPitch(footwear), transform);
             else
                 DungeonAudioComponent.Play(_toggle ? DungeonSound.Footstep : DungeonSound.FootstepB, position, volume, pitch, transform);

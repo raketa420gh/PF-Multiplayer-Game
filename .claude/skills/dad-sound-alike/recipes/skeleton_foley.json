@@ -1,0 +1,82 @@
+{
+ "name": "skeleton_foley",
+ "about": "DaD Monsters_Skeleton_CommonFoley: quiet 0.35 s bone shuffle while moving, 1.5-4k",
+ "reference": "D:/DaD_Sounds/Monsters_Skeleton_CommonFoley",
+ "target": [
+  -20.6,
+  -16.4,
+  -7.7,
+  -0.2,
+  -4.7,
+  -23.3
+ ],
+ "length_ms": 380,
+ "seed": 2800,
+ "layers": [
+  {
+   "src": "bones_rattle/*.ogg",
+   "count": [
+    2,
+    5
+   ],
+   "at_ms": [
+    10,
+    40
+   ],
+   "gap_ms": [
+    40,
+    110
+   ],
+   "until_ms": 300,
+   "gain_db": [
+    -8,
+    0
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "hp": 120,
+   "lp": 9000
+  },
+  {
+   "src": "fantozzi/*/flac/*Stone*.flac",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -14,
+    -9
+   ],
+   "pitch": [
+    2,
+    5
+   ],
+   "hp": 60,
+   "snap": {
+    "hold": [
+     5,
+     10
+    ],
+    "tau": [
+     15,
+     30
+    ]
+   },
+   "chance": 0.7
+  }
+ ],
+ "room": {
+  "db": -24,
+  "decay_ms": 60
+ },
+ "match": 0.8,
+ "fade_ms": 80,
+ "peak_db": -1,
+ "variants": 12,
+ "shelf": {
+  "hz": 10000,
+  "db": 0
+ }
+}

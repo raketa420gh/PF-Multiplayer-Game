@@ -87,6 +87,7 @@ namespace Game.Scripts.Dungeon
             MonsterConfig config = _monster.Config;
             float time = Runner.SimulationTime;
             UpdateTarget(config, time);
+            _monster.SetAlerted(_target != null);
 
             switch (_mode)
             {

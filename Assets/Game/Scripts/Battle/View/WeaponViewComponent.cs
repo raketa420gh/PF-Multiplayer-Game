@@ -107,7 +107,8 @@ namespace Game.Scripts.Battle
                     feedback.Play(sounds.Draw, position, transform);
                     feedback.Play(sounds.Creak, position, transform);
                     break;
-                case CombatState.Reload when !_combat.Weapon.Ranged.IsManualReload:
+                // A bow nocks the next arrow; a crossbow's nock takes are the whole cocking.
+                case CombatState.Reload:
                     feedback.Play(sounds.Nock, position, transform);
                     break;
                 case CombatState.Restock:

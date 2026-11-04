@@ -19,9 +19,27 @@ namespace Game.Scripts.Editor.Battle
         private const string ItemsFolder = "Assets/Game/Audio/Dungeon/Items";
         private const string ItemSoundsFolder = SoundsFolder + "/Items";
         private const string FootstepsPath = "Assets/Game/Configs/Dungeon/Footsteps.asset";
+        private const string MonsterAudioFolder = "Assets/Game/Audio/Dungeon/Monsters";
+        private const string MonstersFolder = "Assets/Game/Configs/Dungeon/Monsters";
+
+        /// Audio/Dungeon/Monsters/<kind>/<Category>_NN.wav → Configs/Dungeon/Monsters/Sounds/<kind>.asset, handed to the monster configs of that kind.
+        private static readonly (string Kind, string[] Monsters)[] s_monsterSounds =
+        {
+            ("Skeleton", new[] { "SkeletonSwordsman", "SkeletonArcher", "SkeletonCrossbowman", "SkeletonWarrior" })
+        };
+
+        private static readonly (string Category, string Field)[] s_monsterCategories =
+        {
+            ("Step", "_steps"), ("Foley", "_foley"), ("Idle", "_idle"), ("Alert", "_alert"), ("AttackVoice", "_attackVoice"), ("AttackWhoosh", "_attackWhoosh"),
+            ("Pain", "_pain"), ("Death", "_death"), ("BoneDrop", "_boneDrop"), ("ReloadVoice", "_reloadVoice")
+        };
 
         /// Order is the network id: never reorder, only append.
-        private static readonly string[] s_sets = { "arming", "viking", "axe", "mace", "morning", "staff", "fists", "bow", "dagger" };
+        private static readonly string[] s_sets = { "arming", "viking", "axe", "mace", "morning", "staff", "fists", "bow", "dagger", "crossbow" };
+
+        /// A set borrows its parent's takes for the categories it has none of, apart from the parent's own mechanics (a crossbow is not drawn or restocked like a bow).
+        private static readonly Dictionary<string, string> s_parents = new() { ["crossbow"] = "bow" };
+        private static readonly HashSet<string> s_unborrowed = new() { "draw", "creak", "hold", "restock" };
 
         private static readonly (string Category, string Field)[] s_categories =
         {
@@ -48,7 +66,7 @@ namespace Game.Scripts.Editor.Battle
         {
             ["ArmingSword"] = "arming", ["SwordEcu"] = "arming", ["SwordShield"] = "arming", ["SwordShieldLeft"] = "arming",
             ["VikingSword"] = "viking", ["VikingEcu"] = "viking", ["VikingShield"] = "viking", ["BattleAxe"] = "axe",
-            ["MaceEcu"] = "mace", ["MaceShield"] = "mace", ["MorningStar"] = "morning", ["Staff"] = "staff", ["Fists"] = "fists", ["Bow"] = "bow",
+            ["MaceEcu"] = "mace", ["MaceShield"] = "mace", ["MorningStar"] = "morning", ["Staff"] = "staff", ["Fists"] = "fists", ["Bow"] = "bow", ["Crossbow"] = "crossbow",
             ["Misericorde"] = "dagger", ["MisericordeShield"] = "dagger", ["MisericordeEcu"] = "dagger"
         };
 
@@ -67,6 +85,7 @@ namespace Game.Scripts.Editor.Battle
         {
             BattleEditorUtility.EnsureFolder(SoundsFolder);
             KeepLoudness($"{WeaponsFolder}/bow");
+            KeepLoudness($"{WeaponsFolder}/crossbow");
 
             for (int i = 0; i < s_sets.Length; i++)
             {
@@ -103,6 +122,7 @@ namespace Game.Scripts.Editor.Battle
             }
 
             steps.ApplyModifiedPropertiesWithoutUndo();
+            BuildMonsterSounds();
             AssetDatabase.SaveAssets();
             ApplyToPrefabs();
         }
@@ -135,6 +155,7 @@ namespace Game.Scripts.Editor.Battle
         }
 
         /// The feedback of every scene in the build gets the weapon table; scene builders set it on a rebuild.
+        [MenuItem("Tools/Game/Battle/Apply Combat Sounds To Scenes")]
         public static void ApplyToScenes()
         {
             foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
@@ -157,6 +178,31 @@ namespace Game.Scripts.Editor.Battle
 
                 if (isChanged)
                     EditorSceneManager.SaveScene(opened);
+            }
+        }
+
+        private static void BuildMonsterSounds()
+        {
+            BattleEditorUtility.EnsureFolder($"{MonstersFolder}/Sounds");
+
+            foreach ((string kind, string[] monsters) in s_monsterSounds)
+            {
+                string folder = $"{MonsterAudioFolder}/{kind}";
+                KeepLoudness(folder);
+                SerializedObject so = new SerializedObject(BattleEditorUtility.LoadOrCreate<MonsterSoundConfig>($"{MonstersFolder}/Sounds/{kind}.asset"));
+
+                foreach ((string category, string field) in s_monsterCategories)
+                    BattleEditorUtility.Set(so, field, Load(folder, category));
+
+                so.ApplyModifiedPropertiesWithoutUndo();
+
+                foreach (string monster in monsters)
+                {
+                    MonsterConfig config = AssetDatabase.LoadAssetAtPath<MonsterConfig>($"{MonstersFolder}/{monster}.asset");
+
+                    if (config != null)
+                        BattleEditorUtility.Set(config, "_sounds", so.targetObject);
+                }
             }
         }
 
@@ -186,6 +232,8 @@ namespace Game.Scripts.Editor.Battle
                     BattleEditorUtility.Set(so, "_sounds", footsteps);
                     BattleEditorUtility.Set(so, "_footwear", isKnown ? look.Feet : Footwear.Light);
                     BattleEditorUtility.Set(so, "_inventory", root.GetComponentInChildren<InventoryComponent>(true));
+                    MonsterSoundConfig monsterSounds = root.TryGetComponent(out MonsterComponent monster) && monster.Config != null ? monster.Config.Sounds : null;
+                    BattleEditorUtility.Set(so, "_ownSteps", monsterSounds != null ? monsterSounds.Steps : new AudioClip[0]);
                     so.ApplyModifiedPropertiesWithoutUndo();
                     isChanged = true;
                 }
@@ -205,6 +253,9 @@ namespace Game.Scripts.Editor.Battle
         private static AudioClip[] LoadTakes(string set, string category)
         {
             AudioClip[] clips = Load($"{WeaponsFolder}/{set}", category);
+
+            if (clips.Length == 0 && s_parents.TryGetValue(set, out string parent) && !s_unborrowed.Contains(category))
+                return LoadTakes(parent, category);
 
             if (clips.Length > 0 || !s_fallbacks.TryGetValue($"{set}/{category}", out string fallback))
                 return clips;

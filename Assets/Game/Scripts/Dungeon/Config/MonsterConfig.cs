@@ -46,6 +46,7 @@ namespace Game.Scripts.Dungeon
         public bool IsCharger => _chargeSpeed > 0f;
         public MonsterAttachment[] Attachments => _attachments;
         public DungeonSound Voice => _voice;
+        public MonsterSoundConfig Sounds => _sounds;
 
         [SerializeField]
         private string _displayName = "Skeleton";
@@ -118,5 +119,8 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private DungeonSound _voice = DungeonSound.Rattle;
+
+        [SerializeField, Tooltip("Recorded sounds of this monster kind; without them the synthesized voice plays")]
+        private MonsterSoundConfig _sounds;
     }
 }
