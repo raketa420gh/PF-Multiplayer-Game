@@ -8,8 +8,10 @@
 3. **Перенос** — `Tools > Tripo3D Bridge` → `Start Server`, из студии отправить в Unity. Бридж кладёт модель в `Assets/TripoModels/<имя>/` (`<имя>.fbx`, текстуры в `<имя>.fbm/`, материал в `Materials/`).
 4. **Приёмка** — в любой 3D-задаче Claude сам замечает модели в `Assets/TripoModels` (и другие файлы не на месте), переносит их через AssetDatabase в категорию (ниже) и даёт смысловое английское PascalCase-имя (`золотой_кубок_3d_модель` → `GoldenGoblet`). Проверяет габариты, треугольники, риг, текстуры. Скрипта-автоматики нет. `Assets/TripoModels` в git не идёт.
 
+Пачки: [WellRest](Tripo_Batch_WellRest.md) — полный набор одного модуля катакомб.
+
 ## Шаблон промпта
-`<предмет>, <материал и состояние>, dark fantasy medieval, game asset, realistic PBR, single object, neutral pose, no base, no background`
+`<предмет>, <материал и состояние>, dark fantasy medieval, game asset, realistic PBR, clean quad topology, low poly, single object, neutral pose, no base, no background`
 - Персонажи и мобы — `T-pose` или `A-pose`, без оружия в руках (оружие — отдельные модели на риге).
 - Предметы — один объект без подставки, лицевая сторона вперёд.
 - Стиль — как у остального окружения (`Art_Direction.md`): реалистичный, приглушённый, потёртый.
