@@ -546,13 +546,14 @@ namespace Game.Scripts.Editor.Dungeon
             return values.Select(value => Mathf.Round(Mathf.Clamp(value, -edge, edge) * 1000f) / 1000f).Append(-edge).Append(edge).Distinct().OrderBy(value => value).ToArray();
         }
 
-        /// Crossbowmen and mages are not in the game yet (DD-016): their markers take the nearest monster there is, to be pointed
+        /// Mages are not in the game yet (DD-016): their markers take the nearest monster there is, to be pointed
         /// at the real one when it comes. There is no urn yet either: a crate stands in for it.
         private static string MonsterPrefab(Mob kind)
         {
             return kind switch
             {
-                Mob.Archer or Mob.Crossbow or Mob.Mage => "SkeletonArcher",
+                Mob.Archer or Mob.Mage => "SkeletonArcher",
+                Mob.Crossbow => "SkeletonCrossbowman",
                 Mob.Warrior => "SkeletonWarrior",
                 Mob.Skull => "FlyingHead",
                 _ => "SkeletonSwordsman"

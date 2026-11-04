@@ -57,6 +57,7 @@ namespace Game.Scripts.Editor.Battle
             ["Dungeon/SkeletonWarrior"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
             ["Dungeon/SkeletonSwordsman"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
             ["Dungeon/SkeletonArcher"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
+            ["Dungeon/SkeletonCrossbowman"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
             ["Dungeon/FlyingHead"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
             ["Dungeon/Juggernaut"] = (ImpactSurface.Flesh, ImpactSurface.Clash, Footwear.Heavy)
         };

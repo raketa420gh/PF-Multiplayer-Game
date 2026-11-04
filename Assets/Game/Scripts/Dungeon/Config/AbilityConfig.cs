@@ -125,8 +125,6 @@ namespace Game.Scripts.Dungeon
     public enum ShapeshiftForm : byte
     {
         None,
-        Bear,
-        Panther,
         Rat
     }
 

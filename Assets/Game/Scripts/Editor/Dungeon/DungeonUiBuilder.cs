@@ -60,6 +60,8 @@ namespace Game.Scripts.Editor.Dungeon
             MapView map = BuildMap(root, inputs);
             PauseMenuView pause = BuildPause(root);
             LoadingView loading = BuildLoading(root, inputs.Title);
+            DungeonTestView test = BattleEditorUtility.CreateChild("DungeonTest", root).AddComponent<DungeonTestView>();
+            BattleEditorUtility.Set(test, "_context", inputs.Context);
 
             DungeonUiRoot uiRoot = canvasObject.AddComponent<DungeonUiRoot>();
             SerializedObject so = new SerializedObject(uiRoot);
@@ -73,8 +75,10 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_map", map);
             BattleEditorUtility.Set(so, "_inventoryPreview", dungeonPreview);
             BattleEditorUtility.Set(so, "_pause", pause);
+            BattleEditorUtility.Set(so, "_test", test);
             so.ApplyModifiedPropertiesWithoutUndo();
 
+            test.gameObject.SetActive(false);
             pause.gameObject.SetActive(false);
             hud.gameObject.SetActive(false);
             dungeonInventory.gameObject.SetActive(false);
@@ -1203,9 +1207,10 @@ namespace Game.Scripts.Editor.Dungeon
             resultBack.gameObject.SetActive(false);
 
             Texture floorMap = inputs.FloorMaps.Length > 0 ? inputs.FloorMaps[0] : null;
-            (string title, string info, Texture picture, string scene)[] destinations =
+            (string title, string info, Texture picture, string scene, bool isTest)[] destinations =
             {
-                (DungeonSceneBuilder.Title, "The Tangled Catacombs · 7x7 rooms laid out anew every run around the Great Hall · dark crypts, skeletons, trapped corridors · 15 min · blue portals at 7:00, 10:00, 12:00, 14:30", floorMap, SceneTravel.DungeonScene)
+                (DungeonSceneBuilder.Title, "The Tangled Catacombs · 7x7 rooms laid out anew every run around the Great Hall · dark crypts, skeletons, trapped corridors · 15 min · blue portals at 7:00, 10:00, 12:00, 14:30", floorMap, SceneTravel.DungeonScene, false),
+                ("Dungeon Test", "One random catacomb room (never the Great Hall) without monsters · F2 calls monsters in to test mechanics · party of up to 3", floorMap, SceneTravel.DungeonScene, true)
             };
 
             LobbyHomeView view = page.gameObject.AddComponent<LobbyHomeView>();
@@ -1240,6 +1245,7 @@ namespace Game.Scripts.Editor.Dungeon
                 BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].Info", destinations[i].info);
                 BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].Picture", destinations[i].picture);
                 BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].Scene", destinations[i].scene);
+                BattleEditorUtility.Set(so, $"_destinations.Array.data[{i}].IsTest", destinations[i].isTest);
             }
 
             so.ApplyModifiedPropertiesWithoutUndo();

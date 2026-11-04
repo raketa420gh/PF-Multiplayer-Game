@@ -129,7 +129,7 @@ namespace Game.Scripts.Dungeon
             MatchComponent match = DungeonContext.Instance != null ? DungeonContext.Instance.Match : null;
 
             if (match != null && match.Object != null && match.Object.IsValid && match.Seed != 0 && match.Seed != _seed)
-                Generate(match.Seed);
+                Generate(match.Seed, match.IsTest);
         }
 
         private void OnDestroy()
@@ -138,8 +138,8 @@ namespace Game.Scripts.Dungeon
                 NavMesh.RemoveNavMeshData(_navMesh);
         }
 
-        /// Lays the rooms of the seed out; the old layout is gone at once.
-        public void Generate(int seed)
+        /// Lays the rooms of the seed out (Dungeon Test: one room, no key room); the old layout is gone at once.
+        public void Generate(int seed, bool isTest = false)
         {
             _seed = seed;
             _version++;
@@ -159,11 +159,13 @@ namespace Game.Scripts.Dungeon
 
             _content = new GameObject("[Generated]").transform;
             _content.SetParent(transform, false);
-            Plan plan = Lay(seed);
+            Plan plan = isTest ? LayTest(seed) : Lay(seed);
             _titles = new string[plan.Rooms.Length];
             _keyCells = plan.KeyCells;
-            _hall = Instantiate(_keyRoom, CellCenter(KeyCell), Quaternion.Euler(0f, plan.KeyTurns * 90f, 0f), _content);
-            _rooms.Add(_hall);
+            _hall = isTest ? null : Instantiate(_keyRoom, CellCenter(KeyCell), Quaternion.Euler(0f, plan.KeyTurns * 90f, 0f), _content);
+
+            if (_hall != null)
+                _rooms.Add(_hall);
             CatacombRoomComponent[] placed = new CatacombRoomComponent[plan.Rooms.Length];
 
             foreach (int cell in plan.KeyCells)
@@ -184,7 +186,8 @@ namespace Game.Scripts.Dungeon
             for (int cell = 0; cell < placed.Length; cell++)
                 ShareUpperWalls(plan, placed, cell);
 
-            WallKeyRoom(plan);
+            if (_hall != null)
+                WallKeyRoom(plan);
 
             for (int z = 0; z <= _grid; z++)
             {
@@ -254,7 +257,7 @@ namespace Game.Scripts.Dungeon
         public bool IsNearKeyRoom(Vector3 position)
         {
             return Vector3.Distance(position, CellCenter(KeyCell)) < _pitch * 1.2f
-                || _isKeyRoomLong && Vector3.Distance(position, _hall.transform.TransformPoint(Vector3.forward * _pitch)) < _pitch * 1.2f;
+                || _isKeyRoomLong && _hall != null && Vector3.Distance(position, _hall.transform.TransformPoint(Vector3.forward * _pitch)) < _pitch * 1.2f;
         }
 
         public string GetTitle(int cell)
@@ -341,6 +344,20 @@ namespace Game.Scripts.Dungeon
                 plan.Rooms[cell] = IsKey(plan, cell) ? null : _kinds[PickKind(random, used, corner >= 0)].Prefab;
                 plan.Turns[cell] = corner >= 0 ? corner : random.Next(4);
             }
+
+            return plan;
+        }
+
+        /// Dungeon Test: one random room of the pool (one with a team start if any has it) in the middle cell, rock all around.
+        public Plan LayTest(int seed)
+        {
+            System.Random random = new System.Random(seed);
+            Plan plan = NewPlan();
+            plan.KeyCells = Array.Empty<int>();
+            RoomKind[] pool = _kinds.Where(kind => kind.Prefab.StartSpots != null).ToArray();
+            pool = pool.Length > 0 ? pool : _kinds;
+            plan.Rooms[KeyCell] = pool[random.Next(pool.Length)].Prefab;
+            plan.Turns[KeyCell] = random.Next(4);
 
             return plan;
         }

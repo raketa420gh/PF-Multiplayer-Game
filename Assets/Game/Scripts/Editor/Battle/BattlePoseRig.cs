@@ -136,6 +136,7 @@ namespace Game.Scripts.Editor.Battle
         private readonly Pose[] _bind;
         private readonly Transform[] _sockets;
         private readonly Quaternion[] _socketRests;
+        private readonly Vector3 _palmRest;
         private readonly Transform _hips;
         private readonly Transform[] _spine;
         private readonly Transform _neck;
@@ -153,6 +154,7 @@ namespace Game.Scripts.Editor.Battle
         private int _frame = -1;
         private WeaponSocket _offSocket = WeaponSocket.LeftHand;
         private float _palmLean;
+        private Vector3 _palm;
 
         public BattlePoseRig()
         {
@@ -162,6 +164,7 @@ namespace Game.Scripts.Editor.Battle
             _animator = _root.GetComponent<Animator>();
             _sockets = CreateSockets(_animator);
             _socketRests = Array.ConvertAll(_sockets, socket => socket.localRotation);
+            _palmRest = _palm = _sockets[(int)WeaponSocket.RightHand].localPosition;
             _handler = new HumanPoseHandler(_animator.avatar, _root.transform);
 
             _bones = _root.GetComponentsInChildren<Transform>();
@@ -207,10 +210,12 @@ namespace Game.Scripts.Editor.Battle
             return _socketRests[(int)socket] * Quaternion.AngleAxis(-lean, Vector3.right);
         }
 
-        /// WeaponDefinition.PalmLean of the weapon being posed.
-        public void SetPalmLean(float palmLean)
+        /// WeaponDefinition.PalmLean and PalmDepth of the weapon being posed.
+        public void SetPalm(float palmLean, float palmDepth)
         {
             _palmLean = palmLean;
+            // The socket's up runs along the forearm out of the wrist.
+            _palm = _palmRest +_socketRests[(int)WeaponSocket.RightHand] * Vector3.up * (palmDepth > 0f ? palmDepth - PalmOffset : 0f);
         }
 
         /// Where the main grip ends up once every muscle is inside the avatar's range: metres off the weapon and degrees the
@@ -266,7 +271,7 @@ namespace Game.Scripts.Editor.Battle
                 // An off hand on the haft wraps it at whatever roll its forearm comes from: the haft turns in the lower hand, and
                 // a roll tied to the edge bent that wrist back on itself whenever the edge turned through a cut.
                 float lean = _palmLean > 0f ? Mathf.Clamp(pose.Lean, -_palmLean, _palmLean) : pose.Lean;
-                _sockets[(int)WeaponSocket.RightHand].localRotation = GetSocketRotation(WeaponSocket.RightHand, lean);
+                _sockets[(int)WeaponSocket.RightHand].SetLocalPositionAndRotation(_palm, GetSocketRotation(WeaponSocket.RightHand, lean));
                 SolveArm(_rightArm, _sockets[(int)WeaponSocket.RightHand], pose.Main, pose.Edge, false, lean * Mathf.Deg2Rad);
                 _offSocket = pose.OffSocket;
                 SolveArm(_leftArm, _sockets[(int)pose.OffSocket], pose.Off, Vector3.zero, IsShared(pose), 0f);

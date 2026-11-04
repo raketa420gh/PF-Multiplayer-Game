@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Fusion;
 using UnityEngine;
 using UnityEngine.AI;
@@ -52,6 +53,8 @@ namespace Game.Scripts.Dungeon
 
         public MatchComponent Match => _match;
         public IReadOnlyList<FloorLayout> Floors => _floors;
+        /// Dungeon Test: monsters an adventurer may call in, the floor's ones and the boss.
+        public IReadOnlyList<NetworkObject> TestMonsters => _testMonsters ??= Array.ConvertAll(_monsters, kind => kind.Prefab).Append(_bossPrefab).Where(prefab => prefab != null).ToArray();
 
         [SerializeField]
         private NetworkEvents _networkEvents;
@@ -85,6 +88,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField, Range(0f, 1f)]
         private float _monsterSpawnChance = 0.8f;
+
+        [SerializeField, Tooltip("Dungeon Test: a called monster appears this far ahead of the adventurer")]
+        private float _testSpawnDistance = 5f;
 
         [SerializeField]
         private float _resetDelay = 8f;
@@ -122,6 +128,7 @@ namespace Game.Scripts.Dungeon
         private readonly bool[] _populated = new bool[MatchComponent.FloorCount];
         private readonly int[] _escapeOpened = new int[MatchComponent.FloorCount];
         private readonly bool[] _descendOpened = new bool[MatchComponent.FloorCount];
+        private NetworkObject[] _testMonsters;
         private NetworkRunner _runner;
         private MatchComponent _match;
         private float _finishedAt = -1f;
@@ -158,6 +165,35 @@ namespace Game.Scripts.Dungeon
                 ResetDungeon();
         }
 
+        /// Host, Dungeon Test: a monster of TestMonsters a few steps ahead of the adventurer, facing them; an index past the list
+        /// takes every monster away.
+        public void SpawnTestMonster(int index, AdventurerComponent adventurer)
+        {
+            if (_match == null || !_match.IsTest || adventurer == null)
+                return;
+
+            if (index >= TestMonsters.Count)
+            {
+                _spawned.RemoveAll(obj =>
+                {
+                    bool isMonster = obj != null && obj.IsValid && obj.TryGetComponent(out MonsterComponent _);
+
+                    if (isMonster)
+                        _runner.Despawn(obj);
+
+                    return isMonster;
+                });
+
+                return;
+            }
+
+            Transform body = adventurer.transform;
+            Vector3 point = body.position + body.forward * _testSpawnDistance;
+            Vector3 position = NavMesh.SamplePosition(point, out NavMeshHit hit, _testSpawnDistance, NavMesh.AllAreas) ? hit.position : point;
+            Quaternion rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(-body.forward, Vector3.up), Vector3.up);
+            _spawned.Add(_runner.Spawn(TestMonsters[index], position, rotation, PlayerRef.None, (_, obj) => obj.GetComponent<MonsterComponent>().Setup(adventurer.Floor)));
+        }
+
         private void SpawnAdventurer(PlayerSessionComponent session)
         {
             if (_match.State == MatchState.Finished)
@@ -177,8 +213,9 @@ namespace Game.Scripts.Dungeon
 
                 if (IsGenerated(floor - 1))
                 {
-                    _match.SetSeed(_seed | 1);
-                    _catacombs.Generate(_seed | 1);
+                    bool isTest = _admission != null && _admission.Mode == QueueMode.Test;
+                    _match.SetSeed(_seed | 1, isTest);
+                    _catacombs.Generate(_seed | 1, isTest);
                     _catacombs.BakeNavMesh();
                 }
 
@@ -334,7 +371,8 @@ namespace Game.Scripts.Dungeon
                 centers[i] = floor.Center;
                 radii[i] = floor.Radius;
                 Vector2 offset = new Vector2((float)random.NextDouble() - 0.5f, (float)random.NextDouble() - 0.5f) * floor.Radius * 0.8f;
-                finals[i] = floor.Center + new Vector3(offset.x, 0f, offset.y);
+                // Dungeon Test: the swarm closes on the one room in the middle.
+                finals[i] = floor.Center + (_match.IsTest ? Vector3.zero : new Vector3(offset.x, 0f, offset.y));
             }
 
             _match.Begin(centers, radii, finals, firstFloor);
@@ -412,7 +450,7 @@ namespace Game.Scripts.Dungeon
                 container.Fill(container.LootTable, random.Next());
             }
 
-            if (floor.BossSpawn != null && _bossPrefab != null && _config.IsMonstersEnabled)
+            if (floor.BossSpawn != null && _bossPrefab != null && _config.IsMonstersEnabled && !_match.IsTest)
             {
                 NetworkObject boss = _runner.Spawn(_bossPrefab, floor.BossSpawn.position, floor.BossSpawn.rotation, PlayerRef.None,
                     (_, obj) => obj.GetComponent<MonsterComponent>().Setup(level));
@@ -530,7 +568,7 @@ namespace Game.Scripts.Dungeon
 
         private void SpawnMonster(NetworkObject prefab, Transform point, byte level)
         {
-            if (!_config.IsMonstersEnabled || IsNearSpawn(point.position))
+            if (!_config.IsMonstersEnabled || _match.IsTest || IsNearSpawn(point.position))
                 return;
 
             _spawned.Add(_runner.Spawn(prefab, point.position, point.rotation, PlayerRef.None, (_, obj) => obj.GetComponent<MonsterComponent>().Setup(level)));

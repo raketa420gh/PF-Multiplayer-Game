@@ -19,8 +19,6 @@ namespace Game.Scripts.Editor.Dungeon
         public const string Staff = "Staff";
         public const string MaceShield = "MaceShield";
         public const string Spellbook = "Spellbook";
-        public const string BearClaws = "BearClaws";
-        public const string PantherClaws = "PantherClaws";
         public const string RatBite = "RatBite";
         public const string MorningStar = "MorningStar";
         public const string SwordEcu = "SwordEcu";
@@ -75,7 +73,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// weapon by name.
         public static readonly string[] CatalogOrder =
         {
-            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, BearClaws, PantherClaws, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu, Torch, Misericorde, MisericordeShield, MisericordeEcu
+            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu, Torch, Misericorde, MisericordeShield, MisericordeEcu
         };
 
         /// The entry whose shield is the model of a shield item, by its ShieldIndex: the round shield, the écu.
@@ -111,8 +109,8 @@ namespace Game.Scripts.Editor.Dungeon
         private static readonly Dictionary<string, (int impact, int stability)> s_force = new()
         {
             ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 4), ["Rat Bite"] = (1, 1), ["Arming Sword"] = (4, 3), ["Morning Star"] = (6, 3), ["Magic Staff"] = (4, 4),
-            ["Round Shield"] = (1, 7), ["Écu"] = (1, 8), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1), ["Panther Claws"] = (4, 2),
-            ["Bear Claws"] = (7, 4), ["Viking Sword"] = (5, 3), ["Torch"] = (2, 1), ["Misericorde"] = (2, 2)
+            ["Round Shield"] = (1, 7), ["Écu"] = (1, 8), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1),
+            ["Viking Sword"] = (5, 3), ["Torch"] = (2, 1), ["Misericorde"] = (2, 2)
         };
 
         /// A weapon with a shield hits with the weapon's Impact and blocks with the shield's Stability.
@@ -184,8 +182,6 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateCrossbow(),
                 CreateStaff(),
                 CreateSpellbook(),
-                CreateBearClaws(),
-                CreatePantherClaws(),
                 CreateRatBite(),
                 CreateMorningStar(),
                 CreateVikingSword(),
@@ -549,6 +545,8 @@ namespace Game.Scripts.Editor.Dungeon
                 Kind = WeaponKind.OneHanded,
                 // A square spike of a blade: no edge leads.
                 IsRound = true,
+                // The short grip in the middle of the fist, as the morning star's haft is held, not at the fingertips.
+                PalmDepth = 0.08f,
                 Reach = 1f,
                 DeflectDuration = 0.5f,
                 BladeBase = bladeBase,
@@ -795,53 +793,6 @@ namespace Game.Scripts.Editor.Dungeon
             definition.Attacks[0].Damage = 2;
             definition.Attacks[1].Damage = 2;
             definition.CanBlock = false;
-
-            return definition;
-        }
-
-        private static WeaponDefinition CreateBearClaws()
-        {
-            WeaponDefinition definition = CreateFists();
-            definition.Prefix = BearClaws;
-            definition.DisplayName = "Bear Claws";
-            definition.Reach = 1.5f;
-            definition.BladeTip = 0.35f;
-            definition.CanBlock = false;
-
-            foreach (AttackDefinition attack in definition.Attacks)
-            {
-                attack.Damage = 27;
-                attack.Windup = 0.5f;
-                attack.Active = 0.18f;
-                attack.Recovery = 0.55f;
-                attack.ComboStart = 0.6f;
-                attack.ComboEnd = 1.1f;
-                attack.Stagger = 0.3f;
-                attack.MoveMultiplier = 0.7f;
-            }
-
-            return definition;
-        }
-
-        private static WeaponDefinition CreatePantherClaws()
-        {
-            WeaponDefinition definition = CreateFists();
-            definition.Prefix = PantherClaws;
-            definition.DisplayName = "Panther Claws";
-            definition.Reach = 1.2f;
-            definition.BladeTip = 0.25f;
-            definition.CanBlock = false;
-
-            foreach (AttackDefinition attack in definition.Attacks)
-            {
-                attack.Damage = 23;
-                attack.Windup = 0.18f;
-                attack.Active = 0.1f;
-                attack.Recovery = 0.22f;
-                attack.ComboStart = 0.2f;
-                attack.ComboEnd = 0.48f;
-                attack.MoveMultiplier = 0.9f;
-            }
 
             return definition;
         }

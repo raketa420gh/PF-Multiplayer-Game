@@ -276,7 +276,7 @@ namespace Game.Scripts.Dungeon
         private WeaponConfig[] _formWeapons;
 
         [SerializeField]
-        private float[] _formScales = { 1f, 1.45f, 1f, 0.4f };
+        private float[] _formScales = { 1f, 0.4f };
 
         [SerializeField]
         private float _restHealInterval = 2f;

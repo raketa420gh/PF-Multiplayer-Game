@@ -35,6 +35,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private PauseMenuView _pause;
 
+        [SerializeField]
+        private DungeonTestView _test;
+
         private PlayerSessionComponent _session;
         private AdventurerComponent _adventurer;
         private SessionState _shownState = (SessionState)255;
@@ -95,6 +98,9 @@ namespace Game.Scripts.Dungeon
             if (Input.GetKeyDown(KeyCode.M) && _map.HasFloors)
                 _map.SetShown(!_map.IsShown);
 
+            if (Input.GetKeyDown(KeyCode.F2) && _context.Match != null && _context.Match.IsTest)
+                SetTestOpen(!_test.IsShown);
+
             UpdateContainer();
             UpdateWheel();
         }
@@ -104,10 +110,18 @@ namespace Game.Scripts.Dungeon
         {
             if (_isInventoryOpen)
                 SetInventoryOpen(false);
+            else if (_test.IsShown)
+                SetTestOpen(false);
             else if (_map.IsShown)
                 _map.Hide();
             else
                 SetPauseOpen(!_pause.IsShown);
+        }
+
+        private void SetTestOpen(bool isOpen)
+        {
+            _test.SetShown(isOpen);
+            _context.Battle.Input.SetUiOpen(isOpen || _isInventoryOpen);
         }
 
         private void SetPauseOpen(bool isOpen)
@@ -163,8 +177,6 @@ namespace Game.Scripts.Dungeon
 
             if (isForms)
             {
-                _wheelEntries.Add(("Bear", null, "Br", new Color(0.7f, 0.5f, 0.3f), "+50% HP, slow, heavy claws"));
-                _wheelEntries.Add(("Panther", null, "Pn", new Color(0.4f, 0.35f, 0.5f), "fast, quick claws"));
                 _wheelEntries.Add(("Rat", null, "Rt", new Color(0.6f, 0.6f, 0.6f), "tiny, fragile, sneaky"));
                 _wheel.Open("Shapeshift", _wheelEntries);
             }
@@ -264,6 +276,7 @@ namespace Game.Scripts.Dungeon
                     break;
                 default:
                     _result.Bind(_session);
+                    _test.Hide();
                     _hud.Hide();
                     _inventory.Hide();
                     _map.Hide();
@@ -278,6 +291,7 @@ namespace Game.Scripts.Dungeon
         /// The session waits for its kit and the adventurer spawn: the loading screen stays up until the body exists.
         private void ShowLoading()
         {
+            _test.Hide();
             _hud.Hide();
             _result.Hide();
             _inventory.Hide();
@@ -292,7 +306,7 @@ namespace Game.Scripts.Dungeon
         {
             _isInventoryOpen = isOpen;
             _inventory.SetShown(isOpen);
-            _context.Battle.Input.SetUiOpen(isOpen);
+            _context.Battle.Input.SetUiOpen(isOpen || _test.IsShown);
 
             if (isOpen)
                 _map.Hide();

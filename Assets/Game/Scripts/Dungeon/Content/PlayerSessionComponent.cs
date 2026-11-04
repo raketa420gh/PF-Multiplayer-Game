@@ -612,6 +612,13 @@ namespace Game.Scripts.Dungeon
             return count;
         }
 
+        /// Dungeon Test: calls a monster of DungeonDirector.TestMonsters in front of the adventurer; an index past the list clears them.
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcSpawnTestMonster(byte index)
+        {
+            DungeonContext.Instance.Director.SpawnTestMonster(index, Adventurer);
+        }
+
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcResetKit()
         {

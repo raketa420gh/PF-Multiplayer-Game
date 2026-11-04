@@ -30,10 +30,10 @@ namespace Game.Scripts.Dungeon
         private Light _handGlow;
 
         [SerializeField]
-        private float[] _formScales = { 1f, 1.45f, 1f, 0.4f };
+        private float[] _formScales = { 1f, 0.4f };
 
         [SerializeField]
-        private Color[] _formTints = { Color.white, new(0.45f, 0.3f, 0.18f), new(0.12f, 0.1f, 0.12f), new(0.45f, 0.42f, 0.4f) };
+        private Color[] _formTints = { Color.white, new(0.45f, 0.42f, 0.4f) };
 
         private readonly List<Renderer> _renderers = new();
         private ArmorDresser _dresser;

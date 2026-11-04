@@ -217,26 +217,9 @@ namespace Game.Scripts.Dungeon
             return Mathf.RoundToInt(damage * (1f - reduction));
         }
 
-        private static float FormHealthBonus(ShapeshiftForm form)
-        {
-            return form switch
-            {
-                ShapeshiftForm.Bear => 50f,
-                ShapeshiftForm.Rat => -95f,
-                _ => 0f
-            };
-        }
+        private static float FormHealthBonus(ShapeshiftForm form) => form == ShapeshiftForm.Rat ? -95f : 0f;
 
-        private static float FormMoveAdd(ShapeshiftForm form)
-        {
-            return form switch
-            {
-                ShapeshiftForm.Bear => -60f,
-                ShapeshiftForm.Panther => 15f,
-                ShapeshiftForm.Rat => 30f,
-                _ => 0f
-            };
-        }
+        private static float FormMoveAdd(ShapeshiftForm form) => form == ShapeshiftForm.Rat ? 30f : 0f;
 
         private static float Perk(float[] perks, PerkEffect effect)
         {

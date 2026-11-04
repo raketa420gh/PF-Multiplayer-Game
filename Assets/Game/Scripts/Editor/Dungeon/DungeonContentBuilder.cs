@@ -68,12 +68,14 @@ namespace Game.Scripts.Editor.Dungeon
             BuildPreviewRig(pieceSet);
 
             BuildAdventurer(loadouts, arrow, orb, database, classes, config, weapons, worldItem, corpse, campfire, pieceSet, zone, vfx);
-            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.ArmingSword), Experience = 25, Loot = loot["Monster"], Body = DungeonSkeletonBuilder.Material("A"), Scale = 0.98f },
+            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.ArmingSword), Experience = 25, Loot = loot["Monster"], Scale = 1f },
                 loadouts, arrow, orb, database, pieceSet);
-            BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Bow), Experience = 25, Loot = loot["Monster"], Body = DungeonSkeletonBuilder.Material("D"), Scale = 0.98f },
+            BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Bow), Experience = 25, Loot = loot["Monster"], Scale = 1f },
+                loadouts, arrow, orb, database, pieceSet);
+            BuildMonster(new MonsterDef { Name = "SkeletonCrossbowman", DisplayName = "Skeleton Crossbowman", Health = 80, Damage = 1f, MoveSpeed = 200f, ActionSpeed = 0.8f, Aggro = 15f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Crossbow), Experience = 30, Loot = loot["Monster"], Scale = 1f },
                 loadouts, arrow, orb, database, pieceSet);
             BuildMonster(new MonsterDef { Name = "SkeletonWarrior", DisplayName = "Skeleton Warrior", Health = 165, Damage = 1.3f, MoveSpeed = 200f, ActionSpeed = 0.65f, Aggro = 10f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.SwordEcu), Experience = 40, Loot = loot["Warrior"], Scale = 1f,
-                Armor = 0.15f, Skin = DungeonWarriorBuilder.Attach }, loadouts, arrow, orb, database, pieceSet);
+                Armor = 0.15f }, loadouts, arrow, orb, database, pieceSet);
             BuildFlyingHead(new MonsterDef { Name = "FlyingHead", DisplayName = "Flying Head", Health = 60, Damage = 1f, MoveSpeed = 230f, ActionSpeed = 1f, Aggro = 12f, Experience = 30, Loot = loot["Monster"], Scale = 1f,
                 Voice = DungeonSound.Screech, Charge = 900f }, arrow, orb, database);
             BuildJuggernaut(new MonsterDef { Name = "Juggernaut", DisplayName = "Iron Juggernaut", Health = 220, Damage = 1f, MoveSpeed = 190f, ActionSpeed = 0.8f, Aggro = 12f, Experience = 60, Loot = loot["Monster"], Scale = 1f,
@@ -674,7 +676,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_zonePrefab", zone);
             BattleEditorUtility.Set(so, "_fistsWeapon", weapons[DungeonWeaponLibrary.Fists]);
             BattleEditorUtility.Set(so, "_torchWeapon", weapons[DungeonWeaponLibrary.Torch]);
-            BattleEditorUtility.Set(so, "_formWeapons", new[] { weapons[DungeonWeaponLibrary.BearClaws], weapons[DungeonWeaponLibrary.PantherClaws], weapons[DungeonWeaponLibrary.RatBite] });
+            BattleEditorUtility.Set(so, "_formWeapons", new[] { weapons[DungeonWeaponLibrary.RatBite] });
             so.ApplyModifiedPropertiesWithoutUndo();
 
             Transform rightHand = parts.Animator.GetBoneTransform(HumanBodyBones.RightHand);
@@ -867,8 +869,6 @@ namespace Game.Scripts.Editor.Dungeon
             public float Charge;
             public DungeonSound Voice = DungeonSound.Rattle;
             public float Armor = -0.22f;
-            /// The body over the fighter rig; skeletons by default.
-            public System.Func<GameObject, Animator, Transform> Skin;
             public (ArmorVisual, Color)[] Attachments = System.Array.Empty<(ArmorVisual, Color)>();
         }
 
@@ -969,10 +969,7 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject root = parts.Root;
             BattleEditorUtility.Set(parts.Fighter, "_respawnDelay", 0f);
             parts.Animator.transform.localScale = Vector3.one * def.Scale;
-            if (def.Skin != null)
-                def.Skin(root, parts.Animator);
-            else
-                DungeonSkeletonBuilder.Attach(root, parts.Animator, def.Body);
+            DungeonSkeletonBuilder.Attach(root, parts.Animator);
 
             root.GetComponent<CharacterController>().radius = 0.3f * def.Scale;
             root.GetComponent<CharacterController>().height = 1.85f * def.Scale;
@@ -997,7 +994,7 @@ namespace Game.Scripts.Editor.Dungeon
         private static void BuildFlyingHead(MonsterDef def, GameObject arrow, GameObject orb, ItemDatabase database)
         {
             const float height = 1.55f;
-            const float scale = 1.7f;
+            const float SkullScale = 0.5f;
             MonsterConfig config = BuildMonsterConfig(def);
             BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(new[] { BuildRam(height) }, arrow, orb, 1, def.Name);
             GameObject root = parts.Root;
@@ -1020,7 +1017,7 @@ namespace Game.Scripts.Editor.Dungeon
             }
 
             skull.transform.localPosition = new Vector3(0f, height, 0f);
-            skull.SphereRadius = 0.16f * scale;
+            skull.SphereRadius = 0.54f * SkullScale;
             BattleEditorUtility.Set(skull, "_zone", HitZone.Torso);
             parts.HitboxRoot.InitHitboxes();
             SerializedObject so = new SerializedObject(parts.Body);
@@ -1030,26 +1027,21 @@ namespace Game.Scripts.Editor.Dungeon
 
             Transform head = BattleEditorUtility.CreateChild("Head", root.transform, new Vector3(0f, height, 0f)).transform;
             Transform model = BattleEditorUtility.CreateChild("Model", head).transform;
-            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(BattleCharacterBuilder.HeadMeshPath);
-            Vector3 center = mesh.bounds.center + Vector3.up * mesh.bounds.extents.y * 0.25f;
-            model.localScale = Vector3.one * scale;
-            model.localPosition = -center * scale;
-            DungeonPropBuilder.MeshObject("Skull", model, mesh, DungeonPropBuilder.Bone, default, default, false, false)
-                .GetComponent<MeshRenderer>().sharedMaterials = new[] { DungeonPropBuilder.Bone };
+            // The Tripo skull is about 1 m tall, jaw at the bottom, face along +Z.
+            model.localScale = Vector3.one * SkullScale;
+            model.localPosition = new Vector3(0f, -0.5f, 0f) * SkullScale;
+            GameObject skullModel = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(DungeonSkeletonBuilder.SkullPath), model);
+            PrefabUtility.UnpackPrefabInstance(skullModel, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            skullModel.name = "Skull";
+            Material bone = DungeonSkeletonBuilder.SkullMaterial;
 
-            Material dark = BattleEditorUtility.GetMaterial("ArmorDark", new Color(0.12f, 0.1f, 0.08f), 0.1f, 0.3f);
+            foreach (Renderer renderer in skullModel.GetComponentsInChildren<Renderer>())
+                renderer.sharedMaterial = bone;
+
             Material eye = DungeonPropBuilder.Emissive("HeadEye", new Color(0.45f, 1f, 0.6f), 6f);
-            Vector3 face = new Vector3(0f, mesh.bounds.center.y + mesh.bounds.extents.y * 0.3f, mesh.bounds.max.z);
 
             foreach (float side in new[] { -1f, 1f })
-            {
-                Vector3 socket = face + new Vector3(side * 0.034f, 0.012f, -0.022f);
-                BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Socket", model, socket, Vector3.zero, new Vector3(0.046f, 0.04f, 0.03f), dark);
-                BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Eye", model, socket + Vector3.forward * 0.01f, Vector3.zero, Vector3.one * 0.02f, eye);
-            }
-
-            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Nose", model, face + new Vector3(0f, -0.03f, -0.012f), Vector3.zero, new Vector3(0.018f, 0.026f, 0.02f), dark);
-            BattleEditorUtility.CreatePrimitive(PrimitiveType.Cube, "Mouth", model, face + new Vector3(0f, -0.075f, -0.024f), Vector3.zero, new Vector3(0.07f, 0.03f, 0.04f), dark);
+                BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Eye", model, new Vector3(side * 0.15f, 0.52f, 0.25f), Vector3.zero, Vector3.one * 0.09f, eye);
             BattleEditorUtility.SetLayerRecursively(head.gameObject, root.layer);
             Light glow = DungeonPropBuilder.PointLight(head, new Vector3(0f, -0.05f, 0.6f), new Color(0.45f, 1f, 0.6f), 3.5f, 0.5f, false);
 

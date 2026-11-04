@@ -97,8 +97,6 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.Crossbow] = new[] { (crossbow, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Staff] = new[] { (staff, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Spellbook] = new[] { (book, WeaponSocket.LeftHand) },
-                [DungeonWeaponLibrary.BearClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
-                [DungeonWeaponLibrary.PantherClaws] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.RatBite] = Array.Empty<(GameObject, WeaponSocket)>(),
                 [DungeonWeaponLibrary.MorningStar] = new[] { (morningStar, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.VikingSword] = new[] { (vikingSword, WeaponSocket.RightHand) },

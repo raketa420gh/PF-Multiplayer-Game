@@ -102,6 +102,7 @@ namespace Game.Scripts.Editor.Battle
             }
 
             BuildActions(upper);
+            rig.SetPalm(0f, 0f);
             BuildFirstPerson(rig, upper);
             BuildHitReactions(controller.layers[2].stateMachine);
             BakeSockets(controller);
@@ -509,7 +510,7 @@ namespace Game.Scripts.Editor.Battle
         /// poses a swing passes on its way up and back.
         public static void Settle(BattlePoseRig rig, WeaponDefinition weapon)
         {
-            rig.SetPalmLean(weapon.PalmLean);
+            rig.SetPalm(weapon.PalmLean, weapon.PalmDepth);
             SettleRoll(rig, ref weapon.Idle);
             SettleRoll(rig, ref weapon.IdleBreath);
             SettleRoll(rig, ref weapon.Block);

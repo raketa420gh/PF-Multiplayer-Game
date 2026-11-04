@@ -36,6 +36,10 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public int Seed { get; private set; }
 
+        /// Dungeon Test: the floor is one random room without monsters; adventurers call monsters in themselves.
+        [Networked]
+        public NetworkBool IsTest { get; private set; }
+
         [Networked, Capacity(FloorCount)]
         private NetworkArray<Vector3> _floorCenters => default;
 
@@ -73,8 +77,9 @@ namespace Game.Scripts.Dungeon
             BeginFloor(firstFloor);
         }
 
-        public void SetSeed(int seed)
+        public void SetSeed(int seed, bool isTest)
         {
+            IsTest = isTest;
             Seed = seed;
         }
 

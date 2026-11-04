@@ -385,6 +385,19 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
+            // A crossbow is cocked by hand when idle and shot with one press once loaded.
+            if (ranged.IsManualReload)
+            {
+                bool isReady = combat.State == CombatState.Idle;
+                input.Buttons.Set(PlayerInputButtons.Reload, isReady && !combat.IsLoaded);
+                isAttackDown = isReady && combat.IsLoaded && !_wasAttackDown && time >= _nextAttackTime;
+
+                if (isAttackDown)
+                    _nextAttackTime = time + Random.Range(_monster.Config.AttackPauseMin, _monster.Config.AttackPauseMax);
+
+                return;
+            }
+
             if (combat.State == CombatState.Draw)
             {
                 if (combat.DrawPower < 1f)
