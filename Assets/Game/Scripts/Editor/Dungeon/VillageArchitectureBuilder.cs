@@ -796,7 +796,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static Texture2D ModelTexture(string file, bool isNormal)
         {
-            string path = $"Assets/SpecialFolder/Models/Environment/Gravestones/{file}";
+            string path = $"Assets/Game/Models/Environment/Gravestones/{file}";
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
             TextureImporterType type = isNormal ? TextureImporterType.NormalMap : TextureImporterType.Default;
 
@@ -813,7 +813,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// The user's grave models: scaled, turned to face +Z, stood on the ground at the origin, with the project stone.
         private static void SaveModelPiece(string name, string file, float scale, float yaw, Material material)
         {
-            string path = $"Assets/SpecialFolder/Models/Environment/Gravestones/{file}";
+            string path = $"Assets/Game/Models/Environment/Gravestones/{file}";
             ModelImporter importer = (ModelImporter)AssetImporter.GetAtPath(path);
 
             // Tilted import rotations swell the renderer bounds: the box is measured on the vertices.

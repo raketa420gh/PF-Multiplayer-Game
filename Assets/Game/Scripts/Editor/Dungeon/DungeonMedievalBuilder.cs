@@ -13,7 +13,7 @@ namespace Game.Scripts.Editor.Dungeon
     {
         public const string PrefabsFolder = DungeonPropBuilder.PrefabsFolder + "/Medieval";
 
-        private const string PackFolder = "Assets/SpecialFolder/Models/Environment/MedievalAssetsPack";
+        private const string PackFolder = "Assets/Game/Models/Environment/MedievalAssetsPack";
         private const string ModelsFolder = PackFolder + "/Models";
         private const string TexturesFolder = PackFolder + "/Textures";
         private const string MaterialsFolder = DungeonPropBuilder.MaterialsFolder + "/Medieval";

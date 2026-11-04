@@ -12,7 +12,7 @@ namespace Game.Scripts.Editor.Battle
         public const string Leather = "BrownLeather01";
 
         /// Unzipped cgbookcase downloads, one folder per material (Docs/06_Art/Free_PBR_Sources.md).
-        private const string SourceFolder = "Assets/SpecialFolder/Textures/Cgbookcase";
+        private const string SourceFolder = "Assets/Game/Textures/Cgbookcase";
         private const string TexturesFolder = "Assets/Game/Textures/Battle";
         private const int MaxSize = 1024;
 

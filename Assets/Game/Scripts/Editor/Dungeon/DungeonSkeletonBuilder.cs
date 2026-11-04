@@ -12,9 +12,9 @@ namespace Game.Scripts.Editor.Dungeon
         public const string SkullPath = SkullFolder + "/FlyingSkull.fbx";
 
         private const string MaterialsFolder = DungeonPropBuilder.MaterialsFolder + "/Skeleton";
-        private const string BodyFolder = "Assets/SpecialFolder/Models/Monsters/SkeletonCrossbowman";
-        private const string BodyPath = BodyFolder + "/SkeletonCrossbowman.fbx";
-        private const string SkullFolder = "Assets/SpecialFolder/Models/Monsters/FlyingSkull";
+        private const string BodyFolder = "Assets/Game/Models/Monsters/Skeleton";
+        private const string BodyPath = BodyFolder + "/Skeleton.fbx";
+        private const string SkullFolder = "Assets/Game/Models/Monsters/FlyingSkull";
         // Tripo exports the body about 1 m tall: scaled to the fighter rig's height.
         private const float BodyScale = 1.75f;
 
@@ -29,7 +29,7 @@ namespace Game.Scripts.Editor.Dungeon
             PrefabUtility.UnpackPrefabInstance(model, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
             Object.DestroyImmediate(model.GetComponent<Animator>());
             model.name = "Skeleton";
-            Material material = TripoMaterial("SkeletonCrossbowman", BodyFolder + "/Textures/SkeletonCrossbowman_");
+            Material material = TripoMaterial("Skeleton", BodyFolder + "/Textures/Skeleton_");
 
             foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>())
             {

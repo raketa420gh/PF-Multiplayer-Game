@@ -24,9 +24,9 @@ CC0 = public domain: коммерческое использование, люб
 
 | Материал | Источник | Лицензия | Где лежит | Где применён |
 |---|---|---|---|---|
-| Fabric 08 (лён) | [cgbookcase](https://www.cgbookcase.com/textures/fabric-08) | CC0 | `Assets/SpecialFolder/Textures/Cgbookcase/Fabric08` | Veinworker: рубаха, штаны (`OutfitPeasant`) |
-| Brown Leather 01 | [cgbookcase](https://www.cgbookcase.com/textures/brown-leather-01) | CC0 | `Assets/SpecialFolder/Textures/Cgbookcase/BrownLeather01` | Veinworker: сапоги (`OutfitPeasantBoots`), капюшон и обмотки (`OutfitRanger3`) |
+| Fabric 08 (лён) | [cgbookcase](https://www.cgbookcase.com/textures/fabric-08) | CC0 | `Assets/Game/Textures/Cgbookcase/Fabric08` | Veinworker: рубаха, штаны (`OutfitPeasant`) |
+| Brown Leather 01 | [cgbookcase](https://www.cgbookcase.com/textures/brown-leather-01) | CC0 | `Assets/Game/Textures/Cgbookcase/BrownLeather01` | Veinworker: сапоги (`OutfitPeasantBoots`), капюшон и обмотки (`OutfitRanger3`) |
 
 Металл (B канал ORM) исключён detail-маской `T_*_ORM_DetailMask`.
 
-Добавить материал cgbookcase: скачать zip (Metalness/Roughness, 2K) → распаковать в `Assets/SpecialFolder/Textures/Cgbookcase/<Имя>/` → прописать в `ClothDetailBuilder.s_sources` → `Tools/Game/Battle/Build Cloth Materials`.
+Добавить материал cgbookcase: скачать zip (Metalness/Roughness, 2K) → распаковать в `Assets/Game/Textures/Cgbookcase/<Имя>/` → прописать в `ClothDetailBuilder.s_sources` → `Tools/Game/Battle/Build Cloth Materials`.

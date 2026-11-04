@@ -22,7 +22,7 @@ namespace Game.Scripts.Editor.Battle
         public const string RangerAltMaterial = "OutfitRanger3";
         public const string WoodMaterial = "DummyWood";
 
-        private const string PacksFolder = "Assets/SpecialFolder/Models";
+        private const string PacksFolder = "Assets/Game/Models";
         private const string BaseFolder = PacksFolder + "/Characters/UniversalBaseCharacters/Base Characters";
         private const string MaleBodyPath = BaseFolder + "/Unity/Superhero_Male_FullBody.fbx";
         private const string FemaleBodyPath = BaseFolder + "/Unity/Superhero_Female_FullBody.fbx";
