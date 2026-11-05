@@ -58,9 +58,10 @@
 - момент block impact/recovery.
 
 ## Models and Materials
-- Меши оружия генерируются (`WeaponMesh`: loft / revolve / tube / plate; детали — `WeaponParts`), по одному mesh-ассету на оружие.
+- Меши оружия генерируются, кроме Tripo-моделей (`WeaponMesh`: loft / revolve / tube / plate; детали — `WeaponParts`), по одному mesh-ассету на оружие.
+- Tripo-модели (`Assets/Game/Models/Weapons/<Name>`, `BattleWeaponPrefabBuilder.BuildTripo`): Arming Sword (гарда 10 см перед кулаком, остриё на 90 см), Round Shield (Ø68 см), Écu, Morning Star (72 см, центр шара на 55 см). Поворот, масштаб и опорная точка модели заданы в вызове билдера; их кадр — как у генерируемых мешей.
 - PBR-наборы текстур — `WeaponTextureBuilder`, материалы `Weapon*.mat` отдельно от общих `Steel`/`Leather`.
-- Écu — heater shield 48×60 см с текстурой лицевой стороны; ремни заходят сзади под 38° (кулак на ремне не может лежать предплечьем в плоскости щита). Модель щита даёт `DungeonWeaponLibrary.ShieldModels`.
+- Écu — heater shield 48×65 см (Tripo), верх на 13 см выше кулака; кадр щита в сокете — `EcuTurn` (предплечье заходит сзади под 38°). Модель щита даёт `DungeonWeaponLibrary.ShieldModels`.
 - Spellbook — раскрытая и закрытая модели книги.
 
 ## Swing Rules

@@ -22,6 +22,10 @@ namespace Game.Scripts.Editor.Battle
     /// Weapon visuals as generated meshes. Local axes: +Z blade / stave, +Y leading edge (knuckles), origin at the grip.
     internal static class BattleWeaponPrefabBuilder
     {
+        /// Tripo weapon models: rod-like ones lie +Y along, with the edge or width on X.
+        public static readonly Quaternion TripoRod = Quaternion.LookRotation(Vector3.right, Vector3.forward);
+
+        private const string TripoFolder = "Assets/Game/Models/Weapons";
         private const float BowStep = 0.01f;
 
         private enum Guard
@@ -132,61 +136,23 @@ namespace Game.Scripts.Editor.Battle
             return Save(root);
         }
 
-        public static GameObject BuildShield()
+        /// A Tripo model (Assets/Game/Models/Weapons/<model>) as a weapon visual. Its frame is the one it imports in: +Y its
+        /// length or top, +Z its face. It is turned into the weapon's frame and scaled, with its pivot (a point of the
+        /// imported model, before scaling) set at the target.
+        public static GameObject BuildTripo(string name, string model, Quaternion turn, float scale, Vector3 pivot, Vector3 target)
         {
-            const float radius = 0.34f;
-            const float front = 0.036f;
-            const float back = 0.02f;
-            const float bulge = 0.03f;
+            string path = $"{TripoFolder}/{model}/{model}";
+            GameObject root = new GameObject(name);
+            GameObject mesh = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>($"{path}.fbx"), root.transform);
+            mesh.name = "Model";
+            mesh.transform.localRotation = turn * mesh.transform.localRotation;
+            mesh.transform.localScale = Vector3.one * scale;
+            mesh.transform.localPosition = target - turn * (pivot * scale);
+            Material material = AssetDatabase.LoadAssetAtPath<Material>($"{path}.mat");
 
-            Material iron = WeaponMaterials.Iron;
-            Material wood = WeaponMaterials.DarkWood;
-            GameObject root = new GameObject("Shield");
-            WeaponMesh mesh = new WeaponMesh();
+            foreach (Renderer renderer in mesh.GetComponentsInChildren<Renderer>())
+                renderer.sharedMaterial = material;
 
-            mesh.Face(WeaponMaterials.ShieldFace, radius, front, bulge, 36, 5, true);
-            mesh.Face(wood, radius, back, bulge, 36, 5, false, 5f);
-
-            List<Vector3> rim = new();
-            List<Vector2> rimRadii = new();
-
-            for (int i = 0; i < 36; i++)
-            {
-                float angle = i * Mathf.PI * 2f / 36f;
-                rim.Add(new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, (front + back) * 0.5f));
-                rimRadii.Add(new Vector2(0.011f, 0.014f));
-            }
-
-            mesh.Tube(iron, rim, rimRadii, 6, Vector3.forward, WeaponMesh.Soft, true);
-
-            // Boss: a flange nailed to the board and the dome over the fist.
-            float bossZ = front + bulge;
-            mesh.Revolve(WeaponMaterials.Steel, new[]
-            {
-                new Vector2(bossZ - 0.012f, 0.088f), new Vector2(bossZ - 0.004f, 0.088f), new Vector2(bossZ, 0.064f), new Vector2(bossZ + 0.022f, 0.056f),
-                new Vector2(bossZ + 0.044f, 0.036f), new Vector2(bossZ + 0.054f, 0.014f), new Vector2(bossZ + 0.056f, 0f)
-            }, 16);
-
-            for (int i = 0; i < 8; i++)
-            {
-                float angle = (i + 0.5f) * Mathf.PI * 2f / 8f;
-                WeaponParts.Rivet(mesh, iron, new Vector3(Mathf.Cos(angle) * 0.076f, Mathf.Sin(angle) * 0.076f, bossZ - 0.004f), Vector3.forward, 0.006f);
-            }
-
-            for (int i = 0; i < 16; i++)
-            {
-                float angle = i * Mathf.PI * 2f / 16f;
-                float t = 0.3f / radius;
-                WeaponParts.Rivet(mesh, iron, new Vector3(Mathf.Cos(angle) * 0.3f, Mathf.Sin(angle) * 0.3f, front + bulge * (1f - t * t)), Vector3.forward, 0.006f);
-            }
-
-            // Back: the grip bar across the boss hole, an iron brace and the forearm strap.
-            mesh.Tube(wood, new[] { new Vector3(0f, -0.27f, 0.03f), new Vector3(0f, -0.09f, 0.012f), new Vector3(0f, 0.09f, 0.012f), new Vector3(0f, 0.27f, 0.03f) },
-                new[] { new Vector2(0.016f, 0.008f), new Vector2(0.014f, 0.013f), new Vector2(0.014f, 0.013f), new Vector2(0.016f, 0.008f) }, 8, Vector3.back);
-            mesh.Tube(WeaponMaterials.Hide, new[] { new Vector3(-0.15f, -0.07f, 0.034f), new Vector3(-0.15f, -0.035f, 0.004f), new Vector3(-0.15f, 0.035f, 0.004f), new Vector3(-0.15f, 0.07f, 0.034f) },
-                new[] { new Vector2(0.02f, 0.0025f), new Vector2(0.02f, 0.0025f), new Vector2(0.02f, 0.0025f), new Vector2(0.02f, 0.0025f) }, 6, Vector3.back);
-
-            mesh.Attach(root.transform, "Shield");
             root.AddComponent<WeaponVisual>();
 
             return Save(root);

@@ -72,11 +72,12 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.EnsureFolder(BattleEditorUtility.MaterialsFolder);
             BattleEditorUtility.EnsureLayer(BattleEditorUtility.HitboxLayer);
 
-            GameObject sword = BattleWeaponPrefabBuilder.BuildSword("Sword", 0.12f, 0.9f, 0.052f, 0.2f, 0.08f, SwordStyle.Arming);
+            // The Tripo arming sword: the guard 10 cm ahead of the fist, the tip at 90 cm, the edge leading.
+            GameObject sword = BattleWeaponPrefabBuilder.BuildTripo("Sword", "ArmingSword", BattleWeaponPrefabBuilder.TripoRod, 1.08f, new Vector3(0f, 0.239f, 0f), new Vector3(0f, 0f, 0.1f));
             GameObject axe = DungeonWeaponPrefabBuilder.BuildAxe("BattleAxe", 0.92f, 0.3f, AxeStyle.Battle);
             GameObject staff = DungeonWeaponPrefabBuilder.BuildStaff();
             GameObject crossbow = DungeonWeaponPrefabBuilder.BuildCrossbow();
-            GameObject shield = BattleWeaponPrefabBuilder.BuildShield();
+            GameObject shield = BattleWeaponPrefabBuilder.BuildTripo("Shield", "RoundShield", Quaternion.Euler(0f, 0f, 90f), 0.695f, new Vector3(0f, 0.489f, -0.0875f), new Vector3(0f, 0f, 0.012f));
             GameObject bow = BattleWeaponPrefabBuilder.BuildBow();
             GameObject book = DungeonWeaponPrefabBuilder.BuildBook();
             GameObject morningStar = DungeonWeaponPrefabBuilder.BuildMorningStar();

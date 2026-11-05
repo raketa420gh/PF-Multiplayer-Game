@@ -28,7 +28,6 @@ namespace Game.Scripts.Editor.Dungeon
 
         /// The écu in its own frame, the fist at the origin: 48 by 60 cm, the top rim 13 cm above the fist, the middle
         /// 5 cm to its left.
-        private const float EcuHalfWidth = 0.24f;
         private const float EcuTop = 0.13f;
         private const float EcuHeight = 0.6f;
         private const float EcuCenter = -0.05f;
@@ -40,8 +39,6 @@ namespace Game.Scripts.Editor.Dungeon
         /// flat on a board held before the eyes would not reach the grip.
         private const float EcuSlant = 62f;
         private const float EcuRise = 38f;
-        /// How far down the sides run straight before they curve in to the point.
-        private const float EcuShoulder = 0.3f;
 
         public static GameObject BuildAxe(string name, float handleLength, float headSize, AxeStyle style)
         {
@@ -124,44 +121,10 @@ namespace Game.Scripts.Editor.Dungeon
             return Save(root);
         }
 
+        /// The Tripo morning star: the butt 8.5 cm behind the fist, the ball's middle 55 cm ahead of it.
         public static GameObject BuildMorningStar()
         {
-            const float radius = 0.058f;
-            const int spikes = 18;
-
-            Material iron = WeaponMaterials.Iron;
-            Vector3 center = new Vector3(0f, 0f, 0.55f);
-            GameObject root = new GameObject("MorningStar");
-            WeaponMesh mesh = new WeaponMesh();
-
-            mesh.Revolve(WeaponMaterials.DarkWood, new[]
-            {
-                new Vector2(-0.085f, 0.013f), new Vector2(-0.075f, 0.02f), new Vector2(-0.06f, 0.0165f), new Vector2(0.25f, 0.0155f), new Vector2(0.51f, 0.019f)
-            }, 10, 0.9f);
-            WeaponParts.Grip(mesh, WeaponMaterials.Leather, -0.045f, 0.1f, 0.0175f, 0.05f, 0.9f);
-            WeaponParts.Band(mesh, iron, 0.42f, 0.021f, 0.008f);
-            WeaponParts.Band(mesh, iron, 0.485f, 0.0225f, 0.012f);
-            mesh.Revolve(iron, WeaponParts.Ball(center.z, radius, 1f, 10), 14);
-
-            // Spikes spread evenly over the ball; the one on top is the longest.
-            for (int i = 0; i < spikes; i++)
-            {
-                float y = 1f - (i + 0.5f) * 2f / spikes;
-                float ring = Mathf.Sqrt(1f - y * y);
-                float angle = i * Mathf.PI * (3f - Mathf.Sqrt(5f));
-                Vector3 direction = new Vector3(Mathf.Cos(angle) * ring, Mathf.Sin(angle) * ring, y);
-
-                if (direction.z < -0.75f)
-                    continue;
-
-                WeaponParts.Spike(mesh, iron, center + direction * (radius - 0.006f), center + direction * (radius + 0.048f), 0.011f);
-            }
-
-            WeaponParts.Spike(mesh, iron, center + Vector3.forward * (radius - 0.006f), center + Vector3.forward * (radius + 0.075f), 0.013f);
-            mesh.Attach(root.transform, "MorningStar");
-            root.AddComponent<WeaponVisual>();
-
-            return Save(root);
+            return BattleWeaponPrefabBuilder.BuildTripo("MorningStar", "MorningStar", BattleWeaponPrefabBuilder.TripoRod, 0.737f, Vector3.zero, new Vector3(0f, 0f, -0.085f));
         }
 
         public static GameObject BuildStaff()
@@ -378,95 +341,12 @@ namespace Game.Scripts.Editor.Dungeon
             return Save(root);
         }
 
-        /// The écu, a heater shield: a flat top, straight sides that curve in to a point, the board bent across, a brass
-        /// rim. It is drawn in its own frame (+Z the face, +Y the top, the fist at the origin, high under the top rim and
-        /// right of the middle) and turned in the shield socket (+X along the forearm, +Y the thumb), as the forearm lies
-        /// in it slanting from the lower left up to the fist.
+        /// The Tripo écu, 48 cm across: in its own frame (+Z the face, +Y the top, the fist at the origin) its top rim
+        /// 13 cm above the fist and its middle 5 cm to the left, the back of the board's middle 11.5 cm off the hand; turned
+        /// in the shield socket (+X along the forearm, +Y the thumb) as the forearm lies in it slanting up to the fist.
         public static GameObject BuildEcu()
         {
-            Material brass = WeaponMaterials.Brass;
-            Material face = WeaponMaterials.EcuFace;
-            Material inside = WeaponMaterials.EcuInside;
-            GameObject root = new GameObject("Ecu");
-            WeaponMesh mesh = new WeaponMesh { Matrix = Matrix4x4.Rotate(EcuTurn) };
-            const int across = 14;
-            const int down = 18;
-
-            for (int side = 0; side < 2; side++)
-            {
-                bool isFront = side == 0;
-
-                for (int i = 0; i < across; i++)
-                {
-                    for (int j = 0; j < down; j++)
-                    {
-                        Vector3 a = EcuPoint((float)i / across, (float)j / down, isFront);
-                        Vector3 b = EcuPoint((i + 1f) / across, (float)j / down, isFront);
-                        Vector3 c = EcuPoint((i + 1f) / across, (j + 1f) / down, isFront);
-                        Vector3 d = EcuPoint((float)i / across, (j + 1f) / down, isFront);
-                        Vector2 ua = EcuUv((float)i / across, (float)j / down, isFront);
-                        Vector2 ub = EcuUv((i + 1f) / across, (float)j / down, isFront);
-                        Vector2 uc = EcuUv((i + 1f) / across, (j + 1f) / down, isFront);
-                        Vector2 ud = EcuUv((float)i / across, (j + 1f) / down, isFront);
-                        Vector3 outward = isFront ? Vector3.forward : Vector3.back;
-                        mesh.Triangle(isFront ? face : inside, a, b, c, ua, ub, uc, outward, WeaponMesh.Soft);
-                        mesh.Triangle(isFront ? face : inside, a, c, d, ua, uc, ud, outward, WeaponMesh.Soft);
-                    }
-                }
-            }
-
-            // The binding round the outline: down the left side to the point, up the right one and back along the top.
-            List<Vector3> rim = new();
-            List<Vector2> rimRadii = new();
-
-            for (int j = 0; j < down; j++)
-                rim.Add(EcuEdge(0f, (float)j / down));
-
-            for (int j = down; j > 0; j--)
-                rim.Add(EcuEdge(1f, (float)j / down));
-
-            for (int i = across; i > 0; i--)
-                rim.Add(EcuEdge((float)i / across, 0f));
-
-            foreach (Vector3 _ in rim)
-                rimRadii.Add(new Vector2(0.012f, 0.014f));
-
-            mesh.Tube(brass, rim, rimRadii, 6, Vector3.forward, WeaponMesh.Soft, true);
-
-            // Domed nails through the binding, on the face and on the inside: six along the top, three down each side.
-            for (int i = 1; i < 7; i++)
-            {
-                WeaponParts.Rivet(mesh, brass, EcuPoint(i / 7f, 0.03f, true), Vector3.forward, 0.007f);
-                WeaponParts.Rivet(mesh, brass, EcuPoint(i / 7f, 0.03f, false), Vector3.back, 0.007f);
-            }
-
-            for (int j = 1; j < 4; j++)
-            {
-                foreach (float u in new[] { 0.035f, 0.965f })
-                {
-                    WeaponParts.Rivet(mesh, brass, EcuPoint(u, j * 0.12f, true), Vector3.forward, 0.007f);
-                    WeaponParts.Rivet(mesh, brass, EcuPoint(u, j * 0.12f, false), Vector3.back, 0.007f);
-                }
-            }
-
-            // Inside: the leather pad under the line of the forearm and the strap the fist closes on, across it.
-            Vector3 slant = Quaternion.Euler(0f, 0f, EcuSlant) * Vector3.right;
-            Vector3 strapAcross = Vector3.Cross(Vector3.forward, slant);
-            Vector3 pad = slant * -0.17f;
-            mesh.Matrix = Matrix4x4.Rotate(EcuTurn) * Matrix4x4.TRS(new Vector3(pad.x, pad.y, EcuBack(pad.x) - 0.004f), Quaternion.LookRotation(slant, Vector3.forward), Vector3.one);
-            WeaponParts.Box(mesh, WeaponMaterials.Hide, -0.12f, 0.12f, new Vector2(0.055f, 0.004f), new Vector2(0.055f, 0.004f));
-            mesh.Matrix = Matrix4x4.Rotate(EcuTurn);
-            float strap = EcuBack(0f);
-            mesh.Tube(WeaponMaterials.Hide, new[]
-            {
-                strapAcross * -0.07f + Vector3.forward * (strap - 0.002f), strapAcross * -0.04f + Vector3.forward * (strap - 0.03f),
-                strapAcross * 0.04f + Vector3.forward * (strap - 0.03f), strapAcross * 0.07f + Vector3.forward * (strap - 0.002f)
-            }, new[] { new Vector2(0.016f, 0.003f), new Vector2(0.016f, 0.003f), new Vector2(0.016f, 0.003f), new Vector2(0.016f, 0.003f) }, 6, Vector3.back);
-
-            mesh.Attach(root.transform, "Ecu");
-            root.AddComponent<WeaponVisual>();
-
-            return Save(root);
+            return BattleWeaponPrefabBuilder.BuildTripo("Ecu", "Ecu", EcuTurn, 0.664f, new Vector3(0f, 0.977f, 0.03f), EcuTurn * new Vector3(EcuCenter, EcuTop, EcuGap + EcuBend));
         }
 
         public static GameObject BuildMagicOrb()
@@ -512,40 +392,6 @@ namespace Game.Scripts.Editor.Dungeon
             Vector3 back = Vector3.ProjectOnPlane(Vector3.back, forearm).normalized;
 
             return Quaternion.Inverse(Quaternion.LookRotation(back, Vector3.Cross(back, forearm)));
-        }
-
-        /// A point of the écu's face (or of its back) at u across, v from the top to the point.
-        private static Vector3 EcuPoint(float u, float v, bool isFront)
-        {
-            Vector3 edge = EcuEdge(u, v);
-
-            return new Vector3(edge.x, edge.y, EcuBack(edge.x) + (isFront ? EcuThickness : 0f));
-        }
-
-        private static Vector3 EcuEdge(float u, float v)
-        {
-            float s = Mathf.Clamp01((v - EcuShoulder) / (1f - EcuShoulder));
-            float halfWidth = EcuHalfWidth * (1f - s * s);
-            float x = EcuCenter + (u * 2f - 1f) * halfWidth;
-
-            return new Vector3(x, EcuTop - v * EcuHeight, EcuBack(x) + EcuThickness * 0.5f);
-        }
-
-        /// The board is bent across: its middle stands out from the arm.
-        private static float EcuBack(float x)
-        {
-            float t = (x - EcuCenter) / EcuHalfWidth;
-
-            return EcuGap + EcuBend * (1f - t * t);
-        }
-
-        /// The painted face is stretched once over the shield's box; the back tiles with the wood.
-        private static Vector2 EcuUv(float u, float v, bool isFront)
-        {
-            Vector3 point = EcuEdge(u, v);
-            Vector2 box = new Vector2((point.x - EcuCenter) / (EcuHalfWidth * 2f) + 0.5f, (point.y - EcuTop) / EcuHeight + 1f);
-
-            return isFront ? box : new Vector2(point.x, point.y) / WeaponMesh.TileSize;
         }
 
         private static GameObject Save(GameObject root)
