@@ -146,13 +146,16 @@ namespace Game.Scripts.Battle
             }
         }
 
-        /// Tints material slot 0 only: slot 1 of a part is bare skin and keeps its own colour.
         private void SetColor(Renderer renderer, Color color)
         {
             _block ??= new MaterialPropertyBlock();
-            renderer.GetPropertyBlock(_block, 0);
-            _block.SetColor(s_baseColor, color);
-            renderer.SetPropertyBlock(_block, 0);
+
+            for (int sub = 0; sub < renderer.sharedMaterials.Length; sub++)
+            {
+                renderer.GetPropertyBlock(_block, sub);
+                _block.SetColor(s_baseColor, color);
+                renderer.SetPropertyBlock(_block, sub);
+            }
         }
     }
 }

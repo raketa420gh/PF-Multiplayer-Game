@@ -27,10 +27,11 @@ namespace Game.Scripts.Editor.Battle
         private const string MaleBodyPath = BaseFolder + "/Unity/Superhero_Male_FullBody.fbx";
         private const string FemaleBodyPath = BaseFolder + "/Unity/Superhero_Female_FullBody.fbx";
         private const string OutfitsFolder = PacksFolder + "/Characters/ModularCharacterOutfits";
-        // The male body is a Tripo model rigged by AccuRig (Character Creator skeleton); the base character above still gives the skeleton
-        // the outfits are cut for.
-        private const string PlayerFolder = PacksFolder + "/Characters/Player";
-        private const string ManPath = PlayerFolder + "/Player.fbx";
+        // The male body is a Character Creator export; the base character above still gives the skeleton the outfits are cut for.
+        private const string ManFolder = PacksFolder + "/Characters/Man";
+        private const string ManPath = ManFolder + "/man.Fbx";
+        private const string ManHair = ManFolder + "/Textures/Roger/Short_blowback/Short_blowback/Hair/Hair_Hair ";
+        private const string ManBeard = ManFolder + "/Textures/Roger/Chin_Curtain_Sparse/Chin_Curtain_Sparse/Beard/Beard_Hair ";
         private const string CcPrefix = "CC_Base_";
         public const string HeadMeshPath = MeshesFolder + "/Male_Head.asset";
         private const string MeshesFolder = BattleEditorUtility.ModelsFolder + "/Character";
@@ -41,7 +42,7 @@ namespace Game.Scripts.Editor.Battle
         private const int MaskSize = 1024;
         // The combat body model (hitboxes, eye point, weapon poses) is authored for a head joint at this height.
         private const float HeadHeight = 1.63f;
-        // Boots reach above the ankle: the shin below this height (character meters) is hidden together with the feet.
+        // Boots reach above the ankle: the shin below this height (source meters) is hidden together with the feet.
         private const float BootTop = 0.37f;
 
         private static readonly Bounds s_bounds = new(new Vector3(0f, 1f, 0f), new Vector3(4.4f, 2.8f, 4.4f));
@@ -504,7 +505,7 @@ namespace Game.Scripts.Editor.Battle
         /// Body regions of a base character; its eyes and eyebrows ride on the head region.
         private static Renderer[] CreateBody(GameObject character, SkinnedMeshRenderer source, string prefix, Transform parent, Transform[] bones, float scale)
         {
-            Renderer[] renderers = SplitBody(source, prefix, parent, bones, new[] { BodyMaterial(prefix) }, Bind(source, bones, scale), Array.ConvertAll(source.bones, bone => bone.name), scale);
+            Renderer[] renderers = SplitBody(source, prefix, parent, bones, new[] { BodyMaterial(prefix) }, Bind(source, bones, scale), Array.ConvertAll(source.bones, bone => bone.name));
             Transform head = renderers[RegionIndex("Head")].transform;
 
             foreach ((string part, Material material) in new[] { ("Eyes", EyesMaterial()), ("Eyebrows", EyebrowsMaterial(prefix)) })
@@ -518,7 +519,8 @@ namespace Game.Scripts.Editor.Battle
             return renderers;
         }
 
-        /// The player body: one skinned mesh (skin, shorts and the face in one texture) split into regions.
+        /// The Character Creator body: skin split into regions with its own materials, the eyes, teeth, hair and beard on the head,
+        /// the boxers on the thighs. Eyelashes, corneas, scalp and the eye occlusion cards are left out.
         private static Renderer[] CreateManBody(GameObject man, Transform parent, Transform[] bones)
         {
             Transform[] skeleton = man.GetComponentsInChildren<Transform>();
@@ -531,7 +533,7 @@ namespace Game.Scripts.Editor.Battle
                     joints.TryAdd(name, bone.position * scale);
             }
 
-            SkinnedMeshRenderer body = man.GetComponentInChildren<SkinnedMeshRenderer>();
+            SkinnedMeshRenderer body = BodySource(man, CcPrefix + "Body");
             // The skin as the source skeleton poses it, which is what the binding carries over (not the mesh's own bind pose).
             Mesh posed = new Mesh();
             body.BakeMesh(posed);
@@ -542,13 +544,46 @@ namespace Game.Scripts.Editor.Battle
 
             Object.DestroyImmediate(posed);
 
-            return SplitBody(body, "Male", parent, bones, new[] { PlayerSkinMaterial() }, BindMan(body, bones, scale, joints, sole), Array.ConvertAll(body.bones, ManBone), scale);
+            Material[] skin = Array.ConvertAll(body.sharedMaterials, material => material.name == "Std_Eyelash" ? null : ManSkinMaterial(material));
+            Renderer[] renderers = SplitBody(body, "Male", parent, bones, skin, BindMan(body, bones, scale, joints, sole), Array.ConvertAll(body.bones, ManBone));
+            Material eye = ManEyeMaterial();
+            Material teeth = BattleEditorUtility.GetMaterial("ManTeeth", new Color(0.86f, 0.82f, 0.74f), 0f, 0.6f);
+            Material hair = HairMaterial("ManHair", ManHair, new Color(0.16f, 0.1f, 0.06f));
+            Material beard = HairMaterial("ManBeard", ManBeard, new Color(0.16f, 0.1f, 0.06f));
+            int head = RegionIndex("Head");
+
+            (string part, int region, Material[] materials)[] features =
+            {
+                (CcPrefix + "Eye", head, new[] { eye, null, eye, null }), (CcPrefix + "Teeth", head, new[] { teeth, teeth }),
+                (CcPrefix + "Tongue", head, new[] { ManSkinMaterial(BodySource(man, CcPrefix + "Tongue").sharedMaterial) }), ("Short_blowback", head, new[] { hair, null }),
+                ("Chin_Curtain_Sparse", head, new[] { beard }), ("Mustache_Horseshoe", head, new[] { beard }), ("Soul_Path_Thick", head, new[] { beard }),
+                ("Stubble_Neck", head, new[] { beard }),
+                ("Boxers", RegionIndex("thigh"), new[] { BattleEditorUtility.GetMaterial("ManBoxers", new Color(0.12f, 0.12f, 0.13f), 0f, 0.15f) })
+            };
+
+            foreach ((string part, int region, Material[] materials) in features)
+            {
+                SkinnedMeshRenderer feature = BodySource(man, part);
+                List<int>[] triangles = new List<int>[Array.FindAll(materials, material => material != null).Length];
+
+                for (int sub = 0, kept = 0; sub < materials.Length; sub++)
+                {
+                    if (materials[sub] != null)
+                        triangles[kept++] = new List<int>(feature.sharedMesh.GetTriangles(sub));
+                }
+
+                string name = "Male_" + part;
+                CreateRenderer(name, renderers[region].transform, Extract(feature, name, triangles, bones, BindMan(feature, bones, scale, joints, sole)), bones,
+                    Array.FindAll(materials, material => material != null));
+            }
+
+            return renderers;
         }
 
         /// Splits a body into region renderers by the dominant bone of each triangle. Each material gets its own submesh (one material
         /// merges them all); a null material drops its submesh.
         private static Renderer[] SplitBody(SkinnedMeshRenderer source, string prefix, Transform parent, Transform[] bones, Material[] materials,
-            (int[] map, Matrix4x4[] bind) binding, string[] boneNames, float scale)
+            (int[] map, Matrix4x4[] bind) binding, string[] boneNames)
         {
             Mesh mesh = source.sharedMesh;
             Vector3[] vertices = mesh.vertices;
@@ -594,7 +629,7 @@ namespace Game.Scripts.Editor.Battle
 
                     int region = Array.IndexOf(share, Mathf.Max(share));
 
-                    if (region == calves && toWorld.MultiplyPoint3x4(vertices[triangles[i]]).y * scale < BootTop)
+                    if (region == calves && toWorld.MultiplyPoint3x4(vertices[triangles[i]]).y < BootTop)
                         region++;
 
                     regions[region][slot].AddRange(new[] { triangles[i], triangles[i + 1], triangles[i + 2] });
@@ -703,7 +738,6 @@ namespace Game.Scripts.Editor.Battle
             }
 
             Mesh mesh = GetMesh(name);
-            mesh.indexFormat = newVertices.Count > ushort.MaxValue ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16;
             mesh.SetVertices(newVertices);
             mesh.SetNormals(newNormals);
             mesh.SetUVs(0, newUvs);
@@ -964,10 +998,10 @@ namespace Game.Scripts.Editor.Battle
                 CreateMask($"{BaseFolder}/Textures/T_Superhero_{gender}_Roughness.png", false));
         }
 
-        /// The player's Tripo maps: colour and normal map over a mask from the roughness map, no metal.
-        private static Material PlayerSkinMaterial()
+        /// A Character Creator material: its diffuse and normal map over a mask from the roughness map next to its other textures.
+        private static Material ManSkinMaterial(Material source)
         {
-            string normal = PlayerFolder + "/Textures/Player_Normal.png";
+            string normal = AssetDatabase.GetAssetPath(source.GetTexture("_BumpMap"));
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(normal);
 
             if (importer.textureType != TextureImporterType.NormalMap)
@@ -976,10 +1010,86 @@ namespace Game.Scripts.Editor.Battle
                 importer.SaveAndReimport();
             }
 
-            Material material = TexturedMaterial("PlayerSkin", PlayerFolder + "/Textures/Player_Color.jpeg", normal,
-                CreateMask(PlayerFolder + "/Textures/Player_Roughness.jpeg", false));
+            string roughness = AssetDatabase.GUIDToAssetPath(AssetDatabase.FindAssets($"{source.name}_roughness t:Texture2D", new[] { ManFolder })[0]);
+            Material material = TexturedMaterial("Man" + source.name.Replace("Std_", ""), AssetDatabase.GetAssetPath(source.GetTexture("_BaseMap")), normal,
+                CreateMask(roughness, false));
             material.SetFloat("_Metallic", 0f);
             material.SetFloat("_Smoothness", 0.55f);
+
+            return material;
+        }
+
+        /// The export has no iris colour: a brown iris with a pupil is drawn into the middle of the eye's UV square.
+        private static Material ManEyeMaterial()
+        {
+            const int size = 256;
+            string path = $"{TexturesFolder}/ManEye.png";
+
+            if (AssetDatabase.LoadAssetAtPath<Texture2D>(path) == null)
+            {
+                Texture2D pixels = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                Color sclera = new Color(0.9f, 0.87f, 0.83f);
+                Color iris = new Color(0.3f, 0.18f, 0.08f);
+
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float radius = new Vector2(x + 0.5f - size * 0.5f, y + 0.5f - size * 0.5f).magnitude / size;
+                        float streak = 0.8f + 0.2f * Mathf.PerlinNoise(Mathf.Atan2(y - size * 0.5f, x - size * 0.5f) * 6f, radius * 20f);
+                        Color color = radius < 0.09f ? Color.black : radius < 0.22f ? iris * streak : radius < 0.24f ? iris * 0.4f : sclera;
+                        pixels.SetPixel(x, y, color);
+                    }
+                }
+
+                File.WriteAllBytes(path, pixels.EncodeToPNG());
+                Object.DestroyImmediate(pixels);
+                AssetDatabase.ImportAsset(path);
+            }
+
+            Material material = BattleEditorUtility.GetMaterial("ManEye", Color.white, 0f, 0.9f);
+            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(path));
+
+            return material;
+        }
+
+        /// The export has no opacity for its hair cards: coverage is whatever differs from the flat background of the root map,
+        /// the shade comes from the strand ids and darkens toward the roots. Alpha-clipped and two-sided.
+        private static Material HairMaterial(string name, string maps, Color color)
+        {
+            string path = $"{TexturesFolder}/{name}.png";
+
+            if (AssetDatabase.LoadAssetAtPath<Texture2D>(path) == null)
+            {
+                Color32[] roots = ReadPixels(maps + "Root Map.jpg");
+                Color32[] ids = ReadPixels(maps + "ID Map.png");
+                int background = roots[5 * MaskSize + 5].r;
+                Texture2D pixels = new Texture2D(MaskSize, MaskSize, TextureFormat.RGBA32, false);
+                Color32[] colors = new Color32[roots.Length];
+
+                for (int i = 0; i < colors.Length; i++)
+                {
+                    float shade = (0.55f + 0.45f * ids[i].r / 255f) * Mathf.Lerp(0.55f, 1f, roots[i].r / 255f);
+                    Color hair = color * shade;
+                    colors[i] = new Color(hair.r, hair.g, hair.b, Mathf.Abs(roots[i].r - background) > 10 ? 1f : 0f);
+                }
+
+                pixels.SetPixels32(colors);
+                File.WriteAllBytes(path, pixels.EncodeToPNG());
+                Object.DestroyImmediate(pixels);
+                AssetDatabase.ImportAsset(path);
+                TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                importer.alphaIsTransparency = true;
+                importer.SaveAndReimport();
+            }
+
+            Material material = BattleEditorUtility.GetMaterial(name, Color.white, 0f, 0.35f);
+            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(path));
+            material.SetFloat("_AlphaClip", 1f);
+            material.SetFloat("_Cutoff", 0.5f);
+            material.SetFloat("_Cull", 0f);
+            material.EnableKeyword("_ALPHATEST_ON");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
 
             return material;
         }
@@ -1027,13 +1137,7 @@ namespace Game.Scripts.Editor.Battle
         {
             string prefix = $"{OutfitsFolder}/Textures/Base/T_Regular_{gender}_";
 
-            Material material = TexturedMaterial("Skin" + gender, prefix + "Dark_BaseColor.png", prefix + "Normal.png", CreateMask(prefix + "Roughness.png", false));
-
-            // The male parts' bare skin is tinted to the player body: mean linear colour of its hands over the pack's arm skin.
-            if (gender == "Male")
-                material.SetColor("_BaseColor", new Color(1.05f, 1.11f, 1.35f));
-
-            return material;
+            return TexturedMaterial("Skin" + gender, prefix + "Dark_BaseColor.png", prefix + "Normal.png", CreateMask(prefix + "Roughness.png", false));
         }
 
         private static Material TexturedMaterial(string name, string baseColor, string normal, Texture2D mask)
