@@ -408,6 +408,7 @@ namespace Game.Scripts.Battle
         /// Weapon and name of the grip point the hand is snapped to; empty for a free grip.
         public WeaponConfig Weapon => _weapon;
         public string Point => _point;
+        public bool KeepsPath => _isHolding && _keepsPath;
 
         [SerializeField]
         private HumanBodyBones _hand;
@@ -442,6 +443,10 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private string _point = string.Empty;
+
+        [Tooltip("Hold: where the joint limits or the reach stop the hand short, the weapon keeps its path and the grip gives way")]
+        [SerializeField]
+        private bool _keepsPath;
 
         private HandGrip(HumanBodyBones hand, HumanBodyBones anchor, bool isHolding, int start, int end)
         {
@@ -535,14 +540,15 @@ namespace Game.Scripts.Battle
             if (socket == null)
                 return;
 
+            Pose weapon = new Pose(socket.position, socket.rotation);
+
             if (_isHolding)
             {
                 // The weapon stays where the socket has it now, the hand is placed so the socket reaches it with the new grip.
                 Vector3 position = Vector3.Lerp(socket.localPosition, _position, weight);
                 Quaternion local = Quaternion.Slerp(socket.localRotation, _rotation, weight);
-                Vector3 weapon = socket.position;
-                rotation = socket.rotation * Quaternion.Inverse(local);
-                target = weapon - rotation * position;
+                rotation = weapon.rotation * Quaternion.Inverse(local);
+                target = weapon.position - rotation * position;
                 socket.SetLocalPositionAndRotation(position, local);
             }
             else
@@ -558,6 +564,9 @@ namespace Game.Scripts.Battle
             TwoBoneIk.Solve(animator.GetBoneTransform(isLeft ? HumanBodyBones.LeftUpperArm : HumanBodyBones.RightUpperArm),
                 animator.GetBoneTransform(isLeft ? HumanBodyBones.LeftLowerArm : HumanBodyBones.RightLowerArm), hand, target);
             hand.rotation = rotation;
+
+            if (KeepsPath)
+                socket.SetPositionAndRotation(weapon.position, weapon.rotation);
         }
 
         public HandGrip Clone()

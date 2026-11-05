@@ -128,6 +128,7 @@ namespace Game.Scripts.Battle
             // transform curve. Both start from the socket at rest, so it is put back before every frame.
             List<Transform> moved = new List<Transform>();
             List<Pose> rests = new List<Pose>();
+            List<bool> keepsPath = new List<bool>();
 
             foreach (HumanBodyBones hand in new[] { HumanBodyBones.LeftHand, HumanBodyBones.RightHand })
             {
@@ -138,6 +139,7 @@ namespace Game.Scripts.Battle
 
                 moved.Add(socket);
                 rests.Add(new Pose(socket.localPosition, socket.localRotation));
+                keepsPath.Add(edit.FindGrip(hand) is { KeepsPath: true });
             }
 
             AnimationCurve[,] sockets = new AnimationCurve[moved.Count, s_socketCurves.Length];
@@ -161,6 +163,7 @@ namespace Game.Scripts.Battle
             float[] reference = new float[HumanTrait.MuscleCount];
             Quaternion previous = Quaternion.identity;
             Quaternion[] previousSockets = new Quaternion[moved.Count];
+            Pose[] targets = new Pose[moved.Count];
 
             for (int frame = 0; frame <= frames; frame++)
             {
@@ -184,8 +187,23 @@ namespace Game.Scripts.Battle
                 }
 
                 edit.Apply(animator, isLoop && frame == frames ? 0f : frame);
+
+                for (int i = 0; i < moved.Count; i++)
+                    targets[i] = new Pose(moved[i].position, moved[i].rotation);
+
                 handler.GetHumanPose(ref pose);
-                JointLimits.Clamp(pose.muscles, reference);
+
+                // A hold that keeps the weapon's path: where a clamped joint leaves the hand short of the grip, the socket takes the gap.
+                if (JointLimits.Clamp(pose.muscles, reference) && keepsPath.Contains(true))
+                {
+                    handler.SetHumanPose(ref pose);
+
+                    for (int i = 0; i < moved.Count; i++)
+                    {
+                        if (keepsPath[i])
+                            moved[i].SetPositionAndRotation(targets[i].position, targets[i].rotation);
+                    }
+                }
 
                 Quaternion rotation = pose.bodyRotation;
 
