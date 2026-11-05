@@ -1,0 +1,116 @@
+{
+ "name": "door_close",
+ "about": "DaD Objects_door_wood_close / OldWood_Close: soft creak for ~0.6 s, then the slam at ~0.65 s, a rebound knock ~0.2 s later, room tail to 1.8 s",
+ "reference": "D:/DaD_Sounds/Objects_Door_OldWood_Close",
+ "length_ms": 1800,
+ "variants": 10,
+ "seed": 9300,
+ "layers": [
+  {
+   "src": "door_slices/creak/hinge_[0-4].wav",
+   "at_ms": [
+    0,
+    30
+   ],
+   "gain_db": [
+    -20,
+    -15
+   ],
+   "pitch": [
+    -7,
+    -4
+   ],
+   "hp": 120,
+   "lp": 3500,
+   "max_ms": 680
+  },
+  {
+   "src": "door_slices/slam/*.wav",
+   "at_ms": [
+    630,
+    680
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 40,
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     110,
+     160
+    ]
+   },
+   "lp": 6000
+  },
+  {
+   "src": "door_slices/slam/*.wav",
+   "at_ms": [
+    650,
+    700
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -6,
+    -4
+   ],
+   "hp": 30,
+   "lp": 4000,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     120,
+     180
+    ]
+   }
+  },
+  {
+   "src": "door_slices/knock/*.wav",
+   "at_ms": [
+    840,
+    900
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 80,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   },
+   "chance": 0.8
+  }
+ ],
+ "room": {
+  "db": -18,
+  "decay_ms": 450
+ },
+ "match": 0.7,
+ "fade_ms": 400,
+ "peak_db": -1
+}

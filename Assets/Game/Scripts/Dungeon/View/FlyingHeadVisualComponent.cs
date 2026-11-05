@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Floating head: hovers and bobs, pulls back and shakes while it screeches, stretches through the ram and drops when killed.
+    /// Floating head: hovers and bobs, pulls back and shakes while it screeches and drops when killed.
     public sealed class FlyingHeadVisualComponent : MonoBehaviour
     {
         [SerializeField]
@@ -29,9 +29,6 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private float _pullBack = 0.3f;
-
-        [SerializeField]
-        private Vector3 _ramScale = new(0.85f, 0.85f, 1.3f);
 
         private const float FallGravity = 14f;
 
@@ -63,7 +60,6 @@ namespace Game.Scripts.Dungeon
 
             _head.localPosition = isScreeching ? position + Random.insideUnitSphere * _shake : position;
             _head.localRotation = Quaternion.Euler(fighter.Move.Pitch, 0f, 0f);
-            _head.localScale = Vector3.MoveTowards(_head.localScale, phase == AttackPhase.Active ? _ramScale : Vector3.one, Time.deltaTime * 4f);
             _glow.intensity = _glowIntensity * (phase == AttackPhase.None ? 1f : 3f);
         }
 
@@ -78,7 +74,6 @@ namespace Game.Scripts.Dungeon
             position.y = Mathf.Max(_groundHeight, position.y - _fallSpeed * Time.deltaTime);
             _head.localPosition = position;
             _head.localRotation = Quaternion.RotateTowards(_head.localRotation, Quaternion.Euler(-70f, 0f, 20f), Time.deltaTime * 300f);
-            _head.localScale = Vector3.one;
             _glow.enabled = false;
         }
     }

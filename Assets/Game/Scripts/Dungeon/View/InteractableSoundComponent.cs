@@ -21,6 +21,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private AudioSource _loop;
 
+        [SerializeField, Tooltip("The door's creak while someone holds it open; stops when the hold ends")]
+        private AudioSource _creak;
+
         private bool _doorOpen;
         private bool _containerOpen;
         private bool _portalActive;
@@ -34,8 +37,11 @@ namespace Game.Scripts.Dungeon
                 _doorOpen = _door.IsOpen;
 
                 if (!_isFirst)
-                    DungeonAudioComponent.Play(DungeonSound.DoorCreak, transform.position, 0.8f, _doorOpen ? 1f : 0.85f);
+                    DungeonAudioComponent.Play(_doorOpen ? DungeonSound.DoorOpen : DungeonSound.DoorClose, transform.position, 0.8f, Random.Range(0.96f, 1.04f));
             }
+
+            if (_creak != null && _door != null && _door.IsOpening != _creak.isPlaying)
+                SetCreak(_door.IsOpening);
 
             if (_container != null && _container.IsOpen != _containerOpen)
             {
@@ -70,6 +76,21 @@ namespace Game.Scripts.Dungeon
             }
 
             _isFirst = false;
+        }
+
+        private void SetCreak(bool isOpening)
+        {
+            if (!isOpening)
+            {
+                _creak.Stop();
+
+                return;
+            }
+
+            _creak.clip = DungeonAudioComponent.Clip(DungeonSound.DoorOpening);
+
+            if (_creak.clip != null)
+                _creak.Play();
         }
     }
 }

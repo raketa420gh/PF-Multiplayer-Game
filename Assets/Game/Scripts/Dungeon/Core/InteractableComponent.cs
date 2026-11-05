@@ -27,6 +27,11 @@ namespace Game.Scripts.Dungeon
         /// Called on the state authority when the hold completes.
         public abstract void Complete(AdventurerComponent adventurer);
 
+        /// The hold has started; it completes at the given tick unless cancelled.
+        public virtual void Begin(AdventurerComponent adventurer, int completeTick)
+        {
+        }
+
         public virtual void Cancel(AdventurerComponent adventurer)
         {
         }

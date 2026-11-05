@@ -71,6 +71,9 @@ namespace Game.Scripts.Editor.Dungeon
                     // North-west stores and bones.
                     At("WoodBarrel", -15.9f, 13.7f), At("GrainSack", -13.8f, 16.2f), At("PlankDebris", -11f, 13.4f, 30f), At("PotteryShards", -14f, 14f, 80f),
                     At("SkullPile", -15.9f, 11.8f, 90f), At("Ribcage", -15f, 10.6f, 150f),
+                    // Loose skulls: rolled off the piles, under the chains, kept by the mourners' candles.
+                    At("SkullSingle", 13.6f, -16.1f, 200f), At("SkullSingle", -14.6f, 11.2f, 150f), At("SkullSingle", -16f, -6.7f, 70f),
+                    At("SkullSingle", -15.3f, -14.5f, 30f), At("SkullSingle", 15.9f, 5.6f, 250f),
                     // North wall: the vein crops out of the stone.
                     At("OssariteCluster", -2.6f, 16.2f, 20f), At("OssariteBone", -3.6f, 15.8f, 40f), At("RubblePileSmall", 1.8f, 16f), At("FallenBlock", 3.1f, 15.9f, 20f),
                     // Fallen masonry round the piers and walls.

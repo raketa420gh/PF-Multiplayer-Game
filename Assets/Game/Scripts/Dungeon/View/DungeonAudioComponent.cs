@@ -21,7 +21,10 @@ namespace Game.Scripts.Dungeon
         Lever,
         Death,
         Extract,
-        Screech
+        Screech,
+        DoorOpen,
+        DoorClose,
+        DoorOpening
     }
 
     /// Takes of one sound; a random one is played each time.
@@ -132,6 +135,12 @@ namespace Game.Scripts.Dungeon
         {
             if (s_instance != null && clip != null)
                 s_instance.PlayAt(clip, position, volume, pitch, emitter);
+        }
+
+        /// A random take for a sound played on a source of its own.
+        public static AudioClip Clip(DungeonSound sound)
+        {
+            return s_instance != null ? s_instance.GetClip(sound) : null;
         }
 
         public static void PlayUi(DungeonSound sound, float volume = 1f)

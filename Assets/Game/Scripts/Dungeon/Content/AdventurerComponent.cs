@@ -1148,6 +1148,7 @@ namespace Game.Scripts.Dungeon
             Pending = PendingAction.Interact;
             _pendingTarget = target.Id;
             _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(duration / Runner.DeltaTime);
+            target.Begin(this, _pendingCompleteTick);
             _isRooted = target.IsRooting;
             _rootYaw = _fighter.Look.y;
         }

@@ -9,12 +9,17 @@ namespace Game.Scripts.Dungeon
         public override float HoldTime => IsOpen ? 0.15f : _openTime;
         public override bool IsRooting => !IsOpen;
         public override bool IsHandsOccupied => true;
+        /// Someone is holding the door open; ends by itself at the tick the hold would have completed.
+        public bool IsOpening => !IsOpen && Runner.Tick < _openingEndTick;
 
         [Networked]
         public NetworkBool IsOpen { get; private set; }
 
         [Networked]
         public NetworkBool IsLocked { get; private set; }
+
+        [Networked]
+        private int _openingEndTick { get; set; }
 
         [SerializeField]
         private Transform _leaf;
@@ -62,8 +67,21 @@ namespace Game.Scripts.Dungeon
                 _blocker.enabled = !IsOpen;
         }
 
+        public override void Begin(AdventurerComponent adventurer, int completeTick)
+        {
+            if (!IsOpen)
+                _openingEndTick = completeTick;
+        }
+
+        public override void Cancel(AdventurerComponent adventurer)
+        {
+            _openingEndTick = 0;
+        }
+
         public override void Complete(AdventurerComponent adventurer)
         {
+            _openingEndTick = 0;
+
             if (IsLocked)
             {
                 if (!adventurer.Stats.HasThreshold(StatType.Dexterity) && !adventurer.Inventory.TryConsumeUtility(UtilityKind.Lockpick))

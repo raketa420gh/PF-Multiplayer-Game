@@ -254,6 +254,7 @@ namespace Game.Scripts.Battle
         public string AnimationPrefix => _animationPrefix;
         public WeaponAttachment[] Attachments => _attachments;
         public float DeflectDuration => _deflectDuration;
+        public bool IsStoppedByWorld => !_ignoresWorld;
         public bool IsBareHands => _isBareHands;
         public float EquipTime => _equipTime;
         public float EquipShown => _equipShown;
@@ -295,6 +296,9 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private float _deflectDuration = 0.6f;
+
+        [SerializeField, Tooltip("Walls neither deflect the trace nor sound: the body just comes up against them (a ramming head)")]
+        private bool _ignoresWorld;
 
         [SerializeField, Tooltip("Empty hands: the weapon in the hand is put away only when switching to these")]
         private bool _isBareHands;

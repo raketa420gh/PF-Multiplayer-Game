@@ -33,6 +33,9 @@ namespace Game.Scripts.Editor.Dungeon
             public Vector3 Rotation;
             public Mount Mount;
             public bool IsSolid;
+            /// A model borrowed from elsewhere (a monster's): its importer is shared, so the prefab scales it, not the importer.
+            public string Source;
+            public System.Func<Material> Material;
         }
 
         private static readonly Spec[] s_specs =
@@ -60,6 +63,7 @@ namespace Game.Scripts.Editor.Dungeon
             Floor("RockB", "Debris", 0.4f, false, new Vector3(90f, 0f, 0f)),
             Floor("RubblePileSmall", "Debris", 0.9f, false),
             Floor("SkullPile", "Debris", 1f, true),
+            new Spec { Name = "SkullSingle", Size = 0.24f, Source = DungeonSkeletonBuilder.SkullPath, Material = () => DungeonSkeletonBuilder.SkullMaterial },
             Floor("Ribcage", "Debris", 0.6f, false, new Vector3(-90f, 0f, 0f)),
             Floor("BoneScatter", "Debris", 0.8f, false, new Vector3(90f, 0f, 0f)),
             Floor("SkeletonLying", "Debris", 1.8f, false, new Vector3(-90f, 0f, 0f)),
@@ -118,19 +122,29 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static string PrefabPath(string name) => $"{PrefabsFolder}/{name}.prefab";
 
-        private static string ModelPath(Spec spec) => $"{ModelsFolder}/{spec.Category}/{spec.Name}/{spec.Name}.fbx";
+        private static string ModelPath(Spec spec) => spec.Source ?? $"{ModelsFolder}/{spec.Category}/{spec.Name}/{spec.Name}.fbx";
 
         private static void Build(Spec spec)
         {
             string path = ModelPath(spec);
-            Scale(spec, path);
-            Material material = AssetDatabase.LoadAssetAtPath<Material>($"{ModelsFolder}/{spec.Category}/{spec.Name}/{spec.Name}.mat");
+
+            if (spec.Source == null)
+                Scale(spec, path);
+
+            Material material = spec.Material != null ? spec.Material() : AssetDatabase.LoadAssetAtPath<Material>($"{ModelsFolder}/{spec.Category}/{spec.Name}/{spec.Name}.mat");
 
             GameObject root = new GameObject(spec.Name);
             GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(path), root.transform);
             model.name = "Mesh";
             model.transform.localRotation = Quaternion.Euler(spec.Rotation) * model.transform.localRotation;
             Bounds bounds = DungeonKitBuilder.Bounds(model);
+
+            if (spec.Source != null)
+            {
+                model.transform.localScale *= spec.Size / Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z);
+                bounds = DungeonKitBuilder.Bounds(model);
+            }
+
             bool isSmall = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z) < ShadowSize;
 
             foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>())

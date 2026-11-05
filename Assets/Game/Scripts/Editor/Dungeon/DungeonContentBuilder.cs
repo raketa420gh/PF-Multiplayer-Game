@@ -1085,7 +1085,10 @@ namespace Game.Scripts.Editor.Dungeon
         /// The ram is not a swing of an animated weapon: its trace is a short ray ahead of the head, authored here.
         private static BattleContentBuilder.Loadout BuildRam(float height)
         {
-            return BuildFixedAttack("HeadRam", "Ram", 6f, new Vector3(0f, height, 0.1f), new Vector3(0f, height, 0.8f), 0.7f, 0.4f, 0.8f, 24, 0.3f);
+            BattleContentBuilder.Loadout ram = BuildFixedAttack("HeadRam", "Ram", 6f, new Vector3(0f, height, 0.1f), new Vector3(0f, height, 0.8f), 0.7f, 0.4f, 0.8f, 24, 0.3f);
+            BattleEditorUtility.Set(ram.Config, "_ignoresWorld", true);
+
+            return ram;
         }
 
         /// The juggernaut's punch: a straight ray from the right shoulder through the fist at full reach, timed to the punch clip.
@@ -1556,7 +1559,18 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_blocker", leaf.GetComponent<Collider>());
             so.ApplyModifiedPropertiesWithoutUndo();
             AddInteractCollider(root, new Vector3(0f, 1.5f, 0f), new Vector3(width, 3f, 0.6f));
-            BattleEditorUtility.Set(root.AddComponent<InteractableSoundComponent>(), "_door", door);
+            AudioSource creak = root.AddComponent<AudioSource>();
+            creak.playOnAwake = false;
+            creak.spatialBlend = 1f;
+            creak.rolloffMode = AudioRolloffMode.Linear;
+            creak.minDistance = 1.5f;
+            creak.maxDistance = 24f;
+            creak.dopplerLevel = 0f;
+            creak.volume = 0.55f;
+            so = new SerializedObject(root.AddComponent<InteractableSoundComponent>());
+            BattleEditorUtility.Set(so, "_door", door);
+            BattleEditorUtility.Set(so, "_creak", creak);
+            so.ApplyModifiedPropertiesWithoutUndo();
             BattleContentBuilder.SavePrefab(root, Prefab(name));
         }
 

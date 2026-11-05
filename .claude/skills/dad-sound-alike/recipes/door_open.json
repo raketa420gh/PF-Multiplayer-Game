@@ -1,0 +1,90 @@
+{
+ "name": "door_open",
+ "about": "DaD Objects_Door_OldWood_Open / door_wood_open: latch clunk at ~50 ms, then a low wooden swing creak ~12 dB under it fading out by ~0.9 s",
+ "reference": "D:/DaD_Sounds/Objects_Door_OldWood_Open",
+ "length_ms": 1300,
+ "variants": 10,
+ "seed": 9100,
+ "layers": [
+  {
+   "src": "door_slices/latch/*.wav",
+   "at_ms": [
+    35,
+    55
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -4,
+    -2
+   ],
+   "hp": 30,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     60,
+     90
+    ]
+   }
+  },
+  {
+   "src": "door_slices/creak/hinge_[0-4].wav",
+   "at_ms": [
+    60,
+    90
+   ],
+   "gain_db": [
+    -15,
+    -12
+   ],
+   "pitch": [
+    -8,
+    -5
+   ],
+   "hp": 120,
+   "lp": 3500,
+   "max_ms": 1150,
+   "snap": {
+    "hold": [
+     120,
+     200
+    ],
+    "tau": [
+     220,
+     320
+    ]
+   }
+  },
+  {
+   "src": "door_slices/creak/tree_[0-4].wav",
+   "at_ms": [
+    150,
+    400
+   ],
+   "gain_db": [
+    -20,
+    -15
+   ],
+   "pitch": [
+    -6,
+    -3
+   ],
+   "hp": 150,
+   "lp": 3000,
+   "max_ms": 600,
+   "chance": 0.6
+  }
+ ],
+ "room": {
+  "db": -30,
+  "decay_ms": 180
+ },
+ "match": 0.7,
+ "fade_ms": 250,
+ "peak_db": -1
+}

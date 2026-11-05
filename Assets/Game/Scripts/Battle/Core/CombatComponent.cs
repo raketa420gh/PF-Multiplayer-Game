@@ -890,7 +890,7 @@ namespace Game.Scripts.Battle
                 isDeflected |= result == HitResult.Blocked;
             }
 
-            if (_hasWorldHit)
+            if (_hasWorldHit && weapon.IsStoppedByWorld)
             {
                 _worldHitPoint = _worldHit.Point;
                 _worldHitNormal = _worldHit.Normal;
