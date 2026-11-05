@@ -58,6 +58,8 @@ namespace Game.Scripts.Battle
     {
         public Vector3 Point;
         public Vector3 Normal;
+        /// Flat unit direction the blow drove the victim (from the attacker through the hit point), zero when unknown.
+        public Vector3 Push;
         public HitResult Result;
         public HitZone Zone;
         public short Damage;
@@ -215,6 +217,7 @@ namespace Game.Scripts.Battle
             {
                 Point = hit.Point,
                 Normal = hit.Normal,
+                Push = _lastHitPush,
                 Result = result,
                 Zone = result == HitResult.Blocked ? HitZone.Block : hit.Zone,
                 Damage = (short)damage,

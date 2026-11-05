@@ -217,6 +217,8 @@ namespace Game.Scripts.Dungeon
         public float CastCharge => IsHoldingCast ? Mathf.InverseLerp(_fighter.Combat.StateTick, _pendingCompleteTick, Runner.Tick) : 0f;
         public bool IsHoldingCast => Pending == PendingAction.Ability && _isHoldingCast;
         public bool IsAimingThrow => Pending == PendingAction.Throw && _fighter.Combat.BusyKind is BusyTorchAim or BusyThrowAim;
+        /// F drops any pending action except the quick skill strike and a throw already leaving the hand.
+        public bool IsCancelable => Pending != PendingAction.None && _fighter.Combat.BusyKind is not (BusyAbility or BusyTorchThrow or BusyThrowRelease);
         /// How far the throw being held is drawn, 0..1.
         public float ThrowDraw => IsAimingThrow ? Mathf.Clamp01((Runner.Tick - _fighter.Combat.StateTick) * Runner.DeltaTime * (1f + Perk(PerkEffect.QuickThrow)) / FullDrawTime) : 0f;
         public float ReloadSpeed => _stats.ReloadSpeed * (1f + _effects.GetMagnitude(StatusEffectKind.QuickReload) / 100f);
@@ -900,7 +902,9 @@ namespace Game.Scripts.Dungeon
 
             CombatComponent combat = _fighter.Combat;
 
-            if (IsHoldingCast && _effects.Has(StatusEffectKind.Silence))
+            bool isCancelPressed = buttons.WasPressed(previous, PlayerInputButtons.Interact) && IsCancelable;
+
+            if (isCancelPressed || (IsHoldingCast && _effects.Has(StatusEffectKind.Silence)))
                 CancelPending();
 
             if (IsHoldingCast)
@@ -909,7 +913,7 @@ namespace Game.Scripts.Dungeon
 
                 if (isReleased && Runner.Tick >= _pendingCompleteTick)
                     FinishCast();
-                else if (isReleased || buttons.WasPressed(previous, PlayerInputButtons.Interact))
+                else if (isReleased)
                     CancelPending();
             }
             else
@@ -935,7 +939,7 @@ namespace Game.Scripts.Dungeon
             if (Pending != PendingAction.None)
                 return;
 
-            if (buttons.WasPressed(previous, PlayerInputButtons.Interact))
+            if (buttons.WasPressed(previous, PlayerInputButtons.Interact) && !isCancelPressed)
                 TryInteract();
 
             bool isBeltInHand = SimulateBelt(buttons, previous);

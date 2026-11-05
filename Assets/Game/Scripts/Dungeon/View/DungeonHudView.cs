@@ -369,7 +369,7 @@ namespace Game.Scripts.Dungeon
         private void UpdatePrompt(AdventurerComponent adventurer)
         {
             InteractableComponent target = adventurer.LookTarget;
-            bool isInteracting = adventurer.Pending == PendingAction.Interact;
+            bool isInteracting = adventurer.IsCancelable;
 
             if (target == null && !isInteracting)
             {

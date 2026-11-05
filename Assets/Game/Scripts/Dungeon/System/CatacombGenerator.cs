@@ -70,6 +70,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("The key room covers the middle cell and the next one along its local +Z; its map is twice as tall")]
         private bool _isKeyRoomLong;
 
+        [SerializeField, Tooltip("Dungeon Test lays only this room; none = a random room of the pool")]
+        private CatacombRoomComponent _testRoom;
+
         [SerializeField, Tooltip("Side between two cells by its open doorways (bit 0 at local -X, bit 1 at +X); length runs along local X")]
         private GameObject[] _sides = new GameObject[4];
 
@@ -348,7 +351,7 @@ namespace Game.Scripts.Dungeon
             return plan;
         }
 
-        /// Dungeon Test: one random room of the pool (one with a team start if any has it) in the middle cell, rock all around.
+        /// Dungeon Test: the test room (else a random room of the pool, one with a team start if any has it) in the middle cell, rock all around.
         public Plan LayTest(int seed)
         {
             System.Random random = new System.Random(seed);
@@ -356,7 +359,7 @@ namespace Game.Scripts.Dungeon
             plan.KeyCells = Array.Empty<int>();
             RoomKind[] pool = _kinds.Where(kind => kind.Prefab.StartSpots != null).ToArray();
             pool = pool.Length > 0 ? pool : _kinds;
-            plan.Rooms[KeyCell] = pool[random.Next(pool.Length)].Prefab;
+            plan.Rooms[KeyCell] = _testRoom != null ? _testRoom : pool[random.Next(pool.Length)].Prefab;
             plan.Turns[KeyCell] = random.Next(4);
 
             return plan;

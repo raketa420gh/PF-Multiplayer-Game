@@ -93,7 +93,7 @@ namespace Game.Scripts.Battle
         private float _moveDamping = 0.1f;
 
         [SerializeField]
-        private float _hitFlinch = 10f;
+        private float _hitLean = 8f;
 
         [SerializeField]
         private float _staggerFlinch = 22f;
@@ -102,7 +102,7 @@ namespace Game.Scripts.Battle
         private float _flinchDecay = 9f;
 
         [SerializeField]
-        private float _hitReactionTime = 0.35f;
+        private float _leanRise = 30f;
 
         [SerializeField]
         private float _hitReactionWeight = 0.7f;
@@ -131,8 +131,6 @@ namespace Game.Scripts.Battle
         private static readonly int s_rest = Animator.StringToHash(RestState);
         private static readonly int s_death = Animator.StringToHash(DeathState);
         private static readonly int s_actionSpeed = Animator.StringToHash(ActionSpeedParam);
-        private static readonly int s_hitChest = Animator.StringToHash(HitChestState);
-        private static readonly int s_hitHead = Animator.StringToHash(HitHeadState);
         private static readonly int s_hitStagger = Animator.StringToHash(HitStaggerState);
         private static readonly int s_hold = Animator.StringToHash(HoldState);
         private static readonly int s_holdTorch = Animator.StringToHash(HoldTorchState);
@@ -187,7 +185,9 @@ namespace Game.Scripts.Battle
         private int _upperToken;
         private float _airTime;
         private float _pitch;
-        private float _flinch;
+        private Vector3 _push;
+        private Vector3 _flinch;
+        private Vector3 _lean;
         private float _hitTime;
         private float _upperWeight = 1f;
         private float _lowerLeft;
@@ -287,7 +287,9 @@ namespace Game.Scripts.Battle
             if (_spineBones.Length == 0)
                 return;
 
-            _flinch = Mathf.Lerp(_flinch, 0f, _flinchDecay * Time.deltaTime);
+            // The flinch kicks in at once and fades; the lean chases it, so the torso eases away from the blow instead of snapping.
+            _flinch = Vector3.Lerp(_flinch, Vector3.zero, _flinchDecay * Time.deltaTime);
+            _lean = Vector3.Lerp(_lean, _flinch, _leanRise * Time.deltaTime);
 
             Vector3 axis = transform.right;
             Quaternion step = Quaternion.AngleAxis(_pitch * _upperWeight / _spineBones.Length, axis);
@@ -295,7 +297,7 @@ namespace Game.Scripts.Battle
             foreach (Transform bone in _spineBones)
                 bone.rotation = step * bone.rotation;
 
-            _spineBones[0].rotation = Quaternion.AngleAxis(-_flinch, axis) * _spineBones[0].rotation;
+            _spineBones[0].rotation = Quaternion.AngleAxis(_lean.magnitude, Vector3.Cross(Vector3.up, _lean)) * _spineBones[0].rotation;
 
             if (_isFirstPerson)
                 _headBone.localScale = MirrorComponent.IsLocalReflected ? Vector3.one : Vector3.zero;
@@ -503,7 +505,7 @@ namespace Game.Scripts.Battle
             // The first-person hands stay steady on the screen: only others see the recoil.
             if (combat.State == CombatState.Stagger && !_isFirstPerson)
             {
-                _flinch = _staggerFlinch;
+                _flinch = (_push == Vector3.zero ? -transform.forward : _push) * _staggerFlinch;
                 _hitTime = _staggerReactionTime;
                 _animator.Play(s_hitStagger, HitLayer, 0f);
             }
@@ -585,6 +587,13 @@ namespace Game.Scripts.Battle
             return result.ToArray();
         }
 
+        private Vector3 GetPush(HitEventData hit)
+        {
+            Vector3 push = hit.Push != Vector3.zero ? hit.Push : Vector3.ProjectOnPlane(transform.position - hit.Point, Vector3.up).normalized;
+
+            return push != Vector3.zero ? push : -transform.forward;
+        }
+
         /// The head is unhidden for a mirror's camera; the player's own camera, inside the head, still skips it.
         private void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
         {
@@ -599,14 +608,9 @@ namespace Game.Scripts.Battle
             if (hit.Result == HitResult.Blocked || _isFirstPerson)
                 return;
 
-            _flinch = Mathf.Max(_flinch, _hitFlinch);
-
-            // A hit that staggers is answered by the heavier recoil, whichever of the two is noticed first.
-            if (_fighter.Combat.State == CombatState.Stagger)
-                return;
-
-            _hitTime = _hitReactionTime;
-            _animator.Play(hit.Zone == HitZone.Head ? s_hitHead : s_hitChest, HitLayer, 0f);
+            // A light lean away from the blow, the way it came; a stagger noticed first keeps its heavier recoil.
+            _push = GetPush(hit);
+            _flinch = _push * Mathf.Max(_flinch.magnitude, _hitLean);
         }
     }
 }
