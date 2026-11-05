@@ -84,6 +84,7 @@ namespace Game.Scripts.Editor.Battle
             GameObject ecu = DungeonWeaponPrefabBuilder.BuildEcu();
             GameObject vikingSword = BattleWeaponPrefabBuilder.BuildSword("VikingSword", 0.11f, 0.88f, 0.058f, 0.16f, 0.09f, SwordStyle.Viking);
             GameObject misericorde = BattleWeaponPrefabBuilder.BuildSword("Misericorde", 0.08f, 0.38f, 0.024f, 0.065f, 0.075f, SwordStyle.Rondel);
+            GameObject poniard = BattleWeaponPrefabBuilder.BuildSword("Poniard", 0.07f, 0.35f, 0.013f, 0.075f, 0.075f, SwordStyle.Stiletto);
             arrow = BattleWeaponPrefabBuilder.BuildArrow();
             magicOrb = DungeonWeaponPrefabBuilder.BuildMagicOrb();
 
@@ -102,6 +103,8 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.MorningStar] = new[] { (morningStar, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.VikingSword] = new[] { (vikingSword, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Misericorde] = new[] { (misericorde, WeaponSocket.RightHand) },
+                // Held in the left hand: its clips are baked mirrored (IsLeftHanded).
+                [DungeonWeaponLibrary.Poniard] = new[] { (poniard, WeaponSocket.LeftHand) },
                 // The torch is the belt item in the hand.
                 [DungeonWeaponLibrary.Torch] = Array.Empty<(GameObject, WeaponSocket)>()
             };

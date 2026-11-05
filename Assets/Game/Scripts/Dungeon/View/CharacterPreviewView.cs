@@ -159,7 +159,7 @@ namespace Game.Scripts.Dungeon
 
             WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(EquipSlot.Weapon1Main);
             WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(EquipSlot.Weapon1Off);
-            WeaponConfig config = _hands != null ? _hands.Fighter.Combat.Weapon : main != null ? main.GetWeapon(off) : null;
+            WeaponConfig config = _hands != null ? _hands.Fighter.Combat.Weapon : main != null ? main.GetWeapon(off) : off != null ? off.Weapon : null;
             bool isArmed = config != null && config.Attachments.Length > 0;
 
             // Unarmed, the whole body stands in the relaxed library idle instead of the fist guard.

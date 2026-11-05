@@ -59,6 +59,9 @@ namespace Game.Scripts.Editor.Battle
             public float PommelSize;
             public bool IsSingleEdged;
             public bool HasLugs;
+            public bool IsWireWrapped;
+            /// Held point down out of the little finger: the blade runs to -Z, the pommel up past the thumb.
+            public bool IsReverseGrip;
         }
 
         public static GameObject BuildSword(string name, float bladeBase, float bladeTip, float bladeWidth, float guardWidth, float gripBack, SwordStyle style)
@@ -126,11 +129,23 @@ namespace Game.Scripts.Editor.Battle
             if (gripBack > 0.15f)
                 WeaponParts.Band(mesh, fittings, (gripFront - gripBack) * 0.5f, 0.019f, 0.006f, 0.003f, 0.82f);
 
+            // Turns of wire round the leather.
+            if (shape.IsWireWrapped)
+            {
+                for (float z = -gripBack + 0.014f; z < gripFront - 0.01f; z += 0.009f)
+                    WeaponParts.Band(mesh, fittings, z, 0.018f, 0.0015f, 0.0006f, 0.82f);
+            }
+
             WeaponParts.Band(mesh, fittings, gripFront - 0.004f, 0.018f, 0.004f, 0.002f, 0.82f);
             WeaponParts.Band(mesh, fittings, -gripBack + 0.004f, 0.018f, 0.004f, 0.002f, 0.82f);
             BuildPommel(mesh, fittings, shape, -gripBack);
 
-            mesh.Attach(root.transform, name);
+            GameObject model = mesh.Attach(root.transform, name);
+
+            // Turned about the edge (+Y), which keeps the edge and puts the blade behind the grip.
+            if (shape.IsReverseGrip)
+                model.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+
             root.AddComponent<WeaponVisual>();
 
             return Save(root);
@@ -354,14 +369,17 @@ namespace Game.Scripts.Editor.Battle
                     shape.PommelSize = 0.02f;
                     break;
                 case SwordStyle.Stiletto:
-                    shape.Thickness = 0.0045f;
-                    shape.Taper = 0.45f;
-                    shape.Point = 0.3f;
+                    // A needle: as thick as it is wide, a square section stood on its corner, tapering the whole way to the point.
+                    shape.Thickness = 0.0062f;
+                    shape.Taper = 0.4f;
+                    shape.Point = 0.45f;
                     shape.Ridge = 0.05f;
                     shape.Fuller = 0f;
                     shape.GuardThickness = 0.01f;
                     shape.Pommel = Pommel.Ball;
-                    shape.PommelSize = 0.014f;
+                    shape.PommelSize = 0.016f;
+                    shape.IsWireWrapped = true;
+                    shape.IsReverseGrip = true;
                     break;
             }
 

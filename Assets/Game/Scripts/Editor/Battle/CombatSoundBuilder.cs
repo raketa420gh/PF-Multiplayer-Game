@@ -35,10 +35,10 @@ namespace Game.Scripts.Editor.Battle
         };
 
         /// Order is the network id: never reorder, only append.
-        private static readonly string[] s_sets = { "arming", "viking", "axe", "mace", "morning", "staff", "fists", "bow", "dagger", "crossbow" };
+        private static readonly string[] s_sets = { "arming", "viking", "axe", "mace", "morning", "staff", "fists", "bow", "dagger", "crossbow", "poniard" };
 
         /// A set borrows its parent's takes for the categories it has none of, apart from the parent's own mechanics (a crossbow is not drawn or restocked like a bow).
-        private static readonly Dictionary<string, string> s_parents = new() { ["crossbow"] = "bow" };
+        private static readonly Dictionary<string, string> s_parents = new() { ["crossbow"] = "bow", ["poniard"] = "dagger" };
         private static readonly HashSet<string> s_unborrowed = new() { "draw", "creak", "hold", "restock" };
 
         private static readonly (string Category, string Field)[] s_categories =
@@ -67,7 +67,7 @@ namespace Game.Scripts.Editor.Battle
             ["ArmingSword"] = "arming", ["SwordEcu"] = "arming", ["SwordShield"] = "arming", ["SwordShieldLeft"] = "arming",
             ["VikingSword"] = "viking", ["VikingEcu"] = "viking", ["VikingShield"] = "viking", ["BattleAxe"] = "axe",
             ["MaceEcu"] = "mace", ["MaceShield"] = "mace", ["MorningStar"] = "morning", ["Staff"] = "staff", ["Fists"] = "fists", ["Bow"] = "bow", ["Crossbow"] = "crossbow",
-            ["Misericorde"] = "dagger", ["MisericordeShield"] = "dagger", ["MisericordeEcu"] = "dagger"
+            ["Misericorde"] = "dagger", ["MisericordeShield"] = "dagger", ["MisericordeEcu"] = "dagger", ["Poniard"] = "poniard"
         };
 
         private static readonly Dictionary<string, (ImpactSurface Body, ImpactSurface Block, Footwear Feet)> s_prefabs = new()

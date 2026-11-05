@@ -324,6 +324,9 @@ namespace Game.Scripts.Editor.Dungeon
                 new[] { Confessor, Mercenary, Huntsman }, new StatModifier(StatType.Agility, 2f)));
             items.Add(Helmet("Great Bascinet", ArmorVisual.GreatBascinet, 45f, 16f, 80, 0.25f, "A closed bascinet strapped to the shoulders. Nothing gets in, the head does not turn.",
                 new[] { Mercenary, Confessor }, new StatModifier(StatType.Vitality, 1f), new StatModifier(StatType.Strength, 1f)));
+            // Dark and Darker's stiletto dagger: an off-hand needle, three quick stabs and a breath before the next three.
+            items.Add(Weapon("Poniard", DungeonWeaponLibrary.Poniard, WeaponClass.Dagger, 1, 2, 6f, "Pd", s_steel, 30,
+                "A slim needle of a blade for the left hand. Three quick stabs in a row; it parries only when the other hand is empty.", offHand: true));
 
             return items;
         }
