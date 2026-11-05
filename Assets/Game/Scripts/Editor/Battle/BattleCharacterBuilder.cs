@@ -30,8 +30,6 @@ namespace Game.Scripts.Editor.Battle
         // The male body is a Character Creator export; the base character above still gives the skeleton the outfits are cut for.
         private const string ManFolder = PacksFolder + "/Characters/Man";
         private const string ManPath = ManFolder + "/man.Fbx";
-        private const string ManHair = ManFolder + "/Textures/Roger/Short_blowback/Short_blowback/Hair/Hair_Hair ";
-        private const string ManBeard = ManFolder + "/Textures/Roger/Chin_Curtain_Sparse/Chin_Curtain_Sparse/Beard/Beard_Hair ";
         private const string CcPrefix = "CC_Base_";
         public const string HeadMeshPath = MeshesFolder + "/Male_Head.asset";
         private const string MeshesFolder = BattleEditorUtility.ModelsFolder + "/Character";
@@ -548,16 +546,13 @@ namespace Game.Scripts.Editor.Battle
             Renderer[] renderers = SplitBody(body, "Male", parent, bones, skin, BindMan(body, bones, scale, joints, sole), Array.ConvertAll(body.bones, ManBone));
             Material eye = ManEyeMaterial();
             Material teeth = BattleEditorUtility.GetMaterial("ManTeeth", new Color(0.86f, 0.82f, 0.74f), 0f, 0.6f);
-            Material hair = HairMaterial("ManHair", ManHair, new Color(0.16f, 0.1f, 0.06f));
-            Material beard = HairMaterial("ManBeard", ManBeard, new Color(0.16f, 0.1f, 0.06f));
             int head = RegionIndex("Head");
 
+            // The export's hair and beard cards are left out: the player is bald and shaven by default.
             (string part, int region, Material[] materials)[] features =
             {
                 (CcPrefix + "Eye", head, new[] { eye, null, eye, null }), (CcPrefix + "Teeth", head, new[] { teeth, teeth }),
-                (CcPrefix + "Tongue", head, new[] { ManSkinMaterial(BodySource(man, CcPrefix + "Tongue").sharedMaterial) }), ("Short_blowback", head, new[] { hair, null }),
-                ("Chin_Curtain_Sparse", head, new[] { beard }), ("Mustache_Horseshoe", head, new[] { beard }), ("Soul_Path_Thick", head, new[] { beard }),
-                ("Stubble_Neck", head, new[] { beard }),
+                (CcPrefix + "Tongue", head, new[] { ManSkinMaterial(BodySource(man, CcPrefix + "Tongue").sharedMaterial) }),
                 ("Boxers", RegionIndex("thigh"), new[] { BattleEditorUtility.GetMaterial("ManBoxers", new Color(0.12f, 0.12f, 0.13f), 0f, 0.15f) })
             };
 
@@ -1049,47 +1044,6 @@ namespace Game.Scripts.Editor.Battle
 
             Material material = BattleEditorUtility.GetMaterial("ManEye", Color.white, 0f, 0.9f);
             material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(path));
-
-            return material;
-        }
-
-        /// The export has no opacity for its hair cards: coverage is whatever differs from the flat background of the root map,
-        /// the shade comes from the strand ids and darkens toward the roots. Alpha-clipped and two-sided.
-        private static Material HairMaterial(string name, string maps, Color color)
-        {
-            string path = $"{TexturesFolder}/{name}.png";
-
-            if (AssetDatabase.LoadAssetAtPath<Texture2D>(path) == null)
-            {
-                Color32[] roots = ReadPixels(maps + "Root Map.jpg");
-                Color32[] ids = ReadPixels(maps + "ID Map.png");
-                int background = roots[5 * MaskSize + 5].r;
-                Texture2D pixels = new Texture2D(MaskSize, MaskSize, TextureFormat.RGBA32, false);
-                Color32[] colors = new Color32[roots.Length];
-
-                for (int i = 0; i < colors.Length; i++)
-                {
-                    float shade = (0.55f + 0.45f * ids[i].r / 255f) * Mathf.Lerp(0.55f, 1f, roots[i].r / 255f);
-                    Color hair = color * shade;
-                    colors[i] = new Color(hair.r, hair.g, hair.b, Mathf.Abs(roots[i].r - background) > 10 ? 1f : 0f);
-                }
-
-                pixels.SetPixels32(colors);
-                File.WriteAllBytes(path, pixels.EncodeToPNG());
-                Object.DestroyImmediate(pixels);
-                AssetDatabase.ImportAsset(path);
-                TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
-                importer.alphaIsTransparency = true;
-                importer.SaveAndReimport();
-            }
-
-            Material material = BattleEditorUtility.GetMaterial(name, Color.white, 0f, 0.35f);
-            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(path));
-            material.SetFloat("_AlphaClip", 1f);
-            material.SetFloat("_Cutoff", 0.5f);
-            material.SetFloat("_Cull", 0f);
-            material.EnableKeyword("_ALPHATEST_ON");
-            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
 
             return material;
         }

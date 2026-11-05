@@ -153,7 +153,8 @@ namespace Game.Scripts.Editor.Dungeon
                 GameObject model = ResolveModel(def, weapons, outfitModels, out float zoom, out Vector3 euler, out Vector3 shift);
                 BattleEditorUtility.Set(so, "_worldModel", def.Kind == ItemKind.Armor ? null : model);
                 BattleEditorUtility.Set(so, "_sounds", def.Sounds != null ? CombatSoundBuilder.LoadItemSet(def.Sounds) : null);
-                BattleEditorUtility.Set(so, "_icon", model != null ? DungeonIconBuilder.Render(model, Sanitize(def.Name), def.Width, def.Height, zoom, euler, shift, def.Kind == ItemKind.Armor) : null);
+                BattleEditorUtility.Set(so, "_icon", model != null ? DungeonIconBuilder.Render(model, Sanitize(def.Name), def.Width, def.Height, zoom, euler, shift,
+                    def.Kind == ItemKind.Armor || def.WeaponPrefix == DungeonWeaponLibrary.Spellbook) : null);
 
                 switch (def.Kind)
                 {
@@ -240,6 +241,13 @@ namespace Game.Scripts.Editor.Dungeon
 
                     if (prefix == null || !weapons.TryGetValue(prefix, out WeaponConfig weapon))
                         return null;
+
+                    // The icon shows the book shut (DungeonIconBuilder), standing upright with its front cover to the eye.
+                    if (prefix == DungeonWeaponLibrary.Spellbook)
+                    {
+                        euler = (Quaternion.LookRotation(Vector3.left, Vector3.back) * Quaternion.Euler(0f, DungeonWeaponPrefabBuilder.BookThumb, 0f)).eulerAngles;
+                        zoom = 1.2f;
+                    }
 
                     foreach (WeaponAttachment attachment in weapon.Attachments)
                     {

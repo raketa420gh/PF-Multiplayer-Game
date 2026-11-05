@@ -15,6 +15,10 @@ namespace Game.Scripts.Editor.Dungeon
     {
         public const string PreviewLayer = "Preview";
         private const float Cell = 44f;
+        /// The equipment sheet is laid out in the pixels of the Dark and Darker reference (607 x 560), scaled to fit 600 x 490.
+        private const float EquipScale = 0.83f;
+        private const float EquipWidth = 607f;
+        private const float EquipTop = 14f;
         private const string HelpText =
             "<b>Controls</b>\n" +
             "WASD move · Shift walk (quiet) · Space jump · Ctrl/C crouch (duck under swings)\n" +
@@ -711,32 +715,34 @@ namespace Game.Scripts.Editor.Dungeon
             RectTransform equipPanel = CreateRect("Equipment", panel, new Vector2(0f, 1f), new Vector2(530f, -40f), new Vector2(640f, 500f));
             equipPanel.pivot = new Vector2(0f, 1f);
             CreateImage("Back", equipPanel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
-            // Each weapon set is a pair of hands side by side beside the head, set I left and set II right: a two-handed weapon spans both.
-            EquipSlotView main1 = Slot(equipPanel, EquipSlot.Weapon1Main, "I", new Vector2(80f, -14f), 2, 4, itemPrefab);
-            EquipSlotView off1 = Slot(equipPanel, EquipSlot.Weapon1Off, "I off", new Vector2(176f, -14f), 2, 4, itemPrefab);
-            EquipSlotView main2 = Slot(equipPanel, EquipSlot.Weapon2Main, "II", new Vector2(376f, -14f), 2, 4, itemPrefab);
-            EquipSlotView off2 = Slot(equipPanel, EquipSlot.Weapon2Off, "II off", new Vector2(472f, -14f), 2, 4, itemPrefab);
+            // The sheet of Dark and Darker in its pixels (EquipScale): weapon sets 1 and 2 in the top corners, each a pair of hands
+            // side by side (a two-handed weapon spans both); the bags over the utility columns 3 and 4; rings beside the legs.
+            foreach ((string number, float x, float y) in new[] { ("1", 0f, 0f), ("2", 453f, 0f), ("3", 0f, 310f), ("4", 529f, 310f) })
+                Header(equipPanel, number, x, y, number is "1" or "2" ? 154f : 78f);
+
             List<EquipSlotView> slots = new()
             {
-                main1,
-                off1,
-                main2,
-                off2,
-                Slot(equipPanel, EquipSlot.Head, "Head", new Vector2(276f, -14f), 2, 2, itemPrefab),
-                Slot(equipPanel, EquipSlot.Necklace, "Neck", new Vector2(298f, -110f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Back, "Cloak", new Vector2(176f, -200f), 2, 3, itemPrefab),
-                Slot(equipPanel, EquipSlot.Chest, "Chest", new Vector2(276f, -162f), 2, 3, itemPrefab),
-                Slot(equipPanel, EquipSlot.Hands, "Hands", new Vector2(376f, -200f), 2, 2, itemPrefab),
-                Slot(equipPanel, EquipSlot.Ring1, "Ring", new Vector2(220f, -346f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Legs, "Legs", new Vector2(276f, -302f), 2, 2, itemPrefab),
-                Slot(equipPanel, EquipSlot.Ring2, "Ring", new Vector2(376f, -346f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Feet, "Feet", new Vector2(276f, -398f), 2, 2, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility1, "3", new Vector2(80f, -200f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility2, "3", new Vector2(80f, -252f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility3, "3", new Vector2(80f, -304f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility4, "4", new Vector2(516f, -200f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility5, "4", new Vector2(516f, -252f), 1, 1, itemPrefab),
-                Slot(equipPanel, EquipSlot.Utility6, "4", new Vector2(516f, -304f), 1, 1, itemPrefab)
+                Slot(equipPanel, EquipSlot.Weapon1Main, "", 0f, 24f, 76f, 186f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Weapon1Off, "", 78f, 24f, 76f, 186f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Weapon2Main, "", 453f, 24f, 76f, 186f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Weapon2Off, "", 531f, 24f, 76f, 186f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Head, "Head", 255f, 32f, 98f, 96f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Necklace, "Neck", 365f, 76f, 52f, 52f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Chest, "Chest", 238f, 144f, 132f, 176f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Back, "Cloak", 384f, 225f, 96f, 96f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Pouch1, "Bag", 0f, 226f, 78f, 78f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Pouch2, "Bag", 529f, 226f, 78f, 78f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Ring1, "Ring", 172f, 338f, 52f, 52f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Legs, "Legs", 238f, 336f, 132f, 180f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Ring2, "Ring", 384f, 338f, 52f, 52f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Hands, "Hands", 126f, 404f, 97f, 96f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Feet, "Feet", 384f, 404f, 97f, 96f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility1, "", 0f, 334f, 78f, 74f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility2, "", 0f, 410f, 78f, 74f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility3, "", 0f, 486f, 78f, 74f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility4, "", 529f, 334f, 78f, 74f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility5, "", 529f, 410f, 78f, 74f, itemPrefab),
+                Slot(equipPanel, EquipSlot.Utility6, "", 529f, 486f, 78f, 74f, itemPrefab)
             };
 
             RectTransform bagPanel = CreateRect("BagPanel", panel, new Vector2(0f, 1f), new Vector2(530f, -560f), new Vector2(640f, 290f));
@@ -746,10 +752,7 @@ namespace Game.Scripts.Editor.Dungeon
             bagTitle.rectTransform.pivot = new Vector2(0f, 1f);
             bagTitle.text = "Backpack";
             bagTitle.color = s_gold;
-            ItemGridView bag = Grid(bagPanel, "Bag", new Vector2(110f, -36f), itemPrefab, cellPrefab);
-            // The belt pouches sit left of the row of cells they open under the bag.
-            slots.Add(Slot(bagPanel, EquipSlot.Pouch1, "Pch", PouchSlotPosition(bag, 0), 1, 1, itemPrefab));
-            slots.Add(Slot(bagPanel, EquipSlot.Pouch2, "Pch", PouchSlotPosition(bag, 1), 1, 1, itemPrefab));
+            ItemGridView bag = Grid(bagPanel, "Bag", new Vector2(100f, -36f), itemPrefab, cellPrefab);
             TMP_Text valueText = CreateText("Value", bagPanel, new Vector2(1f, 1f), new Vector2(-16f, -8f), new Vector2(300f, 24f), 14f, TextAlignmentOptions.MidlineRight);
             valueText.rectTransform.pivot = new Vector2(1f, 1f);
 
@@ -866,13 +869,32 @@ namespace Game.Scripts.Editor.Dungeon
             return view;
         }
 
-        private static EquipSlotView Slot(RectTransform parent, EquipSlot slot, string label, Vector2 position, int width, int height, ItemView itemPrefab)
+        /// A rect of the equipment sheet given in the reference's pixels from its top-left corner, centred across the panel.
+        private static RectTransform EquipRect(string name, RectTransform parent, float x, float y, float width, float height)
         {
-            RectTransform rect = CreateRect("Slot" + slot, parent, new Vector2(0f, 1f), position, new Vector2(width * Cell, height * Cell));
+            RectTransform rect = CreateRect(name, parent, new Vector2(0.5f, 1f), new Vector2(x - EquipWidth * 0.5f, -y - EquipTop) * EquipScale,
+                new Vector2(width, height) * EquipScale);
             rect.pivot = new Vector2(0f, 1f);
+
+            return rect;
+        }
+
+        private static void Header(RectTransform parent, string number, float x, float y, float width)
+        {
+            RectTransform rect = EquipRect("Header" + number, parent, x, y, width, 20f);
+            rect.gameObject.AddComponent<Image>().color = new Color(0.16f, 0.13f, 0.1f, 0.95f);
+            TMP_Text text = CreateText("Number", rect, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, 14f, TextAlignmentOptions.Center);
+            Stretch(text.rectTransform, 0f);
+            text.text = number;
+            text.color = s_gold;
+        }
+
+        private static EquipSlotView Slot(RectTransform parent, EquipSlot slot, string label, float x, float y, float width, float height, ItemView itemPrefab)
+        {
+            RectTransform rect = EquipRect("Slot" + slot, parent, x, y, width, height);
             Image background = rect.gameObject.AddComponent<Image>();
             background.color = new Color(0f, 0f, 0f, 0.6f);
-            CreateImage("Frame", rect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(width * Cell + 4f, height * Cell + 4f), new Color(0.3f, 0.25f, 0.18f, 0.9f)).transform.SetAsFirstSibling();
+            CreateImage("Frame", rect, new Vector2(0.5f, 0.5f), Vector2.zero, rect.sizeDelta + new Vector2(4f, 4f), new Color(0.3f, 0.25f, 0.18f, 0.9f)).transform.SetAsFirstSibling();
             TMP_Text labelText = CreateText("Label", rect, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, 12f, TextAlignmentOptions.Center);
             Stretch(labelText.rectTransform, 2f);
             labelText.text = label;
@@ -894,12 +916,6 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;
-        }
-
-        /// Pouch slot left of the pouch row of the bag (Cell rows of the bag, the grid's pouch gap, then the row).
-        private static Vector2 PouchSlotPosition(ItemGridView bag, int index)
-        {
-            return bag.Rect.anchoredPosition + new Vector2(-(2 - index) * (Cell + 4f) - 6f, -(4f * Cell + 12f));
         }
 
         private static ItemGridView Grid(RectTransform parent, string name, Vector2 position, ItemView itemPrefab, Image cellPrefab)
@@ -1016,21 +1032,9 @@ namespace Game.Scripts.Editor.Dungeon
             RectTransform equipment = (RectTransform)panel.Find("Equipment");
             Place(equipment, top, topLeft, new Vector2(middleLeft + 250f, -36f), new Vector2(600f, height));
 
-            foreach (EquipSlotView slot in equipment.GetComponentsInChildren<EquipSlotView>())
-                ((RectTransform)slot.transform).anchoredPosition += new Vector2(-30f, 5f);
-
             RectTransform bagPanel = (RectTransform)panel.Find("BagPanel");
             Place(bagPanel, top, topLeft, new Vector2(middleLeft, -36f - height - 10f), new Vector2(850f, 1000f - 46f - height));
-            ItemGridView bag = bagPanel.Find("Bag").GetComponent<ItemGridView>();
-            bag.Rect.anchoredPosition = new Vector2(205f, -70f);
-
-            for (int i = 0; i < 2; i++)
-                ((RectTransform)bagPanel.Find("Slot" + (EquipSlot)((int)EquipSlot.Pouch1 + i))).anchoredPosition = PouchSlotPosition(bag, i);
-
-            TMP_Text pouches = CreateText("PouchesTitle", bagPanel, topLeft, PouchSlotPosition(bag, 0) + new Vector2(-10f, 26f), new Vector2(120f, 22f), 13f,
-                TextAlignmentOptions.MidlineLeft);
-            pouches.text = "Belt pouches";
-            pouches.color = s_textDim;
+            bagPanel.Find("Bag").GetComponent<ItemGridView>().Rect.anchoredPosition = new Vector2(205f, -70f);
             TMP_Text hints = CreateText("Hints", bagPanel, new Vector2(0.5f, 0f), new Vector2(0f, 16f), new Vector2(820f, 44f), 13f, TextAlignmentOptions.Center);
             hints.text = "[Drag] move   [R Click] equip / unequip   [Shift + L Click] to the stash and back   [Ctrl + Drag] split a stack\n" +
                 "A belt pouch opens its cells under the backpack; it comes off only while they are empty";

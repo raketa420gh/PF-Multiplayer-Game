@@ -1,4 +1,5 @@
 using System.IO;
+using Game.Scripts.Battle;
 using UnityEditor;
 using UnityEngine;
 
@@ -19,6 +20,10 @@ namespace Game.Scripts.Editor.Dungeon
         {
             BattleEditorUtilityShim.EnsureFolder(Folder);
             GameObject instance = Object.Instantiate(model, s_stage, Quaternion.Euler(euler));
+
+            if (instance.TryGetComponent(out WeaponVisual visual))
+                visual.SetClosed(true);
+
             GameObject cameraObject = new GameObject("IconCamera");
             GameObject lightObject = new GameObject("IconLight");
             string path = $"{Folder}/{name}.png";
