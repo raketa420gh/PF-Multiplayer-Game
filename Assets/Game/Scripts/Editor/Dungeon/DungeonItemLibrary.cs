@@ -182,6 +182,7 @@ namespace Game.Scripts.Editor.Dungeon
         private const string Mercenary = "Mercenary";
         private const string Librarian = "Librarian";
         private const string Confessor = "Confessor";
+        private const string Huntsman = "Huntsman";
         private const string Bolts = "Crossbow Bolts";
         private const string Arrows = "Arrows";
         private const string Quiver = "Quiver";
@@ -318,6 +319,11 @@ namespace Game.Scripts.Editor.Dungeon
             // Dark and Darker's rondel dagger: a stiff spike of a blade between two discs, quick thrusts at the gaps of armour.
             items.Add(Weapon("Misericorde", DungeonWeaponLibrary.Misericorde, WeaponClass.Dagger, 1, 2, 8f, "Rd", s_steel, 25,
                 "A narrow stabbing dagger between a disc guard and a disc pommel. Quick thrusts; pairs with a shield."));
+            // Plate helmets on the head bone: the lightest and the heaviest one in the game.
+            items.Add(Helmet("Cervelliere", ArmorVisual.Cervelliere, 30f, 8f, 30, 0.1f, "A round steel skullcap over a padded coif. Keeps the crown whole and the face free.",
+                new[] { Confessor, Mercenary, Huntsman }, new StatModifier(StatType.Agility, 2f)));
+            items.Add(Helmet("Great Bascinet", ArmorVisual.GreatBascinet, 45f, 16f, 80, 0.25f, "A closed bascinet strapped to the shoulders. Nothing gets in, the head does not turn.",
+                new[] { Mercenary, Confessor }, new StatModifier(StatType.Vitality, 1f), new StatModifier(StatType.Strength, 1f)));
 
             return items;
         }
@@ -354,6 +360,24 @@ namespace Game.Scripts.Editor.Dungeon
                 Name = name, Kind = ItemKind.Armor, Parts = parts, Armor = armor, MovePenalty = movePenalty, Value = value, MagicResist = magicResist,
                 Width = 2, RollsRarity = true, Modifiers = new List<StatModifier>(modifiers)
             };
+        }
+
+        private static ItemDef Helmet(string name, ArmorVisual visual, float armor, float movePenalty, int value, float headshotReduction, string description,
+            string[] classes, params StatModifier[] modifiers)
+        {
+            ItemDef helmet = Piece(name, null, armor, movePenalty, value, 0f, modifiers);
+            helmet.Modifiers.Add(new StatModifier(StatType.HeadshotReduction, headshotReduction));
+            helmet.Slot = EquipSlot.Head;
+            helmet.ArmorType = ArmorType.Plate;
+            helmet.Visual = visual;
+            helmet.Classes = classes;
+            helmet.Height = 2;
+            helmet.Glyph = "Hd";
+            helmet.Color = s_steel;
+            helmet.Sounds = "treasure_l";
+            helmet.Description = description;
+
+            return helmet;
         }
 
         private static ItemDef Weapon(string name, string prefix, WeaponClass weaponClass, int width, int height, float movePenalty, string glyph,

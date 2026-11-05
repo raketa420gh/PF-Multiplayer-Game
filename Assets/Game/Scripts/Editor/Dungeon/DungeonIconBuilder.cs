@@ -16,7 +16,7 @@ namespace Game.Scripts.Editor.Dungeon
         /// The shift moves the centre of the picture off the centre of the model, in shares of its size; euler turns the model before the axes are measured.
         /// An upright model (a figure) keeps the world up instead of its longest axis.
         public static Sprite Render(GameObject model, string name, int width, int height, float zoom = 1f, Vector3 euler = default, Vector3 shift = default,
-            bool upright = false)
+            bool upright = false, bool frontal = false)
         {
             BattleEditorUtilityShim.EnsureFolder(Folder);
             GameObject instance = Object.Instantiate(model, s_stage, Quaternion.Euler(euler));
@@ -59,7 +59,8 @@ namespace Game.Scripts.Editor.Dungeon
                 Vector3 extents = Vector3.Max(bounds.extents, Vector3.one * 0.01f);
                 float radius = Mathf.Max(extents.x, extents.y, extents.z, 0.05f);
                 Vector3 center = bounds.center + shift * radius;
-                int thin = extents.x <= extents.y && extents.x <= extents.z ? 0 : extents.y <= extents.z ? 1 : 2;
+                // Frontal: seen from +Z whatever the proportions, as a helmet is to the face.
+                int thin = frontal ? 2 : extents.x <= extents.y && extents.x <= extents.z ? 0 : extents.y <= extents.z ? 1 : 2;
                 int along = (thin + 1) % 3, across = (thin + 2) % 3;
 
                 if (extents[along] < extents[across])

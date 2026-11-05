@@ -100,6 +100,8 @@ namespace Game.Scripts.Dungeon
         ReloadSpeed,
         /// Fraction of extra damage of ranged hits on the head.
         HeadshotDamage,
+        /// Fraction of damage taken from hits on the head that helmets absorb.
+        HeadshotReduction,
         Count
     }
 
@@ -186,12 +188,14 @@ namespace Game.Scripts.Dungeon
         public AudioClip PickSound(ItemSound sound) => WeaponSoundConfig.Pick(Sounds, sound);
     }
 
-    /// Outfit looks go set by set in slot order (head, chest, hands, legs, feet); the item library counts on it.
+    /// Rigid pieces on bones first; outfit looks go last, set by set in slot order (head, chest, hands, legs, feet): the item library counts on it.
     public enum ArmorVisual : byte
     {
         None,
         Skull,
         Ribcage,
+        Cervelliere,
+        GreatBascinet,
         PeasantHead,
         PeasantChest,
         PeasantHands,

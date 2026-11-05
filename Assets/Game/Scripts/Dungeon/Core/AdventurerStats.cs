@@ -6,6 +6,8 @@ namespace Game.Scripts.Dungeon
     /// Derived character numbers: class attributes + gear + perks + buffs run through the hexagram curves.
     public sealed class AdventurerStats : ICombatStats, StatusEffectComponent.IResistance
     {
+        public const float MaxHeadshotReduction = 0.5f;
+
         public ClassStats Attributes => _attributes;
         public int MaxHealth => _maxHealth;
         public float ArmorRating => _armorRating;
@@ -214,7 +216,9 @@ namespace Game.Scripts.Dungeon
                 _ => 0f
             };
 
-            return Mathf.RoundToInt(damage * (1f - reduction));
+            float head = zone == HitZone.Head ? Mathf.Clamp(_flat[(int)StatType.HeadshotReduction], 0f, MaxHeadshotReduction) : 0f;
+
+            return Mathf.RoundToInt(damage * (1f - reduction) * (1f - head));
         }
 
         private static float FormHealthBonus(ShapeshiftForm form) => form == ShapeshiftForm.Rat ? -95f : 0f;

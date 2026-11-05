@@ -28,6 +28,14 @@ namespace Game.Scripts.Editor.Dungeon
         public const string DatabasePath = ConfigsFolder + "/ItemDatabase.asset";
         public const string DungeonConfigPath = ConfigsFolder + "/Dungeon.asset";
         public const string InteractableLayer = "Interactable";
+        private const string HelmetModelsFolder = "Assets/Game/Models/Armor";
+
+        /// Helmet offsets from the head bone and scales of the Tripo models; the cervelliere's dome is squashed so its rim sits on the brows.
+        private static readonly (ArmorVisual Visual, Vector3 Position, Vector3 Scale)[] s_helmets =
+        {
+            (ArmorVisual.Cervelliere, new Vector3(0f, -0.015f, -0.01f), new Vector3(0.27f, 0.224f, 0.31f)),
+            (ArmorVisual.GreatBascinet, new Vector3(0f, -0.21f, 0.025f), Vector3.one * 0.44f)
+        };
 
         public static string Prefab(string name) => $"{DungeonPropBuilder.PrefabsFolder}/{name}.prefab";
 
@@ -154,7 +162,7 @@ namespace Game.Scripts.Editor.Dungeon
                 BattleEditorUtility.Set(so, "_worldModel", def.Kind == ItemKind.Armor ? null : model);
                 BattleEditorUtility.Set(so, "_sounds", def.Sounds != null ? CombatSoundBuilder.LoadItemSet(def.Sounds) : null);
                 BattleEditorUtility.Set(so, "_icon", model != null ? DungeonIconBuilder.Render(model, Sanitize(def.Name), def.Width, def.Height, zoom, euler, shift,
-                    def.Kind == ItemKind.Armor || def.WeaponPrefix == DungeonWeaponLibrary.Spellbook) : null);
+                    def.Kind == ItemKind.Armor || def.WeaponPrefix == DungeonWeaponLibrary.Spellbook, def.Kind == ItemKind.Armor && def.Parts == null) : null);
 
                 switch (def.Kind)
                 {
@@ -263,6 +271,8 @@ namespace Game.Scripts.Editor.Dungeon
                     bool hasSleeves = def.Parts != null && System.Array.Exists(def.Parts, part => part is OutfitPart.PeasantArms or OutfitPart.RangerArms);
                     zoom = def.Slot == EquipSlot.Hands ? 7f : hasSleeves ? 2.4f : 1.1f;
                     shift = def.Slot == EquipSlot.Hands ? Vector3.left * 0.8f : Vector3.zero;
+                    // Helmets are seen three-quarters from the front.
+                    euler = def.Parts == null ? new Vector3(0f, 30f, 0f) : Vector3.zero;
 
                     return outfitModels.GetValueOrDefault(def.Visual);
                 default:
@@ -530,7 +540,7 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Silver Spoon", 0.6f, 1, 1), ("Tiger's Eye", 0.5f, 1, 1), ("Agate", 0.6f, 1, 1), ("Gold Chain", 0.2f, 1, 1), ("Silver Chain", 0.4f, 1, 1),
                 ("Gold Bracelet", 0.2f, 1, 1), ("Silver Bracelet", 0.4f, 1, 1), ("Leather Scraps", 1.2f, 1, 3), ("Simple Leather", 0.6f, 1, 2),
                 ("Thick Leather", 0.3f, 1, 1), ("Cloth Scraps", 1.2f, 1, 3), ("Simple Cloth", 0.6f, 1, 2), ("Sturdy Cloth", 0.3f, 1, 1),
-                ("Metal Scraps", 1.2f, 1, 3), ("Metal Ingot", 0.3f, 1, 1), ("Empty Bottle", 0.8f, 1, 1)
+                ("Metal Scraps", 1.2f, 1, 3), ("Metal Ingot", 0.3f, 1, 1), ("Empty Bottle", 0.8f, 1, 1), ("Cervelliere", 0.6f, 1, 1), ("Great Bascinet", 0.3f, 1, 1)
             }.Concat(Pieces(0.9f, "Veinworker")).ToArray();
             (string name, float weight, int min, int max)[] ornate = new (string, float, int, int)[]
             {
@@ -541,7 +551,8 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Troll's Blood", 1f, 1, 1), ("Potion of Invisibility", 1f, 1, 2), ("Gold Crown", 0.5f, 1, 1), ("Gold Ingot", 1f, 1, 2), ("Pearl Necklace", 1f, 1, 1),
                 ("Gold Chalice", 1.5f, 1, 1), ("Silver Candlestick", 1f, 1, 1), ("Gold Candelabrum", 1f, 1, 1), ("Silver Candelabrum", 1f, 1, 1), ("Gold Jug", 1f, 1, 1),
                 ("Silver Jug", 1f, 1, 1), ("Gold Fork", 0.8f, 1, 1), ("Silver Fork", 0.6f, 1, 1), ("Gold Spoon", 0.8f, 1, 1), ("Silver Spoon", 0.6f, 1, 1),
-                ("Tiger's Eye", 1.5f, 1, 3), ("Agate", 1.5f, 1, 3), ("Gold Chain", 1f, 1, 1), ("Silver Chain", 1f, 1, 1), ("Gold Bracelet", 1f, 1, 1), ("Silver Bracelet", 1f, 1, 1)
+                ("Tiger's Eye", 1.5f, 1, 3), ("Agate", 1.5f, 1, 3), ("Gold Chain", 1f, 1, 1), ("Silver Chain", 1f, 1, 1), ("Gold Bracelet", 1f, 1, 1), ("Silver Bracelet", 1f, 1, 1),
+                ("Cervelliere", 0.6f, 1, 1), ("Great Bascinet", 0.5f, 1, 1)
             }.Concat(Pieces(0.6f, "Veinworker")).ToArray();
             (string name, float weight, int min, int max)[] coffin =
             {
@@ -853,6 +864,9 @@ namespace Game.Scripts.Editor.Dungeon
                 Object.DestroyImmediate(root);
             }
 
+            foreach ((ArmorVisual visual, Vector3 _, Vector3 _) in s_helmets)
+                models[visual] = BuildHelmet(visual);
+
             return models;
         }
 
@@ -882,7 +896,25 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static (ArmorVisual, int, HumanBodyBones, bool)[] ArmorMapping()
         {
-            return new[] { (ArmorVisual.Skull, 0, HumanBodyBones.Head, false), (ArmorVisual.Ribcage, 1, HumanBodyBones.Spine, false) };
+            return new[]
+            {
+                (ArmorVisual.Skull, 0, HumanBodyBones.Head, false), (ArmorVisual.Ribcage, 1, HumanBodyBones.Spine, false),
+                (ArmorVisual.Cervelliere, 2, HumanBodyBones.Head, false), (ArmorVisual.GreatBascinet, 3, HumanBodyBones.Head, false)
+            };
+        }
+
+        /// A Tripo helmet (0.98 m tall, face to +Z) fitted on the head bone of the Character Creator man.
+        private static GameObject BuildHelmet(ArmorVisual visual)
+        {
+            (ArmorVisual _, Vector3 position, Vector3 scale) = s_helmets.First(helmet => helmet.Visual == visual);
+            GameObject root = new GameObject("Armor_" + visual);
+            root.transform.localPosition = position;
+            root.transform.localScale = scale;
+            PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>($"{HelmetModelsFolder}/{visual}/{visual}.fbx"), root.transform);
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, $"{ArmorFolder}/{root.name}.prefab");
+            Object.DestroyImmediate(root);
+
+            return prefab;
         }
 
         /// What shows a monster's bones through its body, parented to bones: index order matches ArmorMapping.
@@ -907,7 +939,9 @@ namespace Game.Scripts.Editor.Dungeon
                         Part(root, cube, new Vector3(0f, 0.28f - i * 0.055f, 0.14f), new Vector3(0.3f - i * 0.02f, 0.015f, 0.03f), dark, default, true);
 
                     Part(root, cube, new Vector3(0f, 0.2f, 0.15f), new Vector3(0.03f, 0.3f, 0.02f), dark, default, true);
-                })
+                }),
+                BuildHelmet(ArmorVisual.Cervelliere),
+                BuildHelmet(ArmorVisual.GreatBascinet)
             };
         }
 
