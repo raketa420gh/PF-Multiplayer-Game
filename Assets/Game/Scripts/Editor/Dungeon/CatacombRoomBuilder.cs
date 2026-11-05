@@ -650,7 +650,7 @@ namespace Game.Scripts.Editor.Dungeon
                 return;
             }
 
-            Material material = s_stone.Contains(item.Name) ? DungeonPropBuilder.StoneWall
+            Material material = s_stone.Contains(item.Name) ? CatacombSurfaceBuilder.Block
                 : item.Name == "Котёл" ? DungeonPropBuilder.RustyMetal
                 : item.Name == "Кости" ? DungeonPropBuilder.Bone
                 : item.Name is "Спальник" or "Мешки" ? DungeonPropBuilder.WoodPlanks
@@ -846,25 +846,25 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void Wall(Transform root, float from, float to)
         {
-            DungeonStructureBuilder.Block(root, "Wall", new Vector3((from + to) * 0.5f, Height * 0.5f, 0f), new Vector3(to - from, Height, Thickness), DungeonPropBuilder.Ashlar);
+            DungeonStructureBuilder.Block(root, "Wall", new Vector3((from + to) * 0.5f, Height * 0.5f, 0f), new Vector3(to - from, Height, Thickness), CatacombSurfaceBuilder.Wall);
         }
 
         /// Walls end inside the jambs and the lintel inside the arch: no two faces of the frame share a plane.
         private static void Doorway(Transform root, float middle)
         {
             foreach (float sign in new[] { -1f, 1f })
-                DungeonStructureBuilder.Block(root, "Wall Jamb", new Vector3(middle + sign * (DoorWidth + JambWidth) * 0.5f, DoorHeight * 0.5f, 0f), new Vector3(JambWidth, DoorHeight, Thickness + 0.3f), DungeonPropBuilder.StoneWall);
+                DungeonStructureBuilder.Block(root, "Wall Jamb", new Vector3(middle + sign * (DoorWidth + JambWidth) * 0.5f, DoorHeight * 0.5f, 0f), new Vector3(JambWidth, DoorHeight, Thickness + 0.3f), CatacombSurfaceBuilder.Block);
 
             float bottom = DoorHeight + ArchHeight * 0.5f;
-            DungeonStructureBuilder.Block(root, "Lintel", new Vector3(middle, (bottom + Height) * 0.5f, 0f), new Vector3(DoorWidth + JambWidth, Height - bottom, Thickness), DungeonPropBuilder.Ashlar);
-            DungeonStructureBuilder.Block(root, "Arch", new Vector3(middle, bottom, 0f), new Vector3(DoorWidth + JambWidth * 2f, ArchHeight, Thickness + 0.3f), DungeonPropBuilder.StoneWall);
+            DungeonStructureBuilder.Block(root, "Lintel", new Vector3(middle, (bottom + Height) * 0.5f, 0f), new Vector3(DoorWidth + JambWidth, Height - bottom, Thickness), CatacombSurfaceBuilder.Wall);
+            DungeonStructureBuilder.Block(root, "Arch", new Vector3(middle, bottom, 0f), new Vector3(DoorWidth + JambWidth * 2f, ArchHeight, Thickness + 0.3f), CatacombSurfaceBuilder.Block);
         }
 
         private static GameObject Post()
         {
             GameObject root = new GameObject("CatacombPost");
             // A touch lower than the walls and the hall's first storey floor, so its top shares no plane with them.
-            DungeonStructureBuilder.Block(root.transform, "Wall Post", Vector3.up * (Height - PostGap) * 0.5f, new Vector3(Thickness + 0.2f, Height - PostGap, Thickness + 0.2f), DungeonPropBuilder.Ashlar);
+            DungeonStructureBuilder.Block(root.transform, "Wall Post", Vector3.up * (Height - PostGap) * 0.5f, new Vector3(Thickness + 0.2f, Height - PostGap, Thickness + 0.2f), CatacombSurfaceBuilder.Wall);
 
             return root;
         }

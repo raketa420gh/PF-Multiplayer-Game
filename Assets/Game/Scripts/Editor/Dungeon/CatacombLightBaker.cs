@@ -194,9 +194,9 @@ namespace Game.Scripts.Editor.Dungeon
         {
             return renderer.enabled && renderer.gameObject.activeInHierarchy
                 && (renderer.TryGetComponent(out KitBlockComponent _) || renderer.TryGetComponent(out KitStairsComponent _))
-                && renderer.sharedMaterial != null && renderer.sharedMaterial.shader.name == "Universal Render Pipeline/Lit"
+                && renderer.sharedMaterial != null && renderer.sharedMaterial.shader.name is "Universal Render Pipeline/Lit" or "Game/WorldStone"
                 && renderer.sharedMaterial.renderQueue < (int)RenderQueue.Transparent
-                && renderer.sharedMaterial.GetColor("_EmissionColor").maxColorComponent <= 0f;
+                && (!renderer.sharedMaterial.HasProperty("_EmissionColor") || renderer.sharedMaterial.GetColor("_EmissionColor").maxColorComponent <= 0f);
         }
 
         private static bool IsRuntimeOnly(Light light)

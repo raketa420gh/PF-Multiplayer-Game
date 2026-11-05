@@ -53,6 +53,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             AssetDatabase.SaveAssets();
             CatacombRoomSeparator.SeparateAll();
+            DressRooms();
             BalanceRooms();
             Fusion.Editor.NetworkProjectConfigUtilities.RebuildPrefabTable();
             DungeonMapBuilder.SetRoomPool(() => layouts.Select(Realize).ToArray());

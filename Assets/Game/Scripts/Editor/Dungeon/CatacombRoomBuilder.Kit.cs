@@ -43,17 +43,17 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void BuildKit(List<Layout> layouts)
         {
-            Piece("Wall", DungeonPropBuilder.Ashlar, new Vector3(4f, Height, Thickness));
-            Piece("Wall Column", DungeonPropBuilder.StoneWall, new Vector3(1.2f, Height, 1.2f));
-            Piece("Floor", DungeonPropBuilder.Flagstone, new Vector3(4f, Thickness, 4f));
-            Piece("Ceiling", DungeonPropBuilder.Ashlar, new Vector3(4f, Thickness, 4f));
+            Piece("Wall", CatacombSurfaceBuilder.Wall, new Vector3(4f, Height, Thickness));
+            Piece("Wall Column", CatacombSurfaceBuilder.Wall, new Vector3(1.2f, Height, 1.2f));
+            Piece("Floor", CatacombSurfaceBuilder.Floor, new Vector3(4f, Thickness, 4f));
+            Piece("Ceiling", CatacombSurfaceBuilder.Ceiling, new Vector3(4f, Thickness, 4f));
             Piece("Ceiling Beam", DungeonPropBuilder.DarkWood, new Vector3(4f, 0.4f, 0.35f), false);
-            Piece("Platform", DungeonPropBuilder.Ashlar, new Vector3(4f, 1.5f, 4f));
-            Piece("Pit Wall", DungeonPropBuilder.Ashlar, new Vector3(4f, 1f, PitWall), true, true);
+            Piece("Platform", CatacombSurfaceBuilder.Block, new Vector3(4f, 1.5f, 4f));
+            Piece("Pit Wall", CatacombSurfaceBuilder.Block, new Vector3(4f, 1f, PitWall), true, true);
             Register("Stairs", StructureFolder, () =>
             {
                 GameObject root = new GameObject("Stairs") { isStatic = true };
-                Dress(root.AddComponent<KitStairsComponent>(), DungeonPropBuilder.Ashlar);
+                Dress(root.AddComponent<KitStairsComponent>(), CatacombSurfaceBuilder.Stairs);
                 CatacombKit.Apply(root.GetComponent<KitStairsComponent>());
 
                 return root;

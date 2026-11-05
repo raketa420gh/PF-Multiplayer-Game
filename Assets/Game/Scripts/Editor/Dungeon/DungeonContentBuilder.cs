@@ -1506,7 +1506,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void BuildBarrel(LootTableConfig table)
         {
-            GameObject root = DungeonMedievalBuilder.Solid("Barrel", "Barrel", 0.75f);
+            GameObject root = DungeonMedievalBuilder.Solid("Barrel", "WoodBarrel", 1f);
             SetupContainer(root, "Barrel", table, null, Vector3.zero, false, 4, 2);
             AddInteractCollider(root, new Vector3(0f, 0.5f, 0f), new Vector3(1f, 1.1f, 1f));
             BattleContentBuilder.SavePrefab(root, Prefab("Barrel"));
@@ -1514,7 +1514,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void BuildCrate(LootTableConfig table)
         {
-            GameObject root = DungeonMedievalBuilder.Solid("Crate", "Crate", 1f);
+            GameObject root = DungeonMedievalBuilder.Solid("Crate", "SupplyCrate", 1f);
             SetupContainer(root, "Crate", table, null, Vector3.zero, false, 4, 2);
             AddInteractCollider(root, new Vector3(0f, 0.4f, 0f), new Vector3(1f, 0.9f, 1f));
             BattleContentBuilder.SavePrefab(root, Prefab("Crate"));

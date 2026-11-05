@@ -520,17 +520,8 @@ namespace Game.Scripts.Editor.Dungeon
 
         public static GameObject Campfire()
         {
-            DungeonMeshBuilder builder = new DungeonMeshBuilder(1f);
-
-            for (int i = 0; i < 4; i++)
-            {
-                float angle = i * 45f;
-                builder.Box(new Vector3(0f, 0.08f, 0f), new Vector3(0.9f, 0.12f, 0.12f));
-            }
-
             GameObject root = new GameObject("Campfire");
-            MeshObject("Logs", root.transform, builder.Save("CampfireLogs"), DarkWood, default, new Vector3(0f, 30f, 0f), false, false);
-            MeshObject("Logs2", root.transform, AssetDatabase.LoadAssetAtPath<Mesh>($"{DungeonMeshBuilder.Folder}/CampfireLogs.asset"), DarkWood, default, new Vector3(0f, 110f, 0f), false, false);
+            TripoPropBuilder.Model("Campfire", root.transform);
             Flame(root.transform, new Vector3(0f, 0.15f, 0f), 1.4f);
             PointLight(root.transform, new Vector3(0f, 0.8f, 0f), new Color(1f, 0.65f, 0.3f), 9f, 2.8f, true);
 

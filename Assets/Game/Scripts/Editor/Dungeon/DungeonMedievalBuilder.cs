@@ -138,11 +138,11 @@ namespace Game.Scripts.Editor.Dungeon
             return model;
         }
 
-        /// Pack model with a box collider, ready to receive container logic.
+        /// Pack or Tripo model with a box collider, ready to receive container logic.
         public static GameObject Solid(string name, string model, float scale)
         {
             GameObject root = new GameObject(name);
-            Model(model, root.transform).transform.localScale *= scale;
+            (TripoPropBuilder.Has(model) ? TripoPropBuilder.Model(model, root.transform) : Model(model, root.transform)).transform.localScale *= scale;
             AddCollider(root, root);
 
             return root;
