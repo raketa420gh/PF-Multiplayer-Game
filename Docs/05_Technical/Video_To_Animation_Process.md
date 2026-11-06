@@ -8,7 +8,9 @@
 - Референсы: пользователь кладёт в `D:\` (`*.mp4` или папки вида `D:\arming_sword_refs`).
 - Скрипты: `tools/video_to_animation/` (см. ниже). Рабочие кадры/листы — scratchpad сессии, не в репо.
 - Страница сравнения: `D:\arming_sword_refs\compare\index.html` (вне репо, ~200 МБ кадров).
-- Отчёты чтения рефа: `D:rming_sword_refseportsA1|A2|A3|R|FP.md`.
+- Отчёты чтения рефа: `D:/arming_sword_refs/reports/` (A1, A2, A3, R, FP .md).
+eports\A1|A2|A3|R|FP.md`.
+eportsA1|A2|A3|R|FP.md`.
 
 ## Шаги пайплайна (черновик, уточняется по ходу)
 
