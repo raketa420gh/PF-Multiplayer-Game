@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Game.Scripts.Battle;
 using Game.Scripts.Editor.Battle;
@@ -31,7 +31,11 @@ namespace Game.Scripts.Editor.Dungeon
         public const string MisericordeShield = "MisericordeShield";
         public const string MisericordeEcu = "MisericordeEcu";
         public const string Poniard = "Poniard";
+        public const string FistsShield = "FistsShield";
+        public const string FistsEcu = "FistsEcu";
 
+        /// Arming sword strike point from the grip: where the swings were solved before the blade was cut to real size.
+        public const float ArmingStrike = 0.627f;
         private const float AxeHead = 0.8f;
         /// A long axe is held at the butt with the off hand, this far down the haft from the main hand.
         private const float AxeGrip = -0.42f;
@@ -74,7 +78,8 @@ namespace Game.Scripts.Editor.Dungeon
         /// weapon by name.
         public static readonly string[] CatalogOrder =
         {
-            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu, Torch, Misericorde, MisericordeShield, MisericordeEcu, Poniard
+            SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu, Torch, Misericorde, MisericordeShield, MisericordeEcu, Poniard,
+            FistsShield, FistsEcu
         };
 
         /// The entry whose shield is the model of a shield item, by its ShieldIndex: the round shield, the écu.
@@ -95,7 +100,9 @@ namespace Game.Scripts.Editor.Dungeon
             (ArmingSword, CreateArmingSword, new[] { SwordShield, SwordEcu }),
             (MorningStar, CreateMorningStar, new[] { MaceShield, MaceEcu }),
             (VikingSword, CreateVikingSword, new[] { VikingShield, VikingEcu }),
-            (Misericorde, CreateMisericorde, new[] { MisericordeShield, MisericordeEcu })
+            (Misericorde, CreateMisericorde, new[] { MisericordeShield, MisericordeEcu }),
+            // A shield with the main hand empty (DaD): the right hook alone and the shield's block.
+            (Fists, CreateFists, new[] { FistsShield, FistsEcu })
         };
 
         /// Catalog entries that play another entry's clips (its prefix) with a model, reach and damage of their own.
@@ -1215,7 +1222,11 @@ namespace Game.Scripts.Editor.Dungeon
         /// answered from the low guard with an overhead cut from behind the head down the right side.
         private static WeaponDefinition CreateArmingSword()
         {
-            return CreateArmingSword("Arming Sword", 0.12f, 0.9f, 1.4f, 27);
+            // Real proportions (0.93 m long, 0.69 m blade, 21 cm guard); the strike point stays where the clips were solved for.
+            WeaponDefinition sword = CreateArmingSword("Arming Sword", 0.105f, 0.79f, 1.4f, 27);
+            sword.Strike = ArmingStrike;
+
+            return sword;
         }
 
         private static WeaponDefinition CreateArmingSword(string name, float bladeBase, float bladeTip, float reach, int damage)
@@ -1508,6 +1519,10 @@ namespace Game.Scripts.Editor.Dungeon
         private static WeaponDefinition WithShield(WeaponDefinition weapon, WeaponDefinition shield, string prefix, string shieldName)
         {
             BodyPose carry = shield.Attacks[0].MidPose;
+            // Bare hands keep the right hook only: the left arm carries the shield.
+            if (weapon.IsUnarmed)
+                weapon.Attacks = new[] { weapon.Attacks[0] };
+
             List<AttackDefinition> attacks = new(weapon.Attacks);
             // Both are taken out at once, the weapon over the right shoulder and the shield over the left.
             List<PoseKey> draw = weapon.EquipVia.Count > 0 ? weapon.EquipVia : OverShoulder(weapon.Idle);

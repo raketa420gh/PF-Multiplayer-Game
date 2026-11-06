@@ -70,6 +70,7 @@ namespace Game.Scripts.Editor.Battle
             s_held.Clear();
             BuildFirstPerson(rig, upper);
             BuildPickUp(rig, controller);
+            BuildArms(controller);
 
             WeaponDefinition[] weapons = Game.Scripts.Editor.Dungeon.DungeonWeaponLibrary.CreateAll();
 
@@ -106,6 +107,7 @@ namespace Game.Scripts.Editor.Battle
             rig.SetPalm(0f, 0f);
             BuildFirstPerson(rig, upper);
             BuildPickUp(rig, controller);
+            BuildArms(controller);
             BuildHitReactions(controller.layers[2].stateMachine);
             BakeSockets(controller);
             BakeLeftHanded(controller, weapons, false);
@@ -636,6 +638,56 @@ namespace Game.Scripts.Editor.Battle
             state.writeDefaultValues = false;
         }
 
+        /// Two weapons in two hands: the hand that does not strike holds its own weapon's idle on an arm layer over the swing
+        /// of the other (arm muscles ride on the chest, so it turns with the torso). Each layer carries its own hand's sockets
+        /// only; FighterAnimComponent weights them.
+        private static void BuildArms(AnimatorController controller)
+        {
+            GameObject model = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath));
+            Animator animator = model.GetComponent<Animator>();
+            Transform[] sockets = BattlePoseRig.CreateSockets(animator).ToArray();
+            string[] paths = sockets.Select(socket => AnimationUtility.CalculateTransformPath(socket, animator.transform)).ToArray();
+            bool[] isLeft = sockets.Select(socket => socket.IsChildOf(animator.GetBoneTransform(HumanBodyBones.LeftHand))).ToArray();
+            UnityEngine.Object.DestroyImmediate(model);
+
+            AnimatorState[] idles = controller.layers[1].stateMachine.states.Select(child => child.state)
+                .Where(state => state.name.EndsWith(FighterAnimComponent.IdleSuffix) && state.motion != null).ToArray();
+
+            foreach ((string name, bool left) in new[] { (FighterAnimComponent.OffArmLayerName, true), (FighterAnimComponent.MainArmLayerName, false) })
+            {
+                if (controller.layers.All(layer => layer.name != name))
+                {
+                    controller.AddLayer(name);
+                    AnimatorControllerLayer[] layers = controller.layers;
+                    AvatarMask mask = left ? CreateMask("OffArm", AvatarMaskBodyPart.LeftArm, AvatarMaskBodyPart.LeftFingers)
+                        : CreateMask("MainArm", AvatarMaskBodyPart.RightArm, AvatarMaskBodyPart.RightFingers);
+                    mask.transformCount = paths.Length;
+
+                    for (int i = 0; i < paths.Length; i++)
+                    {
+                        mask.SetTransformPath(i, paths[i]);
+                        mask.SetTransformActive(i, isLeft[i] == left);
+                    }
+
+                    layers[^1].defaultWeight = 0f;
+                    layers[^1].avatarMask = mask;
+                    controller.layers = layers;
+                }
+
+                AnimatorStateMachine stateMachine = controller.layers.First(layer => layer.name == name).stateMachine;
+
+                foreach (ChildAnimatorState child in stateMachine.states)
+                    stateMachine.RemoveState(child.state);
+
+                foreach (AnimatorState idle in idles)
+                {
+                    AnimatorState state = stateMachine.AddState(idle.name);
+                    state.motion = idle.motion;
+                    state.writeDefaultValues = false;
+                }
+            }
+        }
+
         private static AnimationClip Record(BattlePoseRig rig, string name, float duration, bool isLoop, Func<float, BodyPose> evaluate)
         {
             int frames = Mathf.Max(1, Mathf.CeilToInt(duration * FrameRate));
@@ -931,7 +983,7 @@ namespace Game.Scripts.Editor.Battle
             AssetDatabase.SaveAssets();
             GameObject model = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath), Vector3.zero, Quaternion.identity);
             Animator animator = model.GetComponent<Animator>();
-            Transform[] sockets = BattlePoseRig.CreateSockets(animator);
+            Transform[] sockets = BattlePoseRig.CreateSockets(animator).ToArray();
             animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<AnimatorController>(BattleEditorUtility.ControllerPath);
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;

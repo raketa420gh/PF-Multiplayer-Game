@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -64,6 +64,10 @@ namespace Game.Scripts.Battle
         public const string PickUpFirstPersonState = "PickUpFp";
         public const string PickUpLayerName = "PickUp";
         public const float PickUpTime = 28f / 60f;
+        /// Two weapons in two hands: the left arm holds the off-hand weapon's idle over the main weapon's swings, the right
+        /// arm the main weapon's idle over the off hand's.
+        public const string OffArmLayerName = "OffArm";
+        public const string MainArmLayerName = "MainArm";
         public const string BandageState = "Bandage";
         public const string BandageFirstPersonState = "BandageFp";
         public const string CastReleaseState = "CastRelease";
@@ -218,6 +222,10 @@ namespace Game.Scripts.Battle
         private Renderer[] _headRenderers;
         private int _pickUpLayer;
         private float _pickUpTime = float.MaxValue;
+        private int _offArmLayer;
+        private int _mainArmLayer;
+        private int _offArmState;
+        private int _mainArmState;
 
         private void Awake()
         {
@@ -226,6 +234,8 @@ namespace Game.Scripts.Battle
 
             _hips = _animator.GetBoneTransform(HumanBodyBones.Hips);
             _pickUpLayer = _animator.GetLayerIndex(PickUpLayerName);
+            _offArmLayer = _animator.GetLayerIndex(OffArmLayerName);
+            _mainArmLayer = _animator.GetLayerIndex(MainArmLayerName);
             _legs = new[]
             {
                 _animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg), _animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg),
@@ -273,7 +283,8 @@ namespace Game.Scripts.Battle
 
             UpdateLocomotion(isAlive, deltaTime);
             UpdateUpperBody(isAlive, deltaTime);
-            UpdatePickUp(isAlive);
+            float pickUp = UpdatePickUp(isAlive);
+            UpdateArms(pickUp);
             UpdatePitch();
         }
 
@@ -423,8 +434,8 @@ namespace Game.Scripts.Battle
                 // One who strikes without walking steps into the swing.
                 if (isStill && combat.State == CombatState.Attack)
                 {
-                    WeaponStates states = _weaponStates[combat.WeaponIndex];
-                    state = combat.IsRiposte ? states.RiposteLegs : states.AttackLegs[combat.AttackIndex];
+                    WeaponStates states = _weaponStates[combat.IsOffAttack ? combat.OffWeaponIndex : combat.WeaponIndex];
+                    state = combat.IsRiposte ? states.RiposteLegs : states.AttackLegs[Mathf.Min(combat.AttackIndex, states.AttackLegs.Length - 1)];
                     time = combat.StateTime;
                     token = combat.StateTick;
                 }
@@ -456,7 +467,8 @@ namespace Game.Scripts.Battle
             switch (combat.State)
             {
                 case CombatState.Attack:
-                    state = combat.IsRiposte ? states.Riposte : states.Attacks[combat.AttackIndex];
+                    WeaponStates swing = combat.IsOffAttack ? _weaponStates[combat.OffWeaponIndex] : states;
+                    state = combat.IsRiposte ? swing.Riposte : swing.Attacks[Mathf.Min(combat.AttackIndex, swing.Attacks.Length - 1)];
                     token = combat.StateTick;
                     break;
                 case CombatState.BlockRaise:
@@ -539,10 +551,10 @@ namespace Game.Scripts.Battle
             _animator.CrossFadeInFixedTime(state, FadeTime, UpperLayer, time);
         }
 
-        private void UpdatePickUp(bool isAlive)
+        private float UpdatePickUp(bool isAlive)
         {
             if (_pickUpLayer < 0)
-                return;
+                return 0f;
 
             float fade = Mathf.Clamp01(Mathf.Min(_pickUpTime, PickUpTime - _pickUpTime) / PickUpFade);
             float weight = isAlive && _pickUpTime < PickUpTime ? fade * _upperWeight : 0f;
@@ -550,6 +562,36 @@ namespace Game.Scripts.Battle
 
             if (weight > 0f)
                 _animator.Play(s_pickUp, _pickUpLayer, _pickUpTime / PickUpTime);
+
+            return weight;
+        }
+
+        /// With a weapon in each hand, the hand that does not strike keeps its own weapon's idle: the left one over the main
+        /// weapon's idle and swings, the right one over the off hand's swings. A pick-up takes the left hand over.
+        private void UpdateArms(float pickUp)
+        {
+            if (_offArmLayer < 0 || _mainArmLayer < 0)
+                return;
+
+            CombatComponent combat = _fighter.Combat;
+            int off = combat.OffWeaponIndex;
+            bool isArmed = off != CombatComponent.NoWeapon && !_isHolding && combat.State is CombatState.Idle or CombatState.Attack or CombatState.Stagger
+                or CombatState.Deflected or CombatState.Equip;
+            bool isOffSwing = isArmed && combat.State == CombatState.Attack && combat.IsOffAttack;
+            _animator.SetLayerWeight(_offArmLayer, isArmed && !isOffSwing ? _upperWeight * (1f - pickUp) : 0f);
+            _animator.SetLayerWeight(_mainArmLayer, isOffSwing ? _upperWeight : 0f);
+
+            if (!isArmed)
+                return;
+
+            int offIdle = _weaponStates[off].Idle;
+            int mainIdle = _weaponStates[combat.WeaponIndex].Idle;
+
+            if (offIdle != _offArmState)
+                _animator.CrossFadeInFixedTime(_offArmState = offIdle, FadeTime, _offArmLayer);
+
+            if (mainIdle != _mainArmState)
+                _animator.CrossFadeInFixedTime(_mainArmState = mainIdle, FadeTime, _mainArmLayer);
         }
 
         private void UpdatePitch()

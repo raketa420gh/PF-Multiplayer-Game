@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
@@ -16,6 +16,7 @@ namespace Game.Scripts.Battle
         private FighterAnimComponent _anim;
         private List<WeaponVisual>[] _visuals;
         private int _shownSlot = -1;
+        private int _shownOff = CombatComponent.NoWeapon;
         private bool _isShownOut = true;
         private WeaponConfig _shownWeapon;
         private bool _wasActivePhase;
@@ -44,11 +45,12 @@ namespace Game.Scripts.Battle
         public override void Render()
         {
             int slot = _combat.WeaponIndex;
+            int off = _combat.OffWeaponIndex;
 
             bool isOut = _combat.IsWeaponOut;
 
-            if (slot != _shownSlot || isOut != _isShownOut)
-                ShowSlot(slot, isOut);
+            if (slot != _shownSlot || off != _shownOff || isOut != _isShownOut)
+                ShowSlot(slot, off, isOut);
 
             WeaponConfig weapon = _combat.Weapon;
 
@@ -68,16 +70,24 @@ namespace Game.Scripts.Battle
             bool isAttack = state == CombatState.Attack;
             bool isEquip = state == CombatState.Equip;
 
+            int striking = _combat.IsOffAttack && off != CombatComponent.NoWeapon ? off : slot;
+
+            if (off != CombatComponent.NoWeapon)
+            {
+                foreach (WeaponVisual visual in _visuals[off])
+                    visual.SetTrailActive(isActivePhase && striking == off);
+            }
+
             foreach (WeaponVisual visual in _visuals[slot])
             {
-                visual.SetTrailActive(isActivePhase);
+                visual.SetTrailActive(isActivePhase && striking == slot);
                 visual.SetDraw(isDrawn, drawHand, hasArrow);
                 visual.SetClosed(isClosed || isAttack && visual.IsShutInAttack(_combat.StateTime) ||
                                  isEquip && visual.IsShutInEquip(_combat.IsUnequipping, _combat.EquipClipTime));
             }
 
             if (isActivePhase && !_wasActivePhase && BattleContext.Instance != null)
-                BattleContext.Instance.Feedback.PlaySwing(transform.position + Vector3.up * 1.4f, weapon.Reach, weapon.Sounds, transform);
+                BattleContext.Instance.Feedback.PlaySwing(transform.position + Vector3.up * 1.4f, _combat.AttackWeapon.Reach, _combat.AttackWeapon.Sounds, transform);
 
             _wasActivePhase = isActivePhase;
             bool isFullDraw = isDrawn && _combat.DrawPower >= 1f;
@@ -117,13 +127,21 @@ namespace Game.Scripts.Battle
             }
         }
 
-        private void ShowSlot(int slot, bool isOut)
+        private void ShowSlot(int slot, int off, bool isOut)
         {
             if (_shownSlot >= 0)
                 SetSlotActive(_shownSlot, false);
 
+            if (_shownOff != CombatComponent.NoWeapon)
+                SetSlotActive(_shownOff, false);
+
             SetSlotActive(slot, isOut);
+
+            if (off != CombatComponent.NoWeapon)
+                SetSlotActive(off, isOut);
+
             _shownSlot = slot;
+            _shownOff = off;
             _isShownOut = isOut;
         }
 

@@ -249,8 +249,9 @@ namespace Game.Scripts.Editor.Battle
                 Kind = WeaponKind.OneHanded,
                 Reach = 1.4f,
                 DeflectDuration = 0.6f,
-                BladeBase = 0.12f,
-                BladeTip = 0.9f,
+                BladeBase = 0.105f,
+                BladeTip = 0.79f,
+                Strike = Dungeon.DungeonWeaponLibrary.ArmingStrike,
                 Idle = idle,
                 Attacks = new[]
                 {

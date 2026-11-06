@@ -210,7 +210,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Weapon("Battle Axe", DungeonWeaponLibrary.BattleAxe, WeaponClass.Axe, 2, 4, 30f, "Ax", s_steel, 50, "Two-handed double axe. A cut, a backswing and an overhead chop.", twoHanded: true),
                 Weapon("Crossbow", DungeonWeaponLibrary.Crossbow, WeaponClass.Crossbow, 2, 3, 50f, "Xb", s_wood, 55, "Hard-hitting bolt. Press R to load a bolt from the bag.", twoHanded: true, ammo: new[] { Bolts }),
                 Weapon("Magic Staff", DungeonWeaponLibrary.Staff, WeaponClass.Staff, 1, 4, 20f, "St", new Color(0.5f, 0.7f, 1f), 50, "Caster focus. Also a decent club.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 4f) }, classes: new[] { Librarian, Confessor }),
-                Weapon("Round Shield", null, WeaponClass.Shield, 2, 3, 13f, "Sh", s_wood, 30, "Blocks with a one-handed weapon in the main hand.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 20f) }),
+                Weapon("Round Shield", null, WeaponClass.Shield, 2, 3, 13f, "Sh", s_wood, 30, "Blocks. With the main hand empty, that hand punches.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 20f) }),
                 Weapon("Spellbook", DungeonWeaponLibrary.Spellbook, WeaponClass.Spellbook, 2, 2, 10f, "Bk", new Color(0.55f, 0.35f, 0.75f), 40, "Magical focus. Hold it to cast readied spells or block with it; it cannot strike.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 2f) }),
 
                 Consumable("Bandage", ConsumableEffect.HealInstant, 15f, 0f, 4f, 3, "+", new Color(0.9f, 0.9f, 0.85f), 5, "Wrap a wound. Heals after a few seconds."),
@@ -262,7 +262,7 @@ namespace Game.Scripts.Editor.Dungeon
             bolts.Description = "Crossbow ammunition: every reload takes one bolt from the bag.";
             items.Add(bolts);
             // The heater shield of Dark and Darker: wider cover above, a point below, a sturdier block than the round one.
-            items.Add(Weapon("Écu", null, WeaponClass.Shield, 2, 3, 16f, "Ec", s_steel, 45, "Heater shield. Blocks with a one-handed weapon in the main hand.",
+            items.Add(Weapon("Écu", null, WeaponClass.Shield, 2, 3, 16f, "Ec", s_steel, 45, "Heater shield. Blocks. With the main hand empty, that hand punches.",
                 offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 25f) }, shieldIndex: 1));
             // Dark and Darker's viking sword: base damage 31, move speed -20, for the barbarian and the warrior.
             items.Add(Weapon("Viking Sword", DungeonWeaponLibrary.VikingSword, WeaponClass.Sword, 1, 3, 20f, "Vk", s_steel, 40, "A broad-bladed sword with a lobed pommel. Three cuts in a row.",
@@ -326,7 +326,7 @@ namespace Game.Scripts.Editor.Dungeon
                 new[] { Mercenary, Confessor }, new StatModifier(StatType.Vitality, 1f), new StatModifier(StatType.Strength, 1f)));
             // Dark and Darker's stiletto dagger: an off-hand needle, three quick stabs and a breath before the next three.
             items.Add(Weapon("Poniard", DungeonWeaponLibrary.Poniard, WeaponClass.Dagger, 1, 2, 6f, "Pd", s_steel, 30,
-                "A slim needle of a blade for the left hand. Three quick stabs in a row; it parries only when the other hand is empty.", offHand: true));
+                "A slim needle of a blade for the left hand. Three quick stabs in a row. Beside a main-hand weapon it stabs on the right button (no block); alone it parries.", offHand: true));
 
             return items;
         }

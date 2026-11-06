@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Fusion;
 using Game.Scripts.Battle;
 using Game.Scripts.Editor.Dungeon;
@@ -72,8 +73,10 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.EnsureFolder(BattleEditorUtility.MaterialsFolder);
             BattleEditorUtility.EnsureLayer(BattleEditorUtility.HitboxLayer);
 
-            // The Tripo arming sword: the guard 10 cm ahead of the fist, the tip at 90 cm, the edge leading.
-            GameObject sword = BattleWeaponPrefabBuilder.BuildTripo("Sword", "ArmingSword", BattleWeaponPrefabBuilder.TripoRod, 1.08f, new Vector3(0f, 0.239f, 0f), new Vector3(0f, 0f, 0.1f));
+            // The Tripo arming sword cut to a real one (DaD's length to width): 0.93 m long, the guard 21 cm wide and 9 cm ahead of
+            // the fist, the tip at 79 cm, the grip 3.6 cm thick, the edge leading.
+            GameObject sword = BattleWeaponPrefabBuilder.BuildTripo("Sword", "ArmingSword", BattleWeaponPrefabBuilder.TripoRod, new Vector3(0.7f, 0.95f, 0.7f),
+                new Vector3(0f, 0.239f, 0f), new Vector3(0f, 0f, 0.088f));
             GameObject axe = DungeonWeaponPrefabBuilder.BuildAxe("BattleAxe", 0.92f, 0.3f, AxeStyle.Battle);
             GameObject staff = DungeonWeaponPrefabBuilder.BuildStaff();
             GameObject crossbow = DungeonWeaponPrefabBuilder.BuildCrossbow();
@@ -113,7 +116,7 @@ namespace Game.Scripts.Editor.Battle
             foreach ((string weapon, Func<WeaponDefinition> _, string[] withShield) in DungeonWeaponLibrary.ShieldPairs)
             {
                 for (int i = 0; i < withShield.Length; i++)
-                    attachments[withShield[i]] = new[] { attachments[weapon][0], (shields[i], WeaponSocket.LeftShield) };
+                    attachments[withShield[i]] = attachments[weapon].Append((shields[i], WeaponSocket.LeftShield)).ToArray();
             }
 
             string[] order = DungeonWeaponLibrary.CatalogOrder;
@@ -168,7 +171,8 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(so, "_mainHand", mainHand);
             BattleEditorUtility.Set(so, "_animationPrefix", definition.Prefix);
             BattleEditorUtility.Set(so, "_deflectDuration", definition.DeflectDuration);
-            BattleEditorUtility.Set(so, "_isBareHands", definition.IsUnarmed);
+            // A shield on the arm of an empty hand is not put away like bare hands.
+            BattleEditorUtility.Set(so, "_isBareHands", definition.IsUnarmed && attachments.Length == 0);
             BattleEditorUtility.Set(so, "_equipTime", definition.EquipVia.Count > 0 ? definition.EquipVia[^1].Time : 0f);
             BattleEditorUtility.Set(so, "_equipShown", definition.EquipShown);
             BattleEditorUtility.Set(so, "_unequipTime", definition.UnequipVia.Count > 0 ? definition.UnequipVia[^1].Time : 0f);

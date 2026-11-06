@@ -275,6 +275,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private WeaponConfig _fistsWeapon;
 
+        [SerializeField, Tooltip("Bare hands with a shield on the other arm, by ShieldIndex: a punch and the shield's block")]
+        private WeaponConfig[] _fistsWithShield = System.Array.Empty<WeaponConfig>();
+
         [SerializeField, Tooltip("Strikes of a burning torch held from the belt")]
         private WeaponConfig _torchWeapon;
 
@@ -871,8 +874,22 @@ namespace Game.Scripts.Dungeon
         {
             CombatComponent combat = _fighter.Combat;
             // Only the holster key or sitting down empties the hands; a belt item is taken out over the weapon.
-            combat.SetSlotWeapon(0, ResolveWeaponIndex(0, EquipSlot.Weapon1Main, EquipSlot.Weapon1Off), IsHolstered);
-            combat.SetSlotWeapon(1, ResolveWeaponIndex(1, EquipSlot.Weapon2Main, EquipSlot.Weapon2Off), IsHolstered);
+            combat.SetSlotWeapon(0, ResolveWeaponIndex(0, EquipSlot.Weapon1Main, EquipSlot.Weapon1Off), IsHolstered, ResolveOffWeaponIndex(0, EquipSlot.Weapon1Main, EquipSlot.Weapon1Off));
+            combat.SetSlotWeapon(1, ResolveWeaponIndex(1, EquipSlot.Weapon2Main, EquipSlot.Weapon2Off), IsHolstered, ResolveOffWeaponIndex(1, EquipSlot.Weapon2Main, EquipSlot.Weapon2Off));
+        }
+
+        /// A weapon of its own in the off hand beside a one-handed melee weapon (a dagger beside a sword); -1 for none or a shield.
+        private int ResolveOffWeaponIndex(int set, EquipSlot mainSlot, EquipSlot offSlot)
+        {
+            if (Form != ShapeshiftForm.None || ((IsTorchInHand || !HasWeaponInHand) && set == _fighter.Combat.WeaponSlot))
+                return -1;
+
+            WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(mainSlot);
+            WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(offSlot);
+            bool isPair = main != null && off != null && off.Weapon != null && off.WeaponClass != WeaponClass.Shield && main.Weapon != null &&
+                          main.Weapon.Kind == WeaponKind.OneHanded;
+
+            return isPair ? _fighter.Combat.FindCatalogIndex(off.Weapon) : -1;
         }
 
         private ItemConfig[] GetAmmo(int slot)
@@ -898,6 +915,10 @@ namespace Game.Scripts.Dungeon
             WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(mainSlot);
             WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(offSlot);
             CombatComponent combat = _fighter.Combat;
+
+            // A shield alone: the empty hand punches, the shield blocks (DaD).
+            if (main == null && off != null && off.WeaponClass == WeaponClass.Shield && off.ShieldIndex < _fistsWithShield.Length)
+                return Mathf.Max(0, combat.FindCatalogIndex(_fistsWithShield[off.ShieldIndex]));
 
             if (main == null)
                 return Mathf.Max(0, combat.FindCatalogIndex(off != null && off.Weapon != null ? off.Weapon : _fistsWeapon));

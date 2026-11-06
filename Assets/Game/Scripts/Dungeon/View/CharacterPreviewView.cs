@@ -1,3 +1,4 @@
+using System.Linq;
 using Fusion;
 using Game.Scripts.Battle;
 using UnityEngine;
@@ -160,17 +161,20 @@ namespace Game.Scripts.Dungeon
             WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(EquipSlot.Weapon1Main);
             WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(EquipSlot.Weapon1Off);
             WeaponConfig config = _hands != null ? _hands.Fighter.Combat.Weapon : main != null ? main.GetWeapon(off) : off != null ? off.Weapon : null;
-            bool isArmed = config != null && config.Attachments.Length > 0;
+            // A weapon of its own in the off hand (a dagger beside a sword) is shown too.
+            WeaponConfig second = _hands != null ? _hands.Fighter.Combat.OffWeapon : null;
+            WeaponAttachment[] attachments = second != null && config != null ? config.Attachments.Concat(second.Attachments).ToArray() : config?.Attachments;
+            bool isArmed = config != null && attachments.Length > 0;
 
             // Unarmed, the whole body stands in the relaxed library idle instead of the fist guard.
             if (_animator != null)
                 _animator.SetLayerWeight(1, isArmed ? 1f : 0f);
 
-            _weaponVisuals = new GameObject[isArmed ? config.Attachments.Length + 1 : 1];
+            _weaponVisuals = new GameObject[isArmed ? attachments.Length + 1 : 1];
 
-            for (int i = 0; isArmed && i < config.Attachments.Length; i++)
+            for (int i = 0; isArmed && i < attachments.Length; i++)
             {
-                WeaponAttachment attachment = config.Attachments[i];
+                WeaponAttachment attachment = attachments[i];
                 _weaponVisuals[i] = Instantiate(attachment.Prefab, _sockets[(int)attachment.Socket], false);
                 SetLayer(_weaponVisuals[i], _rig.layer);
             }

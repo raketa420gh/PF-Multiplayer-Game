@@ -156,13 +156,21 @@ namespace Game.Scripts.Editor.Battle
         /// imported model, before scaling) set at the target.
         public static GameObject BuildTripo(string name, string model, Quaternion turn, float scale, Vector3 pivot, Vector3 target)
         {
+            return BuildTripo(name, model, turn, Vector3.one * scale, pivot, target);
+        }
+
+        /// Scale per axis of the imported model: a rod (+Y its length) can be made slimmer than it is shortened.
+        public static GameObject BuildTripo(string name, string model, Quaternion turn, Vector3 scale, Vector3 pivot, Vector3 target)
+        {
             string path = $"{TripoFolder}/{model}/{model}";
             GameObject root = new GameObject(name);
             GameObject mesh = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>($"{path}.fbx"), root.transform);
             mesh.name = "Model";
+            // The scale is given in the imported frame; the import's own turn (Z-up files) maps it onto the mesh's axes.
+            Vector3 local = Quaternion.Inverse(mesh.transform.localRotation) * scale;
             mesh.transform.localRotation = turn * mesh.transform.localRotation;
-            mesh.transform.localScale = Vector3.one * scale;
-            mesh.transform.localPosition = target - turn * (pivot * scale);
+            mesh.transform.localScale = new Vector3(Mathf.Abs(local.x), Mathf.Abs(local.y), Mathf.Abs(local.z));
+            mesh.transform.localPosition = target - turn * Vector3.Scale(pivot, scale);
             Material material = AssetDatabase.LoadAssetAtPath<Material>($"{path}.mat");
 
             foreach (Renderer renderer in mesh.GetComponentsInChildren<Renderer>())

@@ -694,6 +694,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_campfirePrefab", campfire.GetComponent<NetworkObject>());
             BattleEditorUtility.Set(so, "_zonePrefab", zone);
             BattleEditorUtility.Set(so, "_fistsWeapon", weapons[DungeonWeaponLibrary.Fists]);
+            BattleEditorUtility.Set(so, "_fistsWithShield", DungeonWeaponLibrary.WithShield(DungeonWeaponLibrary.Fists).Select(prefix => weapons[prefix]).ToArray());
             BattleEditorUtility.Set(so, "_torchWeapon", weapons[DungeonWeaponLibrary.Torch]);
             BattleEditorUtility.Set(so, "_formWeapons", new[] { weapons[DungeonWeaponLibrary.RatBite] });
             so.ApplyModifiedPropertiesWithoutUndo();

@@ -12,6 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - When fixing bugs: explain the problem in plain Russian, make minimal changes
 - Any question to the user must go through `AskUserQuestion` with options to pick from — never ask open-ended questions that require a typed answer
 - Task lists (`Docs/Tasks/Tasks.txt` etc.): when doing a task already written there, mark it done (`[x]`) once finished
+- Always commit at the end of every task (no need to ask — a commit can always be reverted). Leave unrelated rebuild noise out of the commit
 - After a task, clean up what it used and no longer needs (temp scripts, stale assets/files, scratch builders). Before deleting anything, tell the user what goes and keep it revertible (git-tracked, or back it up first)
 
 ## Token Economy

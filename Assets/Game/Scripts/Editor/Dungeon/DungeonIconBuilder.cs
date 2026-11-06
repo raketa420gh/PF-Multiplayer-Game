@@ -113,6 +113,8 @@ namespace Game.Scripts.Editor.Dungeon
                 RenderTexture texture = RenderTexture.GetTemporary(pixelsWide, pixelsHigh, 24, RenderTextureFormat.ARGB32);
                 camera.targetTexture = texture;
                 camera.aspect = aspect;
+                // The first render of an editor session comes out empty (the first item, the Arming Sword, lost its icon): render twice.
+                camera.Render();
                 camera.Render();
                 RenderTexture.active = texture;
                 Texture2D image = new Texture2D(pixelsWide, pixelsHigh, TextureFormat.RGBA32, false);

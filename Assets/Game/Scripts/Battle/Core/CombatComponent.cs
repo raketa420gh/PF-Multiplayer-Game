@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
@@ -82,7 +82,13 @@ namespace Game.Scripts.Battle
         public int WeaponIndex => State != CombatState.Equip ? GetWeaponIndex(WeaponSlot)
             : IsUnequipping ? _unequipWeapon : GetWeaponIndex(_pendingSlot);
         public WeaponConfig Weapon => _loadout[WeaponIndex];
-        public MeleeAttackConfig Attack => IsRiposte ? Weapon.Riposte : Weapon.Attacks[AttackIndex];
+        /// The weapon in the off hand next to the main one (a dagger beside a sword): it strikes with the right button
+        /// instead of a block. NoWeapon when the off hand is empty or part of the main entry (a shield).
+        public int OffWeaponIndex => GetOffWeaponIndex(State == CombatState.Equip && !IsUnequipping ? _pendingSlot : WeaponSlot);
+        public WeaponConfig OffWeapon => OffWeaponIndex != NoWeapon ? _loadout[OffWeaponIndex] : null;
+        /// The weapon of the attack under way: the off hand's during its own series.
+        public WeaponConfig AttackWeapon => IsOffAttack && OffWeapon != null ? OffWeapon : Weapon;
+        public MeleeAttackConfig Attack => IsRiposte ? AttackWeapon.Riposte : AttackWeapon.Attacks[Mathf.Min(AttackIndex, AttackWeapon.Attacks.Length - 1)];
         public float StateTime => Runner.SecondsSince(StateTick) * TimeScale;
         public float EquipTime => _equipTime;
         /// The first part of an Equip: the weapon in the hand is being put away, the chosen one is taken out after it.
@@ -96,6 +102,7 @@ namespace Game.Scripts.Battle
         public bool IsComboWindowOpen => State == CombatState.Attack && Attack.IsComboWindow(StateTime);
         public bool IsComboQueued => _comboQueued;
         public bool IsSeriesReady => Runner.Tick >= _seriesReadyTick;
+        public bool IsOffSeriesReady => Runner.Tick >= _offSeriesReadyTick;
         public float DrawPower => State == CombatState.Draw ? Weapon.Ranged.GetPower(StateTime) : 0f;
         public float BusyProgress => State == CombatState.Busy && _stateDuration > 0f ? Mathf.Clamp01(StateTime / _stateDuration) : 0f;
         public float BusyTimeLeft => State == CombatState.Busy ? Mathf.Max(0f, _stateDuration - StateTime) : 0f;
@@ -168,6 +175,10 @@ namespace Game.Scripts.Battle
         [Networked]
         public byte WeaponSlot { get; private set; }
 
+        /// The attack under way is a swing of the off-hand weapon's series.
+        [Networked]
+        public NetworkBool IsOffAttack { get; private set; }
+
         /// The stagger under way comes from a taken hit, not a broken guard or a stun.
         [Networked]
         private NetworkBool IsHitStagger { get; set; }
@@ -231,6 +242,9 @@ namespace Game.Scripts.Battle
         private int _seriesReadyTick { get; set; }
 
         [Networked]
+        private int _offSeriesReadyTick { get; set; }
+
+        [Networked]
         private float _stateDuration { get; set; }
 
         [Networked]
@@ -253,6 +267,10 @@ namespace Game.Scripts.Battle
 
         [Networked, Capacity(MaxSlots)]
         private NetworkArray<byte> _slotWeapons => default;
+
+        /// Catalog index + 1 of the off-hand weapon per slot; 0 = none.
+        [Networked, Capacity(MaxSlots)]
+        private NetworkArray<byte> _slotOffWeapons => default;
 
         [Networked]
         private NetworkBool _slotsInitialized { get; set; }
@@ -346,6 +364,13 @@ namespace Game.Scripts.Battle
             return index < _loadout.Length ? index : 0;
         }
 
+        public int GetOffWeaponIndex(int slot)
+        {
+            int index = _slotOffWeapons[Mathf.Clamp(slot, 0, MaxSlots - 1)] - 1;
+
+            return index >= 0 && index < _loadout.Length ? index : NoWeapon;
+        }
+
         public int FindCatalogIndex(WeaponConfig config)
         {
             return Array.IndexOf(_loadout, config);
@@ -353,13 +378,17 @@ namespace Game.Scripts.Battle
 
         /// Assigns which catalog weapon a weapon slot holds. State authority only.
         /// isPutAway: the hands are emptied on purpose, so the weapon leaving them is put away along its clip.
-        public void SetSlotWeapon(int slot, int catalogIndex, bool isPutAway = false)
+        /// offIndex: catalog index of a weapon in the off hand that fights on its own; negative = none.
+        public void SetSlotWeapon(int slot, int catalogIndex, bool isPutAway = false, int offIndex = -1)
         {
             byte index = (byte)Mathf.Clamp(catalogIndex, 0, _loadout.Length - 1);
+            // Kept one up, so the zero every slot starts with means none.
+            byte off = offIndex >= 0 && offIndex < _loadout.Length ? (byte)(offIndex + 1) : (byte)0;
             int previous = GetWeaponIndex(slot);
             bool isInitialized = _slotsInitialized;
-            bool isChanged = !isInitialized || _slotWeapons[slot] != index;
+            bool isChanged = !isInitialized || _slotWeapons[slot] != index || _slotOffWeapons[slot] != off;
             _slotWeapons.Set(slot, index);
+            _slotOffWeapons.Set(slot, off);
             _slotsInitialized = true;
 
             if (isChanged && slot == WeaponSlot && State != CombatState.Busy)
@@ -418,10 +447,14 @@ namespace Game.Scripts.Battle
         public void Simulate(NetworkButtons buttons, NetworkButtons previous)
         {
             WeaponConfig weapon = Weapon;
+            // Two weapons: each hand strikes with its own button and neither blocks.
+            bool hasOff = OffWeapon != null && !weapon.IsRanged;
             bool isAttackHeld = buttons.IsSet(weapon.AttackButton) && !_isAttackSuppressed;
             bool isAttackPressed = buttons.WasPressed(previous, weapon.AttackButton) && !_isAttackSuppressed;
-            bool isBlockHeld = buttons.IsSet(weapon.BlockButton) && weapon.Block.CanBlock && !_isBlockSuppressed;
-            bool isBlockPressed = buttons.WasPressed(previous, weapon.BlockButton) && !_isBlockSuppressed;
+            bool isOffHeld = hasOff && buttons.IsSet(weapon.BlockButton) && !_isBlockSuppressed;
+            bool isOffPressed = hasOff && buttons.WasPressed(previous, weapon.BlockButton) && !_isBlockSuppressed;
+            bool isBlockHeld = !hasOff && buttons.IsSet(weapon.BlockButton) && weapon.Block.CanBlock && !_isBlockSuppressed;
+            bool isBlockPressed = !hasOff && buttons.WasPressed(previous, weapon.BlockButton) && !_isBlockSuppressed;
             bool isReloadPressed = buttons.WasPressed(previous, PlayerInputButtons.Reload);
             float time = StateTime;
             _isBlockHeld = isBlockHeld;
@@ -429,7 +462,10 @@ namespace Game.Scripts.Battle
             switch (State)
             {
                 case CombatState.Idle:
-                    SimulateIdle(weapon, buttons, previous, isAttackHeld, isAttackPressed, isBlockHeld, isReloadPressed);
+                    if (isOffPressed && IsOffSeriesReady)
+                        StartAttack(0, true);
+                    else
+                        SimulateIdle(weapon, buttons, previous, isAttackHeld, isAttackPressed, isBlockHeld, isReloadPressed);
                     break;
 
                 case CombatState.Equip:
@@ -443,7 +479,7 @@ namespace Game.Scripts.Battle
                     break;
 
                 case CombatState.Attack:
-                    SimulateAttack(weapon, time, isAttackHeld);
+                    SimulateAttack(AttackWeapon, time, IsOffAttack ? isOffHeld : isAttackHeld);
                     break;
 
                 case CombatState.Reload:
@@ -558,7 +594,7 @@ namespace Game.Scripts.Battle
                 return;
 
             if (_comboQueued && time >= attack.ActiveEnd)
-                StartAttack(IsRiposte ? 0 : AttackIndex + 1);
+                StartAttack(IsRiposte ? 0 : AttackIndex + 1, IsOffAttack);
             else if (time >= attack.Duration)
                 EndAttack(weapon, isLast, CombatState.Idle);
             else if (_isBlockHeld && weapon.Block.CanBlock && time >= attack.ActiveEnd + attack.RecoveryTime * 0.5f)
@@ -567,20 +603,23 @@ namespace Game.Scripts.Battle
 
         private void EndAttack(WeaponConfig weapon, bool isLast, CombatState state)
         {
-            if (isLast)
+            if (isLast && IsOffAttack)
+                _offSeriesReadyTick = Runner.Tick + Mathf.CeilToInt(weapon.ComboCooldown / Runner.DeltaTime);
+            else if (isLast)
                 _seriesReadyTick = Runner.Tick + Mathf.CeilToInt(weapon.ComboCooldown / Runner.DeltaTime);
 
             SetState(state);
         }
 
-        private void StartAttack(int index)
+        private void StartAttack(int index, bool isOff = false)
         {
-            if (Weapon.Attacks.Length == 0)
+            if ((isOff ? OffWeapon : Weapon).Attacks.Length == 0)
                 return;
 
             _hitRoots.Clear();
             SetState(CombatState.Attack);
             AttackIndex = (byte)index;
+            IsOffAttack = isOff;
         }
 
         /// A hit has just been blocked: the weapon strikes back from the block.
@@ -689,6 +728,7 @@ namespace Game.Scripts.Battle
             StateTick = Runner.Tick;
             AttackIndex = 0;
             IsRiposte = false;
+            IsOffAttack = false;
             _comboQueued = false;
             IsHitStagger = false;
             _stateDuration = duration;

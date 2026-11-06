@@ -25,7 +25,7 @@ namespace Game.Scripts.Battle
                                fighter.Combat.State == CombatState.Attack;
 
             if (isAttacking)
-                direction = fighter.Combat.Attack.GetSwingDirection(fighter.Combat.Weapon.IsMirrored);
+                direction = fighter.Combat.Attack.GetSwingDirection(fighter.Combat.AttackWeapon.IsMirrored);
 
             bool isThrust = isAttacking && direction.magnitude < _thrustThreshold;
             _arrow.SetShown(isAttacking && !isThrust);
