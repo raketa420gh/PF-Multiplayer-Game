@@ -501,10 +501,10 @@ namespace Game.Scripts.Dungeon
             return Array.IndexOf(_allowedWeapons, weaponClass) >= 0;
         }
 
-        /// Perks unlock at levels 1, 5, 10, 15.
+        /// Every perk slot is open from level 1 until the progression is designed (it was levels 1, 5, 10, 15).
         public static int PerkCountForLevel(int level)
         {
-            return Mathf.Clamp(1 + level / 5, 1, 4);
+            return 4;
         }
 
         public static int PerkSlotLevel(int slot)

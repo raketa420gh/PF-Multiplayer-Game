@@ -15,6 +15,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private LoadingView _loading;
 
+        [SerializeField, Tooltip("Tavern render behind the slot list; the creation page shows UI only")]
+        private GameObject _backdrop;
+
         private int _createSlot;
 
         private void OnEnable()
@@ -46,12 +49,13 @@ namespace Game.Scripts.Dungeon
         {
             _createSlot = slot;
             _select.Hide();
+            _backdrop.SetActive(false);
             _create.Show();
         }
 
-        private void OnCreated(byte classId)
+        private void OnCreated(byte classId, string name)
         {
-            StashService.CreateCharacter(_createSlot, classId);
+            StashService.CreateCharacter(_createSlot, classId, name);
             StashService.SelectSlot(_createSlot);
             OnCancelled();
         }
@@ -59,6 +63,7 @@ namespace Game.Scripts.Dungeon
         private void OnCancelled()
         {
             _create.Hide();
+            _backdrop.SetActive(true);
             _select.Show();
         }
 

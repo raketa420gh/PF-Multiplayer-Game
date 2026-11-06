@@ -79,7 +79,7 @@ namespace Game.Scripts.Dungeon
             float armorMove = 0f;
             bool isPlated = false;
 
-            for (int i = 0; i < InventoryComponent.EquipmentCapacity; i++)
+            for (int i = 0; inventory != null && i < InventoryComponent.EquipmentCapacity; i++)
             {
                 ItemStack stack = inventory.Equipment[i];
                 ItemConfig item = inventory.GetConfig(stack);

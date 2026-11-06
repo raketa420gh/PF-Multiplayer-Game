@@ -157,27 +157,42 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_deleteButton", delete);
             so.ApplyModifiedPropertiesWithoutUndo();
 
+            // Creation is UI only: an opaque page over the tavern render (switched off meanwhile), the classes on the left,
+            // the class hexagram in the middle, its description on the right, the nickname above Create.
             RectTransform createPage = CharacterPage(root, "Create", "Create Character", "Create", "Back",
                 out TMP_Text className, out Button create, out Button back);
+            Image createBack = CreateImage("Background", createPage, center, Vector2.zero, Vector2.zero, new Color(0.035f, 0.03f, 0.027f, 1f));
+            Stretch(createBack.rectTransform, 0f);
+            createBack.transform.SetAsFirstSibling();
             Button[] classButtons = new Button[classes.Length];
 
             for (int i = 0; i < classes.Length; i++)
                 classButtons[i] = CharacterCard(createPage, "Class" + classes[i].DisplayName, i, classes[i].DisplayName);
 
-            RectTransform info = CreateRect("Info", createPage, Vector2.one, new Vector2(-56f, -140f), new Vector2(520f, 240f));
+            Image sheet = CreateImage("Stats", createPage, new Vector2(0.5f, 1f), new Vector2(0f, -236f), new Vector2(520f, 590f), Color.white);
+            sheet.sprite = DungeonUiSpriteBuilder.Load("Panel");
+            StatsView classStats = BuildStats(sheet.rectTransform, new Vector2(0f, -24f), 520f, 115f, true, createPage, out RectTransform statsTooltip);
+            statsTooltip.SetAsLastSibling();
+
+            RectTransform info = CreateRect("Info", createPage, Vector2.one, new Vector2(-56f, -140f), new Vector2(520f, 300f));
             CreateImage("Frame", info, center, Vector2.zero, Vector2.zero, s_frame).rectTransform.StretchFill();
             Stretch(CreateImage("Back", info, center, Vector2.zero, Vector2.zero, s_panel).rectTransform, 2f);
             TMP_Text description = CreateText("Text", info, center, Vector2.zero, Vector2.zero, 19f, TextAlignmentOptions.TopLeft);
             Stretch(description.rectTransform, 22f);
             description.color = s_text;
 
+            TMP_InputField nickname = CreateInput("Nickname", createPage, new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(360f, 56f), "Nickname");
+            nickname.textComponent.fontSize = 24f;
+            nickname.targetGraphic.color = s_panelLight;
+
             CharacterCreateView createView = createPage.gameObject.AddComponent<CharacterCreateView>();
             so = new SerializedObject(createView);
             BattleEditorUtility.Set(so, "_classes", classes);
-            BattleEditorUtility.Set(so, "_preview", preview);
             BattleEditorUtility.Set(so, "_classButtons", classButtons);
+            BattleEditorUtility.Set(so, "_stats", classStats);
             BattleEditorUtility.Set(so, "_nameText", className);
             BattleEditorUtility.Set(so, "_descriptionText", description);
+            BattleEditorUtility.Set(so, "_nicknameInput", nickname);
             BattleEditorUtility.Set(so, "_createButton", create);
             BattleEditorUtility.Set(so, "_backButton", back);
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -187,6 +202,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_select", select);
             BattleEditorUtility.Set(so, "_create", createView);
             BattleEditorUtility.Set(so, "_loading", loading);
+            BattleEditorUtility.Set(so, "_backdrop", backdrop.gameObject);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             // Only one page may bind the shared preview on the first frame.

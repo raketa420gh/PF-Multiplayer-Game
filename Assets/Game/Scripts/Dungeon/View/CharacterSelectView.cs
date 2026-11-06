@@ -65,7 +65,7 @@ namespace Game.Scripts.Dungeon
             {
                 _slots[i].image.color = i == slot ? s_pickedSlot : s_idleSlot;
                 _slotTexts[i].text = StashService.HasCharacter(i)
-                    ? $"<color=#c8e632>Lv. {StashService.LoadLevel(i)}</color>  {FindClass(StashService.LoadClass(i)).DisplayName}"
+                    ? $"{StashService.LoadName(i)}\n<size=80%><color=#c8e632>Lv. {StashService.LoadLevel(i)}</color>  {FindClass(StashService.LoadClass(i)).DisplayName}</size>"
                     : "<color=#6f6a5f>+  Create Character</color>";
             }
 
@@ -83,7 +83,7 @@ namespace Game.Scripts.Dungeon
 
             ClassConfig config = FindClass(StashService.LoadClass(slot));
             _preview.Bind(null, config);
-            _nameText.text = $"<color=#c8e632>Lv. {StashService.LoadLevel(slot)}</color> {config.DisplayName}";
+            _nameText.text = $"{StashService.LoadName(slot)}  <color=#c8e632>Lv. {StashService.LoadLevel(slot)}</color> {config.DisplayName}";
         }
 
         private int FirstCharacter()

@@ -8,7 +8,8 @@ namespace Game.Scripts.Dungeon
     /// keeps its own stash, kit, profile and build; the parameterless calls work on the slot picked on the character select screen.
     public static class StashService
     {
-        public const int SlotCount = 3;
+        public const int SlotCount = 2;
+        public const int MaxNameLength = 16;
 
         private const string KitKey = "kit";
         private const string StashKey = "stash";
@@ -49,13 +50,14 @@ namespace Game.Scripts.Dungeon
         public static bool HasCharacter(int slot) => PlayerPrefs.HasKey(Key(slot, ClassKey));
         public static byte LoadClass(int slot) => (byte)PlayerPrefs.GetInt(Key(slot, ClassKey), 0);
         public static int LoadLevel(int slot) => PlayerPrefs.GetInt(Key(slot, LevelKey), 1);
+        public static string LoadName(int slot) => PlayerPrefs.GetString(Key(slot, NameKey), string.Empty);
 
         public static byte[] LoadKit() => Load(Key(s_slot, KitKey));
         public static byte[] LoadStash(int page) => Load(StashPageKey(page));
         public static int LoadLevel() => LoadLevel(s_slot);
         public static int LoadExperience() => PlayerPrefs.GetInt(Key(s_slot, ExperienceKey), 0);
         public static byte LoadClass() => LoadClass(s_slot);
-        public static string LoadName() => PlayerPrefs.GetString(Key(s_slot, NameKey), string.Empty);
+        public static string LoadName() => LoadName(s_slot);
         public static byte LoadSkillA() => (byte)PlayerPrefs.GetInt(Key(s_slot, SkillAKey), 0);
         public static byte LoadSkillB() => (byte)PlayerPrefs.GetInt(Key(s_slot, SkillBKey), 1);
         public static int LoadPerkMask() => PlayerPrefs.GetInt(Key(s_slot, PerksKey), 1);
@@ -70,11 +72,12 @@ namespace Game.Scripts.Dungeon
             PlayerPrefs.Save();
         }
 
-        /// A new character is only its class; the kit, stash and build start from the class defaults on the first tavern visit.
-        public static void CreateCharacter(int slot, byte classId)
+        /// A new character is only its class and nickname; the kit, stash and build start from the class defaults on the first tavern visit.
+        public static void CreateCharacter(int slot, byte classId, string name)
         {
             DeleteCharacter(slot);
             PlayerPrefs.SetInt(Key(slot, ClassKey), classId);
+            PlayerPrefs.SetString(Key(slot, NameKey), name);
             PlayerPrefs.SetInt(Key(slot, LevelKey), 1);
             PlayerPrefs.Save();
         }

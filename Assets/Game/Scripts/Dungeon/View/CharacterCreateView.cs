@@ -5,26 +5,30 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Character creation: the class list on the left, the class body in the middle, its description and attributes on the right.
+    /// Character creation, UI only: the class list on the left, the class hexagram in the middle, its description on the right,
+    /// the nickname above the Create button.
     public sealed class CharacterCreateView : DisplayableView
     {
-        public event Action<byte> OnCreated;
+        public event Action<byte, string> OnCreated;
         public event Action OnCancelled;
 
         [SerializeField, Tooltip("Indexed like the class buttons")]
         private ClassConfig[] _classes;
 
         [SerializeField]
-        private CharacterPreviewView _preview;
+        private Button[] _classButtons;
 
         [SerializeField]
-        private Button[] _classButtons;
+        private StatsView _stats;
 
         [SerializeField]
         private TMP_Text _nameText;
 
         [SerializeField]
         private TMP_Text _descriptionText;
+
+        [SerializeField]
+        private TMP_InputField _nicknameInput;
 
         [SerializeField]
         private Button _createButton;
@@ -34,7 +38,10 @@ namespace Game.Scripts.Dungeon
 
         private static readonly Color s_idleClass = new(0.05f, 0.04f, 0.035f, 0.96f);
         private static readonly Color s_pickedClass = new(0.22f, 0.17f, 0.1f, 0.98f);
+        private readonly AdventurerStats _classStats = new();
         private int _selected;
+
+        private string Nickname => _nicknameInput.text.Trim();
 
         private void Awake()
         {
@@ -44,13 +51,18 @@ namespace Game.Scripts.Dungeon
                 _classButtons[i].onClick.AddListener(() => { Click(); Select(index); });
             }
 
-            _createButton.onClick.AddListener(() => { Click(); OnCreated?.Invoke(_classes[_selected].Id); });
+            _nicknameInput.characterLimit = StashService.MaxNameLength;
+            _nicknameInput.onValueChanged.AddListener(_ => RefreshCreate());
+            _createButton.onClick.AddListener(() => { Click(); OnCreated?.Invoke(_classes[_selected].Id, Nickname); });
             _backButton.onClick.AddListener(() => { Click(); OnCancelled?.Invoke(); });
+            _stats.Bind(_classStats);
         }
 
         private void OnEnable()
         {
+            _nicknameInput.text = string.Empty;
             Select(0);
+            RefreshCreate();
         }
 
         private void Select(int index)
@@ -61,12 +73,14 @@ namespace Game.Scripts.Dungeon
             for (int i = 0; i < _classButtons.Length; i++)
                 _classButtons[i].image.color = i == index ? s_pickedClass : s_idleClass;
 
-            _preview.SetCharacterShown(true);
-            _preview.Bind(null, config);
+            _classStats.Recalculate(config, null, null, -1, 0);
             _nameText.text = config.DisplayName;
-            ClassStats stats = config.BaseStats;
-            _descriptionText.text = $"{config.Description}\n\n<color=#d9b873>Attributes</color>\n" +
-                $"Strength {stats.Strength}  ·  Vitality {stats.Vitality}  ·  Spirit {stats.Spirit}\nKnowledge {stats.Knowledge}  ·  Agility {stats.Agility}  ·  Dexterity {stats.Dexterity}";
+            _descriptionText.text = config.Description;
+        }
+
+        private void RefreshCreate()
+        {
+            _createButton.interactable = Nickname.Length > 0;
         }
 
         private static void Click()
