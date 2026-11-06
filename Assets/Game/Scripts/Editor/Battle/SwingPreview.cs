@@ -347,9 +347,9 @@ namespace Game.Scripts.Editor.Battle
 
                     foreach (string view in views)
                     {
-                        rig.Animator.GetBoneTransform(HumanBodyBones.Head).localScale = view == "fp" ? Vector3.zero : Vector3.one;
+                        rig.Animator.GetBoneTransform(HumanBodyBones.Head).localScale = view.StartsWith("fp") ? Vector3.zero : Vector3.one;
                         Place(camera, view, rig.Animator.GetBoneTransform(HumanBodyBones.RightHand).position);
-                        Render(camera, view == "fp" ? size * 16 / 9 : size, size, $"{folder}/g_{swing}_{view}_{frame}.png");
+                        Render(camera, view.StartsWith("fp") ? size * 16 / 9 : size, size, $"{folder}/g_{swing}_{view}_{frame}.png");
                     }
                 }
             }
@@ -395,7 +395,7 @@ namespace Game.Scripts.Editor.Battle
         {
             camera.fieldOfView = 35f;
             // The neck stump left by the hidden head comes into the eye when the chest leans into a swing.
-            camera.nearClipPlane = view == "fp" ? 0.1f : 0.04f;
+            camera.nearClipPlane = view.StartsWith("fp") ? 0.1f : 0.04f;
 
             // A free camera to match a footage view: "c_x_y_z_tx_ty_tz_fov" (position, look-at point, field of view).
             if (view.StartsWith("c_"))
@@ -404,6 +404,15 @@ namespace Game.Scripts.Editor.Battle
                 camera.fieldOfView = v[6];
                 camera.transform.position = new Vector3(v[0], v[1], v[2]);
                 camera.transform.LookAt(new Vector3(v[3], v[4], v[5]));
+
+                return;
+            }
+
+            // The player's eyes at another field of view: "fp_<vertical fov>" (58.7 = the footage's 90 horizontal).
+            if (view.StartsWith("fp_"))
+            {
+                camera.fieldOfView = float.Parse(view.Substring(3), System.Globalization.CultureInfo.InvariantCulture);
+                camera.transform.SetPositionAndRotation(BattleAnimationLibrary.Eye, Quaternion.identity);
 
                 return;
             }

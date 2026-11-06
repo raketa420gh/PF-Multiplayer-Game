@@ -1227,13 +1227,32 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void ArmingVariants(int variant, AttackDefinition forehand, AttackDefinition backhand, AttackDefinition riposte)
         {
-            bool isEye = variant == 2;
+            bool isEye = variant >= 2;
             Vector3 offHand = Cm(-28f, 0.95f, 0f);
 
             // Forehand: the footage's own cocking and cut, only the peak differs - the arm reaches out straight.
             forehand.MidPose = isEye
                 ? Peak(Cm(8f, 1.62f, 45f), -10f, 5f, Cm(28f, 1.5f, 15f), Cm(-35f, 1.05f, -45f), 70f)
                 : Peak(Cm(20f, 1.45f, 50f), 0f, 10f, Cm(32f, 1.32f, 25f), Cm(-35f, 1.05f, -45f), 70f);
+
+            // 3: the forehand read frame by frame off the first-person footage. The fist climbs past the right of the face
+            // with the elbow ahead at shoulder height and the forearm upright, the blade laid back past the right ear, then
+            // the straight arm drives the fist down-left under the crosshair. Elbows and the haft's lie across the palm are picked
+            // so every arm muscle stays inside the avatar's range (the wrist cannot bend the blade in line with the forearm).
+            if (variant == 3)
+            {
+                forehand.Raise = new()
+                {
+                    Via(6, At(Cm(11f, 1.61f, 21f), -40f, 70f, 10f, 0f, Cm(30f, 1.55f, 10f), Cm(-35f, 1f, 5f), 17.5f)),
+                    Via(10, At(Cm(11f, 1.67f, 15f), -120f, 50f, 20f, -5f, Cm(40f, 1.7f, 7f), Cm(-40f, 1f, 10f), 32.5f)),
+                    Via(14, At(Cm(9f, 1.73f, 11f), -165f, 15f, 25f, -5f, Cm(16f, 1.45f, 14f), Cm(-40f, 1f, 10f), 17.5f), 0.5f),
+                    Via(22, At(Cm(8f, 1.73f, 12f), 160f, 0f, 25f, -5f, Cm(16f, 1.45f, 14f), Cm(-40f, 1f, 10f), 17.5f), 0.5f)
+                };
+                forehand.WindupPose = At(Cm(11f, 1.73f, 29f), 170f, 80f, 10f, 0f, Cm(45f, 1.68f, 40f), Cm(-35f, 1.05f, 0f), 28.75f);
+                forehand.EndPose = At(Cm(-10f, 1f, 50f), -45f, -40f, -45f, 15f, Cm(-15f, 1.5f, 45f), Cm(-38f, 1f, -35f), 60f);
+                forehand.Return[0] = Via(42, At(Cm(-25f, 0.95f, 25f), -115f, -30f, -50f, 15f, Cm(-20f, 1.45f, 18f), Cm(-38f, 1f, -32f), 46.25f), 0.5f);
+                forehand.MidPose = Peak(Cm(-8f, 1.45f, 50f), -10f, 5f, Cm(25f, 1.4f, -10f), Cm(-35f, 1.05f, -45f), 40f);
+            }
 
             // Backhand slot = the footage's attack #2: the sword laid level behind the head with the fist above the crown and
             // the chest wound 45 left, over the top, the straight arm at the peak, down the right side and out right-back.
