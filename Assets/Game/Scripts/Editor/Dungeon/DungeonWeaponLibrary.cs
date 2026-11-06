@@ -1287,25 +1287,35 @@ namespace Game.Scripts.Editor.Dungeon
                 },
                 After = forehand
             };
-            // The arm swings out level to the right with the blade turned forward, holds, and sweeps it in before the shoulder.
+            // From the backhand's end the blade swings in level to point ahead, the fist drawn back beside the right shoulder,
+            // hangs aimed, then a straight punch along the blade into the crosshair, held, and the tip rises back to upright.
+            // The thumb-up roll the thrust carries from the backhand's end: the keys either side of the strike keep it, or the
+            // arm solve gives them a roll of their own and the blade turns about its axis just before and after the hit.
+            BodyPose Edged(BodyPose pose)
+            {
+                pose.Edge = new Vector3(0.53f, -0.78f, 0.33f);
+
+                return pose;
+            }
+
             AttackDefinition thrust = new AttackDefinition
             {
-                Windup = 43 * Footage, Active = 9 * Footage, Recovery = 56 * Footage, Damage = Mathf.RoundToInt(damage * 1.1f), MoveMultiplier = 0.6f, Stagger = 0.2f, Launch = 1f,
+                Windup = 35 * Footage, Active = 9 * Footage, Recovery = 48 * Footage, Damage = Mathf.RoundToInt(damage * 1.1f), MoveMultiplier = 0.6f, Stagger = 0.2f, Launch = 1f,
                 Raise = new()
                 {
-                    Via(8, At(Cm(48f, 1.15f, -5f), 95f, -5f, 30f, 5f, Cm(36f, 1.28f, -10f), Cm(-35f, 1f, 5f), 50f)),
-                    Via(14, At(Cm(55f, 1.4f, 0f), 60f, 5f, 30f, 0f, Cm(35f, 1.38f, -8f), Cm(-25f, 1f, 0f), 35f)),
-                    Via(22, At(Cm(55f, 1.45f, 5f), 12f, 5f, 30f, 0f, Cm(35f, 1.38f, -8f), Cm(-20f, 1f, 0f)), 0.5f),
-                    Via(37, At(Cm(55f, 1.45f, 5f), 12f, 5f, 30f, 0f, Cm(35f, 1.45f, -5f), Cm(-20f, 1f, 0f)), 0.5f)
+                    Via(8, At(Cm(45f, 1.38f, -15f), 65f, 0f, 40f, 0f, Cm(35f, 1.35f, -35f), Cm(-25f, 1f, 5f), 50f)),
+                    Via(14, At(Cm(42f, 1.42f, -20f), 25f, 3f, 40f, 0f, Cm(32f, 1.38f, -40f), Cm(-25f, 1f, 5f), 55f)),
+                    Via(20, Edged(At(Cm(38f, 1.43f, -20f), -18f, 8f, 35f, 0f, Cm(30f, 1.4f, -42f), Cm(-25f, 1f, 5f), 65f)), 0.5f),
+                    Via(30, Edged(At(Cm(37f, 1.43f, -16f), -18f, 8f, 30f, 0f, Cm(30f, 1.4f, -40f), Cm(-25f, 1f, 5f), 65f)), 0.5f)
                 },
-                WindupPose = At(Cm(22f, 1.38f, 24f), -16f, 24f, 10f, 5f, Cm(25f, 1.15f, 0f), Cm(-22f, 1f, 0f), 55f),
-                MidPose = Peak(Cm(15f, 1.5f, 50f), -5f, 10f, Cm(18f, 1.42f, 25f), Cm(-25f, 0.95f, -10f), 60f),
-                EndPose = At(Cm(13f, 1.53f, 57f), -16f, 24f, -10f, 15f, Cm(16f, 1.32f, 33f), Cm(-25f, 0.95f, -15f), 65f),
+                WindupPose = At(Cm(34f, 1.44f, -8f), -17f, 9f, 25f, 0f, Cm(32f, 1.4f, -32f), Cm(-25f, 1f, 5f), 65f),
+                MidPose = Peak(Cm(16f, 1.51f, 38f), 0f, 6f, Cm(37f, 1.32f, 12f), Cm(-25f, 1f, 10f), 95f),
+                EndPose = At(Cm(15f, 1.52f, 41f), -14f, 14f, -3f, 6f, Cm(37f, 1.32f, 12f), Cm(-25f, 1f, 10f), 95f),
                 Return = new()
                 {
-                    Via(70, At(Cm(14f, 1.47f, 52f), -14f, 26f, -5f, 10f, Cm(15f, 1.35f, 30f), Cm(-25f, 1f, -5f), 60f), 0.5f),
-                    Via(80, At(Cm(15f, 1.2f, 45f), 0f, 35f, 0f, 5f, Cm(20f, 1.2f, 20f), Cm(-25f, 1f, 5f), 40f)),
-                    Via(92, At(Cm(20f, 1.15f, 40f), 0f, 60f, 0f, 5f, Cm(25f, 1.05f, 15f), Cm(-25f, 1f, 5f), 15f))
+                    Via(56, Edged(At(Cm(15f, 1.51f, 40f), -14f, 15f, -3f, 6f, Cm(37f, 1.31f, 12f), Cm(-25f, 1f, 10f), 95f)), 0.5f),
+                    Via(70, At(Cm(20f, 1.38f, 45f), -5f, 35f, -5f, 5f, Cm(33f, 1.25f, 12f), Cm(-25f, 1f, 5f), 70f)),
+                    Via(84, At(Cm(25f, 1.22f, 32f), 0f, 70f, 0f, 5f, Cm(30f, 1.05f, 2f), Cm(-25f, 1f, 5f), 15f))
                 },
                 After = backhand
             };

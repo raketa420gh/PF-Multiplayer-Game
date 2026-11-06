@@ -396,6 +396,7 @@ namespace Game.Scripts.Battle
     public sealed class HandGrip
     {
         public const float BlendFrames = 6f;
+        private const float LeanFrames = 12f;
 
         public HumanBodyBones Hand => _hand;
         public HumanBodyBones Anchor => _anchor;
@@ -447,6 +448,10 @@ namespace Game.Scripts.Battle
         [Tooltip("Hold: where the joint limits or the reach stop the hand short, the weapon keeps its path and the grip gives way")]
         [SerializeField]
         private bool _keepsPath;
+
+        [Tooltip("Hold: the weapon keeps the lean in the fist the clip gives it (a thrust with the blade along the forearm); the grip sets where the palm is and the roll")]
+        [SerializeField]
+        private bool _keepsLean;
 
         private HandGrip(HumanBodyBones hand, HumanBodyBones anchor, bool isHolding, int start, int end)
         {
@@ -546,7 +551,11 @@ namespace Game.Scripts.Battle
             {
                 // The weapon stays where the socket has it now, the hand is placed so the socket reaches it with the new grip.
                 Vector3 position = Vector3.Lerp(socket.localPosition, _position, weight);
-                Quaternion local = Quaternion.Slerp(socket.localRotation, _rotation, weight);
+                // The lean comes in over the first frames: the clip before ends with the weapon square in this grip.
+                Quaternion grip = _keepsLean
+                    ? Quaternion.Slerp(_rotation, _rotation * Quaternion.Inverse(_restRotation) * socket.localRotation, (frame - _start) / LeanFrames)
+                    : _rotation;
+                Quaternion local = Quaternion.Slerp(socket.localRotation, grip, weight);
                 rotation = weapon.rotation * Quaternion.Inverse(local);
                 target = weapon.position - rotation * position;
                 socket.SetLocalPositionAndRotation(position, local);
