@@ -328,6 +328,7 @@ namespace Game.Scripts.Editor.Battle
                     int index = Mathf.Clamp(frame, 0, poses.Length - 1);
                     rig.Plan(poses, false);
                     rig.Apply(poses[index], index);
+                    Grip(rig, poses[index]);
 
                     // The clips are authored right-handed: a weapon the game plays mirrored is shown in the other hand, mirrored with it.
                     foreach (WeaponAttachment attachment in config != null ? config.Attachments : Array.Empty<WeaponAttachment>())
@@ -347,7 +348,7 @@ namespace Game.Scripts.Editor.Battle
                     foreach (string view in views)
                     {
                         rig.Animator.GetBoneTransform(HumanBodyBones.Head).localScale = view == "fp" ? Vector3.zero : Vector3.one;
-                        Place(camera, view);
+                        Place(camera, view, rig.Animator.GetBoneTransform(HumanBodyBones.RightHand).position);
                         Render(camera, view == "fp" ? size * 16 / 9 : size, size, $"{folder}/g_{swing}_{view}_{frame}.png");
                     }
                 }
@@ -359,6 +360,21 @@ namespace Game.Scripts.Editor.Battle
                 foreach (GameObject item in stage)
                     Object.DestroyImmediate(item);
             }
+        }
+
+        /// The body within the avatar's limits and the fingers curled as the clip records them, as the game shows the pose.
+        private static void Grip(BattlePoseRig rig, BodyPose pose)
+        {
+            HumanPose human = rig.CaptureWithinLimits(BattleAnimationBuilder.BodyMuscleCount);
+
+            for (int i = BattleAnimationBuilder.BodyMuscleCount; i < HumanTrait.MuscleCount; i++)
+            {
+                if (HumanTrait.MuscleName[i].EndsWith("Stretched"))
+                    human.muscles[i] = Mathf.Lerp(-0.8f, 0.4f, HumanTrait.MuscleName[i].StartsWith("Left") ? pose.OffOpen : pose.MainOpen);
+            }
+
+            using HumanPoseHandler handler = new HumanPoseHandler(rig.Animator.avatar, rig.Animator.transform);
+            handler.SetHumanPose(ref human);
         }
 
         internal static GameObject CreateLight(float intensity, float yaw)
@@ -375,12 +391,33 @@ namespace Game.Scripts.Editor.Battle
 
         /// The player's own eyes at the game's field of view, or the fighter from the front (it faces the camera, its
         /// right is on the left of the picture), from its right side, or from above with its front down the picture.
-        private static void Place(Camera camera, string view)
+        private static void Place(Camera camera, string view, Vector3 hand)
         {
             camera.fieldOfView = 35f;
+            // The neck stump left by the hidden head comes into the eye when the chest leans into a swing.
+            camera.nearClipPlane = view == "fp" ? 0.1f : 0.04f;
+
+            // A free camera to match a footage view: "c_x_y_z_tx_ty_tz_fov" (position, look-at point, field of view).
+            if (view.StartsWith("c_"))
+            {
+                float[] v = Array.ConvertAll(view.Substring(2).Split('_'), s => float.Parse(s, System.Globalization.CultureInfo.InvariantCulture));
+                camera.fieldOfView = v[6];
+                camera.transform.position = new Vector3(v[0], v[1], v[2]);
+                camera.transform.LookAt(new Vector3(v[3], v[4], v[5]));
+
+                return;
+            }
 
             switch (view)
             {
+                case "hand":
+                    camera.transform.position = hand + new Vector3(0.45f, 0.2f, 0.55f);
+                    camera.transform.LookAt(hand + new Vector3(0f, 0.03f, 0.05f));
+                    break;
+                case "back":
+                    camera.transform.position = new Vector3(2.2f, 2.3f, -3.6f);
+                    camera.transform.LookAt(new Vector3(0f, 1.2f, 0.3f));
+                    break;
                 case "fp":
                     camera.fieldOfView = 75f;
                     camera.transform.SetPositionAndRotation(BattleAnimationLibrary.Eye, Quaternion.identity);
