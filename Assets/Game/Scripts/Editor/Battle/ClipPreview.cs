@@ -11,7 +11,7 @@ namespace Game.Scripts.Editor.Battle
 {
     /// Renders built clips on the character as the player sees them, fingers included (SwingPreview poses the rig and
     /// leaves the fingers flat): the shots to set beside first-person footage. Called from outside the editor while
-    /// first-person clips are being authored (.claude/skills/video-to-animation).
+    /// first-person clips are being authored.
     internal static class ClipPreview
     {
         private const int Layer = 31;
