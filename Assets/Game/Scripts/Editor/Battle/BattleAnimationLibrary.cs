@@ -187,6 +187,8 @@ namespace Game.Scripts.Editor.Battle
         public const float InteractCycle = 0.9f;
         /// The torch goes up over the head in 24 frames at 60 fps (the footage) and is kept there while RMB is held.
         public const float TorchRaiseTime = 24f / 60f;
+        /// A throwing weapon is drawn back and the aiming hand is up 16 frames after LMB, as in the footage.
+        public const float ThrowRaiseTime = 16f / 60f;
         public const float AbilityTime = FighterAnimComponent.AbilityTime;
         public const float AbilityPeak = FighterAnimComponent.AbilityPeak;
         /// A belt item is no handle to close the fist on: the fingers lie around it.
@@ -779,33 +781,91 @@ namespace Game.Scripts.Editor.Battle
                 new(0f, 0.96f, -0.27f), new(-0.35f, 0.25f, 0.9f), 0.4f);
         }
 
-        /// Drawing a knife or a francisca back to throw: the main hand goes up over the right shoulder, the head pointing up and back;
+        /// Drawing a knife or a francisca back to throw as in the Dark and Darker footage: the main hand whips it up and back over
+        /// the right shoulder, out of the view in 4 frames, while the open off hand comes up at the bottom of the view to aim;
         /// the clip ends on the draw, which is kept while LMB is held.
         public static List<PoseKey> ThrowAimKeys()
         {
             return new List<PoseKey>
             {
                 new(0f, Hold()),
-                new(TorchRaiseTime, Held(new(0.26f, 1.86f, 0.02f), new(0f, 0.75f, -0.66f), new(0.05f, 0.98f, -0.15f)), Ease.Out)
+                new(5f / 60f, Held(new(0.3f, 1.8f, 0.14f), new(0.05f, 0.95f, -0.3f), new(0.05f, 0.95f, 0.3f)), Ease.In),
+                new(ThrowRaiseTime, ThrowDrawn(), Ease.Out)
             };
         }
 
-        /// The throw: the hand comes over the top and lets go ahead of the eyes at FighterAnimComponent.TorchRelease, then follows
-        /// through open to the lower left and comes back to the hold (the next weapon of the stack is already in it).
+        /// The throw as in the footage: the aiming hand drops, the main hand comes over the top and lets the weapon go ahead of the
+        /// eyes, blade still up, at FighterAnimComponent.ThrowLetGo; the open hand follows through down out of the view, takes the
+        /// next weapon of the stack there and brings it up into the hold.
         public static List<PoseKey> ThrowReleaseKeys()
         {
-            BodyPose release = Held(new(0.14f, 1.78f, 0.55f), new(0f, 0.2f, 1f), new(-0.05f, 0.35f, 0.94f));
-            BodyPose follow = Held(new(0.02f, 1.35f, 0.5f), new(0f, -0.5f, 0.85f), new(-0.3f, -0.2f, 0.93f));
+            BodyPose over = Held(new(0.14f, 1.95f, 0.33f), new(0f, 0.97f, -0.05f), new(0f, 0.55f, 0.83f));
+            BodyPose ahead = Held(new(0.175f, 1.9f, 0.5f), new(-0.1f, 0.9f, 0.3f), new(-0.1f, 0.5f, 0.86f));
+            BodyPose release = Held(new(0.06f, 1.725f, 0.565f), new(-0.3f, 0.75f, 0.6f), new(-0.15f, 0.45f, 0.88f));
+            BodyPose open = Held(new(0.06f, 1.54f, 0.53f), new(-0.3f, 0.6f, 0.75f), new(-0.2f, 0.25f, 0.95f));
+            BodyPose follow = Held(new(0.02f, 1.35f, 0.48f), new(-0.35f, 0.45f, 0.82f), new(-0.25f, -0.1f, 0.96f));
+            BodyPose belt = Held(new(0.2f, 1.12f, 0.28f), new(0f, 0.95f, 0.3f), new(-0.1f, 0.5f, 0.86f));
+            open.MainOpen = 0.9f;
             follow.MainOpen = 0.9f;
 
             return new List<PoseKey>
             {
-                new(0f, Held(new(0.26f, 1.86f, 0.02f), new(0f, 0.75f, -0.66f), new(0.05f, 0.98f, -0.15f))),
-                new(4f / 60f, Held(new(0.24f, 1.92f, 0.25f), new(0f, 0.9f, 0.4f), new(0f, 0.9f, 0.3f)), Ease.In),
-                new(FighterAnimComponent.TorchRelease, release),
-                new(12f / 60f, follow, Ease.Out),
-                new(FighterAnimComponent.TorchThrowTime, Hold())
+                new(0f, ThrowDrawn()),
+                new(6f / 60f, over, Ease.In),
+                new(8f / 60f, ahead, Ease.Linear),
+                new(FighterAnimComponent.ThrowLetGo, release, Ease.Linear),
+                new(13f / 60f, open, Ease.Linear),
+                new(17f / 60f, follow, Ease.Out),
+                new(28f / 60f, belt),
+                new(FighterAnimComponent.ThrowReleaseTime, Hold())
             };
+        }
+
+        /// The weapon drawn back over the right shoulder out of the view; the open off hand up at the bottom of the view, a bit left
+        /// of the middle, palm in and fingers up.
+        private static BodyPose ThrowDrawn()
+        {
+            BodyPose pose = Held(new(0.26f, 1.86f, 0.02f), new(0f, 0.75f, -0.66f), new(0.05f, 0.98f, -0.15f));
+            pose.Off = new HandPose(new(-0.085f, 1.488f, 0.445f), new(0f, 0.57f, -0.82f), new(0.15f, 0.8f, 0.55f));
+            pose.OffOpen = 0.8f;
+
+            return pose;
+        }
+
+        /// Taking something from the floor as in the Dark and Darker footage, whatever is in the hands and wherever the player
+        /// looks: the open left hand comes up from the lower left to before the chest, closes on the item at frame 13 and is
+        /// pulled back down out of the view. Recorded for the left arm alone (FighterAnimComponent.PickUpLayerName).
+        public static List<PoseKey> PickUpKeys()
+        {
+            Vector3 reachThumb = new(0f, 0.57f, -0.82f);
+            Vector3 reachFingers = new(0.3f, 0.75f, 0.6f);
+            Vector3 fistThumb = new(0.1f, 0.9f, -0.4f);
+            Vector3 fistFingers = new(0.3f, 0.4f, 0.87f);
+
+            // The forearm comes in flat from the lower left corner: the elbow out to the left, low.
+            Vector3 elbow = new(-0.36f, 1.3f, 0.2f);
+
+            return new List<PoseKey>
+            {
+                new(0f, PickingUp(new(-0.22f, 1.2f, 0.3f), reachThumb, reachFingers, 0.6f)),
+                new(6f / 60f, PickingUp(new(-0.06f, 1.47f, 0.515f), reachThumb, reachFingers, 0.8f, elbow), Ease.In),
+                new(10f / 60f, PickingUp(new(-0.045f, 1.58f, 0.565f), reachThumb, reachFingers, 0.8f, elbow), Ease.Out),
+                new(13f / 60f, PickingUp(new(-0.07f, 1.59f, 0.57f), fistThumb, fistFingers, 0.25f, elbow)),
+                new(16f / 60f, PickingUp(new(-0.13f, 1.575f, 0.53f), fistThumb, fistFingers, 0f, elbow)),
+                new(20f / 60f, PickingUp(new(-0.15f, 1.51f, 0.48f), fistThumb, fistFingers, 0f, elbow), Ease.In),
+                new(24f / 60f, PickingUp(new(-0.2f, 1.45f, 0.42f), fistThumb, fistFingers, 0f, elbow), Ease.Linear),
+                new(FighterAnimComponent.PickUpTime, PickingUp(new(-0.24f, 1.22f, 0.3f), fistThumb, fistFingers, 0.1f), Ease.Out)
+            };
+        }
+
+        /// The off hand by its thumb and fingers; the main hand rests low, out of the pick-up layer anyway.
+        private static BodyPose PickingUp(Vector3 hand, Vector3 thumb, Vector3 fingers, float open, Vector3 elbow = default)
+        {
+            BodyPose pose = Cast(0.22f, 0.3f, 1.25f);
+            pose.Off = new HandPose(hand, thumb, fingers);
+            pose.OffOpen = open;
+
+            return Elbows(pose, Vector3.zero, elbow);
         }
 
         /// Raising a torch to throw as in Dark and Darker: the torch goes up over the head on the left, out of the view, the

@@ -171,6 +171,10 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public byte BeltSlot { get; private set; } = NoBelt;
 
+        /// Tick the adventurer last took something from the floor: everyone plays the pick-up from it.
+        [Networked]
+        public int PickUpTick { get; private set; }
+
         public bool HasBeltItemInHand => BeltSlot != NoBelt;
         public bool IsTorchInHand => HasBeltItemInHand && _torchWeapon != null && _inventory.GetEquippedConfig<ConsumableItemConfig>((EquipSlot)BeltSlot) is { IsLight: true };
 
@@ -695,6 +699,12 @@ namespace Game.Scripts.Dungeon
             _session?.AddExperience(amount);
         }
 
+        /// Something was taken from the floor: the left hand plays the pick-up.
+        public void MarkPickUp()
+        {
+            PickUpTick = Runner.Tick;
+        }
+
         public void AddKill()
         {
             Kills++;
@@ -1037,11 +1047,13 @@ namespace Game.Scripts.Dungeon
         private void ReleaseThrow()
         {
             byte kind = _fighter.Combat.BusyKind == BusyTorchAim ? BusyTorchThrow : BusyThrowRelease;
-            float speed = kind == BusyThrowRelease ? _stats.HandlingSpeed * (1f + Perk(PerkEffect.QuickThrow)) : 1f;
+            bool isKnife = kind == BusyThrowRelease;
+            float speed = isKnife ? _stats.HandlingSpeed * (1f + Perk(PerkEffect.QuickThrow)) : 1f;
             _throwPower = ThrowDraw;
             _fighter.Combat.CancelBusy();
-            _fighter.Combat.StartBusy(FighterAnimComponent.TorchThrowTime / speed, kind, speed);
-            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(FighterAnimComponent.TorchRelease / speed / Runner.DeltaTime);
+            _fighter.Combat.StartBusy((isKnife ? FighterAnimComponent.ThrowReleaseTime : FighterAnimComponent.TorchThrowTime) / speed, kind, speed);
+            float letGo = isKnife ? FighterAnimComponent.ThrowLetGo : FighterAnimComponent.TorchRelease;
+            _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(letGo / speed / Runner.DeltaTime);
         }
 
         /// Let go at once the throw goes up as a candle and lands near; fully drawn it flies almost straight, slightly dropping.

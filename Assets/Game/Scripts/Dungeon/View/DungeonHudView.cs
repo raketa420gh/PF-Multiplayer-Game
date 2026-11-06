@@ -100,6 +100,9 @@ namespace Game.Scripts.Dungeon
         private BeltSlot[] _belt;
 
         [SerializeField]
+        private ThrowCrosshairView _throwCrosshair;
+
+        [SerializeField]
         private Image _vignette;
 
         [SerializeField]
@@ -166,6 +169,7 @@ namespace Game.Scripts.Dungeon
             UpdateReadied(adventurer);
             UpdateMarker(adventurer);
             UpdateBoss(adventurer);
+            UpdateThrowCrosshair(adventurer);
         }
 
         private void UpdateReadied(AdventurerComponent adventurer)
@@ -220,6 +224,14 @@ namespace Game.Scripts.Dungeon
                 AbilityTargeting.Aura => spell.AuraTime > 0f ? "aura around you" : "burst around you",
                 _ => "on you"
             };
+        }
+
+        private void UpdateThrowCrosshair(AdventurerComponent adventurer)
+        {
+            bool isThrowing = adventurer.HasBeltItemInHand &&
+                              adventurer.Inventory.GetEquippedConfig<UtilityItemConfig>((EquipSlot)adventurer.BeltSlot) is { UtilityKind: UtilityKind.ThrowingWeapon };
+            bool isReleasing = adventurer.Fighter.Combat.BusyKind == AdventurerComponent.BusyThrowRelease;
+            _throwCrosshair.Refresh(isThrowing, adventurer.IsAimingThrow, adventurer.ThrowDraw, isReleasing);
         }
 
         private void UpdateBoss(AdventurerComponent adventurer)

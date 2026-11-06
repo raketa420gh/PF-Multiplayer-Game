@@ -1,12 +1,14 @@
 # Weapons Art
 
 ## Weapon Set
-В игре восемь предметов-оружия (остальное оружие, включая Halberd, Torch, Lute, Crystal Ball и Recurve Bow, удалено; старые id предметов мигрируются `StashService`):
+В игре десять предметов-оружия (остальное оружие, включая Halberd, Torch, Lute, Crystal Ball и Recurve Bow, удалено; старые id предметов мигрируются `StashService`):
 
 | Оружие | Тип | Комбо со щитом |
 |---|---|---|
 | Arming Sword | Одноручное | Sword & Shield, Sword & Écu |
 | Morning Star | Одноручное | Mace & Shield (модель моргенштерна), Mace & Écu |
+| Misericorde (рондель) | Одноручное, правая рука | Misericorde & Shield, Misericorde & Écu |
+| Poniard (стилет) | Одноручное, левая рука, обратный хват; бьёт и блокирует, только если правая рука пуста | — |
 | Battle Axe | Двуручное | — |
 | Magic Staff | Двуручное, фокус | — |
 | Spellbook | Фокус, отдельное оружие | — |

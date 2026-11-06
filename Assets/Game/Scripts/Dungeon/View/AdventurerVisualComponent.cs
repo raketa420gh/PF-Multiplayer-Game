@@ -64,6 +64,7 @@ namespace Game.Scripts.Dungeon
             }
 
             _anim.SetSeated(_adventurer.IsSeated);
+            _anim.SetPickUp(_adventurer.PickUpTick > 0 ? (Runner.Tick - _adventurer.PickUpTick) * Runner.DeltaTime : float.MaxValue);
             bool isHolding = _adventurer.HasBeltItemInHand && !_adventurer.IsHandsOccupied;
             _anim.SetHolding(isHolding, isHolding && _adventurer.Inventory.GetEquippedConfig<ConsumableItemConfig>((EquipSlot)_adventurer.BeltSlot) is { IsLight: true });
             // Torch blows are left-hand swings played mirrored.
@@ -79,6 +80,13 @@ namespace Game.Scripts.Dungeon
         {
             InventoryComponent inventory = _adventurer.Inventory;
             ItemStack stack = _adventurer.HasBeltItemInHand && !_adventurer.IsHandsOccupied ? inventory.GetEquipped((EquipSlot)_adventurer.BeltSlot) : default;
+            // The hand is empty from the throw until it has taken the next weapon of the stack below the view.
+            CombatComponent combat = _adventurer.Fighter.Combat;
+            bool isThrownOut = combat.State == CombatState.Busy && combat.BusyKind == AdventurerComponent.BusyThrowRelease &&
+                               combat.StateTime >= FighterAnimComponent.ThrowLetGo && combat.StateTime < FighterAnimComponent.ThrowRestock;
+
+            if (_handItem != null && _handItem.activeSelf == isThrownOut)
+                _handItem.SetActive(!isThrownOut);
 
             if (stack.ItemId == _shownHandItem)
                 return;

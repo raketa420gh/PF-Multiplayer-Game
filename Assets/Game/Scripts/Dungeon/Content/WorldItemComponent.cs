@@ -111,6 +111,7 @@ namespace Game.Scripts.Dungeon
             if (adventurer.Inventory.TryLoot(ref stack))
             {
                 adventurer.PlayItemSound(Stack.ItemId, ItemSound.Pickup, transform.position);
+                adventurer.MarkPickUp();
                 Runner.Despawn(Object);
             }
             else

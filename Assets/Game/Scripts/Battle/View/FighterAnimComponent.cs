@@ -48,11 +48,22 @@ namespace Game.Scripts.Battle
         /// A knife or a francisca drawn back and thrown; the throw keeps the torch throw's timing.
         public const string ThrowAimState = "ThrowAim";
         public const string ThrowReleaseState = "ThrowRelease";
+        /// Throwing a knife as in the Dark and Darker footage: it leaves the hand 10 frames after the button is let go, the
+        /// empty hand goes down out of the view and comes back up with the next one at frame 40.
+        public const float ThrowReleaseTime = 40f / 60f;
+        public const float ThrowLetGo = 10f / 60f;
+        /// The empty hand is below the view and takes the next weapon of the stack.
+        public const float ThrowRestock = 24f / 60f;
         /// Throwing a torch as in the Dark and Darker footage: 27 frames at 60 fps, the torch leaves the hand at frame 6.
         public const float TorchThrowTime = 27f / 60f;
         public const float TorchRelease = 6f / 60f;
         public const string OpenState = "Open";
         public const string PickUpState = "PickUp";
+        /// Taking anything from the floor as in the Dark and Darker footage: the left hand reaches out and back in 28 frames,
+        /// on a layer of its own over whatever the rest of the body does.
+        public const string PickUpFirstPersonState = "PickUpFp";
+        public const string PickUpLayerName = "PickUp";
+        public const float PickUpTime = 28f / 60f;
         public const string BandageState = "Bandage";
         public const string BandageFirstPersonState = "BandageFp";
         public const string CastReleaseState = "CastRelease";
@@ -116,6 +127,8 @@ namespace Game.Scripts.Battle
         private const int BaseLayer = 0;
         private const int UpperLayer = 1;
         private const int HitLayer = 2;
+        /// The pick-up layer fades in and out this fast; its clip starts and ends with the hand below the view.
+        private const float PickUpFade = 0.06f;
         private const float RestSpeed = 0.3f;
         /// The busy kind whose clip is the follow-through of a thrown spell.
         private const int ReleaseBusy = 7;
@@ -134,6 +147,7 @@ namespace Game.Scripts.Battle
         private static readonly int s_hitStagger = Animator.StringToHash(HitStaggerState);
         private static readonly int s_hold = Animator.StringToHash(HoldState);
         private static readonly int s_holdTorch = Animator.StringToHash(HoldTorchState);
+        private static readonly int s_pickUp = Animator.StringToHash(PickUpFirstPersonState);
 
         /// Indexed by CombatComponent.BusyKind.
         private static readonly int[] s_busy =
@@ -202,6 +216,8 @@ namespace Game.Scripts.Battle
         private Transform _hips;
         private Transform[] _legs;
         private Renderer[] _headRenderers;
+        private int _pickUpLayer;
+        private float _pickUpTime = float.MaxValue;
 
         private void Awake()
         {
@@ -209,6 +225,7 @@ namespace Game.Scripts.Battle
                 _spineHeight = transform.InverseTransformPoint(_spineBones[0].position).y;
 
             _hips = _animator.GetBoneTransform(HumanBodyBones.Hips);
+            _pickUpLayer = _animator.GetLayerIndex(PickUpLayerName);
             _legs = new[]
             {
                 _animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg), _animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg),
@@ -256,6 +273,7 @@ namespace Game.Scripts.Battle
 
             UpdateLocomotion(isAlive, deltaTime);
             UpdateUpperBody(isAlive, deltaTime);
+            UpdatePickUp(isAlive);
             UpdatePitch();
         }
 
@@ -270,6 +288,12 @@ namespace Game.Scripts.Battle
         {
             _isHolding = isHolding;
             _isHoldingTorch = isTorch;
+        }
+
+        /// Seconds since the fighter last took something from the floor: the left hand plays the pick-up over the rest for PickUpTime.
+        public void SetPickUp(float time)
+        {
+            _pickUpTime = time;
         }
 
         /// Off-hand swings of a weapon held in the right-hand socket's place (the torch in the left hand): the humanoid mirror
@@ -513,6 +537,19 @@ namespace Game.Scripts.Battle
             _upperState = state;
             _upperToken = token;
             _animator.CrossFadeInFixedTime(state, FadeTime, UpperLayer, time);
+        }
+
+        private void UpdatePickUp(bool isAlive)
+        {
+            if (_pickUpLayer < 0)
+                return;
+
+            float fade = Mathf.Clamp01(Mathf.Min(_pickUpTime, PickUpTime - _pickUpTime) / PickUpFade);
+            float weight = isAlive && _pickUpTime < PickUpTime ? fade * _upperWeight : 0f;
+            _animator.SetLayerWeight(_pickUpLayer, weight);
+
+            if (weight > 0f)
+                _animator.Play(s_pickUp, _pickUpLayer, _pickUpTime / PickUpTime);
         }
 
         private void UpdatePitch()

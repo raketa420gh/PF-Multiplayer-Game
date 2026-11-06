@@ -31,7 +31,7 @@
 | Alchemist | Не решено, этап 0 не блокирует | — |
 | Confessor | Morning Star (щит может носить, по умолчанию его нет и он не любимое оружие) | ☐ |
 | Huntsman | Луки и арбалеты. Готово, только когда работают и Recurve Bow, и Crossbow | ☐ |
-| Knave | Кинжал. Ещё не сделан: модель, анимации, звуки с нуля | ☐ |
+| Knave | Кинжал. Сделаны Misericorde (правая рука) и Poniard (левая рука, стилет); ждут проверки | ☐ |
 
 - [ ] Стартовые наборы в `DungeonClassLibrary` привести к `Classes.md`: Mercenary — Écu вместо Round Shield, Confessor — без щита.
 

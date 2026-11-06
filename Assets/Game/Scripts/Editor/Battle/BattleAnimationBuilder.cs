@@ -69,6 +69,7 @@ namespace Game.Scripts.Editor.Battle
             using BattlePoseRig rig = new BattlePoseRig();
             s_held.Clear();
             BuildFirstPerson(rig, upper);
+            BuildPickUp(rig, controller);
 
             WeaponDefinition[] weapons = Game.Scripts.Editor.Dungeon.DungeonWeaponLibrary.CreateAll();
 
@@ -104,6 +105,7 @@ namespace Game.Scripts.Editor.Battle
             BuildActions(upper);
             rig.SetPalm(0f, 0f);
             BuildFirstPerson(rig, upper);
+            BuildPickUp(rig, controller);
             BuildHitReactions(controller.layers[2].stateMachine);
             BakeSockets(controller);
             BakeLeftHanded(controller, weapons, false);
@@ -602,12 +604,36 @@ namespace Game.Scripts.Editor.Battle
             AddState(upper, FighterAnimComponent.HoldTorchState, Record(rig, FighterAnimComponent.HoldTorchState, 1f, true, _ => BattleAnimationLibrary.HoldTorch()));
             AddKeyed(rig, upper, FighterAnimComponent.TorchAimState, BattleAnimationLibrary.TorchRaiseTime, SettleRoll(rig, BattleAnimationLibrary.TorchAimKeys()));
             AddKeyed(rig, upper, FighterAnimComponent.TorchThrowState, FighterAnimComponent.TorchThrowTime, SettleRoll(rig, BattleAnimationLibrary.TorchThrowKeys()));
-            AddKeyed(rig, upper, FighterAnimComponent.ThrowAimState, BattleAnimationLibrary.TorchRaiseTime, SettleRoll(rig, BattleAnimationLibrary.ThrowAimKeys()));
-            AddKeyed(rig, upper, FighterAnimComponent.ThrowReleaseState, FighterAnimComponent.TorchThrowTime, SettleRoll(rig, BattleAnimationLibrary.ThrowReleaseKeys()));
+            AddKeyed(rig, upper, FighterAnimComponent.ThrowAimState, BattleAnimationLibrary.ThrowRaiseTime, SettleRoll(rig, BattleAnimationLibrary.ThrowAimKeys()));
+            AddKeyed(rig, upper, FighterAnimComponent.ThrowReleaseState, FighterAnimComponent.ThrowReleaseTime, SettleRoll(rig, BattleAnimationLibrary.ThrowReleaseKeys()));
             AddState(upper, FighterAnimComponent.BandageFirstPersonState, Record(rig, FighterAnimComponent.BandageFirstPersonState, BandageCycle, true,
                 time => BattleAnimationLibrary.Bandage(time / BandageCycle)));
             AddState(upper, FighterAnimComponent.InteractFirstPersonState, Record(rig, FighterAnimComponent.InteractFirstPersonState,
                 BattleAnimationLibrary.InteractCycle, true, time => BattleAnimationLibrary.Interact(time / BattleAnimationLibrary.InteractCycle)));
+        }
+
+        /// The pick-up on a left-arm layer of its own above the rest (added to a controller that lacks it), so it plays over any
+        /// weapon. Never mirrored, and it leaves the weapon sockets to the layers below.
+        private static void BuildPickUp(BattlePoseRig rig, AnimatorController controller)
+        {
+            if (controller.layers.All(layer => layer.name != FighterAnimComponent.PickUpLayerName))
+            {
+                controller.AddLayer(FighterAnimComponent.PickUpLayerName);
+                AnimatorControllerLayer[] layers = controller.layers;
+                layers[^1].defaultWeight = 0f;
+                layers[^1].avatarMask = CreateMask("LeftArm", AvatarMaskBodyPart.LeftArm, AvatarMaskBodyPart.LeftFingers);
+                controller.layers = layers;
+            }
+
+            AnimatorStateMachine stateMachine = controller.layers.First(layer => layer.name == FighterAnimComponent.PickUpLayerName).stateMachine;
+
+            foreach (ChildAnimatorState child in stateMachine.states)
+                stateMachine.RemoveState(child.state);
+
+            List<PoseKey> keys = SettleRoll(rig, BattleAnimationLibrary.PickUpKeys());
+            AnimatorState state = stateMachine.AddState(FighterAnimComponent.PickUpFirstPersonState);
+            state.motion = Record(rig, FighterAnimComponent.PickUpFirstPersonState, FighterAnimComponent.PickUpTime, false, time => BattleAnimationLibrary.Sample(keys, time));
+            state.writeDefaultValues = false;
         }
 
         private static AnimationClip Record(BattlePoseRig rig, string name, float duration, bool isLoop, Func<float, BodyPose> evaluate)

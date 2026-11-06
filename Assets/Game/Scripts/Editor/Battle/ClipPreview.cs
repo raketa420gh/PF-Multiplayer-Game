@@ -19,8 +19,8 @@ namespace Game.Scripts.Editor.Battle
         private const int Height = 540;
 
         /// Clips: names in the animations folder. Phases: moments as fractions of each clip, 0..1. Writes
-        /// c_{clip}_{index}.png into the folder and returns the paths. A held item (a world model) sits in the hand as in the game.
-        public static string Run(string clips, string phases, string folder, GameObject held = null, bool isTorch = false)
+        /// c_{clip}_{index}.png into the folder and returns the paths. A held item (a world model) sits in the hand as in the game: upright as a drink, or lying on the hand as anything else.
+        public static string Run(string clips, string phases, string folder, GameObject held = null, bool isTorch = false, bool isDrink = true)
         {
             Directory.CreateDirectory(folder);
             StringBuilder written = new StringBuilder();
@@ -32,7 +32,7 @@ namespace Game.Scripts.Editor.Battle
             {
                 BattlePoseRig.CreateSockets(animator);
 
-                foreach (Transform part in HandItem.Create(held, animator, true, isTorch).GetComponentsInChildren<Transform>())
+                foreach (Transform part in HandItem.Create(held, animator, isDrink, isTorch).GetComponentsInChildren<Transform>())
                     part.gameObject.layer = Layer;
             }
 
