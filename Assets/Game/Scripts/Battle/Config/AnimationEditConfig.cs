@@ -461,6 +461,9 @@ namespace Game.Scripts.Battle
         /// Hold: the weapon keeps the clip's path whatever the keys do to the arm; the hand sits on it in the grip turned by
         /// the hand's own keys, the elbow goes where the arm keys swing it.
         public bool LocksWeapon => _isHolding && _locksWeapon;
+        /// Locked weapon left alone by the hand: it stays on the clip's path, the hand goes only where its own and the arm's keys
+        /// put it, so it can be posed on the hilt freely.
+        public bool FreesHand => LocksWeapon && _freesHand;
 
         [SerializeField]
         private HumanBodyBones _hand;
@@ -507,6 +510,10 @@ namespace Game.Scripts.Battle
         [Tooltip("Hold: the weapon keeps the clip's path, the hand and elbow are posed by keys around it")]
         [SerializeField]
         private bool _locksWeapon;
+
+        [Tooltip("Locked weapon: the hand is not reached onto the hilt, keys alone pose it")]
+        [SerializeField]
+        private bool _freesHand;
 
         [NonSerialized]
         private Pose _locked;
@@ -583,6 +590,8 @@ namespace Game.Scripts.Battle
 
         public void SetLocksWeapon(bool isLocking) => _locksWeapon = isLocking;
 
+        public void SetFreesHand(bool isFree) => _freesHand = isFree;
+
         /// Takes the weapon where the clip carries it now.
         public void Lock(Animator animator)
         {
@@ -624,6 +633,13 @@ namespace Game.Scripts.Battle
                 return;
 
             Pose weapon = LocksWeapon ? _locked : new Pose(socket.position, socket.rotation);
+
+            if (FreesHand)
+            {
+                socket.SetPositionAndRotation(weapon.position, weapon.rotation);
+
+                return;
+            }
 
             if (LocksWeapon)
             {

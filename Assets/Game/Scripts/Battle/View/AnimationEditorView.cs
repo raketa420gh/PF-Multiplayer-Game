@@ -397,7 +397,9 @@ namespace Game.Scripts.Battle
 
             for (HumanBodyBones bone = 0; bone < HumanBodyBones.LastBone; bone++)
             {
-                Transform transform = bone < HumanBodyBones.LeftEye || bone == HumanBodyBones.UpperChest ? _animator.GetBoneTransform(bone) : null;
+                Transform transform = bone < HumanBodyBones.LeftEye || bone == HumanBodyBones.UpperChest || IsFinger(bone)
+                    ? _animator.GetBoneTransform(bone)
+                    : null;
 
                 if (transform != null)
                     bones[transform] = bone;
@@ -456,6 +458,36 @@ namespace Game.Scripts.Battle
         private bool IsLayerBone(HumanBodyBones bone)
         {
             return Array.IndexOf(s_legBones, bone) >= 0 == (_editLayer == BaseLayer);
+        }
+
+        private static bool IsFinger(HumanBodyBones bone)
+        {
+            return bone is >= HumanBodyBones.LeftThumbProximal and <= HumanBodyBones.RightLittleDistal;
+        }
+
+        private static HumanBodyBones GetHand(HumanBodyBones finger)
+        {
+            return finger <= HumanBodyBones.LeftLittleDistal ? HumanBodyBones.LeftHand : HumanBodyBones.RightHand;
+        }
+
+        /// Fingers are listed and drawn only while their hand or one of them is selected.
+        private bool IsShown(HumanBodyBones bone)
+        {
+            if (!IsLayerBone(bone))
+                return false;
+
+            if (!IsFinger(bone))
+                return true;
+
+            HumanBodyBones hand = GetHand(bone);
+
+            foreach (HumanBodyBones selected in _selection)
+            {
+                if (selected == hand || (IsFinger(selected) && GetHand(selected) == hand))
+                    return true;
+            }
+
+            return false;
         }
 
         private Transform GetBone(HumanBodyBones bone)
@@ -964,7 +996,7 @@ namespace Game.Scripts.Battle
 
             foreach (HumanBodyBones candidate in _bones)
             {
-                if (IsLayerBone(candidate) && TryGetScreenDistance(mouse, GetBone(candidate).position, best, out float distance))
+                if (IsShown(candidate) && TryGetScreenDistance(mouse, GetBone(candidate).position, best, out float distance))
                     (bone, best) = (candidate, distance);
             }
 
@@ -1846,7 +1878,7 @@ namespace Game.Scripts.Battle
 
             foreach (HumanBodyBones bone in _bones)
             {
-                if (!IsLayerBone(bone))
+                if (!IsShown(bone))
                     continue;
 
                 if (DrawRow(_names[bone], _selection.Contains(bone), _depths[bone], _edit.Find(bone), _edit.FindGrip(bone) != null))
@@ -1952,7 +1984,8 @@ namespace Game.Scripts.Battle
                 return;
             }
 
-            GUILayout.Label(grip.LocksWeapon ? "Weapon locked on the clip's path: hand keys turn the hand on the hilt, arm keys swing the elbow" :
+            GUILayout.Label(grip.FreesHand ? "Weapon locked on the clip's path, the hand is free: move and turn it and the fingers onto the hilt" :
+                grip.LocksWeapon ? "Weapon locked on the clip's path: hand keys turn the hand on the hilt, arm keys swing the elbow" :
                 grip.Point.Length > 0 ? $"On point “{grip.Point}”: moves with it; dragging the hand frees it" :
                 grip.IsHolding ? "Regrip: drag the hand, the weapon keeps its path" : $"Pinned to the weapon in {grip.Anchor}: drag the hand to move the grip",
                 _skin.Hint);
@@ -1963,6 +1996,14 @@ namespace Game.Scripts.Battle
                 grip.SetLocksWeapon(!grip.LocksWeapon);
                 _dirty.Add(_edit.Clip);
             }
+
+            if (grip.LocksWeapon && _skin.Button(grip.FreesHand ? "Reach the hilt" : "Free hand: keys only, no reach", grip.FreesHand))
+            {
+                PushUndo();
+                grip.SetFreesHand(!grip.FreesHand);
+                _dirty.Add(_edit.Clip);
+            }
+
             GUI.changed = false;
             int start = Mathf.RoundToInt(_skin.Slider("From", grip.Start, 0f, _frameCount, "F0"));
             int end = Mathf.RoundToInt(_skin.Slider("To", grip.End, 0f, _frameCount, "F0"));
@@ -2178,7 +2219,7 @@ namespace Game.Scripts.Battle
         {
             foreach (HumanBodyBones bone in _bones)
             {
-                if (!_isSkeletonVisible || !IsLayerBone(bone))
+                if (!_isSkeletonVisible || !IsShown(bone))
                     continue;
 
                 Vector3 position = GetBone(bone).position;
@@ -2189,7 +2230,7 @@ namespace Game.Scripts.Battle
                 if (_parents[bone] != NoBone)
                     DrawLine(GetBone(_parents[bone]).position, position, new Color(1f, 1f, 1f, 0.5f));
 
-                DrawDiamond(position, camera, GetRingRadius(position, 0) * JointScale * 2f, color);
+                DrawDiamond(position, camera, GetRingRadius(position, 0) * JointScale * (IsFinger(bone) ? 0.8f : 2f), color);
             }
 
             foreach (HandGrip grip in _edit.Grips)

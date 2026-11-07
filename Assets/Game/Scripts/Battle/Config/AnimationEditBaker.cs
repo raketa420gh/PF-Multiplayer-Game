@@ -1,12 +1,14 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
 namespace Game.Scripts.Battle
 {
     /// Writes clip edits into their clips: every 60 Hz frame of the untouched source is posed on a character, the edited bones
-    /// are turned, and the human pose read back replaces the body muscles and the root of the clip. Finger curves stay as generated.
+    /// are turned, and the human pose read back replaces the body muscles and the root of the clip. Finger curves stay as generated unless a finger is keyed.
     /// The character must come with its hand sockets at rest.
     public static class AnimationEditBaker
     {
@@ -104,11 +106,13 @@ namespace Game.Scripts.Battle
             bool isLoop = AnimationUtility.GetAnimationClipSettings(source).loopTime;
             AnimationCurve[] muscles = new AnimationCurve[HumanTrait.MuscleCount];
             AnimationCurve[] root = new AnimationCurve[s_rootCurves.Length];
-            AnimationCurve[] bakedMuscles = new AnimationCurve[BodyMuscleCount];
+            // Fingers keep their generated curves unless the edit keys a finger.
+            bool hasFingers = edit.Tracks.Any(track => track.Bone is >= HumanBodyBones.LeftThumbProximal and <= HumanBodyBones.RightLittleDistal);
+            AnimationCurve[] bakedMuscles = new AnimationCurve[hasFingers ? HumanTrait.MuscleCount : BodyMuscleCount];
             AnimationCurve[] bakedRoot = new AnimationCurve[s_rootCurves.Length];
 
             for (int i = 0; i < muscles.Length; i++)
-                muscles[i] = AnimationUtility.GetEditorCurve(source, Binding(HumanTrait.MuscleName[i]));
+                muscles[i] = AnimationUtility.GetEditorCurve(source, Binding(GetCurveName(i)));
 
             for (int i = 0; i < root.Length; i++)
             {
@@ -241,7 +245,7 @@ namespace Game.Scripts.Battle
             head.localScale = headScale;
 
             for (int i = 0; i < bakedMuscles.Length; i++)
-                SetCurve(clip, HumanTrait.MuscleName[i], bakedMuscles[i]);
+                SetCurve(clip, GetCurveName(i), bakedMuscles[i]);
 
             for (int i = 0; i < bakedRoot.Length; i++)
                 SetCurve(clip, s_rootCurves[i], bakedRoot[i]);
@@ -256,6 +260,14 @@ namespace Game.Scripts.Battle
             }
 
             EditorUtility.SetDirty(clip);
+        }
+
+        /// Clips key fingers as "RightHand.Index.1 Stretched"; the muscle name "Right Index 1 Stretched" binds to nothing.
+        private static string GetCurveName(int muscle)
+        {
+            string name = HumanTrait.MuscleName[muscle];
+
+            return muscle < BodyMuscleCount ? name : Regex.Replace(name, @"^(Left|Right) (\w+) ", "$1Hand.$2.");
         }
 
         private static EditorCurveBinding Binding(string property)
