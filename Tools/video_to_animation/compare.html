@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Arming Sword — реф vs наши анимации</title>
+<style>
+  body { background:#16181d; color:#d8dbe2; font:14px/1.45 system-ui, sans-serif; margin:0; }
+  header { position:sticky; top:0; z-index:5; background:#1f2229; padding:10px 16px; border-bottom:1px solid #333; }
+  h1 { font-size:17px; margin:0 0 8px; }
+  .tabs button, .ctl button, .ctl select { background:#2b2f38; color:#d8dbe2; border:1px solid #444; padding:5px 11px; border-radius:4px; cursor:pointer; }
+  .tabs button.on { background:#4a6fa5; border-color:#6b8fc7; }
+  .ctl { display:flex; gap:10px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+  .ctl input[type=range] { width:420px; }
+  main { padding:12px 16px 40px; }
+  .row { display:flex; gap:6px; margin-bottom:6px; align-items:stretch; }
+  .lab { width:150px; flex:none; font-size:12px; background:#1f2229; padding:6px; border-radius:4px; }
+  .lab b { display:block; font-size:13px; color:#fff; }
+  .tile { position:relative; }
+  .tile img { height:250px; display:block; border-radius:3px; background:#000; }
+  .tile span { position:absolute; left:4px; top:3px; font-size:11px; background:#000a; padding:1px 4px; border-radius:3px; }
+  .tile.peak span { background:#b33; }
+  .notes { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:6px 0 16px; }
+  .notes div { background:#1f2229; padding:10px 12px; border-radius:6px; }
+  .notes h3 { margin:0 0 6px; font-size:14px; }
+  .notes ul { margin:0; padding-left:18px; }
+  .fail { color:#e88; font-size:11px; }
+  #clock { font-variant-numeric:tabular-nums; min-width:170px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Arming Sword — покадровое сравнение рефа (DaD, золотой скелет) и наших вариантов</h1>
+  <div class="tabs" id="tabs"></div>
+  <div class="ctl">
+    <button id="play">▶ Play</button>
+    <input type="range" id="slider" min="0" max="1000" value="0">
+    <span id="clock"></span>
+    <label>Скорость <select id="speed"><option value="1">1x</option><option value="0.5">0.5x</option><option value="0.25" selected>0.25x</option><option value="0.1">0.1x</option></select></label>
+    <label><input type="checkbox" id="squeeze" checked> реф ужат до нашего темпа (наши клипы = 0.75 длительности рефа)</label>
+    <span style="opacity:.7">← → кадр, пробел — play. Всё синхронизировано по пику (красная метка = кадр пика).</span>
+  </div>
+</header>
+<main>
+  <div class="notes" id="notes"></div>
+  <div id="rows"></div>
+</main>
+<script>
+const CAMS = { A:'c_-1.5_1.7_4.2_0_1.1_0_35', B:'c_3.4_1.9_2.8_0_1.2_0.4_35', T:'top', FP:'fp' };
+const REFVIEWS = { A:'A — спереди-слева', B:'B — справа-спереди', T:'T — сверху', D:'D — хитбокс (0.1x вырезано до реального времени)', FP:'FP — от первого лица (другое видео)' };
+const VARIANTS = {
+  v0:{ name:'Текущая', text:'то, что сейчас в игре (спека DungeonWeaponLibrary)' },
+  v1:{ name:'Вариант 1 — как 3P', text:'геометрия вида от третьего лица: в пике рука прямая на уровне плеча; клинок доворачивается в прицел' },
+  v2:{ name:'Вариант 2 — как FP', text:'как в FP-видео DaD: в пике кулак проходит через прицел на уровне глаз, клинок почти горизонтально' }
+};
+const ATTACKS = {
+  A1:{ title:'Attack #1 — форхенд', swing:'0', ref:{A:[108,32],B:[108,33],T:[114,37],D:[107,35],FP:[240,38]},
+       ours:{v0:[73,23],v1:[73,23],v2:[73,23]},
+       read:['Замах ~24 кадра: кисть поднимается мимо лица над правым плечом, локоть высоко и в сторону, клинок лежит горизонтально НАЗАД за головой.',
+             'Активная фаза ~10 кадров: клинок переваливается через верх (вверх-назад → вертикаль → вперёд).',
+             'Пик: рука ПОЛНОСТЬЮ прямая, кисть на уровне плеча (~1.45 м) спереди-справа, клинок вперёд и чуть вверх, кончик ~10 см ниже глаз и в ~1.3 м впереди.',
+             'Проводка: вниз-влево к левому бедру, корпус с +25° (вправо) до −35°, левая рука уходит назад для баланса. Восстановление ~50 кадров.',
+             'FP-видео: кисть в пике проходит ЧЕРЕЗ прицел (u 0.52, v 0.53), кончик выше-правее, удар идёт диагональю сверху-справа вниз-влево.'],
+       diff:['Текущая: замах и проводка уже совпадают с рефом; в пике локоть согнут и опущен (1.25 м), рука не выпрямлена.',
+             'Вариант 1: рука выпрямляется на уровне плеча, клинок задран ~20° (иначе strike-point не попадёт в прицел).',
+             'Вариант 2: кулак на уровне глаз — то, что видно в FP DaD.'] },
+  A2:{ title:'Attack #2 — рубящий сверху (слот бэкхенда)', swing:'1', ref:{A:[98,29],B:[97,30],T:[95,28],D:[93,29]},
+       ours:{v0:[72,26],v1:[71,21],v2:[71,21]},
+       read:['Замах ~16 кадров + удержание до 22: меч горизонтально ЗА головой, кулак НАД макушкой (~1.92 м), локоть вперёд-вверх-в сторону, корпус довёрнут влево ~45° (видна спина).',
+             'Активная фаза 8–9 кадров: кончик поднимается, переваливается через верх, проходит вертикаль над головой.',
+             'Пик: рука прямая на уровне плеча (кисть 1.40 м), клинок продолжает руку, чуть вниз; кончик ~0.34 м ниже глаз.',
+             'Конец активной: клинок вниз-вперёд у правой ноги; корпус раскручивается вправо до ~+65°, рука уходит вправо-назад низко и держится там ~30 кадров.',
+             'Возврат: клинок вниз-вперёд у правой ноги, кисть поднимает его через горизонталь в вертикальную стойку.'],
+       diff:['Текущая: замах сбоку слева у лица (кулак 1.57 м, корпус −65°), удар через левое плечо вниз направо — ниже и левее рефа.',
+             'Варианты 1/2: замах над макушкой, рубящий через верх, проводка вправо-назад с раскруткой корпуса; отличаются высотой кисти в пике.',
+             'Солвер: на быстром проходе после пика (кадры 24–26) twist до 1.8 и выход рукояти из кулака до 3.6 см — докрутим после выбора.'] },
+  A3:{ title:'Attack #3 — укол', swing:'2', ref:{A:[113,38],B:[116,41],T:[116,41],D:[113,39]},
+       ours:{v0:[71,30]},
+       read:['Взвод (−10 к. до хитбокса): кулак снаружи правого плеча на уровне плеча, 0.3 м позади головы; локоть отведён прямо назад; клинок горизонтально и нацелен в цель (как копьё); ЛАДОНЬ ВНИЗ, клинок плашмя; корпус +55°.',
+             'Выпад: 6 кадров с постоянной скоростью, затем удержание до +21.',
+             'Пик: рука прямая, кулак на уровне плеча (1.42), 0.8 м вперёд; клинок сходится к центру (yaw −13°), кончик ~на уровне глаз; корпус −38°, наклон +15°, правая нога скользит ~10 см.',
+             'Возврат: локоть падает к рёбрам, клинок поднимается в вертикаль, предплечье проворачивается обратно в «большой палец вверх».'],
+       diff:['Текущая версия переснята сегодня по этому же видео (коммит cd25fd81) — совпадает; новых вариантов нет.'] },
+  R:{ title:'Riposte', swing:'r', ref:{A:[89,27],B:[94,29],T:[85,22],D:[66,26]},
+       ours:{v0:[68,22],v1:[62,20],v2:[62,20]},
+       read:['Старт из блока (клинок поперёк живота, кончик влево). Кисть поднимается ПЕРЕД собой и уходит над макушку; клинок разворачивается и ложится горизонтально за головой (взвод на 16–18 к., кулак 1.95 м, чуть левее центра).',
+             'Активная фаза 12–13 кадров: один большой рубящий через верх (чуть левее вертикали), горизонталь на уровне живота/груди, и вниз мимо правого бедра — кончик почти у пола.',
+             'Пик (клинок горизонтально): кисть 1.18 м — на 0.49 м ниже глаз; глаза клинок пересекает за ~1.5 кадра до этого.',
+             'Проводка: рука продолжает назад-вверх за правым боком (мулине), затем клинок вперёд низко и поднимается в стойку (~80 кадров всё действие).'],
+       diff:['Текущая: взвод ниже (1.75 м) и с клинком вверх-назад, конец перед собой (кисть 1.0 м впереди), без мулине.',
+             'Варианты 1/2: взвод над макушкой, проводка до пола у правой ноги и мулине назад-вверх; в пике кисть 1.18 (В1, клинок задран в прицел) или на уровне глаз (В2).'] }
+};
+let cur='A1', t=0, playing=false, last=0, tiles=[];
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(3,'0');
+function build(){
+  const a=ATTACKS[cur];
+  $('tabs').innerHTML=Object.entries(ATTACKS).map(([k,v])=>`<button class="${k==cur?'on':''}" onclick="sel('${k}')">${v.title}</button>`).join(' ');
+  $('notes').innerHTML=`<div><h3>Что в рефе</h3><ul>${a.read.map(s=>`<li>${s}</li>`).join('')}</ul></div><div><h3>Что у нас / варианты</h3><ul>${a.diff.map(s=>`<li>${s}</li>`).join('')}</ul></div>`;
+  tiles=[]; let h='';
+  h+=`<div class="row"><div class="lab"><b>РЕФ</b>DaD, золотой скелет</div>`;
+  for(const [v,[n,p]] of Object.entries(a.ref)){ tiles.push({ref:true,v,n,p,src:i=>`ref/${cur}/${v}/${pad(i)}.jpg`}); h+=`<div class="tile" id="t${tiles.length-1}"><img><span>${REFVIEWS[v]}</span></div>`; }
+  h+='</div>';
+  for(const [vk,[n,p]] of Object.entries(a.ours)){
+    h+=`<div class="row"><div class="lab"><b>${VARIANTS[vk].name}</b>${VARIANTS[vk].text}</div>`;
+    for(const v of ['A','B','T','FP']){ tiles.push({ref:false,v,n,p,src:i=>`ours/${vk}/g_${a.swing}_${CAMS[v]}_${i}.png`}); h+=`<div class="tile" id="t${tiles.length-1}"><img><span>${v}</span></div>`; }
+    h+='</div>';
+  }
+  $('rows').innerHTML=h;
+  tiles.forEach((x,i)=>{ x.el=$('t'+i); x.img=x.el.querySelector('img'); for(let f=0;f<x.n;f++) new Image().src=x.src(f); });
+  const ref=Object.values(a.ref), ours=Object.values(a.ours);
+  range=[Math.min(...ours.map(([n,p])=>-p)), Math.max(...ours.map(([n,p])=>n-p))];
+  t=range[0]; draw();
+}
+let range=[0,1];
+function frameOf(x){ const k = x.ref ? ($('squeeze').checked?1/0.75:1) : 1; return Math.max(0,Math.min(x.n-1,Math.round(x.p+t*k))); }
+function draw(){
+  for(const x of tiles){ const f=frameOf(x); x.img.src=x.src(f); x.el.classList.toggle('peak',f==x.p); }
+  $('slider').value=Math.round((t-range[0])/(range[1]-range[0])*1000);
+  $('clock').textContent=`${t>=0?'+':''}${t.toFixed(1)} кадров от пика (60 Гц)`;
+}
+function sel(k){ cur=k; build(); }
+function tick(ts){ if(playing){ const dt=(ts-last)/1000*60*parseFloat($('speed').value); t+=dt; if(t>range[1]) t=range[0]; draw(); } last=ts; requestAnimationFrame(tick); }
+$('play').onclick=()=>{ playing=!playing; $('play').textContent=playing?'❚❚ Pause':'▶ Play'; };
+$('slider').oninput=e=>{ t=range[0]+e.target.value/1000*(range[1]-range[0]); draw(); };
+$('squeeze').onchange=draw;
+document.onkeydown=e=>{ if(e.key=='ArrowRight'){t=Math.min(range[1],Math.round(t)+1);draw();} if(e.key=='ArrowLeft'){t=Math.max(range[0],Math.round(t)-1);draw();} if(e.key==' '){e.preventDefault();$('play').click();} };
+build(); requestAnimationFrame(tick);
+</script>
+</body>
+</html>
