@@ -22,6 +22,27 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private List<ClipMarkers> _markers = new();
 
+        [Tooltip("Per shield prefab: the shield socket's offset on the hand, in that socket's space; an animation rebuild solves every clip with the shield for it")]
+        [SerializeField]
+        private List<GripPoint> _shields = new();
+
+        public Pose GetShieldGrip(string shield)
+        {
+            GripPoint grip = _shields.Find(item => item.Name == shield);
+
+            return grip != null ? new Pose(grip.Pose.position, grip.Pose.rotation.normalized) : Pose.identity;
+        }
+
+        public void SetShieldGrip(string shield, Pose grip)
+        {
+            GripPoint point = _shields.Find(item => item.Name == shield);
+
+            if (point == null)
+                _shields.Add(point = new GripPoint(shield, Vector3.zero));
+
+            point.SetPose(grip.position, grip.rotation);
+        }
+
         public ClipEdit Find(AnimationClip clip)
         {
             return _clips.Find(edit => edit.Clip == clip);

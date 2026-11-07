@@ -212,7 +212,7 @@ namespace Game.Scripts.Editor.Battle
             return _socketRests[(int)socket] * Quaternion.AngleAxis(-lean, Vector3.right);
         }
 
-        /// The shield of the weapon being posed sits in the hand by 'grip' (ShieldGripConfig): the socket the authored board pose is
+        /// The shield of the weapon being posed sits in the hand by 'grip' (set in the animation editor, AnimationEditConfig): the socket the authored board pose is
         /// solved for moves on the hand, so the board keeps its path and the hand takes the new grip.
         public void SetShieldGrip(Pose grip)
         {

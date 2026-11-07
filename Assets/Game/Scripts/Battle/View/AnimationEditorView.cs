@@ -120,6 +120,10 @@ namespace Game.Scripts.Battle
                 "Reset turn — сбросить поворот. Рука: G — примагнитить к ближайшей точке, кнопки точек — к выбранной; Free regrip — рука скользит " +
                 "по оружию, оружие держит траекторию; Pin — вторая рука закреплена на оружии; From / To — кадры, где хват действует; Release — снять. " +
                 "Примагниченная рука следует за точкой во всех клипах этого оружия."),
+            ("Хват щита",
+                "Клип со щитом, Upper body → Shield grip: щит стоит где его ставит клип, левая кисть, локоть и пальцы ставятся как обычно. " +
+                "Apply — хват щита запоминается для всех его клипов (ключи руки, поставленные в этом режиме, отбрасываются), Cancel — выйти без " +
+                "изменений, Reset — хват по умолчанию. Затем Stop play and rebuild — пересборка клипов (несколько минут)."),
             ("Отображение",
                 "Aim ray — линия прицела из глаза, крест каждые 25 см (из глаз они складываются в перекрестие). Skeleton — суставы, Grip points — " +
                 "точки хвата, Baked clip — запечённый клип без наложенных правок (только просмотр)."),
@@ -155,7 +159,13 @@ namespace Game.Scripts.Battle
         private readonly Vector3[] _ring = new Vector3[RingSegments + 1];
         /// Weapon sockets as the character is built (the palm of each hand); holding grips move them, so they are put back every frame.
         private readonly Dictionary<HumanBodyBones, Pose> _socketRests = new();
+        /// Per shield: its socket on the hand with no grip, worked out from the clip and the grip it was built with.
+        private readonly Dictionary<string, Pose> _shieldRests = new();
         private AnimatorOverrideController _overrides;
+        /// The clip's edit as it was before Shield grip; the arm keys posed there are dropped on Apply / Cancel.
+        private ClipEdit _shieldBackup;
+        /// Shield socket on the hand as the clip writes it on this frame.
+        private Pose _shieldSampled;
         private Material _material;
         private AnimationEditorSkin _skin;
         private JointLimits _limits;
@@ -207,6 +217,8 @@ namespace Game.Scripts.Battle
         private bool _isHelpVisible;
         private bool _isSelectingRange;
         private bool _isEasing = true;
+        private bool _wasShieldDirty;
+        private bool _isShieldGripSaved;
 
         private void Awake()
         {
@@ -506,6 +518,13 @@ namespace Game.Scripts.Battle
         /// of the weapon in the hand that the clip carries there.
         private void ApplyEdits(bool hasHolds = true)
         {
+            // Shield grip: the shield stays where the clip carries it, the keys pose the arm around it.
+            Transform shield = hasHolds ? GetShieldSocket() : null;
+            Pose locked = shield != null ? new Pose(shield.position, shield.rotation) : default;
+
+            if (shield != null)
+                _shieldSampled = new Pose(shield.localPosition, shield.localRotation);
+
             _limits.Capture();
 
             for (int layer = BaseLayer; layer <= UpperLayer; layer++)
@@ -515,6 +534,17 @@ namespace Game.Scripts.Battle
 
             for (int layer = BaseLayer; layer <= UpperLayer; layer++)
                 GetEdit(Resolve(_test.GetClip(layer)))?.Relock(_animator);
+
+            if (shield != null && _shieldBackup != null)
+                shield.SetPositionAndRotation(locked.position, locked.rotation);
+        }
+
+        /// The off-hand shield socket, when a shield is on it.
+        private Transform GetShieldSocket()
+        {
+            Transform socket = GetBone(HumanBodyBones.LeftHand).Find("LeftHandShieldSocket");
+
+            return socket != null && socket.childCount > 0 ? socket : null;
         }
 
         /// The clip alone on the current frame: the animator writes it now, the edits come on top in LateUpdate.
@@ -1909,6 +1939,11 @@ namespace Game.Scripts.Battle
 
         private void DrawBonesTab()
         {
+            Transform shield = _editLayer == UpperLayer && !_isShowingBaked ? GetShieldSocket() : null;
+
+            if (shield != null || _shieldBackup != null)
+                DrawShieldGrip(shield);
+
             GUILayout.Label($"{s_layerNames[_editLayer]} bones", _skin.Header);
             _boneScroll = GUILayout.BeginScrollView(_boneScroll);
 
@@ -2191,6 +2226,96 @@ namespace Game.Scripts.Battle
             _dirty.Add(_edit.Clip);
         }
 
+        /// Shield grip: one grip per shield, for every clip it is in. The shield is locked where this clip carries it, the left hand
+        /// and elbow are posed with the usual tools; Apply keeps how the shield now sits in the hand, a rebuild solves the clips for it.
+        private void DrawShieldGrip(Transform shield)
+        {
+            string name = shield != null ? shield.GetChild(0).name.Replace("(Clone)", string.Empty) : null;
+
+            if (_shieldBackup == null)
+            {
+                GUILayout.BeginHorizontal();
+
+                if (_skin.Button($"Shield grip: pose the hand on the {name}"))
+                {
+                    _shieldRests.TryAdd(name, Inverse(_config.GetShieldGrip(name)).GetTransformedBy(_shieldSampled));
+                    _shieldBackup = _edit.Clone();
+                    _wasShieldDirty = _dirty.Contains(_edit.Clip);
+                    Select(HumanBodyBones.LeftHand);
+                }
+
+                if (_skin.Button("Reset", false, 60f))
+                    SaveShieldGrip(name, Pose.identity);
+
+                GUILayout.EndHorizontal();
+#if UNITY_EDITOR
+                GUI.enabled = _dirty.Count == 0;
+
+                if (_isShieldGripSaved && _skin.Button(_dirty.Count == 0 ? "Stop play and rebuild the clips (minutes)" : "Save the clips before the rebuild"))
+                {
+                    UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+                    UnityEditor.EditorApplication.isPlaying = false;
+                }
+
+                GUI.enabled = true;
+#endif
+                _skin.Separator();
+
+                return;
+            }
+
+            GUILayout.Label($"The {name ?? "shield"} stays where the clip has it: move and turn the left hand (W / E), swing the elbow with the " +
+                "upper arm. Apply keeps the grip for every clip with this shield; the arm keys posed here are dropped.", _skin.Hint);
+            GUILayout.BeginHorizontal();
+            GUI.enabled = shield != null && _edit?.Clip == _shieldBackup.Clip;
+
+            if (_skin.Button("Apply"))
+            {
+                Transform hand = GetBone(HumanBodyBones.LeftHand);
+                Pose posed = new Pose(hand.InverseTransformPoint(shield.position), Quaternion.Inverse(hand.rotation) * shield.rotation);
+                SaveShieldGrip(name, posed.GetTransformedBy(Inverse(_shieldRests[name])));
+                EndShieldGrip();
+            }
+
+            GUI.enabled = true;
+
+            if (_skin.Button("Cancel"))
+                EndShieldGrip();
+
+            GUILayout.EndHorizontal();
+            _skin.Separator();
+        }
+
+        private void SaveShieldGrip(string shield, Pose grip)
+        {
+            _config.SetShieldGrip(shield, grip);
+            _isShieldGripSaved = true;
+#if UNITY_EDITOR
+            AnimationEditBaker.SaveConfig(_config);
+#endif
+        }
+
+        private void EndShieldGrip()
+        {
+            AnimationClip clip = _shieldBackup.Clip;
+            _edits[clip] = _shieldBackup;
+
+            if (_edit?.Clip == clip)
+                _edit = _shieldBackup;
+
+            if (!_wasShieldDirty)
+                _dirty.Remove(clip);
+
+            _shieldBackup = null;
+        }
+
+        private static Pose Inverse(Pose pose)
+        {
+            Quaternion inverse = Quaternion.Inverse(pose.rotation);
+
+            return new Pose(inverse * -pose.position, inverse);
+        }
+
         private static Vector3 ToSigned(Vector3 euler)
         {
             return new Vector3(Mathf.DeltaAngle(0f, euler.x), Mathf.DeltaAngle(0f, euler.y), Mathf.DeltaAngle(0f, euler.z));
@@ -2349,5 +2474,16 @@ namespace Game.Scripts.Battle
             GL.Vertex(from);
             GL.Vertex(to);
         }
+
+#if UNITY_EDITOR
+        private static void OnPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state != UnityEditor.PlayModeStateChange.EnteredEditMode)
+                return;
+
+            UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            UnityEditor.EditorApplication.delayCall += () => UnityEditor.EditorApplication.ExecuteMenuItem("Tools/Game/Battle/Rebuild Animations And Content");
+        }
+#endif
     }
 }
