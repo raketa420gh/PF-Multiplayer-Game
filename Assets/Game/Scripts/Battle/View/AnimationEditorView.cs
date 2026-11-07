@@ -72,6 +72,7 @@ namespace Game.Scripts.Battle
         private static readonly Color s_trackColor = new(0.55f, 0.85f, 1f);
         private static readonly Color s_cursorColor = new(1f, 0.3f, 0.3f);
         private static readonly Color s_gripColor = new(1f, 0.35f, 1f);
+        private static readonly Color s_markerColor = new(0.45f, 1f, 0.45f);
         private static readonly Color s_rayColor = new(0.2f, 1f, 0.8f);
         private static readonly Color s_rangeColor = new(0.3f, 0.8f, 1f, 0.2f);
         private static readonly Color s_rowColor = new(1f, 1f, 1f, 0.03f);
@@ -479,6 +480,9 @@ namespace Game.Scripts.Battle
                 GetEdit(Resolve(_test.GetClip(layer)))?.Apply(_animator, _test.GetTime(layer) * FrameRate, hasHolds);
 
             _limits.Restrict();
+
+            for (int layer = BaseLayer; layer <= UpperLayer; layer++)
+                GetEdit(Resolve(_test.GetClip(layer)))?.Relock(_animator);
         }
 
         /// The clip alone on the current frame: the animator writes it now, the edits come on top in LateUpdate.
@@ -613,6 +617,12 @@ namespace Game.Scripts.Battle
             int target = -1;
 
             bool hasSelection = _bone != NoBone || _prop != NoBone;
+
+            foreach (int marker in _config.GetMarkers(_edit.Clip))
+            {
+                if ((marker - _frame) * direction > 0 && (target < 0 || (marker - target) * direction < 0))
+                    target = marker;
+            }
 
             foreach (BoneTrack track in _edit.Tracks)
             {
@@ -1148,7 +1158,8 @@ namespace Game.Scripts.Battle
         {
             HandGrip grip = _edit.FindGrip(bone);
 
-            return grip != null && grip.GetWeight(_frame) > 0f ? grip : null;
+            // A locked weapon leaves the hand to its keys: they turn it on the hilt.
+            return grip != null && !grip.LocksWeapon && grip.GetWeight(_frame) > 0f ? grip : null;
         }
 
         private void Pin(bool isHolding)
@@ -1693,6 +1704,10 @@ namespace Game.Scripts.Battle
                     GUI.Label(new Rect(x + 2f, area.y, 40f, RulerHeight), frame.ToString(), _skin.Hint);
             }
 
+            // The generator's keys: where the poses to set by hand are.
+            foreach (int marker in _config.GetMarkers(_edit.Clip))
+                AnimationEditorSkin.Fill(new Rect(GetX(track, marker) - 1f, area.y, 3f, RulerHeight), s_markerColor);
+
             GUI.Label(new Rect(poseRow.x + 4f, poseRow.y, TrackLabelWidth, RowHeight), "All tracks", _skin.Label);
             GUI.Label(new Rect(boneRow.x + 4f, boneRow.y, TrackLabelWidth - 8f, RowHeight), GetSelectionName(), _skin.Label);
 
@@ -1937,9 +1952,17 @@ namespace Game.Scripts.Battle
                 return;
             }
 
-            GUILayout.Label(grip.Point.Length > 0 ? $"On point “{grip.Point}”: moves with it; dragging the hand frees it" :
+            GUILayout.Label(grip.LocksWeapon ? "Weapon locked on the clip's path: hand keys turn the hand on the hilt, arm keys swing the elbow" :
+                grip.Point.Length > 0 ? $"On point “{grip.Point}”: moves with it; dragging the hand frees it" :
                 grip.IsHolding ? "Regrip: drag the hand, the weapon keeps its path" : $"Pinned to the weapon in {grip.Anchor}: drag the hand to move the grip",
                 _skin.Hint);
+
+            if (grip.IsHolding && _skin.Button(grip.LocksWeapon ? "Unlock weapon" : "Lock weapon: hand and elbow by keys", grip.LocksWeapon))
+            {
+                PushUndo();
+                grip.SetLocksWeapon(!grip.LocksWeapon);
+                _dirty.Add(_edit.Clip);
+            }
             GUI.changed = false;
             int start = Mathf.RoundToInt(_skin.Slider("From", grip.Start, 0f, _frameCount, "F0"));
             int end = Mathf.RoundToInt(_skin.Slider("To", grip.End, 0f, _frameCount, "F0"));

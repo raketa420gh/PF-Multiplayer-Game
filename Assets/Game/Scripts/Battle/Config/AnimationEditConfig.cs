@@ -18,6 +18,10 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private List<WeaponGrips> _weapons = new();
 
+        [Tooltip("Frames of the generator's keys per clip, written by every animation build: where poses are set by hand")]
+        [SerializeField]
+        private List<ClipMarkers> _markers = new();
+
         public ClipEdit Find(AnimationClip clip)
         {
             return _clips.Find(edit => edit.Clip == clip);
@@ -27,6 +31,17 @@ namespace Game.Scripts.Battle
         {
             _clips.RemoveAll(other => other.Clip == edit.Clip);
             _clips.Add(edit);
+        }
+
+        public IReadOnlyList<int> GetMarkers(AnimationClip clip)
+        {
+            return _markers.Find(markers => markers.Clip == clip)?.Frames ?? (IReadOnlyList<int>)Array.Empty<int>();
+        }
+
+        public void SetMarkers(AnimationClip clip, List<int> frames)
+        {
+            _markers.RemoveAll(markers => markers.Clip == clip || markers.Clip == null);
+            _markers.Add(new ClipMarkers(clip, frames));
         }
 
         public WeaponGrips GetGrips(WeaponConfig weapon)
@@ -39,6 +54,25 @@ namespace Game.Scripts.Battle
             _weapons.Add(grips = new WeaponGrips(weapon));
 
             return grips;
+        }
+    }
+
+    [Serializable]
+    public sealed class ClipMarkers
+    {
+        public AnimationClip Clip => _clip;
+        public IReadOnlyList<int> Frames => _frames;
+
+        [SerializeField]
+        private AnimationClip _clip;
+
+        [SerializeField]
+        private List<int> _frames;
+
+        public ClipMarkers(AnimationClip clip, List<int> frames)
+        {
+            _clip = clip;
+            _frames = frames;
         }
     }
 
@@ -213,6 +247,13 @@ namespace Game.Scripts.Battle
         /// the keys and pins put them; the weapon is the same either way.
         public void Apply(Animator animator, float frame, bool hasHolds = true)
         {
+            // A locked weapon stays on the clip's path: taken before the keys turn the arm that carries it.
+            foreach (HandGrip grip in _grips)
+            {
+                if (grip.LocksWeapon && hasHolds)
+                    grip.Lock(animator);
+            }
+
             foreach (BoneTrack track in _tracks)
             {
                 Transform target = track.IsSocket ? HandGrip.GetSocket(animator, track.Bone) : animator.GetBoneTransform(track.Bone);
@@ -225,14 +266,21 @@ namespace Game.Scripts.Battle
             foreach (HandGrip grip in _grips)
             {
                 if (grip.IsHolding && hasHolds)
-                    grip.Apply(animator, frame);
+                    grip.Apply(animator, frame, Find(grip.Hand)?.Evaluate(frame).Rotation ?? Quaternion.identity);
             }
 
             foreach (HandGrip grip in _grips)
             {
                 if (!grip.IsHolding)
-                    grip.Apply(animator, frame);
+                    grip.Apply(animator, frame, Quaternion.identity);
             }
+        }
+
+        /// Puts locked and path-keeping weapons back where the grips left them, after the joint limits turned the hands.
+        public void Relock(Animator animator)
+        {
+            foreach (HandGrip grip in _grips)
+                grip.Relock(animator);
         }
 
         public ClipEdit Clone()
@@ -409,7 +457,10 @@ namespace Game.Scripts.Battle
         /// Weapon and name of the grip point the hand is snapped to; empty for a free grip.
         public WeaponConfig Weapon => _weapon;
         public string Point => _point;
-        public bool KeepsPath => _isHolding && _keepsPath;
+        public bool KeepsPath => _isHolding && (_keepsPath || _locksWeapon);
+        /// Hold: the weapon keeps the clip's path whatever the keys do to the arm; the hand sits on it in the grip turned by
+        /// the hand's own keys, the elbow goes where the arm keys swing it.
+        public bool LocksWeapon => _isHolding && _locksWeapon;
 
         [SerializeField]
         private HumanBodyBones _hand;
@@ -452,6 +503,13 @@ namespace Game.Scripts.Battle
         [Tooltip("Hold: the weapon keeps the lean in the fist the clip gives it (a thrust with the blade along the forearm); the grip sets where the palm is and the roll")]
         [SerializeField]
         private bool _keepsLean;
+
+        [Tooltip("Hold: the weapon keeps the clip's path, the hand and elbow are posed by keys around it")]
+        [SerializeField]
+        private bool _locksWeapon;
+
+        [NonSerialized]
+        private Pose _locked;
 
         private HandGrip(HumanBodyBones hand, HumanBodyBones anchor, bool isHolding, int start, int end)
         {
@@ -523,6 +581,25 @@ namespace Game.Scripts.Battle
             SetPose(anchor.InverseTransformPoint(hand.position), Quaternion.Inverse(anchor.rotation) * hand.rotation);
         }
 
+        public void SetLocksWeapon(bool isLocking) => _locksWeapon = isLocking;
+
+        /// Takes the weapon where the clip carries it now.
+        public void Lock(Animator animator)
+        {
+            Transform socket = GetSocket(animator, _anchor);
+
+            if (socket != null)
+                _locked = new Pose(socket.position, socket.rotation);
+        }
+
+        public void Relock(Animator animator)
+        {
+            Transform socket = KeepsPath ? GetSocket(animator, _anchor) : null;
+
+            if (socket != null)
+                socket.SetPositionAndRotation(_locked.position, _locked.rotation);
+        }
+
         public void SetRange(int start, int end)
         {
             _start = start;
@@ -534,7 +611,8 @@ namespace Game.Scripts.Battle
             return Mathf.Clamp01(1f - Mathf.Max(_start - frame, frame - _end) / BlendFrames);
         }
 
-        public void Apply(Animator animator, float frame)
+        /// The hand key turns a locked hand on the weapon.
+        public void Apply(Animator animator, float frame, Quaternion handKey)
         {
             float weight = GetWeight(frame);
             Transform hand = animator.GetBoneTransform(_hand);
@@ -545,9 +623,16 @@ namespace Game.Scripts.Battle
             if (socket == null)
                 return;
 
-            Pose weapon = new Pose(socket.position, socket.rotation);
+            Pose weapon = LocksWeapon ? _locked : new Pose(socket.position, socket.rotation);
 
-            if (_isHolding)
+            if (LocksWeapon)
+            {
+                // The palm sits on the weapon in the grip, turned by the hand's key; the arm reaches it in the bend plane its keys give.
+                rotation = weapon.rotation * Quaternion.Inverse(_rotation) * handKey;
+                target = weapon.position - rotation * _position;
+                weight = 1f;
+            }
+            else if (_isHolding)
             {
                 // The weapon stays where the socket has it now, the hand is placed so the socket reaches it with the new grip.
                 Vector3 position = Vector3.Lerp(socket.localPosition, _position, weight);
@@ -575,7 +660,10 @@ namespace Game.Scripts.Battle
             hand.rotation = rotation;
 
             if (KeepsPath)
+            {
+                _locked = weapon;
                 socket.SetPositionAndRotation(weapon.position, weapon.rotation);
+            }
         }
 
         public HandGrip Clone()

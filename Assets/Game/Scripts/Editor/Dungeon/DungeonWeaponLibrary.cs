@@ -1220,144 +1220,6 @@ namespace Game.Scripts.Editor.Dungeon
         /// series is a forehand from behind the head over the right shoulder to the left hip, a backhand from beside the
         /// face over the left shoulder down to the right, and a thrust from the arm held out to the right. A blocked hit is
         /// answered from the low guard with an overhead cut from behind the head down the right side.
-        public static int ThrustVariant;
-        // Variants from D:\arming_sword_refs\arming_sword.mp4 (preview only). 1: as the third-person footage - the arm straight
-        // at shoulder height at the peak. 2: as the first-person footage - the fist passes through the crosshair at eye height.
-        public static int ArmingVariant;
-
-        private static void ArmingVariants(int variant, AttackDefinition forehand, AttackDefinition backhand, AttackDefinition riposte)
-        {
-            bool isEye = variant >= 2;
-            Vector3 offHand = Cm(-28f, 0.95f, 0f);
-
-            // Forehand: the footage's own cocking and cut, only the peak differs - the arm reaches out straight.
-            forehand.MidPose = isEye
-                ? Peak(Cm(8f, 1.62f, 45f), -10f, 5f, Cm(28f, 1.5f, 15f), Cm(-35f, 1.05f, -45f), 70f)
-                : Peak(Cm(20f, 1.45f, 50f), 0f, 10f, Cm(32f, 1.32f, 25f), Cm(-35f, 1.05f, -45f), 70f);
-
-            // 3: the forehand read frame by frame off the first-person footage. The fist climbs past the right of the face
-            // with the elbow ahead at shoulder height and the forearm upright, the blade laid back past the right ear, then
-            // the straight arm drives the fist down-left under the crosshair. Elbows and the haft's lie across the palm are picked
-            // so every arm muscle stays inside the avatar's range (the wrist cannot bend the blade in line with the forearm).
-            if (variant == 3)
-            {
-                forehand.Raise = new()
-                {
-                    Via(6, At(Cm(11f, 1.61f, 21f), -40f, 70f, 10f, 0f, Cm(30f, 1.55f, 10f), Cm(-35f, 1f, 5f), 17.5f)),
-                    Via(10, At(Cm(11f, 1.67f, 15f), -120f, 50f, 20f, -5f, Cm(40f, 1.7f, 7f), Cm(-40f, 1f, 10f), 32.5f)),
-                    Via(14, At(Cm(9f, 1.73f, 11f), -165f, 15f, 25f, -5f, Cm(16f, 1.45f, 14f), Cm(-40f, 1f, 10f), 17.5f), 0.5f),
-                    Via(22, At(Cm(8f, 1.73f, 12f), 160f, 0f, 25f, -5f, Cm(16f, 1.45f, 14f), Cm(-40f, 1f, 10f), 17.5f), 0.5f)
-                };
-                forehand.WindupPose = At(Cm(11f, 1.73f, 29f), 170f, 80f, 10f, 0f, Cm(45f, 1.68f, 40f), Cm(-35f, 1.05f, 0f), 28.75f);
-                forehand.EndPose = At(Cm(-10f, 1f, 50f), -45f, -40f, -45f, 15f, Cm(-15f, 1.5f, 45f), Cm(-38f, 1f, -35f), 60f);
-                forehand.Return[0] = Via(42, At(Cm(-25f, 0.95f, 25f), -115f, -30f, -50f, 15f, Cm(-20f, 1.45f, 18f), Cm(-38f, 1f, -32f), 46.25f), 0.5f);
-                forehand.MidPose = Peak(Cm(-8f, 1.45f, 50f), -10f, 5f, Cm(25f, 1.4f, -10f), Cm(-35f, 1.05f, -45f), 40f);
-            }
-
-            // Backhand slot = the footage's attack #2: the sword laid level behind the head with the fist above the crown and
-            // the chest wound 45 left, over the top, the straight arm at the peak, down the right side and out right-back.
-            backhand.Windup = 23 * Footage;
-            backhand.Active = 9 * Footage;
-            backhand.Recovery = 60 * Footage;
-            backhand.Raise = new()
-            {
-                Via(8, At(Cm(12f, 1.65f, 22f), 180f, 70f, -20f, 0f, Cm(30f, 1.4f, 15f), offHand, 20f)),
-                Via(16, At(Cm(8f, 1.92f, 5f), 175f, 8f, -45f, -5f, Cm(28f, 1.58f, 10f), Cm(-28f, 0.95f, -5f)), 0.5f),
-                Via(21, At(Cm(9f, 1.93f, 8f), 178f, 9f, -45f, -5f, Cm(28f, 1.6f, 12f), Cm(-28f, 0.95f, -5f)), 0.5f)
-            };
-            backhand.WindupPose = At(Cm(12f, 1.92f, 8f), 180f, 20f, -40f, -5f, Cm(28f, 1.6f, 12f), Cm(-28f, 0.95f, -5f));
-            backhand.MidPose = isEye
-                ? Peak(Cm(10f, 1.6f, 45f), -5f, 8f, Cm(25f, 1.5f, 15f), offHand, 55f)
-                : Peak(Cm(14f, 1.4f, 45f), 0f, 10f, Cm(30f, 1.3f, 18f), offHand, 65f);
-            backhand.EndPose = At(Cm(25f, 1.05f, 35f), 40f, -55f, 30f, 15f, Cm(24f, 1.25f, 10f), Cm(-35f, 0.95f, 10f), 60f);
-            backhand.Return = new()
-            {
-                Via(40, At(Cm(50f, 1.05f, -45f), 150f, -28f, 65f, 5f, Cm(38f, 1.25f, -30f), Cm(-45f, 0.95f, 20f), 70f), 0.5f),
-                Via(62, At(Cm(48f, 1.02f, -40f), 145f, -30f, 60f, 5f, Cm(38f, 1.22f, -28f), Cm(-42f, 0.95f, 15f), 70f), 0.5f),
-                Via(76, At(Cm(30f, 0.95f, 20f), 20f, -30f, 20f, 5f, Cm(30f, 1.05f, 0f), Cm(-30f, 1f, 5f), 30f)),
-                Via(86, At(Cm(22f, 1.05f, 30f), 0f, 20f, 5f, 5f, Cm(25f, 1f, 5f), Cm(-25f, 1f, 5f), 30f))
-            };
-
-            // Riposte: from the block the fist goes up the front to above the crown, the blade level behind it, one big cut
-            // over the top down the right side to the floor, a loop back up behind the right side and forward low to the guard.
-            riposte.Windup = 20 * Footage;
-            riposte.Active = 12 * Footage;
-            riposte.Recovery = 49 * Footage;
-            riposte.Raise = new()
-            {
-                Via(8, At(Cm(0f, 1.45f, 20f), -130f, 10f, -30f, 0f, Cm(25f, 1.2f, 10f), Cm(-40f, 1f, -15f))),
-                Via(15, At(Cm(-5f, 1.95f, 2f), -170f, -10f, -35f, -5f, Cm(27f, 1.6f, 12f), Cm(-45f, 1f, 0f)), 0.5f),
-                Via(18, At(Cm(-4f, 1.95f, 4f), -170f, -5f, -35f, -5f, Cm(27f, 1.6f, 14f), Cm(-45f, 1f, 0f)), 0.5f)
-            };
-            riposte.WindupPose = At(Cm(0f, 1.92f, 8f), -165f, 10f, -35f, -5f, Cm(28f, 1.6f, 18f), Cm(-45f, 1f, 0f));
-            riposte.MidPose = isEye
-                ? Peak(Cm(10f, 1.58f, 40f), -5f, 10f, Cm(28f, 1.45f, 12f), Cm(-55f, 1.05f, 0f), 55f)
-                : Peak(Cm(12f, 1.18f, 40f), -5f, 15f, Cm(28f, 1.12f, 15f), Cm(-55f, 1.05f, 0f), 25f);
-            riposte.EndPose = At(Cm(40f, 0.8f, -5f), 150f, -70f, 35f, 25f, Cm(30f, 1.1f, -10f), Cm(-30f, 0.95f, 5f), 60f);
-            riposte.Return = new()
-            {
-                Via(46, At(Cm(45f, 1.3f, -55f), 170f, -10f, 30f, 10f, Cm(33f, 1.38f, -35f), Cm(-35f, 1f, 5f), 65f), 0.5f),
-                Via(66, At(Cm(30f, 0.95f, 25f), 10f, -5f, 20f, 5f, Cm(30f, 1.05f, 0f), Cm(-30f, 1f, 5f), 30f)),
-                Via(74, At(Cm(22f, 1.05f, 30f), 0f, 40f, 10f, 5f, Cm(25f, 1f, 5f), Cm(-25f, 1f, 5f), 20f))
-            };
-        }
-
-        // Variants of the thrust from D:\arming_sword_refs\arming_sword_attack_3.mp4 for the user to choose from (preview only).
-        // 1: as in the footage - fist cocked palm-down by the right shoulder, elbow far back, chest turned 65 right, the forearm
-        //    rolls to thumb-up during the drive and the chest unwinds to 35 left. 2: the same body, thumb-up all the way (no roll).
-        // 3: restrained - half the chest turn, a shorter draw, thumb-up.
-        private static AttackDefinition ArmingThrust(int variant, int damage, AttackDefinition backhand)
-        {
-            bool isRolled = variant == 1;
-            float k = variant == 3 ? 0.55f : 1f;
-            Vector3 palmDown = new(1f, -0.1f, 0f);
-            Vector3 thumbUp = new(0.35f, -0.94f, 0f);
-
-            BodyPose Key(Vector3 grip, float yaw, float elevation, float torso, float pitch, Vector3 elbow, Vector3 offHand, float lean, float roll)
-            {
-                // Lean from the forearm line: the haft lies along it as far as the blade does, so the wrist stays straight.
-                Vector3 blade = Quaternion.Euler(-elevation, yaw, 0f) * Vector3.forward;
-                BodyPose pose = At(grip, yaw, elevation, torso, pitch, elbow, offHand, lean >= 0f ? lean : Mathf.Clamp(90f - Vector3.Angle(grip - elbow, blade), 0f, 85f));
-                if (roll >= 0f)
-                    pose.Edge = Vector3.Slerp(isRolled ? palmDown : thumbUp, thumbUp, roll).normalized;
-
-                return pose;
-            }
-
-            // Draw back: depth and turn of the cocked pose scale with k (3 draws back about half as far).
-            Vector3 Back(float side, float height, float depth) => Cm(side, height, depth * k);
-
-            return new AttackDefinition
-            {
-                Windup = 39 * Footage, Active = 8 * Footage, Recovery = 58 * Footage, Damage = Mathf.RoundToInt(damage * 1.1f), MoveMultiplier = 0.6f, Stagger = 0.2f, Launch = 1f,
-                Raise = new()
-                {
-                    Via(4, Key(Cm(42f, 1.1f, Mathf.Lerp(10f, -12f, k)), 70f, -22f, 40f * k, 8f, Cm(32f, 1.18f, Mathf.Lerp(0f, -25f, k)), Cm(-30f, 1f, 15f), -1f, -1f)),
-                    Via(9, Key(Back(40f, 1.36f, -38f), 55f, -5f, 55f * k, 5f, Back(32f, 1.22f, -50f), Cm(-18f, 1f, 25f), -1f, -1f)),
-                    Via(15, Key(Back(38f, 1.42f, -32f), 25f, 0f, 60f * k, 5f, Back(18f, 1.42f, -45f), Cm(-12f, 1.03f, 35f), -1f, -1f)),
-                    Via(24, Key(Back(36f, 1.43f, -30f), 0f, 3f, 65f * k, 5f, Back(12f, 1.45f, -42f), Cm(-12f, 1.05f, 42f), -1f, 0f), 0.5f),
-                    Via(36, Key(Back(35f, 1.42f, -28f), -3f, 5f, 63f * k, 5f, Back(12f, 1.44f, -40f), Cm(-12f, 1.05f, 40f), -1f, 0f), 0.5f)
-                },
-                WindupPose = Key(Back(30f, 1.4f, -8f), -12f, 12f, 30f * k, 6f, Back(20f, 1.4f, -28f), Cm(-15f, 1.03f, 20f), -1f, 0.25f),
-                MidPose = Edge(Peak(Cm(20f, 1.47f, 22f), 0f, 8f, Cm(24f, 1.38f, -5f), Cm(-25f, 1f, 5f), 62f), thumbUp, isRolled ? palmDown : thumbUp, 0.65f),
-                EndPose = Key(Cm(12f, 1.51f, 60f), -16f, 15f, -35f * k, 10f, Cm(16f, 1.48f, 32f), Cm(-28f, 1f, -5f), -1f, 1f),
-                Return = new()
-                {
-                    Via(67, Key(Cm(12f, 1.5f, 58f), -16f, 16f, -35f * k, 10f, Cm(16f, 1.46f, 30f), Cm(-28f, 1f, -5f), -1f, 1f), 0.5f),
-                    Via(80, Key(Cm(18f, 1.32f, 42f), -3f, 38f, -20f * k, 6f, Cm(25f, 1.12f, 12f), Cm(-25f, 1f, 0f), -1f, 1f)),
-                    Via(92, Key(Cm(18f, 1.2f, 32f), 3f, 62f, -8f * k, 5f, Cm(28f, 1.02f, 2f), Cm(-25f, 1f, 5f), -1f, 1f))
-                },
-                After = backhand
-            };
-
-            static BodyPose Edge(BodyPose pose, Vector3 to, Vector3 from, float t)
-            {
-                pose.Edge = Vector3.Slerp(from, to, t).normalized;
-
-                return pose;
-            }
-        }
-
         private static WeaponDefinition CreateArmingSword()
         {
             // Real proportions (0.93 m long, 0.69 m blade, 21 cm guard); the strike point stays where the clips were solved for.
@@ -1458,9 +1320,6 @@ namespace Game.Scripts.Editor.Dungeon
                 After = backhand
             };
 
-            if (ThrustVariant > 0)
-                thrust = ArmingThrust(ThrustVariant, damage, backhand);
-
             // From the low guard up past the left of the face to behind the head, then over the top steeply down the right.
             AttackDefinition riposte = new AttackDefinition
             {
@@ -1484,9 +1343,6 @@ namespace Game.Scripts.Editor.Dungeon
                     Via(80, upright)
                 }
             };
-
-            if (ArmingVariant > 0)
-                ArmingVariants(ArmingVariant, forehand, backhand, riposte);
 
             foreach (AttackDefinition attack in new[] { forehand, backhand, thrust, riposte })
             {

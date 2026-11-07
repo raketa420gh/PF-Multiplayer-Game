@@ -112,6 +112,7 @@ namespace Game.Scripts.Editor.Battle
             BakeSockets(controller);
             BakeLeftHanded(controller, weapons, false);
             BakeEdits();
+            StoreMarkers(weapons);
 
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
@@ -148,6 +149,35 @@ namespace Game.Scripts.Editor.Battle
             foreach (AnimationClip clip in controller.animationClips.Distinct().Where(clip => prefixes.Any(clip.name.StartsWith) && (!isCastOnly || IsWeaponCast(clip.name)) &&
                          AssetDatabase.GetAssetPath(clip).StartsWith(BattleEditorUtility.AnimationsFolder)))
                 ClipMirror.Apply(clip, sockets);
+        }
+
+        /// The frames of every swing's keys, marked on the animation editor's timeline: the poses to set by hand are there.
+        public static void StoreMarkers(WeaponDefinition[] weapons)
+        {
+            AnimationEditConfig edits = AssetDatabase.LoadAssetAtPath<AnimationEditConfig>(AnimationEditBaker.ConfigPath);
+            HashSet<string> stored = new();
+
+            if (edits == null)
+                return;
+
+            foreach (WeaponDefinition weapon in weapons.Where(weapon => stored.Add(weapon.Prefix)))
+            {
+                AttackDefinition[] attacks = weapon.Riposte == null ? weapon.Attacks : weapon.Attacks.Append(weapon.Riposte).ToArray();
+
+                for (int i = 0; i < attacks.Length; i++)
+                {
+                    string name = weapon.Prefix + (i < weapon.Attacks.Length ? FighterAnimComponent.AttackSuffix + i : FighterAnimComponent.RiposteSuffix);
+                    AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{BattleEditorUtility.AnimationsFolder}/{name}.anim");
+                    int last = Mathf.RoundToInt(attacks[i].Duration * FrameRate);
+
+                    if (clip != null)
+                        edits.SetMarkers(clip, BattleAnimationLibrary.AttackKeys(weapon, attacks[i])
+                            .Select(key => Mathf.Clamp(Mathf.RoundToInt(key.Time * FrameRate), 0, last)).Distinct().ToList());
+                }
+            }
+
+            EditorUtility.SetDirty(edits);
+            AssetDatabase.SaveAssets();
         }
 
         /// Hand edits made in the animation test scene go back onto the freshly generated clips.
