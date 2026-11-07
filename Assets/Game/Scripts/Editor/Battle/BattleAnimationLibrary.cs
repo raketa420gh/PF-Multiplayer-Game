@@ -239,8 +239,10 @@ namespace Game.Scripts.Editor.Battle
         public static WeaponDefinition CreateSwordShield()
         {
             BodyPose idle = SwordShield(new(0.22f, 1.2f, 0.38f), new(-0.15f, 0.75f, 0.64f), s_shieldRest, s_shieldRestNormal);
-            BodyPose block = SwordShield(new(0.3f, 1.32f, 0.22f), new(0.15f, 0.7f, 0.7f),
-                new(-0.06f, 1.47f, 0.34f), new(0.02f, 0.1f, 1f), 15f);
+            // Behind the raised shield the weapon drops by the right hip, pointing ahead and down under the board.
+            Vector3 lowGrip = new(0.27f, 1f, 0.16f);
+            Vector3 lowBlade = new(0.25f, -0.35f, 0.9f);
+            BodyPose block = SwordShield(lowGrip, lowBlade, new(-0.06f, 1.47f, 0.34f), new(0.02f, 0.1f, 1f), 15f);
 
             return new WeaponDefinition
             {
@@ -288,9 +290,9 @@ namespace Game.Scripts.Editor.Battle
                 BlockAngle = 100f,
                 BlockMove = 0.6f,
                 Block = block,
-                BlockHit = SwordShield(new(0.3f, 1.3f, 0.2f), new(0.15f, 0.7f, 0.7f),
+                BlockHit = SwordShield(lowGrip, lowBlade,
                     new(-0.1f, 1.4f, 0.26f), new(-0.25f, 0.35f, 0.9f), 8f, -4f),
-                BlockLowered = SwordShield(new(0.3f, 1.3f, 0.2f), new(0.15f, 0.7f, 0.7f),
+                BlockLowered = SwordShield(lowGrip, lowBlade,
                     new(-0.14f, 1.34f, 0.3f), new(-0.2f, 0.15f, 0.95f), 8f),
                 DeflectPose = SwordShield(new(0.34f, 1.62f, 0.2f), new(0.3f, 0.85f, 0.3f), s_shieldRest, s_shieldRestNormal, 12f, -6f),
                 BlockSocket = WeaponSocket.LeftShield,
