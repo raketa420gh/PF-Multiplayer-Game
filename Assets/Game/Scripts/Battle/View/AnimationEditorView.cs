@@ -1244,8 +1244,37 @@ namespace Game.Scripts.Battle
         private void ChangeKey(HumanBodyBones bone, BoneKey key, bool isSocket = false)
         {
             BeginChange();
-            _edit.GetOrAdd(bone, isSocket).SetKey(key);
+            BoneTrack track = _edit.GetOrAdd(bone, isSocket);
+            Protect(track, key.Frame);
+            track.SetKey(key);
             _dirty.Add(_edit.Clip);
+        }
+
+        /// A track's first key on a frame would carry its offset onto the poses already keyed elsewhere (it holds before the
+        /// first and after the last key): the track is pinned there as it stands first.
+        private void Protect(BoneTrack track, int frame)
+        {
+            if (track.IndexOf(frame) >= 0)
+                return;
+
+            SortedSet<int> frames = new();
+
+            foreach (BoneTrack other in _edit.Tracks)
+            {
+                foreach (BoneKey key in other.Keys)
+                    frames.Add(key.Frame);
+            }
+
+            List<BoneKey> pins = new();
+
+            foreach (int other in frames)
+            {
+                if (other != frame && track.IndexOf(other) < 0)
+                    pins.Add(track.Evaluate(other));
+            }
+
+            foreach (BoneKey pin in pins)
+                track.SetKey(new BoneKey(pin.Frame, pin.Rotation, pin.Position));
         }
 
         /// Pins the current offset of the selection, or of every animated track, as keys on this frame.
@@ -1325,7 +1354,10 @@ namespace Game.Scripts.Battle
             PushUndo();
 
             foreach (BoneTrack track in GetSelectedTracks())
+            {
+                Protect(track, _frame);
                 track.SetKey(new BoneKey(_frame, Quaternion.identity, Vector3.zero));
+            }
 
             _dirty.Add(_edit.Clip);
         }
@@ -1396,8 +1428,12 @@ namespace Game.Scripts.Battle
                     : new BoneKey(_frame, Quaternion.Inverse(clip.localRotation) * pose.rotation,
                         bone == HumanBodyBones.Hips ? pose.position - clip.localPosition : current.Position);
 
-                if (Quaternion.Angle(key.Rotation, current.Rotation) > PasteTolerance || (key.Position - current.Position).sqrMagnitude > 1e-8f)
-                    _edit.GetOrAdd(bone, isSocket).SetKey(key);
+                if (Quaternion.Angle(key.Rotation, current.Rotation) <= PasteTolerance && (key.Position - current.Position).sqrMagnitude <= 1e-8f)
+                    continue;
+
+                BoneTrack track = _edit.GetOrAdd(bone, isSocket);
+                Protect(track, _frame);
+                track.SetKey(key);
             }
 
             _dirty.Add(_edit.Clip);
