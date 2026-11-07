@@ -105,6 +105,7 @@ namespace Game.Scripts.Editor.Battle
 
             BuildActions(upper);
             rig.SetPalm(0f, 0f);
+            rig.SetShieldGrip(Pose.identity);
             BuildFirstPerson(rig, upper);
             BuildPickUp(rig, controller);
             BuildArms(controller);
@@ -506,6 +507,8 @@ namespace Game.Scripts.Editor.Battle
         /// The weapon's own first-person actions: its cast, taking it out and putting it away.
         private static void BuildCast(BattlePoseRig rig, AnimatorStateMachine stateMachine, WeaponDefinition weapon)
         {
+            rig.SetShieldGrip(ShieldGripConfig.Get(weapon.Shield));
+
             if (weapon.EquipVia.Count > 0)
                 AddKeyed(rig, stateMachine, weapon.Prefix + FighterAnimComponent.EquipSuffix, weapon.EquipVia[^1].Time, SettleRoll(rig, weapon.EquipVia));
 
@@ -545,6 +548,7 @@ namespace Game.Scripts.Editor.Battle
         public static void Settle(BattlePoseRig rig, WeaponDefinition weapon)
         {
             rig.SetPalm(weapon.PalmLean, weapon.PalmDepth);
+            rig.SetShieldGrip(ShieldGripConfig.Get(weapon.Shield));
             SettleRoll(rig, ref weapon.Idle);
             SettleRoll(rig, ref weapon.IdleBreath);
             SettleRoll(rig, ref weapon.Block);

@@ -137,6 +137,7 @@ namespace Game.Scripts.Editor.Battle
         private readonly Transform[] _sockets;
         private readonly Quaternion[] _socketRests;
         private readonly Vector3 _palmRest;
+        private readonly Pose _shieldRest;
         private readonly Transform _hips;
         private readonly Transform[] _spine;
         private readonly Transform _neck;
@@ -165,6 +166,7 @@ namespace Game.Scripts.Editor.Battle
             _sockets = CreateSockets(_animator);
             _socketRests = Array.ConvertAll(_sockets, socket => socket.localRotation);
             _palmRest = _palm = _sockets[(int)WeaponSocket.RightHand].localPosition;
+            _shieldRest = new Pose(_sockets[(int)WeaponSocket.LeftShield].localPosition, _sockets[(int)WeaponSocket.LeftShield].localRotation);
             _handler = new HumanPoseHandler(_animator.avatar, _root.transform);
 
             _bones = _root.GetComponentsInChildren<Transform>();
@@ -208,6 +210,17 @@ namespace Game.Scripts.Editor.Battle
         public Quaternion GetSocketRotation(WeaponSocket socket, float lean)
         {
             return _socketRests[(int)socket] * Quaternion.AngleAxis(-lean, Vector3.right);
+        }
+
+        /// The shield of the weapon being posed sits in the hand by 'grip' (ShieldGripConfig): the socket the authored board pose is
+        /// solved for moves on the hand, so the board keeps its path and the hand takes the new grip.
+        public void SetShieldGrip(Pose grip)
+        {
+            Transform socket = _sockets[(int)WeaponSocket.LeftShield];
+            // Apply puts every transform back to its bind pose first, the socket included.
+            Pose local = new Pose(_shieldRest.position + _shieldRest.rotation * grip.position, _shieldRest.rotation * grip.rotation);
+            _bind[Array.IndexOf(_bones, socket)] = local;
+            socket.SetLocalPositionAndRotation(local.position, local.rotation);
         }
 
         /// WeaponDefinition.PalmLean and PalmDepth of the weapon being posed.
