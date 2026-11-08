@@ -92,6 +92,15 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Dungeon Test: a called monster appears this far ahead of the adventurer")]
         private float _testSpawnDistance = 5f;
 
+        [SerializeField, Tooltip("Dungeon Test: one of each stands in a row across the room's middle, to test loot")]
+        private NetworkObject[] _testChests;
+
+        [SerializeField, Tooltip("Dungeon Test: the middle of the chest row in room space (clear of the Arena's lift) and the step between chests")]
+        private Vector3 _testChestsAt = new(0f, 0f, -3.5f);
+
+        [SerializeField]
+        private float _testChestStep = 2f;
+
         [SerializeField]
         private float _resetDelay = 8f;
 
@@ -478,11 +487,12 @@ namespace Game.Scripts.Dungeon
             foreach (CatacombRoomComponent room in _catacombs.Rooms)
             {
                 foreach (MonsterPlacement placement in room.Containers)
+                    SpawnContainer(placement.Prefab, placement.Point.position, placement.Point.rotation, random);
+
+                for (int i = 0; _match.IsTest && i < _testChests.Length; i++)
                 {
-                    NetworkObject spawned = _runner.Spawn(placement.Prefab, placement.Point.position, placement.Point.rotation);
-                    ContainerComponent container = spawned.GetComponent<ContainerComponent>();
-                    container.Fill(container.LootTable, random.Next());
-                    _spawned.Add(spawned);
+                    Vector3 local = _testChestsAt + Vector3.right * ((i - (_testChests.Length - 1) * 0.5f) * _testChestStep);
+                    SpawnContainer(_testChests[i], room.transform.TransformPoint(local), room.transform.rotation, random);
                 }
 
                 foreach (MonsterPlacement placement in room.Traps)
@@ -499,6 +509,14 @@ namespace Game.Scripts.Dungeon
         private bool IsGenerated(int floorIndex)
         {
             return _catacombs != null && _catacombs.Floor == floorIndex + 1;
+        }
+
+        private void SpawnContainer(NetworkObject prefab, Vector3 position, Quaternion rotation, System.Random random)
+        {
+            NetworkObject spawned = _runner.Spawn(prefab, position, rotation);
+            ContainerComponent container = spawned.GetComponent<ContainerComponent>();
+            container.Fill(container.LootTable, random.Next());
+            _spawned.Add(spawned);
         }
 
         /// Teams start in the key room (the Great Hall) or a room next to it.

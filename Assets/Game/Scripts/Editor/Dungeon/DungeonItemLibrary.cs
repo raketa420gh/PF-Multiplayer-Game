@@ -171,6 +171,8 @@ namespace Game.Scripts.Editor.Dungeon
         public (string item, EquipSlot slot, int count, bool equipped)[] Kit;
         public WeaponClass[] Weapons;
         public CastFocus Focus = CastFocus.Magic;
+        /// For now only the Mercenary and the Confessor can be created and played.
+        public bool IsPlayable;
     }
 
     /// Items, classes, abilities and perks of the prototype.

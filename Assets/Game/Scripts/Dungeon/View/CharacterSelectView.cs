@@ -69,7 +69,7 @@ namespace Game.Scripts.Dungeon
                     : "<color=#6f6a5f>+  Create Character</color>";
             }
 
-            _enterButton.interactable = hasCharacter;
+            _enterButton.interactable = hasCharacter && FindClass(StashService.LoadClass(slot)).IsPlayable;
             _deleteButton.interactable = hasCharacter;
             _deleteButton.GetComponentInChildren<TMP_Text>().text = "Delete";
             _preview.SetCharacterShown(hasCharacter);
@@ -83,7 +83,8 @@ namespace Game.Scripts.Dungeon
 
             ClassConfig config = FindClass(StashService.LoadClass(slot));
             _preview.Bind(null, config);
-            _nameText.text = $"{StashService.LoadName(slot)}  <color=#c8e632>Lv. {StashService.LoadLevel(slot)}</color> {config.DisplayName}";
+            _nameText.text = $"{StashService.LoadName(slot)}  <color=#c8e632>Lv. {StashService.LoadLevel(slot)}</color> {config.DisplayName}"
+                + (config.IsPlayable ? string.Empty : "  <color=#e05040>(class unavailable)</color>");
         }
 
         private int FirstCharacter()

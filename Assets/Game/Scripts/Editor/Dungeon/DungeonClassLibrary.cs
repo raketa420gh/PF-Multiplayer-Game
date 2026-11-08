@@ -35,7 +35,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             return new ClassDef
             {
-                Id = 0, Name = "Mercenary", Description = "A free blade: a soldier of a disbanded army gone below for the coin. Loyal to no one, trusts no ossarite: plain steel, and ossarite is only pay.",
+                Id = 0, Name = "Mercenary", IsPlayable = true,Description = "A free blade: a soldier of a disbanded army gone below for the coin. Loyal to no one, trusts no ossarite: plain steel, and ossarite is only pay.",
                 Stats = new ClassStats(19, 19, 8, 9, 17, 18), Color = steel, Body = Color.white,
                 Subclasses = new[]
                 {
@@ -365,7 +365,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             return new ClassDef
             {
-                Id = 3, Name = "Confessor", Description = "A burier of the Cathedral of Repose: sang the dead of the vein to rest so they would not rise, and gathered the tithe. Came down himself to atone for Mornheim's \"payment of the dead\". One wheel of prayers.",
+                Id = 3, Name = "Confessor", IsPlayable = true,Description = "A burier of the Cathedral of Repose: sang the dead of the vein to rest so they would not rise, and gathered the tithe. Came down himself to atone for Mornheim's \"payment of the dead\". One wheel of prayers.",
                 Stats = new ClassStats(15, 14, 21, 16, 12, 12), Color = light, Body = Color.white,
                 Subclasses = new[]
                 {

@@ -424,6 +424,7 @@ namespace Game.Scripts.Editor.Dungeon
                 ClassConfig config = BattleEditorUtility.LoadOrCreate<ClassConfig>($"{ClassesFolder}/{def.Name}.asset");
                 SerializedObject so = new SerializedObject(config);
                 BattleEditorUtility.Set(so, "_id", def.Id);
+                BattleEditorUtility.Set(so, "_isPlayable", def.IsPlayable);
                 BattleEditorUtility.Set(so, "_displayName", def.Name);
                 BattleEditorUtility.Set(so, "_description", def.Description);
                 BattleEditorUtility.Set(so, "_color", def.Color);

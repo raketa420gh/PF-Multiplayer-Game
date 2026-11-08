@@ -358,9 +358,14 @@ namespace Game.Scripts.Dungeon
 
         public bool CanCastBareHanded => _castFocus == CastFocus.BareHands;
         public CastFocus Focus => _castFocus;
+        /// Only playable classes can be created and taken into the game.
+        public bool IsPlayable => _isPlayable;
 
         [SerializeField]
         private byte _id;
+
+        [SerializeField]
+        private bool _isPlayable = true;
 
         [SerializeField]
         private string _displayName;

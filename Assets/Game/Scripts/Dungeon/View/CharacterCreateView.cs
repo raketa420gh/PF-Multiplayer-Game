@@ -49,6 +49,7 @@ namespace Game.Scripts.Dungeon
             {
                 int index = i;
                 _classButtons[i].onClick.AddListener(() => { Click(); Select(index); });
+                _classButtons[i].interactable = _classes[i].IsPlayable;
             }
 
             _nicknameInput.characterLimit = StashService.MaxNameLength;
@@ -61,7 +62,7 @@ namespace Game.Scripts.Dungeon
         private void OnEnable()
         {
             _nicknameInput.text = string.Empty;
-            Select(0);
+            Select(Math.Max(0, Array.FindIndex(_classes, config => config.IsPlayable)));
             RefreshCreate();
         }
 

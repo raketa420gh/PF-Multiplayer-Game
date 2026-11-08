@@ -1251,7 +1251,7 @@ namespace Game.Scripts.Editor.Dungeon
             (string title, string info, Texture picture, string scene, bool isTest)[] destinations =
             {
                 (DungeonSceneBuilder.Title, "The Tangled Catacombs · 7x7 rooms laid out anew every run around the Great Hall · dark crypts, skeletons, trapped corridors · 15 min · blue portals at 7:00, 10:00, 12:00, 14:30", floorMap, SceneTravel.DungeonScene, false),
-                ("Dungeon Test", "One random catacomb room (never the Great Hall) without monsters · F2 calls monsters in to test mechanics · party of up to 3", floorMap, SceneTravel.DungeonScene, true)
+                ("Dungeon Test", "The Arena room with one chest of each kind, no monsters · F2 calls monsters in to test mechanics · party of up to 3", floorMap, SceneTravel.DungeonScene, true)
             };
 
             LobbyHomeView view = page.gameObject.AddComponent<LobbyHomeView>();
