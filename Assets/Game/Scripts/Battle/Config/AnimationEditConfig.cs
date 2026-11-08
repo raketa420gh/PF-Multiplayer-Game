@@ -22,27 +22,6 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private List<ClipMarkers> _markers = new();
 
-        [Tooltip("Per shield prefab: the shield socket's offset on the hand, in that socket's space; an animation rebuild solves every clip with the shield for it")]
-        [SerializeField]
-        private List<GripPoint> _shields = new();
-
-        public Pose GetShieldGrip(string shield)
-        {
-            GripPoint grip = _shields.Find(item => item.Name == shield);
-
-            return grip != null ? new Pose(grip.Pose.position, grip.Pose.rotation.normalized) : Pose.identity;
-        }
-
-        public void SetShieldGrip(string shield, Pose grip)
-        {
-            GripPoint point = _shields.Find(item => item.Name == shield);
-
-            if (point == null)
-                _shields.Add(point = new GripPoint(shield, Vector3.zero));
-
-            point.SetPose(grip.position, grip.rotation);
-        }
-
         public ClipEdit Find(AnimationClip clip)
         {
             return _clips.Find(edit => edit.Clip == clip);
@@ -194,6 +173,10 @@ namespace Game.Scripts.Battle
         public AnimationClip Source => _source;
         public IReadOnlyList<BoneTrack> Tracks => _tracks;
         public IReadOnlyList<HandGrip> Grips => _grips;
+        /// The off-hand shield stays on the clip's path; the arm keys pose the hand on it, the shield socket takes the offset.
+        public bool LocksShield => _locksShield;
+
+        private const string ShieldSocket = "LeftHandShieldSocket";
 
         [SerializeField]
         private AnimationClip _clip;
@@ -207,13 +190,30 @@ namespace Game.Scripts.Battle
         [SerializeField]
         private List<HandGrip> _grips = new();
 
+        [SerializeField]
+        private bool _locksShield;
+
+        [NonSerialized]
+        private Transform _lockedShield;
+
+        [NonSerialized]
+        private Pose _shieldPose;
+
         public ClipEdit(AnimationClip clip, AnimationClip source)
         {
             _clip = clip;
             _source = source;
         }
 
+        /// The off-hand shield socket; the baking rig has it with no shield on.
+        public static Transform GetShield(Animator animator)
+        {
+            return animator.GetBoneTransform(HumanBodyBones.LeftHand).Find(ShieldSocket);
+        }
+
         public void SetSource(AnimationClip source) => _source = source;
+
+        public void SetLocksShield(bool isLocked) => _locksShield = isLocked;
 
         public BoneTrack Find(HumanBodyBones bone, bool isSocket = false)
         {
@@ -268,7 +268,12 @@ namespace Game.Scripts.Battle
         /// the keys and pins put them; the weapon is the same either way.
         public void Apply(Animator animator, float frame, bool hasHolds = true)
         {
-            // A locked weapon stays on the clip's path: taken before the keys turn the arm that carries it.
+            // A locked weapon or shield stays on the clip's path: taken before the keys turn the arm that carries it.
+            _lockedShield = _locksShield && hasHolds ? GetShield(animator) : null;
+
+            if (_lockedShield != null)
+                _shieldPose = new Pose(_lockedShield.position, _lockedShield.rotation);
+
             foreach (HandGrip grip in _grips)
             {
                 if (grip.LocksWeapon && hasHolds)
@@ -295,6 +300,8 @@ namespace Game.Scripts.Battle
                 if (!grip.IsHolding)
                     grip.Apply(animator, frame, Quaternion.identity);
             }
+
+            RelockShield();
         }
 
         /// Puts locked and path-keeping weapons back where the grips left them, after the joint limits turned the hands.
@@ -302,11 +309,13 @@ namespace Game.Scripts.Battle
         {
             foreach (HandGrip grip in _grips)
                 grip.Relock(animator);
+
+            RelockShield();
         }
 
         public ClipEdit Clone()
         {
-            ClipEdit clone = new ClipEdit(_clip, _source);
+            ClipEdit clone = new ClipEdit(_clip, _source) { _locksShield = _locksShield };
 
             foreach (BoneTrack track in _tracks)
                 clone._tracks.Add(track.Clone());
@@ -315,6 +324,12 @@ namespace Game.Scripts.Battle
                 clone._grips.Add(grip.Clone());
 
             return clone;
+        }
+
+        private void RelockShield()
+        {
+            if (_lockedShield != null)
+                _lockedShield.SetPositionAndRotation(_shieldPose.position, _shieldPose.rotation);
         }
     }
 

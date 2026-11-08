@@ -1564,7 +1564,6 @@ namespace Game.Scripts.Editor.Dungeon
             }
 
             weapon.Prefix = prefix;
-            weapon.Shield = shield.Shield;
             weapon.DisplayName = $"{weapon.DisplayName} & {shieldName}";
             weapon.Idle = Carry(weapon.Idle, shield.Idle);
             weapon.IdleBreath = Carry(weapon.IdleBreath, shield.Idle);
@@ -1647,7 +1646,6 @@ namespace Game.Scripts.Editor.Dungeon
             Vector3 top = new(0f, 1f, -0.09f);
 
             WeaponDefinition definition = BattleAnimationLibrary.CreateSwordShield();
-            definition.Shield = ShieldGripConfig.Ecu;
             definition.Idle = EcuPose(new(0.12f, 1.38f, 0.42f), new(0.06f, 0.99f, 0.15f), restShield, restNormal, restTop, rightElbow);
             definition.BlockRaise = 12 * Footage;
             definition.BlockVia = new()

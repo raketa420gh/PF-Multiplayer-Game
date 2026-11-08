@@ -97,8 +97,6 @@ namespace Game.Scripts.Editor.Battle
         /// How far from the wrist (metres) the main fist closes on the grip; 0 = BattlePoseRig.PalmOffset, at the fingertips of a
         /// short grip. Deeper takes it into the middle of the fist, the fingers round it.
         public float PalmDepth;
-        /// Prefab name of the shield on the off arm (AnimationEditConfig shield grip key), null without one.
-        public string Shield;
         /// The edge faces the heel of the main hand, away from its knuckles: the hand at the butt of a polearm, which
         /// travels against the head, so the knuckles lead the hand's own way while the edge leads the head's.
         public bool IsEdgeBack;
@@ -250,7 +248,6 @@ namespace Game.Scripts.Editor.Battle
             {
                 Prefix = "SwordShield",
                 DisplayName = "Sword & Shield",
-                Shield = ShieldGripConfig.RoundShield,
                 Kind = WeaponKind.OneHanded,
                 Reach = 1.4f,
                 DeflectDuration = 0.6f,

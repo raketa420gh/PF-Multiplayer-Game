@@ -146,6 +146,16 @@ namespace Game.Scripts.Battle
                 keepsPath.Add(edit.FindGrip(hand) is { KeepsPath: true });
             }
 
+            // A locked shield keeps the clip's path whatever the joint limits leave of the arm; its socket takes the offset.
+            Transform shield = edit.LocksShield ? ClipEdit.GetShield(animator) : null;
+
+            if (shield != null)
+            {
+                moved.Add(shield);
+                rests.Add(new Pose(shield.localPosition, shield.localRotation));
+                keepsPath.Add(true);
+            }
+
             AnimationCurve[,] sockets = new AnimationCurve[moved.Count, s_socketCurves.Length];
             // The edit starts from the socket where the source clip keys it, as the editor shows it: a mirrored clip does not
             // key the left socket at its rest.
