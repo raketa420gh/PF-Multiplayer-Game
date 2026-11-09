@@ -147,6 +147,12 @@ namespace Game.Scripts.Dungeon
         {
             if (_visual != null && _visual.activeSelf != IsOpen)
                 _visual.SetActive(IsOpen);
+
+            // The sunk pedestal's orb and light shine up through the floor: hidden until the portal shows up and once it has sunk back.
+            bool isPedestalShown = IsActive || _pedestalHeight > -_pedestalDepth;
+
+            if (_pedestal != null && _pedestal.gameObject.activeSelf != isPedestalShown)
+                _pedestal.gameObject.SetActive(isPedestalShown);
         }
     }
 }
