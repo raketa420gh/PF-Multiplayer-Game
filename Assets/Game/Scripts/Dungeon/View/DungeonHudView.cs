@@ -3,6 +3,7 @@ using Fusion;
 using Game.Scripts.Battle;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
@@ -100,7 +101,8 @@ namespace Game.Scripts.Dungeon
         private BeltSlot[] _belt;
 
         [SerializeField]
-        private ThrowCrosshairView _throwCrosshair;
+        [FormerlySerializedAs("_throwCrosshair")]
+        private AimCrosshairView _aimCrosshair;
 
         [SerializeField]
         private Image _vignette;
@@ -169,7 +171,7 @@ namespace Game.Scripts.Dungeon
             UpdateReadied(adventurer);
             UpdateMarker(adventurer);
             UpdateBoss(adventurer);
-            UpdateThrowCrosshair(adventurer);
+            UpdateAimCrosshair(adventurer);
         }
 
         private void UpdateReadied(AdventurerComponent adventurer)
@@ -226,12 +228,26 @@ namespace Game.Scripts.Dungeon
             };
         }
 
-        private void UpdateThrowCrosshair(AdventurerComponent adventurer)
+        /// Thrown items aim with the throw; a bow with its draw; a crossbow is drawn while loaded and closes in with the reload.
+        private void UpdateAimCrosshair(AdventurerComponent adventurer)
         {
-            bool isThrowing = adventurer.HasBeltItemInHand &&
-                              adventurer.Inventory.GetEquippedConfig<UtilityItemConfig>((EquipSlot)adventurer.BeltSlot) is { UtilityKind: UtilityKind.ThrowingWeapon };
-            bool isReleasing = adventurer.Fighter.Combat.BusyKind == AdventurerComponent.BusyThrowRelease;
-            _throwCrosshair.Refresh(isThrowing, adventurer.IsAimingThrow, adventurer.ThrowDraw, isReleasing);
+            CombatComponent combat = adventurer.Fighter.Combat;
+
+            if (adventurer.HasBeltItemInHand)
+            {
+                bool isReleasing = combat.State == CombatState.Busy && combat.BusyKind is AdventurerComponent.BusyThrowRelease or AdventurerComponent.BusyTorchThrow;
+                _aimCrosshair.Refresh(adventurer.Inventory.GetEquippedConfig<ItemConfig>((EquipSlot)adventurer.BeltSlot) is { IsAimed: true },
+                    adventurer.IsAimingThrow, adventurer.ThrowDraw, isReleasing);
+
+                return;
+            }
+
+            WeaponConfig weapon = combat.Weapon;
+
+            if (weapon.IsRanged && weapon.Ranged.IsManualReload)
+                _aimCrosshair.Refresh(true, combat.IsLoaded || combat.State == CombatState.Reload, combat.IsLoaded ? 1f : combat.ReloadProgress, combat.State == CombatState.Recoil);
+            else
+                _aimCrosshair.Refresh(weapon.IsRanged, combat.State == CombatState.Draw, combat.DrawPower, combat.State == CombatState.Reload);
         }
 
         private void UpdateBoss(AdventurerComponent adventurer)

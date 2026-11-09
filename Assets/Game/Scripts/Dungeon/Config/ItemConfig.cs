@@ -137,6 +137,8 @@ namespace Game.Scripts.Dungeon
         public GameObject WorldModel => _worldModel;
         /// Handling sounds of the item: weapons take them from their combat config, the rest from their material's set.
         public virtual WeaponSoundConfig Sounds => _sounds;
+        /// Held in hand it is drawn back and let go at the crosshair: the HUD shows the aim bars (AimCrosshairView).
+        public virtual bool IsAimed => false;
 
         [SerializeField]
         private short _id;

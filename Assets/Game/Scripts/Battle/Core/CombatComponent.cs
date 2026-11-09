@@ -107,6 +107,7 @@ namespace Game.Scripts.Battle
         public float BusyProgress => State == CombatState.Busy && _stateDuration > 0f ? Mathf.Clamp01(StateTime / _stateDuration) : 0f;
         public float BusyTimeLeft => State == CombatState.Busy ? Mathf.Max(0f, _stateDuration - StateTime) : 0f;
         public byte BusyKind => _busyKind;
+        public float ReloadProgress => State == CombatState.Reload && _stateDuration > 0f ? Mathf.Clamp01(StateTime / _stateDuration) : 0f;
         public float TimeScale => State switch
         {
             CombatState.Attack or CombatState.BlockRaise or CombatState.BlockImpact or CombatState.Draw => ActionSpeed,

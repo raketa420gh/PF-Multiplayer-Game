@@ -2,10 +2,10 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// The crosshair of a throwing weapon as in the Dark and Darker footage: two bars beside the dot. Drawing the throw
-    /// closes them in slowly, at full power they snap shut on the dot; let go, they kick out wide and settle back.
-    /// Gaps are the inner edges of the bars from the centre, in 1080p pixels.
-    public sealed class ThrowCrosshairView : DisplayableView
+    /// The crosshair of anything drawn back and let go (thrown items, bows, crossbows) as in the Dark and Darker footage:
+    /// two bars beside the dot. Drawing (or reloading) closes them in slowly, at full power they snap shut on the dot;
+    /// let go, they kick out wide and settle back. Gaps are the inner edges of the bars from the centre, in 1080p pixels.
+    public sealed class AimCrosshairView : DisplayableView
     {
         [SerializeField]
         private RectTransform _left;

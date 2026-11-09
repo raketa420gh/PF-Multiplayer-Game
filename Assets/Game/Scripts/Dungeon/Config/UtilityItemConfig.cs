@@ -9,6 +9,7 @@ namespace Game.Scripts.Dungeon
     {
         public override ItemKind Kind => ItemKind.Utility;
         public UtilityKind UtilityKind => _utilityKind;
+        public override bool IsAimed => _utilityKind == UtilityKind.ThrowingWeapon;
         public int Damage => _damage;
         public float UseTime => _useTime;
         /// A knife, not an axe: short-blade perks count for it.

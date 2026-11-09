@@ -418,18 +418,18 @@ namespace Game.Scripts.Editor.Dungeon
             return prefab.GetComponent<Image>();
         }
 
-        /// Two bars beside the crosshair dot, shown while a throwing weapon is in hand (ThrowCrosshairView). Public: a built
+        /// Two bars beside the crosshair dot, shown while an aimed item or ranged weapon is in hand (AimCrosshairView). Public: a built
         /// scene gets them without a rebuild.
-        public static ThrowCrosshairView BuildThrowCrosshair(Transform hud)
+        public static AimCrosshairView BuildAimCrosshair(Transform hud)
         {
             Vector2 center = new Vector2(0.5f, 0.5f);
             Color color = new Color(1f, 1f, 1f, 0.75f);
-            RectTransform root = CreateRect("ThrowCrosshair", hud, center, Vector2.zero, Vector2.zero);
+            RectTransform root = CreateRect("AimCrosshair", hud, center, Vector2.zero, Vector2.zero);
             RectTransform left = CreateImage("Left", root, center, Vector2.zero, new Vector2(12f, 2f), color).rectTransform;
             RectTransform right = CreateImage("Right", root, center, Vector2.zero, new Vector2(12f, 2f), color).rectTransform;
             left.pivot = new Vector2(1f, 0.5f);
             right.pivot = new Vector2(0f, 0.5f);
-            ThrowCrosshairView view = root.gameObject.AddComponent<ThrowCrosshairView>();
+            AimCrosshairView view = root.gameObject.AddComponent<AimCrosshairView>();
             BattleEditorUtility.Set(view, "_left", left);
             BattleEditorUtility.Set(view, "_right", right);
             root.gameObject.SetActive(false);
@@ -455,7 +455,7 @@ namespace Game.Scripts.Editor.Dungeon
             BuildCompass(hud, inputs.Context);
 
             CreateImage("Crosshair", hud, center, Vector2.zero, new Vector2(4f, 4f), new Color(1f, 1f, 1f, 0.75f));
-            ThrowCrosshairView throwCrosshair = BuildThrowCrosshair(hud);
+            AimCrosshairView aimCrosshair = BuildAimCrosshair(hud);
             BattleEditorUtility.CreateSwingHint(hud, inputs.Context.Battle);
             Image ring = CreateImage("PromptRing", hud, center, Vector2.zero, new Vector2(60f, 60f), new Color(1f, 0.9f, 0.6f, 0.9f));
             MakeRadial(ring);
@@ -604,7 +604,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_castText", castText);
             BattleEditorUtility.Set(so, "_castRoot", castRoot.gameObject);
             BattleEditorUtility.Set(so, "_vignette", vignette);
-            BattleEditorUtility.Set(so, "_throwCrosshair", throwCrosshair);
+            BattleEditorUtility.Set(so, "_aimCrosshair", aimCrosshair);
             BattleEditorUtility.Set(so, "_killText", kills);
             BattleEditorUtility.Set(so, "_readiedText", readied);
             BattleEditorUtility.Set(so, "_bossFill", bossFill);
