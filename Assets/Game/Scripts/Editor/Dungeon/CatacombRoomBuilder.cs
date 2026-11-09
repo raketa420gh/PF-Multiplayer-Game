@@ -20,7 +20,8 @@ namespace Game.Scripts.Editor.Dungeon
     {
         public const string Folder = DungeonPropBuilder.PrefabsFolder + "/Catacombs";
         public const int MapPixels = 144;
-        public const float DoorWidth = 2f;
+        /// Fits the leaf of CatacombDoor (1.05 m); NavMesh passes it with the 0.3 m agent on 0.15 m voxels.
+        public const float DoorWidth = 1.1f;
         /// A little above a head, and above the 2 m NavMesh agent standing on a quarter-metre walkway: the doorways carry doors.
         public const float DoorHeight = 2.4f;
         /// The two doorways of a side sit this far either side of its middle: in the middles of its halves.

@@ -4846,8 +4846,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7494099696320021275}
   - component: {fileID: 5715463967328414862}
-  - component: {fileID: 2365341733984514716}
   - component: {fileID: 2799363232809930126}
+  - component: {fileID: 2365341733984514716}
   m_Layer: 0
   m_Name: Light
   m_TagString: Untagged
@@ -4935,22 +4935,6 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!114 &2365341733984514716
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3829075575298451321}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f375fb4f1eaf91b46a1779a9be18969e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.FlickerLightComponent
-  _light: {fileID: 5715463967328414862}
-  _baseIntensity: 3.5
-  _amplitude: 0.875
-  _speed: 9
 --- !u!114 &2799363232809930126
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4980,6 +4964,22 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &2365341733984514716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3829075575298451321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f375fb4f1eaf91b46a1779a9be18969e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.FlickerLightComponent
+  _light: {fileID: 5715463967328414862}
+  _baseIntensity: 3.5
+  _amplitude: 0.875
+  _speed: 9
 --- !u!1 &5731556164048818769
 GameObject:
   m_ObjectHideFlags: 0

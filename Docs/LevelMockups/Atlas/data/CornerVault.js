@@ -2,11 +2,11 @@
 ATLAS.room("CornerVault",[
 {"id":"Wa1","cat":"wall","name":"Wall","p":[-5.9,0,9],"ry":0,"s":[0.2,6,0.6]},
 {"id":"Wa2","cat":"wall","name":"Wall","p":[-4.8,2.4,9],"ry":0,"s":[2,3.6,0.6]},
-{"id":"Tr1","cat":"trap","name":"Door","p":[-4.8,0,9],"ry":0,"s":[2,2.4,0.12]},
+{"id":"Tr1","cat":"trap","name":"Door","p":[-4.8,0,9],"ry":0,"s":[1.1,2.4,0.12]},
 {"id":"Wa3","cat":"wall","name":"Wall","p":[-3.7,0,9],"ry":0,"s":[0.2,6,0.6]},
 {"id":"Wa4","cat":"wall","name":"Wall","p":[9,0,-6.3],"ry":0,"s":[0.6,6,0.2]},
 {"id":"Wa5","cat":"wall","name":"Wall","p":[9,2.4,-5.2],"ry":0,"s":[0.6,3.6,2]},
-{"id":"Tr2","cat":"trap","name":"Door","p":[9,0,-5.2],"ry":90,"s":[2,2.4,0.12]},
+{"id":"Tr2","cat":"trap","name":"Door","p":[9,0,-5.2],"ry":90,"s":[1.1,2.4,0.12]},
 {"id":"Wa6","cat":"wall","name":"Wall","p":[9,0,-4.1],"ry":0,"s":[0.6,6,0.2]},
 {"id":"Tr3","cat":"trap","name":"SecretDoor","p":[-11,0,-5.5],"ry":0,"s":[2.4,6,1],"open":[2.6,0,0]},
 {"id":"Tr4","cat":"trap","name":"SecretDoor","p":[-5.5,0,-11],"ry":0,"s":[1,6,2.4],"open":[0,0,2.6]},
@@ -162,5 +162,9 @@ ATLAS.room("CornerVault",[
 {"id":"Fl39","cat":"floor","name":"Floor","p":[13.4,-0.6,-0.5],"ry":0,"s":[6.8,0.6,7]},
 {"id":"Fl40","cat":"floor","name":"Floor","p":[16.95,-0.6,-8.4],"ry":0,"s":[0.3,0.6,2.4]},
 {"id":"Fl41","cat":"floor","name":"Floor","p":[16.95,-0.6,8.4],"ry":0,"s":[0.3,0.6,2.4]},
-{"id":"Ce1","cat":"ceiling","name":"Ceiling","p":[0,6,0],"ry":0,"s":[34.2,0.6,34.2]}
+{"id":"Ce1","cat":"ceiling","name":"Ceiling","p":[0,6,0],"ry":0,"s":[34.2,0.6,34.2]},
+{"id":"Wa37","cat":"wall","name":"Wall","p":[-5.575,0,9],"ry":0,"s":[0.45,2.4,0.6]},
+{"id":"Wa38","cat":"wall","name":"Wall","p":[-4.025,0,9],"ry":0,"s":[0.45,2.4,0.6]},
+{"id":"Wa39","cat":"wall","name":"Wall","p":[9,0,-5.975],"ry":0,"s":[0.6,2.4,0.45]},
+{"id":"Wa40","cat":"wall","name":"Wall","p":[9,0,-4.425],"ry":0,"s":[0.6,2.4,0.45]}
 ]);

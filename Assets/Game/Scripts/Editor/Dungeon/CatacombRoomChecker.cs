@@ -124,10 +124,10 @@ namespace Game.Scripts.Editor.Dungeon
         private static NavMeshData Bake(Transform root)
         {
             NavMeshBuildSettings settings = NavMesh.GetSettingsByID(0);
-            settings.agentRadius = 0.35f;
+            settings.agentRadius = 0.3f;
             settings.agentHeight = 1.8f;
             settings.overrideVoxelSize = true;
-            settings.voxelSize = 0.2f;
+            settings.voxelSize = 0.15f;
             List<NavMeshBuildMarkup> markups = new();
             List<NavMeshBuildSource> sources = new();
 

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &915786168410880027
+--- !u!1 &759105470618008976
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,11 +8,11 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3328619085055828462}
-  - component: {fileID: 3312114066186634228}
-  - component: {fileID: 4735785754701689861}
-  - component: {fileID: 7188882351438433094}
-  - component: {fileID: 1084838601034152525}
+  - component: {fileID: 3102409040689250584}
+  - component: {fileID: 2299117168333530610}
+  - component: {fileID: 7424245864507278143}
+  - component: {fileID: 1801086034064847596}
+  - component: {fileID: 3510250657670135858}
   m_Layer: 0
   m_Name: Wall Secret
   m_TagString: Untagged
@@ -20,36 +20,36 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3328619085055828462
+--- !u!4 &3102409040689250584
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 915786168410880027}
+  m_GameObject: {fileID: 759105470618008976}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.6, z: 7.9}
+  m_LocalPosition: {x: 13.2, y: -0.55, z: -0.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4190951300408078824}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &3312114066186634228
+--- !u!33 &2299117168333530610
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 915786168410880027}
-  m_Mesh: {fileID: 4300000, guid: db7ad4c3c05142e4b8f9ed58bca919af, type: 2}
---- !u!23 &4735785754701689861
+  m_GameObject: {fileID: 759105470618008976}
+  m_Mesh: {fileID: 4300000, guid: d489f76f9cf9c1b49904f5e9aeab8ee2, type: 2}
+--- !u!23 &7424245864507278143
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 915786168410880027}
+  m_GameObject: {fileID: 759105470618008976}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -92,13 +92,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &7188882351438433094
+--- !u!65 &1801086034064847596
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 915786168410880027}
+  m_GameObject: {fileID: 759105470618008976}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -111,22 +111,22 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.6, y: 1.7, z: 4.2}
-  m_Center: {x: 0, y: 0.85, z: 0}
---- !u!114 &1084838601034152525
+  m_Size: {x: 2.4, y: 0.5, z: 4.2}
+  m_Center: {x: 0, y: 0.25, z: 0}
+--- !u!114 &3510250657670135858
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 915786168410880027}
+  m_GameObject: {fileID: 759105470618008976}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 688af9bcfba47b1439fbb42eb3adcf46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.RoomSlabComponent
-  _closed: {x: 0, y: -0.6, z: 7.9}
-  _offset: {x: 2.7, y: 0, z: 0}
+  _closed: {x: 13.2, y: -0.55, z: -0.9}
+  _offset: {x: -3, y: 0, z: 0}
 --- !u!1 &1675250088412328320
 GameObject:
   m_ObjectHideFlags: 0
@@ -415,8 +415,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3328619085055828462}
   - {fileID: 971617139148298328}
+  - {fileID: 3102409040689250584}
   - {fileID: 636370770495505245}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -495,8 +495,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.RoomMechanismComponent
   _slabs:
-  - {fileID: 1084838601034152525}
   - {fileID: 8454239627761128185}
+  - {fileID: 3510250657670135858}
   _openTime: 3
   _sequence: 0
   _lift: {fileID: 0}
@@ -533,7 +533,7 @@ Transform:
   m_GameObject: {fileID: 6731756551498978538}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 13.2, y: -0.55, z: -0.9}
+  m_LocalPosition: {x: 0, y: -0.6, z: 7.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -546,7 +546,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6731756551498978538}
-  m_Mesh: {fileID: 4300000, guid: 16714d422a2a161438ed50ccf644faff, type: 2}
+  m_Mesh: {fileID: 4300000, guid: 327a2606a4859174583c57903f9fa6e0, type: 2}
 --- !u!23 &5693960981568425400
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -615,8 +615,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2.4, y: 0.5, z: 4.2}
-  m_Center: {x: 0, y: 0.25, z: 0}
+  m_Size: {x: 2.6, y: 1.7, z: 4.2}
+  m_Center: {x: 0, y: 0.85, z: 0}
 --- !u!114 &8454239627761128185
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -629,8 +629,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 688af9bcfba47b1439fbb42eb3adcf46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.RoomSlabComponent
-  _closed: {x: 13.2, y: -0.55, z: -0.9}
-  _offset: {x: -3, y: 0, z: 0}
+  _closed: {x: 0, y: -0.6, z: 7.9}
+  _offset: {x: 2.7, y: 0, z: 0}
 --- !u!1 &7023650713924926408
 GameObject:
   m_ObjectHideFlags: 0

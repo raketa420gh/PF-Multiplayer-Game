@@ -3670,7 +3670,7 @@ ParticleSystem:
           m_PostInfinity: 2
           m_RotationOrder: 4
       cycleCount: 1
-      repeatInterval: 0.0001
+      repeatInterval: 0.01
       probability: 1
   SizeModule:
     enabled: 0
@@ -21227,7 +21227,7 @@ MonoBehaviour:
     Count: {fileID: 1432410662}
     Frame: {fileID: 724485313}
     Fuel: {fileID: 178975087}
-  _throwCrosshair: {fileID: 609984567}
+  _aimCrosshair: {fileID: 609984567}
   _vignette: {fileID: 2027947609}
   _killText: {fileID: 877664312}
   _readiedText: {fileID: 1023759529}
@@ -51400,7 +51400,7 @@ ParticleSystem:
           m_PostInfinity: 2
           m_RotationOrder: 4
       cycleCount: 1
-      repeatInterval: 0.0001
+      repeatInterval: 0.01
       probability: 1
   SizeModule:
     enabled: 0
@@ -65788,13 +65788,13 @@ MonoBehaviour:
   _post: {fileID: 2503925171411039936, guid: 62c2ab7053d4c4246bc8365b6ed77ae7, type: 3}
   _door: {fileID: 2880037150636468360, guid: 279f03b27e1a8b247b252ef88b35429d, type: 3}
   _loops: 0.25
-  _doorWidth: 2
+  _doorWidth: 1.1
   _doorOffset: 8.4
   _cellPixels: 144
   _parchment: {r: 0.82, g: 0.74, b: 0.55, a: 1}
   _ink: {r: 0.2, g: 0.13, b: 0.07, a: 1}
-  _voxelSize: 0.2
-  _agentRadius: 0.35
+  _voxelSize: 0.15
+  _agentRadius: 0.3
   _agentHeight: 1.8
 --- !u!114 &2101010776
 MonoBehaviour:

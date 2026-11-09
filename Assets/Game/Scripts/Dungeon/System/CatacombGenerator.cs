@@ -101,10 +101,10 @@ namespace Game.Scripts.Dungeon
         private Color _ink = new(0.2f, 0.13f, 0.07f);
 
         [SerializeField]
-        private float _voxelSize = 0.2f;
+        private float _voxelSize = 0.15f;
 
         [SerializeField]
-        private float _agentRadius = 0.35f;
+        private float _agentRadius = 0.3f;
 
         [SerializeField, Tooltip("A body's height: doorways are only a little higher, walkways raise the floor under some of them")]
         private float _agentHeight = 1.8f;

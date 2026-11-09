@@ -1,7 +1,7 @@
 // Проверка макета: растр 0,2 м, поверхности для тела с запасом до стен 0,6 и высотой 1,8, подъём за шаг 0,3 м. Два прохода:
 // закрытый (секреты заперты, лифт стоит) и открытый (плиты сдвинуты, лифт соединяет остановки).
 const { DOOR_OFFSET, MIN_Y, MAX_Y } = require('./roomkit');
-const STEP = 0.2, EXT = 17.4, N = Math.round(2 * EXT / STEP), R_CELLS = 3, BODY = 1.8, CLIMB = 0.31, MIN_FLIGHT_W = 1.6;
+const STEP = 0.2, EXT = 17.4, N = Math.round(2 * EXT / STEP), R_CELLS = 2, BODY = 1.8, CLIMB = 0.31, MIN_FLIGHT_W = 1.6;
 const toI = v => Math.floor((v + EXT) / STEP), toV = i => -EXT + (i + 0.5) * STEP;
 const idx = (i, j) => i * N + j;
 const footprint = o => {

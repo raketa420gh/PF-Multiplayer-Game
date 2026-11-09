@@ -28,7 +28,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const float CatacombSize = Pitch * CatacombGrid;
         /// Depth of the hall below the village, well under the deepest riverbed.
         public const float FloorDrop = -60f;
-        public const float AgentRadius = 0.35f;
+        public const float AgentRadius = 0.3f;
         public const string VillageNavMeshPath = "Assets/Game/Scenes/DungeonScene/VillageNavMesh.asset";
 
         public static readonly string[] FloorTitles = { "Cursed Village", "Tangled Catacombs" };

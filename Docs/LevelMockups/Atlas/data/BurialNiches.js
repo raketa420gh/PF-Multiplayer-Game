@@ -1,6 +1,6 @@
 // "edited":true
 ATLAS.room("BurialNiches",[
-{"id":"Tr1","cat":"trap","name":"Door","p":[-3.2,0,-7],"ry":0,"s":[2,2.4,0.12]},
+{"id":"Tr1","cat":"trap","name":"Door","p":[-3.2,0,-7],"ry":0,"s":[1.1,2.4,0.12]},
 {"id":"Wa1","cat":"wall","name":"Wall","p":[-3.2,2.4,-7],"ry":0,"s":[2,2,4]},
 {"id":"Wa2","cat":"wall","name":"Wall","p":[7,2.4,2],"ry":0,"s":[4,2,2]},
 {"id":"Wa3","cat":"wall","name":"Wall","p":[-5.2,2.4,12.4],"ry":0,"s":[2,2,0.8]},
@@ -167,7 +167,7 @@ ATLAS.room("BurialNiches",[
 {"id":"Pr69","cat":"prop","name":"Парапет","p":[-2.25,5,4],"ry":0,"s":[0.3,1,2]},
 {"id":"Pr70","cat":"prop","name":"Парапет","p":[2.25,5,4],"ry":0,"s":[0.3,1,2]},
 {"id":"Pr71","cat":"prop","name":"Парапет","p":[0,5,3.15],"ry":0,"s":[4.8,1,0.3]},
-{"id":"Tr2","cat":"trap","name":"Door","p":[0,5,12.3],"ry":0,"s":[2,2.4,0.12]},
+{"id":"Tr2","cat":"trap","name":"Door","p":[0,5,12.3],"ry":0,"s":[1.1,2.4,0.12]},
 {"id":"Wa84","cat":"wall","name":"Wall","p":[0,7.4,12.3],"ry":0,"s":[2,2,0.6]},
 {"id":"Ch8","cat":"chest","name":"GoldenChest","p":[0,5,15.4],"ry":180,"s":[0.9,0.8,0.9]},
 {"id":"Pr72","cat":"prop","name":"Саркофаг","p":[-2.2,5,14.6],"ry":0,"s":[1.2,1,2.4]},
@@ -424,5 +424,9 @@ ATLAS.room("BurialNiches",[
 {"id":"Up1","cat":"upper","name":"Wall Upper","p":[0,6,17.1],"ry":0,"s":[34.78,3.4,0.6]},
 {"id":"Up2","cat":"upper","name":"Wall Upper","p":[0,6,-17.1],"ry":0,"s":[34.78,3.4,0.6]},
 {"id":"Up3","cat":"upper","name":"Wall Upper","p":[-17.1,6,0],"ry":0,"s":[0.6,3.4,33.6]},
-{"id":"Up4","cat":"upper","name":"Wall Upper","p":[17.1,6,0],"ry":0,"s":[0.6,3.4,33.6]}
+{"id":"Up4","cat":"upper","name":"Wall Upper","p":[17.1,6,0],"ry":0,"s":[0.6,3.4,33.6]},
+{"id":"Wa213","cat":"wall","name":"Wall","p":[-3.975,0,-7],"ry":0,"s":[0.45,2.4,0.6]},
+{"id":"Wa214","cat":"wall","name":"Wall","p":[-2.425,0,-7],"ry":0,"s":[0.45,2.4,0.6]},
+{"id":"Wa215","cat":"wall","name":"Wall","p":[-0.775,5,12.3],"ry":0,"s":[0.45,2.4,0.6]},
+{"id":"Wa216","cat":"wall","name":"Wall","p":[0.775,5,12.3],"ry":0,"s":[0.45,2.4,0.6]}
 ]);

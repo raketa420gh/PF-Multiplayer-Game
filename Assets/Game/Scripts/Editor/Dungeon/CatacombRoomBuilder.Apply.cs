@@ -14,7 +14,6 @@ namespace Game.Scripts.Editor.Dungeon
     internal static partial class CatacombRoomBuilder
     {
         private const string InteriorDoor = "Door";
-        private const string InteriorDoorHalf = "DoorHalf";
         private const float ThresholdHeight = 0.15f;
         private const float ThresholdDepth = 1.2f;
         /// A torch on a side of the cell, out of the mockups the exporter wrote without a yaw.
@@ -80,9 +79,8 @@ namespace Game.Scripts.Editor.Dungeon
         {
             BuildKit(layouts);
             HallMarkers();
-            DungeonContentBuilder.BuildHalfDoor();
+            DungeonContentBuilder.BuildCatacombDoor();
             Marker($"Trap {InteriorDoor}", CatacombMarkerKind.Trap, "CatacombDoor");
-            Marker($"Trap {InteriorDoorHalf}", CatacombMarkerKind.Trap, "CatacombDoorHalf");
 
             foreach (string stone in new[] { "Саркофаг", "Весовая платформа" })
                 s_stone.Add(stone);
@@ -234,7 +232,7 @@ namespace Game.Scripts.Editor.Dungeon
                 case "start" when item.name == "Start":
                     Kit("Start", root, point, item.ry);
                     break;
-                case "trap" when item.name is InteriorDoor or InteriorDoorHalf:
+                case "trap" when item.name == InteriorDoor:
                     Kit($"Trap {item.name}", root, UpperDoorway(root, item), item.ry);
                     break;
                 case "trap" when !RoomMechanismBuilder.IsPart(item.name):

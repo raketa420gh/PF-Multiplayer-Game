@@ -2,7 +2,7 @@
 // Координаты Unity: x восток, z север, метры от центра клетки, y вверх; pivot снизу по центру; ry по часовой.
 // Ярус (level) — это скала всей клетки, из которой вырезаны пустоты (carve); скала становится блоками Wall, пол кладётся
 // только под пустотами (иначе NavMesh получает острова внутри стен).
-const INNER = 16.8, EDGE = 17.1, DOOR_OFFSET = 8.4, DOOR_W = 2, DOOR_H = 2.4, TH = 0.6, MIN_Y = -10, MAX_Y = 24;
+const INNER = 16.8, EDGE = 17.1, DOOR_OFFSET = 8.4, OPENING = 2, DOOR_W = 1.1, DOOR_H = 2.4, TH = 0.6, MIN_Y = -10, MAX_Y = 24;
 const round = v => Math.round(v * 1000) / 1000;
 const rect = (x1, z1, x2, z2) => ({ x1: Math.min(x1, x2), z1: Math.min(z1, z2), x2: Math.max(x1, x2), z2: Math.max(z1, z2) });
 
@@ -71,10 +71,10 @@ class Room {
     const seg = (a, b, yy, hh) => { if (b - a > 0.01) alongX ? this.wall(a, z1, b, z1, { th, y: yy, h: hh }) : this.wall(x1, a, x1, b, { th, y: yy, h: hh }); };
     let cur = from;
     for (const t of [...at].sort((a, b) => a - b)) {
-      seg(cur, t - DOOR_W / 2, y, h);
-      seg(t - DOOR_W / 2, t + DOOR_W / 2, y + DOOR_H, h - DOOR_H);
+      seg(cur, t - OPENING / 2, y, h);
+      seg(t - OPENING / 2, t + OPENING / 2, y + DOOR_H, h - DOOR_H);
       if (door) { const px = alongX ? t : x1, pz = alongX ? z1 : t; double ? this.doubleDoor(px, pz, alongX ? 0 : 90, { y }) : this.door(px, pz, alongX ? 0 : 90, { y }); }
-      cur = t + DOOR_W / 2;
+      cur = t + OPENING / 2;
     }
     seg(cur, to, y, h);
   }
@@ -115,14 +115,10 @@ class Room {
 
   // ---------- механизмы: один на комнату, спавнится хостом, см. CatacombRoomBuilder.Apply ----------
 
-  /// Деревянная дверь как между модулями: проём 2 × 2,4, ry 0 — полотно вдоль X, 90 — вдоль Z.
-  door(x, z, ry = 0, { y = 0 } = {}) { return this.add('trap', 'Door', [x, y, z], [2, DOOR_H, 0.12], { ry }); }
-  /// Двойная деревянная дверь в проёме 2 × 2,4.
-  doubleDoor(x, z, ry = 0, { y = 0 } = {}) {
-    const rad = ry * Math.PI / 180, dx = Math.cos(rad) * 0.5, dz = -Math.sin(rad) * 0.5;
-    this.add('trap', 'DoorHalf', [x - dx, y, z - dz], [1, DOOR_H, 0.12], { ry });
-    return this.add('trap', 'DoorHalf', [x + dx, y, z + dz], [1, DOOR_H, 0.12], { ry: (ry + 180) % 360 });
-  }
+  /// Деревянная дверь 1,1 × 2,4 в проёме 2 × 2,4: finish ставит по бокам каменные косяки. ry 0 — полотно вдоль X, 90 — вдоль Z.
+  door(x, z, ry = 0, { y = 0 } = {}) { return this.add('trap', 'Door', [x, y, z], [DOOR_W, DOOR_H, 0.12], { ry }); }
+  /// Двойных дверей больше нет (одна створка модели): то же, что door.
+  doubleDoor(x, z, ry = 0, opts = {}) { return this.door(x, z, ry, opts); }
   /// Рычаг на стене: p на уровне пола, ry — куда смотрит. order > 0 — номер в правильной последовательности. action:'lift' — управляет лифтом.
   lever(x, y, z, ry, { order, action } = {}) { return this.add('trap', 'SecretLever', [x, y, z], [0.3, 1.2, 0.2], { ry, order, action }); }
   /// Подвижная плита секрета: x, y (низ), z — закрытое положение, open — смещение при открытии.
@@ -162,10 +158,27 @@ class Room {
     this.add('ceiling', 'Ceiling', [0, top, 0], [34.2, TH, 34.2]);
     if (top > 6) for (const [x, z, sx, sz] of [[0, EDGE, 34.78, TH], [0, -EDGE, 34.78, TH], [-EDGE, 0, TH, 33.6], [EDGE, 0, TH, 33.6]])
       this.add('upper', 'Wall Upper', [x, 6, z], [sx, top - 6, sz]);
+    this.items.filter(o => o.name === 'Door').forEach(d => this.jambs(d));
     return this;
+  }
+
+  /// Полотно уже проёма: два косяка закрывают остаток, толщиной и смещением как стена сбоку (без стены или в скале — TH по оси двери).
+  jambs(d) {
+    const alongX = d.ry % 180 === 0, w = (OPENING - DOOR_W) / 2, [x, y, z] = d.p;
+    const walls = this.items.filter(o => o.cat === 'wall' || o.cat === 'upper').map(o => {
+      const [sx, sy, sz] = o.ry % 180 ? [o.s[2], o.s[1], o.s[0]] : o.s;
+      return { x1: o.p[0] - sx / 2, x2: o.p[0] + sx / 2, y1: o.p[1], y2: o.p[1] + sy, z1: o.p[2] - sz / 2, z2: o.p[2] + sz / 2 };
+    });
+    for (const s of [-1, 1]) {
+      const px = alongX ? x + s * (OPENING / 2 + 0.1) : x, pz = alongX ? z : z + s * (OPENING / 2 + 0.1);
+      const b = walls.find(b => px >= b.x1 && px <= b.x2 && pz >= b.z1 && pz <= b.z2 && y + 1 >= b.y1 && y + 1 <= b.y2);
+      const th = b ? (alongX ? b.z2 - b.z1 : b.x2 - b.x1) : TH, isWall = th <= 1.5, t = isWall ? th : TH;
+      const off = b && isWall ? (alongX ? (b.z1 + b.z2) / 2 - z : (b.x1 + b.x2) / 2 - x) : 0, along = s * (DOOR_W + w) / 2;
+      this.add('wall', 'Wall', alongX ? [x + along, y, z + off] : [x + off, y, z + along], alongX ? [w, DOOR_H, t] : [t, DOOR_H, w]);
+    }
   }
 
   toFile() { return `// "edited":true\nATLAS.room("${this.name}",[\n${this.items.map(o => JSON.stringify(o)).join(',\n')}\n]);\n`; }
 }
 
-module.exports = { Room, subtract, rect, INNER, EDGE, DOOR_OFFSET, DOOR_W, DOOR_H, TH, MIN_Y, MAX_Y };
+module.exports = { Room, subtract, rect, INNER, EDGE, DOOR_OFFSET, OPENING, DOOR_W, DOOR_H, TH, MIN_Y, MAX_Y };

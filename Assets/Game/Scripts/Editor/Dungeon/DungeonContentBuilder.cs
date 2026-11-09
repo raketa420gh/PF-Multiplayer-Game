@@ -21,6 +21,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const string ClassesFolder = ConfigsFolder + "/Classes";
         public const string AbilitySoundsFolder = "Assets/Game/Audio/Dungeon/Abilities";
         public const string PortalSoundsFolder = "Assets/Game/Audio/Dungeon/Portal";
+        private const string CatacombDoorModel = "Assets/Game/Models/Environment/Catacomb/CatacombDoorLeaf/CatacombDoorLeaf";
         private static ItemDatabase s_database;
         public const string LootFolder = ConfigsFolder + "/Loot";
         public const string MonstersFolder = ConfigsFolder + "/Monsters";
@@ -105,10 +106,7 @@ namespace Game.Scripts.Editor.Dungeon
             BuildDoor("Door", DungeonPropBuilder.DoorLeaf());
             BuildDoor("CellDoor", DungeonMedievalBuilder.CellDoorLeaf());
             BuildDoor("HouseDoor", HouseDoorLeaf(), DungeonVillageKitBuilder.DoorHalf - 0.03f, DungeonVillageKitBuilder.DoorHalf * 2f);
-            const float catacombLeaf = CatacombRoomBuilder.DoorWidth - 0.04f;
-            BuildDoor("CatacombDoor", DungeonPropBuilder.DoorLeaf(catacombLeaf, CatacombRoomBuilder.DoorHeight - 0.04f, "CatacombDoorLeaf"), -catacombLeaf * 0.5f,
-                CatacombRoomBuilder.DoorWidth, true);
-            BuildHalfDoor();
+            BuildCatacombDoor();
             BuildPortal("EscapePortal", PortalKind.Escape, DungeonPropBuilder.PortalBlue, true);
             BuildPortal("DescendPortal", PortalKind.Descend, DungeonPropBuilder.PortalRed, false);
             BuildShrine(ShrineKind.Health, 100f, 0f);
@@ -1576,11 +1574,22 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.SavePrefab(root, Prefab("Bookshelf"));
         }
 
-        /// One leaf of a double door: two of them, turned to each other, fill a doorway of the catacombs.
-        public static void BuildHalfDoor()
+        /// The door of every catacomb doorway: the Tripo leaf, scaled whole to the doorway's height, the doorway is as wide as the leaf comes out.
+        public static void BuildCatacombDoor()
         {
-            const float leaf = CatacombRoomBuilder.DoorWidth * 0.5f - 0.02f;
-            BuildDoor("CatacombDoorHalf", DungeonPropBuilder.DoorLeaf(leaf, CatacombRoomBuilder.DoorHeight - 0.04f, "CatacombDoorHalfLeaf"), -leaf * 0.5f, CatacombRoomBuilder.DoorWidth * 0.5f, true);
+            GameObject leaf = new GameObject("Leaf");
+            GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(CatacombDoorModel + ".fbx"), leaf.transform);
+            model.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(CatacombDoorModel + ".mat");
+            // The model's hinge pins are on its +X edge: turned round they come to the hinge at the origin.
+            model.transform.localRotation = Quaternion.Euler(0f, 180f, 0f) * model.transform.localRotation;
+            model.transform.localScale *= (CatacombRoomBuilder.DoorHeight - 0.04f) / DungeonKitBuilder.Bounds(model).size.y;
+            Bounds bounds = DungeonKitBuilder.Bounds(model);
+            model.transform.localPosition = new Vector3(-bounds.min.x, -bounds.min.y, -bounds.center.z);
+            BoxCollider collider = leaf.AddComponent<BoxCollider>();
+            collider.center = new Vector3(bounds.size.x * 0.5f, bounds.size.y * 0.5f, 0f);
+            collider.size = bounds.size;
+            Debug.Assert(bounds.size.x < CatacombRoomBuilder.DoorWidth, $"Catacomb door leaf {bounds.size.x:0.00} m does not fit the doorway");
+            BuildDoor("CatacombDoor", leaf, -bounds.size.x * 0.5f, CatacombRoomBuilder.DoorWidth, true);
         }
 
         private static void BuildDoor(string name, GameObject leaf, float hingeX = -1.05f, float width = 2.2f, bool isSpawned = false)

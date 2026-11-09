@@ -69,12 +69,8 @@ ATLAS.room("Labyrinth",[
 {"id":"Ch2","cat":"chest","name":"LargeOakChest","p":[2.4,-0.001,3.3],"ry":180,"s":[1.4,0.948,0.817]},
 {"id":"Ch3","cat":"chest","name":"Coffin","p":[-2.8,0,-14],"ry":0,"s":[0.95,0.86,2.25]},
 {"id":"Ch4","cat":"chest","name":"SmallOakChest","p":[11.2,0,5.614],"ry":0,"s":[0.902,0.676,0.48]},
-{"id":"Li1","cat":"light","name":"Brazier","p":[-3.2,1.6,-3.2],"color":"#FF9940","i":3.5,"r":11},
-{"id":"Li2","cat":"light","name":"Candle","p":[0,0.3,3.6],"color":"#FFB259","i":1.1,"r":4},
-{"id":"Li3","cat":"light","name":"Candle","p":[-2.8,0.3,-15],"color":"#FFB259","i":1.1,"r":4},
-{"id":"Li4","cat":"light","name":"Torch","p":[0,3.2,-14.583],"color":"#FFC280","i":9,"r":12},
-{"id":"Li5","cat":"light","name":"Torch","p":[0,3.2,14.583],"color":"#FFC280","i":9,"r":12},
-{"id":"Li6","cat":"light","name":"Torch","p":[0,3.2,-5.017],"color":"#FFC280","i":9,"r":12},
+{"id":"Li1","cat":"light","name":"Candle","p":[-2.8,0.3,-15],"color":"#FFB259","i":1.1,"r":4},
+{"id":"Li2","cat":"light","name":"Torch","p":[0,3.2,-14.583],"color":"#FFC280","i":9,"r":12},
 {"id":"Mo1","cat":"monster","name":"Skull","p":[14,0,-14],"ry":0,"s":[0.7,1.8,0.7],"round":true},
 {"id":"Mo2","cat":"monster","name":"Skull","p":[-14,0,14],"ry":0,"s":[0.7,1.8,0.7],"round":true},
 {"id":"Mo3","cat":"monster","name":"Sword","p":[-5.6,0,-2.8],"ry":90,"s":[0.7,1.8,0.7],"round":true},
@@ -84,5 +80,8 @@ ATLAS.room("Labyrinth",[
 {"id":"St1","cat":"start","name":"Start","p":[-14,0,-14],"ry":45,"s":[1,0.1,1],"round":true},
 {"id":"St2","cat":"start","name":"Spot","p":[-14.849,0,-13.151],"ry":45,"s":[0.6,1.8,0.6]},
 {"id":"St3","cat":"start","name":"Spot","p":[-14,0,-14],"ry":45,"s":[0.6,1.8,0.6]},
-{"id":"St4","cat":"start","name":"Spot","p":[-13.151,0,-14.849],"ry":45,"s":[0.6,1.8,0.6]}
+{"id":"St4","cat":"start","name":"Spot","p":[-13.151,0,-14.849],"ry":45,"s":[0.6,1.8,0.6]},
+{"id":"Tr3","cat":"trap","name":"Lamp Brazier","p":[-3.2,0,-3.2],"ry":0,"s":[1,1.075,0.951]},
+{"id":"Tr4","cat":"trap","name":"Lamp Candle","p":[0,0,3.6],"ry":0,"s":[0.32,0.2,0.304]},
+{"id":"Tr5","cat":"trap","name":"Lamp Torch","p":[-0.001,2.211,-4.715],"ry":180,"s":[0.176,0.778,0.531]}
 ]);

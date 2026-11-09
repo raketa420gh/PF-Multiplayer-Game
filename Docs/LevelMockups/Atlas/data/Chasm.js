@@ -218,14 +218,13 @@ ATLAS.room("Chasm",[
 {"id":"Fl121","cat":"floor","name":"Floor","p":[16.2,-0.6,16.2],"ry":0,"s":[1.8,0.6,1.8]},
 {"id":"Ce1","cat":"ceiling","name":"Ceiling","p":[0,6,0],"ry":0,"s":[34.2,0.6,34.2]},
 {"id":"Ch1","cat":"chest","name":"GoldenChest","p":[1.423,0,1.423],"ry":225,"s":[1.4,0.691,1.031]},
-{"id":"Li1","cat":"light","name":"Brazier","p":[-1.5,1.6,-1.5],"color":"#FF9940","i":3.5,"r":11},
 {"id":"Mo1","cat":"monster","name":"Warrior","p":[-1.5,0,1.5],"ry":135,"s":[0.7,1.8,0.7],"round":true},
 {"id":"Mo2","cat":"monster","name":"Skull","p":[12.6,0,16],"ry":180,"s":[0.7,1.8,0.7],"round":true},
 {"id":"Mo3","cat":"monster","name":"Skull","p":[-12.6,0,-16],"ry":0,"s":[0.7,1.8,0.7],"round":true},
 {"id":"Mo4","cat":"monster","name":"Archer","p":[16,0,0],"ry":270,"s":[0.7,1.8,0.7],"round":true},
 {"id":"Mo5","cat":"monster","name":"Crossbow","p":[-16,0,0],"ry":90,"s":[0.7,1.8,0.7],"round":true},
-{"id":"Li2","cat":"light","name":"Torch","p":[0,3.2,16.233],"color":"#FFC280","i":9,"r":12},
-{"id":"Li3","cat":"light","name":"Torch","p":[16.233,3.2,0],"color":"#FFC280","i":9,"r":12},
-{"id":"Li4","cat":"light","name":"Torch","p":[0,3.2,-16.233],"color":"#FFC280","i":9,"r":12},
-{"id":"Li5","cat":"light","name":"Torch","p":[-16.233,3.2,0],"color":"#FFC280","i":9,"r":12}
+{"id":"Li1","cat":"light","name":"Torch","p":[0,3.2,-16.233],"color":"#FFC280","i":9,"r":12},
+{"id":"Li2","cat":"light","name":"Torch","p":[-16.233,3.2,0],"color":"#FFC280","i":9,"r":12},
+{"id":"Tr1","cat":"trap","name":"Lamp Torch","p":[-0.001,2.211,16.535],"ry":180,"s":[0.176,0.778,0.531]},
+{"id":"Tr2","cat":"trap","name":"Lamp Torch","p":[16.535,2.211,0.001],"ry":270,"s":[0.176,0.778,0.531]}
 ]);
