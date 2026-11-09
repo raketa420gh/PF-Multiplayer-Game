@@ -50,6 +50,31 @@
 
 Текстура — да, риг — нет.
 
+### Картинки для Tripo Multiview (ChatGPT Image)
+По части — один чат, три сообщения подряд: сначала front, потом left и back «той же детали» (так ChatGPT держит форму). В Tripo — режим Multiview: front / left / back.
+
+Общий хвост: `Orthographic view, no perspective distortion, camera exactly level with the object's centre. The whole object centred and fully in frame with margin, nothing cropped. Plain flat light grey background, soft even studio lighting, no cast shadows, no reflections of surroundings. No mannequin, no body, no stand, no text, no other objects. Realistic game asset reference sheet for 3D modelling, early 15th century Italian plate armour matching a great bascinet: polished but worn steel with fine scratches and small dents, dark brown leather straps, brass buckles and rivets.`
+
+**PlateCuirass**
+1. `Front view of a medieval plate cuirass standing upright as if worn: rounded globular breastplate with a vertical central ridge, a separate lower plackart overlapping it, deep-cut armholes, open round neck with NO gorget, two leather strap loops on the upper chest for a helmet, side hinges and buckles. Hollow inside.` + хвост
+2. `The exact same cuirass from the previous image, now seen strictly from its left side (profile): breastplate curve, side hinge and buckle, backplate behind, same proportions, materials and wear.` + хвост
+3. `The exact same cuirass, now seen strictly from the back: the backplate with its own lower lames, shoulder straps and a leather strap loop between the shoulder blades for a helmet, same proportions, materials and wear.` + хвост
+
+**PlateFauld**
+1. `Front view of a medieval plate fauld standing upright as if worn around the hips: four overlapping horizontal curved steel lames forming a hoop open at the back, two rectangular tassets of three lames each hanging from leather straps over the front of the thighs. Hollow inside.` + хвост
+2. `The exact same fauld from the previous image, now seen strictly from its left side: the curve of the lames, a tasset hanging in front, same proportions, materials and wear.` + хвост
+3. `The exact same fauld, now seen strictly from the back: the open back of the hoop with the leather belt and buckle, inner side of the tassets visible through the gap, same proportions, materials and wear.` + хвост
+
+**PlatePauldron** (левая рука, опущена вдоль тела)
+1. `Front view of a medieval LEFT shoulder armour as if worn on a left arm hanging straight down: a rounded spaulder of three overlapping lames covering the shoulder cap, joined by rivets and an inner leather strap to a tubular rerebrace that encloses the upper arm down to just above the elbow. Hollow inside, a top leather point for tying to the arming doublet.` + хвост
+2. `The exact same left shoulder armour from the previous image, now seen strictly from the outer (left) side: the full dome of the spaulder and the rerebrace tube, same proportions, materials and wear.` + хвост
+3. `The exact same left shoulder armour, now seen strictly from the back: the rear lames of the spaulder and the hinge and buckle of the rerebrace, same proportions, materials and wear.` + хвост
+
+**PlateVambrace** (левая рука, вытянута вниз, локоть назад)
+1. `Front view of a medieval LEFT forearm armour as if worn on a straight left arm hanging down: a pointed fan-shaped couter guarding the elbow at the back, articulated by a lame to a closed tubular vambrace that runs down to the wrist and flares slightly at the cuff. Hollow inside, open at both ends.` + хвост
+2. `The exact same left forearm armour from the previous image, now seen strictly from the outer (left) side: the fan-shaped wing of the couter in full profile and the vambrace tube, same proportions, materials and wear.` + хвост
+3. `The exact same left forearm armour, now seen strictly from the back: the point of the couter, the hinge line and two buckles of the vambrace, same proportions, materials and wear.` + хвост
+
 ## Встраивание (делает Claude, когда модели лягут в `Assets/TripoModels`)
 1. **Приём**: `Assets/Game/Models/Armor/PlateHarness/<Part>/<Part>.fbx` + `Textures/<Part>_Color|Normal|MetallicSmoothness` (через AssetDatabase).
 2. **`ArmorVisual.PlateHarness`** — после `GreatBascinet`, до `PeasantHead` (жёсткие визуалы идут первыми; полный ребилд Dungeon перепишет все `_visual`).
