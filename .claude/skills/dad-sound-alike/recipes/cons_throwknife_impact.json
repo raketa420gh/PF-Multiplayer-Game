@@ -1,0 +1,77 @@
+{
+ "name": "cons_throwknife_impact",
+ "reference": "D:/DaD_Sounds/Utility_ThrowingKnife_Throwing_End",
+ "length_ms": 650,
+ "variants": 10,
+ "seed": 42134,
+ "layers": [
+  {
+   "src": "wood_crack_hit/wood_impact/impactwood*",
+   "at_ms": [
+    0,
+    5
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    0,
+    3
+   ]
+  },
+  {
+   "src": "metal_impact/clink*",
+   "at_ms": [
+    0,
+    5
+   ],
+   "gain_db": [
+    -7,
+    -4
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "snap": {
+    "hold": [
+     10,
+     15.0
+    ],
+    "tau": [
+     120,
+     168.0
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/bing1.wav",
+   "at_ms": [
+    0,
+    5
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    2,
+    5
+   ],
+   "chance": 0.5
+  }
+ ],
+ "match": 0.6,
+ "fade_ms": 200,
+ "peak_db": -1,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}

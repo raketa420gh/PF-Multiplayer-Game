@@ -215,16 +215,16 @@ namespace Game.Scripts.Editor.Dungeon
                 Weapon("Round Shield", null, WeaponClass.Shield, 2, 3, 13f, "Sh", s_wood, 30, "Blocks. With the main hand empty, that hand punches.", offHand: true, modifiers: new[] { new StatModifier(StatType.ArmorRating, 20f) }),
                 Weapon("Spellbook", DungeonWeaponLibrary.Spellbook, WeaponClass.Spellbook, 2, 2, 10f, "Bk", new Color(0.55f, 0.35f, 0.75f), 40, "Magical focus. Hold it to cast readied spells or block with it; it cannot strike.", twoHanded: true, focus: true, modifiers: new[] { new StatModifier(StatType.MagicalPower, 2f) }),
 
-                Consumable("Bandage", ConsumableEffect.HealInstant, 15f, 0f, 4f, 3, "+", new Color(0.9f, 0.9f, 0.85f), 5, "Wrap a wound. Heals after a few seconds."),
-                Consumable("Potion of Healing", ConsumableEffect.HealOverTime, 20f, 20f, DrinkTime, 3, "Po", s_potion, 12, "Restores health over time."),
-                Consumable("Potion of Protection", ConsumableEffect.Protection, 10f, 24f, DrinkTime, 3, "Po", new Color(0.3f, 0.5f, 1f), 14, "A shield that absorbs physical damage."),
-                Consumable("Surgical Kit", ConsumableEffect.HealInstant, 100f, 0f, 12f, 1, "+", new Color(0.7f, 0.2f, 0.2f), 30, "Full heal after a long, vulnerable procedure.", 2, 2),
-                Consumable("Ale", ConsumableEffect.Haste, 6f, 15f, DrinkTime, 2, "Al", new Color(0.85f, 0.6f, 0.2f), 8, "Liquid courage. Quickens the step."),
+                Consumable("Bandage", ConsumableEffect.HealInstant, 15f, 0f, 4f, 3, "+", new Color(0.9f, 0.9f, 0.85f), 5, "Wrap a wound. Heals after a few seconds.", sounds: "bandage"),
+                Consumable("Potion of Healing", ConsumableEffect.HealOverTime, 20f, 20f, DrinkTime, 3, "Po", s_potion, 12, "Restores health over time.", sounds: "potion"),
+                Consumable("Potion of Protection", ConsumableEffect.Protection, 10f, 24f, DrinkTime, 3, "Po", new Color(0.3f, 0.5f, 1f), 14, "A shield that absorbs physical damage.", sounds: "potion"),
+                Consumable("Surgical Kit", ConsumableEffect.HealInstant, 100f, 0f, 12f, 1, "+", new Color(0.7f, 0.2f, 0.2f), 30, "Full heal after a long, vulnerable procedure.", 2, 2, "surgical"),
+                Consumable("Ale", ConsumableEffect.Haste, 6f, 15f, DrinkTime, 2, "Al", new Color(0.85f, 0.6f, 0.2f), 8, "Liquid courage. Quickens the step.", sounds: "ale"),
 
-                Utility("Francisca Axe", UtilityKind.ThrowingWeapon, 18, 0.5f, 2, 1, 2, "Ax", s_steel, 12, "Thrown axe."),
-                Utility("Throwing Knife", UtilityKind.ThrowingWeapon, 14, 0.4f, 2, 1, 2, "Dg", s_steel, 10, "Thrown knife."),
-                Utility("Campfire Kit", UtilityKind.Campfire, 0, 4f, 1, 2, 2, "Cf", new Color(1f, 0.6f, 0.3f), 20, "Place a campfire and rest by it to heal."),
-                Utility("Lockpick", UtilityKind.Lockpick, 0, 0f, 3, 1, 1, "Lp", s_steel, 6, "Opens one locked door or chest."),
+                Utility("Francisca Axe", UtilityKind.ThrowingWeapon, 18, 0.5f, 2, 1, 2, "Ax", s_steel, 12, "Thrown axe.", "francisca"),
+                Utility("Throwing Knife", UtilityKind.ThrowingWeapon, 14, 0.4f, 2, 1, 2, "Dg", s_steel, 10, "Thrown knife.", "throwknife"),
+                Utility("Campfire Kit", UtilityKind.Campfire, 0, 4f, 1, 2, 2, "Cf", new Color(1f, 0.6f, 0.3f), 20, "Place a campfire and rest by it to heal.", "campfire"),
+                Utility("Lockpick", UtilityKind.Lockpick, 0, 0f, 3, 1, 1, "Lp", s_steel, 6, "Opens one locked door or chest.", "lockpick"),
 
                 Treasure("Gold Coins", 1, 1, 25, 1, "$", s_gold),
                 Treasure("Gold Coin Purse", 1, 1, 1, 100, "$$", s_gold),
@@ -240,8 +240,8 @@ namespace Game.Scripts.Editor.Dungeon
                 // Second wave of Dark and Darker gear.
                 Weapon("Morning Star", DungeonWeaponLibrary.MorningStar, WeaponClass.Mace, 1, 3, 23f, "Mc", s_steel, 36, "Spiked mace head. Staggers on the third hit."),
 
-                Consumable("Troll's Blood", ConsumableEffect.HealOverTime, 45f, 30f, DrinkTime, 1, "Tb", new Color(0.35f, 0.75f, 0.3f), 40, "Thick green blood. Slowly knits even grave wounds."),
-                Consumable("Potion of Invisibility", ConsumableEffect.Invisibility, 0f, 8f, DrinkTime, 2, "Po", new Color(0.8f, 0.85f, 0.95f), 30, "Monsters and players lose sight of you for a few seconds."),
+                Consumable("Troll's Blood", ConsumableEffect.HealOverTime, 45f, 30f, DrinkTime, 1, "Tb", new Color(0.35f, 0.75f, 0.3f), 40, "Thick green blood. Slowly knits even grave wounds.", sounds: "potion"),
+                Consumable("Potion of Invisibility", ConsumableEffect.Invisibility, 0f, 8f, DrinkTime, 2, "Po", new Color(0.8f, 0.85f, 0.95f), 30, "Monsters and players lose sight of you for a few seconds.", sounds: "potion"),
 
                 Treasure("Silver Chalice", 1, 1, 1, 28, "Ch", s_silver, sounds: "treasure_s"),
                 Treasure("Gold Crown", 2, 2, 1, 220, "Cr", s_gold),
@@ -272,7 +272,7 @@ namespace Game.Scripts.Editor.Dungeon
             // Darkness is the catacombs' danger: a torch from the belt lights 5 m around the left hand for 60 s of fuel.
             items.Add(Consumable("Torch", ConsumableEffect.Light, 5f, 60f, 0f, 1, "To", new Color(1f, 0.6f, 0.25f), 3,
                 "Hold it in the left hand to light the dark around you. Throw it down to light a spot: it burns until the fuel runs out.",
-                1, 2));
+                1, 2, "torch"));
             // The recurve bow: 10 arrows at the hip, R restocks them from the arrows in the bag.
             items.Add(Weapon("Recurve Bow", DungeonWeaponLibrary.Bow, WeaponClass.Bow, 2, 4, 30f, "Bw", s_wood, 50,
                 "Draw, hold and loose. Every shot spends an arrow from the bag; ten ride at the hip, press R to restock them.", twoHanded: true,
@@ -398,22 +398,22 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         private static ItemDef Consumable(string name, ConsumableEffect effect, float magnitude, float duration, float useTime, int stack, string glyph,
-            Color color, int value, string description, int width = 1, int height = 1)
+            Color color, int value, string description, int width = 1, int height = 1, string sounds = null)
         {
             return new ItemDef
             {
                 Name = name, Kind = ItemKind.Consumable, Effect = effect, Magnitude = magnitude, Duration = duration, UseTime = useTime, Stack = stack,
-                Glyph = glyph, Color = color, Value = value, Description = description, Width = width, Height = height, RollsRarity = true
+                Glyph = glyph, Color = color, Value = value, Description = description, Width = width, Height = height, RollsRarity = true, Sounds = sounds
             };
         }
 
         private static ItemDef Utility(string name, UtilityKind kind, int damage, float useTime, int stack, int width, int height, string glyph, Color color,
-            int value, string description)
+            int value, string description, string sounds = null)
         {
             return new ItemDef
             {
                 Name = name, Kind = ItemKind.Utility, Utility = kind, Damage = damage, UseTime = useTime, Stack = stack, Width = width, Height = height,
-                Glyph = glyph, Color = color, Value = value, Description = description
+                Glyph = glyph, Color = color, Value = value, Description = description, Sounds = sounds
             };
         }
 

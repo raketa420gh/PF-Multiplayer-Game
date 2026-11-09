@@ -21,14 +21,20 @@ namespace Game.Scripts.Battle
         WoodHard
     }
 
-    /// Handling of the weapon as an item: drawn into the hands, dropped, picked up, moved in the inventory.
+    /// Handling of the weapon as an item: drawn into the hands, dropped, picked up, moved in the inventory; consumables also
+    /// sound their use (looped while it lasts), a throw and where it lands, a fire catching and burning on (looped).
     public enum ItemSound : byte
     {
         Equip,
         Drop,
         Pickup,
         Drag,
-        Place
+        Place,
+        Use,
+        Throw,
+        Impact,
+        Ignite,
+        Burn
     }
 
     /// Recorded takes of one weapon family: its swing and what it sounds like on every surface.
@@ -114,6 +120,21 @@ namespace Game.Scripts.Battle
         private AudioClip[] _place = Array.Empty<AudioClip>();
 
         [SerializeField]
+        private AudioClip[] _use = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _throw = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _impact = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _ignite = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _burn = Array.Empty<AudioClip>();
+
+        [SerializeField]
         private AudioClip[] _draw = Array.Empty<AudioClip>();
 
         [SerializeField]
@@ -157,6 +178,11 @@ namespace Game.Scripts.Battle
                 ItemSound.Pickup => _pickup,
                 ItemSound.Drag => _drag,
                 ItemSound.Place => _place,
+                ItemSound.Use => _use,
+                ItemSound.Throw => _throw,
+                ItemSound.Impact => _impact,
+                ItemSound.Ignite => _ignite,
+                ItemSound.Burn => _burn,
                 _ => Array.Empty<AudioClip>()
             };
         }

@@ -1,0 +1,80 @@
+{
+ "name": "cons_francisca_pickup",
+ "reference": "D:/DaD_Sounds/Item_3D_FranciscaAxe_Pickup",
+ "length_ms": 800,
+ "variants": 10,
+ "seed": 41746,
+ "layers": [
+  {
+   "src": "leather_slices/sheath/*",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -5,
+    -2
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "max_ms": 500
+  },
+  {
+   "src": "metal_impact/clink*",
+   "at_ms": [
+    20,
+    60
+   ],
+   "gain_db": [
+    -7,
+    -4
+   ],
+   "pitch": [
+    -5,
+    -3
+   ],
+   "snap": {
+    "hold": [
+     5,
+     7.5
+    ],
+    "tau": [
+     60,
+     84.0
+    ]
+   },
+   "hp": 500
+  },
+  {
+   "src": "fabric_slices/Cloth_*",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    0,
+    0
+   ],
+   "max_ms": 400,
+   "hp": 500
+  }
+ ],
+ "match": 0.8,
+ "fade_ms": 200,
+ "peak_db": -1,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}

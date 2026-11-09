@@ -194,6 +194,8 @@ namespace Game.Scripts.Dungeon
 
         /// A potion is being drunk: the animation says it all, no progress bar; bandages and surgical kits fill one.
         public bool IsDrinking => Pending == PendingAction.Consumable && _fighter.Combat.BusyKind == BusyUse;
+        /// Equipment slot of the item the pending use or throw is about.
+        public byte PendingSlot => _pendingIndex;
 
         /// Bag index of the item being discovered in the opened container, NoSearch when nothing is left to find.
         [Networked]
@@ -2224,6 +2226,7 @@ namespace Game.Scripts.Dungeon
             if (data.Item <= 0 || _worldItemPrefab == null || _database.Get(data.Item) is not { } config)
                 return;
 
+            RpcItemSound(data.Item, ItemSound.Impact, point);
             ItemStack stack = ItemStack.Create(config, 1, (ItemRarity)data.ItemRarity);
             Vector3 direction = data.GetVelocity(Runner.SecondsSince(data.FireTick)).normalized;
 

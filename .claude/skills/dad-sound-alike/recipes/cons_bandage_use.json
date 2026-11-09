@@ -1,0 +1,87 @@
+{
+ "name": "cons_bandage_use",
+ "reference": "D:/DaD_Sounds/Wp_Bandage_Use_1",
+ "length_ms": 2000,
+ "variants": 10,
+ "seed": 40291,
+ "layers": [
+  {
+   "src": "fabric_slices/torm__blanket*",
+   "at_ms": [
+    0,
+    50
+   ],
+   "gain_db": [
+    -4,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "count": [
+    4,
+    6
+   ],
+   "gap_ms": [
+    280,
+    420
+   ],
+   "until_ms": 1700,
+   "max_ms": 450
+  },
+  {
+   "src": "fabric_slices/rustling_*",
+   "at_ms": [
+    100,
+    200
+   ],
+   "gain_db": [
+    -9,
+    -5
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "count": [
+    2,
+    4
+   ],
+   "gap_ms": [
+    400,
+    600
+   ],
+   "max_ms": 500
+  },
+  {
+   "src": "wet_towel/wet_towel_on_body/*.flac",
+   "at_ms": [
+    500,
+    1200
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "chance": 0.6,
+   "max_ms": 400
+  }
+ ],
+ "match": 0.6,
+ "fade_ms": 120,
+ "peak_db": -3,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}

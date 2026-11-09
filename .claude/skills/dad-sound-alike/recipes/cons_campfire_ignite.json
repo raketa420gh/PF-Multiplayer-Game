@@ -1,0 +1,60 @@
+{
+ "name": "cons_campfire_ignite",
+ "reference": "D:/DaD_Sounds/Utility_Campfire_Loop",
+ "length_ms": 1700,
+ "variants": 10,
+ "seed": 40776,
+ "layers": [
+  {
+   "src": "consum_slices/fire_whoosh/*",
+   "at_ms": [
+    0,
+    30
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "max_ms": 1600
+  },
+  {
+   "src": "consum_slices/crackle/*",
+   "at_ms": [
+    200,
+    300
+   ],
+   "gain_db": [
+    -14,
+    -6
+   ],
+   "pitch": [
+    -3,
+    3
+   ],
+   "count": [
+    4,
+    7
+   ],
+   "gap_ms": [
+    80,
+    220
+   ]
+  }
+ ],
+ "match": 0.4,
+ "fade_ms": 500,
+ "peak_db": -1,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}

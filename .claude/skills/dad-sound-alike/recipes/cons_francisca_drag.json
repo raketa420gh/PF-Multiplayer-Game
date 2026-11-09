@@ -1,0 +1,62 @@
+{
+ "name": "cons_francisca_drag",
+ "reference": "D:/DaD_Sounds/Item_2D_ThrowAxe_Drag",
+ "length_ms": 800,
+ "variants": 10,
+ "seed": 41843,
+ "layers": [
+  {
+   "src": "leather_slices/sheath/*",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "max_ms": 500
+  },
+  {
+   "src": "metal_impact/clink*",
+   "at_ms": [
+    60,
+    150
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -5,
+    -3
+   ],
+   "snap": {
+    "hold": [
+     5,
+     7.5
+    ],
+    "tau": [
+     60,
+     84.0
+    ]
+   }
+  }
+ ],
+ "match": 0.6,
+ "fade_ms": 200,
+ "peak_db": -1,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}

@@ -1,0 +1,72 @@
+{
+ "name": "cons_lockpick_place",
+ "reference": "D:/DaD_Sounds/Item_2D_LockPick_Drop",
+ "length_ms": 450,
+ "variants": 10,
+ "seed": 42619,
+ "layers": [
+  {
+   "src": "wood_metal_100/keys_*.ogg",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    3,
+    6
+   ],
+   "hp": 3000,
+   "max_ms": 350
+  },
+  {
+   "src": "metal_impact/clink*",
+   "at_ms": [
+    10,
+    80
+   ],
+   "gain_db": [
+    -8,
+    -4
+   ],
+   "pitch": [
+    5,
+    9
+   ],
+   "hp": 3000,
+   "snap": {
+    "hold": [
+     4,
+     6.0
+    ],
+    "tau": [
+     40,
+     56.0
+    ]
+   },
+   "count": [
+    1,
+    2
+   ],
+   "gap_ms": [
+    60,
+    140
+   ]
+  }
+ ],
+ "match": 0.7,
+ "fade_ms": 150,
+ "peak_db": -1,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}

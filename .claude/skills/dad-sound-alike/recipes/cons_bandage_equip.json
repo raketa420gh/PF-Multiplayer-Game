@@ -1,0 +1,53 @@
+{
+ "name": "cons_bandage_equip",
+ "reference": "D:/DaD_Sounds/Utility_Bandage_Equip",
+ "length_ms": 1000,
+ "variants": 10,
+ "seed": 40388,
+ "layers": [
+  {
+   "src": "fabric_slices/torm__blanket*",
+   "at_ms": [
+    10,
+    40
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "max_ms": 800
+  },
+  {
+   "src": "wet_towel/wet_towel_on_body/*.flac",
+   "at_ms": [
+    20,
+    50
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "max_ms": 500
+  }
+ ],
+ "match": 0.8,
+ "fade_ms": 200,
+ "peak_db": -1,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}

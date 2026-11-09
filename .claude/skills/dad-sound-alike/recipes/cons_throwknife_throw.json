@@ -1,0 +1,53 @@
+{
+ "name": "cons_throwknife_throw",
+ "reference": "D:/DaD_Sounds/Utility_ThrowingKnife_Throwing_Start",
+ "length_ms": 350,
+ "variants": 10,
+ "seed": 42037,
+ "layers": [
+  {
+   "src": "dagger_slices/swing/*",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    2,
+    4
+   ],
+   "hp": 1500
+  },
+  {
+   "src": "swishes/swishes/*",
+   "at_ms": [
+    40,
+    80
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    6,
+    9
+   ],
+   "hp": 2500
+  }
+ ],
+ "match": 0.8,
+ "fade_ms": 100,
+ "peak_db": -1,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}

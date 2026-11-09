@@ -1,0 +1,101 @@
+{
+ "name": "cons_potion_use",
+ "reference": "D:/DaD_Sounds/Utility_Potion_Drink",
+ "length_ms": 4000,
+ "variants": 10,
+ "seed": 40000,
+ "layers": [
+  {
+   "src": "fantasy_accessory/sfx/vial-glass-round-uncork-*.wav",
+   "at_ms": [
+    20,
+    60
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 300
+  },
+  {
+   "src": "more202/Drink/Drink_0[1-4].wav",
+   "at_ms": [
+    650,
+    800
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "count": [
+    5,
+    7
+   ],
+   "gap_ms": [
+    380,
+    520
+   ],
+   "until_ms": 3300
+  },
+  {
+   "src": "qubodup_bottle/*/swallow-0[1345].flac",
+   "at_ms": [
+    900,
+    1100
+   ],
+   "gain_db": [
+    -7,
+    -3
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "count": [
+    3,
+    5
+   ],
+   "gap_ms": [
+    500,
+    700
+   ],
+   "until_ms": 3500
+  },
+  {
+   "src": "glass_slices/tink/*",
+   "at_ms": [
+    3500,
+    3700
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "chance": 0.6
+  }
+ ],
+ "match": 0.6,
+ "fade_ms": 300,
+ "peak_db": -2,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}

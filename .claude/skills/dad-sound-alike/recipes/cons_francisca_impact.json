@@ -1,0 +1,78 @@
+{
+ "name": "cons_francisca_impact",
+ "reference": "D:/DaD_Sounds/Utility_FranciscaAxe_Throwing_End",
+ "length_ms": 500,
+ "variants": 10,
+ "seed": 41455,
+ "layers": [
+  {
+   "src": "wood_crack_hit/wood_impact/impactwood*",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -4,
+    -2
+   ]
+  },
+  {
+   "src": "metal27/*/dull_metal_collision_*",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -7,
+    -4
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     10,
+     15.0
+    ],
+    "tau": [
+     60,
+     84.0
+    ]
+   }
+  },
+  {
+   "src": "impact_meat/**/*",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "chance": 0.5,
+   "max_ms": 300
+  }
+ ],
+ "match": 0.6,
+ "fade_ms": 150,
+ "peak_db": -1,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}

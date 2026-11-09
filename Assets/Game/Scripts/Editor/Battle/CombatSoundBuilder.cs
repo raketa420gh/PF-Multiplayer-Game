@@ -41,6 +41,13 @@ namespace Game.Scripts.Editor.Battle
         private static readonly Dictionary<string, string> s_parents = new() { ["crossbow"] = "bow", ["poniard"] = "dagger" };
         private static readonly HashSet<string> s_unborrowed = new() { "draw", "creak", "hold", "restock" };
 
+        /// Item sounds a consumable has no takes of its own for are borrowed from a related material or weapon.
+        private static readonly Dictionary<string, string> s_itemParents = new()
+        {
+            ["ale"] = ItemsFolder + "/potion", ["bandage"] = ItemsFolder + "/fabric", ["surgical"] = ItemsFolder + "/leather", ["throwknife"] = WeaponsFolder + "/dagger"
+        };
+        private static readonly string[] s_itemCategories = { "drop", "pickup", "drag", "place", "equip", "use", "throw", "impact", "ignite", "burn" };
+
         private static readonly (string Category, string Field)[] s_categories =
         {
             ("swing", "_swing"), ("flesh", "_flesh"), ("bone", "_bone"), ("plate", "_plate"), ("shield", "_shield"), ("clash", "_clash"), ("stone", "_stone"), ("wood", "_wood"),
@@ -132,7 +139,7 @@ namespace Game.Scripts.Editor.Battle
             return s_sets.Select(LoadSet).ToArray();
         }
 
-        /// Handling sounds of a non-weapon material (Audio/Dungeon/Items/<set>/<drop|pickup|drag|place>_NN.wav); no network id, items play them by item id.
+        /// Handling and use sounds of a non-weapon item family (Audio/Dungeon/Items/<set>/<category>_NN.wav, s_itemCategories); no network id, items play them by item id.
         public static WeaponSoundConfig LoadItemSet(string set)
         {
             string folder = $"{ItemsFolder}/{set}";
@@ -143,8 +150,11 @@ namespace Game.Scripts.Editor.Battle
 
             WeaponSoundConfig config = BattleEditorUtility.LoadOrCreate<WeaponSoundConfig>($"{ItemSoundsFolder}/{set}.asset");
 
-            foreach (string category in new[] { "drop", "pickup", "drag", "place" })
-                BattleEditorUtility.Set(config, "_" + category, Load(folder, category));
+            foreach (string category in s_itemCategories)
+            {
+                AudioClip[] clips = Load(folder, category);
+                BattleEditorUtility.Set(config, "_" + category, clips.Length == 0 && s_itemParents.TryGetValue(set, out string parent) ? Load(parent, category) : clips);
+            }
 
             return config;
         }
@@ -223,6 +233,12 @@ namespace Game.Scripts.Editor.Battle
                     BattleEditorUtility.Set(so, "_body", look.Body);
                     BattleEditorUtility.Set(so, "_blockSurface", look.Block);
                     so.ApplyModifiedPropertiesWithoutUndo();
+                    isChanged = true;
+                }
+
+                if (root.TryGetComponent(out CampfireComponent campfire))
+                {
+                    BattleEditorUtility.Set(campfire, "_sounds", LoadItemSet("campfire"));
                     isChanged = true;
                 }
 

@@ -1,0 +1,73 @@
+{
+ "name": "cons_campfire_place",
+ "reference": "D:/DaD_Sounds/Item_2D_CampfireKit_Drop",
+ "length_ms": 900,
+ "variants": 10,
+ "seed": 41261,
+ "layers": [
+  {
+   "src": "wood_metal_100/wood_hit_*.ogg",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "max_ms": 400,
+   "hp": 500
+  },
+  {
+   "src": "fabric_slices/rustling_*",
+   "at_ms": [
+    0,
+    30
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    0,
+    2
+   ],
+   "max_ms": 500,
+   "hp": 1500
+  },
+  {
+   "src": "metal_impact/clink*",
+   "at_ms": [
+    80,
+    250
+   ],
+   "gain_db": [
+    -14,
+    -9
+   ],
+   "pitch": [
+    2,
+    5
+   ],
+   "chance": 0.6,
+   "max_ms": 150,
+   "hp": 2000
+  }
+ ],
+ "match": 0.6,
+ "fade_ms": 200,
+ "peak_db": -1,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}

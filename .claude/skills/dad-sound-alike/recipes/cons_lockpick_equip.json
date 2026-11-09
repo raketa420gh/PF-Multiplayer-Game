@@ -1,0 +1,54 @@
+{
+ "name": "cons_lockpick_equip",
+ "reference": "D:/DaD_Sounds/Utility_LockPick_Equip",
+ "length_ms": 1500,
+ "variants": 10,
+ "seed": 42231,
+ "layers": [
+  {
+   "src": "fantasy_accessory/sfx/keys-rattle-*.wav",
+   "at_ms": [
+    0,
+    30
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    2,
+    5
+   ],
+   "hp": 2500,
+   "max_ms": 1000
+  },
+  {
+   "src": "fantasy_accessory/sfx/keyhole-lockbox-insert-*.wav",
+   "at_ms": [
+    200,
+    400
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    2,
+    4
+   ],
+   "hp": 2000
+  }
+ ],
+ "match": 0.7,
+ "fade_ms": 400,
+ "peak_db": -1,
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   300,
+   6000
+  ]
+ }
+}
