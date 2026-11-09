@@ -32,6 +32,10 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public NetworkBool IsOpened { get; private set; }
 
+        /// Adventurers gone through so far: every peer plays the step-through sound on a change.
+        [Networked]
+        public int Passes { get; private set; }
+
         [SerializeField]
         private PortalKind _kind;
 
@@ -137,6 +141,8 @@ namespace Game.Scripts.Dungeon
 
         private void Pass(AdventurerComponent adventurer)
         {
+            Passes++;
+
             if (_kind == PortalKind.Escape)
                 adventurer.Extract();
             else

@@ -1,0 +1,113 @@
+{
+ "name": "portal_close",
+ "about": "Portal closes / pedestal sinks: a low suck-in that swells over ~1.2 s then dies away by ~3.5 s (DaD Objects_Portal_DeActive)",
+ "reference": "D:/DaD_Sounds/Objects_Portal_DeActive",
+ "target": [
+  0,
+  -4,
+  -9,
+  -21,
+  -18,
+  -21
+ ],
+ "length_ms": 3700,
+ "variants": 10,
+ "seed": 43000,
+ "layers": [
+  {
+   "src": "portal_slices/swell_short/*.wav",
+   "at_ms": [
+    0,
+    80
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ]
+  },
+  {
+   "src": "power_drain/qubodup-PowerDrain/flac/*.flac",
+   "at_ms": [
+    700,
+    1000
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -8,
+    -5
+   ]
+  },
+  {
+   "src": "portal_slices/shimmer/*.wav",
+   "at_ms": [
+    0,
+    200
+   ],
+   "gain_db": [
+    -20,
+    -15
+   ],
+   "pitch": [
+    -6,
+    -3
+   ],
+   "hp": 400,
+   "max_ms": 1800
+  },
+  {
+   "src": "ghost_breath/*.flac",
+   "at_ms": [
+    300,
+    600
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 2000
+  },
+  {
+   "src": "avalanche/Misc/gust.ogg",
+   "at_ms": [
+    600,
+    900
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 2500
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 400,
+  "len_ms": 1500,
+  "band": [
+   80,
+   3000
+  ]
+ },
+ "match": 0.75,
+ "fade_ms": 900,
+ "peak_db": -2,
+ "shelf": {
+  "hz": 3000,
+  "db": 8
+ }
+}

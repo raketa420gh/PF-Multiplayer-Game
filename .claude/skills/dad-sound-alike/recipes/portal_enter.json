@@ -1,0 +1,110 @@
+{
+ "name": "portal_enter",
+ "about": "Adventurer steps through: a ~1 s magical whoosh-out, bass-heavy, a second push around 0.6 s (DaD Magic_Teleport_Depart)",
+ "reference": "D:/DaD_Sounds/Magic_Teleport_Depart",
+ "length_ms": 1150,
+ "variants": 10,
+ "seed": 44000,
+ "layers": [
+  {
+   "src": "teleport_fins/teleport.wav",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -5,
+    -2
+   ]
+  },
+  {
+   "src": "teleport_spell/teleport.wav",
+   "at_ms": [
+    0,
+    60
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -3,
+    0
+   ]
+  },
+  {
+   "src": "earth_spell/earth.flac",
+   "chance": 0.6,
+   "at_ms": [
+    0,
+    40
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "max_ms": 900
+  },
+  {
+   "src": "portal_slices/boom/*.wav",
+   "at_ms": [
+    0,
+    0
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     250,
+     400
+    ],
+    "tau": [
+     150,
+     250
+    ]
+   }
+  },
+  {
+   "src": "avalanche/Misc/gust.ogg",
+   "at_ms": [
+    450,
+    600
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    -4,
+    0
+   ],
+   "max_ms": 500
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 200,
+  "len_ms": 700,
+  "band": [
+   100,
+   4000
+  ]
+ },
+ "match": 0.8,
+ "fade_ms": 250,
+ "peak_db": -1
+}

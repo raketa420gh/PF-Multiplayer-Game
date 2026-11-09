@@ -1,0 +1,149 @@
+{
+ "name": "portal_appear",
+ "about": "Escape portal shows up (pedestal rises): ~4 s low magical roar swelling in and cut off over a second, a quiet airy shimmer and sparse crackles / falling grit trailing to ~6 s (DaD Objects_Portal_Appear: bass roar layers 1/3/4 + quiet 1.5-4k crackle layers 2/5)",
+ "reference": "D:/DaD_Sounds/Objects_Portal_Appear",
+ "target": [
+  0,
+  -5,
+  -9,
+  -13,
+  -15,
+  -21
+ ],
+ "length_ms": 6200,
+ "variants": 10,
+ "seed": 41000,
+ "layers": [
+  {
+   "src": "portal_slices/swell/*.wav",
+   "at_ms": [
+    0,
+    60
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ]
+  },
+  {
+   "src": "earthquake/shake.flac",
+   "at_ms": [
+    80,
+    250
+   ],
+   "gain_db": [
+    -7,
+    -4
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "lp": 2500,
+   "max_ms": 4300
+  },
+  {
+   "src": "portal_slices/shimmer/*.wav",
+   "at_ms": [
+    100,
+    400
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    -3,
+    2
+   ],
+   "hp": 300
+  },
+  {
+   "src": "magical/magical_[245]*.ogg",
+   "count": [
+    4,
+    7
+   ],
+   "at_ms": [
+    600,
+    900
+   ],
+   "gap_ms": [
+    700,
+    1200
+   ],
+   "until_ms": 5200,
+   "gain_db": [
+    -17,
+    -12
+   ],
+   "pitch": [
+    -5,
+    0
+   ],
+   "hp": 800
+  },
+  {
+   "src": "breaking_falling/bfh1_falling_0*.ogg",
+   "chance": 0.8,
+   "count": [
+    1,
+    2
+   ],
+   "at_ms": [
+    300,
+    900
+   ],
+   "gap_ms": [
+    1200,
+    2000
+   ],
+   "until_ms": 3500,
+   "gain_db": [
+    -17,
+    -12
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 250
+  },
+  {
+   "src": "ghost_breath/*.flac",
+   "at_ms": [
+    300,
+    700
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 1500
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 500,
+  "len_ms": 1800,
+  "band": [
+   80,
+   3000
+  ]
+ },
+ "match": 0.75,
+ "fade_ms": 900,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 2500,
+  "db": 8
+ }
+}

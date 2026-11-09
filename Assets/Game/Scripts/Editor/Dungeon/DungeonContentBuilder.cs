@@ -20,6 +20,7 @@ namespace Game.Scripts.Editor.Dungeon
         public const string AbilitiesFolder = ConfigsFolder + "/Abilities";
         public const string ClassesFolder = ConfigsFolder + "/Classes";
         public const string AbilitySoundsFolder = "Assets/Game/Audio/Dungeon/Abilities";
+        public const string PortalSoundsFolder = "Assets/Game/Audio/Dungeon/Portal";
         private static ItemDatabase s_database;
         public const string LootFolder = ConfigsFolder + "/Loot";
         public const string MonstersFolder = ConfigsFolder + "/Monsters";
@@ -1658,7 +1659,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             so.ApplyModifiedPropertiesWithoutUndo();
             AudioSource hum = root.AddComponent<AudioSource>();
-            hum.clip = AssetDatabase.LoadAssetAtPath<AudioClip>(DungeonAudioBuilder.Path("Portal"));
+            hum.clip = AssetDatabase.LoadAssetAtPath<AudioClip>(PortalSoundsFolder + "/Loop.wav");
             hum.loop = true;
             hum.playOnAwake = false;
             hum.spatialBlend = 1f;
@@ -1670,6 +1671,11 @@ namespace Game.Scripts.Editor.Dungeon
             so = new SerializedObject(sound);
             BattleEditorUtility.Set(so, "_portal", portal);
             BattleEditorUtility.Set(so, "_loop", hum);
+            // DaD-alike takes layered from CC0 recordings (dad-sound-alike recipes portal_*.json).
+            BattleEditorUtility.Set(so, "_portalAppear", BattleAudioBuilder.Load("Appear", PortalSoundsFolder));
+            BattleEditorUtility.Set(so, "_portalOpen", BattleAudioBuilder.Load("Open", PortalSoundsFolder));
+            BattleEditorUtility.Set(so, "_portalClose", BattleAudioBuilder.Load("Close", PortalSoundsFolder));
+            BattleEditorUtility.Set(so, "_portalEnter", BattleAudioBuilder.Load("Enter", PortalSoundsFolder));
             so.ApplyModifiedPropertiesWithoutUndo();
             BattleContentBuilder.SavePrefab(root, Prefab(name));
         }

@@ -1,0 +1,147 @@
+{
+ "name": "portal_open",
+ "about": "Portal opens: a heavy low magical boom that holds ~1.5 s and fades over ~6 s, a whoosh on top at the start (DaD Objects_Portal_Active_1)",
+ "reference": "D:/DaD_Sounds/Objects_Portal_Active/Objects_Portal_Active_1_424125175.wav",
+ "target": [
+  0,
+  -10,
+  -19,
+  -20,
+  -23,
+  -28
+ ],
+ "length_ms": 7500,
+ "variants": 10,
+ "seed": 42000,
+ "layers": [
+  {
+   "src": "portal_slices/boom/*.wav",
+   "at_ms": [
+    0,
+    0
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     1300,
+     1800
+    ],
+    "tau": [
+     1500,
+     2000
+    ]
+   }
+  },
+  {
+   "src": "earthquake/shake.flac",
+   "at_ms": [
+    0,
+    40
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "lp": 1500,
+   "snap": {
+    "hold": [
+     900,
+     1300
+    ],
+    "tau": [
+     1200,
+     1600
+    ]
+   }
+  },
+  {
+   "src": "teleport_spell/teleport.wav",
+   "at_ms": [
+    0,
+    30
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -6,
+    -3
+   ]
+  },
+  {
+   "src": "power_drain/qubodup-PowerDrain/flac/*.flac",
+   "at_ms": [
+    100,
+    250
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    -7,
+    -4
+   ]
+  },
+  {
+   "src": "portal_slices/shimmer/*.wav",
+   "at_ms": [
+    200,
+    500
+   ],
+   "gain_db": [
+    -22,
+    -17
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 300
+  },
+  {
+   "src": "ghost_breath/*.flac",
+   "at_ms": [
+    200,
+    400
+   ],
+   "gain_db": [
+    -20,
+    -16
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 1500
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 600,
+  "len_ms": 2000,
+  "band": [
+   60,
+   2000
+  ]
+ },
+ "match": 0.7,
+ "fade_ms": 1500,
+ "peak_db": -1,
+ "shelf": {
+  "hz": 2000,
+  "db": 6
+ }
+}

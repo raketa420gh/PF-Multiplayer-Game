@@ -15,6 +15,18 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private PortalComponent _portal;
 
+        [SerializeField, Tooltip("Escape portal showing up (its pedestal rises)")]
+        private AudioClip[] _portalAppear;
+
+        [SerializeField]
+        private AudioClip[] _portalOpen;
+
+        [SerializeField]
+        private AudioClip[] _portalClose;
+
+        [SerializeField, Tooltip("Someone steps through the portal")]
+        private AudioClip[] _portalEnter;
+
         [SerializeField]
         private LeverComponent _lever;
 
@@ -27,6 +39,8 @@ namespace Game.Scripts.Dungeon
         private bool _doorOpen;
         private bool _containerOpen;
         private bool _portalActive;
+        private bool _portalShown;
+        private int _portalPasses;
         private bool _leverPulled;
         private bool _isFirst = true;
 
@@ -51,12 +65,29 @@ namespace Game.Scripts.Dungeon
                     DungeonAudioComponent.Play(DungeonSound.ChestOpen, transform.position);
             }
 
+            if (_portal != null && _portal.IsActive != _portalShown)
+            {
+                _portalShown = _portal.IsActive;
+
+                // A way down opens the moment it shows up: its open sound covers that.
+                if (!_isFirst && (!_portalShown || _portal.Kind == PortalKind.Escape))
+                    PlayPortal(_portalShown ? _portalAppear : _portalClose);
+            }
+
+            if (_portal != null && _portal.Passes != _portalPasses)
+            {
+                _portalPasses = _portal.Passes;
+
+                if (!_isFirst)
+                    PlayPortal(_portalEnter);
+            }
+
             if (_portal != null && _portal.IsOpen != _portalActive)
             {
                 _portalActive = _portal.IsOpen;
 
                 if (!_isFirst && _portalActive)
-                    DungeonAudioComponent.Play(DungeonSound.PortalOpen, transform.position, 1f);
+                    PlayPortal(_portalOpen);
 
                 if (_loop != null)
                 {
@@ -76,6 +107,12 @@ namespace Game.Scripts.Dungeon
             }
 
             _isFirst = false;
+        }
+
+        private void PlayPortal(AudioClip[] clips)
+        {
+            if (clips != null && clips.Length > 0)
+                DungeonAudioComponent.Play(clips[Random.Range(0, clips.Length)], transform.position + Vector3.up * 1.2f);
         }
 
         private void SetCreak(bool isOpening)

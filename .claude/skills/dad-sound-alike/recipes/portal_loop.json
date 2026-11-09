@@ -1,0 +1,106 @@
+{
+ "name": "portal_loop",
+ "about": "Open portal idle hum (looped on the portal's own source): steady low roar bed with a slowly wandering airy shimmer on top (DaD Objects_Portal_Active_2); made seamless afterwards by a crossfade",
+ "reference": "D:/DaD_Sounds/Objects_Portal_Active/Objects_Portal_Active_2_494016593.wav",
+ "target": [
+  0,
+  -12,
+  -18,
+  -11,
+  -12,
+  -16
+ ],
+ "length_ms": 10500,
+ "variants": 6,
+ "seed": 45000,
+ "layers": [
+  {
+   "src": "portal_slices/bed/deep_*.wav",
+   "at_ms": [
+    0,
+    0
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ]
+  },
+  {
+   "src": "portal_slices/bed/engine_*.wav",
+   "at_ms": [
+    0,
+    0
+   ],
+   "gain_db": [
+    -6,
+    -4
+   ],
+   "pitch": [
+    -2,
+    0
+   ]
+  },
+  {
+   "src": "portal_slices/shimmer_loop/*.wav",
+   "count": [
+    4,
+    4
+   ],
+   "at_ms": [
+    0,
+    300
+   ],
+   "gap_ms": [
+    2300,
+    2800
+   ],
+   "until_ms": 9000,
+   "gain_db": [
+    -7,
+    -4
+   ],
+   "pitch": [
+    -2,
+    3
+   ],
+   "hp": 600
+  },
+  {
+   "src": "ghost_breath/*.flac",
+   "count": [
+    3,
+    4
+   ],
+   "at_ms": [
+    500,
+    1500
+   ],
+   "gap_ms": [
+    2500,
+    3200
+   ],
+   "until_ms": 8500,
+   "gain_db": [
+    -12,
+    -9
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 1500,
+   "chance": 1.0
+  }
+ ],
+ "match": 0.8,
+ "fade_ms": 1,
+ "peak_db": -3,
+ "shelf": {
+  "hz": 3000,
+  "db": 10
+ }
+}
