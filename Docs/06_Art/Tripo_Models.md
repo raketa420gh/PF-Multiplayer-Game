@@ -8,7 +8,9 @@
 3. **Перенос** — `Tools > Tripo3D Bridge` → `Start Server`, из студии отправить в Unity. Бридж кладёт модель в `Assets/TripoModels/<имя>/` (`<имя>.fbx`, текстуры в `<имя>.fbm/`, материал в `Materials/`).
 4. **Приёмка** — в любой 3D-задаче Claude сам замечает модели в `Assets/TripoModels` (и другие файлы не на месте), переносит их через AssetDatabase в категорию (ниже) и даёт смысловое английское PascalCase-имя (`золотой_кубок_3d_модель` → `GoldenGoblet`). Проверяет габариты, треугольники, риг, текстуры. Скрипта-автоматики нет. `Assets/TripoModels` в git не идёт.
 
-Пачки: [WellRest](Tripo_Batch_WellRest.md) — полный набор одного модуля катакомб.
+Пачки: [WellRest](Tripo_Batch_WellRest.md) — полный набор одного модуля катакомб; [Plate Harness](PlateHarness.md) — латный доспех к большому бацинету (4 части, картинки ChatGPT → Multiview).
+
+Image → Multiview: для деталей, где важна форма с разных сторон, сначала 3 картинки в ChatGPT Image (front / left / back, в одном чате, «the exact same … from the previous image»), потом Multiview в Tripo.
 
 ## Шаблон промпта
 `<предмет>, <материал и состояние>, dark fantasy medieval, game asset, realistic PBR, clean quad topology, low poly, single object, neutral pose, no base, no background`
@@ -17,7 +19,7 @@
 - Стиль — как у остального окружения (`Art_Direction.md`): реалистичный, приглушённый, потёртый.
 
 ## Перенос в проект
-- Путь: `Assets/Game/Models/<Monsters|Environment|Items>/<PascalName>/<PascalName>.fbx`.
+- Путь: `Assets/Game/Models/<Monsters|Environment|Items|Weapons|Armor>/<PascalName>/<PascalName>.fbx` (части доспеха: `Armor/<Set>/<Part>/`).
 - Текстуры: `Textures/<PascalName>_Color.jpg`, `_Normal.png`, `_MetallicSmoothness.png` (металл в R, гладкость в A).
 - Материал URP Lit собирается билдером (`DungeonSkeletonBuilder.TripoMaterial`), импортёр — `materialImportMode = None`.
 - Масштаб: Tripo отдаёт модель высотой около 1 м — `globalScale` в импортёре под реальный размер.
