@@ -39,6 +39,9 @@ namespace Game.Scripts.Editor.Dungeon
             (ArmorVisual.GreatBascinet, new Vector3(0f, -0.21f, 0.025f), Vector3.one * 0.44f)
         };
 
+        /// Rigid pieces whose prefab root a rebuild keeps: the ones the equipment fit editor offers.
+        public static ArmorVisual[] FittedVisuals => s_helmets.Select(helmet => helmet.Visual).ToArray();
+
         public static string Prefab(string name) => $"{DungeonPropBuilder.PrefabsFolder}/{name}.prefab";
 
         private static int Catalog(string weapon) => System.Array.IndexOf(DungeonWeaponLibrary.CatalogOrder, weapon);
@@ -904,15 +907,18 @@ namespace Game.Scripts.Editor.Dungeon
             };
         }
 
-        /// A Tripo helmet (0.98 m tall, face to +Z) fitted on the head bone of the Character Creator man.
+        /// A Tripo helmet (0.98 m tall, face to +Z) fitted on the head bone of the Character Creator man. A prefab that exists keeps
+        /// its root: the fit editor (AnimationEditor scene, Equipment Fit) saves the fit there.
         private static GameObject BuildHelmet(ArmorVisual visual)
         {
             (ArmorVisual _, Vector3 position, Vector3 scale) = s_helmets.First(helmet => helmet.Visual == visual);
+            string path = $"{ArmorFolder}/Armor_{visual}.prefab";
+            Transform fitted = AssetDatabase.LoadAssetAtPath<GameObject>(path)?.transform;
             GameObject root = new GameObject("Armor_" + visual);
-            root.transform.localPosition = position;
-            root.transform.localScale = scale;
+            root.transform.SetLocalPositionAndRotation(fitted != null ? fitted.localPosition : position, fitted != null ? fitted.localRotation : Quaternion.identity);
+            root.transform.localScale = fitted != null ? fitted.localScale : scale;
             PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>($"{HelmetModelsFolder}/{visual}/{visual}.fbx"), root.transform);
-            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, $"{ArmorFolder}/{root.name}.prefab");
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             Object.DestroyImmediate(root);
 
             return prefab;

@@ -81,9 +81,41 @@ namespace Game.Scripts.Editor.Battle
             BattleEditorUtility.Set(editor, "_camera", camera.GetComponent<Camera>());
             BattleEditorUtility.Set(editor, "_config", BattleEditorUtility.LoadOrCreate<AnimationEditConfig>(AnimationEditBaker.ConfigPath));
             editor.ApplyModifiedPropertiesWithoutUndo();
+            AddSections(system, animator, camera.GetComponent<Camera>());
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log($"[{nameof(BattleAnimationTestSceneBuilder)}] Scene built: {ScenePath}");
+        }
+
+        /// The start menu over the sections: the animation browser and editor on [System], the equipment fit editor; both hidden at start.
+        public static void AddSections(GameObject system, Animator animator, Camera camera)
+        {
+            GameObject fit = new GameObject("[EquipmentFit]");
+            SerializedObject so = new SerializedObject(fit.AddComponent<EquipmentFitView>());
+            BattleEditorUtility.Set(so, "_animator", animator);
+            BattleEditorUtility.Set(so, "_camera", camera);
+            BattleEditorUtility.Set(so, "_pieces", AssetDatabase.LoadAssetAtPath<ArmorPieceSetConfig>($"{DungeonContentBuilder.ConfigsFolder}/ArmorPieces.asset"));
+            ArmorVisual[] visuals = DungeonContentBuilder.FittedVisuals;
+            so.FindProperty("_visuals").arraySize = visuals.Length;
+
+            for (int i = 0; i < visuals.Length; i++)
+                so.FindProperty($"_visuals.Array.data[{i}]").enumValueFlag = (int)visuals[i];
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            so = new SerializedObject(new GameObject("[Menu]").AddComponent<EditorMenuView>());
+            (string Name, DisplayableView View)[] sections = { ("Animation Editor", system.AddComponent<EditorSectionView>()), ("Equipment Fit", fit.GetComponent<EquipmentFitView>()) };
+            so.FindProperty("_sections").arraySize = sections.Length;
+
+            for (int i = 0; i < sections.Length; i++)
+            {
+                BattleEditorUtility.Set(so, $"_sections.Array.data[{i}].Name", sections[i].Name);
+                BattleEditorUtility.Set(so, $"_sections.Array.data[{i}].View", sections[i].View);
+            }
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+            system.SetActive(false);
+            fit.SetActive(false);
         }
     }
 }

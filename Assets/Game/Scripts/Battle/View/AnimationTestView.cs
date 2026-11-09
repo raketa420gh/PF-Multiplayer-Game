@@ -226,7 +226,8 @@ namespace Game.Scripts.Battle
             float height = GuiHeight - Margin * 2f;
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
 
-            GUILayout.BeginArea(new Rect(Margin, Margin, PanelWidth, height), GUI.skin.box);
+            // The editor menu's button sits under it.
+            GUILayout.BeginArea(new Rect(Margin, Margin, PanelWidth, height - EditorMenuView.ButtonHeight - Margin), GUI.skin.box);
             _weaponScroll = GUILayout.BeginScrollView(_weaponScroll);
 
             for (int i = 0; i < _weapons.Length; i++)
