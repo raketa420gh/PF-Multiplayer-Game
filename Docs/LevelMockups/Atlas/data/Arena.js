@@ -300,6 +300,7 @@ ATLAS.room("Arena",[
 {"id":"Mo6","cat":"monster","name":"Skull","p":[0,-5,4.4],"ry":180,"s":[0.7,1.8,0.7],"round":true},
 {"id":"Li7","cat":"light","name":"Candle","p":[-0.6,-4.7,-11],"ry":0,"color":"#FFB259","i":1.1,"r":4},
 {"id":"Li8","cat":"light","name":"Candle","p":[4.8,-4.7,-13.2],"ry":0,"color":"#FFB259","i":1.1,"r":4},
+{"id":"Li9","cat":"light","name":"Chandelier","p":[0,7.4,0],"ry":0,"color":"#FFC280","i":90,"r":30},
 {"id":"St10","cat":"start","name":"Start","p":[-8.4,0,14.8],"ry":180,"s":[1,0.1,1],"round":true},
 {"id":"Wa88","cat":"wall","name":"Wall","p":[-15.55,-5.6,0],"ry":0,"s":[3.1,5,34.2]},
 {"id":"Wa89","cat":"wall","name":"Wall","p":[1.55,-5.6,-15.75],"ry":0,"s":[31.1,5,2.7]},

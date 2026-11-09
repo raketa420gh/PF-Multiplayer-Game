@@ -110,6 +110,8 @@ class Room {
   torch(x, z, ry, y = 0) { return this.add('light', 'Torch', [x, y + 3.2, z], null, { ry, color: '#FFC280', i: 9, r: 12 }); }
   candle(x, z, y = 0) { return this.add('light', 'Candle', [x, y + 0.3, z], null, { color: '#FFB259', i: 1.1, r: 4 }); }
   brazier(x, z, y = 0) { return this.add('light', 'Brazier', [x, y + 0.9, z], null, { color: '#FF9A4D', i: 6, r: 9 }); }
+  /// Люстра под потолком, всегда запечена: y — где свет (корпус и цепь на 1,6 м выше), i и r — сила и дальность на весь зал.
+  chandelier(x, z, y, { i = 90, r = 30 } = {}) { return this.add('light', 'Chandelier', [x, y, z], null, { color: '#FFC280', i, r }); }
 
   // ---------- механизмы: один на комнату, спавнится хостом, см. CatacombRoomBuilder.Apply ----------
 

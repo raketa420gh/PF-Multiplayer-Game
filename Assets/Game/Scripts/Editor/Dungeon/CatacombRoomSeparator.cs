@@ -37,9 +37,18 @@ namespace Game.Scripts.Editor.Dungeon
         [MenuItem("Tools/Game/Dungeon/Catacombs/Separate Coplanar Faces")]
         public static void SeparateAll()
         {
+            SeparateAll(null);
+        }
+
+        /// names null for every room.
+        public static void SeparateAll(string[] names)
+        {
             foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { CatacombRoomBuilder.Folder }))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
+
+                if (names != null && !names.Contains(System.IO.Path.GetFileNameWithoutExtension(path)))
+                    continue;
 
                 if (!AssetDatabase.LoadAssetAtPath<GameObject>(path).TryGetComponent(out CatacombRoomComponent _))
                     continue;

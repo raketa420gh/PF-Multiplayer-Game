@@ -90,5 +90,8 @@ exports.build = r => {
   r.monster('Skull', 0, 4.4, { y: LOW, ry: 180 });
   r.candle(-0.6, -11, LOW); r.candle(4.8, -13.2, LOW);
 
+  // Над ареной люстра: запечённый верхний свет на всю арену и трибуны.
+  r.chandelier(0, 0, 7.4);
+
   r.start(-8.4, 14.8, 180);
 };

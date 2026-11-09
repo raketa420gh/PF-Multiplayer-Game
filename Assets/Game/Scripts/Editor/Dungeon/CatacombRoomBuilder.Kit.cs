@@ -69,8 +69,10 @@ namespace Game.Scripts.Editor.Dungeon
                 Register($"Light {glim}", LightsFolder, () => Group($"Light {glim}", root => BuildLight(root, lamp, 0f)));
             }
 
+            // Its ring and arms would shade the light hanging among them, the floor beyond the middle would stay dark.
             Register("Light Chandelier", LightsFolder, () => Group("Light Chandelier",
-                root => DungeonMapBuilder.Place(DungeonMedievalBuilder.Load("Chandelier"), root, Vector3.up * (Height - 0.4f), 0f)));
+                root => DungeonMapBuilder.Place(DungeonMedievalBuilder.Load("Chandelier"), root, Vector3.up * (Height - 0.4f), 0f)
+                    .GetComponentsInChildren<Renderer>(true).ToList().ForEach(body => body.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off)));
 
             foreach (Item prop in layouts.SelectMany(layout => layout.Items).Where(item => item.Shape == Shape.Prop).GroupBy(item => item.Name).Select(group => group.First()))
             {

@@ -38,6 +38,22 @@ namespace Game.Scripts.Editor.Dungeon
             FinishRooms(layouts);
         }
 
+        /// Only the named rooms are rebuilt from their mockups: the others and the pool stay as they are, the prefab keeps its asset.
+        public static void ApplyMockups(params string[] names)
+        {
+            List<Layout> layouts = Layouts().ToList();
+            PrepareKit(layouts);
+
+            foreach (Layout layout in layouts.Where(layout => names.Contains(layout.Name) && IsMockup(layout.Name)))
+                ApplyMockup(layout);
+
+            AssetDatabase.SaveAssets();
+            CatacombRoomSeparator.SeparateAll(names);
+            BalanceRooms(names);
+            Fusion.Editor.NetworkProjectConfigUtilities.RebuildPrefabTable();
+            Debug.Log($"Mockups applied: {string.Join(", ", names)}");
+        }
+
         /// Only the rooms without a prefab are built: the others keep their assets, and the scene gets the whole pool.
         [MenuItem("Tools/Game/Dungeon/Catacombs/Build Missing Rooms")]
         public static void BuildMissingRooms()
@@ -86,9 +102,9 @@ namespace Game.Scripts.Editor.Dungeon
             Fusion.Editor.NetworkProjectConfigUtilities.RebuildPrefabTable();
         }
 
-        private static void BalanceRooms()
+        private static void BalanceRooms(string[] names = null)
         {
-            foreach (string path in CatacombLightBaker.RoomPaths())
+            foreach (string path in CatacombLightBaker.RoomPaths().Where(path => names == null || names.Contains(Path.GetFileNameWithoutExtension(path))))
             {
                 GameObject room = PrefabUtility.LoadPrefabContents(path);
                 CatacombRoomLighting.Balance(room.transform, (name, position, yaw) => Kit(name, room.transform, position, yaw));
@@ -244,7 +260,15 @@ namespace Game.Scripts.Editor.Dungeon
 
             Light light = s_kit[kit].GetComponentInChildren<Light>(true);
             Vector3 point = item.Position - Vector3.up * (light != null ? light.transform.position.y - s_kit[kit].transform.position.y : 0f);
-            Kit(kit, root, point, item.name == "Torch" ? TorchYaw(item) : 0f);
+            Light placed = Kit(kit, root, point, item.name == "Torch" ? TorchYaw(item) : 0f).GetComponentInChildren<Light>(true);
+
+            // The mockup holds the light's strength too: the kit's own for the usual lamps, a hall's worth for a chandelier.
+            if (placed == null || item.r <= 0f)
+                return;
+
+            placed.color = Hex(item.color);
+            placed.intensity = item.i;
+            placed.range = item.r;
         }
 
         /// A wall under any storey but the ground one ends level with its floor, and a wall's top cuts the NavMesh: a door there stands on a
