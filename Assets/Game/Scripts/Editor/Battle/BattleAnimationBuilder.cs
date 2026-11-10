@@ -49,6 +49,9 @@ namespace Game.Scripts.Editor.Battle
             "m_LocalPosition.x", "m_LocalPosition.y", "m_LocalPosition.z", "m_LocalRotation.x", "m_LocalRotation.y", "m_LocalRotation.z", "m_LocalRotation.w"
         };
 
+        // Curves of the arm a shield is carried on: its muscles, and its fingers as clips name them.
+        private static readonly string[] s_shieldArm = { "Left Shoulder", "Left Arm", "Left Forearm", "Left Hand", "LeftHand." };
+
         [MenuItem("Tools/Game/Battle/Build Animations")]
         public static void Build()
         {
@@ -114,6 +117,7 @@ namespace Game.Scripts.Editor.Battle
             BakeEdits();
             // Authored outside the pose library: written last, on the idle's finished grip (the content build samples its traces).
             ArmingSwordAttacks.Bake(false);
+            BakeShieldSwings(weapons);
             StoreMarkers(weapons);
 
             EditorUtility.SetDirty(controller);
@@ -195,6 +199,61 @@ namespace Game.Scripts.Editor.Battle
             BattlePoseRig.CreateSockets(animator);
             AnimationEditBaker.BakeAll(edits, animator);
             UnityEngine.Object.DestroyImmediate(model);
+        }
+
+        /// A weapon swung beside a shield is the weapon's own finished swing, hand edits and all: the pair's clip takes it
+        /// whole and keeps only its shield arm. A hand edit of the pair's clip goes on top of that. The riposte stays the
+        /// pair's own: it starts from the shield's block, not from the weapon's guard.
+        public static void BakeShieldSwings(WeaponDefinition[] weapons)
+        {
+            AnimationEditConfig edits = AssetDatabase.LoadAssetAtPath<AnimationEditConfig>(AnimationEditBaker.ConfigPath);
+            GameObject model = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath));
+            Animator animator = model.GetComponent<Animator>();
+            Transform shoulder = animator.GetBoneTransform(HumanBodyBones.LeftShoulder);
+            HashSet<string> shieldPaths = new(BattlePoseRig.CreateSockets(animator).Where(socket => socket.IsChildOf(shoulder))
+                .Select(socket => AnimationUtility.CalculateTransformPath(socket, animator.transform)));
+
+            foreach ((string weapon, Func<WeaponDefinition> _, string[] withShield) in Game.Scripts.Editor.Dungeon.DungeonWeaponLibrary.ShieldPairs)
+            {
+                foreach (WeaponDefinition pair in weapons.Where(definition => withShield.Contains(definition.Prefix)))
+                {
+                    for (int i = 0; i < pair.Attacks.Length; i++)
+                    {
+                        string suffix = FighterAnimComponent.AttackSuffix + i;
+                        AnimationClip swing = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{BattleEditorUtility.AnimationsFolder}/{weapon}{suffix}.anim");
+                        AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{BattleEditorUtility.AnimationsFolder}/{pair.Prefix}{suffix}.anim");
+
+                        if (swing == null || clip == null)
+                            continue;
+
+                        ClipEdit edit = edits != null ? edits.Find(clip) : null;
+                        CarryShield(swing, edit != null ? edit.Source : clip, shieldPaths);
+
+                        if (edit != null)
+                            AnimationEditBaker.Bake(edit, animator);
+                    }
+                }
+            }
+
+            UnityEngine.Object.DestroyImmediate(model);
+            AssetDatabase.SaveAssets();
+        }
+
+        /// 'clip' becomes 'swing' with the shield arm it had: the left arm's muscles and the sockets on it.
+        private static void CarryShield(AnimationClip swing, AnimationClip clip, HashSet<string> shieldPaths)
+        {
+            bool IsShieldArm(EditorCurveBinding binding) => binding.type == typeof(Animator) ? s_shieldArm.Any(binding.propertyName.StartsWith) : shieldPaths.Contains(binding.path);
+
+            EditorCurveBinding[] taken = AnimationUtility.GetCurveBindings(swing).Where(binding => !IsShieldArm(binding)).ToArray();
+            // In the clip's own order: a pair whose weapon swings as generated stays as it was, curve for curve.
+            EditorCurveBinding[] bindings = AnimationUtility.GetCurveBindings(clip).Where(binding => IsShieldArm(binding) || taken.Contains(binding)).Union(taken).ToArray();
+            AnimationCurve[] curves = Array.ConvertAll(bindings, binding => AnimationUtility.GetEditorCurve(IsShieldArm(binding) ? clip : swing, binding));
+
+            clip.ClearCurves();
+            clip.frameRate = swing.frameRate;
+            AnimationUtility.SetEditorCurves(clip, bindings, curves);
+            AnimationUtility.SetAnimationClipSettings(clip, AnimationUtility.GetAnimationClipSettings(swing));
+            EditorUtility.SetDirty(clip);
         }
 
         private static AnimatorController CreateController()

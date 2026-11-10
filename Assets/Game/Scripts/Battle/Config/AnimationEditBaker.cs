@@ -95,7 +95,7 @@ namespace Game.Scripts.Battle
             EditorUtility.SetDirty(to);
         }
 
-        private static void Bake(ClipEdit edit, Animator animator)
+        public static void Bake(ClipEdit edit, Animator animator)
         {
             AnimationClip source = edit.Source;
             AnimationClip clip = edit.Clip;
