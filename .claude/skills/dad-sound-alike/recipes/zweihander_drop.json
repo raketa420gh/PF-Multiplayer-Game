@@ -1,0 +1,264 @@
+{
+ "name": "zweihander_drop",
+ "variants": 12,
+ "about": "Item_3D_LongSword_Drop (Sound.Item.Drop, 3 media): long blade clatters and rings on stone - first clang at 30-50 ms, more clangs/rattles keep it within -1..-7 dB for ~500 ms, then ~2 dB/25 ms to -25 dB at 0.8 s and -40 dB by 1.0 s, ring floor ~-50 dB to 2 s; 1.5-4 kHz lead, no low end",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/drop",
+ "length_ms": 2000,
+ "seed": 42000,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 700,
+ "layers": [
+  {
+   "src": "weapons_apparel/sfx/sword-knife-clash-0[4579].wav",
+   "at_ms": [
+    30,
+    45
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -9,
+    -6
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     300,
+     400
+    ],
+    "tau": [
+     220,
+     260
+    ]
+   },
+   "max_ms": 1700
+  },
+  {
+   "src": "zweihander_slices/clash/*.wav",
+   "at_ms": [
+    30,
+    45
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     110,
+     140
+    ]
+   },
+   "max_ms": 600
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[38].ogg",
+   "at_ms": [
+    30,
+    40
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     15,
+     20
+    ]
+   }
+  },
+  {
+   "src": "weapons_apparel/sfx/sword-thermos-hit-01.wav",
+   "at_ms": [
+    90,
+    130
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -4,
+    1
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     250,
+     330
+    ],
+    "tau": [
+     220,
+     260
+    ]
+   },
+   "max_ms": 1700
+  },
+  {
+   "src": "weapons_apparel/sfx/sword-knife-clash-0[4579].wav",
+   "at_ms": [
+    240,
+    330
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -9,
+    -6
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     200,
+     260
+    ],
+    "tau": [
+     220,
+     260
+    ]
+   },
+   "max_ms": 1700
+  },
+  {
+   "src": "weapons_apparel/sfx/sword-knife-clash-0[4579].wav",
+   "at_ms": [
+    380,
+    470
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -7,
+    -4
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     100,
+     160
+    ],
+    "tau": [
+     220,
+     260
+    ]
+   },
+   "max_ms": 1500
+  },
+  {
+   "src": "zweihander_slices/hilt/*.wav",
+   "at_ms": [
+    90,
+    150
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -5,
+    -1
+   ],
+   "count": [
+    3,
+    5
+   ],
+   "gap_ms": [
+    70,
+    130
+   ],
+   "until_ms": 520,
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     70,
+     100
+    ]
+   },
+   "max_ms": 500
+  },
+  {
+   "src": "sfx_breaking/bfh1_metal_falling_0[1-5].ogg",
+   "at_ms": [
+    40,
+    80
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "max_ms": 700
+  },
+  {
+   "src": "metal_impact/bing1.wav",
+   "at_ms": [
+    300,
+    400
+   ],
+   "gain_db": [
+    -26,
+    -22
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 1000,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     350,
+     450
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 4000,
+  "db": -3
+ },
+ "room": {
+  "db": -24,
+  "decay_ms": 300,
+  "len_ms": 1500,
+  "band": [
+   600,
+   9000
+  ]
+ }
+}

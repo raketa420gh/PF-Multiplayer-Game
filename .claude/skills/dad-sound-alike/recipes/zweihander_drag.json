@@ -1,0 +1,131 @@
+{
+ "name": "zweihander_drag",
+ "variants": 12,
+ "about": "Item_2D_LongSword_Drag (Sound.Inventory.Drag, 5 media): inventory pick - one steel shing starting at 30-50 ms, peak anywhere 70-120 ms (1.5-10 kHz, almost nothing below 500 Hz), held ~100 ms, then ~6 dB/25 ms, silent after 0.3 s",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/drag",
+ "length_ms": 600,
+ "seed": 42200,
+ "peak_db": -1,
+ "match": 0.8,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "rpg_pack/RPG Sound Pack/battle/sword-unsheathe*.wav",
+   "at_ms": [
+    35,
+    80
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -8,
+    -5
+   ],
+   "hp": 1000,
+   "snap": {
+    "hold": [
+     90,
+     120
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "zweihander_slices/clash/nkb_*.wav",
+   "at_ms": [
+    60,
+    110
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     5,
+     10
+    ],
+    "tau": [
+     35,
+     45
+    ]
+   },
+   "max_ms": 300
+  },
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    40,
+    90
+   ],
+   "gain_db": [
+    -5,
+    -2
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     70,
+     100
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpactWood.flac",
+   "at_ms": [
+    40,
+    70
+   ],
+   "gain_db": [
+    -24,
+    -20
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "lp": 300,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 8000,
+  "db": 3
+ },
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   1200,
+   12000
+  ]
+ }
+}

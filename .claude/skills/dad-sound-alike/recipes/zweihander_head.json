@@ -1,0 +1,236 @@
+{
+ "name": "zweihander_head",
+ "variants": 12,
+ "about": "FX_Hit_Character_Headshot_Axe (the Sound.Hit.Headshot.Default of TwoHandedSword_Sound; no sword headshot for two-handers): instant broadband heavy chop into the skull - steel + bone crunch held ~250 ms (-8 dB at 225 ms), -20 dB at 350 ms, -30 dB by 425 ms, tail gone ~0.65 s",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/head",
+ "length_ms": 850,
+ "seed": 41200,
+ "peak_db": -1,
+ "match": 0.85,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    0,
+    3
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     50,
+     70
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   }
+  },
+  {
+   "src": "zweihander_slices/hilt/s[kn]h_*.wav",
+   "at_ms": [
+    0,
+    3
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 800,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   },
+   "max_ms": 300
+  },
+  {
+   "src": "hits_and_punches/hits/hit*.flac",
+   "at_ms": [
+    0,
+    3
+   ],
+   "gain_db": [
+    -1,
+    0
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "lp": 400,
+   "snap": {
+    "hold": [
+     90,
+     110
+    ],
+    "tau": [
+     70,
+     90
+    ]
+   }
+  },
+  {
+   "src": "deep_breaks/*.wav",
+   "at_ms": [
+    0,
+    4
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "snap": {
+    "hold": [
+     220,
+     250
+    ],
+    "tau": [
+     70,
+     85
+    ]
+   }
+  },
+  {
+   "src": "tinysized/sfx-cc0/apple-cut-*.wav",
+   "at_ms": [
+    0,
+    6
+   ],
+   "gain_db": [
+    -5,
+    -3
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     80,
+     110
+    ],
+    "tau": [
+     50,
+     60
+    ]
+   }
+  },
+  {
+   "src": "wet_squish/impsplat/impactsplat0[1367]*.flac",
+   "at_ms": [
+    10,
+    20
+   ],
+   "gain_db": [
+    -7,
+    -4
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1500,
+   "snap": {
+    "hold": [
+     120,
+     150
+    ],
+    "tau": [
+     70,
+     90
+    ]
+   }
+  },
+  {
+   "src": "deep_breaks/*.wav",
+   "at_ms": [
+    110,
+    170
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    2,
+    5
+   ],
+   "hp": 600,
+   "max_ms": 320,
+   "snap": {
+    "hold": [
+     90,
+     120
+    ],
+    "tau": [
+     60,
+     75
+    ]
+   }
+  },
+  {
+   "src": "deep_breaks/*.wav",
+   "at_ms": [
+    240,
+    300
+   ],
+   "gain_db": [
+    -10,
+    -7
+   ],
+   "pitch": [
+    3,
+    6
+   ],
+   "hp": 800,
+   "max_ms": 260,
+   "snap": {
+    "hold": [
+     50,
+     80
+    ],
+    "tau": [
+     45,
+     55
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 5000,
+  "db": 5
+ },
+ "room": {
+  "db": -24,
+  "decay_ms": 110,
+  "len_ms": 500,
+  "band": [
+   300,
+   10000
+  ]
+ }
+}

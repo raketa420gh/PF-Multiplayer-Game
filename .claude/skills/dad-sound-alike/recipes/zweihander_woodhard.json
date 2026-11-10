@@ -1,0 +1,155 @@
+{
+ "name": "zweihander_woodhard",
+ "variants": 12,
+ "about": "FX_Hit switch TwoHandedSword_Wood_Hard (3 media of its own): hard broadband crack of a heavy blade on a beam (150 Hz-24 kHz flat), held ~75 ms (-4 dB), drops to -21 dB by 100 ms, slow -21..-40 dB tail to ~300 ms",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/woodhard",
+ "length_ms": 520,
+ "seed": 41700,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 150,
+ "layers": [
+  {
+   "src": "wood_metal_100/wood_slam_0[1-4].ogg",
+   "at_ms": [
+    2,
+    2
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     52,
+     60
+    ],
+    "tau": [
+     7,
+     9
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_hammer_0[12].ogg",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     50,
+     58
+    ],
+    "tau": [
+     7,
+     9
+    ]
+   }
+  },
+  {
+   "src": "zweihander_slices/hilt/s[kn]h_*.wav",
+   "at_ms": [
+    0,
+    3
+   ],
+   "gain_db": [
+    -5,
+    -2
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 2000,
+   "snap": {
+    "hold": [
+     48,
+     56
+    ],
+    "tau": [
+     8,
+     10
+    ]
+   },
+   "max_ms": 200
+  },
+  {
+   "src": "wood_metal_100/wood_hit_0[5-9].ogg",
+   "at_ms": [
+    20,
+    35
+   ],
+   "gain_db": [
+    -5,
+    -2
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "snap": {
+    "hold": [
+     20,
+     28
+    ],
+    "tau": [
+     7,
+     9
+    ]
+   }
+  },
+  {
+   "src": "surface_slices/woodres_1[14].wav",
+   "at_ms": [
+    4,
+    8
+   ],
+   "gain_db": [
+    -23,
+    -19
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     90,
+     120
+    ]
+   },
+   "max_ms": 420
+  }
+ ],
+ "shelf": {
+  "hz": 8000,
+  "db": 6
+ },
+ "room": {
+  "db": -29,
+  "decay_ms": 110,
+  "len_ms": 380,
+  "band": [
+   150,
+   9000
+  ]
+ }
+}

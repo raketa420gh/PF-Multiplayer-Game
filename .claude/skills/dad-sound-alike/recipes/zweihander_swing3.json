@@ -1,0 +1,153 @@
+{
+ "name": "zweihander_swing3",
+ "variants": 12,
+ "about": "Wp_TwohandSword_Whoosh (3 non-underwater media, a 20-150 Hz air whump peaking at 100 ms, gone by 400 ms) summed with Wp_Zweihander_Attack_3 (515988334: the quickest and brightest of the three, peak 60-120 ms, 4-10 kHz only -16 dB) - both fire from the same montage (AM_Zweihander_Stand_Attack_0N); same notify frame and raw media levels (+1 dB make-up on the attack) assumed. Whoosh leads, more air on top",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/swing3",
+ "length_ms": 660,
+ "seed": 40300,
+ "peak_db": -1,
+ "match": 0.7,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "morningstar_swing_slices/Axe_Swing_0[23467].wav",
+   "at_ms": [
+    0,
+    8
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "lp": 200,
+   "snap": {
+    "hold": [
+     110,
+     125
+    ],
+    "tau": [
+     50,
+     60
+    ]
+   },
+   "max_ms": 520
+  },
+  {
+   "src": "morningstar_swing_slices/pick/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    0,
+    12
+   ],
+   "gain_db": [
+    -6,
+    -4
+   ],
+   "pitch": [
+    -6,
+    -3
+   ],
+   "hp": 140,
+   "snap": {
+    "hold": [
+     120,
+     140
+    ],
+    "tau": [
+     85,
+     105
+    ]
+   },
+   "max_ms": 520,
+   "lp": 2500
+  },
+  {
+   "src": "morningstar_swing_slices/pick/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    30,
+    60
+   ],
+   "gain_db": [
+    -10,
+    -7
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 140,
+   "snap": {
+    "hold": [
+     120,
+     140
+    ],
+    "tau": [
+     85,
+     105
+    ]
+   },
+   "max_ms": 520,
+   "lp": 2500
+  },
+  {
+   "src": "morningstar_swing_slices/Katana_Swing_0[1235].wav",
+   "at_ms": [
+    0,
+    15
+   ],
+   "gain_db": [
+    -11,
+    -8
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 250,
+   "snap": {
+    "hold": [
+     115,
+     135
+    ],
+    "tau": [
+     75,
+     95
+    ]
+   },
+   "max_ms": 480
+  },
+  {
+   "src": "dagger_slices/swing/dsw_0[1-5].wav",
+   "at_ms": [
+    60,
+    110
+   ],
+   "gain_db": [
+    -11,
+    -8
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 1200,
+   "max_ms": 260
+  }
+ ],
+ "shelf": {
+  "hz": 3000,
+  "db": 5
+ },
+ "room": {
+  "db": -26,
+  "decay_ms": 90,
+  "len_ms": 350,
+  "band": [
+   60,
+   4000
+  ]
+ }
+}

@@ -1,0 +1,234 @@
+{
+ "name": "zweihander_stone",
+ "variants": 12,
+ "about": "FX_Hit switch Hit_Object=TwoHandedSword_Default (6 media): ~30 ms pre-roll, big blade clangs on stone - 1.5-10 kHz steel ring with almost no low end, perfectly even ~1.5 dB/25 ms decay to -54 dB at 0.9 s, quiet ring floor to 1.4 s",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/stone",
+ "length_ms": 1500,
+ "seed": 41400,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 500,
+ "layers": [
+  {
+   "src": "weapons_apparel/sfx/sword-knife-clash-09.wav",
+   "at_ms": [
+    30,
+    40
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -8,
+    -4
+   ],
+   "hp": 600,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     280,
+     330
+    ]
+   },
+   "max_ms": 1400
+  },
+  {
+   "src": "weapons_apparel/sfx/sword-thermos-hit-01.wav",
+   "at_ms": [
+    30,
+    40
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -4,
+    1
+   ],
+   "hp": 600,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     260,
+     300
+    ]
+   },
+   "max_ms": 1400
+  },
+  {
+   "src": "weapons_apparel/sfx/sword-knife-clash-0[457].wav",
+   "at_ms": [
+    30,
+    40
+   ],
+   "gain_db": [
+    -6,
+    -4
+   ],
+   "pitch": [
+    -9,
+    -6
+   ],
+   "hp": 600,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     230,
+     270
+    ]
+   },
+   "max_ms": 1300
+  },
+  {
+   "src": "zweihander_slices/clash/[nsp][kn]b_*.wav",
+   "at_ms": [
+    30,
+    40
+   ],
+   "gain_db": [
+    -6,
+    -4
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 600,
+   "snap": {
+    "hold": [
+     250,
+     300
+    ],
+    "tau": [
+     130,
+     150
+    ]
+   },
+   "max_ms": 620
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[38].ogg",
+   "at_ms": [
+    30,
+    36
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     15,
+     22
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_metal_hit_0[16].ogg",
+   "at_ms": [
+    30,
+    40
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     90,
+     110
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/bing1.wav",
+   "at_ms": [
+    30,
+    40
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 1000,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     200,
+     240
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    30,
+    34
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 250,
+   "snap": {
+    "hold": [
+     15,
+     20
+    ],
+    "tau": [
+     20,
+     25
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -30,
+  "decay_ms": 180,
+  "len_ms": 900,
+  "band": [
+   800,
+   9000
+  ]
+ }
+}

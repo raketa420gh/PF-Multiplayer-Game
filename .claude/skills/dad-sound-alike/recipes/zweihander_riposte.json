@@ -1,0 +1,259 @@
+{
+ "name": "zweihander_riposte",
+ "variants": 12,
+ "about": "Wp_TwohandSword_Whoosh (3 non-underwater media, a 20-150 Hz air whump peaking at 100 ms, gone by 400 ms) summed with Wp_Zweihander_Attack_4_2 (1047869469, the only whoosh of AM_Zweihander_Guard_Attack_01 = riposte): loud broadband whoosh peaking 200-250 ms, -18 dB by 450 ms, a second lighter pass 500-700 ms ~18 dB down, gone by 850 ms - both fire from the same montage (AM_Zweihander_Stand_Attack_0N); same notify frame and raw media levels (+1 dB make-up on the attack) assumed. ",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/riposte",
+ "length_ms": 1100,
+ "seed": 40500,
+ "peak_db": -1,
+ "match": 0.7,
+ "fade_ms": 250,
+ "layers": [
+  {
+   "src": "morningstar_swing_slices/Axe_Swing_0[23467].wav",
+   "at_ms": [
+    0,
+    8
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "lp": 200,
+   "snap": {
+    "hold": [
+     110,
+     125
+    ],
+    "tau": [
+     50,
+     60
+    ]
+   },
+   "max_ms": 520
+  },
+  {
+   "src": "morningstar_swing_slices/pick/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    85,
+    105
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 100,
+   "snap": {
+    "hold": [
+     120,
+     140
+    ],
+    "tau": [
+     95,
+     115
+    ]
+   },
+   "max_ms": 600
+  },
+  {
+   "src": "morningstar_swing_slices/pick/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    170,
+    200
+   ],
+   "gain_db": [
+    -5,
+    -3
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 100,
+   "snap": {
+    "hold": [
+     120,
+     140
+    ],
+    "tau": [
+     95,
+     115
+    ]
+   },
+   "max_ms": 600
+  },
+  {
+   "src": "morningstar_swing_slices/pick/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    260,
+    300
+   ],
+   "gain_db": [
+    -9,
+    -7
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 100,
+   "snap": {
+    "hold": [
+     120,
+     140
+    ],
+    "tau": [
+     95,
+     115
+    ]
+   },
+   "max_ms": 600
+  },
+  {
+   "src": "morningstar_swing_slices/pick/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    350,
+    390
+   ],
+   "gain_db": [
+    -14,
+    -11
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 100,
+   "snap": {
+    "hold": [
+     120,
+     140
+    ],
+    "tau": [
+     95,
+     115
+    ]
+   },
+   "max_ms": 600
+  },
+  {
+   "src": "morningstar_swing_slices/Katana_Swing_0[1235].wav",
+   "at_ms": [
+    100,
+    130
+   ],
+   "gain_db": [
+    -5,
+    -3
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 250,
+   "snap": {
+    "hold": [
+     115,
+     135
+    ],
+    "tau": [
+     90,
+     110
+    ]
+   },
+   "max_ms": 480
+  },
+  {
+   "src": "morningstar_swing_slices/pick/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    440,
+    480
+   ],
+   "gain_db": [
+    -15,
+    -12
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 120,
+   "snap": {
+    "hold": [
+     120,
+     140
+    ],
+    "tau": [
+     110,
+     130
+    ]
+   },
+   "max_ms": 500
+  },
+  {
+   "src": "morningstar_swing_slices/pick/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    520,
+    560
+   ],
+   "gain_db": [
+    -15,
+    -12
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 120,
+   "snap": {
+    "hold": [
+     120,
+     140
+    ],
+    "tau": [
+     110,
+     130
+    ]
+   },
+   "max_ms": 500
+  },
+  {
+   "src": "dagger_slices/swing/dsw_0[1-5].wav",
+   "at_ms": [
+    160,
+    230
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 1200,
+   "max_ms": 260
+  }
+ ],
+ "shelf": {
+  "hz": 1500,
+  "db": 4
+ },
+ "room": {
+  "db": -24,
+  "decay_ms": 110,
+  "len_ms": 450,
+  "band": [
+   60,
+   5000
+  ]
+ }
+}

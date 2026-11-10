@@ -1,0 +1,148 @@
+{
+ "name": "zweihander_unequip",
+ "variants": 12,
+ "about": "Wp_LongSword_UnEquip (what AM_Zweihander_Stand_Unequip fires, 2 media): blade slid home - mid scrape (500-4000 Hz) swelling to its peak at 125-175 ms, about -8 dB to 300 ms, -15..-20 dB to 450 ms, the guard seats with a knock at 450-500 ms (-10 dB), over by 0.55 s",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/unequip",
+ "length_ms": 640,
+ "seed": 42500,
+ "peak_db": -4,
+ "match": 0.8,
+ "fade_ms": 80,
+ "layers": [
+  {
+   "src": "rpg_pack/RPG Sound Pack/battle/sword-unsheathe*.wav",
+   "at_ms": [
+    100,
+    125
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -14,
+    -11
+   ],
+   "hp": 400,
+   "lp": 3000,
+   "snap": {
+    "hold": [
+     60,
+     80
+    ],
+    "tau": [
+     50,
+     65
+    ]
+   }
+  },
+  {
+   "src": "zweihander_slices/draw/kdf_*.wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -6,
+    -3
+   ],
+   "hp": 400,
+   "lp": 3000,
+   "snap": {
+    "hold": [
+     300,
+     330
+    ],
+    "tau": [
+     60,
+     80
+    ]
+   },
+   "max_ms": 460
+  },
+  {
+   "src": "zweihander_slices/hilt/s[kn]h_*.wav",
+   "at_ms": [
+    445,
+    480
+   ],
+   "gain_db": [
+    -13,
+    -10
+   ],
+   "pitch": [
+    -6,
+    -3
+   ],
+   "hp": 400,
+   "lp": 4500,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   },
+   "max_ms": 150
+  },
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpactWood.flac",
+   "at_ms": [
+    448,
+    480
+   ],
+   "gain_db": [
+    -17,
+    -13
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "lp": 1500,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     20,
+     30
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/sheath/*.wav",
+   "at_ms": [
+    0,
+    100
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 300,
+   "max_ms": 400
+  }
+ ],
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 300,
+  "band": [
+   300,
+   4000
+  ]
+ }
+}

@@ -1,0 +1,153 @@
+{
+ "name": "zweihander_swing1",
+ "variants": 12,
+ "about": "Wp_TwohandSword_Whoosh (3 non-underwater media, a 20-150 Hz air whump peaking at 100 ms, gone by 400 ms) summed with Wp_Zweihander_Attack_1 (858324500: slow-rising mid whoosh, 150-500 Hz lead, peak 240 ms, -15 dB 100 ms later) - both fire from the same montage (AM_Zweihander_Stand_Attack_0N); same notify frame and raw media levels (+1 dB make-up on the attack) assumed. Whump first, the blade whoosh arrives late and holds to ~280 ms",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/swing1",
+ "length_ms": 700,
+ "seed": 40100,
+ "peak_db": -1,
+ "match": 0.7,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "morningstar_swing_slices/Axe_Swing_0[23467].wav",
+   "at_ms": [
+    0,
+    8
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "lp": 200,
+   "snap": {
+    "hold": [
+     110,
+     125
+    ],
+    "tau": [
+     50,
+     60
+    ]
+   },
+   "max_ms": 520
+  },
+  {
+   "src": "morningstar_swing_slices/pick/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    55,
+    75
+   ],
+   "gain_db": [
+    -7,
+    -5
+   ],
+   "pitch": [
+    -7,
+    -4
+   ],
+   "hp": 140,
+   "snap": {
+    "hold": [
+     120,
+     140
+    ],
+    "tau": [
+     70,
+     85
+    ]
+   },
+   "max_ms": 520,
+   "lp": 2500
+  },
+  {
+   "src": "morningstar_swing_slices/pick/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    120,
+    140
+   ],
+   "gain_db": [
+    -5,
+    -3
+   ],
+   "pitch": [
+    -7,
+    -4
+   ],
+   "hp": 140,
+   "snap": {
+    "hold": [
+     120,
+     140
+    ],
+    "tau": [
+     60,
+     75
+    ]
+   },
+   "max_ms": 520,
+   "lp": 2500
+  },
+  {
+   "src": "morningstar_swing_slices/Katana_Swing_0[1235].wav",
+   "at_ms": [
+    110,
+    140
+   ],
+   "gain_db": [
+    -12,
+    -9
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 250,
+   "snap": {
+    "hold": [
+     115,
+     135
+    ],
+    "tau": [
+     55,
+     70
+    ]
+   },
+   "max_ms": 480
+  },
+  {
+   "src": "dagger_slices/swing/dsw_0[1-5].wav",
+   "at_ms": [
+    190,
+    240
+   ],
+   "gain_db": [
+    -13,
+    -10
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 1200,
+   "max_ms": 260
+  }
+ ],
+ "shelf": {
+  "hz": 3000,
+  "db": 4
+ },
+ "room": {
+  "db": -26,
+  "decay_ms": 90,
+  "len_ms": 350,
+  "band": [
+   60,
+   3000
+  ]
+ }
+}

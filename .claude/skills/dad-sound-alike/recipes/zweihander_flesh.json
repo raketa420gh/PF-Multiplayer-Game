@@ -1,0 +1,210 @@
+{
+ "name": "zweihander_flesh",
+ "variants": 12,
+ "about": "FX_Hit_Character switch Hit_Character=OneHandedSword (what TwoHandedSword_Sound uses; DaD has no two-handed body state): instant bright blade slash (4-10 kHz lead) over a sub punch (20-150 Hz only -1 dB, 150-500 Hz hollow), dense ~150 ms, wet slices trailing at ~230 and ~350 ms, -28 dB by 450 ms, gone by 0.6 s",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/flesh",
+ "length_ms": 800,
+ "seed": 41100,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    0,
+    4
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 1500,
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   }
+  },
+  {
+   "src": "tinysized/sfx-cc0/apple-cut-*.wav",
+   "at_ms": [
+    0,
+    6
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     80,
+     110
+    ],
+    "tau": [
+     55,
+     70
+    ]
+   }
+  },
+  {
+   "src": "hits_heavy_body/*.flac",
+   "at_ms": [
+    0,
+    4
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 160,
+   "snap": {
+    "hold": [
+     50,
+     70
+    ],
+    "tau": [
+     45,
+     55
+    ]
+   }
+  },
+  {
+   "src": "impact_meat/qubodupImpact/qubodupImpactMeat0*.flac",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 900,
+   "snap": {
+    "hold": [
+     40,
+     60
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "wet_squish/impsplat/impactsplat0[1367]*.flac",
+   "at_ms": [
+    4,
+    12
+   ],
+   "gain_db": [
+    -5,
+    -2
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     120,
+     150
+    ],
+    "tau": [
+     80,
+     100
+    ]
+   }
+  },
+  {
+   "src": "wet_squish/impsplat/*.flac",
+   "at_ms": [
+    190,
+    250
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 1000,
+   "max_ms": 300,
+   "snap": {
+    "hold": [
+     80,
+     110
+    ],
+    "tau": [
+     60,
+     75
+    ]
+   }
+  },
+  {
+   "src": "tinysized/sfx-cc0/apple-cut-*.wav",
+   "at_ms": [
+    320,
+    370
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 800,
+   "max_ms": 220,
+   "snap": {
+    "hold": [
+     50,
+     70
+    ],
+    "tau": [
+     35,
+     45
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 8000,
+  "db": 6
+ },
+ "room": {
+  "db": -24,
+  "decay_ms": 110,
+  "len_ms": 500,
+  "band": [
+   800,
+   12000
+  ]
+ }
+}

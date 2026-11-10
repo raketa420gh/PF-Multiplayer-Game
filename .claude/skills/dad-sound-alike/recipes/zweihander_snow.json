@@ -1,0 +1,182 @@
+{
+ "name": "zweihander_snow",
+ "variants": 12,
+ "about": "FX_Hit switch Axe_Snow = container 365775175 (the one TwoHandedSword_Sound points at, shared by every weapon; same refs as dagger/morningstar snow): muffled thump + bright snow crunch 0-80 ms, packed-snow crunches ~160/290 ms ~15 dB down, powdery settle -25..-45 dB to 1.5 s; plus a faint heavy-steel tick",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/snow",
+ "length_ms": 1650,
+ "seed": 41800,
+ "peak_db": -1,
+ "match": 0.6,
+ "fade_ms": 400,
+ "layers": [
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    22,
+    30
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "lp": 600,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     16,
+     22
+    ]
+   }
+  },
+  {
+   "src": "snow_walk/SnowWalk/SnowWalk*.ogg",
+   "at_ms": [
+    20,
+    28
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "snap": {
+    "hold": [
+     5,
+     15
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "snow_walk/SnowWalk/SnowWalk*.ogg",
+   "at_ms": [
+    70,
+    110
+   ],
+   "gain_db": [
+    -20,
+    -17
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     40,
+     80
+    ],
+    "tau": [
+     70,
+     100
+    ]
+   }
+  },
+  {
+   "src": "snow_gravel/*/*gravel_and_ice_0[3689].flac",
+   "at_ms": [
+    150,
+    290
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 600,
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     30,
+     50
+    ]
+   }
+  },
+  {
+   "src": "snow_gravel/*/*gravel_and_ice_*.flac",
+   "at_ms": [
+    60,
+    120
+   ],
+   "gain_db": [
+    -30,
+    -26
+   ],
+   "pitch": [
+    2,
+    5
+   ],
+   "hp": 500,
+   "count": [
+    2,
+    3
+   ],
+   "gap_ms": [
+    250,
+    400
+   ],
+   "until_ms": 900,
+   "max_ms": 600
+  },
+  {
+   "src": "zweihander_slices/hilt/s[kn]h_*.wav",
+   "at_ms": [
+    8,
+    14
+   ],
+   "gain_db": [
+    -20,
+    -16
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 2000,
+   "snap": {
+    "hold": [
+     6,
+     10
+    ],
+    "tau": [
+     12,
+     16
+    ]
+   },
+   "max_ms": 150
+  }
+ ],
+ "shelf": {
+  "hz": 2500,
+  "db": 3
+ },
+ "room": {
+  "db": -29,
+  "decay_ms": 250,
+  "len_ms": 1400,
+  "band": [
+   300,
+   12000
+  ]
+ }
+}

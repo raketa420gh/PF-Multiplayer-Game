@@ -1,0 +1,225 @@
+{
+ "name": "zweihander_place",
+ "variants": 12,
+ "about": "Item_2D_LongSword_Drop (Sound.Inventory.Drop, 6 media): inventory place - a first steel touch at 50-75 ms, a quieter slide to ~225 ms, the main heavy clank at 250-300 ms with a small low thump, ~2.5 dB/25 ms ringing decay to -40 dB by 0.65 s, faint ring to 1.2 s",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/place",
+ "length_ms": 1300,
+ "seed": 42300,
+ "peak_db": -1,
+ "match": 0.8,
+ "fade_ms": 500,
+ "layers": [
+  {
+   "src": "zweihander_slices/hilt/s[kn]h_*.wav",
+   "at_ms": [
+    50,
+    70
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 1000,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   },
+   "max_ms": 200
+  },
+  {
+   "src": "weapons_apparel/sfx/sword-knife-clash-0[4579].wav",
+   "at_ms": [
+    50,
+    70
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -6,
+    -3
+   ],
+   "hp": 800,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     200,
+     240
+    ]
+   },
+   "max_ms": 420
+  },
+  {
+   "src": "dagger_slices/sheath/sheathf_*.wav",
+   "at_ms": [
+    110,
+    190
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 1500,
+   "max_ms": 150
+  },
+  {
+   "src": "weapons_apparel/sfx/sword-knife-clash-0[4579].wav",
+   "at_ms": [
+    230,
+    290
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -8,
+    -5
+   ],
+   "hp": 800,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     90,
+     110
+    ]
+   },
+   "max_ms": 900
+  },
+  {
+   "src": "zweihander_slices/clash/*.wav",
+   "at_ms": [
+    240,
+    290
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 800,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     85,
+     105
+    ]
+   },
+   "max_ms": 600
+  },
+  {
+   "src": "zweihander_slices/mace/mnb_*.wav",
+   "at_ms": [
+    240,
+    290
+   ],
+   "gain_db": [
+    -6,
+    -4
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     70,
+     90
+    ]
+   },
+   "max_ms": 600
+  },
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpactWood.flac",
+   "at_ms": [
+    245,
+    285
+   ],
+   "gain_db": [
+    -12,
+    -9
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "lp": 250,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "metal_impact/bing1.wav",
+   "at_ms": [
+    240,
+    290
+   ],
+   "gain_db": [
+    -28,
+    -24
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 1000,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     300,
+     400
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -30,
+  "decay_ms": 140,
+  "len_ms": 700,
+  "band": [
+   800,
+   10000
+  ]
+ }
+}

@@ -1,0 +1,147 @@
+{
+ "name": "zweihander_block",
+ "variants": 12,
+ "about": "Wp_CrystalSword_Guard (the weapon foley AM_Zweihander_Guard fires, 1 media; its _Guard_Cloth / _Guard_End companions are in the review folder): raising the blade into guard - ~50 ms of silence, then one short flat-spectrum handling knock/rattle (20 Hz-24 kHz), -3 dB at +25 ms, -15 dB at +100 ms, -30 dB by +175 ms, 0.3 s in all",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/block",
+ "length_ms": 400,
+ "seed": 42600,
+ "peak_db": -3,
+ "match": 0.9,
+ "fade_ms": 120,
+ "layers": [
+  {
+   "src": "zweihander_slices/hilt/s[kn]h_*.wav",
+   "at_ms": [
+    48,
+    55
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 1500,
+   "snap": {
+    "hold": [
+     12,
+     20
+    ],
+    "tau": [
+     20,
+     26
+    ]
+   },
+   "max_ms": 220
+  },
+  {
+   "src": "hits_and_punches/hits/hit*.flac",
+   "at_ms": [
+    48,
+    55
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 300,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     20,
+     26
+    ]
+   }
+  },
+  {
+   "src": "fabric_slices/torm__blanket-movement-*.wav",
+   "at_ms": [
+    45,
+    55
+   ],
+   "gain_db": [
+    -5,
+    -3
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 160,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     28,
+     36
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/sheath/*.wav",
+   "at_ms": [
+    50,
+    60
+   ],
+   "gain_db": [
+    -7,
+    -4
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "max_ms": 200,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     35,
+     45
+    ]
+   }
+  },
+  {
+   "src": "fabric_slices/Cloth_0*.wav",
+   "at_ms": [
+    0,
+    5
+   ],
+   "gain_db": [
+    -22,
+    -18
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 30
+  }
+ ],
+ "shelf": {
+  "hz": 6000,
+  "db": 9
+ },
+ "room": {
+  "db": -20,
+  "decay_ms": 90,
+  "len_ms": 280,
+  "band": [
+   200,
+   14000
+  ]
+ }
+}

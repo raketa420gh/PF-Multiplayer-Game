@@ -1,0 +1,124 @@
+{
+ "name": "zweihander_wood",
+ "variants": 12,
+ "about": "FX_Hit switch TwoHandedSword_Wood (container shared with OneHandedSword_Wood; the 3 non-underwater media): blade chops into a plank - 500-1500 Hz woody knock, -3 dB at 50 ms, -15 dB at 100 ms, -40 dB by 250 ms, faint tail",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/wood",
+ "length_ms": 780,
+ "seed": 41600,
+ "peak_db": -1,
+ "match": 0.7,
+ "fade_ms": 300,
+ "layers": [
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpactWood.flac",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     70,
+     90
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_hit_0[1-4].ogg",
+   "at_ms": [
+    2,
+    6
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     55,
+     75
+    ],
+    "tau": [
+     34,
+     42
+    ]
+   }
+  },
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    0,
+    4
+   ],
+   "gain_db": [
+    -10,
+    -7
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     15,
+     20
+    ]
+   }
+  },
+  {
+   "src": "surface_slices/woodres_1[14].wav",
+   "at_ms": [
+    4,
+    8
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     60,
+     80
+    ]
+   },
+   "max_ms": 450
+  }
+ ],
+ "room": {
+  "db": -30,
+  "decay_ms": 100,
+  "len_ms": 500,
+  "band": [
+   200,
+   5000
+  ]
+ }
+}

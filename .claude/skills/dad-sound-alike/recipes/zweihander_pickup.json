@@ -1,0 +1,153 @@
+{
+ "name": "zweihander_pickup",
+ "variants": 12,
+ "about": "Item_3D_ArmingSword_Pickup (Sound.Item.PickUp of TwoHandedSword_Sound; DaD has no long-sword pickup, 4 media): hand lifts a blade off the floor - 3 very bright steel scrapes/ticks (4-10 kHz lead, nothing below 500 Hz) at ~50, ~150-200 and ~300-375 ms, each a little quieter, gone by 0.5 s",
+ "reference": "D:/DaD_Sounds/Zweihander_Review/pickup",
+ "length_ms": 700,
+ "seed": 42100,
+ "peak_db": -1,
+ "match": 0.8,
+ "fade_ms": 150,
+ "layers": [
+  {
+   "src": "rpg_pack/RPG Sound Pack/battle/sword-unsheathe*.wav",
+   "at_ms": [
+    25,
+    45
+   ],
+   "gain_db": [
+    -11,
+    -8
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 1500,
+   "max_ms": 120
+  },
+  {
+   "src": "dagger_slices/draw/drawf_*.wav",
+   "at_ms": [
+    135,
+    165
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 2000,
+   "snap": {
+    "hold": [
+     35,
+     45
+    ],
+    "tau": [
+     26,
+     32
+    ]
+   }
+  },
+  {
+   "src": "zweihander_slices/hilt/snh_*.wav",
+   "at_ms": [
+    140,
+    190
+   ],
+   "gain_db": [
+    -4,
+    -1
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 2500,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   },
+   "max_ms": 200
+  },
+  {
+   "src": "zweihander_slices/hilt/snh_*.wav",
+   "at_ms": [
+    230,
+    280
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 2500,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   },
+   "max_ms": 200
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/battle/sword-unsheathe*.wav",
+   "at_ms": [
+    285,
+    335
+   ],
+   "gain_db": [
+    -15,
+    -12
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 2000,
+   "max_ms": 160
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/cloth*.wav",
+   "at_ms": [
+    0,
+    6
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 400,
+   "max_ms": 450
+  }
+ ],
+ "room": {
+  "db": -26,
+  "decay_ms": 70,
+  "len_ms": 350,
+  "band": [
+   1500,
+   12000
+  ]
+ }
+}
