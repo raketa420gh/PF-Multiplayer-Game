@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arming Sword — макет атак</title>
+<style>
+  :root { --bg:#14161a; --panel:#1d2026; --line:#2c313a; --text:#d9dde3; --dim:#8a919c; --acc:#e0b34a; --act:#c8463c; --ok:#58b368; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; background:var(--bg); color:var(--text); font:14px/1.35 "Segoe UI", system-ui, sans-serif; }
+  #app { display:grid; grid-template-rows:auto 1fr auto; height:100%; }
+  header, footer { background:var(--panel); border-bottom:1px solid var(--line); padding:8px 12px; display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; }
+  footer { border-bottom:0; border-top:1px solid var(--line); display:block; }
+  h1 { font-size:15px; margin:0 8px 0 0; font-weight:600; }
+  .group { display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
+  .group > span { color:var(--dim); margin-right:2px; }
+  button { background:#272b33; color:var(--text); border:1px solid var(--line); border-radius:5px; padding:5px 10px; font:inherit; cursor:pointer; }
+  button:hover { border-color:#4a5160; }
+  button.on { background:var(--acc); color:#1b1505; border-color:var(--acc); font-weight:600; }
+  label { color:var(--dim); display:flex; gap:5px; align-items:center; cursor:pointer; }
+  main { display:grid; grid-template-columns:1fr minmax(280px, 34%); min-height:0; }
+  main.noref { grid-template-columns:1fr; }
+  main.noref #ref { display:none; }
+  #stage { position:relative; min-width:0; min-height:0; overflow:hidden; background:#525d6c; }
+  #view { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .cross { position:absolute; width:18px; height:18px; margin:-9px 0 0 -9px; pointer-events:none; display:none; }
+  .cross:before, .cross:after { content:""; position:absolute; background:#ffe14d; box-shadow:0 0 2px #000; }
+  .cross:before { left:8px; top:0; width:2px; height:18px; }
+  .cross:after { top:8px; left:0; height:2px; width:18px; }
+  #insetFrame { position:absolute; border:1px solid #000; outline:1px solid #ffffff55; pointer-events:none; display:none; }
+  #hud { position:absolute; left:10px; top:8px; font:12px/1.5 Consolas, monospace; color:#fff; text-shadow:0 0 3px #000, 0 0 3px #000; pointer-events:none; white-space:pre; }
+  #hint { position:absolute; left:10px; bottom:8px; font-size:12px; color:#ffffffaa; text-shadow:0 0 3px #000; pointer-events:none; }
+  #ref { background:#0d0e11; border-left:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
+  #ref video { width:100%; flex:1; min-height:0; background:#000; object-fit:contain; }
+  #refbar { padding:8px; display:flex; flex-wrap:wrap; gap:6px 10px; border-top:1px solid var(--line); background:var(--panel); }
+  #timeline { position:relative; height:26px; margin:2px 0 6px; }
+  #track { position:absolute; left:0; right:0; top:10px; height:6px; background:#2c313a; border-radius:3px; overflow:hidden; }
+  #track i { position:absolute; top:0; bottom:0; }
+  #track .windup { background:#4d6f9a; } #track .active { background:var(--act); } #track .rec { background:#3a4250; }
+  #marks b { position:absolute; top:4px; width:2px; height:18px; background:#ffe14d; margin-left:-1px; }
+  #marks s { position:absolute; top:7px; width:1px; height:12px; background:#fff8; }
+  #seek { position:absolute; left:-8px; right:-8px; top:0; width:calc(100% + 16px); height:26px; margin:0; background:transparent; -webkit-appearance:none; appearance:none; }
+  #seek::-webkit-slider-runnable-track { background:transparent; height:26px; }
+  #seek::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:26px; border-radius:3px; background:#fff; border:1px solid #000; opacity:.9; }
+  #seek::-moz-range-track { background:transparent; }
+  .row { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; }
+  #speed { width:150px; }
+  #legend { color:var(--dim); font-size:12px; }
+  #legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin:0 4px 0 10px; vertical-align:-1px; }
+  kbd { background:#2a2e36; border:1px solid #444; border-radius:3px; padding:0 4px; font:11px Consolas, monospace; color:var(--text); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Arming Sword — макет атак</h1>
+    <div class="group" id="clips"><span>Анимация:</span></div>
+    <div class="group" id="views"><span>Ракурс:</span></div>
+    <div class="group">
+      <label><input type="checkbox" id="inset" checked> FP-врезка</label>
+      <label><input type="checkbox" id="trail" checked> траектория</label>
+      <label><input type="checkbox" id="hitbox" checked> хитбокс</label>
+      <label><input type="checkbox" id="showref" checked> реф-видео</label>
+    </div>
+  </header>
+  <main id="main">
+    <div id="stage">
+      <canvas id="view"></canvas>
+      <div class="cross" id="cross"></div>
+      <div id="insetFrame"></div>
+      <div class="cross" id="insetCross"></div>
+      <div id="hud"></div>
+      <div id="hint">ЛКМ — вращать · ПКМ — двигать · колесо — зум</div>
+    </div>
+    <aside id="ref">
+      <video id="video" muted playsinline preload="auto"></video>
+      <div id="refbar">
+        <div class="group" id="refviews"><span>Реф:</span></div>
+        <label><input type="checkbox" id="sync" checked> в темпе макета</label>
+      </div>
+    </aside>
+  </main>
+  <footer>
+    <div id="timeline">
+      <div id="track"></div><div id="marks"></div>
+      <input type="range" id="seek" min="0" max="72" step="0.05" value="0">
+    </div>
+    <div class="row">
+      <div class="group">
+        <button id="prev" title="кадр назад (←)">◀</button>
+        <button id="play" title="пробел">Пауза</button>
+        <button id="next" title="кадр вперёд (→)">▶</button>
+        <label><input type="checkbox" id="loop" checked> повтор</label>
+      </div>
+      <div class="group" id="speeds"><span>Скорость:</span></div>
+      <div class="group"><input type="range" id="speed" min="0.02" max="1.5" step="0.005" value="0.525"><span id="speedv"></span></div>
+      <div id="legend"><i style="background:#4d6f9a"></i>замах<i style="background:#c8463c"></i>активная фаза (хитбокс)<i style="background:#ffe14d"></i>пик — точка удара в прицеле<i style="background:#3a4250"></i>проводка и возврат
+        &nbsp;·&nbsp; <kbd>пробел</kbd> <kbd>←</kbd><kbd>→</kbd> <kbd>1</kbd>–<kbd>4</kbd> <kbd>F</kbd></div>
+    </div>
+  </footer>
+</div>
+<script src="three.min.js"></script>
+<script src="data.js"></script>
+<script>
+(function () {
+  "use strict";
+  var D = window.MOCKUP, T = THREE;
+  function decode(text, Type) {
+    var bin = atob(text), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Type(bytes.buffer);
+  }
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------- scene ----------
+  var canvas = $("view"), stage = $("stage");
+  var renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = T.sRGBEncoding;
+  renderer.autoClear = false;
+  var scene = new T.Scene();
+  var background = new T.Color(0x525d6c);
+  scene.add(new T.HemisphereLight(0xdfe8ff, 0x4a4238, 0.85));
+  var sun = new T.DirectionalLight(0xfff2e0, 0.95); sun.position.set(-2, 4, 3); scene.add(sun);
+  var fill = new T.DirectionalLight(0xbfd0ff, 0.35); fill.position.set(3, 2, -3); scene.add(fill);
+  var floor = new T.Mesh(new T.CircleGeometry(4, 48), new T.MeshBasicMaterial({ color: 0x3f4650 }));
+  floor.rotation.x = -Math.PI / 2; scene.add(floor);
+  var grid = new T.GridHelper(8, 16, 0x596170, 0x4c5360); grid.position.y = 0.002; scene.add(grid);
+
+  // Unity is left-handed: everything is mirrored in X on the way in, triangles are rewound to match.
+  var MIRROR = new T.Matrix4().makeScale(-1, 1, 1);
+  var textures = D.textures.map(function (uri) { var t = new T.TextureLoader().load(uri); t.encoding = T.sRGBEncoding; t.anisotropy = 4; return t; });
+  function material(part, skinned) {
+    var color = new T.Color(part.color[0], part.color[1], part.color[2]).convertSRGBToLinear();
+    return new T.MeshStandardMaterial({ color: color, map: part.tex >= 0 ? textures[part.tex] : null, skinning: skinned, roughness: skinned ? 0.75 : 0.45, metalness: skinned ? 0 : 0.55 });
+  }
+  function geometry(mesh, rewind) {
+    var g = new T.BufferGeometry();
+    g.setAttribute("position", new T.BufferAttribute(decode(mesh.v, Float32Array), 3));
+    g.setAttribute("normal", new T.BufferAttribute(decode(mesh.n, Float32Array), 3));
+    var uv = decode(mesh.uv, Float32Array);
+    if (uv.length) g.setAttribute("uv", new T.BufferAttribute(uv, 2));
+    var parts = mesh.parts.map(function (p) { return decode(p.i, Uint32Array); });
+    var index = new Uint32Array(parts.reduce(function (n, p) { return n + p.length; }, 0)), at = 0;
+    parts.forEach(function (p, m) {
+      g.addGroup(at, p.length, m);
+      for (var i = 0; i < p.length; i += 3) {
+        index[at + i] = p[i];
+        index[at + i + 1] = rewind ? p[i + 2] : p[i + 1];
+        index[at + i + 2] = rewind ? p[i + 1] : p[i + 2];
+      }
+      at += p.length;
+    });
+    g.setIndex(new T.BufferAttribute(index, 1));
+    return g;
+  }
+
+  var N = D.bones, bones = [];
+  for (var b = 0; b < N; b++) { var bone = new T.Bone(); bone.matrixAutoUpdate = false; bones.push(bone); }
+  D.meshes.forEach(function (mesh) {
+    var g = geometry(mesh, true);
+    g.setAttribute("skinIndex", new T.BufferAttribute(decode(mesh.si, Uint16Array), 4));
+    g.setAttribute("skinWeight", new T.BufferAttribute(decode(mesh.sw, Float32Array), 4));
+    var bind = decode(mesh.bind, Float32Array), inverses = [];
+    for (var i = 0; i < N; i++) inverses.push(new T.Matrix4().fromArray(bind, i * 16));
+    var skinned = new T.SkinnedMesh(g, mesh.parts.map(function (p) { return material(p, true); }));
+    skinned.bindMode = "detached";
+    skinned.bind(new T.Skeleton(bones, inverses), new T.Matrix4());
+    skinned.frustumCulled = false;
+    scene.add(skinned);
+  });
+  var sword = new T.Group(); sword.matrixAutoUpdate = false; scene.add(sword);
+  D.sword.forEach(function (mesh) {
+    var m = new T.Mesh(geometry(mesh, false), mesh.parts.map(function (p) { return material(p, false); }));
+    m.frustumCulled = false; sword.add(m);
+  });
+  var bladeLength = D.bladeTip - D.bladeBase;
+  var hit = new T.Group(); sword.add(hit);
+  [[0, 0.5, 0xd8443a], [0.5, 1, 0x4fd66a]].forEach(function (h) {
+    var box = new T.Mesh(new T.BoxGeometry(0.022, 0.07, bladeLength * (h[1] - h[0])), new T.MeshBasicMaterial({ color: h[2], transparent: true, opacity: 0.55, depthWrite: false }));
+    box.position.z = D.bladeBase + bladeLength * (h[0] + h[1]) / 2; hit.add(box);
+  });
+
+  // ---------- clips ----------
+  var clips = D.clips.map(function (c) {
+    var clip = { name: c.name, frames: c.frames, last: c.frames - 1, peak: c.peak, windup: c.windup, activeEnd: c.activeEnd, afterFrame: c.afterFrame,
+      strain: c.strain, lean: c.lean, roll: c.roll, poses: decode(c.poses, Float32Array), socket: decode(c.socket, Float32Array) };
+    clip.tip = []; clip.strikePath = [];
+    var q = new T.Quaternion(), v = new T.Vector3();
+    for (var f = 0; f < c.frames; f++) {
+      var s = clip.socket, o = f * 7;
+      q.set(s[o + 3], s[o + 4], s[o + 5], s[o + 6]);
+      v.set(0, 0, 1).applyQuaternion(q);
+      clip.tip.push(new T.Vector3(-(s[o] + v.x * D.bladeTip), s[o + 1] + v.y * D.bladeTip, s[o + 2] + v.z * D.bladeTip));
+      clip.strikePath.push(new T.Vector3(-(s[o] + v.x * D.strike), s[o + 1] + v.y * D.strike, s[o + 2] + v.z * D.strike));
+    }
+    return clip;
+  });
+  // A play list is a run of segments; the combo chains each attack from the frame the next one starts at.
+  var lists = clips.map(function (c, i) { return { name: c.name.replace("Attack", "Атака"), segments: [{ clip: i, from: 0, to: c.last }] }; });
+  if (clips.length > 1) lists.push({ name: "Связка " + clips.map(function (c, i) { return i + 1; }).join("→"), segments: clips.map(function (c, i) {
+    return { clip: i, from: 0, to: i + 1 < clips.length ? clips[i + 1].afterFrame : c.last }; }) });
+  var list = lists[0], total = 0, time = 0, playing = true, speed = 0.525;
+
+  var trail = new T.Group(); scene.add(trail);
+  function buildTrail() {
+    while (trail.children.length) { var old = trail.children.pop(); old.geometry.dispose(); }
+    list.segments.forEach(function (seg) {
+      var c = clips[seg.clip], pts = c.tip.slice(seg.from, seg.to + 1);
+      trail.add(new T.Line(new T.BufferGeometry().setFromPoints(pts), new T.LineBasicMaterial({ color: 0xdfe6f0, transparent: true, opacity: 0.55 })));
+      var a = Math.max(Math.ceil(c.windup), seg.from), e = Math.min(Math.floor(c.activeEnd), seg.to);
+      if (e > a) {
+        trail.add(new T.Line(new T.BufferGeometry().setFromPoints(c.tip.slice(a, e + 1)), new T.LineBasicMaterial({ color: 0xff5a4d })));
+        trail.add(new T.Line(new T.BufferGeometry().setFromPoints(c.strikePath.slice(a, e + 1)), new T.LineBasicMaterial({ color: 0xffe14d })));
+      }
+    });
+  }
+
+  var p0 = new T.Vector3(), p1 = new T.Vector3(), q0 = new T.Quaternion(), q1 = new T.Quaternion(), s0 = new T.Vector3(), s1 = new T.Vector3(), tmp = new T.Matrix4();
+  var ZERO = new T.Vector3(0, 0, 0), ONE = new T.Vector3(1, 1, 1), headPos = new T.Vector3();
+  var state = { clip: clips[0], frame: 0 };
+  function locate(t) {
+    for (var i = 0; i < list.segments.length; i++) {
+      var seg = list.segments[i], len = seg.to - seg.from;
+      if (t <= len || i === list.segments.length - 1) { state.clip = clips[seg.clip]; state.frame = Math.min(seg.from + t, seg.to); state.segment = i; return; }
+      t -= len;
+    }
+  }
+  function pose(hideHead) {
+    var c = state.clip, f = Math.max(0, Math.min(state.frame, c.last)), f0 = Math.floor(f), f1 = Math.min(f0 + 1, c.last), a = f - f0, P = c.poses;
+    for (var i = 0; i < N; i++) {
+      var o0 = (f0 * N + i) * 10, o1 = (f1 * N + i) * 10;
+      p0.set(P[o0], P[o0 + 1], P[o0 + 2]); p1.set(P[o1], P[o1 + 1], P[o1 + 2]); p0.lerp(p1, a);
+      q0.set(P[o0 + 3], P[o0 + 4], P[o0 + 5], P[o0 + 6]); q1.set(P[o1 + 3], P[o1 + 4], P[o1 + 5], P[o1 + 6]); q0.slerp(q1, a);
+      s0.set(P[o0 + 7], P[o0 + 8], P[o0 + 9]); s1.set(P[o1 + 7], P[o1 + 8], P[o1 + 9]); s0.lerp(s1, a);
+      if (i === D.headBone) headPos.copy(p0);
+      bones[i].matrixWorld.multiplyMatrices(MIRROR, tmp.compose(p0, q0, s0));
+    }
+    // The game hides the head from its own eyes by scaling the bone to nothing.
+    if (hideHead) D.head.forEach(function (i) { bones[i].matrixWorld.multiplyMatrices(MIRROR, tmp.compose(headPos, q0, ZERO)); });
+    var S = c.socket, a0 = f0 * 7, a1 = f1 * 7;
+    p0.set(S[a0], S[a0 + 1], S[a0 + 2]); p1.set(S[a1], S[a1 + 1], S[a1 + 2]); p0.lerp(p1, a);
+    q0.set(S[a0 + 3], S[a0 + 4], S[a0 + 5], S[a0 + 6]); q1.set(S[a1 + 3], S[a1 + 4], S[a1 + 5], S[a1 + 6]); q0.slerp(q1, a);
+    sword.matrix.multiplyMatrices(MIRROR, tmp.compose(p0, q0, ONE));
+    sword.matrixWorldNeedsUpdate = true;
+    hit.visible = $("hitbox").checked && f >= c.windup && f <= c.activeEnd;
+  }
+
+  // ---------- cameras ----------
+  var eye = new T.Vector3(-D.eye[0], D.eye[1], D.eye[2]);
+  var fp = new T.PerspectiveCamera(D.fov, 16 / 9, 0.1, 50);
+  fp.position.copy(eye); fp.lookAt(eye.x, eye.y, eye.z + 1);
+  var cam = new T.PerspectiveCamera(35, 1, 0.05, 60);
+  var orbit = { target: new T.Vector3(0, 1.15, 0.2), yaw: 0, pitch: 0, dist: 4.4 };
+  // Yaw 0 looks at the fighter's face; the fighter's right hand is on the left of the picture, as another player sees it.
+  var presets = {
+    fp: { name: "От первого лица" },
+    front: { name: "Спереди", yaw: 0, pitch: 4, dist: 4.4, target: [0, 1.15, 0.1] },
+    ref: { name: "¾ справа", yaw: -42, pitch: 8, dist: 4.6, target: [0, 1.15, 0.15] },
+    right: { name: "Справа", yaw: -90, pitch: 4, dist: 4.4, target: [0, 1.15, 0.3] },
+    left: { name: "Слева", yaw: 90, pitch: 4, dist: 4.4, target: [0, 1.15, 0.3] },
+    back: { name: "Сзади", yaw: 168, pitch: 12, dist: 4.2, target: [0, 1.25, 0.3] },
+    top: { name: "Сверху", yaw: 180, pitch: 89, dist: 6, target: [0, 1, 0.3] },
+    hand: { name: "Кисть", hand: true, yaw: -40, pitch: 15, dist: 1.1 }
+  };
+  var view = "ref", follow = false;
+  function setView(key) {
+    view = key; var p = presets[key];
+    if (key !== "fp") { orbit.yaw = p.yaw; orbit.pitch = p.pitch; orbit.dist = p.dist; follow = !!p.hand; if (p.target) orbit.target.fromArray(p.target); }
+    Array.prototype.forEach.call($("views").querySelectorAll("button"), function (b) { b.classList.toggle("on", b.dataset.key === key); });
+    $("hint").style.display = key === "fp" ? "none" : "";
+  }
+  function placeOrbit() {
+    if (follow) { var s = state.clip.socket, o = Math.floor(state.frame) * 7; orbit.target.lerp(p1.set(-s[o], s[o + 1], s[o + 2]), 0.35); }
+    var yaw = orbit.yaw * Math.PI / 180, pitch = orbit.pitch * Math.PI / 180;
+    cam.position.set(orbit.target.x + orbit.dist * Math.sin(yaw) * Math.cos(pitch), orbit.target.y + orbit.dist * Math.sin(pitch), orbit.target.z + orbit.dist * Math.cos(yaw) * Math.cos(pitch));
+    cam.up.set(0, 1, 0);
+    if (orbit.pitch > 88) cam.up.set(0, 0, 1);
+    cam.lookAt(orbit.target);
+  }
+  var drag = null;
+  canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  canvas.addEventListener("pointerdown", function (e) { if (view === "fp") return; drag = { x: e.clientX, y: e.clientY, pan: e.button !== 0 }; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener("pointermove", function (e) {
+    if (!drag) return;
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+    if (drag.pan) {
+      var k = orbit.dist * 0.0012, right = new T.Vector3().setFromMatrixColumn(cam.matrixWorld, 0), up = new T.Vector3().setFromMatrixColumn(cam.matrixWorld, 1);
+      orbit.target.addScaledVector(right, -dx * k).addScaledVector(up, dy * k); follow = false;
+    } else { orbit.yaw -= dx * 0.4; orbit.pitch = Math.max(-20, Math.min(89, orbit.pitch + dy * 0.3)); }
+  });
+  canvas.addEventListener("pointerup", function () { drag = null; });
+  canvas.addEventListener("wheel", function (e) { e.preventDefault(); if (view !== "fp") orbit.dist = Math.max(0.5, Math.min(12, orbit.dist * Math.exp(e.deltaY * 0.001))); }, { passive: false });
+
+  // ---------- reference footage ----------
+  var video = $("video"), refs = "../arming_sword_refs/", refSeg = null, refKey = "B";
+  var MAIN = "arming_sword.mp4", FP = "arming_sword_all_attacks.mp4", TP = "arming_sword_all_attacks_2.mp4";
+  var segments = {
+    A: { name: "спереди", file: MAIN, clips: [[649, 756], [1252, 1349], [1817, 1929]] },
+    B: { name: "¾ справа", file: MAIN, clips: [[757, 864], [1350, 1446], [1930, 2045]] },
+    T: { name: "сверху", file: MAIN, clips: [[865, 978], [1447, 1541], [2046, 2161]] },
+    D: { name: "хитбокс (0.1×)", file: MAIN, clips: [[979, 1251], [1542, 1816], [2162, 2446]], own: true },
+    F: { name: "FP", file: FP, clips: [[104, 150], [148, 222], [222, 340]], combo: [100, 345] },
+    S: { name: "FP 0.5×", file: FP, clips: [[372, 470], [470, 618], [618, 826]], combo: [366, 826], slow: 0.5 },
+    P: { name: "3-е лицо, связка", file: TP, clips: [[40, 300], [40, 300], [40, 300]], combo: [40, 300] }
+  };
+  function setRef(key) {
+    refKey = key; var seg = segments[key], index = lists.indexOf(list);
+    var range = index >= clips.length ? (seg.combo || [seg.clips[0][0], seg.clips[seg.clips.length - 1][1]]) : seg.clips[index];
+    refSeg = { start: range[0] / 60, end: range[1] / 60, slow: seg.slow || 1, own: !!seg.own };
+    var src = refs + seg.file;
+    if (video.getAttribute("src") !== src) video.setAttribute("src", src);
+    restartRef();
+    Array.prototype.forEach.call($("refviews").querySelectorAll("button"), function (b) { b.classList.toggle("on", b.dataset.key === key); });
+  }
+  function restartRef() {
+    if (!refSeg || !$("showref").checked) return;
+    try { video.currentTime = refSeg.start; } catch (e) { }
+    if (playing) { var p = video.play(); if (p && p.catch) p.catch(function () { }); } else video.pause();
+  }
+  function tickRef() {
+    if (!refSeg || !$("showref").checked) return;
+    // Our clips run at 0.75 of the footage's length: the footage keeps pace at speed / 0.75.
+    var rate = $("sync").checked && !refSeg.own ? speed / 0.75 / refSeg.slow : 1;
+    rate = Math.max(0.0625, Math.min(4, rate));
+    if (Math.abs(video.playbackRate - rate) > 0.001) video.playbackRate = rate;
+    if (video.currentTime >= refSeg.end || video.currentTime < refSeg.start - 0.05) { if ($("sync").checked && !refSeg.own) video.pause(); else video.currentTime = refSeg.start; }
+  }
+
+  // ---------- ui ----------
+  function button(parent, text, key, click) { var b = document.createElement("button"); b.textContent = text; b.dataset.key = key; b.onclick = click; $(parent).appendChild(b); return b; }
+  lists.forEach(function (l, i) { button("clips", l.name, i, function () { setList(i); }); });
+  Object.keys(presets).forEach(function (k) { button("views", presets[k].name, k, function () { setView(k); }); });
+  Object.keys(segments).forEach(function (k) { button("refviews", segments[k].name, k, function () { setRef(k); }); });
+  [[0.1, "0.1×"], [0.25, "0.25×"], [0.525, "как в игре (0.525×)"], [0.75, "темп рефа (0.75×)"], [1, "1× клип"]].forEach(function (s) { button("speeds", s[1], s[0], function () { setSpeed(s[0]); }); });
+  function setSpeed(v) {
+    speed = v; $("speed").value = v; $("speedv").textContent = v.toFixed(3).replace(/0+$/, "").replace(/\.$/, "") + "×";
+    Array.prototype.forEach.call($("speeds").querySelectorAll("button"), function (b) { b.classList.toggle("on", Math.abs(parseFloat(b.dataset.key) - v) < 1e-4); });
+  }
+  $("speed").oninput = function () { setSpeed(parseFloat(this.value)); };
+  function setList(i) {
+    list = lists[i]; total = list.segments.reduce(function (n, s) { return n + s.to - s.from; }, 0); time = 0;
+    $("seek").max = total;
+    var track = $("track"), marks = $("marks"), at = 0; track.innerHTML = ""; marks.innerHTML = "";
+    list.segments.forEach(function (seg, n) {
+      var c = clips[seg.clip];
+      function band(cls, a, e) { a = Math.max(a, seg.from); e = Math.min(e, seg.to); if (e <= a) return; var el = document.createElement("i"); el.className = cls;
+        el.style.left = (at + a - seg.from) / total * 100 + "%"; el.style.width = (e - a) / total * 100 + "%"; track.appendChild(el); }
+      band("windup", 0, c.windup); band("active", c.windup, c.activeEnd); band("rec", c.activeEnd, c.last);
+      if (c.peak >= seg.from && c.peak <= seg.to) { var m = document.createElement("b"); m.style.left = (at + c.peak - seg.from) / total * 100 + "%"; m.title = "пик"; marks.appendChild(m); }
+      if (n > 0) { var s = document.createElement("s"); s.style.left = at / total * 100 + "%"; marks.appendChild(s); }
+      at += seg.to - seg.from;
+    });
+    Array.prototype.forEach.call($("clips").querySelectorAll("button"), function (b) { b.classList.toggle("on", +b.dataset.key === i); });
+    buildTrail(); setRef(refKey);
+  }
+  function setPlaying(v) { playing = v; $("play").textContent = v ? "Пауза" : "Играть"; if (v) { if ($("showref").checked && refSeg) { var p = video.play(); if (p && p.catch) p.catch(function () { }); } } else video.pause(); }
+  $("play").onclick = function () { if (!playing && time >= total) { time = 0; restartRef(); } setPlaying(!playing); };
+  function step(d) { setPlaying(false); time = Math.max(0, Math.min(total, Math.round(time + d))); }
+  $("prev").onclick = function () { step(-1); }; $("next").onclick = function () { step(1); };
+  $("seek").oninput = function () { setPlaying(false); time = parseFloat(this.value); };
+  $("showref").onchange = function () { $("main").classList.toggle("noref", !this.checked); if (this.checked) restartRef(); else video.pause(); resize(); };
+  window.addEventListener("keydown", function (e) {
+    if (e.target.tagName === "INPUT" && e.target.type !== "range" && e.target.type !== "checkbox") return;
+    if (e.code === "Space") { e.preventDefault(); $("play").onclick(); }
+    else if (e.code === "ArrowLeft") { e.preventDefault(); step(-1); }
+    else if (e.code === "ArrowRight") { e.preventDefault(); step(1); }
+    else if (e.key >= "1" && e.key <= "9" && lists[+e.key - 1]) setList(+e.key - 1);
+    else if (e.code === "KeyF") setView(view === "fp" ? "ref" : "fp");
+  });
+
+  // ---------- frame ----------
+  var W = 1, H = 1;
+  function resize() { W = stage.clientWidth; H = stage.clientHeight; renderer.setSize(W, H, false); }
+  window.addEventListener("resize", resize);
+  function fit(w, h, aspect) { var vw = w, vh = w / aspect; if (vh > h) { vh = h; vw = h * aspect; } return { w: Math.floor(vw), h: Math.floor(vh) }; }
+  function draw(camera, x, y, w, h, hideHead, overlays) {
+    pose(hideHead);
+    trail.visible = overlays && $("trail").checked;
+    renderer.setViewport(x, y, w, h); renderer.setScissor(x, y, w, h); renderer.setScissorTest(true);
+    renderer.setClearColor(background, 1); renderer.clear();
+    renderer.render(scene, camera);
+  }
+  function place(el, x, y) { el.style.display = "block"; el.style.left = x + "px"; el.style.top = y + "px"; }
+  var lastNow = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.1, (now - lastNow) / 1000); lastNow = now;
+    if (playing) {
+      time += dt * 60 * speed;
+      if (time >= total) { if ($("loop").checked) { time = 0; restartRef(); } else { time = total; setPlaying(false); } }
+    }
+    $("seek").value = time;
+    locate(time);
+    tickRef();
+    renderer.setScissorTest(false); renderer.setClearColor(0x14161a, 1); renderer.clear();
+    var insetOn = $("inset").checked && view !== "fp";
+    $("cross").style.display = "none"; $("insetCross").style.display = "none"; $("insetFrame").style.display = "none";
+    if (view === "fp") {
+      var r = fit(W, H, 16 / 9), x = Math.floor((W - r.w) / 2), y = Math.floor((H - r.h) / 2);
+      draw(fp, x, y, r.w, r.h, true, false);
+      place($("cross"), W / 2, H / 2);
+    } else {
+      placeOrbit(); cam.aspect = W / H; cam.updateProjectionMatrix();
+      draw(cam, 0, 0, W, H, false, true);
+      if (insetOn) {
+        var iw = Math.floor(Math.min(W * 0.38, 520)), ih = Math.floor(iw * 9 / 16), ix = W - iw - 10, iy = 10;
+        draw(fp, ix, iy, iw, ih, true, false);
+        var f = $("insetFrame"); f.style.display = "block"; f.style.left = ix + "px"; f.style.top = (H - iy - ih) + "px"; f.style.width = iw + "px"; f.style.height = ih + "px";
+        place($("insetCross"), ix + iw / 2, H - iy - ih / 2);
+      }
+    }
+    var c = state.clip, fr = state.frame, i = Math.min(Math.round(fr), c.last);
+    var phase = fr < c.windup ? "замах" : fr <= c.activeEnd ? "АКТИВНАЯ ФАЗА" : "проводка / возврат";
+    var miss = c.strikePath[c.peak], off = Math.hypot(miss.x - eye.x, miss.y - eye.y) * 100;
+    $("hud").textContent = c.name.replace("Attack", "Атака") + " · кадр " + fr.toFixed(1) + " / " + c.last + " · " + phase +
+      "\nпик: кадр " + c.peak + ", точка удара от прицела " + off.toFixed(1) + " см" +
+      "\nсуставы руки: " + (c.strain[i] * 100).toFixed(0) + "% предела · рукоять в кулаке: наклон " + c.lean[i].toFixed(0) + "°, поворот " + c.roll[i].toFixed(0) + "°";
+    requestAnimationFrame(frame);
+  }
+  // ?list=0..3&view=fp|front|ref|right|left|back|top|hand&t=<frame> opens a given moment.
+  var params = new URLSearchParams(location.search);
+  resize(); setSpeed(0.525); setView(presets[params.get("view")] ? params.get("view") : "ref"); setList(lists[+params.get("list")] ? +params.get("list") : 0);
+  if (params.has("t")) { time = parseFloat(params.get("t")) || 0; setPlaying(false); }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
