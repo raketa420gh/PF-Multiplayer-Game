@@ -222,7 +222,7 @@
   function locate(t) {
     for (var i = 0; i < list.segments.length; i++) {
       var seg = list.segments[i], len = seg.to - seg.from;
-      if (t <= len || i === list.segments.length - 1) { state.clip = clips[seg.clip]; state.frame = Math.min(seg.from + t, seg.to); state.segment = i; return; }
+      if (t <= len || i === list.segments.length - 1) { state.clip = clips[seg.clip]; state.frame = Math.max(seg.from, Math.min(seg.from + t, seg.to)); state.segment = i; return; }
       t -= len;
     }
   }
@@ -384,11 +384,16 @@
   function place(el, x, y) { el.style.display = "block"; el.style.left = x + "px"; el.style.top = y + "px"; }
   var lastNow = performance.now();
   function frame(now) {
-    var dt = Math.min(0.1, (now - lastNow) / 1000); lastNow = now;
+    requestAnimationFrame(frame);
+    try { tick(now); } catch (error) { $("hud").textContent = "Ошибка: " + error.message; }
+  }
+  function tick(now) {
+    var dt = Math.max(0, Math.min(0.1, (now - lastNow) / 1000)); lastNow = now;
     if (playing) {
       time += dt * 60 * speed;
       if (time >= total) { if ($("loop").checked) { time = 0; restartRef(); } else { time = total; setPlaying(false); } }
     }
+    time = Math.max(0, Math.min(total, time || 0));
     $("seek").value = time;
     locate(time);
     tickRef();
@@ -409,13 +414,12 @@
         place($("insetCross"), ix + iw / 2, H - iy - ih / 2);
       }
     }
-    var c = state.clip, fr = state.frame, i = Math.min(Math.round(fr), c.last);
+    var c = state.clip, fr = state.frame, i = Math.max(0, Math.min(Math.round(fr), c.last));
     var phase = fr < c.windup ? "замах" : fr <= c.activeEnd ? "АКТИВНАЯ ФАЗА" : "проводка / возврат";
     var miss = c.strikePath[c.peak], off = Math.hypot(miss.x - eye.x, miss.y - eye.y) * 100;
     $("hud").textContent = c.name.replace("Attack", "Атака") + " · кадр " + fr.toFixed(1) + " / " + c.last + " · " + phase +
       "\nпик: кадр " + c.peak + ", точка удара от прицела " + off.toFixed(1) + " см" +
       "\nсуставы руки: " + (c.strain[i] * 100).toFixed(0) + "% предела · рукоять в кулаке: наклон " + c.lean[i].toFixed(0) + "°, поворот " + c.roll[i].toFixed(0) + "°";
-    requestAnimationFrame(frame);
   }
   // ?list=0..3&view=fp|front|ref|right|left|back|top|hand&t=<frame> opens a given moment.
   var params = new URLSearchParams(location.search);
