@@ -112,6 +112,8 @@ namespace Game.Scripts.Editor.Battle
             BakeSockets(controller);
             BakeLeftHanded(controller, weapons, false);
             BakeEdits();
+            // Authored outside the pose library: written last, on the idle's finished grip (the content build samples its traces).
+            ArmingSwordAttacks.Bake(false);
             StoreMarkers(weapons);
 
             EditorUtility.SetDirty(controller);

@@ -66,6 +66,7 @@ namespace Game.Scripts.Editor.Battle
         public int Index;
         public int Frames;
         public int Peak;
+        public float Duration;
         public float Windup;
         public float ActiveEnd;
         /// The attack it is chained from and the frame of that attack it starts at; -1 = from the idle.
@@ -84,10 +85,11 @@ namespace Game.Scripts.Editor.Battle
         public float[] Strain;
     }
 
-    /// Arming sword attacks authored from footage as a mock-up: the sword is rigid in the fist (one grip point, the hilt may
-    /// turn a little in the hand), the arm is solved in humanoid muscles inside the avatar's ranges, so no joint bends the
-    /// way a body cannot and the fist never leaves the hilt. Writes the data of the review page; the game is not touched.
-    internal static class ArmingSwordMockup
+    /// The arming sword's three attacks, authored from footage: the sword is rigid in the fist (one grip point, the hilt may
+    /// turn a little in the hand) and the arm is solved in humanoid muscles inside the avatar's ranges, so no joint bends the
+    /// way a body cannot and the fist never leaves the hilt. The animation build ends by writing the clips from here; the
+    /// review page (Docs/Tasks/ArmingSword_Animations/mockup) shows the same poses.
+    internal static class ArmingSwordAttacks
     {
         private const string Prefix = "ArmingSword";
         private const float FrameRate = 60f;
@@ -103,6 +105,73 @@ namespace Game.Scripts.Editor.Battle
         private const float MaxRoll = 25f;
         private const float SoftLimit = 0.85f;
 
+        /// Clip frames (60 Hz), model space metres: +Z ahead, +X right. See Parse for the words.
+        private const string Keys = @"# Arming Sword attack keys for the mock-up. Clip frames (60 Hz), model space metres: +Z ahead, +X right.
+# key <frame> grip(x y z) blade(x y z) | aim <frame> grip(x y z) -> strike point on the crosshair | idle <frame>
+# to <bow> <turn right> <lean right> (chest, degrees) | el <elbow x y z> | ed <edge x y z> | hard <w> | stop
+# Right shoulder ~ (0.17, 1.46, 0.0); a bent arm keeps the grip within ~0.52 m of it.
+# A fist holds the blade square to the forearm (85 deg), the wrist gives +-35: never lay the blade along the forearm.
+# The knuckles lead a cut: the forearm points roughly where the blade travels.
+
+# Attack 1: cocked behind the head, round over the right shoulder and down across the body to the left hip.
+motion forehand
+idle 0
+key 4   0.30 1.42 0.42   0.00 0.97 -0.25   to 0 8 0
+key 8   0.32 1.58 0.26  -0.08 0.80 -0.60   to -2 18 0
+key 12  0.30 1.76 0.10  -0.40 0.40 -0.82   to -3 25 0   el 0.45 1.46 0.03
+key 16  0.27 1.82 0.04  -0.62 0.12 -0.78   to -3 28 0   el 0.45 1.50 0.04
+key 19  0.28 1.78 0.12  -0.15 0.55 -0.82   to -2 22 0   el 0.46 1.52 0.06
+key 21  0.24 1.64 0.30   0.25 0.94 0.22    to 2 8 0     el 0.44 1.46 0.12
+aim 23  0.08 1.40 0.48                     to 8 -8 0    el 0.38 1.36 0.16
+key 25 -0.02 1.20 0.42  -0.35 0.10 0.93    to 12 -18 0  el 0.26 1.28 0.20
+key 27 -0.10 1.08 0.34  -0.48 -0.28 0.83   to 14 -25 0
+key 29 -0.13 1.04 0.26  -0.82 -0.38 0.42   to 14 -27 0
+key 31 -0.12 1.04 0.22  -0.86 -0.38 -0.32  to 14 -28 0
+key 35 -0.11 1.05 0.21  -0.55 -0.38 -0.74  to 12 -26 0  stop
+key 48 -0.11 1.05 0.21  -0.55 -0.36 -0.75  to 10 -22 0  stop
+key 56 -0.05 1.10 0.36  -0.45 0.65 -0.60   to 5 -10 0
+key 64  0.16 1.28 0.46  -0.12 0.97 -0.20   to 2 -3 0
+idle 72
+
+# Attack 2: up the left side to the left shoulder, the blade laid back over it, then round the left and across to the right.
+motion backhand after 0 31
+idle 0
+key 5  -0.22 1.14 0.24  -0.50 0.20 -0.84   to 8 -30 0
+key 10 -0.22 1.30 0.20  -0.15 0.60 -0.79   to 2 -32 0   el 0.16 1.16 0.24
+key 15 -0.21 1.38 0.08   0.30 0.62 -0.72   to 0 -34 0   el 0.18 1.20 0.24
+key 20 -0.20 1.40 0.04   0.42 0.60 -0.68   to 0 -35 0   el 0.18 1.22 0.24 stop
+key 22.5 -0.19 1.42 0.08 -0.10 0.65 -0.75  to 0 -32 0   el 0.20 1.24 0.24
+key 24 -0.12 1.44 0.30  -0.80 0.50 -0.33   to 1 -22 0   el 0.26 1.30 0.24
+key 25 -0.03 1.45 0.42  -0.72 0.45 0.52    to 3 -12 0
+aim 26  0.06 1.40 0.48                     to 5 -2 0    el 0.36 1.36 0.18
+key 27  0.18 1.30 0.46   0.25 0.35 0.90    to 6 8 0
+key 28.5 0.30 1.16 0.38  0.62 0.10 0.78    to 6 16 0
+key 31  0.42 1.04 0.20   0.90 -0.10 0.42   to 6 23 0
+key 35  0.48 1.00 0.02   0.92 -0.20 -0.33  to 5 28 0
+key 42  0.49 1.00 -0.04  0.80 -0.35 -0.49  to 4 27 0    stop
+key 48  0.49 1.00 -0.04  0.80 -0.35 -0.49  to 4 25 0    stop
+key 56  0.42 1.00 0.18   0.85 0.10 0.50    to 3 15 0
+key 62  0.32 1.12 0.38   0.35 0.60 0.72    to 1 6 0
+key 67  0.28 1.30 0.47   0.05 0.95 0.30    to 0 2 0
+idle 71
+
+# Attack 3: the arm lifts out to the right, the blade swings in level to point ahead and hangs aimed,
+# then the fist comes round to the front and drives the point into the crosshair, held, and the tip rises back to upright.
+motion stab after 1 34 thrust
+idle 0
+key 6   0.58 1.20 -0.10  0.80 0.00 0.60    to 3 25 0    el 0.40 1.16 -0.24
+key 11  0.62 1.36 -0.14  0.30 0.08 0.95    to 1 24 0    el 0.42 1.34 -0.28
+key 15  0.62 1.44 -0.16 -0.20 0.10 0.97    to 0 22 0    el 0.40 1.40 -0.30
+key 23  0.61 1.44 -0.16 -0.28 0.10 0.95    to 0 22 0    el 0.40 1.40 -0.30 stop
+key 26  0.60 1.44 -0.14 -0.28 0.11 0.95    to 0 20 0    el 0.40 1.40 -0.28
+key 28  0.44 1.46 0.14  -0.22 0.20 0.95    to 4 4 0     el 0.38 1.25 -0.08
+aim 30  0.20 1.46 0.48                     to 8 -12 0   el 0.28 1.25 0.12 hard 1
+aim 33  0.18 1.46 0.52                     to 9 -17 0   el 0.26 1.25 0.16 hard 1 stop
+aim 48  0.18 1.46 0.51                     to 8 -15 0   el 0.26 1.25 0.16 hard 1 stop
+key 56  0.22 1.42 0.50  -0.12 0.70 0.70    to 4 -8 0    el 0.31 1.30 0.17
+key 63  0.26 1.40 0.50   0.00 0.94 0.34    to 1 -2 0    el 0.36 1.37 0.15
+idle 69";
+
         private static readonly Vector3 s_eye = BattleAnimationLibrary.Eye;
         private static readonly string[] s_arm = { "Shoulder Down-Up", "Shoulder Front-Back", "Arm Down-Up", "Arm Front-Back", "Arm Twist In-Out", "Forearm Stretch", "Forearm Twist In-Out", "Hand Down-Up", "Hand In-Out" };
         // What it costs a muscle to leave its rest: shoulders and wrists give way last.
@@ -114,9 +183,7 @@ namespace Game.Scripts.Editor.Battle
         {
             public readonly BattlePoseRig Source = new BattlePoseRig();
             public readonly Animator Animator;
-            public readonly Transform Socket, Hips, Spine, Chest, Head, Upper, Elbow, Hand;
-            public readonly Transform[] Legs;
-            public readonly float SpineHeight;
+            public readonly Transform Socket, Hips, Chest, Head, Elbow, Hand;
             public readonly Vector3 PalmNormal;
             public Vector3 GripPosition;
             public Quaternion GripRotation;
@@ -132,15 +199,10 @@ namespace Game.Scripts.Editor.Battle
                 GripRotation = Socket.localRotation;
                 PalmNormal = Socket.localRotation * Vector3.right;
                 Hips = Animator.GetBoneTransform(HumanBodyBones.Hips);
-                Spine = Animator.GetBoneTransform(HumanBodyBones.Spine);
                 Chest = Animator.GetBoneTransform(HumanBodyBones.UpperChest);
                 Head = Animator.GetBoneTransform(HumanBodyBones.Head);
-                Upper = Animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
                 Elbow = Animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
                 Hand = Animator.GetBoneTransform(HumanBodyBones.RightHand);
-                Legs = new[] { HumanBodyBones.LeftUpperLeg, HumanBodyBones.LeftLowerLeg, HumanBodyBones.LeftFoot, HumanBodyBones.RightUpperLeg, HumanBodyBones.RightLowerLeg, HumanBodyBones.RightFoot }
-                    .Select(Animator.GetBoneTransform).ToArray();
-                SpineHeight = Spine.position.y - FighterAnimComponent.IdleDrop;
                 _handler = new HumanPoseHandler(Animator.avatar, Animator.transform);
             }
 
@@ -150,30 +212,16 @@ namespace Game.Scripts.Editor.Battle
                 Source.Dispose();
             }
 
-            /// The pose as the game shows it: the upper body held at the model's height whatever the legs do (HoldUpperBody).
-            public void Set(float[] muscles, Vector3 position, Quaternion rotation, float lean, float roll, bool plantsFeet = false)
+            public void Set(float[] muscles, Vector3 position, Quaternion rotation, float lean, float roll)
             {
                 Array.Copy(muscles, _pose.muscles, muscles.Length);
                 _pose.bodyPosition = position;
                 _pose.bodyRotation = rotation;
                 _handler.SetHumanPose(ref _pose);
+                // A humanoid pose hangs on the body's centre of mass, so a reaching arm would push the hips back. The controller
+                // does not do that: the legs layer sets the hips and the upper-body clip builds on them.
+                Hips.SetPositionAndRotation(s_hips.position, s_hips.rotation);
                 Socket.SetLocalPositionAndRotation(GripPosition, Grip(lean, roll));
-                Vector3 offset = Vector3.up * (SpineHeight - Spine.position.y);
-
-                if (!plantsFeet)
-                {
-                    Hips.position += offset;
-
-                    return;
-                }
-
-                Vector3 left = Legs[2].position, right = Legs[5].position;
-                Quaternion leftRotation = Legs[2].rotation, rightRotation = Legs[5].rotation;
-                Hips.position += offset;
-                TwoBoneIk.Solve(Legs[0], Legs[1], Legs[2], left);
-                TwoBoneIk.Solve(Legs[3], Legs[4], Legs[5], right);
-                Legs[2].rotation = leftRotation;
-                Legs[5].rotation = rightRotation;
             }
 
             public Quaternion Grip(float lean, float roll)
@@ -181,13 +229,6 @@ namespace Game.Scripts.Editor.Battle
                 return Quaternion.AngleAxis(-lean, PalmNormal) * GripRotation * Quaternion.AngleAxis(roll, Vector3.forward);
             }
 
-            public HumanPose Read()
-            {
-                HumanPose pose = new HumanPose();
-                _handler.GetHumanPose(ref pose);
-
-                return pose;
-            }
         }
 
         private struct Target
@@ -199,7 +240,6 @@ namespace Game.Scripts.Editor.Battle
         private sealed class ClipPose
         {
             public AnimationCurve[] Muscles;
-            public AnimationCurve[] Root;
             public AnimationCurve[] Socket;
 
             public float[] Read(float time)
@@ -212,20 +252,44 @@ namespace Game.Scripts.Editor.Battle
                 return muscles;
             }
 
-            public Vector3 Position(float time) => new Vector3(Root[0].Evaluate(time), Root[1].Evaluate(time), Root[2].Evaluate(time));
-
-            public Quaternion Rotation(float time) =>
-                new Quaternion(Root[3].Evaluate(time), Root[4].Evaluate(time), Root[5].Evaluate(time), Root[6].Evaluate(time)).normalized;
         }
 
         public static readonly string[] Tables = new string[3];
 
-        private static int[] s_right, s_left, s_legs, s_torso, s_neck;
+        private static int[] s_right, s_legs, s_torso, s_neck;
         private static Vector3 s_torsoScale, s_neckScale;
         private static float[] s_idle;
         private static ClipPose s_idleClip;
+        private static HumanPose s_stance;
+        private static Pose s_hips;
+        private static WeaponDefinition s_weapon;
 
-        /// Solves the attacks of the keys file and writes data.js of the review page into the folder. Returns the numbers.
+        /// Writes ArmingSword_Attack0-2 from the keys: body muscles, the fingers as the idle holds them and the sword's socket
+        /// in the fist. Hand edits stored for these clips are dropped: they were made on the generated swings these replace
+        /// and would be baked over the new ones. With traces, the weapon config's blade traces are sampled anew through the
+        /// controller (the content build does that itself). Returns the numbers.
+        public static string Bake(bool withTraces)
+        {
+            StringBuilder report = new StringBuilder();
+            SwordMotion[] motions = Solve(string.Empty, report);
+            DropEdits(motions);
+
+            using (Stage rig = CreateStage())
+            {
+                foreach (SwordMotion motion in motions)
+                    Write(motion, rig);
+            }
+
+            AssetDatabase.SaveAssets();
+
+            if (withTraces)
+                Trace(motions, report);
+
+            return report.ToString();
+        }
+
+        /// Solves the attacks (keys: a text file while tuning, empty = the keys in the code) and writes data.js of the review
+        /// page into the folder. Returns the numbers.
         public static string Build(string keys, string folder)
         {
             Directory.CreateDirectory(folder);
@@ -280,7 +344,7 @@ namespace Game.Scripts.Editor.Battle
                         // Skinning is evaluated once per editor frame, so every moment gets a rig of its own.
                         using Stage rig = CreateStage();
                         int index = Mathf.Clamp(frame, 0, motion.Frames);
-                        rig.Set(motion.Muscles[index], motion.BodyPositions[index], motion.BodyRotations[index], motion.Lean[index], motion.Roll[index], true);
+                        rig.Set(motion.Muscles[index], motion.BodyPositions[index], motion.BodyRotations[index], motion.Lean[index], motion.Roll[index]);
                         GameObject held = Object.Instantiate(sword, rig.Socket, false);
                         held.hideFlags = HideFlags.HideAndDontSave;
 
@@ -380,7 +444,6 @@ namespace Game.Scripts.Editor.Battle
         private static SwordMotion[] Solve(string keys, StringBuilder report)
         {
             s_right = Array.ConvertAll(s_arm, name => Muscle("Right " + name));
-            s_left = Array.ConvertAll(s_arm, name => Muscle("Left " + name));
             s_legs = Enumerable.Range(0, Body).Where(i => HumanTrait.MuscleName[i].Contains("Leg") || HumanTrait.MuscleName[i].Contains("Foot") || HumanTrait.MuscleName[i].Contains("Toes")).ToArray();
             s_torso = new[] { "Spine", "Chest", "UpperChest" }.SelectMany(bone => new[] { " Front-Back", " Left-Right", " Twist Left-Right" }.Select(axis => Muscle(bone + axis))).ToArray();
             s_neck = new[] { "Neck", "Head" }.SelectMany(bone => new[] { " Nod Down-Up", " Tilt Left-Right", " Turn Left-Right" }.Select(axis => Muscle(bone + axis))).ToArray();
@@ -391,27 +454,225 @@ namespace Game.Scripts.Editor.Battle
 
             s_idleClip = ReadClip(Prefix + FighterAnimComponent.IdleSuffix, socketPath);
             s_idle = s_idleClip.Read(0f);
+            s_stance = ReadStance();
+            s_weapon = Dungeon.DungeonWeaponLibrary.Find(Dungeon.DungeonWeaponLibrary.CreateAll(), Prefix);
 
             using Stage rig = CreateStage();
             Calibrate(rig);
-            SerializedObject config = new SerializedObject(AssetDatabase.LoadAssetAtPath<WeaponConfig>($"{BattleEditorUtility.ConfigsFolder}/{Prefix}.asset"));
             SwordMotion[] motions = Parse(keys);
 
+            // The timing is the combat model's: the swing is fitted into the windup, the active window and the recovery it has.
             for (int i = 0; i < motions.Length; i++)
             {
                 SwordMotion motion = motions[i];
-                SerializedProperty attack = config.FindProperty("_attacks").GetArrayElementAtIndex(i);
-                float windup = attack.FindPropertyRelative("_windupTime").floatValue;
-                float active = attack.FindPropertyRelative("_activeTime").floatValue;
+                AttackDefinition attack = s_weapon.Attacks[i];
                 motion.Index = i;
-                motion.Windup = windup * FrameRate;
-                motion.ActiveEnd = (windup + active) * FrameRate;
-                motion.Peak = Mathf.RoundToInt((windup + active * 0.5f) * FrameRate);
-                motion.Frames = Mathf.CeilToInt((windup + active + attack.FindPropertyRelative("_recoveryTime").floatValue) * FrameRate - 1e-3f);
+                motion.Duration = attack.Duration;
+                motion.Windup = attack.Windup * FrameRate;
+                motion.ActiveEnd = (attack.Windup + attack.Active) * FrameRate;
+                motion.Peak = Mathf.RoundToInt(BattleAnimationLibrary.PeakTime(attack) * FrameRate);
+                motion.Frames = Mathf.CeilToInt(attack.Duration * FrameRate - 1e-3f);
                 Solve(rig, motion, motions, report);
             }
 
             return motions;
+        }
+
+        /// The body the controller plays under an upper-body clip while the fighter stands: the legs and the root every frame
+        /// of the swing is solved on, the same the blade traces are sampled with.
+        private static HumanPose ReadStance()
+        {
+            GameObject model = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath), Vector3.zero, Quaternion.identity);
+            model.hideFlags = HideFlags.HideAndDontSave;
+            Animator animator = Play(model, Prefix + FighterAnimComponent.IdleSuffix, 0f);
+            HumanPose pose = new HumanPose();
+
+            using (HumanPoseHandler handler = new HumanPoseHandler(animator.avatar, animator.transform))
+                handler.GetHumanPose(ref pose);
+
+            Transform hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+            s_hips = new Pose(hips.position, hips.rotation);
+
+            Object.DestroyImmediate(model);
+
+            return pose;
+        }
+
+        private static Animator Play(GameObject model, string state, float normalizedTime)
+        {
+            Animator animator = model.GetComponent<Animator>();
+
+            if (animator.runtimeAnimatorController == null)
+            {
+                animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(BattleEditorUtility.ControllerPath);
+                animator.applyRootMotion = false;
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                animator.Rebind();
+            }
+
+            animator.SetFloat(FighterAnimComponent.ActionSpeedParam, 1f);
+
+            // Twice: the first evaluation after switching states still shows the state before.
+            for (int pass = 0; pass < 2; pass++)
+            {
+                animator.Play(state, 1, Mathf.Clamp(normalizedTime, 0f, 0.999f));
+                animator.Update(0f);
+            }
+
+            return animator;
+        }
+
+        private static string ClipPath(SwordMotion motion)
+        {
+            return $"{BattleEditorUtility.AnimationsFolder}/{Prefix}{FighterAnimComponent.AttackSuffix}{motion.Index}.anim";
+        }
+
+        private static string MuscleProperty(int muscle)
+        {
+            string[] parts = HumanTrait.MuscleName[muscle].Split(' ');
+
+            // The curve of a finger is named after its hand: 'Left Index 1 Stretched' is 'LeftHand.Index.1 Stretched'.
+            return muscle < Body ? HumanTrait.MuscleName[muscle] : $"{parts[0]}Hand.{parts[1]}.{string.Join(" ", parts.Skip(2))}";
+        }
+
+        private static void Write(SwordMotion motion, Stage rig)
+        {
+            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath(motion)) ?? throw new ArgumentException($"No clip '{ClipPath(motion)}'");
+            AnimationClip idle = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{BattleEditorUtility.AnimationsFolder}/{Prefix}{FighterAnimComponent.IdleSuffix}.anim");
+            int count = motion.Frames + 1;
+            List<EditorCurveBinding> bindings = new List<EditorCurveBinding>();
+            List<AnimationCurve> curves = new List<AnimationCurve>();
+
+            // Keys sit on the simulation's 60 Hz grid, as the generated clips have them.
+            void Add(EditorCurveBinding binding, Func<int, float> value)
+            {
+                AnimationCurve curve = new AnimationCurve();
+
+                for (int frame = 0; frame < count; frame++)
+                    curve.AddKey(Mathf.Min(frame / FrameRate, motion.Duration), value(frame));
+
+                for (int i = 0; i < curve.length; i++)
+                    curve.SmoothTangents(i, 0f);
+
+                bindings.Add(binding);
+                curves.Add(curve);
+            }
+
+            for (int i = 0; i < HumanTrait.MuscleCount; i++)
+            {
+                int muscle = i;
+
+                // The fingers hold the hilt as the idle has them; a finger the idle does not key stays as the avatar rests it.
+                if (muscle < Body || s_idleClip.Muscles[muscle] != null)
+                    Add(EditorCurveBinding.FloatCurve(string.Empty, typeof(Animator), MuscleProperty(muscle)), frame => motion.Muscles[frame][muscle]);
+            }
+
+            for (int i = 0; i < s_rootCurves.Length; i++)
+            {
+                int axis = i;
+                Add(EditorCurveBinding.FloatCurve(string.Empty, typeof(Animator), s_rootCurves[i]), frame =>
+                    axis < 3 ? motion.BodyPositions[frame][axis] : motion.BodyRotations[frame][axis - 3]);
+            }
+
+            // The sword's socket turns in the fist as the swing was solved; the other sockets stay as the idle carries them.
+            Quaternion[] grips = new Quaternion[count];
+
+            for (int frame = 0; frame < count; frame++)
+            {
+                Quaternion grip = motion.Grips[frame];
+                grips[frame] = frame > 0 && Quaternion.Dot(grips[frame - 1], grip) < 0f ? new Quaternion(-grip.x, -grip.y, -grip.z, -grip.w) : grip;
+            }
+
+            for (int s = 0; s < rig.Source.Sockets.Length; s++)
+            {
+                Transform socket = rig.Source.Sockets[s];
+                string path = AnimationUtility.CalculateTransformPath(socket, rig.Animator.transform);
+                bool isSword = socket == rig.Socket;
+                float[] rest = { socket.localPosition.x, socket.localPosition.y, socket.localPosition.z, socket.localRotation.x, socket.localRotation.y, socket.localRotation.z, socket.localRotation.w };
+
+                for (int i = 0; i < s_socketCurves.Length; i++)
+                {
+                    int axis = i;
+                    EditorCurveBinding binding = EditorCurveBinding.FloatCurve(path, typeof(Transform), s_socketCurves[i]);
+                    AnimationCurve carried = idle == null ? null : AnimationUtility.GetEditorCurve(idle, binding);
+                    float still = isSword && axis < 3 ? rig.GripPosition[axis] : carried?.Evaluate(0f) ?? rest[axis];
+                    Add(binding, frame => isSword && axis >= 3 ? grips[frame][axis - 3] : still);
+                }
+            }
+
+            clip.ClearCurves();
+            clip.frameRate = FrameRate;
+            AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
+            AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
+            settings.loopTime = false;
+            settings.loopBlendOrientation = true;
+            settings.loopBlendPositionY = true;
+            settings.loopBlendPositionXZ = true;
+            settings.keepOriginalOrientation = true;
+            settings.keepOriginalPositionY = true;
+            settings.keepOriginalPositionXZ = true;
+            settings.stopTime = motion.Duration;
+            AnimationUtility.SetAnimationClipSettings(clip, settings);
+            EditorUtility.SetDirty(clip);
+        }
+
+        private static void DropEdits(SwordMotion[] motions)
+        {
+            AnimationEditConfig edits = AssetDatabase.LoadAssetAtPath<AnimationEditConfig>(AnimationEditBaker.ConfigPath);
+
+            if (edits == null)
+                return;
+
+            HashSet<AnimationClip> clips = new HashSet<AnimationClip>(motions.Select(motion => AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath(motion))));
+            SerializedObject serialized = new SerializedObject(edits);
+            SerializedProperty stored = serialized.FindProperty("_clips");
+
+            for (int i = stored.arraySize - 1; i >= 0; i--)
+            {
+                if (clips.Contains(stored.GetArrayElementAtIndex(i).FindPropertyRelative("_clip").objectReferenceValue as AnimationClip))
+                    stored.DeleteArrayElementAtIndex(i);
+            }
+
+            if (serialized.ApplyModifiedPropertiesWithoutUndo())
+                EditorUtility.SetDirty(edits);
+        }
+
+        /// The blade through each swing as the controller plays the clip, the way the content build samples it into the weapon
+        /// config: what hits is what is seen.
+        private static void Trace(SwordMotion[] motions, StringBuilder report)
+        {
+            WeaponConfig config = AssetDatabase.LoadAssetAtPath<WeaponConfig>($"{BattleEditorUtility.ConfigsFolder}/{Prefix}.asset");
+            SerializedObject serialized = new SerializedObject(config);
+            GameObject model = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath), Vector3.zero, Quaternion.identity);
+            model.hideFlags = HideFlags.HideAndDontSave;
+            Transform socket = BattlePoseRig.CreateSockets(model.GetComponent<Animator>())[(int)WeaponSocket.RightHand];
+
+            foreach (SwordMotion motion in motions)
+            {
+                SerializedProperty attack = serialized.FindProperty("_attacks").GetArrayElementAtIndex(motion.Index);
+                SerializedProperty bases = attack.FindPropertyRelative("_traceBase"), tips = attack.FindPropertyRelative("_traceTip");
+                int count = motion.Frames + 1;
+                bases.arraySize = tips.arraySize = count;
+
+                for (int frame = 0; frame < count; frame++)
+                {
+                    Play(model, Prefix + FighterAnimComponent.AttackSuffix + motion.Index, Mathf.Min(frame / FrameRate, motion.Duration) / motion.Duration);
+                    bases.GetArrayElementAtIndex(frame).vector3Value = socket.TransformPoint(0f, 0f, s_weapon.BladeBase);
+                    tips.GetArrayElementAtIndex(frame).vector3Value = socket.TransformPoint(0f, 0f, s_weapon.BladeTip);
+
+                    if (frame != motion.Peak)
+                        continue;
+
+                    Vector3 strike = socket.TransformPoint(0f, 0f, Strike);
+                    report.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0}: through the controller the strike point is {1:F1} cm off the crosshair at the peak",
+                        motion.Name, new Vector2(strike.x - s_eye.x, strike.y - s_eye.y).magnitude * 100f));
+                }
+            }
+
+            Object.DestroyImmediate(model);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(config);
+            AssetDatabase.SaveAssets();
         }
 
         private static int Muscle(string name)
@@ -429,12 +690,9 @@ namespace Game.Scripts.Editor.Battle
 
             for (int i = 0; i < pose.Muscles.Length; i++)
             {
-                string[] parts = HumanTrait.MuscleName[i].Split(' ');
-                string property = i < Body ? HumanTrait.MuscleName[i] : $"{parts[0]}Hand.{parts[1]}.{string.Join(" ", parts.Skip(2))}";
-                pose.Muscles[i] = AnimationUtility.GetEditorCurve(clip, EditorCurveBinding.FloatCurve(string.Empty, typeof(Animator), property));
+                pose.Muscles[i] = AnimationUtility.GetEditorCurve(clip, EditorCurveBinding.FloatCurve(string.Empty, typeof(Animator), MuscleProperty(i)));
             }
 
-            pose.Root = Array.ConvertAll(s_rootCurves, property => AnimationUtility.GetEditorCurve(clip, EditorCurveBinding.FloatCurve(string.Empty, typeof(Animator), property)));
             pose.Socket = Array.ConvertAll(s_socketCurves, property => AnimationUtility.GetEditorCurve(clip, EditorCurveBinding.FloatCurve(socketPath, typeof(Transform), property)));
 
             return pose;
@@ -479,7 +737,6 @@ namespace Game.Scripts.Editor.Battle
         private static void Solve(Stage rig, SwordMotion motion, SwordMotion[] motions, StringBuilder report)
         {
             int count = motion.Frames + 1;
-            ClipPose legs = ReadClip(Prefix + FighterAnimComponent.AttackLegsSuffix + motion.Index, string.Empty);
             motion.Muscles = new float[count][];
             motion.BodyPositions = new Vector3[count];
             motion.BodyRotations = new Quaternion[count];
@@ -491,16 +748,14 @@ namespace Game.Scripts.Editor.Battle
 
             for (int frame = 0; frame < count; frame++)
             {
-                float time = frame / FrameRate;
                 float[] muscles = (float[])s_idle.Clone();
-                float[] feet = legs.Read(time);
 
                 foreach (int i in s_legs)
-                    muscles[i] = feet[i];
+                    muscles[i] = s_stance.muscles[i];
 
                 motion.Muscles[frame] = muscles;
-                motion.BodyPositions[frame] = legs.Position(time);
-                motion.BodyRotations[frame] = legs.Rotation(time);
+                motion.BodyPositions[frame] = s_stance.bodyPosition;
+                motion.BodyRotations[frame] = s_stance.bodyRotation;
             }
 
             // The idle as the game shows it, and the pose the attack before leaves: what the first key starts from.
@@ -586,7 +841,7 @@ namespace Game.Scripts.Editor.Battle
                 for (int frame = 0; frame < count; frame++)
                 {
                     float free = frame == 0 || frame == count - 1 ? 0f
-                        : Mathf.Clamp01(Mathf.Max((motion.Windup - 4f - frame) / 4f, (frame - motion.ActiveEnd - 4f) / 4f));
+                        : Mathf.Clamp01(Mathf.Max((motion.Windup - 4f - frame) / 4f, (frame - motion.ActiveEnd) / 4f));
                     float[] earlier = before[Mathf.Max(frame - 1, 0)], later = before[Mathf.Min(frame + 1, count - 1)];
                     solved[frame] = new float[earlier.Length];
 
@@ -956,14 +1211,14 @@ namespace Game.Scripts.Editor.Battle
             return new SwordKey { Frame = frame, IsIdle = true };
         }
 
-        /// Keys of the attacks from a text file, so poses are tuned without recompiling. Lines:
+        /// Keys of the attacks: the ones in the code, or a text file of the same lines while poses are being tuned. Lines:
         /// "motion <name> | after <attack> <frame>", "idle <frame>", "key <frame> x y z bx by bz", "aim <frame> x y z",
         /// each followed by any of "to <bow> <turn> <lean>", "el x y z", "ed x y z", "hard <w>", "stop".
         private static SwordMotion[] Parse(string path)
         {
             List<SwordMotion> motions = new List<SwordMotion>();
 
-            foreach (string raw in File.ReadAllLines(path))
+            foreach (string raw in path.Length > 0 ? File.ReadAllLines(path) : Keys.Split('\n'))
             {
                 string line = raw.Split('#')[0].Trim();
 
@@ -1110,7 +1365,7 @@ namespace Game.Scripts.Editor.Battle
 
                 for (int frame = 0; frame < count; frame++)
                 {
-                    rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], motion.Roll[frame], true);
+                    rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], motion.Roll[frame]);
 
                     for (int b = 0; b < bones.Count; b++)
                         Write(poses, (frame * bones.Count + b) * 10, bones[b].position, bones[b].rotation, bones[b].lossyScale);
