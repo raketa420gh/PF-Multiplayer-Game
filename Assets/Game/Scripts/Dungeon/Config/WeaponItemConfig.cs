@@ -30,6 +30,11 @@ namespace Game.Scripts.Dungeon
         public Vector3 GroundEuler => _groundEuler;
         /// Shift of the turned model that sets it on the ground.
         public Vector3 GroundOffset => _groundOffset;
+        /// Turn that brings the model to the frame it is carried on the back in: z along a weapon from its grip, x across its
+        /// flat; a shield's face to -z, its top to y.
+        public Vector3 CarryEuler => _carryEuler;
+        /// The carried model's bounds in that frame.
+        public Bounds CarryBounds => new(_carryCenter, _carrySize);
 
         [SerializeField]
         private WeaponConfig _weapon;
@@ -72,6 +77,15 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private Vector3 _groundOffset;
+
+        [SerializeField]
+        private Vector3 _carryEuler;
+
+        [SerializeField]
+        private Vector3 _carryCenter;
+
+        [SerializeField]
+        private Vector3 _carrySize;
 
         public override bool CanEquip(EquipSlot slot)
         {

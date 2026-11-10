@@ -65,6 +65,22 @@ namespace Game.Scripts.Battle
             _bookClosed.SetActive(isClosed);
         }
 
+        /// On the back instead of in the hand: the book shut, no arrow, the string straight and moving with the bow.
+        public void SetCarried()
+        {
+            SetClosed(true);
+
+            if (_string == null)
+                return;
+
+            _arrow.gameObject.SetActive(false);
+            _string.useWorldSpace = false;
+            Transform line = _string.transform;
+            _string.SetPosition(0, line.InverseTransformPoint(_stringTop.position));
+            _string.SetPosition(1, line.InverseTransformPoint(_nockRest.position));
+            _string.SetPosition(2, line.InverseTransformPoint(_stringBottom.position));
+        }
+
         public void SetDraw(bool isDrawn, Vector3 handPosition, bool hasArrow)
         {
             if (_string == null)

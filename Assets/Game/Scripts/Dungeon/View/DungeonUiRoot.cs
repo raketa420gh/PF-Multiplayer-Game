@@ -248,7 +248,7 @@ namespace Game.Scripts.Dungeon
             {
                 _inventory.Bind(adventurer.Inventory, adventurer.Actions, adventurer.Stats, adventurer.Class.DisplayName, true);
                 _inventory.SetSearcher(adventurer);
-                _inventoryPreview.Bind(adventurer.Inventory, adventurer.Class, adventurer);
+                _inventoryPreview.Bind(adventurer.Inventory, adventurer.Class);
             }
         }
 

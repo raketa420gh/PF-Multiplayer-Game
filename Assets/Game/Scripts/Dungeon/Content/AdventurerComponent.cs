@@ -184,6 +184,18 @@ namespace Game.Scripts.Dungeon
 
         public bool HasWeaponInHand => !HasBeltItemInHand && !IsHolstered && Form == ShapeshiftForm.None && !IsHandsOccupied;
 
+        /// The weapon set in the hands right now; -1 while both are carried: put away, not yet drawn, or the hands hold something else.
+        public int SetInHands
+        {
+            get
+            {
+                CombatComponent combat = _fighter.Combat;
+                int set = combat.HandSlot;
+
+                return Form == ShapeshiftForm.None && combat.IsWeaponOut && combat.Weapon == GetSetWeapon(set) ? set : -1;
+            }
+        }
+
         /// Doors, shrines and bandages take both hands: whatever was held is put away until the action ends.
         public bool IsHandsOccupied => Pending switch
         {
@@ -623,6 +635,22 @@ namespace Game.Scripts.Dungeon
             return slot < _skills.Length ? _skills[slot] : null;
         }
 
+        /// The combat config a weapon set fights with once it is in the hands; the fists for an empty set.
+        public WeaponConfig GetSetWeapon(int set)
+        {
+            WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(set == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main);
+            WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(set == 0 ? EquipSlot.Weapon1Off : EquipSlot.Weapon2Off);
+
+            // A shield alone: the empty hand punches, the shield blocks (DaD).
+            if (main == null && off != null && off.WeaponClass == WeaponClass.Shield && off.ShieldIndex < _fistsWithShield.Length)
+                return _fistsWithShield[off.ShieldIndex];
+
+            if (main == null)
+                return off != null && off.Weapon != null ? off.Weapon : _fistsWeapon;
+
+            return main.GetWeapon(off);
+        }
+
         /// Ability index of the skill on the given slot (Q, E), -1 when the slot is empty.
         public int GetSkillAbility(int slot)
         {
@@ -876,8 +904,8 @@ namespace Game.Scripts.Dungeon
         {
             CombatComponent combat = _fighter.Combat;
             // Only the holster key or sitting down empties the hands; a belt item is taken out over the weapon.
-            combat.SetSlotWeapon(0, ResolveWeaponIndex(0, EquipSlot.Weapon1Main, EquipSlot.Weapon1Off), IsHolstered, ResolveOffWeaponIndex(0, EquipSlot.Weapon1Main, EquipSlot.Weapon1Off));
-            combat.SetSlotWeapon(1, ResolveWeaponIndex(1, EquipSlot.Weapon2Main, EquipSlot.Weapon2Off), IsHolstered, ResolveOffWeaponIndex(1, EquipSlot.Weapon2Main, EquipSlot.Weapon2Off));
+            combat.SetSlotWeapon(0, ResolveWeaponIndex(0), IsHolstered, ResolveOffWeaponIndex(0, EquipSlot.Weapon1Main, EquipSlot.Weapon1Off));
+            combat.SetSlotWeapon(1, ResolveWeaponIndex(1), IsHolstered, ResolveOffWeaponIndex(1, EquipSlot.Weapon2Main, EquipSlot.Weapon2Off));
         }
 
         /// A weapon of its own in the off hand beside a one-handed melee weapon (a dagger beside a sword); -1 for none or a shield.
@@ -901,7 +929,7 @@ namespace Game.Scripts.Dungeon
             return weapon != null ? weapon.Ammo : System.Array.Empty<ItemConfig>();
         }
 
-        private int ResolveWeaponIndex(int set, EquipSlot mainSlot, EquipSlot offSlot)
+        private int ResolveWeaponIndex(int set)
         {
             if (Form != ShapeshiftForm.None && _formWeapons != null && (int)Form - 1 < _formWeapons.Length)
                 return Mathf.Max(0, _fighter.Combat.FindCatalogIndex(_formWeapons[(int)Form - 1]));
@@ -914,18 +942,7 @@ namespace Game.Scripts.Dungeon
             if (!HasWeaponInHand && set == _fighter.Combat.WeaponSlot)
                 return Mathf.Max(0, _fighter.Combat.FindCatalogIndex(_fistsWeapon));
 
-            WeaponItemConfig main = _inventory.GetEquippedConfig<WeaponItemConfig>(mainSlot);
-            WeaponItemConfig off = _inventory.GetEquippedConfig<WeaponItemConfig>(offSlot);
-            CombatComponent combat = _fighter.Combat;
-
-            // A shield alone: the empty hand punches, the shield blocks (DaD).
-            if (main == null && off != null && off.WeaponClass == WeaponClass.Shield && off.ShieldIndex < _fistsWithShield.Length)
-                return Mathf.Max(0, combat.FindCatalogIndex(_fistsWithShield[off.ShieldIndex]));
-
-            if (main == null)
-                return Mathf.Max(0, combat.FindCatalogIndex(off != null && off.Weapon != null ? off.Weapon : _fistsWeapon));
-
-            return Mathf.Max(0, combat.FindCatalogIndex(main.GetWeapon(off)));
+            return Mathf.Max(0, _fighter.Combat.FindCatalogIndex(GetSetWeapon(set)));
         }
 
         private void OnSimulateInput(NetworkButtons buttons, NetworkButtons previous)

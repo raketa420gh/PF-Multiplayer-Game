@@ -127,6 +127,77 @@ namespace Game.Scripts.Editor.Dungeon
             Debug.Log($"[{nameof(DungeonContentBuilder)}] Dungeon content built");
         }
 
+        /// How a weapon is carried on the back (CarriedGear). ground: the turn that lays a shield face up, its top to -z -
+        /// carried, the face looks behind and the top is up. The crossbow is built in the fist's frame: carried, its own z is
+        /// the length and its top lies on the back. Anything else lies along z already; its thinner side is brought to x.
+        public static void SetCarry(SerializedObject so, GameObject model, Quaternion? ground, bool isCrossbow)
+        {
+            Quaternion turn = ground != null ? Quaternion.LookRotation(Vector3.down, Vector3.back) * ground.Value
+                : isCrossbow ? Quaternion.Euler(0f, 0f, -90f) * Quaternion.Inverse(DungeonWeaponPrefabBuilder.CrossbowInHand.rotation)
+                : Quaternion.identity;
+            Bounds bounds = CarryBounds(model, turn);
+
+            if (ground == null && bounds.size.y < bounds.size.x)
+            {
+                turn = Quaternion.Euler(0f, 0f, 90f) * turn;
+                bounds = CarryBounds(model, turn);
+            }
+
+            // A book's mesh is turned in the palm: shut on the belt it hangs square, at the roll its outline is smallest.
+            bool isBook = model != null && model.TryGetComponent(out WeaponVisual visual) &&
+                          new SerializedObject(visual).FindProperty("_bookClosed").objectReferenceValue != null;
+
+            for (int roll = -45; isBook && roll <= 45; roll += 3)
+            {
+                Quaternion rolled = Quaternion.Euler(roll, 0f, 0f) * Quaternion.Euler(0f, 0f, 90f);
+                Bounds outline = CarryBounds(model, rolled);
+
+                if (outline.size.y * outline.size.z >= bounds.size.y * bounds.size.z - 0.0001f)
+                    continue;
+
+                turn = rolled;
+                bounds = outline;
+            }
+
+            BattleEditorUtility.Set(so, "_carryEuler", turn.eulerAngles);
+            BattleEditorUtility.Set(so, "_carryCenter", bounds.center);
+            BattleEditorUtility.Set(so, "_carrySize", bounds.size);
+        }
+
+        /// Bounds of the model as it is carried (the book shut, no arrow on the bow) in the frame the turn brings it to.
+        private static Bounds CarryBounds(GameObject model, Quaternion turn)
+        {
+            Bounds bounds = default;
+
+            if (model == null)
+                return bounds;
+
+            GameObject instance = Object.Instantiate(model);
+            bool isStarted = false;
+
+            if (instance.TryGetComponent(out WeaponVisual visual))
+                visual.SetCarried();
+
+            foreach (MeshFilter filter in instance.GetComponentsInChildren<MeshFilter>())
+            {
+                Matrix4x4 matrix = Matrix4x4.Rotate(turn) * instance.transform.worldToLocalMatrix * filter.transform.localToWorldMatrix;
+
+                foreach (Vector3 vertex in filter.sharedMesh.vertices)
+                {
+                    if (isStarted)
+                        bounds.Encapsulate(matrix.MultiplyPoint3x4(vertex));
+                    else
+                        bounds = new Bounds(matrix.MultiplyPoint3x4(vertex), Vector3.zero);
+
+                    isStarted = true;
+                }
+            }
+
+            Object.DestroyImmediate(instance);
+
+            return bounds;
+        }
+
         private static ItemDatabase BuildItems(Dictionary<string, WeaponConfig> weapons)
         {
             List<ItemDef> defs = DungeonItemLibrary.CreateItems();
@@ -186,6 +257,7 @@ namespace Game.Scripts.Editor.Dungeon
                         Quaternion ground = isShield ? Quaternion.Euler(-90f, 0f, 0f) * (isEcu ? Quaternion.Inverse(DungeonWeaponPrefabBuilder.EcuTurn) : Quaternion.identity) : Quaternion.identity;
                         BattleEditorUtility.Set(so, "_groundEuler", ground.eulerAngles);
                         BattleEditorUtility.Set(so, "_groundOffset", isShield && model != null ? GroundOffset(model, ground) : Vector3.zero);
+                        SetCarry(so, model, isShield ? ground : (Quaternion?)null, def.WeaponPrefix == DungeonWeaponLibrary.Crossbow);
                         break;
                     case ItemKind.Armor:
                         BattleEditorUtility.Set(so, "_slot", def.Slot);

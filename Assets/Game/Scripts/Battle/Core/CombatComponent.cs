@@ -84,7 +84,9 @@ namespace Game.Scripts.Battle
         public WeaponConfig Weapon => _loadout[WeaponIndex];
         /// The weapon in the off hand next to the main one (a dagger beside a sword): it strikes with the right button
         /// instead of a block. NoWeapon when the off hand is empty or part of the main entry (a shield).
-        public int OffWeaponIndex => GetOffWeaponIndex(State == CombatState.Equip && !IsUnequipping ? _pendingSlot : WeaponSlot);
+        public int OffWeaponIndex => GetOffWeaponIndex(HandSlot);
+        /// The slot whose weapon is in the hand: the chosen one once the previous weapon is put away.
+        public int HandSlot => State == CombatState.Equip && !IsUnequipping ? _pendingSlot : WeaponSlot;
         public WeaponConfig OffWeapon => OffWeaponIndex != NoWeapon ? _loadout[OffWeaponIndex] : null;
         /// The weapon of the attack under way: the off hand's during its own series.
         public WeaponConfig AttackWeapon => IsOffAttack && OffWeapon != null ? OffWeapon : Weapon;

@@ -45,6 +45,7 @@ namespace Game.Scripts.Dungeon
         private GameObject _handItem;
         private short _shownHandItem;
         private FighterAnimComponent _anim;
+        private CarriedGear _carried;
 
         public override void Spawned()
         {
@@ -53,6 +54,7 @@ namespace Game.Scripts.Dungeon
             _model.SetBodyColor(_classColor);
             _dresser = new ArmorDresser(_animator, _pieceSet, gameObject.layer);
             _renderers.AddRange(GetComponentsInChildren<Renderer>(true));
+            _carried = new CarriedGear(_animator, gameObject.layer);
         }
 
         public override void Render()
@@ -74,6 +76,21 @@ namespace Game.Scripts.Dungeon
             UpdateHandGlow();
             UpdateForm();
             UpdateHandItem();
+            UpdateCarried();
+        }
+
+        /// What is equipped but not in the hands hangs on the back and the belt; a shapeshifted body carries nothing.
+        private void UpdateCarried()
+        {
+            if (_adventurer.Form != ShapeshiftForm.None)
+            {
+                _carried.Clear();
+
+                return;
+            }
+
+            bool isHolding = _adventurer.HasBeltItemInHand && !_adventurer.IsHandsOccupied;
+            _carried.Apply(_adventurer.Inventory, _adventurer.SetInHands, isHolding ? _adventurer.BeltSlot : -1);
         }
 
         private void UpdateHandItem()
@@ -181,6 +198,7 @@ namespace Game.Scripts.Dungeon
                 return;
 
             _wasInvisible = isInvisible;
+            _carried.SetVisible(!isInvisible);
 
             foreach (Renderer renderer in _renderers)
             {
