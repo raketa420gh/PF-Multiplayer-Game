@@ -21,6 +21,10 @@ namespace Game.Scripts.Dungeon
         [Networked]
         private int _openingEndTick { get; set; }
 
+        /// The opener stood on the leaf's -Z side: it swings to +Z, away from them.
+        [Networked]
+        private NetworkBool _isOpenBackward { get; set; }
+
         [SerializeField]
         private Transform _leaf;
 
@@ -46,13 +50,13 @@ namespace Game.Scripts.Dungeon
             if (HasStateAuthority)
                 IsLocked = _startsLocked;
 
-            _angle = IsOpen ? _openAngle : 0f;
+            _angle = IsOpen ? OpenedAngle() : 0f;
             ApplyAngle();
         }
 
         public override void Render()
         {
-            float target = IsOpen ? _openAngle : 0f;
+            float target = IsOpen ? OpenedAngle() : 0f;
 
             if (Mathf.Approximately(_angle, target))
                 return;
@@ -90,6 +94,9 @@ namespace Game.Scripts.Dungeon
                 IsLocked = false;
             }
 
+            if (!IsOpen)
+                SwingAwayFrom(adventurer.transform.position);
+
             IsOpen = !IsOpen;
         }
 
@@ -99,11 +106,16 @@ namespace Game.Scripts.Dungeon
         }
 
         /// Monsters shove doors open on their way to a target.
-        public void ForceOpen()
+        public void ForceOpen(Vector3 from)
         {
+            SwingAwayFrom(from);
             IsLocked = false;
             IsOpen = true;
         }
+
+        private void SwingAwayFrom(Vector3 position) => _isOpenBackward = Vector3.Dot(position - transform.position, transform.forward) < 0f;
+
+        private float OpenedAngle() => _isOpenBackward ? -_openAngle : _openAngle;
 
         private void ApplyAngle()
         {

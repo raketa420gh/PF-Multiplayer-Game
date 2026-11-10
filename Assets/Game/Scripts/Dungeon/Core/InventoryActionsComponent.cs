@@ -102,29 +102,36 @@ namespace Game.Scripts.Dungeon
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcEquip(NetworkBehaviourId source, int fromIndex, EquipSlot slot)
         {
-            if (!TryResolve(source, out InventoryComponent from) || !_inventory.HasEquipment)
+            if (TryResolve(source, out InventoryComponent from))
+                Equip(from, fromIndex, slot);
+        }
+
+        /// Left click on loot: on the body when a free slot takes it, else onto the belt or into the bag.
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcLoot(NetworkBehaviourId source, int index)
+        {
+            if (!TryResolve(source, out InventoryComponent from) || from == _inventory)
                 return;
 
-            ItemStack stack = from.Bag[fromIndex];
+            ItemStack stack = from.Bag[index];
             ItemConfig config = from.GetConfig(stack);
-            slot = InventoryComponent.GetHandSlot(config, slot);
 
-            if (config == null || stack.IsHidden || !config.CanEquip(slot) || _inventory.IsSlotBlocked(slot))
+            if (config == null || stack.IsHidden)
                 return;
 
-            if (_owner != null && !_owner.CanEquip(config, slot))
+            EquipSlot slot = FindFreeSlot(config);
+
+            if (slot != EquipSlot.Count)
+            {
+                Equip(from, index, slot);
+
                 return;
+            }
 
-            ItemStack previous = _inventory.GetEquipped(slot);
+            int count = stack.Count;
 
-            if (!_inventory.CanTakeOff(slot, config is PouchItemConfig pouch ? pouch.Cells : 0))
-                return;
-            from.RemoveAt(fromIndex);
-            _inventory.SetEquipment(slot, stack.At(0, 0));
-            _inventory.OnMainHandEquipped(slot, out ItemStack displaced);
-
-            ReturnItem(from, previous, stack.X, stack.Y);
-            ReturnItem(from, displaced, -1, -1);
+            if (_inventory.TryLoot(ref stack) || stack.Count < count)
+                from.RemoveAt(index, count - stack.Count);
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
@@ -238,6 +245,48 @@ namespace Game.Scripts.Dungeon
                 Array.Copy(data, i * chunkBytes, chunk, 0, chunk.Length);
                 RpcLoad(kind, (byte)i, (byte)chunkCount, chunk);
             }
+        }
+
+        private void Equip(InventoryComponent from, int fromIndex, EquipSlot slot)
+        {
+            if (!_inventory.HasEquipment)
+                return;
+
+            ItemStack stack = from.Bag[fromIndex];
+            ItemConfig config = from.GetConfig(stack);
+            slot = InventoryComponent.GetHandSlot(config, slot);
+
+            if (config == null || stack.IsHidden || !config.CanEquip(slot) || _inventory.IsSlotBlocked(slot))
+                return;
+
+            if (_owner != null && !_owner.CanEquip(config, slot))
+                return;
+
+            ItemStack previous = _inventory.GetEquipped(slot);
+
+            if (!_inventory.CanTakeOff(slot, config is PouchItemConfig pouch ? pouch.Cells : 0))
+                return;
+            from.RemoveAt(fromIndex);
+            _inventory.SetEquipment(slot, stack.At(0, 0));
+            _inventory.OnMainHandEquipped(slot, out ItemStack displaced);
+
+            ReturnItem(from, previous, stack.X, stack.Y);
+            ReturnItem(from, displaced, -1, -1);
+        }
+
+        /// An empty slot the item goes to as it is; a two-hander needs its off hand empty too.
+        private EquipSlot FindFreeSlot(ItemConfig config)
+        {
+            bool isTwoHanded = config is WeaponItemConfig { IsTwoHanded: true };
+
+            for (EquipSlot slot = 0; _inventory.HasEquipment && slot < EquipSlot.Count; slot++)
+            {
+                if (config.CanEquip(slot) && InventoryComponent.GetHandSlot(config, slot) == slot && _inventory.GetEquipped(slot).IsEmpty && !_inventory.IsSlotBlocked(slot)
+                    && (!isTwoHanded || _inventory.GetEquipped(slot + 1).IsEmpty) && (_owner == null || _owner.CanEquip(config, slot)))
+                    return slot;
+            }
+
+            return EquipSlot.Count;
         }
 
         private bool TryResolve(NetworkBehaviourId id, out InventoryComponent inventory)

@@ -234,7 +234,7 @@ namespace Game.Scripts.Dungeon
             DoorComponent door = hit.collider.GetComponentInParent<DoorComponent>();
 
             if (door != null && !door.IsOpen)
-                door.ForceOpen();
+                door.ForceOpen(transform.position);
         }
 
         private void Fight(MonsterConfig config, ref PlayerInputData input, float time)

@@ -1580,22 +1580,41 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.SavePrefab(root, Prefab("Bookshelf"));
         }
 
-        /// The door of every catacomb doorway: the Tripo leaf, scaled whole to the doorway's height, the doorway is as wide as the leaf comes out.
+        /// The door of every catacomb doorway: the Tripo leaf, scaled to the doorway's height and its plank panel stretched to 1 cm short of the jambs; the hinge straps reach into the jamb.
         public static void BuildCatacombDoor()
         {
+            const float width = CatacombRoomBuilder.DoorWidth - 0.02f;
             GameObject leaf = new GameObject("Leaf");
-            GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(CatacombDoorModel + ".fbx"), leaf.transform);
+            Transform fit = BattleEditorUtility.CreateChild("Fit", leaf.transform, Vector3.zero).transform;
+            GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(CatacombDoorModel + ".fbx"), fit);
             model.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(CatacombDoorModel + ".mat");
             // The model's hinge pins are on its +X edge: turned round they come to the hinge at the origin.
             model.transform.localRotation = Quaternion.Euler(0f, 180f, 0f) * model.transform.localRotation;
             model.transform.localScale *= (CatacombRoomBuilder.DoorHeight - 0.04f) / DungeonKitBuilder.Bounds(model).size.y;
+            fit.localScale = new Vector3(width / (DungeonKitBuilder.Bounds(model).max.x - PanelEdge(model)), 1f, 1f);
             Bounds bounds = DungeonKitBuilder.Bounds(model);
-            model.transform.localPosition = new Vector3(-bounds.min.x, -bounds.min.y, -bounds.center.z);
+            fit.localPosition = new Vector3(-PanelEdge(model), -bounds.min.y, -bounds.center.z);
             BoxCollider collider = leaf.AddComponent<BoxCollider>();
-            collider.center = new Vector3(bounds.size.x * 0.5f, bounds.size.y * 0.5f, 0f);
-            collider.size = bounds.size;
-            Debug.Assert(bounds.size.x < CatacombRoomBuilder.DoorWidth, $"Catacomb door leaf {bounds.size.x:0.00} m does not fit the doorway");
-            BuildDoor("CatacombDoor", leaf, -bounds.size.x * 0.5f, CatacombRoomBuilder.DoorWidth, true);
+            collider.center = new Vector3(width * 0.5f, bounds.size.y * 0.5f, 0f);
+            collider.size = new Vector3(width, bounds.size.y, bounds.size.z);
+            BuildDoor("CatacombDoor", leaf, -width * 0.5f, CatacombRoomBuilder.DoorWidth, true);
+        }
+
+        /// The hinge-side edge of the plank panel: the straps stick out past it only at some heights, so the innermost of the per-height edges.
+        private static float PanelEdge(GameObject model)
+        {
+            MeshFilter filter = model.GetComponent<MeshFilter>();
+            Bounds bounds = DungeonKitBuilder.Bounds(model);
+            float[] edges = Enumerable.Repeat(float.MaxValue, 20).ToArray();
+
+            foreach (Vector3 vertex in filter.sharedMesh.vertices)
+            {
+                Vector3 point = filter.transform.TransformPoint(vertex);
+                int band = Mathf.Clamp((int)((point.y - bounds.min.y) / bounds.size.y * edges.Length), 0, edges.Length - 1);
+                edges[band] = Mathf.Min(edges[band], point.x);
+            }
+
+            return edges.Where(edge => edge < float.MaxValue).Max();
         }
 
         private static void BuildDoor(string name, GameObject leaf, float hingeX = -1.05f, float width = 2.2f, bool isSpawned = false)

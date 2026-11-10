@@ -135,8 +135,8 @@ namespace Game.Scripts.Dungeon
 
             if (eventData.button == PointerEventData.InputButton.Right)
                 _owner.QuickAction(this);
-            else if (eventData.button == PointerEventData.InputButton.Left && Input.GetKey(KeyCode.LeftShift))
-                _owner.QuickTransfer(this);
+            else if (eventData.button == PointerEventData.InputButton.Left)
+                _owner.QuickTransfer(this, Input.GetKey(KeyCode.LeftShift));
         }
 
         public void OnPointerEnter(PointerEventData eventData)

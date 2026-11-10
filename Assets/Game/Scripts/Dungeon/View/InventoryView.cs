@@ -282,22 +282,23 @@ namespace Game.Scripts.Dungeon
                 _actions.RpcEquip(item.Inventory.Id, item.BagIndex, target);
         }
 
-        public void QuickTransfer(ItemView item)
+        /// Plain click loots in the dungeon (onto the body, belt or bag); Shift moves between the two grids.
+        public void QuickTransfer(ItemView item, bool isShift)
         {
             if (_actions == null || item.IsEquipped)
                 return;
 
             InventoryComponent target = item.Inventory == _primary ? _other : _primary;
 
-            if (target == null)
-                return;
-
-            if (target == _primary && IsBeltLoot(item))
+            if (target == _primary && _allowWorldDrop)
             {
-                _actions.RpcUse(item.Inventory.Id, item.BagIndex);
+                _actions.RpcLoot(item.Inventory.Id, item.BagIndex);
 
                 return;
             }
+
+            if (target == null || !isShift)
+                return;
 
             for (int y = 0; y < target.Rows; y++)
             {
