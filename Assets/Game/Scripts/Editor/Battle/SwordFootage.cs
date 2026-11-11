@@ -328,8 +328,8 @@ namespace Game.Scripts.Editor.Battle
         private static WeaponDefinition s_weapon;
 
         /// Writes ArmingSword_Attack0-2 from the keys: body muscles, the fingers as the idle holds them and the sword's socket
-        /// in the fist. Hand edits stored for these clips are dropped: they were made on the generated swings these replace
-        /// and would be baked over the new ones. With traces, the weapon config's blade traces are sampled anew through the
+        /// in the fist. Hand edits stored for these clips are baked back on top (a grip that holds the weapon keeps its path,
+        /// so the hands can be re-posed without moving the blade). With traces, the weapon config's blade traces are sampled anew through the
         /// controller (the content build does that itself). Returns the numbers.
         /// A weapon with every motion from footage gets its rest, taking out and putting away (the taking out backwards), the
         /// block up and down, the hit on the block and the bounce off a block written too. The game's legs and eyes stay in
@@ -370,14 +370,13 @@ namespace Game.Scripts.Editor.Battle
                     (0f, Sample(first, first.Windup + 2f)), (0.12f, Sample(first, Mathf.Max(first.Windup - 12f, 0f))), (s_weapon.DeflectDuration, Sample(idle, 0f)))));
             }
 
-            DropEdits(clips.Select(clip => clip.Name));
-
             using (Stage rig = CreateStage())
             {
                 foreach ((string name, Track track) in clips)
                     Write(name, track, rig, name.EndsWith(FighterAnimComponent.IdleSuffix));
             }
 
+            BakeEdits(clips.Select(clip => clip.Name));
             AssetDatabase.SaveAssets();
 
             if (withTraces)
@@ -934,7 +933,8 @@ namespace Game.Scripts.Editor.Battle
             EditorUtility.SetDirty(clip);
         }
 
-        private static void DropEdits(IEnumerable<string> names)
+        /// Hand edits of the written clips (made in the animation test scene on these footage clips) go back on top of them.
+        private static void BakeEdits(IEnumerable<string> names)
         {
             AnimationEditConfig edits = AssetDatabase.LoadAssetAtPath<AnimationEditConfig>(AnimationEditBaker.ConfigPath);
 
@@ -942,17 +942,14 @@ namespace Game.Scripts.Editor.Battle
                 return;
 
             HashSet<AnimationClip> clips = new HashSet<AnimationClip>(names.Select(name => AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath(name))));
-            SerializedObject serialized = new SerializedObject(edits);
-            SerializedProperty stored = serialized.FindProperty("_clips");
 
-            for (int i = stored.arraySize - 1; i >= 0; i--)
-            {
-                if (clips.Contains(stored.GetArrayElementAtIndex(i).FindPropertyRelative("_clip").objectReferenceValue as AnimationClip))
-                    stored.DeleteArrayElementAtIndex(i);
-            }
+            if (!edits.Clips.Any(edit => clips.Contains(edit.Clip)))
+                return;
 
-            if (serialized.ApplyModifiedPropertiesWithoutUndo())
-                EditorUtility.SetDirty(edits);
+            GameObject model = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(BattleEditorUtility.ModelPath));
+            BattlePoseRig.CreateSockets(model.GetComponent<Animator>());
+            AnimationEditBaker.BakeAll(edits, model.GetComponent<Animator>(), clips.Contains);
+            Object.DestroyImmediate(model);
         }
 
         /// The blade through each swing as the controller plays the clip, the way the content build samples it into the weapon

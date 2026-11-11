@@ -52,11 +52,11 @@ namespace Game.Scripts.Battle
         }
 
         /// After a rebuild every edited clip is fresh from the generator: it becomes the new source and gets its edit again.
-        public static void BakeAll(AnimationEditConfig config, Animator animator)
+        public static void BakeAll(AnimationEditConfig config, Animator animator, System.Func<AnimationClip, bool> filter = null)
         {
             foreach (ClipEdit edit in config.Clips)
             {
-                if (edit.Clip == null)
+                if (edit.Clip == null || (filter != null && !filter(edit.Clip)))
                     continue;
 
                 edit.SetSource(CaptureSource(edit.Clip));
