@@ -192,6 +192,42 @@ namespace Game.Scripts.Editor.Dungeon
             return Save(root);
         }
 
+        /// A hewn club for one hand: slim and leather-wrapped in the fist, thick for most of its length (the head 10 cm), 0.98 m long.
+        public static GameObject BuildClub()
+        {
+            const int steps = 14;
+
+            Material wood = WeaponMaterials.DarkWood;
+            GameObject root = new GameObject("Club");
+            Transform parent = BattleEditorUtility.CreateChild("Grip", root.transform, Vector3.zero).transform;
+            WeaponMesh mesh = new WeaponMesh();
+            List<Vector3> path = new(steps + 1);
+            List<Vector2> radii = new(steps + 1);
+
+            // A grown branch: it wanders a little, knots swell it, and its end is rounded off.
+            for (int i = 0; i <= steps; i++)
+            {
+                float t = (float)i / steps;
+                float z = Mathf.Lerp(ClubMotions.Back, ClubMotions.Tip, t);
+                float swell = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.06f, 0.4f, z));
+                float radius = (Mathf.Lerp(0.019f, 0.046f, swell) + 0.008f * Mathf.InverseLerp(0.4f, ClubMotions.Tip, z)) * (1f + 0.06f * Mathf.Sin(t * 19f) * swell) * (i == steps ? 0.62f : 1f);
+                path.Add(new Vector3(Mathf.Sin(t * 7f) * 0.006f * swell, Mathf.Sin(t * 5f + 1f) * 0.005f * swell, z));
+                radii.Add(new Vector2(radius, radius * 0.93f));
+            }
+
+            mesh.Tube(wood, path, radii, 8, Vector3.up, WeaponMesh.Hard);
+            mesh.Revolve(wood, new[]
+            {
+                new Vector2(ClubMotions.Back - 0.032f, 0.01f), new Vector2(ClubMotions.Back - 0.022f, 0.027f), new Vector2(ClubMotions.Back - 0.004f, 0.028f),
+                new Vector2(ClubMotions.Back + 0.012f, 0.02f)
+            }, 8);
+            WeaponParts.Grip(mesh, WeaponMaterials.DarkLeather, ClubMotions.Back + 0.01f, 0.1f, 0.0205f, 0.06f, 0.92f);
+            mesh.Attach(parent, "Club");
+            root.AddComponent<WeaponVisual>();
+
+            return Save(root);
+        }
+
         /// Below the muzzle line, how far the knuckles of the fist on the crossbow's grip point (degrees): the fist holds the
         /// wrist of the stock as a pistol grip, the stock over the thumb and running on past the knuckles, so a level stock
         /// leaves the wrist straight on a forearm that rises to it.

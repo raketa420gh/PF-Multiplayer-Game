@@ -1,0 +1,149 @@
+{
+ "name": "club_handle",
+ "variants": 12,
+ "about": "FX_Hit_Character_QuarterStaff_Handle (3 media): the shaft knocks a body - instant punch thump with a wooden knock on top (flat 20 Hz-4 kHz), held about -4 dB to 125 ms, -12 dB at 150 ms, -30 dB by 250 ms, gone by 0.4 s",
+ "reference": "D:/DaD_Sounds/Club_Review/handle",
+ "length_ms": 620,
+ "seed": 50900,
+ "peak_db": -1,
+ "match": 0.7,
+ "fade_ms": 170,
+ "layers": [
+  {
+   "src": "blockdrop_slices/thump/hit[12][235].wav",
+   "at_ms": [
+    2,
+    2
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "snap": {
+    "hold": [
+     150,
+     170
+    ],
+    "tau": [
+     30,
+     36
+    ]
+   }
+  },
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpactWood.flac",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     30,
+     45
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/boom/impactwood1[124]*.wav",
+   "at_ms": [
+    2,
+    6
+   ],
+   "gain_db": [
+    -5,
+    -2
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     110,
+     140
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/haft/[AS]*_Spear_Haft_on_Haft_*.wav",
+   "at_ms": [
+    0,
+    3
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     60,
+     90
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "wet_towel/wet_towel_on_body/*-0[1378]*.flac",
+   "at_ms": [
+    2,
+    5
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 200,
+   "snap": {
+    "hold": [
+     60,
+     90
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 75,
+  "len_ms": 400,
+  "band": [
+   300,
+   9000
+  ]
+ }
+}

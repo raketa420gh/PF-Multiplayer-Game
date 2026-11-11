@@ -1,0 +1,118 @@
+{
+ "name": "club_place",
+ "variants": 12,
+ "about": "Item_2D_Staff_Drop (Sound.Inventory.Drop, 4 media, quiet: peaks -7..-13 dB): inventory place - a soft wooden slide swelling from 0 to its peak at 175-250 ms (500-4000 Hz, no low end), set down, then ~6 dB/25 ms to -42 dB by 375 ms",
+ "reference": "D:/DaD_Sounds/Club_Review/place",
+ "length_ms": 700,
+ "seed": 51800,
+ "peak_db": -6,
+ "match": 0.8,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "wood_metal_100/wood_squeak_0[12].ogg",
+   "at_ms": [
+    30,
+    50
+   ],
+   "gain_db": [
+    -3,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 500,
+   "lp": 6000,
+   "snap": {
+    "hold": [
+     170,
+     190
+    ],
+    "tau": [
+     60,
+     70
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_misc_07.ogg",
+   "at_ms": [
+    60,
+    90
+   ],
+   "gain_db": [
+    -10,
+    -7
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 800,
+   "snap": {
+    "hold": [
+     140,
+     160
+    ],
+    "tau": [
+     60,
+     70
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/quiver/*.wav",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -28,
+    -24
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 300,
+   "lp": 3000,
+   "max_ms": 160
+  },
+  {
+   "src": "blockdrop_slices/haft/[AS]*_Spear_Haft_on_Haft_*.wav",
+   "at_ms": [
+    170,
+    220
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     22,
+     30
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -44,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   400,
+   5000
+  ]
+ }
+}

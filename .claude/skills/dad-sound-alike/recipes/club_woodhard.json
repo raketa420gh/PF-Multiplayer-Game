@@ -1,0 +1,175 @@
+{
+ "name": "club_woodhard",
+ "variants": 12,
+ "about": "FX_Hit switch QuaterStaff_Wood_Hard (2 media, shared with Staff_Wood_Hard): wood on a thick beam - dull low knock (20-150 and 500-1500 Hz lead, 10 kHz+ at -20 dB), -7 dB at 50 ms, then a resonant plateau -14..-21 dB from 75 to 225 ms, -40 dB by 300 ms",
+ "reference": "D:/DaD_Sounds/Club_Review/woodhard",
+ "length_ms": 500,
+ "seed": 51300,
+ "peak_db": -1,
+ "match": 0.7,
+ "fade_ms": 120,
+ "layers": [
+  {
+   "src": "wood_metal_100/wood_slam_0[1-4].ogg",
+   "at_ms": [
+    2,
+    2
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     14,
+     18
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_hammer_0[12].ogg",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     14,
+     18
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    2,
+    2
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 250,
+   "snap": {
+    "hold": [
+     35,
+     45
+    ],
+    "tau": [
+     18,
+     24
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/haft/Mace_Spear_Haft_*.wav",
+   "at_ms": [
+    0,
+    3
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     14,
+     18
+    ]
+   }
+  },
+  {
+   "src": "surface_slices/woodres_1[14].wav",
+   "at_ms": [
+    4,
+    8
+   ],
+   "gain_db": [
+    -20,
+    -17
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     200,
+     230
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   },
+   "max_ms": 420
+  },
+  {
+   "src": "blockdrop_slices/boom/*.wav",
+   "at_ms": [
+    4,
+    10
+   ],
+   "gain_db": [
+    -19,
+    -16
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 1200,
+   "snap": {
+    "hold": [
+     190,
+     220
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -34,
+  "decay_ms": 110,
+  "len_ms": 400,
+  "band": [
+   150,
+   4000
+  ]
+ }
+}

@@ -1,0 +1,235 @@
+{
+ "name": "club_swing2",
+ "variants": 12,
+ "about": "Wp_Quaterstaff_Whoosh (4 non-underwater media: a short 150-500 Hz air whump, peak 75 ms, gone by 200 ms) summed with Wp_Staff_Attack_Whoosh (6 non-underwater media: the same shape with more 500-4000 Hz) fired 68-70 ms later - what every AM_Club_*_Attack montage plays (notify times read from the montages, raw media levels assumed). One fast low \"whup-whup\": peak at 75-100 ms, held about -7 dB to 175 ms, -25 dB by 225 ms, gone by 0.3 s. AM_Club_Stand_Attack_02 (cloth 0.045 s, whump 0.581 s, whoosh 0.649 s). Plus the tail of Wp_Common_Cloth_Leather_Attack, which the montage starts 536 ms before the whump (so only what is left of the 0.7-1.5 s leather rustle lands under and after the swing, ~30-45 dB down, out to ~0.55 s) - the only thing DaD varies between the club attacks.",
+ "length_ms": 900,
+ "seed": 50200,
+ "peak_db": -1,
+ "match": 0.7,
+ "fade_ms": 180,
+ "layers": [
+  {
+   "src": "swishes/swishes/swish-[1-9].wav",
+   "at_ms": [
+    40,
+    46
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ]
+  },
+  {
+   "src": "morningstar_swing_slices/Axe_Swing_0[23467].wav",
+   "at_ms": [
+    0,
+    8
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "lp": 200,
+   "snap": {
+    "hold": [
+     110,
+     125
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   },
+   "max_ms": 320
+  },
+  {
+   "src": "morningstar_swing_slices/pick_short/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    36,
+    48
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 120,
+   "lp": 2500,
+   "snap": {
+    "hold": [
+     90,
+     110
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   },
+   "max_ms": 340
+  },
+  {
+   "src": "swishes/swishes/swish-[1-9].wav",
+   "at_ms": [
+    104,
+    112
+   ],
+   "gain_db": [
+    -9,
+    -7
+   ],
+   "pitch": [
+    0,
+    3
+   ]
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/battle/swing*.wav",
+   "at_ms": [
+    100,
+    112
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -3,
+    0
+   ]
+  },
+  {
+   "src": "morningstar_swing_slices/pick_short/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    96,
+    110
+   ],
+   "gain_db": [
+    -12,
+    -9
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 150,
+   "lp": 3000,
+   "snap": {
+    "hold": [
+     70,
+     90
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   },
+   "max_ms": 300
+  },
+  {
+   "src": "dagger_slices/swing/dsw_0[1-5].wav",
+   "at_ms": [
+    60,
+    120
+   ],
+   "gain_db": [
+    -18,
+    -14
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 1200,
+   "max_ms": 200
+  },
+  {
+   "src": "fabric_slices/torm__blanket-movement-*.wav",
+   "at_ms": [
+    170,
+    230
+   ],
+   "gain_db": [
+    -28,
+    -24
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 300,
+   "max_ms": 240
+  },
+  {
+   "src": "fabric_slices/rustling_*.wav",
+   "at_ms": [
+    270,
+    340
+   ],
+   "gain_db": [
+    -27,
+    -23
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 300,
+   "max_ms": 300
+  },
+  {
+   "src": "fabric_slices/torm__blanket-movement-*.wav",
+   "at_ms": [
+    380,
+    450
+   ],
+   "gain_db": [
+    -40,
+    -36
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 300,
+   "max_ms": 300
+  },
+  {
+   "src": "leather_slices/quiver/*.wav",
+   "at_ms": [
+    520,
+    600
+   ],
+   "gain_db": [
+    -52,
+    -48
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 300,
+   "max_ms": 180
+  }
+ ],
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 350,
+  "band": [
+   100,
+   3000
+  ]
+ },
+ "reference": "D:/DaD_Sounds/Club_Review/swing2"
+}

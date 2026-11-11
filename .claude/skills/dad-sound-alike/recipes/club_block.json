@@ -1,0 +1,221 @@
+{
+ "name": "club_block",
+ "variants": 12,
+ "about": "Wp_HandCannon_Fire_Grab (the weapon foley AM_Club_Guard fires, 1 media; its Wp_CrystalSword_Guard_Cloth companion is in the review folder): hands clap onto the shaft as it comes up - ~70 ms of faint rustle, one bright dry grab/tick at 75-100 ms (4-10 kHz lead, little below 500 Hz), -15 dB 50 ms later, rustle around -27 dB, a small second touch at ~290 ms (-19 dB), gone by 0.43 s",
+ "reference": "D:/DaD_Sounds/Club_Review/block",
+ "length_ms": 560,
+ "seed": 50500,
+ "peak_db": -3,
+ "match": 0.85,
+ "fade_ms": 120,
+ "layers": [
+  {
+   "src": "leather_slices/sheath/*.wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -22,
+    -18
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 70
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/wood-small.wav",
+   "at_ms": [
+    72,
+    78
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     18,
+     24
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_hit_0[126].ogg",
+   "at_ms": [
+    72,
+    78
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1500,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     18,
+     24
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/thump/hit*.wav",
+   "at_ms": [
+    72,
+    78
+   ],
+   "gain_db": [
+    -12,
+    -9
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 300,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     20,
+     26
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/quiver/*.wav",
+   "at_ms": [
+    74,
+    90
+   ],
+   "gain_db": [
+    -12,
+    -9
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1000,
+   "max_ms": 90,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "fabric_slices/rustling_*.wav",
+   "at_ms": [
+    130,
+    180
+   ],
+   "gain_db": [
+    -35,
+    -31
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 200
+  },
+  {
+   "src": "rpg_pack/RPG Sound Pack/inventory/wood-small.wav",
+   "at_ms": [
+    268,
+    288
+   ],
+   "gain_db": [
+    -20,
+    -16
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 1200,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     12,
+     16
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/quiver/*.wav",
+   "at_ms": [
+    262,
+    288
+   ],
+   "gain_db": [
+    -26,
+    -22
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 800,
+   "max_ms": 90
+  },
+  {
+   "src": "fabric_slices/rustling_*.wav",
+   "at_ms": [
+    315,
+    345
+   ],
+   "gain_db": [
+    -35,
+    -31
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 150
+  }
+ ],
+ "shelf": {
+  "hz": 5000,
+  "db": 6
+ },
+ "room": {
+  "db": -35,
+  "decay_ms": 60,
+  "len_ms": 300,
+  "band": [
+   800,
+   12000
+  ]
+ }
+}

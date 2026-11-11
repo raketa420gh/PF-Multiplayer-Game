@@ -1,0 +1,204 @@
+{
+ "name": "club_clash",
+ "variants": 12,
+ "about": "FX_Hit_Block_Staff (Sound.Hit.Block of Quarterstaff_Sound, 3 media): a hit caught on the wooden shaft - a first contact at 25-75 ms, the main full-bodied wooden thwack at 100-125 ms (flat 20 Hz-4 kHz, no metal), held about -7 dB to 200 ms, then ~5 dB/25 ms to -40 dB by 375 ms. FX_Hit_ImpactGuard_Wooden (2 media) is in the review folder, not used",
+ "reference": "D:/DaD_Sounds/Club_Review/clash",
+ "length_ms": 650,
+ "seed": 50600,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "blockdrop_slices/haft/[AS]*_Spear_Haft_on_Haft_*.wav",
+   "at_ms": [
+    25,
+    50
+   ],
+   "gain_db": [
+    -7,
+    -4
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_slam_0[1-4].ogg",
+   "at_ms": [
+    78,
+    90
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     28,
+     34
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/haft/Mace_Spear_Haft_*.wav",
+   "at_ms": [
+    80,
+    92
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     28,
+     34
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_hit_0[126].ogg",
+   "at_ms": [
+    78,
+    90
+   ],
+   "gain_db": [
+    -5,
+    -3
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 1500,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     25,
+     30
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/boom/*.wav",
+   "at_ms": [
+    78,
+    90
+   ],
+   "gain_db": [
+    -10,
+    -8
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 500,
+   "snap": {
+    "hold": [
+     90,
+     110
+    ],
+    "tau": [
+     30,
+     36
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/boom/*.wav",
+   "at_ms": [
+    78,
+    90
+   ],
+   "gain_db": [
+    -11,
+    -9
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     90,
+     110
+    ],
+    "tau": [
+     30,
+     36
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/haft/[AS]*_Spear_Haft_on_Haft_*.wav",
+   "at_ms": [
+    190,
+    260
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "chance": 0.6,
+   "snap": {
+    "hold": [
+     20,
+     30
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 5000,
+  "db": 4
+ },
+ "room": {
+  "db": -28,
+  "decay_ms": 90,
+  "len_ms": 400,
+  "band": [
+   150,
+   6000
+  ]
+ }
+}

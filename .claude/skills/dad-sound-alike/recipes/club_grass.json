@@ -1,0 +1,194 @@
+{
+ "name": "club_grass",
+ "variants": 12,
+ "about": "FX_Hit switch QuaterStaff_Grass (3 media, shared with Staff_Grass): soft earth thump (<150 Hz lead) at 25-50 ms with a second lobe at 100-150 ms, bright soil/grass rustle on top (1.5-24 kHz 7-13 dB down), -8 dB at 200 ms, then ~3.5 dB/25 ms to -47 dB by 0.45 s",
+ "reference": "D:/DaD_Sounds/Club_Review/grass",
+ "length_ms": 850,
+ "seed": 51100,
+ "peak_db": -2,
+ "match": 0.65,
+ "fade_ms": 300,
+ "layers": [
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    20,
+    26
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -4,
+    -2
+   ],
+   "lp": 250,
+   "snap": {
+    "hold": [
+     35,
+     45
+    ],
+    "tau": [
+     35,
+     45
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_wood_hit_0[123].ogg",
+   "at_ms": [
+    20,
+    26
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "lp": 2500,
+   "snap": {
+    "hold": [
+     30,
+     45
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[27].ogg",
+   "at_ms": [
+    85,
+    100
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -4,
+    -2
+   ],
+   "lp": 200,
+   "snap": {
+    "hold": [
+     40,
+     55
+    ],
+    "tau": [
+     45,
+     55
+    ]
+   }
+  },
+  {
+   "src": "fantozzi/*/flac/*Sand*.flac",
+   "at_ms": [
+    22,
+    32
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 500,
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     50,
+     70
+    ]
+   },
+   "max_ms": 300
+  },
+  {
+   "src": "fantozzi/*/flac/*Sand*.flac",
+   "at_ms": [
+    90,
+    130
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 500,
+   "count": [
+    2,
+    4
+   ],
+   "gap_ms": [
+    60,
+    100
+   ],
+   "until_ms": 400,
+   "snap": {
+    "hold": [
+     20,
+     40
+    ],
+    "tau": [
+     40,
+     60
+    ]
+   },
+   "max_ms": 250
+  },
+  {
+   "src": "snow_walk/SnowWalk/SnowWalk*.ogg",
+   "at_ms": [
+    25,
+    40
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 3000,
+   "snap": {
+    "hold": [
+     40,
+     80
+    ],
+    "tau": [
+     60,
+     90
+    ]
+   },
+   "max_ms": 400
+  }
+ ],
+ "shelf": {
+  "hz": 6000,
+  "db": 5
+ },
+ "room": {
+  "db": -34,
+  "decay_ms": 140,
+  "len_ms": 600,
+  "band": [
+   300,
+   8000
+  ]
+ }
+}

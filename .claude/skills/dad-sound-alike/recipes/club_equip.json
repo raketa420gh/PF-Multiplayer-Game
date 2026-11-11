@@ -1,0 +1,146 @@
+{
+ "name": "club_equip",
+ "variants": 12,
+ "about": "Wp_MagicStaff_Equip (what AM_Club_Stand_Equip fires at 0.02 s, 3 media - two of them are the Item_3D_Staff_Pickup recordings; its Wp_Common_Cloth_Leather_S companion is in the review folder): the shaft comes to hand - a wooden knock at 20-40 ms (500-4000 Hz), a second knock at 120-320 ms (-2..-16 dB), quiet handling floor, over by 0.45 s",
+ "reference": "D:/DaD_Sounds/Club_Review/equip",
+ "length_ms": 650,
+ "seed": 51900,
+ "peak_db": -1,
+ "match": 0.8,
+ "fade_ms": 150,
+ "layers": [
+  {
+   "src": "blockdrop_slices/haft/[AS]*_Spear_Haft_on_Haft_*.wav",
+   "at_ms": [
+    26,
+    36
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     18,
+     24
+    ]
+   }
+  },
+  {
+   "src": "rpg80/item_wood_0[1-3].ogg",
+   "at_ms": [
+    26,
+    36
+   ],
+   "gain_db": [
+    -6,
+    -3
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "lp": 6000,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     18,
+     24
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/haft/*_Spear_Haft*.wav",
+   "at_ms": [
+    120,
+    320
+   ],
+   "gain_db": [
+    -16,
+    -4
+   ],
+   "pitch": [
+    -5,
+    -1
+   ],
+   "lp": 6000,
+   "chance": 0.9,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     20,
+     28
+    ]
+   }
+  },
+  {
+   "src": "leather_slices/quiver/*.wav",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -20,
+    -16
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 300,
+   "lp": 4000,
+   "max_ms": 450
+  },
+  {
+   "src": "rpg80/item_wood_0[1-3].ogg",
+   "at_ms": [
+    60,
+    110
+   ],
+   "gain_db": [
+    -18,
+    -14
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "lp": 6000,
+   "chance": 0.5,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     18,
+     24
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -34,
+  "decay_ms": 150,
+  "len_ms": 500,
+  "band": [
+   300,
+   4000
+  ]
+ }
+}

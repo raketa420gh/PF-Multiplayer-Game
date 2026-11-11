@@ -1,0 +1,125 @@
+{
+ "name": "club_stone",
+ "variants": 12,
+ "about": "FX_Hit switch Hit_Object=QuaterStaff_Default (3 media; Staff_Default plays the same audio): wood on stone - one dry, very short wooden tock, 1.5-4 kHz lead with almost nothing below 500 Hz, -21 dB by 50 ms, gone by 0.1 s",
+ "reference": "D:/DaD_Sounds/Club_Review/stone",
+ "length_ms": 400,
+ "seed": 51000,
+ "peak_db": -1,
+ "match": 0.7,
+ "fade_ms": 150,
+ "layers": [
+  {
+   "src": "blockdrop_slices/haft/[AS]*_Spear_Haft_on_Haft_*.wav",
+   "at_ms": [
+    0,
+    2
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "snap": {
+    "hold": [
+     28,
+     36
+    ],
+    "tau": [
+     14,
+     18
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_vol2/wood_and_metal_vol.2/wood1[04567].aif",
+   "at_ms": [
+    0,
+    2
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     28,
+     36
+    ],
+    "tau": [
+     14,
+     18
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_hit_0[36].ogg",
+   "at_ms": [
+    0,
+    2
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -1,
+    2
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     26,
+     34
+    ],
+    "tau": [
+     14,
+     18
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[38].ogg",
+   "at_ms": [
+    0,
+    3
+   ],
+   "gain_db": [
+    -10,
+    -7
+   ],
+   "pitch": [
+    -1,
+    1
+   ],
+   "hp": 800,
+   "snap": {
+    "hold": [
+     8,
+     12
+    ],
+    "tau": [
+     10,
+     14
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -32,
+  "decay_ms": 50,
+  "len_ms": 200,
+  "band": [
+   800,
+   6000
+  ]
+ }
+}

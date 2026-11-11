@@ -1,0 +1,148 @@
+{
+ "name": "club_wood",
+ "variants": 12,
+ "about": "FX_Hit switch Staff_Wood (the state Quarterstaff_Sound uses; same container as QuaterStaff_Wood, 4 media): wood on a plank - hollow woody knock, flat 150-4000 Hz, -12 dB at 75 ms, -22 dB at 125 ms, -35 dB by 200 ms",
+ "reference": "D:/DaD_Sounds/Club_Review/wood",
+ "length_ms": 600,
+ "seed": 51200,
+ "peak_db": -1,
+ "match": 0.7,
+ "fade_ms": 250,
+ "layers": [
+  {
+   "src": "qubodup_impact/qubodupImpact/qubodupImpactWood.flac",
+   "at_ms": [
+    16,
+    20
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     38,
+     46
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_hit_0[1-4].ogg",
+   "at_ms": [
+    16,
+    22
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     38,
+     46
+    ]
+   }
+  },
+  {
+   "src": "wood_metal_100/wood_slam_0[12].ogg",
+   "at_ms": [
+    16,
+    20
+   ],
+   "gain_db": [
+    -3,
+    -1
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     38,
+     46
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/haft/[AS]*_Spear_Haft_on_Haft_*.wav",
+   "at_ms": [
+    14,
+    20
+   ],
+   "gain_db": [
+    -5,
+    -2
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "snap": {
+    "hold": [
+     25,
+     35
+    ],
+    "tau": [
+     36,
+     44
+    ]
+   }
+  },
+  {
+   "src": "surface_slices/woodres_1[14].wav",
+   "at_ms": [
+    18,
+    24
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "snap": {
+    "hold": [
+     30,
+     40
+    ],
+    "tau": [
+     50,
+     65
+    ]
+   },
+   "max_ms": 400
+  }
+ ],
+ "room": {
+  "db": -32,
+  "decay_ms": 90,
+  "len_ms": 450,
+  "band": [
+   200,
+   5000
+  ]
+ }
+}

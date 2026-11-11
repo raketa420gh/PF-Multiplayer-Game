@@ -1,0 +1,143 @@
+{
+ "name": "club_unequip",
+ "variants": 12,
+ "about": "Wp_Quaterstaff_UnEquip (what AM_Club_Stand_Unequip fires at 0.005 s, 2 media; its Wp_Common_Cloth_UnEquip companion is in the review folder): the shaft is stowed - ~40 ms of silence, a wooden knock at 50-120 ms, then a cloth/leather stow rustle around -15..-20 dB that swells again at 300-400 ms, -30 dB by 0.55 s, gone by 0.65 s",
+ "reference": "D:/DaD_Sounds/Club_Review/unequip",
+ "length_ms": 900,
+ "seed": 52000,
+ "peak_db": -2,
+ "match": 0.85,
+ "fade_ms": 200,
+ "layers": [
+  {
+   "src": "blockdrop_slices/haft/[AS]*_Spear_Haft_on_Haft_*.wav",
+   "at_ms": [
+    45,
+    115
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -5,
+    -2
+   ],
+   "snap": {
+    "hold": [
+     25,
+     40
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_wood_hit_0[13].ogg",
+   "at_ms": [
+    50,
+    110
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "chance": 0.5,
+   "snap": {
+    "hold": [
+     25,
+     40
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  },
+  {
+   "src": "fabric_slices/rustling_*.wav",
+   "at_ms": [
+    120,
+    200
+   ],
+   "gain_db": [
+    -32,
+    -28
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 450
+  },
+  {
+   "src": "fabric_slices/torm__blanket-movement-*.wav",
+   "at_ms": [
+    180,
+    260
+   ],
+   "gain_db": [
+    -22,
+    -17
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 400
+  },
+  {
+   "src": "leather_slices/sheath/*.wav",
+   "at_ms": [
+    200,
+    300
+   ],
+   "gain_db": [
+    -24,
+    -19
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "max_ms": 350
+  },
+  {
+   "src": "morningstar_swing_slices/pick_short/S[ap]*_Swing_*.wav",
+   "at_ms": [
+    250,
+    330
+   ],
+   "gain_db": [
+    -18,
+    -13
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "lp": 300,
+   "chance": 0.5,
+   "max_ms": 300
+  }
+ ],
+ "shelf": {
+  "hz": 6000,
+  "db": 3
+ },
+ "room": {
+  "db": -30,
+  "decay_ms": 100,
+  "len_ms": 400,
+  "band": [
+   200,
+   8000
+  ]
+ }
+}

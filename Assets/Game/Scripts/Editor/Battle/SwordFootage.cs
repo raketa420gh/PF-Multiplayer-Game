@@ -78,6 +78,8 @@ namespace Game.Scripts.Editor.Battle
         /// How far the hilt may lie over in the palm toward the forearm's line, degrees: a long hilt swung at arm's length lies further.
         public float MaxLean = 24f;
         public string Keys;
+        /// A weapon prefab (its name in the battle prefabs folder) shown until the weapon has a config of its own.
+        public string Model;
         /// Boxes (centre, size, colour; the socket's space) standing in for the weapon until it has a prefab.
         public (Vector3 Center, Vector3 Size, Color Color)[] Mock;
     }
@@ -303,7 +305,7 @@ namespace Game.Scripts.Editor.Battle
         private static Vector3 s_torsoScale, s_neckScale, s_idleTorso;
         private static float[] s_idle, s_leftOpen;
         private static float s_idleLean, s_idleRoll;
-        private static bool s_hasIdleMotion;
+        private static bool s_hasIdleMotion, s_isIdleLeftFree;
 
         private static float Strike => s_spec.Strike;
 
@@ -509,10 +511,12 @@ namespace Game.Scripts.Editor.Battle
         private static GameObject CreateSword(Transform socket)
         {
             WeaponConfig config = AssetDatabase.LoadAssetAtPath<WeaponConfig>($"{BattleEditorUtility.ConfigsFolder}/{s_spec.Prefix}.asset");
-            GameObject sword = config != null ? Object.Instantiate(config.Attachments[0].Prefab, socket, false) : new GameObject(s_spec.Prefix);
+            GameObject prefab = config != null ? config.Attachments[0].Prefab
+                : s_spec.Model != null ? AssetDatabase.LoadAssetAtPath<GameObject>($"{BattleEditorUtility.PrefabsFolder}/{s_spec.Model}.prefab") : null;
+            GameObject sword = prefab != null ? Object.Instantiate(prefab, socket, false) : new GameObject(s_spec.Prefix);
             sword.hideFlags = HideFlags.HideAndDontSave;
 
-            if (config != null)
+            if (prefab != null)
                 return sword;
 
             sword.transform.SetParent(socket, false);
@@ -557,7 +561,7 @@ namespace Game.Scripts.Editor.Battle
             s_leftOpen = Array.ConvertAll(s_leftFingers, i => s_idle[i]);
             s_idleTorso = Vector3.zero;
             s_idleLean = s_idleRoll = 0f;
-            s_hasIdleMotion = false;
+            s_hasIdleMotion = s_isIdleLeftFree = false;
 
             // Both fists hold the hilt alike.
             for (int i = 0; i < s_leftFingers.Length && IsTwoHanded; i++)
@@ -627,6 +631,8 @@ namespace Game.Scripts.Editor.Battle
 
                 // The rest pose of a weapon that has no idle clip yet: every motion after it leaves and meets this one.
                 s_hasIdleMotion = true;
+                // A weapon the right hand holds alone rests with the left hand off it: every idle key has it so.
+                s_isIdleLeftFree = IsTwoHanded && motion.Left[0] < 0.5f;
                 s_idleTorso = motion.Torso[0];
                 s_idleLean = motion.Lean[0];
                 s_idleRoll = motion.Roll[0];
@@ -934,7 +940,8 @@ namespace Game.Scripts.Editor.Battle
             rig.Set(rest, motion.BodyPositions[0], motion.BodyRotations[0], s_idleLean, s_idleRoll);
             SwordKey idle = new SwordKey
             {
-                Grip = rig.Socket.position, Blade = rig.Socket.forward, Edge = rig.Socket.up, Elbow = rig.Elbow.position, Torso = s_idleTorso, Flow = 0f, Hard = 2f, IsIdle = true
+                Grip = rig.Socket.position, Blade = rig.Socket.forward, Edge = rig.Socket.up, Elbow = rig.Elbow.position, Torso = s_idleTorso, Flow = 0f, Hard = 2f, IsIdle = true,
+                IsLeftFree = s_isIdleLeftFree, LeftHand = rig.LeftHand.position
             };
             float[] seed = Seed(s_idle, s_idleLean, s_idleRoll);
             List<SwordKey> keys = new List<SwordKey>(motion.Keys);

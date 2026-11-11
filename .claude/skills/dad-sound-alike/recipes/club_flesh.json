@@ -1,0 +1,218 @@
+{
+ "name": "club_flesh",
+ "variants": 12,
+ "about": "FX_Hit_Character switch Hit_Character=Quaterstaff (what Quarterstaff_Sound uses, 3 media; the same audio as the FX_Hit_Character_QuarterStaff event): blunt wooden hit on a body - instant sub-heavy thud (20-150 Hz lead, mids 4-8 dB down, nothing bright), dense and held: -5 dB at 125 ms, about -11 dB to 300 ms, then cut to -37 dB by 375 ms",
+ "reference": "D:/DaD_Sounds/Club_Review/flesh",
+ "length_ms": 700,
+ "seed": 50700,
+ "peak_db": -1,
+ "match": 0.75,
+ "fade_ms": 150,
+ "layers": [
+  {
+   "src": "blockdrop_slices/thump/hit1[2-8].wav",
+   "at_ms": [
+    0,
+    2
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    0
+   ],
+   "snap": {
+    "hold": [
+     60,
+     80
+    ],
+    "tau": [
+     60,
+     80
+    ]
+   }
+  },
+  {
+   "src": "impact_meat/qubodupImpact/qubodupImpactMeat02.flac",
+   "at_ms": [
+    0,
+    2
+   ],
+   "gain_db": [
+    -2,
+    0
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "lp": 250,
+   "snap": {
+    "hold": [
+     240,
+     270
+    ],
+    "tau": [
+     30,
+     38
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/thump/hit[0123][2459].wav",
+   "at_ms": [
+    0,
+    2
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "lp": 600,
+   "snap": {
+    "hold": [
+     250,
+     280
+    ],
+    "tau": [
+     30,
+     38
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/haft/[AS]*_Spear_Haft_on_Haft_*.wav",
+   "at_ms": [
+    0,
+    3
+   ],
+   "gain_db": [
+    -4,
+    -2
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "snap": {
+    "hold": [
+     30,
+     50
+    ],
+    "tau": [
+     40,
+     50
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/boom/*.wav",
+   "at_ms": [
+    0,
+    4
+   ],
+   "gain_db": [
+    -5,
+    -3
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 300,
+   "snap": {
+    "hold": [
+     60,
+     100
+    ],
+    "tau": [
+     60,
+     80
+    ]
+   }
+  },
+  {
+   "src": "wet_towel/wet_towel_on_body/*-0[1378]*.flac",
+   "at_ms": [
+    2,
+    5
+   ],
+   "gain_db": [
+    -8,
+    -5
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 200
+  },
+  {
+   "src": "wet_squish/impsplat/impactsplat0[1367]*.flac",
+   "at_ms": [
+    60,
+    120
+   ],
+   "gain_db": [
+    -10,
+    -7
+   ],
+   "pitch": [
+    -2,
+    1
+   ],
+   "hp": 400,
+   "snap": {
+    "hold": [
+     100,
+     140
+    ],
+    "tau": [
+     50,
+     60
+    ]
+   }
+  },
+  {
+   "src": "blockdrop_slices/thump/hit*.wav",
+   "at_ms": [
+    170,
+    230
+   ],
+   "gain_db": [
+    -9,
+    -6
+   ],
+   "pitch": [
+    -3,
+    -1
+   ],
+   "lp": 400,
+   "snap": {
+    "hold": [
+     60,
+     80
+    ],
+    "tau": [
+     30,
+     40
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -30,
+  "decay_ms": 80,
+  "len_ms": 400,
+  "band": [
+   200,
+   8000
+  ]
+ }
+}
