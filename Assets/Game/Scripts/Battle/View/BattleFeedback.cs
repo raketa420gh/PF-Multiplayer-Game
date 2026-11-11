@@ -151,11 +151,13 @@ namespace Game.Scripts.Battle
         }
 
         /// Recorded swings carry their own weight; the synthesized fallback drops in pitch with reach, as long weapons move more air.
-        public void PlaySwing(Vector3 position, float reach, WeaponSoundConfig sounds, Transform emitter = null)
+        public void PlaySwing(Vector3 position, float reach, WeaponSoundConfig sounds, int attack, bool isRiposte, Transform emitter = null)
         {
-            if (sounds != null && sounds.Swing.Length > 0)
+            AudioClip[] swing = sounds != null ? sounds.GetSwing(attack, isRiposte) : Array.Empty<AudioClip>();
+
+            if (swing.Length > 0)
             {
-                PlayClip(sounds.Swing, position, 1f, emitter);
+                PlayClip(swing, position, 1f, emitter);
 
                 return;
             }

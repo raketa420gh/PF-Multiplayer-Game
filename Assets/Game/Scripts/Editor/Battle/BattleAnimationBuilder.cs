@@ -117,6 +117,8 @@ namespace Game.Scripts.Editor.Battle
             BakeEdits();
             // Authored outside the pose library: written last, on the idle's finished grip (the content build samples its traces).
             ArmingSwordAttacks.Bake(false);
+            ZweihanderMotions.Bake();
+            ClubMotions.Bake();
             BakeShieldSwings(weapons);
             StoreMarkers(weapons);
 

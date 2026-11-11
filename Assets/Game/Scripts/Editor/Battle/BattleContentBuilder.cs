@@ -88,6 +88,9 @@ namespace Game.Scripts.Editor.Battle
             GameObject vikingSword = BattleWeaponPrefabBuilder.BuildSword("VikingSword", 0.11f, 0.88f, 0.058f, 0.16f, 0.09f, SwordStyle.Viking);
             GameObject misericorde = BattleWeaponPrefabBuilder.BuildSword("Misericorde", 0.08f, 0.38f, 0.024f, 0.065f, 0.075f, SwordStyle.Rondel);
             GameObject poniard = BattleWeaponPrefabBuilder.BuildSword("Poniard", 0.07f, 0.35f, 0.013f, 0.075f, 0.075f, SwordStyle.Stiletto);
+            // 1.8 m from the pommel to the point as the footage's: a 33 cm grip, the guard 42 cm wide, the lugs above the ricasso.
+            GameObject zweihander = BattleWeaponPrefabBuilder.BuildSword(DungeonWeaponLibrary.Zweihander, 0.09f, 1.43f, 0.044f, 0.42f, 0.33f, SwordStyle.Greatsword);
+            GameObject club = DungeonWeaponPrefabBuilder.BuildClub();
             arrow = BattleWeaponPrefabBuilder.BuildArrow();
             magicOrb = DungeonWeaponPrefabBuilder.BuildMagicOrb();
 
@@ -108,6 +111,8 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.Misericorde] = new[] { (misericorde, WeaponSocket.RightHand) },
                 // Held in the left hand: its clips are baked mirrored (IsLeftHanded).
                 [DungeonWeaponLibrary.Poniard] = new[] { (poniard, WeaponSocket.LeftHand) },
+                [DungeonWeaponLibrary.Zweihander] = new[] { (zweihander, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.Club] = new[] { (club, WeaponSocket.RightHand) },
                 // The torch is the belt item in the hand.
                 [DungeonWeaponLibrary.Torch] = Array.Empty<(GameObject, WeaponSocket)>()
             };

@@ -82,6 +82,8 @@ namespace Game.Scripts.Editor.Battle
         public string Model;
         /// Boxes (centre, size, colour; the socket's space) standing in for the weapon until it has a prefab.
         public (Vector3 Center, Vector3 Size, Color Color)[] Mock;
+        /// Seconds of clip per second of the keys: motions keyed in footage frames play at the game's pace (DungeonWeaponLibrary.Footage).
+        public float Pace = 1f;
     }
 
     /// The body under the upper-body solve at one moment: the hips off the stance (metres), the pelvis turned right and
@@ -273,6 +275,14 @@ namespace Game.Scripts.Editor.Battle
 
         }
 
+        /// A clip's frames on the 60 Hz grid: the body's muscles and the turn of the weapon in the fist.
+        private struct Track
+        {
+            public float[][] Muscles;
+            public Quaternion[] Grips;
+            public float Duration;
+        }
+
         private struct Target
         {
             public Vector3 Grip, Blade, Edge, Elbow, Torso, LeftHand, LeftElbow;
@@ -305,7 +315,7 @@ namespace Game.Scripts.Editor.Battle
         private static Vector3 s_torsoScale, s_neckScale, s_idleTorso;
         private static float[] s_idle, s_leftOpen;
         private static float s_idleLean, s_idleRoll;
-        private static bool s_hasIdleMotion, s_isIdleLeftFree;
+        private static bool s_hasIdleMotion, s_isIdleLeftFree, s_isStanding;
 
         private static float Strike => s_spec.Strike;
 
@@ -321,17 +331,51 @@ namespace Game.Scripts.Editor.Battle
         /// in the fist. Hand edits stored for these clips are dropped: they were made on the generated swings these replace
         /// and would be baked over the new ones. With traces, the weapon config's blade traces are sampled anew through the
         /// controller (the content build does that itself). Returns the numbers.
+        /// A weapon with every motion from footage gets its rest, taking out and putting away (the taking out backwards), the
+        /// block up and down, the hit on the block and the bounce off a block written too. The game's legs and eyes stay in
+        /// the stance under an upper-body clip, so the body keys are left out: the chest gives the whole turn the pelvis
+        /// shares in the mock-up, and the hits are where they are seen.
         public static string Bake(SwordSpec spec, bool withTraces)
         {
             s_spec = spec;
             StringBuilder report = new StringBuilder();
-            SwordMotion[] motions = Solve(string.Empty, report);
-            DropEdits(motions);
+            s_isStanding = true;
+            SwordMotion[] motions;
+
+            try
+            {
+                motions = Solve(string.Empty, report);
+            }
+            finally
+            {
+                s_isStanding = false;
+            }
+
+            SwordMotion Find(string id) => Array.Find(motions, motion => motion.Id == id);
+            List<(string Name, Track Track)> clips = motions.Select(motion => (ClipName(motion), motion.Id == "idle" ? Still(Sample(motion, 0f), 1f) : Retime(motion))).ToList();
+
+            if (Find("equip") is SwordMotion equip)
+                clips.Add((s_spec.Prefix + FighterAnimComponent.UnequipSuffix, Reverse(Retime(equip))));
+
+            if (Find("block") is SwordMotion block && Find("blockLower") is SwordMotion lower)
+            {
+                (float[], Quaternion) held = Sample(block, block.Frames);
+                clips.Add((s_spec.Prefix + FighterAnimComponent.BlockImpactSuffix, Blend(s_weapon.BlockImpact + s_weapon.BlockRecovery,
+                    (0f, held), (0.08f, Sample(lower, 4f)), (s_weapon.BlockImpact, Sample(lower, 2f)), (s_weapon.BlockImpact + s_weapon.BlockRecovery, held))));
+            }
+
+            if (Find("attack1") is SwordMotion first && Find("idle") is SwordMotion idle)
+            {
+                clips.Add((s_spec.Prefix + FighterAnimComponent.DeflectSuffix, Blend(s_weapon.DeflectDuration,
+                    (0f, Sample(first, first.Windup + 2f)), (0.12f, Sample(first, Mathf.Max(first.Windup - 12f, 0f))), (s_weapon.DeflectDuration, Sample(idle, 0f)))));
+            }
+
+            DropEdits(clips.Select(clip => clip.Name));
 
             using (Stage rig = CreateStage())
             {
-                foreach (SwordMotion motion in motions)
-                    Write(motion, rig);
+                foreach ((string name, Track track) in clips)
+                    Write(name, track, rig, name.EndsWith(FighterAnimComponent.IdleSuffix));
             }
 
             AssetDatabase.SaveAssets();
@@ -340,6 +384,22 @@ namespace Game.Scripts.Editor.Battle
                 Trace(motions, report);
 
             return report.ToString();
+        }
+
+        /// The motions as keyed, unsolved: what the weapon's definition takes its timings and rough poses from.
+        public static SwordMotion[] Read(SwordSpec spec)
+        {
+            SwordSpec solving = s_spec;
+            s_spec = spec;
+
+            try
+            {
+                return Parse(string.Empty);
+            }
+            finally
+            {
+                s_spec = solving;
+            }
         }
 
         /// Solves the attacks (keys: a text file while tuning, empty = the keys in the code) and writes data.js of the review
@@ -691,9 +751,98 @@ namespace Game.Scripts.Editor.Battle
             return animator;
         }
 
-        private static string ClipPath(SwordMotion motion)
+        private static string ClipPath(string name)
         {
-            return $"{BattleEditorUtility.AnimationsFolder}/{s_spec.Prefix}{FighterAnimComponent.AttackSuffix}{motion.Index}.anim";
+            return $"{BattleEditorUtility.AnimationsFolder}/{name}.anim";
+        }
+
+        /// The game clip a motion is: the named ones by their id, attackN as Attack(N-1), any other as the attack of its place.
+        private static string ClipName(SwordMotion motion)
+        {
+            string suffix = motion.Id switch
+            {
+                "idle" => FighterAnimComponent.IdleSuffix,
+                "equip" => FighterAnimComponent.EquipSuffix,
+                "block" => FighterAnimComponent.BlockSuffix,
+                "blockLower" => FighterAnimComponent.BlockLowerSuffix,
+                "riposte" => FighterAnimComponent.RiposteSuffix,
+                _ when motion.Id.StartsWith("attack") && int.TryParse(motion.Id.Substring(6), out int number) => FighterAnimComponent.AttackSuffix + (number - 1),
+                _ => FighterAnimComponent.AttackSuffix + motion.Index
+            };
+
+            return s_spec.Prefix + suffix;
+        }
+
+        /// The motion at the game's pace: keyed in footage frames it plays Pace times as long, and the peak of a swing lands on
+        /// the frame the combat model has it at (its windup and half its active time, rounded to the frame).
+        private static Track Retime(SwordMotion motion)
+        {
+            float duration = motion.Duration * s_spec.Pace, end = motion.Frames * s_spec.Pace;
+            float peak = motion.ActiveEnd > motion.Windup ? Mathf.Round(motion.Peak * s_spec.Pace) : 0f;
+            int count = Mathf.CeilToInt(duration * FrameRate - 1e-3f) + 1;
+            Track track = new Track { Muscles = new float[count][], Grips = new Quaternion[count], Duration = duration };
+
+            for (int frame = 0; frame < count; frame++)
+            {
+                float at = Mathf.Min(frame, end);
+                float source = peak <= 0f ? at / s_spec.Pace
+                    : at <= peak ? at * motion.Peak / peak : motion.Peak + (at - peak) * (motion.Frames - motion.Peak) / Mathf.Max(end - peak, 1e-3f);
+                (track.Muscles[frame], track.Grips[frame]) = Sample(motion, source);
+            }
+
+            return track;
+        }
+
+        /// The solved pose at a frame of the motion, between two frames by a share of each.
+        private static (float[] Muscles, Quaternion Grip) Sample(SwordMotion motion, float frame)
+        {
+            frame = Mathf.Clamp(frame, 0f, motion.Frames);
+            int from = Mathf.Min((int)frame, motion.Frames), to = Mathf.Min(from + 1, motion.Frames);
+            float t = frame - from;
+
+            if (t <= 0f)
+                return ((float[])motion.Muscles[from].Clone(), motion.Grips[from]);
+
+            float[] muscles = new float[motion.Muscles[from].Length];
+
+            for (int i = 0; i < muscles.Length; i++)
+                muscles[i] = Mathf.Lerp(motion.Muscles[from][i], motion.Muscles[to][i], t);
+
+            return (muscles, Quaternion.Slerp(motion.Grips[from], motion.Grips[to], t));
+        }
+
+        private static Track Still((float[] Muscles, Quaternion Grip) pose, float duration)
+        {
+            return Blend(duration, (0f, pose), (duration, pose));
+        }
+
+        private static Track Reverse(Track track)
+        {
+            return new Track { Muscles = track.Muscles.Reverse().ToArray(), Grips = track.Grips.Reverse().ToArray(), Duration = track.Duration };
+        }
+
+        /// Poses already solved, run into one another (easing in and out) at the times given: a short clip made of the motions.
+        private static Track Blend(float duration, params (float Time, (float[] Muscles, Quaternion Grip) Pose)[] keys)
+        {
+            int count = Mathf.CeilToInt(duration * FrameRate - 1e-3f) + 1;
+            Track track = new Track { Muscles = new float[count][], Grips = new Quaternion[count], Duration = duration };
+
+            for (int frame = 0; frame < count; frame++)
+            {
+                float time = Mathf.Min(frame / FrameRate, duration);
+                int next = Mathf.Clamp(Array.FindIndex(keys, key => key.Time > time), 1, keys.Length - 1);
+                (float start, (float[] Muscles, Quaternion Grip) a) = keys[next - 1];
+                (float stop, (float[] Muscles, Quaternion Grip) b) = keys[next];
+                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((time - start) / Mathf.Max(stop - start, 1e-4f)));
+                track.Muscles[frame] = new float[a.Muscles.Length];
+
+                for (int i = 0; i < a.Muscles.Length; i++)
+                    track.Muscles[frame][i] = Mathf.Lerp(a.Muscles[i], b.Muscles[i], t);
+
+                track.Grips[frame] = Quaternion.Slerp(a.Grip, b.Grip, t);
+            }
+
+            return track;
         }
 
         private static string MuscleProperty(int muscle)
@@ -704,11 +853,11 @@ namespace Game.Scripts.Editor.Battle
             return muscle < Body ? HumanTrait.MuscleName[muscle] : $"{parts[0]}Hand.{parts[1]}.{string.Join(" ", parts.Skip(2))}";
         }
 
-        private static void Write(SwordMotion motion, Stage rig)
+        private static void Write(string name, Track track, Stage rig, bool isLoop)
         {
-            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath(motion)) ?? throw new ArgumentException($"No clip '{ClipPath(motion)}'");
-            AnimationClip idle = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{BattleEditorUtility.AnimationsFolder}/{s_spec.Prefix}{FighterAnimComponent.IdleSuffix}.anim");
-            int count = motion.Frames + 1;
+            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath(name)) ?? throw new ArgumentException($"No clip '{ClipPath(name)}'");
+            AnimationClip idle = AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath(s_spec.Prefix + FighterAnimComponent.IdleSuffix));
+            int count = track.Muscles.Length;
             List<EditorCurveBinding> bindings = new List<EditorCurveBinding>();
             List<AnimationCurve> curves = new List<AnimationCurve>();
 
@@ -718,7 +867,7 @@ namespace Game.Scripts.Editor.Battle
                 AnimationCurve curve = new AnimationCurve();
 
                 for (int frame = 0; frame < count; frame++)
-                    curve.AddKey(Mathf.Min(frame / FrameRate, motion.Duration), value(frame));
+                    curve.AddKey(Mathf.Min(frame / FrameRate, track.Duration), value(frame));
 
                 for (int i = 0; i < curve.length; i++)
                     curve.SmoothTangents(i, 0f);
@@ -733,14 +882,14 @@ namespace Game.Scripts.Editor.Battle
 
                 // The fingers hold the hilt as the idle has them; a finger the idle does not key stays as the avatar rests it.
                 if (muscle < Body || s_idleClip.Muscles[muscle] != null)
-                    Add(EditorCurveBinding.FloatCurve(string.Empty, typeof(Animator), MuscleProperty(muscle)), frame => motion.Muscles[frame][muscle]);
+                    Add(EditorCurveBinding.FloatCurve(string.Empty, typeof(Animator), MuscleProperty(muscle)), frame => track.Muscles[frame][muscle]);
             }
 
             for (int i = 0; i < s_rootCurves.Length; i++)
             {
                 int axis = i;
                 Add(EditorCurveBinding.FloatCurve(string.Empty, typeof(Animator), s_rootCurves[i]), frame =>
-                    axis < 3 ? motion.BodyPositions[frame][axis] : motion.BodyRotations[frame][axis - 3]);
+                    axis < 3 ? s_stance.bodyPosition[axis] : s_stance.bodyRotation[axis - 3]);
             }
 
             // The sword's socket turns in the fist as the swing was solved; the other sockets stay as the idle carries them.
@@ -748,7 +897,7 @@ namespace Game.Scripts.Editor.Battle
 
             for (int frame = 0; frame < count; frame++)
             {
-                Quaternion grip = motion.Grips[frame];
+                Quaternion grip = track.Grips[frame];
                 grips[frame] = frame > 0 && Quaternion.Dot(grips[frame - 1], grip) < 0f ? new Quaternion(-grip.x, -grip.y, -grip.z, -grip.w) : grip;
             }
 
@@ -773,26 +922,26 @@ namespace Game.Scripts.Editor.Battle
             clip.frameRate = FrameRate;
             AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
             AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
-            settings.loopTime = false;
+            settings.loopTime = isLoop;
             settings.loopBlendOrientation = true;
             settings.loopBlendPositionY = true;
             settings.loopBlendPositionXZ = true;
             settings.keepOriginalOrientation = true;
             settings.keepOriginalPositionY = true;
             settings.keepOriginalPositionXZ = true;
-            settings.stopTime = motion.Duration;
+            settings.stopTime = track.Duration;
             AnimationUtility.SetAnimationClipSettings(clip, settings);
             EditorUtility.SetDirty(clip);
         }
 
-        private static void DropEdits(SwordMotion[] motions)
+        private static void DropEdits(IEnumerable<string> names)
         {
             AnimationEditConfig edits = AssetDatabase.LoadAssetAtPath<AnimationEditConfig>(AnimationEditBaker.ConfigPath);
 
             if (edits == null)
                 return;
 
-            HashSet<AnimationClip> clips = new HashSet<AnimationClip>(motions.Select(motion => AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath(motion))));
+            HashSet<AnimationClip> clips = new HashSet<AnimationClip>(names.Select(name => AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath(name))));
             SerializedObject serialized = new SerializedObject(edits);
             SerializedProperty stored = serialized.FindProperty("_clips");
 
@@ -1652,6 +1801,9 @@ namespace Game.Scripts.Editor.Battle
 
                 // "body <frame> [h dx dy dz yaw [pitch]] [lf dx dz [yaw [heel]]] [rf dx dz [yaw [heel]]]": the hips off the stance
                 // and the pelvis turned right / pitched forward, each foot off its stance, turned right, its heel raised.
+                if (words[0] == "body" && s_isStanding)
+                    continue;
+
                 if (words[0] == "body")
                 {
                     BodyKey body = new BodyKey { Frame = (int)Next() };

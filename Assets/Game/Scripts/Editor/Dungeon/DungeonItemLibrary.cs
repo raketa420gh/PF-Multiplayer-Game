@@ -329,6 +329,11 @@ namespace Game.Scripts.Editor.Dungeon
             // Dark and Darker's stiletto dagger: an off-hand needle, three quick stabs and a breath before the next three.
             items.Add(Weapon("Poniard", DungeonWeaponLibrary.Poniard, WeaponClass.Dagger, 1, 2, 6f, "Pd", s_steel, 30,
                 "A slim needle of a blade for the left hand. Three quick stabs in a row. Beside a main-hand weapon it stabs on the right button (no block); alone it parries.", offHand: true));
+            // Dark and Darker's two-handed great sword and wooden club, their motions taken from footage.
+            items.Add(Weapon("Zweihander", DungeonWeaponLibrary.Zweihander, WeaponClass.Sword, 2, 5, 35f, "Zw", s_steel, 70,
+                "A great two-handed sword. Two wide cuts at the neck and a thrust; a heavy riposte from the guard.", twoHanded: true));
+            items.Add(Weapon("Club", DungeonWeaponLibrary.Club, WeaponClass.Mace, 1, 3, 15f, "Cb", s_wood, 12,
+                "A plain wooden club for one hand. Pairs with a shield; without one, the left palm braces it in the block."));
 
             return items;
         }

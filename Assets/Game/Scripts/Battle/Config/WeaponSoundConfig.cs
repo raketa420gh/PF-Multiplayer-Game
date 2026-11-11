@@ -58,12 +58,30 @@ namespace Game.Scripts.Battle
         public AudioClip[] Restock => _restock;
         /// Share of the blade trace, from the grip, that is the haft: body hits landing only there sound as Handle.
         public float HandleShare => _handleShare;
+        /// The guard brought up and the weapon put away; empty for sets without takes of their own.
+        public AudioClip[] BlockRaise => _blockRaise;
+        public AudioClip[] Unequip => _unequip;
 
         [SerializeField]
         private byte _id;
 
         [SerializeField]
         private AudioClip[] _swing = Array.Empty<AudioClip>();
+
+        [SerializeField, Tooltip("Own whooshes of the attacks of the series and of the riposte; the generic swing where empty")]
+        private AudioClip[] _swing1 = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _swing2 = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _swing3 = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _swing4 = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _riposte = Array.Empty<AudioClip>();
 
         [SerializeField]
         private AudioClip[] _flesh = Array.Empty<AudioClip>();
@@ -106,6 +124,12 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private AudioClip[] _equip = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _unequip = Array.Empty<AudioClip>();
+
+        [SerializeField]
+        private AudioClip[] _blockRaise = Array.Empty<AudioClip>();
 
         [SerializeField]
         private AudioClip[] _drop = Array.Empty<AudioClip>();
@@ -185,6 +209,21 @@ namespace Game.Scripts.Battle
                 ItemSound.Burn => _burn,
                 _ => Array.Empty<AudioClip>()
             };
+        }
+
+        /// The whoosh of the given attack of the series (or of the riposte), falling back to the generic swing.
+        public AudioClip[] GetSwing(int attack, bool isRiposte)
+        {
+            AudioClip[] clips = isRiposte ? _riposte : attack switch
+            {
+                0 => _swing1,
+                1 => _swing2,
+                2 => _swing3,
+                3 => _swing4,
+                _ => Array.Empty<AudioClip>()
+            };
+
+            return Or(clips, _swing);
         }
 
         public AudioClip[] Get(ImpactSurface surface)

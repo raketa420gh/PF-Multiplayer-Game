@@ -7,6 +7,8 @@ namespace Game.Scripts.Editor.Battle
     /// the head in the block. The review page shows these poses.
     internal static class ClubMotions
     {
+        public static SwordSpec Spec => s_spec;
+
         public const float Back = -0.1f;
         public const float Tip = 0.88f;
 
@@ -159,7 +161,7 @@ body 72 h 0 -0.03 0.04 -12 1 rf 0 0 0 10";
         /// never on the grip: OffHand only lets the left arm be keyed.
         private static readonly SwordSpec s_spec = new SwordSpec
         {
-            Prefix = "Club", Base = "ArmingSword", Strike = 0.62f, BladeBase = 0.12f, BladeTip = Tip, OffHand = 0.14f, MaxLean = 55f, Keys = Keys, Model = "Club",
+            Prefix = "Club", Base = "ArmingSword", Strike = 0.62f, BladeBase = 0.12f, BladeTip = Tip, OffHand = 0.14f, MaxLean = 55f, Keys = Keys, Model = "Club", Pace = Dungeon.DungeonWeaponLibrary.FootagePace,
             Mock = new[]
             {
                 (new Vector3(0f, 0f, (Back + 0.1f) * 0.5f), new Vector3(0.04f, 0.04f, 0.1f - Back), s_leather),
@@ -167,6 +169,12 @@ body 72 h 0 -0.03 0.04 -12 1 rf 0 0 0 10";
                 (new Vector3(0f, 0f, (0.5f + Tip) * 0.5f), new Vector3(0.09f, 0.09f, Tip - 0.5f), s_wood)
             }
         };
+
+        /// The motions as keyed: the weapon's definition takes its timings and rough poses from them.
+        public static SwordMotion[] Read() => SwordFootage.Read(s_spec);
+
+        /// Writes the weapon's game clips from the keys (see SwordFootage.Bake).
+        public static string Bake() => SwordFootage.Bake(s_spec, false);
 
         /// Solves the motions (keys: a text file while tuning, empty = the keys in the code) and writes data.js of the review page.
         public static string Build(string keys, string folder) => SwordFootage.Build(s_spec, keys, folder);

@@ -87,20 +87,22 @@ namespace Game.Scripts.Battle
             }
 
             if (isActivePhase && !_wasActivePhase && BattleContext.Instance != null)
-                BattleContext.Instance.Feedback.PlaySwing(transform.position + Vector3.up * 1.4f, _combat.AttackWeapon.Reach, _combat.AttackWeapon.Sounds, transform);
+                BattleContext.Instance.Feedback.PlaySwing(transform.position + Vector3.up * 1.4f, _combat.AttackWeapon.Reach, _combat.AttackWeapon.Sounds,
+                    _combat.AttackIndex, _combat.IsRiposte, transform);
 
             _wasActivePhase = isActivePhase;
             bool isFullDraw = isDrawn && _combat.DrawPower >= 1f;
 
             if (weapon.Sounds != null && BattleContext.Instance != null)
-                PlayRangedSound(weapon.Sounds, state, isFullDraw && !_wasFullDraw);
+                PlayStateSound(weapon.Sounds, state, isFullDraw && !_wasFullDraw);
 
             _shownState = state;
             _wasFullDraw = isFullDraw;
         }
 
-        /// The bow's own sounds: the draw, the hold once it is full, the next arrow nocked, the quiver restocked.
-        private void PlayRangedSound(WeaponSoundConfig sounds, CombatState state, bool isFullNow)
+        /// Sounds of the state the weapon enters: the guard raised, the weapon put away; for a bow the draw, the hold once it is full,
+        /// the next arrow nocked, the quiver restocked.
+        private void PlayStateSound(WeaponSoundConfig sounds, CombatState state, bool isFullNow)
         {
             BattleFeedback feedback = BattleContext.Instance.Feedback;
             Vector3 position = transform.position + Vector3.up * 1.4f;
@@ -113,6 +115,12 @@ namespace Game.Scripts.Battle
 
             switch (state)
             {
+                case CombatState.BlockRaise:
+                    feedback.Play(sounds.BlockRaise, position, transform);
+                    break;
+                case CombatState.Equip when _combat.IsUnequipping:
+                    feedback.Play(sounds.Unequip, position, transform);
+                    break;
                 case CombatState.Draw:
                     feedback.Play(sounds.Draw, position, transform);
                     feedback.Play(sounds.Creak, position, transform);

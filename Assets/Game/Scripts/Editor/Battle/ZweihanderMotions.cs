@@ -7,6 +7,8 @@ namespace Game.Scripts.Editor.Battle
     /// steps as the third-person footage has it. The review page shows these poses.
     internal static class ZweihanderMotions
     {
+        public static SwordSpec Spec => s_spec;
+
         private const float Guard = 0.07f;
         private const float Tip = 1.43f;
 
@@ -179,7 +181,7 @@ body 76 h 0 -0.04 0.06 -20 3       rf 0 0 0 10";
         /// 1.8 m from the pommel to the point, 1.36 m of it the blade; the parrying lugs end the ricasso.
         private static readonly SwordSpec s_spec = new SwordSpec
         {
-            Prefix = "Zweihander", Base = "ArmingSword", Strike = 1.15f, BladeBase = Guard + 0.02f, BladeTip = Tip, OffHand = 0.22f, MaxLean = 42f, Keys = Keys,
+            Prefix = "Zweihander", Base = "ArmingSword", Strike = 1.15f, BladeBase = Guard + 0.02f, BladeTip = Tip, OffHand = 0.22f, MaxLean = 42f, Keys = Keys, Pace = Dungeon.DungeonWeaponLibrary.FootagePace, Model = "Zweihander",
             Mock = new[]
             {
                 (new Vector3(0f, 0f, -0.13f), new Vector3(0.03f, 0.034f, 0.4f), s_leather),
@@ -192,6 +194,12 @@ body 76 h 0 -0.04 0.06 -20 3       rf 0 0 0 10";
                 (new Vector3(0f, 0f, Tip - 0.03f), new Vector3(0.005f, 0.026f, 0.06f), s_steel)
             }
         };
+
+        /// The motions as keyed: the weapon's definition takes its timings and rough poses from them.
+        public static SwordMotion[] Read() => SwordFootage.Read(s_spec);
+
+        /// Writes the weapon's game clips from the keys (see SwordFootage.Bake).
+        public static string Bake() => SwordFootage.Bake(s_spec, false);
 
         /// Solves the motions (keys: a text file while tuning, empty = the keys in the code) and writes data.js of the review page.
         public static string Build(string keys, string folder) => SwordFootage.Build(s_spec, keys, folder);

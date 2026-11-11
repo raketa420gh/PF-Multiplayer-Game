@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Game.Scripts.Battle;
 using Game.Scripts.Editor.Battle;
 using UnityEngine;
@@ -33,7 +34,13 @@ namespace Game.Scripts.Editor.Dungeon
         public const string Poniard = "Poniard";
         public const string FistsShield = "FistsShield";
         public const string FistsEcu = "FistsEcu";
+        public const string Zweihander = "Zweihander";
+        public const string Club = "Club";
+        public const string ClubShield = "ClubShield";
+        public const string ClubEcu = "ClubEcu";
 
+        /// Seconds of clip per second of Dark and Darker footage, see Footage.
+        public const float FootagePace = 0.75f;
         /// Arming sword strike point from the grip: where the swings were solved before the blade was cut to real size.
         public const float ArmingStrike = 0.627f;
         private const float AxeHead = 0.8f;
@@ -42,7 +49,7 @@ namespace Game.Scripts.Editor.Dungeon
         private const float Frame = 1f / BattleAnimationBuilder.FrameRate;
         /// A frame of 60 fps footage of Dark and Darker. A fight there runs at full pace and ours at the base action
         /// speed of the fighters, so a clip is that much shorter than what it is copied from.
-        private const float Footage = 0.75f * Frame;
+        private const float Footage = FootagePace * Frame;
         /// How much lower on the screen than in the footage the raised bare fists of the block are held.
         private const float RaisedFistDrop = 0.27f;
         private const float StaffHands = -0.55f;
@@ -79,7 +86,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static readonly string[] CatalogOrder =
         {
             SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu, Torch, Misericorde, MisericordeShield, MisericordeEcu, Poniard,
-            FistsShield, FistsEcu
+            FistsShield, FistsEcu, Zweihander, Club, ClubShield, ClubEcu
         };
 
         /// The entry whose shield is the model of a shield item, by its ShieldIndex: the round shield, the écu.
@@ -101,6 +108,7 @@ namespace Game.Scripts.Editor.Dungeon
             (MorningStar, CreateMorningStar, new[] { MaceShield, MaceEcu }),
             (VikingSword, CreateVikingSword, new[] { VikingShield, VikingEcu }),
             (Misericorde, CreateMisericorde, new[] { MisericordeShield, MisericordeEcu }),
+            (Club, CreateClub, new[] { ClubShield, ClubEcu }),
             // A shield with the main hand empty (DaD): the right hook alone and the shield's block.
             (Fists, CreateFists, new[] { FistsShield, FistsEcu })
         };
@@ -118,7 +126,8 @@ namespace Game.Scripts.Editor.Dungeon
         {
             ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 4), ["Rat Bite"] = (1, 1), ["Arming Sword"] = (4, 3), ["Morning Star"] = (6, 3), ["Magic Staff"] = (4, 4),
             ["Round Shield"] = (1, 7), ["Écu"] = (1, 8), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1),
-            ["Viking Sword"] = (5, 3), ["Torch"] = (2, 1), ["Misericorde"] = (2, 2), ["Poniard"] = (2, 2)
+            ["Viking Sword"] = (5, 3), ["Torch"] = (2, 1), ["Misericorde"] = (2, 2), ["Poniard"] = (2, 2),
+            ["Zweihander"] = (7, 5), ["Club"] = (5, 2)
         };
 
         /// A weapon with a shield hits with the weapon's Impact and blocks with the shield's Stability.
@@ -195,7 +204,9 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateVikingSword(),
                 CreateTorch(),
                 CreateMisericorde(),
-                CreatePoniard()
+                CreatePoniard(),
+                CreateZweihander(),
+                CreateClub()
             };
 
             // Every pair is built from a definition of its own: WithShield changes the poses it is given.
@@ -215,6 +226,128 @@ namespace Game.Scripts.Editor.Dungeon
         /// widest slant, straight from the guard before the forehead. Every swing stops dead ahead with the arm long and
         /// the haft laid along it, sinks to the belly and comes back up into rest elbow first; the free arm is thrown
         /// back behind the hip by it.
+        /// The zweihander of Dark and Darker, every motion solved from the footage (ZweihanderMotions): two level cuts round at
+        /// the neck, right to left and back, then a thrust from the right hip; the block is the hilt by the right temple with
+        /// the point ahead, the riposte a cut down from over the head.
+        private static WeaponDefinition CreateZweihander()
+        {
+            WeaponDefinition sword = FromFootage(ZweihanderMotions.Read(), ZweihanderMotions.Spec, new[] { 42, 42, 46 }, 63, 0.45f);
+            sword.Prefix = Zweihander;
+            sword.DisplayName = "Zweihander";
+            sword.Kind = WeaponKind.TwoHanded;
+            sword.Reach = 2f;
+            sword.DeflectDuration = 0.9f;
+            sword.Attacks[2].Stagger = 0.3f;
+            sword.Riposte.Stagger = 0.45f;
+            sword.BlockMitigation = 0.75f;
+            sword.BlockImpact = 0.3f;
+            sword.BlockRecovery = 0.45f;
+            sword.BlockMove = 0.5f;
+
+            return sword;
+        }
+
+        /// The club of Dark and Darker, every motion solved from the footage (ClubMotions), swung by the right hand alone: a
+        /// cut round at the neck from the right, a backhand from the left, the first again; the left palm braces the head in
+        /// the block.
+        private static WeaponDefinition CreateClub()
+        {
+            WeaponDefinition club = FromFootage(ClubMotions.Read(), ClubMotions.Spec, new[] { 26, 26, 28 }, 39, 0.7f);
+            club.Prefix = Club;
+            club.DisplayName = "Club";
+            club.Kind = WeaponKind.OneHanded;
+            club.IsRound = true;
+            club.Reach = 1.45f;
+            club.DeflectDuration = 0.6f;
+            club.BlockMitigation = 0.6f;
+            club.BlockImpact = 0.28f;
+            club.BlockRecovery = 0.4f;
+            club.BlockMove = 0.6f;
+
+            return club;
+        }
+
+        /// A weapon whose clips are all written from footage (SwordFootage.Bake) over the generated ones. Its definition gives
+        /// the combat model the timings of the keys (at the game's pace), and the generator rough poses from the keys for what
+        /// it still makes of them: the swings beside a shield, the footwork, the timeline marks.
+        private static WeaponDefinition FromFootage(SwordMotion[] motions, SwordSpec spec, int[] damage, int riposteDamage, float move)
+        {
+            SwordMotion Get(string id) => Array.Find(motions, motion => motion.Id == id);
+            BodyPose idle = FootagePose(spec, Get("idle").Keys[0], default);
+            BodyPose PoseOf(SwordKey key) => FootagePose(spec, key, idle);
+            SwordKey Near(SwordMotion motion, float frame) => motion.Keys.Where(key => !key.IsIdle).OrderBy(key => Mathf.Abs(key.Frame - frame)).First();
+            List<PoseKey> Between(SwordMotion motion, float from, float to) => motion.Keys.Where(key => key.Frame > from && key.Frame < to).Select(key => Via(key.Frame, PoseOf(key))).ToList();
+
+            AttackDefinition Attack(SwordMotion motion, int hit, AttackDefinition after)
+            {
+                // The combat model has the peak at the middle of the active time: the windup ends half of it before the keyed peak.
+                float active = motion.ActiveEnd - motion.Windup, windup = motion.Peak - active * 0.5f;
+                AttackDefinition attack = new AttackDefinition
+                {
+                    Windup = windup * Footage, Active = active * Footage, Recovery = (motion.Frames - windup - active) * Footage, Damage = hit, MoveMultiplier = move, Launch = 1f,
+                    Raise = Between(motion, 0f, windup - 1f), WindupPose = PoseOf(Near(motion, windup)), MidPose = PoseOf(Near(motion, motion.Peak)),
+                    EndPose = PoseOf(Near(motion, windup + active)), Return = Between(motion, windup + active + 1f, motion.Frames), After = after
+                };
+                attack.ComboStart = attack.Windup + attack.Active * 0.5f;
+                attack.ComboEnd = attack.Windup + attack.Active + attack.Recovery * 0.65f;
+
+                return attack;
+            }
+
+            AttackDefinition[] attacks = new AttackDefinition[3];
+
+            for (int i = 0; i < attacks.Length; i++)
+                attacks[i] = Attack(Get("attack" + (i + 1)), damage[i], i > 0 ? attacks[i - 1] : null);
+
+            SwordMotion equip = Get("equip"), block = Get("block"), lower = Get("blockLower");
+            List<PoseKey> draw = Between(equip, -1f, equip.Frames);
+            draw.Add(Via(equip.Frames, idle));
+            float drawn = draw[^1].Time;
+            BodyPose guard = PoseOf(block.Keys[^1]);
+
+            return new WeaponDefinition
+            {
+                BladeBase = spec.BladeBase,
+                BladeTip = spec.BladeTip,
+                Strike = spec.Strike,
+                Idle = idle,
+                Attacks = attacks,
+                Riposte = Attack(Get("riposte"), riposteDamage, null),
+                EquipVia = draw,
+                EquipShown = equip.Shown * Footage,
+                UnequipVia = draw.Select(key => PoseKey.Flow(drawn - key.Time, key.Pose, 1f)).Reverse().ToList(),
+                UnequipHidden = drawn - equip.Shown * Footage,
+                CanBlock = true,
+                BlockRaise = block.Frames * Footage,
+                BlockVia = Between(block, 0f, block.Frames),
+                BlockLower = lower.Frames * Footage,
+                BlockLowerVia = Between(lower, 0f, lower.Frames),
+                Block = guard,
+                BlockHit = Shifted(guard, new Vector3(0f, -0.03f, 0f)),
+                BlockLowered = Shifted(guard, new Vector3(0f, -0.02f, 0f)),
+                DeflectPose = attacks[0].WindupPose,
+                BlockAngle = 80f,
+                BlockSocket = WeaponSocket.RightHand,
+                BlockBoxCenter = new Vector3(0f, 0f, (spec.BladeBase + spec.BladeTip) * 0.5f),
+                BlockBoxExtents = new Vector3(0.08f, 0.08f, (spec.BladeTip - spec.BladeBase) * 0.5f)
+            };
+        }
+
+        /// A footage key as a generated pose: the grip, the blade, the chest's turn and bow; both fists on a two-handed hilt,
+        /// or the left hand where the key has it off. An idle key is the rest pose.
+        private static BodyPose FootagePose(SwordSpec spec, SwordKey key, BodyPose idle)
+        {
+            if (key.IsIdle)
+                return idle;
+
+            BodyPose pose = spec.OffHand > 0f && !key.IsLeftFree
+                ? BattleAnimationLibrary.Elbows(BattleAnimationLibrary.TwoHanded(key.Grip, key.Blade, -spec.OffHand, key.Torso.y, key.Torso.x), key.Elbow)
+                : Pose(key.Grip, key.Blade, key.Torso.y, key.Torso.x, key.Elbow, key.LeftHand, 0f);
+            pose.Edge = key.Edge;
+
+            return pose;
+        }
+
         private static WeaponDefinition CreateMorningStar()
         {
             // The middle of the ball.
