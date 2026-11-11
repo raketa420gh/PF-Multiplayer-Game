@@ -212,7 +212,7 @@
   var clips = D.clips.map(function (c, n) {
     var clip = { id: c.id, name: NAMES[c.id] || c.name, frames: c.frames, last: c.frames - 1, peak: c.peak, windup: c.windup, activeEnd: c.activeEnd, afterFrame: c.afterFrame,
       shown: c.shown || 0, left: c.left, isAttack: c.activeEnd > c.windup,
-      strain: c.strain, lean: c.lean, roll: c.roll, poses: decode(c.poses, Float32Array), socket: decode(c.socket, Float32Array) };
+      strain: c.strain, lean: c.lean, roll: c.roll, eyes: c.eyes || null, poses: decode(c.poses, Float32Array), socket: decode(c.socket, Float32Array) };
     clip.tip = []; clip.strikePath = [];
     var q = new T.Quaternion(), v = new T.Vector3();
     for (var f = 0; f < c.frames; f++) {
@@ -288,6 +288,10 @@
     // The weapon appears in the hand part of the way through taking it out, as in the game.
     sword.visible = f >= c.shown;
     hit.visible = $("hitbox").checked && c.isAttack && f >= c.windup && f <= c.activeEnd;
+    // The eyes ride with the body (a lunge, a crouch): the first-person camera goes where the body takes them.
+    var E = c.eyes, e0 = f0 * 3, e1 = f1 * 3;
+    if (E) fp.position.set(eye.x - (E[e0] + (E[e1] - E[e0]) * a), eye.y + E[e0 + 1] + (E[e1 + 1] - E[e0 + 1]) * a, eye.z + E[e0 + 2] + (E[e1 + 2] - E[e0 + 2]) * a);
+    else fp.position.copy(eye);
   }
 
   // ---------- cameras ----------
@@ -538,7 +542,7 @@
     var c = state.clip, fr = state.frame, i = Math.max(0, Math.min(Math.round(fr), c.last));
     var text = c.name + " · кадр " + fr.toFixed(1) + " / " + c.last + " · " + (c.frames / 60).toFixed(2) + " с";
     if (c.isAttack) {
-      var miss = c.strikePath[c.peak], off = Math.hypot(miss.x - eye.x, miss.y - eye.y) * 100;
+      var miss = c.strikePath[c.peak], pe = c.eyes ? c.peak * 3 : -1, off = Math.hypot(miss.x - eye.x + (pe < 0 ? 0 : c.eyes[pe]), miss.y - eye.y - (pe < 0 ? 0 : c.eyes[pe + 1])) * 100;
       text += " · " + (fr < c.windup ? "замах" : fr <= c.activeEnd ? "АКТИВНАЯ ФАЗА" : "проводка / возврат") +
         "\nзамах " + Math.round(c.windup) + " к. · удар " + Math.round(c.activeEnd - c.windup) + " к. · пик: кадр " + c.peak + ", точка удара от прицела " + off.toFixed(1) + " см";
     }

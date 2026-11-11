@@ -82,8 +82,30 @@ namespace Game.Scripts.Editor.Battle
         public (Vector3 Center, Vector3 Size, Color Color)[] Mock;
     }
 
+    /// The body under the upper-body solve at one moment: the hips off the stance (metres), the pelvis turned right and
+    /// pitched forward (degrees), each foot off its stance (x, lift, z), turned right and its heel raised (degrees).
+    internal struct BodyFrame
+    {
+        public Vector3 Shift, Left, Right;
+        public float Yaw, Pitch, LeftYaw, RightYaw, LeftHeel, RightHeel;
+        /// How far the eyes go with the body: the first-person view and everything keyed in it ride along.
+        public Vector3 Eye;
+    }
+
+    /// A "body" line: the parts it names; the others stay as the key before has them.
+    internal struct BodyKey
+    {
+        public int Frame;
+        public BodyFrame Body;
+        public bool HasHips, HasLeft, HasRight;
+    }
+
     internal sealed class SwordMotion
     {
+        /// The hips, the pelvis and the feet under the swing at key frames; none = the stance throughout.
+        public List<BodyKey> BodyKeys = new List<BodyKey>();
+        /// The body per frame; null while the motion and the one it is chained from stand in the stance.
+        public BodyFrame[] Lower;
         public string Id;
         public string Text = string.Empty;
         public string AfterId;
@@ -146,10 +168,13 @@ namespace Game.Scripts.Editor.Battle
             public readonly BattlePoseRig Source = new BattlePoseRig();
             public readonly Animator Animator;
             public readonly Transform Socket, Hips, Chest, Head, Elbow, Hand, LeftElbow, LeftHand, LeftGrip;
+            /// The body of the frame being posed; null = the stance.
+            public BodyFrame? Lower;
             public readonly Vector3 PalmNormal;
             public Vector3 GripPosition;
             public Quaternion GripRotation;
 
+            private readonly Transform[] _leftLeg, _rightLeg;
             private readonly HumanPoseHandler _handler;
             private HumanPose _pose = new HumanPose { muscles = new float[HumanTrait.MuscleCount] };
 
@@ -169,6 +194,8 @@ namespace Game.Scripts.Editor.Battle
                 LeftHand = Animator.GetBoneTransform(HumanBodyBones.LeftHand);
                 LeftGrip = new GameObject("LeftGrip") { hideFlags = HideFlags.HideAndDontSave }.transform;
                 LeftGrip.SetParent(LeftHand, false);
+                _leftLeg = new[] { HumanBodyBones.LeftUpperLeg, HumanBodyBones.LeftLowerLeg, HumanBodyBones.LeftFoot }.Select(Animator.GetBoneTransform).ToArray();
+                _rightLeg = new[] { HumanBodyBones.RightUpperLeg, HumanBodyBones.RightLowerLeg, HumanBodyBones.RightFoot }.Select(Animator.GetBoneTransform).ToArray();
                 _handler = new HumanPoseHandler(Animator.avatar, Animator.transform);
             }
 
@@ -202,7 +229,39 @@ namespace Game.Scripts.Editor.Battle
                 // A humanoid pose hangs on the body's centre of mass, so a reaching arm would push the hips back. The controller
                 // does not do that: the legs layer sets the hips and the upper-body clip builds on them.
                 Hips.SetPositionAndRotation(s_hips.position, s_hips.rotation);
+
+                if (Lower is BodyFrame body)
+                {
+                    Hips.SetPositionAndRotation(s_hips.position + body.Shift, Quaternion.Euler(0f, body.Yaw, 0f) * Quaternion.Euler(body.Pitch, 0f, 0f) * s_hips.rotation);
+                    Plant(_leftLeg, s_leftFoot, body.Left, body.LeftYaw, body.LeftHeel, body.Yaw);
+                    Plant(_rightLeg, s_rightFoot, body.Right, body.RightYaw, body.RightHeel, body.Yaw);
+                }
+
                 Socket.SetLocalPositionAndRotation(GripPosition, Grip(lean, roll));
+            }
+
+            /// A leg (thigh, shin, foot) bent to keep its foot where the body has it: off its stance, turned, the heel raised
+            /// on the ball. The knee points between where the pelvis and the foot do.
+            private static void Plant(Transform[] leg, Pose stance, Vector3 offset, float yaw, float heel, float pelvisYaw)
+            {
+                const float footLength = 0.16f;
+                Transform thigh = leg[0], shin = leg[1], foot = leg[2];
+                Quaternion turn = Quaternion.Euler(0f, yaw, 0f);
+                float raised = heel * Mathf.Deg2Rad;
+                Vector3 hip = thigh.position;
+                float upper = Vector3.Distance(hip, shin.position), lower = Vector3.Distance(shin.position, foot.position);
+                Vector3 reach = stance.position + offset + new Vector3(0f, Mathf.Sin(raised), 0f) * footLength + turn * Vector3.forward * ((1f - Mathf.Cos(raised)) * footLength) - hip;
+                reach = Vector3.ClampMagnitude(reach, (upper + lower) * 0.999f);
+                float length = reach.magnitude, along = (upper * upper - lower * lower + length * length) / (2f * length);
+                Vector3 axis = reach / length;
+                float kneeYaw = Mathf.Lerp(pelvisYaw, yaw, 0.6f);
+                Vector3 bend = Vector3.ProjectOnPlane(Quaternion.Euler(0f, kneeYaw, 0f) * Vector3.forward, axis).normalized;
+                Vector3 knee = hip + axis * along + bend * Mathf.Sqrt(Mathf.Max(upper * upper - along * along, 0f));
+                // The thigh came round with the pelvis; the rest of the way to the knee's own heading it turns about itself.
+                thigh.rotation = Quaternion.AngleAxis(kneeYaw - pelvisYaw, Vector3.up) * thigh.rotation;
+                thigh.rotation = Quaternion.FromToRotation(shin.position - hip, knee - hip) * thigh.rotation;
+                shin.rotation = Quaternion.FromToRotation(foot.position - shin.position, hip + reach - shin.position) * shin.rotation;
+                foot.rotation = turn * Quaternion.AngleAxis(heel, Vector3.right) * stance.rotation;
             }
 
             public Quaternion Grip(float lean, float roll)
@@ -253,7 +312,7 @@ namespace Game.Scripts.Editor.Battle
         private static bool IsTwoHanded => s_spec.OffHand > 0f;
         private static ClipPose s_idleClip;
         private static HumanPose s_stance;
-        private static Pose s_hips;
+        private static Pose s_hips, s_leftFoot, s_rightFoot;
         private static WeaponDefinition s_weapon;
 
         /// Writes ArmingSword_Attack0-2 from the keys: body muscles, the fingers as the idle holds them and the sword's socket
@@ -339,6 +398,7 @@ namespace Game.Scripts.Editor.Battle
                         // Skinning is evaluated once per editor frame, so every moment gets a rig of its own.
                         using Stage rig = CreateStage();
                         int index = Mathf.Clamp(frame, 0, motion.Frames);
+                        Enter(rig, motion, index);
                         rig.Set(motion.Muscles[index], motion.BodyPositions[index], motion.BodyRotations[index], motion.Lean[index], motion.Roll[index]);
 
                         if (index >= motion.Shown)
@@ -351,6 +411,9 @@ namespace Game.Scripts.Editor.Battle
                         {
                             rig.Head.localScale = view.StartsWith("fp") ? Vector3.zero : Vector3.one;
                             Place(camera, view, rig.Hand.position);
+
+                            if (view.StartsWith("fp"))
+                                camera.transform.position += Eye(motion, index);
 
                             // The first render of an editor session comes out empty.
                             for (int pass = isFirst ? 0 : 1; pass < 2; pass++)
@@ -545,6 +608,7 @@ namespace Game.Scripts.Editor.Battle
                     motion.Roll = solved.Roll;
                     motion.Strain = solved.Strain;
                     motion.Left = solved.Left;
+                    motion.Lower = solved.Lower;
                     Tables[i] = solved.Name;
                     report.AppendLine($"{motion.Name}: as solved before");
                 }
@@ -554,7 +618,7 @@ namespace Game.Scripts.Editor.Battle
                     s_solved[motion.Text] = new SwordMotion
                     {
                         Muscles = motion.Muscles, BodyPositions = motion.BodyPositions, BodyRotations = motion.BodyRotations, Grips = motion.Grips, Torso = motion.Torso,
-                        Lean = motion.Lean, Roll = motion.Roll, Strain = motion.Strain, Left = motion.Left, Name = Tables[i]
+                        Lean = motion.Lean, Roll = motion.Roll, Strain = motion.Strain, Left = motion.Left, Lower = motion.Lower, Name = Tables[i]
                     };
                 }
 
@@ -588,6 +652,9 @@ namespace Game.Scripts.Editor.Battle
 
             Transform hips = animator.GetBoneTransform(HumanBodyBones.Hips);
             s_hips = new Pose(hips.position, hips.rotation);
+            Transform left = animator.GetBoneTransform(HumanBodyBones.LeftFoot), right = animator.GetBoneTransform(HumanBodyBones.RightFoot);
+            s_leftFoot = new Pose(left.position, left.rotation);
+            s_rightFoot = new Pose(right.position, right.rotation);
 
             Object.DestroyImmediate(model);
 
@@ -817,11 +884,12 @@ namespace Game.Scripts.Editor.Battle
             s_neckScale = new Vector3(Measure(s_neck, rig.Head, 0).x, Measure(s_neck, rig.Head, 2).y, Measure(s_neck, rig.Head, 1).z);
         }
 
-        /// The chest turned against the hips and the head kept on what the eyes look at.
-        private static void SetTorso(float[] muscles, Vector3 torso)
+        /// The chest turned against the way ahead and the head kept on what the eyes look at. What the pelvis has turned
+        /// already the spine does not turn again; what it pitches the neck gives back.
+        private static void SetTorso(float[] muscles, Vector3 torso, float pelvisYaw = 0f, float pelvisPitch = 0f)
         {
-            Vector3 chest = new Vector3(torso.x / s_torsoScale.x, torso.z / s_torsoScale.z, torso.y / s_torsoScale.y);
-            Vector3 head = new Vector3(-torso.x / s_neckScale.x, -torso.z / s_neckScale.z, -torso.y / s_neckScale.y) * 0.8f;
+            Vector3 chest = new Vector3(torso.x / s_torsoScale.x, torso.z / s_torsoScale.z, (torso.y - pelvisYaw) / s_torsoScale.y);
+            Vector3 head = new Vector3(-(torso.x + pelvisPitch) / s_neckScale.x, -torso.z / s_neckScale.z, -torso.y / s_neckScale.y) * 0.8f;
 
             for (int i = 0; i < s_torso.Length; i++)
                 muscles[s_torso[i]] = Mathf.Clamp(s_idle[s_torso[i]] + chest[i % 3], -1f, 1f);
@@ -842,6 +910,7 @@ namespace Game.Scripts.Editor.Battle
             motion.Roll = new float[count];
             motion.Strain = new float[count];
             motion.Left = new float[count];
+            motion.Lower = BuildLower(motion, motions);
 
             for (int frame = 0; frame < count; frame++)
             {
@@ -861,6 +930,7 @@ namespace Game.Scripts.Editor.Battle
             if (s_hasIdleMotion)
                 SetTorso(rest, s_idleTorso);
 
+            rig.Lower = null;
             rig.Set(rest, motion.BodyPositions[0], motion.BodyRotations[0], s_idleLean, s_idleRoll);
             SwordKey idle = new SwordKey
             {
@@ -882,11 +952,14 @@ namespace Game.Scripts.Editor.Battle
             {
                 SwordMotion before = motions[motion.After];
                 int from = motion.AfterFrame;
+                Enter(rig, before, from);
                 rig.Set(before.Muscles[from], motion.BodyPositions[0], motion.BodyRotations[0], before.Lean[from], before.Roll[from]);
+                // Keys are given as the eyes see them: what the body adds comes back on every frame's target.
+                Vector3 eye = Eye(before, from);
                 keys[0] = new SwordKey
                 {
-                    Grip = rig.Socket.position, Blade = rig.Socket.forward, Elbow = rig.Elbow.position, Torso = before.Torso[from], Flow = 0f,
-                    IsLeftFree = IsTwoHanded && before.Left[from] < 0.5f, LeftHand = rig.LeftHand.position
+                    Grip = rig.Socket.position - eye, Blade = rig.Socket.forward, Elbow = rig.Elbow.position - eye, Torso = before.Torso[from], Flow = 0f,
+                    IsLeftFree = IsTwoHanded && before.Left[from] < 0.5f, LeftHand = rig.LeftHand.position - eye
                 };
                 seed = Seed(before.Muscles[from], before.Lean[from], before.Roll[from]);
             }
@@ -900,6 +973,7 @@ namespace Game.Scripts.Editor.Battle
             {
                 found = SolveArm(rig, motion, frame, rough[frame], found, frame == 0 ? 0f : 1f, null);
                 Apply(motion, frame, found, rough[frame].Left);
+                Enter(rig, motion, frame);
                 rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], motion.Roll[frame]);
 
                 for (int i = 0; i < keys.Count; i++)
@@ -908,7 +982,7 @@ namespace Game.Scripts.Editor.Battle
                         continue;
 
                     SwordKey key = keys[i];
-                    key.Grip = rig.Socket.position;
+                    key.Grip = rig.Socket.position - Eye(motion, frame);
                     key.Blade = rig.Socket.forward;
                     keys[i] = key;
                 }
@@ -996,6 +1070,7 @@ namespace Game.Scripts.Editor.Battle
                 float[] previous = solved[Mathf.Max(frame - 1, 0)];
                 values = solved[frame];
                 Apply(motion, frame, values, targets[frame].Left);
+                Enter(rig, motion, frame);
                 rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], motion.Roll[frame]);
                 motion.Grips[frame] = rig.Grip(motion.Lean[frame], motion.Roll[frame]);
                 motion.Torso[frame] = targets[frame].Torso;
@@ -1037,8 +1112,9 @@ namespace Game.Scripts.Editor.Battle
                     rig.LeftHand.position.x, rig.LeftHand.position.y, rig.LeftHand.position.z, rig.LeftElbow.position.x, rig.LeftElbow.position.y, rig.LeftElbow.position.z));
             }
 
+            Enter(rig, motion, motion.Peak);
             rig.Set(motion.Muscles[motion.Peak], motion.BodyPositions[motion.Peak], motion.BodyRotations[motion.Peak], motion.Lean[motion.Peak], motion.Roll[motion.Peak]);
-            Vector3 strike = rig.Socket.position + rig.Socket.forward * Strike;
+            Vector3 strike = rig.Socket.position + rig.Socket.forward * Strike - Eye(motion, motion.Peak);
             report.AppendLine(string.Format(CultureInfo.InvariantCulture,
                 "{0}: frames {1} peak {2} | peak miss {3:F1} cm (strike z {4:F2}) | grip off target max {5:F1} cm @{6} | blade off max {7:F0} deg @{8} | muscle step max {9:F2} @{10}",
                 motion.Name, motion.Frames, motion.Peak, new Vector2(strike.x - s_eye.x, strike.y - s_eye.y).magnitude * 100f, strike.z, worstGrip * 100f, gripFrame,
@@ -1049,6 +1125,93 @@ namespace Game.Scripts.Editor.Battle
                 report.AppendLine(string.Format(CultureInfo.InvariantCulture, "  left fist off the hilt max {0:F1} cm @{1}", worstGap * 100f, gapFrame));
 
             Tables[motion.Index] = table.ToString();
+        }
+
+        private static void Enter(Stage rig, SwordMotion motion, int frame)
+        {
+            rig.Lower = motion.Lower != null ? motion.Lower[frame] : (BodyFrame?)null;
+        }
+
+        private static Vector3 Eye(SwordMotion motion, int frame)
+        {
+            return motion.Lower != null ? motion.Lower[frame].Eye : Vector3.zero;
+        }
+
+        /// The body per frame from the "body" keys: the hips run through them, a foot stands where a key has it and steps
+        /// between two keys that have it elsewhere. A motion chained from another starts as that one stands; one that ends in
+        /// the idle ends in the stance, any other stays as its last key has it.
+        private static BodyFrame[] BuildLower(SwordMotion motion, SwordMotion[] motions)
+        {
+            BodyFrame[] before = motion.After >= 0 ? motions[motion.After].Lower : null;
+
+            if (motion.BodyKeys.Count == 0 && before == null)
+                return null;
+
+            List<BodyKey> keys = motion.BodyKeys.OrderBy(key => key.Frame).ToList();
+            BodyKey first = new BodyKey { Body = before != null ? before[motion.AfterFrame] : default, HasHips = true, HasLeft = true, HasRight = true };
+
+            if (before != null)
+                keys.RemoveAll(key => key.Frame <= 0);
+
+            if (keys.Count == 0 || keys[0].Frame > 0)
+                keys.Insert(0, first);
+
+            for (int i = 0; i < keys.Count; i++)
+            {
+                BodyKey key = keys[i];
+                BodyFrame last = i > 0 ? keys[i - 1].Body : default, body = key.Body;
+
+                if (!key.HasHips)
+                    (body.Shift, body.Yaw, body.Pitch) = (last.Shift, last.Yaw, last.Pitch);
+
+                if (!key.HasLeft)
+                    (body.Left, body.LeftYaw, body.LeftHeel) = (last.Left, last.LeftYaw, last.LeftHeel);
+
+                if (!key.HasRight)
+                    (body.Right, body.RightYaw, body.RightHeel) = (last.Right, last.RightYaw, last.RightHeel);
+
+                key.Body = body;
+                keys[i] = key;
+            }
+
+            if (keys[^1].Frame < motion.Frames)
+                keys.Add(new BodyKey { Frame = motion.Frames, Body = motion.Keys[^1].IsIdle ? default : keys[^1].Body });
+
+            Vector3 Slope(Func<BodyFrame, Vector3> value, int i)
+            {
+                return i == 0 || i == keys.Count - 1 ? Vector3.zero : (value(keys[i + 1].Body) - value(keys[i - 1].Body)) / (keys[i + 1].Frame - keys[i - 1].Frame);
+            }
+
+            Vector3 Step(Vector3 from, Vector3 to, float t)
+            {
+                float stride = Vector3.Distance(from, to);
+
+                return Vector3.Lerp(from, to, Mathf.SmoothStep(0f, 1f, t)) + Vector3.up * (stride > 0.04f ? Mathf.Min(0.09f, stride * 0.3f) * Mathf.Sin(t * Mathf.PI) : 0f);
+            }
+
+            Vector3 toEye = s_eye - s_hips.position;
+            BodyFrame[] frames = new BodyFrame[motion.Frames + 1];
+
+            for (int frame = 0; frame < frames.Length; frame++)
+            {
+                int i = Mathf.Clamp(keys.FindLastIndex(key => key.Frame <= frame), 0, keys.Count - 2);
+                float span = keys[i + 1].Frame - keys[i].Frame, t = Mathf.Clamp01((frame - keys[i].Frame) / span), ease = Mathf.SmoothStep(0f, 1f, t);
+                BodyFrame a = keys[i].Body, b = keys[i + 1].Body;
+                Vector3 Along(Func<BodyFrame, Vector3> value) => Hermite(value(a), Slope(value, i) * span, value(b), Slope(value, i + 1) * span, t);
+                Vector3 turn = Along(body => new Vector3(body.Yaw, body.Pitch, 0f));
+                BodyFrame at = new BodyFrame
+                {
+                    Shift = Along(body => body.Shift), Yaw = turn.x, Pitch = turn.y,
+                    Left = Step(a.Left, b.Left, t), Right = Step(a.Right, b.Right, t),
+                    LeftYaw = Mathf.Lerp(a.LeftYaw, b.LeftYaw, ease), RightYaw = Mathf.Lerp(a.RightYaw, b.RightYaw, ease),
+                    LeftHeel = Mathf.Lerp(a.LeftHeel, b.LeftHeel, ease), RightHeel = Mathf.Lerp(a.RightHeel, b.RightHeel, ease)
+                };
+                // The eyes go with the hips, and forward and down as the pelvis pitches the body over them.
+                at.Eye = at.Shift + Quaternion.Euler(0f, at.Yaw, 0f) * (Quaternion.Euler(at.Pitch, 0f, 0f) * (Quaternion.Euler(0f, -at.Yaw, 0f) * toEye)) - toEye;
+                frames[frame] = at;
+            }
+
+            return frames;
         }
 
         private static float[] Seed(float[] muscles, float lean, float roll)
@@ -1169,6 +1332,16 @@ namespace Game.Scripts.Editor.Battle
                 targets[frame].EdgeWeight = swing;
             }
 
+            // Keyed as the eyes see it, everything goes where the body takes the eyes.
+            for (int frame = 0; frame < count && motion.Lower != null; frame++)
+            {
+                Vector3 eye = motion.Lower[frame].Eye;
+                targets[frame].Grip += eye;
+                targets[frame].Elbow += eye;
+                targets[frame].LeftHand += eye;
+                targets[frame].LeftElbow += eye;
+            }
+
             return targets;
         }
 
@@ -1196,7 +1369,9 @@ namespace Game.Scripts.Editor.Battle
             const float step = 2e-3f;
             int n = start.Length;
             float[] muscles = (float[])motion.Muscles[frame].Clone();
-            SetTorso(muscles, target.Torso);
+            Enter(rig, motion, frame);
+            BodyFrame body = rig.Lower ?? default;
+            SetTorso(muscles, target.Torso, body.Yaw, body.Pitch);
             Array.Copy(muscles, motion.Muscles[frame], muscles.Length);
             float hard = 1f + target.Hard;
 
@@ -1213,8 +1388,8 @@ namespace Game.Scripts.Editor.Battle
                 Add(r, (rig.Socket.position - target.Grip) * (35f * hard * (1f - 0.4f * target.Aim)));
                 Add(r, (rig.Socket.forward - target.Blade) * (14f * hard * (1f - 0.5f * target.Aim)));
                 Vector3 strike = rig.Socket.position + rig.Socket.forward * Strike;
-                r.Add((strike.x - s_eye.x) * 300f * target.Aim);
-                r.Add((strike.y - s_eye.y) * 300f * target.Aim);
+                r.Add((strike.x - s_eye.x - body.Eye.x) * 300f * target.Aim);
+                r.Add((strike.y - s_eye.y - body.Eye.y) * 300f * target.Aim);
                 Add(r, (rig.Socket.up - target.Edge) * (3.5f * target.EdgeWeight));
                 Add(r, (rig.Elbow.position - target.Elbow) * (14f * target.ElbowWeight));
 
@@ -1468,6 +1643,50 @@ namespace Game.Scripts.Editor.Battle
                     continue;
                 }
 
+                // "body <frame> [h dx dy dz yaw [pitch]] [lf dx dz [yaw [heel]]] [rf dx dz [yaw [heel]]]": the hips off the stance
+                // and the pelvis turned right / pitched forward, each foot off its stance, turned right, its heel raised.
+                if (words[0] == "body")
+                {
+                    BodyKey body = new BodyKey { Frame = (int)Next() };
+
+                    float Maybe()
+                    {
+                        return at < words.Length && float.TryParse(words[at], NumberStyles.Float, CultureInfo.InvariantCulture, out float value) && at++ >= 0 ? value : 0f;
+                    }
+
+                    while (at < words.Length)
+                    {
+                        switch (words[at++])
+                        {
+                            case "h":
+                                body.HasHips = true;
+                                body.Body.Shift = new Vector3(Next(), Next(), Next());
+                                body.Body.Yaw = Next();
+                                body.Body.Pitch = Maybe();
+                                break;
+                            case "lf":
+                                body.HasLeft = true;
+                                body.Body.Left = new Vector3(Next(), 0f, Next());
+                                body.Body.LeftYaw = Maybe();
+                                body.Body.LeftHeel = Maybe();
+                                break;
+                            case "rf":
+                                body.HasRight = true;
+                                body.Body.Right = new Vector3(Next(), 0f, Next());
+                                body.Body.RightYaw = Maybe();
+                                body.Body.RightHeel = Maybe();
+                                break;
+                            default:
+                                throw new ArgumentException($"Unknown word in '{line}'");
+                        }
+                    }
+
+                    motions[^1].BodyKeys.Add(body);
+                    motions[^1].Text += "\n" + line;
+
+                    continue;
+                }
+
                 SwordKey key = words[0] switch
                 {
                     "idle" => Idle(Next()),
@@ -1597,6 +1816,7 @@ namespace Game.Scripts.Editor.Battle
 
                 for (int frame = 0; frame < count; frame++)
                 {
+                    Enter(rig, motion, frame);
                     rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], motion.Roll[frame]);
 
                     for (int b = 0; b < bones.Count; b++)
@@ -1612,6 +1832,9 @@ namespace Game.Scripts.Editor.Battle
 
                 if (IsTwoHanded)
                     json.Append(",\"id\":\"").Append(motion.Id).Append("\",\"shown\":").Append(motion.Shown).Append(",\"left\":").Append(Json(motion.Left));
+
+                if (motion.Lower != null)
+                    json.Append(",\"eyes\":").Append(Json(motion.Lower.SelectMany(body => new[] { body.Eye.x, body.Eye.y, body.Eye.z }).ToArray()));
 
                 json.Append(",\"strain\":").Append(Json(motion.Strain)).Append(",\"lean\":").Append(Json(motion.Lean)).Append(",\"roll\":").Append(Json(motion.Roll));
                 json.Append(",\"poses\":\"").Append(Base64(poses)).Append("\",\"socket\":\"").Append(Base64(sockets)).Append("\"}");
