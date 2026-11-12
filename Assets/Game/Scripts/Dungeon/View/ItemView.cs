@@ -17,7 +17,8 @@ namespace Game.Scripts.Dungeon
         public int BagIndex => _bagIndex;
         public EquipSlot Slot => _slot;
         public bool IsEquipped => _bagIndex < 0;
-        public Vector2Int GrabCell => _grabCell;
+        /// Where the pointer took the item, 0..1 from its top-left corner.
+        public Vector2 GrabPoint => _grabPoint;
 
         [SerializeField]
         private Image _background;
@@ -49,8 +50,7 @@ namespace Game.Scripts.Dungeon
         private InventoryComponent _inventory;
         private int _bagIndex;
         private EquipSlot _slot;
-        private float _cellSize;
-        private Vector2Int _grabCell;
+        private Vector2 _grabPoint;
         private bool _isSplitting;
         private InventoryView _owner;
 
@@ -64,7 +64,6 @@ namespace Game.Scripts.Dungeon
             _config = config;
             _bagIndex = bagIndex;
             _slot = slot;
-            _cellSize = cellSize;
 
             RectTransform rect = (RectTransform)transform;
             bool isSlot = bagIndex < 0;
@@ -107,11 +106,8 @@ namespace Game.Scripts.Dungeon
             _isSplitting = Input.GetKey(KeyCode.LeftControl) && _stack.Count > 1;
 
             RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)transform, eventData.position, eventData.pressEventCamera, out Vector2 local);
-            RectTransform rect = (RectTransform)transform;
-            Vector2 topLeft = local + new Vector2(rect.pivot.x * rect.sizeDelta.x, (1f - rect.pivot.y) * rect.sizeDelta.y - rect.sizeDelta.y);
-            _grabCell = IsEquipped ? Vector2Int.zero : new Vector2Int(
-                Mathf.Clamp(Mathf.FloorToInt((local.x + rect.pivot.x * rect.sizeDelta.x) / _cellSize), 0, _config.Width - 1),
-                Mathf.Clamp(Mathf.FloorToInt((rect.sizeDelta.y * (1f - rect.pivot.y) - local.y) / _cellSize), 0, _config.Height - 1));
+            Rect rect = ((RectTransform)transform).rect;
+            _grabPoint = new Vector2(Mathf.InverseLerp(rect.xMin, rect.xMax, local.x), Mathf.InverseLerp(rect.yMax, rect.yMin, local.y));
             _group.alpha = 0.4f;
             DungeonAudioComponent.PlayUi(_config.PickSound(ItemSound.Drag));
             _owner.BeginDrag(this, eventData);

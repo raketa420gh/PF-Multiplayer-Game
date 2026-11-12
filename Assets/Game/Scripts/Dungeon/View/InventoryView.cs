@@ -160,8 +160,7 @@ namespace Game.Scripts.Dungeon
                 return;
 
             RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)_canvas.transform, eventData.position, _canvas.worldCamera, out Vector2 local);
-            _dragGhost.anchoredPosition = local - new Vector2(_dragged.GrabCell.x * _bagGrid.CellSize + _bagGrid.CellSize * 0.5f,
-                -(_dragged.GrabCell.y * _bagGrid.CellSize + _bagGrid.CellSize * 0.5f));
+            _dragGhost.anchoredPosition = local - Vector2.Scale(_dragGhost.sizeDelta, new Vector2(_dragged.GrabPoint.x, -_dragged.GrabPoint.y));
 
             ItemGridView grid = FindUnderPointer<ItemGridView>(eventData, out EquipSlotView slot);
             _bagGrid.ClearHighlight();
@@ -178,10 +177,8 @@ namespace Game.Scripts.Dungeon
             _hoveredZone = zone;
             zone?.Preview(_dragged);
 
-            if (grid != null && grid.Inventory != null && grid.TryGetCell(eventData.position, _canvas.worldCamera, out int x, out int y))
+            if (TryGetPlace(grid, _dragged, eventData, out int x, out int y))
             {
-                x -= _dragged.GrabCell.x;
-                y -= _dragged.GrabCell.y;
                 bool isValid = grid.Inventory.CanPlace(_dragged.Config, x, y, grid.Inventory == _dragged.Inventory ? _dragged.BagIndex : -1);
                 grid.Highlight(x, y, _dragged.Config.Width, _dragged.Config.Height, isValid || grid.Inventory.FindBagIndexAt(x, y) >= 0);
             }
@@ -219,11 +216,8 @@ namespace Game.Scripts.Dungeon
 
             ItemGridView grid = FindUnderPointer<ItemGridView>(eventData, out EquipSlotView slot);
 
-            if (grid != null && grid.TryGetCell(eventData.position, _canvas.worldCamera, out int x, out int y))
+            if (TryGetPlace(grid, item, eventData, out int x, out int y))
             {
-                x -= item.GrabCell.x;
-                y -= item.GrabCell.y;
-
                 if (item.IsEquipped)
                     _actions.RpcUnequip(item.Slot, grid.Inventory.Id, x, y);
                 else if (item.IsSplitting)
@@ -333,6 +327,25 @@ namespace Game.Scripts.Dungeon
         {
             if (_tooltipItem == item)
                 ShowTooltip(item);
+        }
+
+        /// The cells the ghost covers most: its top-left cell rounded to the nearest one, kept inside the grid under the pointer.
+        private bool TryGetPlace(ItemGridView grid, ItemView item, PointerEventData eventData, out int x, out int y)
+        {
+            x = 0;
+            y = 0;
+
+            if (grid == null || grid.Inventory == null || !grid.TryGetCell(eventData.position, _canvas.worldCamera, out _, out _))
+                return false;
+
+            float half = _bagGrid.CellSize * 0.5f;
+            Rect rect = _dragGhost.rect;
+            Vector3 corner = _dragGhost.TransformPoint(new Vector3(rect.xMin + half, rect.yMax - half));
+            grid.GetCell(RectTransformUtility.WorldToScreenPoint(_canvas.worldCamera, corner), _canvas.worldCamera, out x, out y);
+            x = Mathf.Clamp(x, 0, Mathf.Max(0, grid.Inventory.Width - item.Config.Width));
+            y = Mathf.Clamp(y, 0, Mathf.Max(0, grid.Inventory.Rows - item.Config.Height));
+
+            return true;
         }
 
         private void TakeAll()

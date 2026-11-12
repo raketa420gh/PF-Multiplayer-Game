@@ -101,12 +101,18 @@ namespace Game.Scripts.Dungeon
 
         public bool TryGetCell(Vector2 screenPosition, Camera camera, out int x, out int y)
         {
+            GetCell(screenPosition, camera, out x, out y);
+
+            return x >= 0 && y >= 0 && x < _inventory.Width && y < _inventory.Rows;
+        }
+
+        /// The cell under the point, possibly outside the grid.
+        public void GetCell(Vector2 screenPosition, Camera camera, out int x, out int y)
+        {
             RectTransformUtility.ScreenPointToLocalPointInRectangle(_cellsRoot, screenPosition, camera, out Vector2 local);
             float bagBottom = _inventory.Height * _cellSize;
             x = Mathf.FloorToInt(local.x / _cellSize);
             y = -local.y < bagBottom ? Mathf.FloorToInt(-local.y / _cellSize) : _inventory.Height + Mathf.FloorToInt((-local.y - bagBottom - _pouchGap) / _cellSize);
-
-            return x >= 0 && y >= 0 && x < _inventory.Width && y < _inventory.Rows;
         }
 
         public void Highlight(int x, int y, int width, int height, bool isValid)
