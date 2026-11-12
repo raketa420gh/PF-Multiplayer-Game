@@ -388,6 +388,7 @@ namespace Game.Scripts.Dungeon
         private readonly AdventurerStats _stats = new();
         private ClassConfig _class;
         private PlayerSessionComponent _session;
+        private static readonly RaycastHit[] s_lookHits = new RaycastHit[16];
         private InteractableComponent _lookTarget;
         private float _swarmAccumulator;
         private int _appliedVersion = -1;
@@ -447,6 +448,9 @@ namespace Game.Scripts.Dungeon
             _fighter.Receiver.OnHitTaken -= OnHitTaken;
             _fighter.Combat.Projectiles.OnImpact -= OnProjectileImpact;
             _effects.OnExpired -= OnEffectExpired;
+
+            if (HasInputAuthority)
+                InteractOutline.Set(null);
 
             if (DungeonContext.Instance != null && DungeonContext.Instance.LocalAdventurer == this)
                 DungeonContext.Instance.SetLocalAdventurer(null);
@@ -510,6 +514,7 @@ namespace Game.Scripts.Dungeon
                 return;
 
             _lookTarget = FindInteractable();
+            InteractOutline.Set(_lookTarget);
 
             // Seated, the head turns as far as at a door.
             if (DungeonContext.Instance != null)
@@ -2502,11 +2507,33 @@ namespace Game.Scripts.Dungeon
 
             PhysicsScene scene = Runner.GetPhysicsScene();
 
+            // Any part of the model counts, solid or trigger; anything else solid in front blocks the look.
             // A just despawned item keeps its collider until the end of the frame.
-            InteractableComponent target = scene.Raycast(origin, direction, out RaycastHit hit, InteractRange, _interactMask, QueryTriggerInteraction.Collide)
-                && hit.collider.GetComponentInParent<InteractableComponent>() is { Object: { IsValid: true } } found
-                    ? found
-                    : null;
+            int count = scene.Raycast(origin, direction, s_lookHits, InteractRange, _interactMask | WorldMask, QueryTriggerInteraction.Collide);
+            InteractableComponent target = null;
+            float nearest = InteractRange;
+            float blocker = InteractRange;
+
+            for (int i = 0; i < count; i++)
+            {
+                RaycastHit hit = s_lookHits[i];
+
+                if (hit.collider.GetComponentInParent<InteractableComponent>() is { Object: { IsValid: true } } found)
+                {
+                    if (hit.distance <= nearest)
+                    {
+                        nearest = hit.distance;
+                        target = found;
+                    }
+                }
+                else if (!hit.collider.isTrigger)
+                {
+                    blocker = Mathf.Min(blocker, hit.distance);
+                }
+            }
+
+            if (nearest > blocker)
+                target = null;
 
             // Bodies come to rest differently on every client: for another player's look the server takes any body by the line of sight.
             if (target != null || HasInputAuthority)
