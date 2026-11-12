@@ -142,7 +142,13 @@ namespace Game.Scripts.Battle
 
             // A body on the floor is not in the way of the living.
             if (_wasAlive != isAlive)
+            {
                 _move.SetBlocking(isAlive);
+
+                // Unsimulated bodies follow the state authority, which takes the dead out of physics.
+                if (Object.IsProxy)
+                    _move.SetBodyActive(isAlive);
+            }
 
             _wasAlive = isAlive;
         }
@@ -243,7 +249,7 @@ namespace Game.Scripts.Battle
                 _receiver.HitboxRoot.HitboxRootActive = false;
             }
 
-            _move.Simulate(Vector2.zero, _look, false, false, false, 0f);
+            _move.SimulateDead(_look);
 
             if (HasStateAuthority && _respawnDelay > 0f && _respawnTimer.Expired(Runner))
                 Revive(_spawnPosition, _look.y);

@@ -81,6 +81,7 @@ namespace Game.Scripts.Battle
         /// Sitting on the ground lowers the body past a full crouch, sitting down and getting up take SitTime.
         public void Simulate(Vector2 move, Vector2 look, bool isWalk, bool isCrouch, bool isJump, float speedMultiplier, bool isSeated = false, bool isInSeat = false)
         {
+            _collider.enabled = true;
             Pitch = Mathf.Clamp(look.x, -MaxPitch, MaxPitch);
             transform.rotation = Quaternion.Euler(0f, look.y, 0f);
 
@@ -119,6 +120,16 @@ namespace Game.Scripts.Battle
             TrackFall(wasGrounded);
         }
 
+        /// A dead body falls to the ground, then leaves physics: nobody pushes it or bumps into it.
+        public void SimulateDead(Vector2 look)
+        {
+            if (!_collider.enabled)
+                return;
+
+            Simulate(Vector2.zero, look, false, false, false, 0f);
+            _collider.enabled = !_controller.Grounded;
+        }
+
         public void Teleport(Vector3 position, float yaw)
         {
             _controller.Velocity = Vector3.zero;
@@ -146,6 +157,11 @@ namespace Game.Scripts.Battle
         {
             if (_blocker != null)
                 _blocker.enabled = isBlocking;
+        }
+
+        public void SetBodyActive(bool isActive)
+        {
+            _collider.enabled = isActive;
         }
 
         public void AddImpulse(Vector3 impulse)

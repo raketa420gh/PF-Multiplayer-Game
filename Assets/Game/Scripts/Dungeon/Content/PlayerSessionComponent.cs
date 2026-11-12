@@ -25,7 +25,7 @@ namespace Game.Scripts.Dungeon
         public const byte LoadStash = 1;
         public const int StashPages = 2;
         /// Pages the player may use; the rest are shown locked.
-        public const int OpenStashPages = 1;
+        public const int OpenStashPages = 2;
         /// Skill slot left empty (Q or E binds nothing).
         public const byte NoSkill = byte.MaxValue;
 
