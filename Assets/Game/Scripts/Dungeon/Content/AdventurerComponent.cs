@@ -1288,7 +1288,7 @@ namespace Game.Scripts.Dungeon
 
             AbilityConfig ability = _abilities[index];
 
-            if (!_cooldowns[index].ExpiredOrNotRunning(Runner) || (ability.IsSpell && !ability.IsCooldownBased && _charges[index] == 0) || !CanAfford(ability))
+            if (!_cooldowns[index].ExpiredOrNotRunning(Runner) || (ability.UsesCharges && _charges[index] == 0) || !CanAfford(ability))
                 return;
 
             if (ability.Has(AbilityFlags.RequiresShield) && !HoldsWeaponClass(WeaponClass.Shield))
@@ -1488,6 +1488,13 @@ namespace Game.Scripts.Dungeon
                 case AbilityKind.GiveItem:
                     GiveItem(ability);
                     break;
+            }
+
+            if (ability.Has(AbilityFlags.Campfire))
+            {
+                _charges.Set(index, (byte)Mathf.Max(0, _charges[index] - 1));
+
+                return;
             }
 
             if (ability.IsSpell && !ability.IsCooldownBased)
@@ -2303,15 +2310,15 @@ namespace Game.Scripts.Dungeon
             }
         }
 
-        /// Every spell short of charges fills at once, a heavy one (few charges) slower; Cooldown Recovery sets the pace. The free
-        /// cast of Knowledge 30 returns with the last charge.
+        /// Every spell short of charges fills at once, a heavy one (few charges) slower; Cooldown Recovery sets the pace. Campfire
+        /// skills fill only by a lit fire. The free cast of Knowledge 30 returns with the last charge.
         private void SimulateSpellRecovery(float pace)
         {
             bool isSpent = false;
 
-            for (int i = _skillCount; i < _abilities.Count; i++)
+            for (int i = 0; i < _abilities.Count; i++)
             {
-                if (_abilities[i].IsCooldownBased || _charges[i] >= GetMaxCharges(i))
+                if (!_abilities[i].UsesCharges || _charges[i] >= GetMaxCharges(i) || (i < _skillCount && !IsByFire))
                 {
                     _recovery.Set(i, 0f);
 
@@ -2327,7 +2334,7 @@ namespace Game.Scripts.Dungeon
                 }
 
                 _recovery.Set(i, recovery);
-                isSpent |= _charges[i] < GetMaxCharges(i);
+                isSpent |= i >= _skillCount && _charges[i] < GetMaxCharges(i);
             }
 
             _isAttuned |= !isSpent;

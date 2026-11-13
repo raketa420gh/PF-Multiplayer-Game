@@ -62,7 +62,7 @@ namespace Game.Scripts.Dungeon
         public void SetAbility(int index, AbilityConfig ability)
         {
             string detail = ability.IsSpell && !ability.IsCooldownBased ? $"{ability.Charges} charges · cast {ability.CastTime:0.##}s"
-                : ability.Cooldown > 0f ? $"Cooldown {ability.Cooldown:0}s" : string.Empty;
+                : ability.UsesCharges ? $"{ability.Charges} use · back by a campfire" : ability.Cooldown > 0f ? $"Cooldown {ability.Cooldown:0}s" : string.Empty;
             Set(index, ability.Icon, ability.Glyph, ability.Color, $"<b>{ability.DisplayName}</b>\n{ability.Description}\n<size=80%><color=#9a927f>{detail}</color></size>");
         }
 

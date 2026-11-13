@@ -66,7 +66,9 @@ namespace Game.Scripts.Dungeon
         Healing = 2048,
         Poison = 4096,
         /// A curse: the godless perks follow it.
-        Curse = 8192
+        Curse = 8192,
+        /// A skill spent on use: its charges come back only resting by a campfire.
+        Campfire = 16384
     }
 
     /// The lasting zone an ability leaves.
@@ -159,6 +161,8 @@ namespace Game.Scripts.Dungeon
         public Fusion.NetworkObject SpawnPrefab => _spawnPrefab;
         public float StaggerDuration => _staggerDuration;
         public bool IsCooldownBased => _charges >= 99;
+        /// Spent charge by charge: a charge-based spell or a campfire skill.
+        public bool UsesCharges => _isSpell ? !IsCooldownBased : Has(AbilityFlags.Campfire);
         /// Subclass the ability belongs to, -1 for the whole class.
         public int Subclass => _subclass;
         /// Stacks of the subclass resource needed to use it.

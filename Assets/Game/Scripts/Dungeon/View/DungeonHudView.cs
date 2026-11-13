@@ -440,8 +440,9 @@ namespace Game.Scripts.Dungeon
             slot.Icon.sprite = ability.Icon;
             slot.Glyph.text = ability.Icon != null ? string.Empty : ability.Glyph;
             slot.Glyph.color = ability.Color;
-            slot.Cooldown.fillAmount = ability.Cooldown > 0f ? cooldown / adventurer.GetCooldownDuration(index) : 0f;
-            slot.Charges.text = ability.IsSpell && !ability.IsCooldownBased ? adventurer.GetCharges(index).ToString() : cooldown > 0f ? Mathf.CeilToInt(cooldown).ToString() : string.Empty;
+            slot.Cooldown.fillAmount = ability.Has(AbilityFlags.Campfire) ? 1f - adventurer.GetChargeFill(index)
+                : ability.Cooldown > 0f ? cooldown / adventurer.GetCooldownDuration(index) : 0f;
+            slot.Charges.text = ability.UsesCharges ?adventurer.GetCharges(index).ToString() : cooldown > 0f ? Mathf.CeilToInt(cooldown).ToString() : string.Empty;
         }
 
         private void UpdateBelt(AdventurerComponent adventurer)

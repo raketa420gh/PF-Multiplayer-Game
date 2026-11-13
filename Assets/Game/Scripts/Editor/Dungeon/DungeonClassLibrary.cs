@@ -47,8 +47,8 @@ namespace Game.Scripts.Editor.Dungeon
                 {
                     new AbilityDef
                     {
-                        Name = "Second Wind", Description = Text("Restore 25% of your health over 5s.", "Breathe. Again."), Kind = AbilityKind.Heal, Magnitude = 25f, Duration = 5f,
-                        PercentHealth = true, DamageType = DamageType.Physical, Cooldown = 60f, CastTime = 0.3f, Glyph = "SW", Color = new Color(0.9f, 0.35f, 0.3f), Vfx = VfxStyle.Heal,
+                        Name = "Second Wind", Description = Text("Restore 40% of your health over 12s. One use: rest by a campfire to get it back.", "Breathe. Again."), Kind = AbilityKind.Heal,
+                        Magnitude = 40f, Duration = 12f, PercentHealth = true, DamageType = DamageType.Physical, Flags = AbilityFlags.Campfire, Cooldown = 0f, CastTime = 0.3f, Glyph = "SW", Color = new Color(0.9f, 0.35f, 0.3f), Vfx = VfxStyle.Heal,
                         Art = "a weary soldier catching his breath, steam of breath in cold air, hand on his chest"
                     },
                     new AbilityDef
