@@ -38,7 +38,11 @@
 - Weapons: мечи, топоры, булавы, копья, кинжалы, щиты, факел. Стартовый набор: Arming Sword + Écu, Battle Axe, Bandage ×3, Torch.
 - Любимое оружие: Arming Sword + Écu.
 - Subclasses: **Shieldbearer** (только щит, живучий), **Hewer** (быстрый, любое оружие), **Captain** (поддержка отряда).
-- Skills: общие Second Wind (как в DaD: 40% HP за 12 с, один заряд, возвращается только отдыхом у костра за 15 с (серый костёр горит 18 с, как junk Campfire Kit в DaD; 2 с уходит на то, чтобы сесть); у навыков с флагом `AbilityFlags.Campfire` `Cooldown` = время восстановления у костра), Grit Your Teeth (+15 п. к снижению физ. урона на 6 с, перезарядка 60 с; эффект `StatusEffectKind.PhysicalReduction`), Over Here! (провокация: монстры в 8 м бьют тебя 4 с, все враги в 8 м замедлены на 20% на 4 с, перезарядка 30 с); Shield Bash, The Wall (Shieldbearer); Shoulder Blow, Fury (Hewer); Hold the Line!, Charge!, Banner (Captain).
+- Skills, общие (утверждены 2026-11-13):
+  - **Second Wind** — как в DaD: 40% HP за 12 с, один заряд; возвращается только отдыхом у костра за 15 с (серый костёр горит 18 с, как junk Campfire Kit в DaD; 2 с уходит на то, чтобы сесть). У навыков с флагом `AbilityFlags.Campfire` `Cooldown` = время восстановления у костра.
+  - **Grit Your Teeth** — +15 п. к Physical Reduction на 6 с, перезарядка 60 с (эффект `StatusEffectKind.PhysicalReduction`).
+  - **Over Here!** — крик-провокация: монстры в 8 м выбирают тебя целью 4 с (`StatusEffectKind.Taunt`, монстр видит тебя в 10 раз ближе), все враги в 8 м (монстры и игроки) замедлены на 20% на 4 с. Перезарядка 30 с, каст 0,3 с, флаг `Shout`. Стоит последним в списке навыков класса — билды хранят навыки по индексу.
+- Skills подклассов: Shield Bash, The Wall (Shieldbearer); Shoulder Blow, Fury (Hewer); Hold the Line!, Charge!, Banner (Captain).
 - Perks: общие Hardened, Plate Habit, Used to Wounds, Drill Arms, Field Rations; Steady Stance, Shield Drill, Counterblow, Heavy Bones / Anything Sharp, Light Step, Onslaught, Quick Hands / Under the Banner, Set the Example, Battle Order, Voice.
 
 ## Librarian

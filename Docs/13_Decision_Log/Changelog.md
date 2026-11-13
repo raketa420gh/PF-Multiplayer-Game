@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-13
+
+### Added
+- Mercenary: общий навык **Over Here!** — крик-провокация: монстры в 8 м бьют тебя 4 с, все враги в 8 м замедлены на 20% на 4 с, перезарядка 30 с.
+- Эффект `StatusEffectKind.PhysicalReduction`: процентные пункты к Physical Reduction поверх кривой брони.
+- Прогрессия по уровням (`Progression.md`): слоты перков на 1/5/15/20, слот E на 10, подклассы по одному на 30/40/50, кап 50.
+
+### Changed
+- Mercenary: **Second Wind** как в DaD — 40% HP за 12 с, один заряд, возвращается отдыхом у костра 15 с (`AbilityFlags.Campfire`); костёр горит 18 с.
+- Mercenary: **Grit Your Teeth** — вместо −20% урона на 5 с теперь +15 п. Physical Reduction на 6 с, перезарядка 60 с вместо 40 с.
+
 ## 2026-11-06
 
 ### Added

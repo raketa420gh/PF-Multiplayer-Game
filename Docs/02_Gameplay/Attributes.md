@@ -81,7 +81,7 @@
 
 ## Не зависит от атрибутов
 
-- Armor Rating → PDR и Magic Resistance (база 30 + экипировка) → MDR: кривые `DungeonFormulas.ArmorReduction / MagicReduction`, потолок 65%.
+- Armor Rating → PDR и Magic Resistance (база 30 + экипировка) → MDR: кривые `DungeonFormulas.ArmorReduction / MagicReduction`, потолок 65%. К PDR после кривой прибавляются эффекты `StatusEffectKind.PhysicalReduction` в процентных пунктах (Grit Your Teeth +15) и вычитается Rage — они могут вывести PDR за потолок.
 - Урон по голове: только множитель зоны и экипировка.
 - Длительность баффов и дебаффов фиксирована (`AbilityConfig.Duration`); исключение — порог Ловкости (замедления не действуют).
 - Cooldown Recovery: `1 + бонусы% / 100` (`StatType.CooldownRecovery`, только экипировка и перки); откат навыков и восстановление зарядов у костра делятся на это значение (`GetCooldownDuration`, `SimulateSpellRecovery`).
