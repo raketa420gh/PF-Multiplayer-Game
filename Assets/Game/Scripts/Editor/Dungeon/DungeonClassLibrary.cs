@@ -53,8 +53,8 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Grit Your Teeth", Description = Text("Take 20% less damage for 5s.", "Hurts. Later."), Kind = AbilityKind.Buff, Effect = StatusEffectKind.Guard,
-                        Magnitude = 20f, Duration = 5f, Cooldown = 40f, CastTime = 0.2f, Glyph = "GT", Color = steel, Vfx = VfxStyle.Physical,
+                        Name = "Grit Your Teeth", Description = Text("+15% physical damage reduction for 6s.", "Hurts. Later."), Kind = AbilityKind.Buff, Effect = StatusEffectKind.PhysicalReduction,
+                        Magnitude = 15f, Duration = 6f, Cooldown = 60f, CastTime = 0.2f, Glyph = "GT", Color = steel, Vfx = VfxStyle.Physical,
                         Art = "a clenched jaw of a scarred mercenary, blood on the teeth, steel gorget"
                     },
                     new AbilityDef
@@ -100,6 +100,12 @@ namespace Game.Scripts.Editor.Dungeon
                         Name = "Banner", Description = Text("Plant your banner for 20s: allies within 5m of it get +3 to every attribute.", "Here we stand."), Kind = AbilityKind.Zone,
                         Zone = ZoneKind.Banner, ZoneRadius = 5f, ZoneDuration = 20f, Effect = StatusEffectKind.AllAttributes, Magnitude = 3f, Cooldown = 60f, CastTime = 0.6f,
                         Glyph = "Bn", Color = captain, Subclass = 2, Vfx = VfxStyle.Holy, Art = "a war banner driven into a crypt floor, its torn cloth glowing faintly gold"
+                    },
+                    new AbilityDef
+                    {
+                        Name = "Over Here!", Description = Text("Monsters within 8m go for you for 4s; every enemy within 8m is slowed by 20% for 4s.", "Me. Look at me."), Kind = AbilityKind.Taunt,
+                        Magnitude = 1f, Duration = 4f, Radius = 8f, HitEffect = StatusEffectKind.Slow, HitMagnitude = 20f, HitDuration = 4f, Flags = AbilityFlags.Shout, Cooldown = 30f, CastTime = 0.3f,
+                        Glyph = "OH", Color = steel, Vfx = VfxStyle.Shout, Art = "a scarred mercenary bellowing with arms spread wide, sword banging on a shield, ghouls turning toward him"
                     }
                 },
                 Perks = new[]

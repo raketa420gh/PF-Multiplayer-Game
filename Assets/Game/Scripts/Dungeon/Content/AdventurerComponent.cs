@@ -1455,6 +1455,14 @@ namespace Game.Scripts.Dungeon
                     break;
                 case AbilityKind.Taunt:
                     _effects.Add(StatusEffectKind.Taunt, Power(ability), buffDuration);
+                    RpcFlash(transform.position + Vector3.up, ability.Color, ability.Radius * 2f);
+                    GatherBodies(transform.position + Vector3.up, ability.Radius);
+
+                    foreach (DamageReceiverComponent receiver in s_struck)
+                    {
+                        if (ability.Effect != StatusEffectKind.None && receiver.IsAlive && receiver.TryGetComponent(out StatusEffectComponent effects))
+                            ApplyEffectTo(effects, ability.Effect, ability.EffectMagnitude, ability.EffectDuration, ability.Flags);
+                    }
                     break;
                 case AbilityKind.Spawn:
                     SpawnObject(ability, index);

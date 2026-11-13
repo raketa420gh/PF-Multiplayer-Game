@@ -621,6 +621,7 @@ namespace Game.Scripts.Dungeon
                 case StatusEffectKind.Knowledge:
                 case StatusEffectKind.Armor:
                 case StatusEffectKind.ArmorPercent:
+                case StatusEffectKind.PhysicalReduction:
                 case StatusEffectKind.DamageBonus:
                     Spawn(root, Body(new Layer { Material = c.Glow, Rate = 6f, Velocity = new Vector3(0f, 0.4f, 0f), Life = new(1f, 1.6f), Size = new(0.025f, 0.05f), From = Alpha(aura, 0.9f), Local = true, Max = 12 }, chest, torso));
                     Hover(root, c.Ring, new Vector3(0f, 0.03f, 0f), 1.1f, Alpha(aura, 0.2f), ParticleSystemRenderMode.HorizontalBillboard);
@@ -697,7 +698,7 @@ namespace Game.Scripts.Dungeon
                 StatusEffectKind.Dexterity => new Color(0.4f, 0.85f, 0.75f),
                 StatusEffectKind.Spirit => new Color(0.65f, 0.6f, 1f),
                 StatusEffectKind.Knowledge => new Color(0.4f, 0.6f, 1f),
-                StatusEffectKind.Armor or StatusEffectKind.ArmorPercent => new Color(0.65f, 0.72f, 0.8f),
+                StatusEffectKind.Armor or StatusEffectKind.ArmorPercent or StatusEffectKind.PhysicalReduction => new Color(0.65f, 0.72f, 0.8f),
                 StatusEffectKind.Mercury => new Color(0.8f, 0.85f, 0.9f),
                 StatusEffectKind.Onslaught => new Color(1f, 0.55f, 0.2f),
                 StatusEffectKind.Haste => new Color(0.75f, 0.9f, 1f),

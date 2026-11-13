@@ -118,7 +118,9 @@ namespace Game.Scripts.Dungeon
         /// The next weapon hit deals the magnitude in percent more damage (righteous wrath).
         Wrath,
         /// Percent less healing received.
-        Festering
+        Festering,
+        /// Percent points added to physical damage reduction.
+        PhysicalReduction
     }
 
     public struct StatusEffect : INetworkStruct

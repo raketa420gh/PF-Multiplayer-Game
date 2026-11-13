@@ -396,7 +396,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_glyph", def.Glyph);
             BattleEditorUtility.Set(so, "_icon", DungeonAbilityIconBuilder.BuildOrPainted(Sanitize(def.Name), def.Icon ?? DungeonAbilityIconBuilder.SymbolFor(def.Kind), def.Color));
 
-            if (def.Kind is AbilityKind.Projectile or AbilityKind.AreaDamage or AbilityKind.Blink or AbilityKind.Dash or AbilityKind.Zone or AbilityKind.Throw or AbilityKind.TargetEffect
+            if (def.Kind is AbilityKind.Projectile or AbilityKind.AreaDamage or AbilityKind.Blink or AbilityKind.Dash or AbilityKind.Zone or AbilityKind.Throw or AbilityKind.TargetEffect or AbilityKind.Taunt
                 && def.HitEffect != StatusEffectKind.None)
                 BattleEditorUtility.Set(so, "_effect", def.HitEffect);
 

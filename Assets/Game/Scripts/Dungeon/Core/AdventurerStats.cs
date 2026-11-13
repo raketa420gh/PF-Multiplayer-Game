@@ -178,7 +178,7 @@ namespace Game.Scripts.Dungeon
             _armorRating = (armor + _flat[(int)StatType.ArmorRating] + Effect(effects, StatusEffectKind.Armor))
                 * (1f + Perk(perks, PerkEffect.FrostSkin) + Effect(effects, StatusEffectKind.ArmorPercent) / 100f);
             _magicResistance = DungeonFormulas.BaseMagicResistance + magicResistance + _flat[(int)StatType.MagicResistance];
-            _physicalReduction = DungeonFormulas.ArmorReduction(_armorRating) + rage * -0.01f;
+            _physicalReduction = DungeonFormulas.ArmorReduction(_armorRating) + (Effect(effects, StatusEffectKind.PhysicalReduction) - rage) * 0.01f;
             _magicalReduction = DungeonFormulas.MagicReduction(_magicResistance);
 
             float Attribute(StatType stat) => config.BaseStats.Get(stat) + _flat[(int)stat];
