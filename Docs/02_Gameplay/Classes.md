@@ -21,7 +21,7 @@
 - Counterplay:
 
 ## Subclasses
-- У каждого класса три подкласса (`ClassConfig.Subclasses`), выбираются вкладками на странице Skills; сохраняются под ключом `subclass`.
+- У каждого класса три подкласса (`ClassConfig.Subclasses`), выбираются вкладками на странице Skills; сохраняются под ключом `subclass`. Открываются на 30/40/50 уровне, до этого — только общее (см. `Progression.md`).
 - Каждый навык, заклинание и перк либо общий (`Subclass = -1`), либо принадлежит одному подклассу; при смене подкласса билд обрезается до доступного (`FitBuild`).
 - Ресурс-стеки подклассов (`AdventurerComponent.Resource`, `ResourceMax`) в коде есть, но сейчас выключены: у всех подклассов `ResourceMax = 0`.
 - Стамины нет.
@@ -39,7 +39,7 @@
 - Любимое оружие: Arming Sword + Écu.
 - Subclasses: **Shieldbearer** (только щит, живучий), **Hewer** (быстрый, любое оружие), **Captain** (поддержка отряда).
 - Skills: общие Second Wind, Grit Your Teeth; Shield Bash, The Wall (Shieldbearer); Shoulder Blow, Fury (Hewer); Hold the Line!, Charge!, Banner (Captain).
-- Perks: общие Hardened, Plate Habit, Used to Wounds; Steady Stance, Shield Drill, Counterblow, Heavy Bones / Anything Sharp, Light Step, Onslaught, Quick Hands / Under the Banner, Set the Example, Battle Order, Voice.
+- Perks: общие Hardened, Plate Habit, Used to Wounds, Drill Arms, Field Rations; Steady Stance, Shield Drill, Counterblow, Heavy Bones / Anything Sharp, Light Step, Onslaught, Quick Hands / Under the Banner, Set the Example, Battle Order, Voice.
 
 ## Librarian
 - Identity: изгнанный библиотекарь Коллегии, одно колесо из пяти заклинаний, заряды возвращаются у костра. Хрупок в ближнем бою.
@@ -49,7 +49,7 @@
 - Subclasses: **Flamer**, **Frostbinder**, **Stormcaller**.
 - Skills: Reread, Concentration.
 - Spells: общие Lantern, Prickly Word; Fireball, Wall of Fire, Funeral Pyre (Flamer); Ice Shard, Rime, Frozen Shackles (Frostbinder); Lightning, Chain Lightning, Thunderstorm (Stormcaller).
-- Perks: общие Well-Read, Firm Word, Frugal Word; Hot Flame, Long Smoulder, Burnt Hands, Funeral Heat / Piercing Cold, Brittleness, Rime on the Skin, Winter Memory / Dry Air, Iron Calls, Long Chain, Quick Word.
+- Perks: общие Well-Read, Firm Word, Frugal Word, Night Copyist, Long Hours; Hot Flame, Long Smoulder, Burnt Hands, Funeral Heat / Piercing Cold, Brittleness, Rime on the Skin, Winter Memory / Dry Air, Iron Calls, Long Chain, Quick Word.
 
 ## Alchemist
 - Identity: выгнанный подмастерье гильдии алхимиков, добывает оссарит на реагенты; варева из своей фляги и бросаемые колбы.
@@ -58,7 +58,7 @@
 - Любимое оружие: не решено.
 - Subclasses: **Physician**, **Bombardier**, **Mutagenist**.
 - Skills: общие Healing Brew, Invigorating Brew; Splash of Life, Fortifying Mix (Physician); Blasting Flask, Fire Flask (Bombardier); Bull's Blood, Quicksilver Mix (Mutagenist).
-- Perks: общие Potion Lore, Provident, Iron Stomach; Healthy Spirit, Generous Flask, Calm Hands, Pure Blood / Caustic Mix, Strong Charge, Wide Spread, Used to the Roar / Accustomed, Double Dose, Sinewy, Buzz.
+- Perks: общие Potion Lore, Provident, Iron Stomach, Reagent Sense, Steady Pour; Healthy Spirit, Generous Flask, Calm Hands, Pure Blood / Caustic Mix, Strong Charge, Wide Spread, Used to the Roar / Accustomed, Double Dose, Sinewy, Buzz.
 
 ## Confessor
 - Identity: погребальщик Собора Упокоения, отпевает мёртвых жилы; булава, щит и одно колесо молитв.
@@ -68,7 +68,7 @@
 - Subclasses: **Healer**, **Smiter**, **Apostate**.
 - Skills: Rosary, Holy Water.
 - Spells: общие Minor Healing, Rest; Healing, Circle of Intercession, Blessing (Healer); Hallowed Weapon, Sentence, Light of the Cathedral (Smiter); Wither, Curse, Whisper of the Sleeper (Apostate).
-- Perks: общие Firm Faith, Requiem, Altar Boy; Warm Hands, Shroud, Patience, Last Rites / Heavy Hand, Strength of Faith, Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
+- Perks: общие Firm Faith, Requiem, Altar Boy, Gravedigger's Back, Night Vigil; Warm Hands, Shroud, Patience, Last Rites / Heavy Hand, Strength of Faith, Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
 
 ## Huntsman
 - Identity: охотник из мёртвых лесов, теперь охотится на тварей жилы; арбалет и лук, меч на крайний случай. Без магии.
@@ -77,7 +77,7 @@
 - Любимое оружие: луки и арбалеты.
 - Subclasses: **Marksman**, **Tracker**, **Trapper**.
 - Skills: общие Exhale, Full Quiver; Armor-Piercing, Pin Down (Marksman); Flare Arrow, Tracking (Tracker); Hunting Trap, Hunting Net (Trapper).
-- Perks: общие Beast Habit, Knack, Forest Hardened; Taut String, Long Shot, Finishing Shot, Steady Hand / Cat's Eye, Trap Sense, Vein Expert, Hunter's Mark / Heavy Jaws, Poisoned Teeth, Iron Stock, Prey in the Snare.
+- Perks: общие Beast Habit, Knack, Forest Hardened, Lean Winters, Clean Kill; Taut String, Long Shot, Finishing Shot, Steady Hand / Cat's Eye, Trap Sense, Vein Expert, Hunter's Mark / Heavy Jaws, Poisoned Teeth, Iron Stock, Prey in the Snare.
 - Из луков в игре есть Recurve Bow.
 
 ## Knave
@@ -87,7 +87,7 @@
 - Любимое оружие: кинжал (ещё не сделан; пока в наборе Arming Sword).
 - Subclasses: **Assassin**, **Poisoner**, **Thrower**.
 - Skills: общие Blade Venom, Take to Your Heels; Open Up, Finish Him (Assassin); Venom Bubble, Dead Root (Poisoner); Spare Knife, Knife Fan (Thrower).
-- Perks: общие Knows Where to Look, Light-Footed, Nimble Fingers; First Blood, Short Blade, For the Throat, Clean Work / Thick Venom, Caustic Venom, Weakness, Rotten Blood / Bundle of Knives, True Throw, Quick Hand, Oiled Blades.
+- Perks: общие Knows Where to Look, Light-Footed, Nimble Fingers, Graveyard Feet, Gallows Luck; First Blood, Short Blade, For the Throat, Clean Work / Thick Venom, Caustic Venom, Weakness, Rotten Blood / Bundle of Knives, True Throw, Quick Hand, Oiled Blades.
 
 ## Spell Rules
 - Лечащие, защитные и усиливающие заклинания (Heal, Shield, Buff) любого класса действуют на искателя под прицелом, при промахе — на самого заклинателя.

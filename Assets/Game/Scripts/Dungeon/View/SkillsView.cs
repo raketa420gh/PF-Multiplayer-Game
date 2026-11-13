@@ -68,7 +68,7 @@ namespace Game.Scripts.Dungeon
         private PlayerSessionComponent _session;
         private int _shownClass = -1;
         private int _shownSubclass = -1;
-        private (byte, byte, int, int) _shownBuild;
+        private (byte, byte, int, int, byte) _shownBuild;
         /// Which perk each slot shows. The session only knows the set of perks; their places around the doll are the page's own.
         private int[] _slotPerks;
         private int _dropSlot = NoPerk;
@@ -141,10 +141,9 @@ namespace Game.Scripts.Dungeon
                 _shownSubclass = _session.Subclass;
                 _shownBuild = default;
                 BuildIcons(config);
-                ShowSubclasses(config);
             }
 
-            (byte, byte, int, int) build = (_session.SkillA, _session.SkillB, _session.PerkMask, _session.Level);
+            (byte, byte, int, int, byte) build = (_session.SkillA, _session.SkillB, _session.PerkMask, _session.Level, _session.SubclassMask);
 
             if (_shownBuild != build)
             {
@@ -214,9 +213,15 @@ namespace Game.Scripts.Dungeon
                 icon.SetAbility(icon.Index, config.Skills[icon.Index]);
         }
 
-        /// The tab of the chosen subclass is lit (no tabs while subclasses are hidden); the line under the tabs tells what it is about and what feeds its resource.
+        /// The tab of the chosen subclass is lit (no tabs while subclasses are hidden); a subclass the level cannot open yet shows the level
+        /// it opens at. The line under the tabs tells what the chosen one is about, or when the first one opens.
         private void ShowSubclasses(ClassConfig config)
         {
+            int opened = 0;
+
+            for (int i = 0; i < config.Subclasses.Length; i++)
+                opened += _session.IsSubclassOpen(i) ? 1 : 0;
+
             for (int i = 0; i < _subclassTabs.Length; i++)
             {
                 SubclassDefinition subclass = ClassConfig.AreSubclassesEnabled && i < config.Subclasses.Length ? config.Subclasses[i] : null;
@@ -226,6 +231,8 @@ namespace Game.Scripts.Dungeon
                     continue;
 
                 bool isChosen = i == _session.Subclass;
+                bool isLocked = !_session.CanOpenSubclass(i);
+                _subclassTabs[i].interactable = !isLocked;
                 Image icon = i < _subclassIcons.Length ? _subclassIcons[i] : null;
 
                 if (icon != null)
@@ -236,13 +243,15 @@ namespace Game.Scripts.Dungeon
                 }
 
                 TMP_Text label = _subclassTabs[i].GetComponentInChildren<TMP_Text>();
-                label.text = subclass.Name;
-                label.color = isChosen ? subclass.Color : new Color(0.62f, 0.58f, 0.5f);
+                label.text = isLocked ? $"{subclass.Name}  Lv {ClassConfig.SubclassLevel(opened)}" : subclass.Name;
+                label.color = isChosen ? subclass.Color : isLocked ? new Color(0.4f, 0.37f, 0.33f) : new Color(0.62f, 0.58f, 0.5f);
                 _subclassTabs[i].image.color = isChosen ? new Color(0.24f, 0.19f, 0.12f, 0.95f) : new Color(0.08f, 0.07f, 0.06f, 0.9f);
             }
 
             SubclassDefinition chosen = config.GetSubclass(_session.Subclass);
-            _subclassText.text = chosen != null ? chosen.Description : string.Empty;
+            _subclassText.text = chosen != null ? chosen.Description
+                : opened == 0 && ClassConfig.SubclassCountForLevel(_session.Level) == 0 ? $"A subclass can be chosen at level {ClassConfig.SubclassLevel(0)}."
+                : "Choose a subclass.";
         }
 
         private void Fill(List<AbilityIconView> icons, AbilityIconView prefab, RectTransform root, int count, Predicate<int> isShown,
@@ -270,6 +279,9 @@ namespace Game.Scripts.Dungeon
 
         private void RefreshBuild(ClassConfig config)
         {
+            ShowSubclasses(config);
+            int skillSlots = ClassConfig.SkillSlotCountForLevel(_session.Level);
+
             foreach (AbilityIconView icon in _skillIcons)
             {
                 // The spell memory may sit in both slots.
@@ -288,7 +300,7 @@ namespace Game.Scripts.Dungeon
                     _skillSlots[slot].Clear();
 
                 _skillSlots[slot].SetSelected(index < config.Skills.Length);
-                _skillSlots[slot].SetBadge(s_skillKeys[slot]);
+                _skillSlots[slot].SetBadge(slot < skillSlots ? s_skillKeys[slot] : $"Lv {ClassConfig.SkillSlotLevel(slot)}");
             }
 
             int allowed = Mathf.Min(ClassConfig.PerkCountForLevel(_session.Level), _perkSlots.Length);
@@ -470,8 +482,8 @@ namespace Game.Scripts.Dungeon
             for (int slot = 0; slot < _perkSlots.Length; slot++)
                 _perkSlots[slot].SetTargeted(isPerk && slot < allowed);
 
-            foreach (AbilityIconView slot in _skillSlots)
-                slot.SetTargeted(!isPerk);
+            for (int slot = 0; slot < _skillSlots.Length; slot++)
+                _skillSlots[slot].SetTargeted(!isPerk && slot < ClassConfig.SkillSlotCountForLevel(_session.Level));
         }
 
         private void OnDragged(AbilityIconView icon, PointerEventData eventData)

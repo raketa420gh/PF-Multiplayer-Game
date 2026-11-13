@@ -107,7 +107,11 @@ namespace Game.Scripts.Dungeon
         public long SpellLayout { get; private set; } = ClassConfig.DefaultSpellLayout;
 
         [Networked]
-        public byte Subclass { get; private set; }
+        public byte Subclass { get; private set; } = ClassConfig.NoSubclass;
+
+        /// Bit i: subclass i was opened (Progression.md: one more at levels 30, 40, 50).
+        [Networked]
+        public byte SubclassMask { get; private set; }
 
         private IEnumerable<InventoryComponent> OpenStashes => _stashes.Take(OpenStashPages);
 
@@ -172,7 +176,7 @@ namespace Game.Scripts.Dungeon
                 RpcArrive(carry.Floor, carry.Health, carry.Kills, carry.Experience, carry.Charges);
 
             RpcSetProfile(StashService.LoadLevel(), StashService.LoadExperience(), StashService.LoadClass(), StashService.LoadName());
-            RpcSetBuild(StashService.LoadSubclass(), StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask(), StashService.LoadSpellLayout());
+            RpcSetBuild(StashService.LoadSubclass(), StashService.LoadSubclassMask(), StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask(), StashService.LoadSpellLayout());
             SendInventory(LoadKit, StashService.LoadKit());
 
             for (int page = 0; page < StashPages; page++)
@@ -231,7 +235,7 @@ namespace Game.Scripts.Dungeon
             }
 
             StashService.SaveProfile(Level, Experience, ClassId, DisplayName);
-            StashService.SaveBuild(Subclass, SkillA, SkillB, PerkMask, SpellLayout);
+            StashService.SaveBuild(Subclass, SubclassMask, SkillA, SkillB, PerkMask, SpellLayout);
         }
 
         /// Nobody descends naked: an empty kit is replaced by the starting one; what is carried down from above stays as it is.
@@ -318,7 +322,8 @@ namespace Game.Scripts.Dungeon
                 return;
 
             ClassId = classId;
-            Subclass = 0;
+            Subclass = ClassConfig.NoSubclass;
+            SubclassMask = 0;
             SkillA = 0;
             SkillB = 1;
             PerkMask = 1;
@@ -328,21 +333,33 @@ namespace Game.Scripts.Dungeon
             GiveDefaultKit();
         }
 
-        /// Another specialisation between runs: what belonged to the old one leaves the build.
+        /// Another specialisation between runs: an opened one is free to switch to, a new one opens while the level allows another;
+        /// what belonged to the old one leaves the build.
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcSelectSubclass(byte subclass)
         {
-            if (State != SessionState.Lobby || subclass >= Class.Subclasses.Length || Subclass == subclass)
+            if (State != SessionState.Lobby || subclass >= Class.Subclasses.Length || Subclass == subclass || !CanOpenSubclass(subclass))
                 return;
 
+            SubclassMask |= (byte)(1 << subclass);
             Subclass = subclass;
             FitBuild();
+        }
+
+        public bool IsSubclassOpen(int subclass)
+        {
+            return (SubclassMask & (1 << subclass)) != 0;
+        }
+
+        public bool CanOpenSubclass(int subclass)
+        {
+            return IsSubclassOpen(subclass) || CountBits(SubclassMask) < ClassConfig.SubclassCountForLevel(Level);
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcSelectSkill(byte slot, byte index)
         {
-            if (State != SessionState.Lobby || (index != NoSkill && !Class.IsSkillAvailable(index, Subclass)))
+            if (State != SessionState.Lobby || slot >= ClassConfig.SkillSlotCountForLevel(Level) || (index != NoSkill && !Class.IsSkillAvailable(index, Subclass)))
                 return;
 
             if (index == NoSkill)
@@ -526,9 +543,10 @@ namespace Game.Scripts.Dungeon
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        private void RpcSetBuild(byte subclass, byte skillA, byte skillB, int perkMask, long spellLayout)
+        private void RpcSetBuild(byte subclass, byte subclassMask, byte skillA, byte skillB, int perkMask, long spellLayout)
         {
             Subclass = subclass;
+            SubclassMask = subclassMask;
             SkillA = skillA;
             SkillB = skillB;
             PerkMask = perkMask;
@@ -541,16 +559,43 @@ namespace Game.Scripts.Dungeon
         private void FitBuild()
         {
             ClassConfig config = Class;
-            Subclass = (byte)Mathf.Clamp(Subclass, 0, Mathf.Max(0, config.Subclasses.Length - 1));
-            PerkMask &= config.AvailablePerkMask(Subclass);
+            int allowed = ClassConfig.SubclassCountForLevel(Level);
+            int chosen = Subclass < config.Subclasses.Length && allowed > 0 ? 1 << Subclass : 0;
+            // More subclasses than the level allows (an old save): the chosen one stays first.
+            int others = SubclassMask & ((1 << config.Subclasses.Length) - 1) & ~chosen;
+            SubclassMask = (byte)((SubclassMask & chosen) | KeepBits(others, allowed - CountBits(SubclassMask & chosen)));
+
+            if (Subclass != ClassConfig.NoSubclass && !IsSubclassOpen(Subclass))
+                Subclass = ClassConfig.NoSubclass;
+
+            PerkMask = KeepBits(PerkMask & config.AvailablePerkMask(Subclass), ClassConfig.PerkCountForLevel(Level));
             FitSpells(config);
 
-            // A slot emptied on purpose stays empty.
+            // A slot emptied on purpose stays empty; a locked one is always empty.
             if (SkillA != NoSkill && !config.IsSkillAvailable(SkillA, Subclass))
                 SkillA = FreeSkill(config, SkillB);
 
-            if (SkillB != NoSkill && (!config.IsSkillAvailable(SkillB, Subclass) || (SkillB == SkillA && !IsSharedSkill(config, SkillA))))
+            if (ClassConfig.SkillSlotCountForLevel(Level) < 2)
+                SkillB = NoSkill;
+            else if (SkillB != NoSkill && (!config.IsSkillAvailable(SkillB, Subclass) || (SkillB == SkillA && !IsSharedSkill(config, SkillA))))
                 SkillB = FreeSkill(config, SkillA);
+        }
+
+        /// The lowest count set bits of the value.
+        private static int KeepBits(int value, int count)
+        {
+            int kept = 0;
+
+            for (int bit = 0; bit < 32 && count > 0; bit++)
+            {
+                if ((value & (1 << bit)) == 0)
+                    continue;
+
+                kept |= 1 << bit;
+                count--;
+            }
+
+            return kept;
         }
 
         /// Slots keep only spells of the class and subclass, each once; free places of the first wheel then take the spells that sit

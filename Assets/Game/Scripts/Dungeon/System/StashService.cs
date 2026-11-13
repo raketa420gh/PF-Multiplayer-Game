@@ -63,7 +63,9 @@ namespace Game.Scripts.Dungeon
         public static int LoadPerkMask() => PlayerPrefs.GetInt(Key(s_slot, PerksKey), 1);
         public static long LoadSpellLayout() => long.TryParse(PlayerPrefs.GetString(Key(s_slot, SpellSlotsKey), string.Empty), out long layout) ? layout
             : PlayerPrefs.HasKey(Key(s_slot, SpellsKey)) ? LayoutFromMask(PlayerPrefs.GetInt(Key(s_slot, SpellsKey))) : ClassConfig.DefaultSpellLayout;
-        public static byte LoadSubclass() => (byte)PlayerPrefs.GetInt(Key(s_slot, SubclassKey), 0);
+        /// The subclass key keeps the chosen subclass in the low byte and the mask of the opened ones above it.
+        public static byte LoadSubclass() => (byte)PlayerPrefs.GetInt(Key(s_slot, SubclassKey), ClassConfig.NoSubclass);
+        public static byte LoadSubclassMask() => (byte)(PlayerPrefs.GetInt(Key(s_slot, SubclassKey), 0) >> 8);
 
         public static void SelectSlot(int slot)
         {
@@ -93,9 +95,9 @@ namespace Game.Scripts.Dungeon
             PlayerPrefs.Save();
         }
 
-        public static void SaveBuild(int subclass, int skillA, int skillB, int perkMask, long spellLayout)
+        public static void SaveBuild(int subclass, int subclassMask, int skillA, int skillB, int perkMask, long spellLayout)
         {
-            PlayerPrefs.SetInt(Key(s_slot, SubclassKey), subclass);
+            PlayerPrefs.SetInt(Key(s_slot, SubclassKey), subclass | (subclassMask << 8));
             PlayerPrefs.SetInt(Key(s_slot, SkillAKey), skillA);
             PlayerPrefs.SetInt(Key(s_slot, SkillBKey), skillB);
             PlayerPrefs.SetInt(Key(s_slot, PerksKey), perkMask);

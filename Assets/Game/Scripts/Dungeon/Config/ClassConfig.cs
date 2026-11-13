@@ -355,6 +355,12 @@ namespace Game.Scripts.Dungeon
         public static readonly long DefaultSpellLayout = DefaultLayout();
         /// Every class picks one of its three subclasses; its own perks, skills and spells join the shared ones.
         public static readonly bool AreSubclassesEnabled = true;
+        /// No subclass chosen yet: only the shared perks, skills and spells.
+        public const byte NoSubclass = byte.MaxValue;
+
+        private static readonly int[] s_perkSlotLevels = { 1, 5, 15, 20 };
+        private static readonly int[] s_skillSlotLevels = { 1, 10 };
+        private static readonly int[] s_subclassLevels = { 30, 40, 50 };
 
         public bool CanCastBareHanded => _castFocus == CastFocus.BareHands;
         public CastFocus Focus => _castFocus;
@@ -453,7 +459,7 @@ namespace Game.Scripts.Dungeon
 
         public SubclassDefinition GetSubclass(int subclass)
         {
-            return AreSubclassesEnabled && _subclasses.Length > 0 ? _subclasses[Mathf.Clamp(subclass, 0, _subclasses.Length - 1)] : null;
+            return AreSubclassesEnabled && subclass >= 0 && subclass < _subclasses.Length ? _subclasses[subclass] : null;
         }
 
         /// Shared entries (-1) belong to every subclass.
@@ -506,15 +512,47 @@ namespace Game.Scripts.Dungeon
             return Array.IndexOf(_allowedWeapons, weaponClass) >= 0;
         }
 
-        /// Every perk slot is open from level 1 until the progression is designed (it was levels 1, 5, 10, 15).
+        /// Progression.md: perk slots open at levels 1, 5, 15, 20.
         public static int PerkCountForLevel(int level)
         {
-            return 4;
+            return CountOpened(s_perkSlotLevels, level);
         }
 
         public static int PerkSlotLevel(int slot)
         {
-            return Mathf.Max(1, slot * 5);
+            return s_perkSlotLevels[Mathf.Clamp(slot, 0, s_perkSlotLevels.Length - 1)];
+        }
+
+        /// The E skill slot opens at level 10.
+        public static int SkillSlotCountForLevel(int level)
+        {
+            return CountOpened(s_skillSlotLevels, level);
+        }
+
+        public static int SkillSlotLevel(int slot)
+        {
+            return s_skillSlotLevels[Mathf.Clamp(slot, 0, s_skillSlotLevels.Length - 1)];
+        }
+
+        /// Subclasses are chosen one by one at levels 30, 40, 50; before the first only the shared entries are there.
+        public static int SubclassCountForLevel(int level)
+        {
+            return CountOpened(s_subclassLevels, level);
+        }
+
+        public static int SubclassLevel(int index)
+        {
+            return s_subclassLevels[Mathf.Clamp(index, 0, s_subclassLevels.Length - 1)];
+        }
+
+        private static int CountOpened(int[] levels, int level)
+        {
+            int count = 0;
+
+            while (count < levels.Length && level >= levels[count])
+                count++;
+
+            return count;
         }
     }
 }

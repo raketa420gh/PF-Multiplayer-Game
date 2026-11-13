@@ -29,7 +29,6 @@ namespace Game.Scripts.Dungeon
         public float LethalFall => _lethalFall;
         /// Longest time monsters ignore a freshly spawned adventurer who has not moved or pressed anything yet.
         public float LoadInProtection => _loadInProtection;
-        public int[] ExperiencePerLevel => _experiencePerLevel;
         public int MaxLevel => _maxLevel;
 
         [SerializeField]
@@ -71,17 +70,18 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _loadInProtection = 20f;
 
-        [SerializeField]
-        private int[] _experiencePerLevel = { 50, 50, 50, 50, 50, 75, 75, 75, 75, 75, 75, 75, 75, 75, 75 };
+        [SerializeField, Tooltip("XP from level L to L + 1 = base + step * L (Progression.md)")]
+        private int _experienceBase = 300;
 
         [SerializeField]
-        private int _maxLevel = 15;
+        private int _experienceStep = 30;
+
+        [SerializeField]
+        private int _maxLevel = 50;
 
         public int ExperienceForLevel(int level)
         {
-            int index = Mathf.Clamp(level - 1, 0, _experiencePerLevel.Length - 1);
-
-            return _experiencePerLevel[index];
+            return _experienceBase + _experienceStep * Mathf.Max(1, level);
         }
     }
 }
