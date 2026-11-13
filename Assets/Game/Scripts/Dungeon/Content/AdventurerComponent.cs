@@ -2311,7 +2311,7 @@ namespace Game.Scripts.Dungeon
         }
 
         /// Every spell short of charges fills at once, a heavy one (few charges) slower; Cooldown Recovery sets the pace. Campfire
-        /// skills fill only by a lit fire. The free cast of Knowledge 30 returns with the last charge.
+        /// skills fill only by a lit fire, a charge per their Cooldown. The free cast of Knowledge 30 returns with the last charge.
         private void SimulateSpellRecovery(float pace)
         {
             bool isSpent = false;
@@ -2325,7 +2325,8 @@ namespace Game.Scripts.Dungeon
                     continue;
                 }
 
-                float recovery = _recovery[i] + Runner.DeltaTime * pace * _stats.CooldownSpeed / (_spellRecoverInterval * SpellWeight(_abilities[i]));
+                float recovery = _recovery[i] + Runner.DeltaTime * (i < _skillCount ? 1f / GetCooldownDuration(i)
+                    : pace * _stats.CooldownSpeed / (_spellRecoverInterval * SpellWeight(_abilities[i])));
 
                 if (recovery >= 1f)
                 {
