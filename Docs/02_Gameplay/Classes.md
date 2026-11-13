@@ -38,7 +38,7 @@
 - Weapons: мечи, топоры, булавы, копья, кинжалы, щиты, факел. Стартовый набор: Arming Sword + Écu, Battle Axe, Bandage ×3, Torch.
 - Любимое оружие: Arming Sword + Écu.
 - Subclasses: **Shieldbearer** (только щит, живучий), **Hewer** (быстрый, любое оружие), **Captain** (поддержка отряда).
-- Skills: общие Second Wind (как в DaD: 40% HP за 12 с, один заряд, возвращается только отдыхом у костра за 162 с = 90% горения обычного костра; у навыков с флагом `AbilityFlags.Campfire` `Cooldown` = время восстановления у костра), Grit Your Teeth; Shield Bash, The Wall (Shieldbearer); Shoulder Blow, Fury (Hewer); Hold the Line!, Charge!, Banner (Captain).
+- Skills: общие Second Wind (как в DaD: 40% HP за 12 с, один заряд, возвращается только отдыхом у костра за 15 с (серый костёр горит 18 с, как junk Campfire Kit в DaD; 2 с уходит на то, чтобы сесть); у навыков с флагом `AbilityFlags.Campfire` `Cooldown` = время восстановления у костра), Grit Your Teeth; Shield Bash, The Wall (Shieldbearer); Shoulder Blow, Fury (Hewer); Hold the Line!, Charge!, Banner (Captain).
 - Perks: общие Hardened, Plate Habit, Used to Wounds, Drill Arms, Field Rations; Steady Stance, Shield Drill, Counterblow, Heavy Bones / Anything Sharp, Light Step, Onslaught, Quick Hands / Under the Banner, Set the Example, Battle Order, Voice.
 
 ## Librarian

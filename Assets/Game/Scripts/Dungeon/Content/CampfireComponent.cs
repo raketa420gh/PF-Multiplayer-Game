@@ -14,7 +14,7 @@ namespace Game.Scripts.Dungeon
         public bool IsLit => _lifetime.ExpiredOrNotRunning(Runner) == false;
 
         [SerializeField]
-        private float _burnTime = 180f;
+        private float _burnTime = 18f;
 
         [SerializeField]
         private Light _light;
