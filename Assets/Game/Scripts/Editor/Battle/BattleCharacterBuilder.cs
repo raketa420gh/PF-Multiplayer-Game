@@ -10,7 +10,7 @@ namespace Game.Scripts.Editor.Battle
 {
     /// Assembles the modular character from the Quaternius packs: the base character skeleton rebuilt with world-aligned bones,
     /// the base bodies split into body regions and every outfit part rebound to that skeleton.
-    internal static class BattleCharacterBuilder
+    internal static partial class BattleCharacterBuilder
     {
         public const string AnimationsPath1 = PacksFolder + "/Animations/UniversalAnimationLibrary/Unity/UAL1_Standard.fbx";
         public const string AnimationsPath2 = PacksFolder + "/Animations/UniversalAnimationLibrary2/Unity/UAL2_Standard.fbx";
@@ -68,7 +68,8 @@ namespace Game.Scripts.Editor.Battle
             ("Ranger", "Ranger_Acc_Pauldron", "Ranger_Acc_Pauldrons", BodyRegion.None),
             ("Ranger", "Ranger_Head_Hood", "Ranger_Head_Hood", BodyRegion.None),
             ("Ranger", "Ranger_Legs", "Ranger_Legs", BodyRegion.Thighs | BodyRegion.Calves),
-            ("Ranger", "Ranger_Feet_Boots", "Ranger_Feet", BodyRegion.Feet)
+            ("Ranger", "Ranger_Feet_Boots", "Ranger_Feet", BodyRegion.Feet),
+            (HarnessPart, HarnessPart, HarnessPart, BodyRegion.Torso | BodyRegion.UpperArms)
         };
 
         /// Upper-body joints of the simulation body the weapon poses were authored on (meters, T-pose, sided bones given for
@@ -166,6 +167,14 @@ namespace Game.Scripts.Editor.Battle
                 for (int i = 0; i < s_parts.Length; i++)
                 {
                     (string outfit, string male, string female, BodyRegion region) = s_parts[i];
+
+                    if (outfit == HarnessPart)
+                    {
+                        Renderer[] harness = CreateHarness(outfitRoot, bones, maleBody);
+                        (maleParts[i], femaleParts[i], covers[i]) = (harness[0], harness[1], region);
+                        continue;
+                    }
+
                     Material cloth = male == "Peasant_Feet" ? boots : outfit == "Peasant" ? peasant : ranger;
                     covers[i] = region;
                     maleParts[i] = CreatePart(LoadOutfit(outfits, sources, "Male_" + outfit), "Male_" + male, outfitRoot, bones, scale, cloth, SkinMaterial("Male"));

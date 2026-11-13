@@ -31,7 +31,8 @@ namespace Game.Scripts.Battle
         RangerPauldron,
         RangerHood,
         RangerLegs,
-        RangerBoots
+        RangerBoots,
+        PlateHarness
     }
 
     /// Modular character: base body regions and skinned outfit parts on one skeleton.
@@ -85,8 +86,13 @@ namespace Game.Scripts.Battle
 
         public void Show(OutfitPart part, Material material, Color tint)
         {
-            Renderer renderer = (_isFemale ? _femaleParts : _maleParts)[(int)part];
+            Renderer[] parts = _isFemale ? _femaleParts : _maleParts;
+            Renderer renderer = parts[(int)part];
             renderer.gameObject.SetActive(true);
+
+            // Plate sleeves leave no room for the bracers.
+            if (parts[(int)OutfitPart.PlateHarness].gameObject.activeSelf)
+                parts[(int)OutfitPart.RangerBracers].gameObject.SetActive(false);
 
             if (material != null)
             {

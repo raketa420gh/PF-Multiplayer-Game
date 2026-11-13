@@ -203,6 +203,7 @@ namespace Game.Scripts.Editor.Dungeon
         private static readonly OutfitPart[] s_shirt = { OutfitPart.PeasantBody, OutfitPart.PeasantArms };
         private static readonly OutfitPart[] s_trousers = { OutfitPart.PeasantLegs };
         private static readonly OutfitPart[] s_shoes = { OutfitPart.PeasantFeet };
+        private static readonly OutfitPart[] s_harness = { OutfitPart.PlateHarness };
 
         public static List<ItemDef> CreateItems()
         {
@@ -334,6 +335,20 @@ namespace Game.Scripts.Editor.Dungeon
                 "A great two-handed sword. Two wide cuts at the neck and a thrust; a heavy riposte from the guard.", twoHanded: true));
             items.Add(Weapon("Club", DungeonWeaponLibrary.Club, WeaponClass.Mace, 1, 3, 15f, "Cb", s_wood, 12,
                 "A plain wooden club for one hand. Pairs with a shield; without one, the left palm braces it in the block."));
+            // The great bascinet's pair: plate over mail over a quilted doublet, one skinned shell from the waist to the neck and the wrists.
+            ItemDef harness = Piece("Plate Harness", s_harness, 95f, 22f, 150, 0f,
+                new StatModifier(StatType.Vitality, 2f), new StatModifier(StatType.Strength, 1f), new StatModifier(StatType.Dexterity, -1f));
+            harness.Slot = EquipSlot.Chest;
+            harness.ArmorType = ArmorType.Plate;
+            harness.Visual = ArmorVisual.PlateHarness;
+            harness.Material = BattleCharacterBuilder.PlateHarnessMaterial;
+            harness.Classes = new[] { Mercenary, Confessor };
+            harness.Height = 3;
+            harness.Glyph = "Ch";
+            harness.Color = s_steel;
+            harness.Sounds = "treasure_l";
+            harness.Description = "Breast and back of one steel, arms in plate to the wrist. The great bascinet buckles onto it; the man inside turns like a door.";
+            items.Add(harness);
 
             return items;
         }

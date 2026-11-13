@@ -202,7 +202,8 @@ namespace Game.Scripts.Dungeon
         PeasantChest,
         PeasantHands,
         PeasantLegs,
-        PeasantFeet
+        PeasantFeet,
+        PlateHarness
     }
 
     public enum ConsumableEffect : byte

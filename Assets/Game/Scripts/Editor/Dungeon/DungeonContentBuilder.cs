@@ -342,7 +342,7 @@ namespace Game.Scripts.Editor.Dungeon
                     return null;
                 case ItemKind.Armor:
                     // The figure stands with its arms spread: sleeves are cropped to the body, of a pair of bracers one is shown.
-                    bool hasSleeves = def.Parts != null && System.Array.Exists(def.Parts, part => part is OutfitPart.PeasantArms or OutfitPart.RangerArms);
+                    bool hasSleeves = def.Parts != null && System.Array.Exists(def.Parts, part => part is OutfitPart.PeasantArms or OutfitPart.RangerArms or OutfitPart.PlateHarness);
                     zoom = def.Slot == EquipSlot.Hands ? 7f : hasSleeves ? 2.4f : 1.1f;
                     shift = def.Slot == EquipSlot.Hands ? Vector3.left * 0.8f : Vector3.zero;
                     // Helmets are seen three-quarters from the front.
@@ -615,7 +615,8 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Silver Spoon", 0.6f, 1, 1), ("Tiger's Eye", 0.5f, 1, 1), ("Agate", 0.6f, 1, 1), ("Gold Chain", 0.2f, 1, 1), ("Silver Chain", 0.4f, 1, 1),
                 ("Gold Bracelet", 0.2f, 1, 1), ("Silver Bracelet", 0.4f, 1, 1), ("Leather Scraps", 1.2f, 1, 3), ("Simple Leather", 0.6f, 1, 2),
                 ("Thick Leather", 0.3f, 1, 1), ("Cloth Scraps", 1.2f, 1, 3), ("Simple Cloth", 0.6f, 1, 2), ("Sturdy Cloth", 0.3f, 1, 1),
-                ("Metal Scraps", 1.2f, 1, 3), ("Metal Ingot", 0.3f, 1, 1), ("Empty Bottle", 0.8f, 1, 1), ("Cervelliere", 0.6f, 1, 1), ("Great Bascinet", 0.3f, 1, 1)
+                ("Metal Scraps", 1.2f, 1, 3), ("Metal Ingot", 0.3f, 1, 1), ("Empty Bottle", 0.8f, 1, 1), ("Cervelliere", 0.6f, 1, 1), ("Great Bascinet", 0.3f, 1, 1),
+                ("Plate Harness", 0.2f, 1, 1)
             }.Concat(Pieces(0.9f, "Veinworker")).ToArray();
             (string name, float weight, int min, int max)[] ornate = new (string, float, int, int)[]
             {
@@ -627,7 +628,7 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Gold Chalice", 1.5f, 1, 1), ("Silver Candlestick", 1f, 1, 1), ("Gold Candelabrum", 1f, 1, 1), ("Silver Candelabrum", 1f, 1, 1), ("Gold Jug", 1f, 1, 1),
                 ("Silver Jug", 1f, 1, 1), ("Gold Fork", 0.8f, 1, 1), ("Silver Fork", 0.6f, 1, 1), ("Gold Spoon", 0.8f, 1, 1), ("Silver Spoon", 0.6f, 1, 1),
                 ("Tiger's Eye", 1.5f, 1, 3), ("Agate", 1.5f, 1, 3), ("Gold Chain", 1f, 1, 1), ("Silver Chain", 1f, 1, 1), ("Gold Bracelet", 1f, 1, 1), ("Silver Bracelet", 1f, 1, 1),
-                ("Cervelliere", 0.6f, 1, 1), ("Great Bascinet", 0.5f, 1, 1)
+                ("Cervelliere", 0.6f, 1, 1), ("Great Bascinet", 0.5f, 1, 1), ("Plate Harness", 0.4f, 1, 1)
             }.Concat(Pieces(0.6f, "Veinworker")).ToArray();
             (string name, float weight, int min, int max)[] coffin =
             {
