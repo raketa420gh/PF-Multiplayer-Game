@@ -241,8 +241,8 @@ namespace Game.Scripts.Dungeon
         {
             float multiplier = 1f;
 
-            if (Take(StatusEffectKind.HeavyBlow, out float heavy))
-                bonus += heavy / 100f;
+            if (request.DamageType == DamageType.Physical && Take(StatusEffectKind.HeavyBlow, out float heavy))
+                multiplier += heavy / 100f / _stats.GetDamageMultiplier(DamageType.Physical);
 
             if (Take(StatusEffectKind.Wrath, out float wrath))
                 bonus += wrath / 100f;
@@ -258,7 +258,7 @@ namespace Game.Scripts.Dungeon
             if (execute > 0f && victim.Health.Progress < ExecuteHealth)
             {
                 _effects.Remove(StatusEffectKind.Execute);
-                multiplier = execute;
+                multiplier *= execute;
             }
 
             if (Take(StatusEffectKind.Judgement, out float stun))

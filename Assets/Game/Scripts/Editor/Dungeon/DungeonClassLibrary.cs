@@ -72,8 +72,8 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Shoulder Blow", Description = Text("Your next weapon hit within 10s deals 50% more damage.", "All the weight. All of it."), Kind = AbilityKind.Buff,
-                        Effect = StatusEffectKind.HeavyBlow, Magnitude = 50f, Duration = 10f, Cooldown = 20f, CastTime = 0.15f, Glyph = "SB", Color = hewer, Subclass = 1, Vfx = VfxStyle.Blood,
+                        Name = "Shoulder Blow", Description = Text("Your next weapon hit within 10s gets +40% physical damage bonus.", "All the weight. All of it."), Kind = AbilityKind.Buff,
+                        Effect = StatusEffectKind.HeavyBlow, Magnitude = 40f, Duration = 10f, Cooldown = 20f, CastTime = 0.15f, Glyph = "SB", Color = hewer, Subclass = 1, Vfx = VfxStyle.Blood,
                         Art = "a heavy axe raised high over the shoulder, muscles straining, about to fall"
                     },
                     new AbilityDef

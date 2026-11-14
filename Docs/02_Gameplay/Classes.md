@@ -46,7 +46,8 @@
   - **Shield Bash** — удар щитом на месте, без рывка: 8 физ. урона в конусе 40° на 2,2 м, отброс 3, стаггер 0,3 с, перезарядка 16 с, нужен щит.
   - **Brace** (вместо The Wall) — 6 с: блок не пробивается (Impact не ломает guard), блок не замедляет, каждый заблокированный удар ближнего боя отбрасывает атакующего (сила 4). Перезарядка 30 с, нужен щит (`StatusEffectKind.Brace`).
   - **Fury** (Hewer, изменён 2026-11-14) — 8 с: +20% скорости действий и +5% скорости передвижения (было +15%), перезарядка 45 с.
-  - Остальные: Shoulder Blow (Hewer); Hold the Line!, Charge!, Banner (Captain).
+  - **Shoulder Blow** (Hewer, изменён 2026-11-14) — следующий физический удар оружием в течение 10 с получает +40 п. п. к бонусу физического урона (складывается с бонусом от Physical Power и аффиксов, а не умножает итог; было ×1,5 к итогу). Перезарядка 20 с (`StatusEffectKind.HeavyBlow`).
+  - Остальные: Hold the Line!, Charge!, Banner (Captain).
 - Perks: общие Hardened, Plate Habit, Used to Wounds, Drill Arms, Field Rations; Steady Stance, Shield Drill, Counterblow, Heavy Bones / Anything Sharp, Light Step, Onslaught, Quick Hands / Under the Banner, Set the Example, Battle Order, Voice.
 
 ## Librarian

@@ -91,7 +91,7 @@ namespace Game.Scripts.Dungeon
         Drain,
         /// Every weapon hit poisons the victim for the magnitude in seconds.
         VenomBlade,
-        /// The next weapon hit deals the magnitude in percent more damage.
+        /// The next physical weapon hit gets the magnitude in percent on top of the physical damage bonus (added to it, not multiplied).
         HeavyBlow,
         /// The next weapon hit ignores armor and deals the magnitude in percent more damage.
         Expose,
