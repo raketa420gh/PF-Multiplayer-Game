@@ -21,10 +21,10 @@
 | Parameter | Value |
 |---|---:|
 | Block Angle Tolerance | `[TBD]` |
-| Block Damage Mitigation | `[TBD]` |
+| Block Damage Mitigation | 100% — блок бинарный, см. Combat.md |
 | Block Impact Duration | `[TBD]` |
 | Block Recovery | `[TBD]` |
-| Partial Block Damage | `[TBD]` |
+| Partial Block Damage | Нет — задетое тело = полный урон |
 | Block Stamina Cost | Нет — стамины в игре нет |
 
 ### Impact / Stability

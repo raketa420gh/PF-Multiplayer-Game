@@ -120,7 +120,7 @@ namespace Game.Scripts.Dungeon
         BandageHealing,
         /// A raised block does not slow.
         SteadyBlock,
-        /// Share more of a hit the shield stops.
+        /// The block goes up this share faster.
         ShieldTraining,
         /// Percent faster attacks for a moment after a blocked hit.
         Retaliation,

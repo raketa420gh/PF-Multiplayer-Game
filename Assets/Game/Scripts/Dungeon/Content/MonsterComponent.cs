@@ -114,11 +114,6 @@ namespace Game.Scripts.Dungeon
         {
         }
 
-        float DamageReceiverComponent.IHitModifier.ModifyBlockMitigation(float mitigation)
-        {
-            return mitigation;
-        }
-
         int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, in HitRequest request)
         {
             float reduction = request.IgnoreArmor ? 0f : request.DamageType == DamageType.Physical ? _config.ArmorReduction : request.DamageType == DamageType.Magical ? _config.MagicReduction : 0f;

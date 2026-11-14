@@ -211,7 +211,6 @@ namespace Game.Scripts.Editor.Battle
             if (definition.CanBlock)
             {
                 BattleEditorUtility.Set(so, "_block._raiseTime", definition.BlockRaise);
-                BattleEditorUtility.Set(so, "_block._mitigation", definition.BlockMitigation);
                 BattleEditorUtility.Set(so, "_block._impactDuration", definition.BlockImpact);
                 BattleEditorUtility.Set(so, "_block._recoveryDuration", definition.BlockRecovery);
                 BattleEditorUtility.Set(so, "_block._angleTolerance", definition.BlockAngle);

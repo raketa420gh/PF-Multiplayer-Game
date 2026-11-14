@@ -239,7 +239,6 @@ namespace Game.Scripts.Editor.Dungeon
             sword.DeflectDuration = 0.9f;
             sword.Attacks[2].Stagger = 0.3f;
             sword.Riposte.Stagger = 0.45f;
-            sword.BlockMitigation = 0.75f;
             sword.BlockImpact = 0.3f;
             sword.BlockRecovery = 0.45f;
             sword.BlockMove = 0.5f;
@@ -259,7 +258,6 @@ namespace Game.Scripts.Editor.Dungeon
             club.IsRound = true;
             club.Reach = 1.45f;
             club.DeflectDuration = 0.6f;
-            club.BlockMitigation = 0.6f;
             club.BlockImpact = 0.28f;
             club.BlockRecovery = 0.4f;
             club.BlockMove = 0.6f;
@@ -487,7 +485,6 @@ namespace Game.Scripts.Editor.Dungeon
                 Riposte = riposte,
                 CanBlock = true,
                 BlockRaise = 0.2f,
-                BlockMitigation = 0.7f,
                 BlockImpact = 0.28f,
                 BlockRecovery = 0.4f,
                 BlockAngle = 80f,
@@ -715,7 +712,6 @@ namespace Game.Scripts.Editor.Dungeon
                     PoseKey.Flow(7 * Footage, Dagger(0.8f, 0.92f, 0.32f, 0.625f, 0.27f, lowElbow, offLow), 1f),
                     PoseKey.Flow(9 * Footage, Dagger(0.75f, 0.9f, 0.3f, 0.65f, 0.29f, lowElbow, Vector3.Lerp(offLow, offRaised, 0.5f)), 0.6f)
                 },
-                BlockMitigation = 0.6f,
                 BlockImpact = 0.25f,
                 BlockRecovery = 0.35f,
                 BlockAngle = 70f,
@@ -936,7 +932,6 @@ namespace Game.Scripts.Editor.Dungeon
                     PoseKey.Flow(4 * Footage, At(0.35f, 0.45f, 0.33f, 0.55f, 0.85f, Cm(28f, 1.35f, 20f)), 1.2f),
                     PoseKey.Flow(6 * Footage, At(0.32f, 0.75f, 0.31f, 0.46f, 1.08f, lowElbow), 0.8f)
                 },
-                BlockMitigation = 0.6f,
                 BlockImpact = 0.25f,
                 BlockRecovery = 0.35f,
                 BlockAngle = 70f,
@@ -1044,7 +1039,6 @@ namespace Game.Scripts.Editor.Dungeon
                     new(11 * Footage, ShutBook(new(0.09f, 1.725f, 0.43f), across, Vector3.up, 0f), Ease.Out)
                 },
                 BlockLower = 18 * Footage,
-                BlockMitigation = 0.5f,
                 BlockImpact = 0.25f,
                 BlockRecovery = 0.3f,
                 BlockAngle = 80f,
@@ -1233,7 +1227,6 @@ namespace Game.Scripts.Editor.Dungeon
                     new(8 * Footage, Fists2(0.6f, 0.72f, 0.37f, 0.7f, new(-0.9f, 0.3f, -0.3f), new(0f, 0.6f, 0.8f), 0.3f, 0.28f), Ease.Linear),
                     new(10 * Footage, Fists2(0.62f, 0.85f, 0.37f, 0.82f, new(-0.9f, 0.3f, -0.3f), new(-0.1f, 0.5f, 0.85f), 0.3f, 0.3f), Ease.Linear)
                 },
-                BlockMitigation = 0.4f,
                 BlockImpact = 0.25f,
                 BlockRecovery = 0.3f,
                 BlockAngle = 80f,
@@ -1518,7 +1511,6 @@ namespace Game.Scripts.Editor.Dungeon
                     PoseKey.Flow(12 * Footage, Sword(0.76f, 0.78f, 0.45f, 0.68f, -0.3f, 0.6f, 0f, lowElbow, offHand), 1f),
                     PoseKey.Flow(14 * Footage, Sword(0.73f, 0.8f, 0.45f, 0.71f, -0.3f, 0.3f, 0f, lowElbow, offHand), 0.6f)
                 },
-                BlockMitigation = 0.7f,
                 BlockImpact = 0.28f,
                 BlockRecovery = 0.4f,
                 BlockAngle = 80f,
@@ -1703,7 +1695,6 @@ namespace Game.Scripts.Editor.Dungeon
             weapon.DeflectPose = Carry(weapon.DeflectPose, shield.Idle);
             weapon.CanBlock = shield.CanBlock;
             weapon.BlockRaise = shield.BlockRaise;
-            weapon.BlockMitigation = shield.BlockMitigation;
             weapon.BlockImpact = shield.BlockImpact;
             weapon.BlockRecovery = shield.BlockRecovery;
             weapon.BlockAngle = shield.BlockAngle;
@@ -1942,7 +1933,6 @@ namespace Game.Scripts.Editor.Dungeon
                 Riposte = riposte,
                 CanBlock = true,
                 BlockRaise = 0.25f,
-                BlockMitigation = 0.7f,
                 BlockImpact = 0.3f,
                 BlockRecovery = 0.45f,
                 BlockAngle = 80f,
@@ -2083,7 +2073,6 @@ namespace Game.Scripts.Editor.Dungeon
                 Riposte = riposte,
                 CanBlock = true,
                 BlockRaise = 0.25f,
-                BlockMitigation = 0.6f,
                 BlockImpact = 0.3f,
                 BlockRecovery = 0.45f,
                 BlockAngle = 80f,
@@ -2151,7 +2140,6 @@ namespace Game.Scripts.Editor.Dungeon
             definition.CanBlock = true;
             definition.BlockRaise = 20 * Footage;
             definition.BlockLower = 26 * Footage;
-            definition.BlockMitigation = 0.6f;
             definition.BlockImpact = 0.3f;
             definition.BlockRecovery = 0.4f;
             definition.BlockAngle = 70f;
@@ -2279,7 +2267,6 @@ namespace Game.Scripts.Editor.Dungeon
             definition.CanBlock = true;
             definition.BlockRaise = 18 * Footage;
             definition.BlockLower = 18 * Footage;
-            definition.BlockMitigation = 0.6f;
             definition.BlockImpact = 0.3f;
             definition.BlockRecovery = 0.4f;
             definition.BlockAngle = 70f;

@@ -135,7 +135,6 @@ namespace Game.Scripts.Battle
     {
         public bool CanBlock => _canBlock;
         public float RaiseTime => _raiseTime;
-        public float Mitigation => _mitigation;
         public float ImpactDuration => _impactDuration;
         public float RecoveryDuration => _recoveryDuration;
         public int Stability => _stability;
@@ -150,9 +149,6 @@ namespace Game.Scripts.Battle
 
         [SerializeField]
         private float _raiseTime = 0.2f;
-
-        [SerializeField, Range(0f, 1f)]
-        private float _mitigation = 1f;
 
         [SerializeField]
         private float _impactDuration = 0.25f;

@@ -112,7 +112,8 @@ namespace Game.Scripts.Battle
         public float ReloadProgress => State == CombatState.Reload && _stateDuration > 0f ? Mathf.Clamp01(StateTime / _stateDuration) : 0f;
         public float TimeScale => State switch
         {
-            CombatState.Attack or CombatState.BlockRaise or CombatState.BlockImpact or CombatState.Draw => ActionSpeed,
+            CombatState.BlockRaise => ActionSpeed * _blockRaiseSpeed,
+            CombatState.Attack or CombatState.BlockImpact or CombatState.Draw => ActionSpeed,
             CombatState.Equip or CombatState.Reload or CombatState.Restock => _stats?.HandlingSpeed ?? 1f,
             CombatState.Busy => _busySpeed,
             _ => 1f
@@ -305,6 +306,7 @@ namespace Game.Scripts.Battle
         private bool _isBlockHeld;
         private bool _isBlockSuppressed;
         private bool _isBlockSlowIgnored;
+        private float _blockRaiseSpeed = 1f;
         private bool _isGuardUnbreakable;
         private bool _isAttackSuppressed;
         private int _renderedWorldHits;
@@ -353,6 +355,12 @@ namespace Game.Scripts.Battle
         public void SetBlockSlowIgnored(bool isIgnored)
         {
             _isBlockSlowIgnored = isIgnored;
+        }
+
+        /// The guard goes up this many times faster (a class perk).
+        public void SetBlockRaiseSpeed(float speed)
+        {
+            _blockRaiseSpeed = speed;
         }
 
         /// No impact breaks the raised block (a class skill).

@@ -284,11 +284,6 @@ namespace Game.Scripts.Dungeon
             return receiver.TryGetComponent(out AdventurerComponent adventurer) && adventurer._inventory.GetEquippedConfig<ArmorItemConfig>(EquipSlot.Chest) is { ArmorType: ArmorType.Plate };
         }
 
-        float DamageReceiverComponent.IHitModifier.ModifyBlockMitigation(float mitigation)
-        {
-            return mitigation * (1f + Perk(PerkEffect.ShieldTraining));
-        }
-
         /// Struck side: armor (unless the hit ignores it), guards and weaknesses, the habits of the alchemist and the tracker.
         int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, in HitRequest request)
         {

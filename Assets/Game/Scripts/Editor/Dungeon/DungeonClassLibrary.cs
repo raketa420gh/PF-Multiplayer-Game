@@ -115,7 +115,7 @@ namespace Game.Scripts.Editor.Dungeon
                     Stats("Drill Arms", "+3 Strength.", "A thousand cuts at a post before the first at a man.", "a soldier swinging a wooden practice sword at a straw post", -1, new StatModifier(StatType.Strength, 3f)),
                     Stats("Field Rations", "+3 Vitality.", "Hardtack and boiled leather. You get used to it.", "a dented tin of hardtack biscuits and a strip of dried meat", -1, new StatModifier(StatType.Vitality, 3f)),
                     Perk("Steady Stance", "Your block does not slow you down.", "Feet first, then the shield.", PerkEffect.SteadyBlock, 1f, "armored boots planted firmly in mud behind a shield", 0),
-                    Perk("Shield Drill", "Your shield block stops 20% more damage.", "The shield is a wall, not a plate.", PerkEffect.ShieldTraining, 0.2f, "a heater shield deflecting a sword blow, sparks flying", 0),
+                    Perk("Shield Drill", "You raise your block 20% faster.", "The shield is a wall, not a plate.", PerkEffect.ShieldTraining, 0.2f, "a heater shield deflecting a sword blow, sparks flying", 0),
                     Perk("Counterblow", "After a blocked hit your attacks are 25% faster for 2s.", "Your turn is over.", PerkEffect.Retaliation, 25f, "a sword thrusting out from behind a raised shield", 0),
                     Perk("Heavy Bones", "Nothing can knock you back.", "Push. I will wait.", PerkEffect.KnockbackImmune, 1f, "a broad-shouldered warrior standing firm against a wave of dust", 0),
                     Perk("Anything Sharp", "You can wield any weapon.", "A weapon is a weapon.", PerkEffect.AnyWeapon, 1f, "a pile of mismatched weapons: axe, mace, sword, spear", 1),

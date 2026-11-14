@@ -113,7 +113,6 @@ namespace Game.Scripts.Editor.Battle
 
         public bool CanBlock;
         public float BlockRaise;
-        public float BlockMitigation;
         public float BlockImpact;
         public float BlockRecovery;
         public float BlockAngle;
@@ -284,7 +283,6 @@ namespace Game.Scripts.Editor.Battle
                 },
                 CanBlock = true,
                 BlockRaise = 0.18f,
-                BlockMitigation = 1f,
                 BlockImpact = 0.25f,
                 BlockRecovery = 0.35f,
                 BlockAngle = 100f,

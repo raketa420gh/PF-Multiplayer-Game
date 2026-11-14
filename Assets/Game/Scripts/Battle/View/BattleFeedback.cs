@@ -208,8 +208,7 @@ namespace Game.Scripts.Battle
         {
             return hit.Result switch
             {
-                HitResult.Blocked => hit.Damage > 0 ? $"BLOCK {hit.Damage}" : "BLOCK",
-                HitResult.PartialBlock => $"PARTIAL {hit.Damage}",
+                HitResult.Blocked => "BLOCK",
                 _ => hit.Zone == HitZone.Head ? $"HEAD {hit.Damage}" : hit.Damage.ToString()
             };
         }

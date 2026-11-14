@@ -8,8 +8,7 @@ namespace Game.Scripts.Battle
     public enum HitResult : byte
     {
         Hit,
-        Blocked,
-        PartialBlock
+        Blocked
     }
 
     /// What dealt a hit: class perks and status effects tell sources apart by it.
@@ -81,8 +80,6 @@ namespace Game.Scripts.Battle
         {
             /// Attacker side, before the victim's reductions: the striker's bonuses may change the damage and the request.
             void ModifyOutgoingHit(DamageReceiverComponent victim, ref HitRequest request);
-            /// Victim side: share of the hit the raised block stops.
-            float ModifyBlockMitigation(float mitigation);
             int ModifyIncomingDamage(int damage, in HitRequest request);
         }
 
@@ -188,19 +185,13 @@ namespace Game.Scripts.Battle
                 blockRays = 0;
             }
 
-            HitResult result = blockRays == 0 ? HitResult.Hit : bodyRays == 0 ? HitResult.Blocked : HitResult.PartialBlock;
-            float blockedShare = blockRays / (float)(blockRays + bodyRays);
+            // As in DaD: a blade stopped by a valid block deals nothing; one that also reached the body is a full hit.
+            HitResult result = bodyRays == 0 && blockRays > 0 ? HitResult.Blocked : HitResult.Hit;
 
             if (hit.Attacker != null && hit.Attacker._modifier != null)
                 hit.Attacker._modifier.ModifyOutgoingHit(this, ref hit);
 
-            float zoneMultiplier = result == HitResult.Blocked ? 1f : _zoneConfig.GetMultiplier(hit.Zone);
-            float mitigation = block != null ? block.Mitigation * blockedShare : 0f;
-
-            if (_modifier != null && mitigation > 0f)
-                mitigation = Mathf.Clamp01(_modifier.ModifyBlockMitigation(mitigation));
-
-            int damage = Mathf.RoundToInt(hit.BaseDamage * zoneMultiplier * (1f - mitigation));
+            int damage = result == HitResult.Blocked ? 0 : Mathf.RoundToInt(hit.BaseDamage * _zoneConfig.GetMultiplier(hit.Zone));
 
             if (_modifier != null && damage > 0)
                 damage = Mathf.Max(0, _modifier.ModifyIncomingDamage(damage, hit));
