@@ -78,8 +78,8 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Fury", Description = Text("For 8s attack 20% faster and move 15% faster.", "Red. Everything red."), Kind = AbilityKind.Buff, Effect = StatusEffectKind.ActionSpeed,
-                        Magnitude = 20f, Duration = 8f, SecondEffect = StatusEffectKind.Haste, SecondMagnitude = 15f, SecondDuration = 8f, Cooldown = 45f, CastTime = 0.2f,
+                        Name = "Fury", Description = Text("For 8s attack 20% faster and move 5% faster.", "Red. Everything red."), Kind = AbilityKind.Buff, Effect = StatusEffectKind.ActionSpeed,
+                        Magnitude = 20f, Duration = 8f, SecondEffect = StatusEffectKind.Haste, SecondMagnitude = 5f, SecondDuration = 8f, Cooldown = 45f, CastTime = 0.2f,
                         Glyph = "Fu", Color = hewer, Subclass = 1, Vfx = VfxStyle.Blood, Art = "a roaring blood-spattered warrior with wild eyes, red haze around him"
                     },
                     new AbilityDef

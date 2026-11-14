@@ -45,7 +45,8 @@
 - Skills подклассов (Shieldbearer переделан 2026-11-14):
   - **Shield Bash** — удар щитом на месте, без рывка: 8 физ. урона в конусе 40° на 2,2 м, отброс 3, стаггер 0,3 с, перезарядка 16 с, нужен щит.
   - **Brace** (вместо The Wall) — 6 с: блок не пробивается (Impact не ломает guard), блок не замедляет, каждый заблокированный удар ближнего боя отбрасывает атакующего (сила 4). Перезарядка 30 с, нужен щит (`StatusEffectKind.Brace`).
-  - Остальные: Shoulder Blow, Fury (Hewer); Hold the Line!, Charge!, Banner (Captain).
+  - **Fury** (Hewer, изменён 2026-11-14) — 8 с: +20% скорости действий и +5% скорости передвижения (было +15%), перезарядка 45 с.
+  - Остальные: Shoulder Blow (Hewer); Hold the Line!, Charge!, Banner (Captain).
 - Perks: общие Hardened, Plate Habit, Used to Wounds, Drill Arms, Field Rations; Steady Stance, Shield Drill, Counterblow, Heavy Bones / Anything Sharp, Light Step, Onslaught, Quick Hands / Under the Banner, Set the Example, Battle Order, Voice.
 
 ## Librarian
