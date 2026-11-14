@@ -541,8 +541,11 @@ namespace Game.Scripts.Battle
                     break;
 
                 case CombatState.BlockImpact:
-                    if (isAttackPressed && weapon.HasRiposte)
+                    // Only a block taken on the weapon itself opens the riposte; a shield block goes on to a plain swing.
+                    if (isAttackPressed && weapon.HasRiposte && !weapon.HasShield)
                         StartRiposte();
+                    else if (isAttackPressed && IsSeriesReady)
+                        StartAttack(0);
                     else if (time >= _stateDuration)
                         SetState(isBlockHeld ? CombatState.Block : CombatState.Idle);
                     break;
