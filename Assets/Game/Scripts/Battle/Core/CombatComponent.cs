@@ -305,6 +305,7 @@ namespace Game.Scripts.Battle
         private bool _isBlockHeld;
         private bool _isBlockSuppressed;
         private bool _isBlockSlowIgnored;
+        private bool _isGuardUnbreakable;
         private bool _isAttackSuppressed;
         private int _renderedWorldHits;
         private bool _hasWorldHit;
@@ -352,6 +353,12 @@ namespace Game.Scripts.Battle
         public void SetBlockSlowIgnored(bool isIgnored)
         {
             _isBlockSlowIgnored = isIgnored;
+        }
+
+        /// No impact breaks the raised block (a class skill).
+        public void SetGuardUnbreakable(bool isUnbreakable)
+        {
+            _isGuardUnbreakable = isUnbreakable;
         }
 
         /// While a belt item is in hand the primary button uses it instead of attacking.
@@ -954,7 +961,7 @@ namespace Game.Scripts.Battle
         {
             BlockConfig block = Weapon.Block;
 
-            if (result != HitResult.Hit && impact > block.Stability)
+            if (result != HitResult.Hit && impact > block.Stability && !_isGuardUnbreakable)
             {
                 SetState(CombatState.Stagger, block.BreakDuration);
             }

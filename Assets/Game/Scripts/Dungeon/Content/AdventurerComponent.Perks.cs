@@ -25,7 +25,6 @@ namespace Game.Scripts.Dungeon
         private const float DeadRootTime = 6f;
         private const float DeadRootSlow = 20f;
         private const float GenerousRadius = 4f;
-        private const float BulwarkAngle = 75f;
 
         private readonly float[] _perks = new float[(int)PerkEffect.Count];
         private DamageReceiverComponent _onslaughtVictim;
@@ -290,17 +289,9 @@ namespace Game.Scripts.Dungeon
             return mitigation * (1f + Perk(PerkEffect.ShieldTraining));
         }
 
-        /// Struck side: armor (unless the hit ignores it), guards and weaknesses, a wall in front, the habits of the alchemist and the tracker.
+        /// Struck side: armor (unless the hit ignores it), guards and weaknesses, the habits of the alchemist and the tracker.
         int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, in HitRequest request)
         {
-            if (_effects.Has(StatusEffectKind.Bulwark))
-            {
-                Vector3 toAttacker = Vector3.ProjectOnPlane(request.AttackerPosition - transform.position, Vector3.up);
-
-                if (toAttacker.sqrMagnitude > 0.01f && Vector3.Angle(transform.forward, toAttacker) < BulwarkAngle)
-                    return 0;
-            }
-
             float reduced = request.IgnoreArmor ? damage : _stats.ModifyIncomingDamage(damage, request.DamageType, request.Zone);
             float guard = Mathf.Clamp(_effects.GetMagnitude(StatusEffectKind.Guard), 0f, 80f) / 100f;
             float taken = StatusDamage.Taken(_effects) - guard - (IsMixtureActive ? Perk(PerkEffect.Buzz) : 0f);
@@ -385,7 +376,7 @@ namespace Game.Scripts.Dungeon
             _isBonusHit = false;
         }
 
-        /// A blocked hit quickens the counter; a hit taken stirs righteous wrath at most once in a while.
+        /// A blocked hit quickens the counter and, braced, throws a melee attacker back; a hit taken stirs righteous wrath at most once in a while.
         private void OnHitTaken(HitResult result, int damage, HitRequest request)
         {
             if (!HasStateAuthority)
@@ -395,6 +386,9 @@ namespace Game.Scripts.Dungeon
 
             if (result != HitResult.Hit && Perk(PerkEffect.Retaliation) > 0f)
                 _effects.Add(StatusEffectKind.Retaliation, Perk(PerkEffect.Retaliation), RetaliationTime);
+
+            if (result != HitResult.Hit && request.Attacker != null && (request.Tag & DamageTag.Melee) != 0)
+                Push(request.Attacker, transform.position, _effects.GetMagnitude(StatusEffectKind.Brace));
 
             if (result == HitResult.Hit && damage > 0 && request.Attacker != null && Perk(PerkEffect.RighteousWrath) > 0f && Runner.Tick >= _wrathReadyTick)
             {

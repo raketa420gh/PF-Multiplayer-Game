@@ -466,7 +466,8 @@ namespace Game.Scripts.Dungeon
 
             _fighter.Combat.SetBlockSuppressed((ReadiedSpell != NoSpell && HasFocus && State == AdventurerState.Alive) || HasBeltItemInHand || IsInSeat);
             _fighter.Combat.SetAttackSuppressed((HasBeltItemInHand && !IsTorchInHand) || IsInSeat);
-            _fighter.Combat.SetBlockSlowIgnored(Perk(PerkEffect.SteadyBlock) > 0f);
+            _fighter.Combat.SetBlockSlowIgnored(Perk(PerkEffect.SteadyBlock) > 0f || _effects.Has(StatusEffectKind.Brace));
+            _fighter.Combat.SetGuardUnbreakable(_effects.Has(StatusEffectKind.Brace));
 
             if (!HasStateAuthority)
                 return;

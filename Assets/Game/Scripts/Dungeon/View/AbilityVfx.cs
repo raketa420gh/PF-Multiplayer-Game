@@ -594,7 +594,7 @@ namespace Game.Scripts.Dungeon
                     Spawn(root, Body(new Layer { Material = c.Smoke, Rate = 4f, Life = new(1.5f, 2.2f), Velocity = new Vector3(0f, 0.2f, 0f), Size = new(0.3f, 0.6f), From = new Color(0.45f, 0.47f, 0.42f, 0.25f), Noise = 0.3f, Max = 10 }, chest, torso));
 
                     return true;
-                case StatusEffectKind.Bulwark:
+                case StatusEffectKind.Brace:
                     Vector3 shield = new(0f, height * 0.55f, 0.5f);
                     Hover(root, c.Ring, shield, 1.2f, new Color(1f, 0.82f, 0.4f, 0.35f), ParticleSystemRenderMode.Billboard, true);
                     Hover(root, c.Glow, shield, 1f, new Color(1f, 0.85f, 0.5f, 0.12f), ParticleSystemRenderMode.Billboard, true);

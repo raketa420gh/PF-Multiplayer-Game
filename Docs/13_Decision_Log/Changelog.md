@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-11-14
+- Mercenary / Shieldbearer: Shield Bash is now a shield strike in place with a short knockback (no stun), 16s cooldown; The Wall replaced by Brace: 6s unbreakable, unslowed block that throws back melee attackers.
+
 ## 2026-11-13
 
 ### Added

@@ -79,8 +79,8 @@ namespace Game.Scripts.Dungeon
         Lightbearer,
         /// Enemy silhouettes are seen through walls within the magnitude in metres.
         Tracking,
-        /// No damage from anything in front.
-        Bulwark,
+        /// The block cannot be broken nor slows, and every blocked melee hit throws the attacker back by the magnitude.
+        Brace,
         /// Strength raised by the magnitude; when it runs out the body pays with Sluggish.
         BullBlood,
         /// Agility lowered by the magnitude.

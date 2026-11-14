@@ -42,7 +42,10 @@
   - **Second Wind** — как в DaD: 40% HP за 12 с, один заряд; возвращается только отдыхом у костра за 15 с (серый костёр горит 18 с, как junk Campfire Kit в DaD; 2 с уходит на то, чтобы сесть). У навыков с флагом `AbilityFlags.Campfire` `Cooldown` = время восстановления у костра.
   - **Grit Your Teeth** — +15 п. к Physical Reduction на 6 с, перезарядка 60 с (эффект `StatusEffectKind.PhysicalReduction`).
   - **Over Here!** — крик-провокация: монстры в 8 м выбирают тебя целью 4 с (`StatusEffectKind.Taunt`, монстр видит тебя в 10 раз ближе), все враги в 8 м (монстры и игроки) замедлены на 20% на 4 с. Перезарядка 30 с, каст 0,3 с, флаг `Shout`. Стоит последним в списке навыков класса — билды хранят навыки по индексу.
-- Skills подклассов: Shield Bash, The Wall (Shieldbearer); Shoulder Blow, Fury (Hewer); Hold the Line!, Charge!, Banner (Captain).
+- Skills подклассов (Shieldbearer переделан 2026-11-14):
+  - **Shield Bash** — удар щитом на месте, без рывка: 8 физ. урона в конусе 40° на 2,2 м, отброс 3, стаггер 0,3 с, перезарядка 16 с, нужен щит.
+  - **Brace** (вместо The Wall) — 6 с: блок не пробивается (Impact не ломает guard), блок не замедляет, каждый заблокированный удар ближнего боя отбрасывает атакующего (сила 4). Перезарядка 30 с, нужен щит (`StatusEffectKind.Brace`).
+  - Остальные: Shoulder Blow, Fury (Hewer); Hold the Line!, Charge!, Banner (Captain).
 - Perks: общие Hardened, Plate Habit, Used to Wounds, Drill Arms, Field Rations; Steady Stance, Shield Drill, Counterblow, Heavy Bones / Anything Sharp, Light Step, Onslaught, Quick Hands / Under the Banner, Set the Example, Battle Order, Voice.
 
 ## Librarian

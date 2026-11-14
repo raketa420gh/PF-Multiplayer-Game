@@ -53,22 +53,21 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Grit Your Teeth", Description = Text("+15% physical damage reduction for 6s.", "Hurts. Later."), Kind = AbilityKind.Buff, Effect = StatusEffectKind.PhysicalReduction,
+                        Name = "Grit Your Teeth", Description = Text("+15 physical damage reduction for 6s.", "Hurts. Later."), Kind = AbilityKind.Buff, Effect = StatusEffectKind.PhysicalReduction,
                         Magnitude = 15f, Duration = 6f, Cooldown = 60f, CastTime = 0.2f, Glyph = "GT", Color = steel, Vfx = VfxStyle.Physical,
                         Art = "a clenched jaw of a scarred mercenary, blood on the teeth, steel gorget"
                     },
                     new AbilityDef
                     {
-                        Name = "Shield Bash", Description = Text("Swing your shield ahead without a lunge: 8 physical damage to everyone in front and a 1s stun. Needs a shield.", "Down."),
-                        Kind = AbilityKind.AreaDamage, Magnitude = 8f, Radius = 2.4f, Cone = 50f, Stagger = 1f, DamageType = DamageType.Physical, Flags = AbilityFlags.RequiresShield,
-                        Cooldown = 15f, CastTime = 0.15f, Glyph = "SB", Color = shield, Subclass = 0, Vfx = VfxStyle.Physical,
+                        Name = "Shield Bash", Description = Text("Strike with your shield where you stand: 8 physical damage to everyone in front and a short knockback. Needs a shield.", "Down."),
+                        Kind = AbilityKind.AreaDamage, Magnitude = 8f, Radius = 2.2f, Cone = 40f, Stagger = 0.3f, Push = 3f, DamageType = DamageType.Physical, Flags = AbilityFlags.RequiresShield,
+                        Cooldown = 16f, CastTime = 0.15f, Glyph = "SB", Color = shield, Subclass = 0, Vfx = VfxStyle.Physical,
                         Art = "a round shield boss slamming into a skeleton's skull, bone shards flying"
                     },
                     new AbilityDef
                     {
-                        Name = "The Wall", Description = Text("For 3s nothing hurts you from the front, but you cannot move. Needs a shield.", "Not one step."), Kind = AbilityKind.Buff,
-                        Effect = StatusEffectKind.Bulwark, Magnitude = 1f, Duration = 3f, SecondEffect = StatusEffectKind.Root, SecondMagnitude = 1f, SecondDuration = 3f,
-                        Flags = AbilityFlags.RequiresShield, Cooldown = 30f, CastTime = 0.15f, Glyph = "Wa", Color = shield, Subclass = 0, Vfx = VfxStyle.Holy,
+                        Name = "Brace", Description = Text("For 6s no blow breaks your block and blocking does not slow you; every melee hit you block throws the attacker back. Needs a shield.", "Not one step."), Kind = AbilityKind.Buff,
+                        Effect = StatusEffectKind.Brace, Magnitude = 4f, Duration = 6f, Flags = AbilityFlags.RequiresShield, Cooldown = 30f, CastTime = 0.15f, Glyph = "Br", Color = shield, Subclass = 0, Vfx = VfxStyle.Holy,
                         Art = "a lone shieldbearer planted in a narrow stone corridor, arrows broken against his raised shield"
                     },
                     new AbilityDef
