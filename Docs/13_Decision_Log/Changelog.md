@@ -5,6 +5,7 @@
 - Mercenary / Shieldbearer: Shield Bash is now a shield strike in place with a short knockback (no stun), 16s cooldown; The Wall replaced by Brace: 6s unbreakable, unslowed block that throws back melee attackers.
 - Блок как в DaD: удар, попавший только в поднятый щит/оружие, не наносит урона; если лезвие задело и тело — полный урон. Процент поглощения (`BlockConfig.Mitigation`) и `PartialBlock` удалены.
 - Fighter perk **Shield Drill**: вместо +20% поглощения блок поднимается на 20% быстрее.
+- Mercenary / Captain: **Hold the Line!** даёт +15 п. Physical Reduction и +15 п. Magical Reduction на 8 с вместо −15% любого урона. Новый `StatusEffectKind.MagicalReduction`; `AreaBuff` накладывает и `SecondEffect`.
 
 ## 2026-11-13
 

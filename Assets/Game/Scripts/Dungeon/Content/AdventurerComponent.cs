@@ -1754,6 +1754,9 @@ namespace Game.Scripts.Dungeon
                     continue;
 
                 ally._effects.Add(ability.Effect, Power(ability), duration);
+
+                if (ability.SecondEffect != StatusEffectKind.None)
+                    ally._effects.Add(ability.SecondEffect, ability.SecondMagnitude, duration);
             }
 
             if (isFlash)

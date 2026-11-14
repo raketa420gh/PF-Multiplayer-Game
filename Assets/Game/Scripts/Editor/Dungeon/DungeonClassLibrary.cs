@@ -84,8 +84,8 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Hold the Line!", Description = Text("You and your allies within 8m take 15% less damage for 8s.", "Shields together!"), Kind = AbilityKind.AreaBuff,
-                        Effect = StatusEffectKind.Guard, Magnitude = 15f, Duration = 8f, Radius = 8f, Flags = AbilityFlags.Shout, Cooldown = 40f, CastTime = 0.3f,
+                        Name = "Hold the Line!", Description = Text("You and your allies within 8m get +15 physical and +15 magical damage reduction for 8s.", "Shields together!"), Kind = AbilityKind.AreaBuff,
+                        Effect = StatusEffectKind.PhysicalReduction, Magnitude = 15f, SecondEffect = StatusEffectKind.MagicalReduction, SecondMagnitude = 15f, Duration = 8f, Radius = 8f, Flags = AbilityFlags.Shout, Cooldown = 40f, CastTime = 0.3f,
                         Glyph = "HL", Color = captain, Subclass = 2, Vfx = VfxStyle.Shout, Art = "a row of overlapping battered shields, a captain shouting behind them"
                     },
                     new AbilityDef

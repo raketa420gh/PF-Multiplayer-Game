@@ -179,7 +179,7 @@ namespace Game.Scripts.Dungeon
                 * (1f + Perk(perks, PerkEffect.FrostSkin) + Effect(effects, StatusEffectKind.ArmorPercent) / 100f);
             _magicResistance = DungeonFormulas.BaseMagicResistance + magicResistance + _flat[(int)StatType.MagicResistance];
             _physicalReduction = DungeonFormulas.ArmorReduction(_armorRating) + (Effect(effects, StatusEffectKind.PhysicalReduction) - rage) * 0.01f;
-            _magicalReduction = DungeonFormulas.MagicReduction(_magicResistance);
+            _magicalReduction = DungeonFormulas.MagicReduction(_magicResistance) + Effect(effects, StatusEffectKind.MagicalReduction) * 0.01f;
 
             float Attribute(StatType stat) => config.BaseStats.Get(stat) + _flat[(int)stat];
             float ThresholdPower(StatType attribute) => HasThreshold(attribute) ? DungeonFormulas.ThresholdPower : 0f;

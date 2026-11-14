@@ -120,7 +120,9 @@ namespace Game.Scripts.Dungeon
         /// Percent less healing received.
         Festering,
         /// Percent points added to physical damage reduction.
-        PhysicalReduction
+        PhysicalReduction,
+        /// Percent points added to magical damage reduction.
+        MagicalReduction
     }
 
     public struct StatusEffect : INetworkStruct
