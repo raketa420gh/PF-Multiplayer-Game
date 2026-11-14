@@ -2,7 +2,7 @@
 
 В игре шесть классов из `03_World/Lore.md`: **Mercenary** (`Id = 0`), **Librarian** (1), **Alchemist** (2), **Confessor** (3), **Huntsman** (4), **Knave** (5). Данные классов лежат в `Editor/Dungeon/DungeonClassLibrary.cs`, ассеты генерируются в `Configs/Dungeon/Classes` через `Tools/Game/Dungeon/Build Content`. Лор, цитаты и описания подклассов — в `Lore.md`, здесь только игровые данные.
 
-Атрибуты описаны в `Attributes.md` («Гексаграмма»): 6 атрибутов, сумма 90.
+Атрибуты описаны в `Attributes.md` («Гексаграмма»): 6 атрибутов, сумма 64, нейтраль 10.
 
 ## Class Framework
 Для каждого класса:
@@ -34,7 +34,7 @@
 
 ## Mercenary
 - Identity: солдат распущенной армии, пошёл в жилу за деньги; простая сталь, без магии.
-- Attributes: 19 / 19 / 8 / 9 / 17 / 18.
+- Attributes: 12 / 15 / 10 / 5 / 10 / 12 (задал пользователь 2026-11-14).
 - Weapons: мечи, топоры, булавы, копья, кинжалы, щиты, факел. Стартовый набор: Arming Sword + Écu, Battle Axe, Bandage ×3, Torch.
 - Любимое оружие: Arming Sword + Écu.
 - Subclasses: **Shieldbearer** (только щит, живучий), **Hewer** (быстрый, любое оружие), **Captain** (поддержка отряда).
@@ -50,7 +50,7 @@
 
 ## Librarian
 - Identity: изгнанный библиотекарь Коллегии, одно колесо из пяти заклинаний, заряды возвращаются у костра. Хрупок в ближнем бою.
-- Attributes: 8 / 10 / 23 / 21 / 15 / 13.
+- Attributes: 6 / 7 / 16 / 15 / 11 / 9.
 - Weapons: посохи, книга заклинаний, факел. Стартовый набор: Spellbook, Magic Staff, Campfire Kit, Bandage ×2, Torch.
 - Любимое оружие: Magic Staff.
 - Subclasses: **Flamer**, **Frostbinder**, **Stormcaller**.
@@ -60,7 +60,7 @@
 
 ## Alchemist
 - Identity: выгнанный подмастерье гильдии алхимиков, добывает оссарит на реагенты; варева из своей фляги и бросаемые колбы.
-- Attributes: 14 / 15 / 13 / 18 / 15 / 15.
+- Attributes: 10 / 11 / 9 / 13 / 10 / 11.
 - Weapons: мечи, булавы, кинжалы, посохи, копья, факел. Стартовый набор: Arming Sword, Potion of Healing ×2, Bandage ×2, Torch.
 - Любимое оружие: не решено.
 - Subclasses: **Physician**, **Bombardier**, **Mutagenist**.
@@ -69,7 +69,7 @@
 
 ## Confessor
 - Identity: погребальщик Собора Упокоения, отпевает мёртвых жилы; булава, щит и одно колесо молитв.
-- Attributes: 15 / 14 / 21 / 16 / 12 / 12.
+- Attributes: 11 / 10 / 15 / 11 / 8 / 9.
 - Weapons: булавы, посохи, книга заклинаний, щиты, факел. Стартовый набор: Morning Star, Spellbook, Campfire Kit, Bandage ×2, Torch. Щит носить может, но по умолчанию его нет.
 - Любимое оружие: Morning Star.
 - Subclasses: **Healer**, **Smiter**, **Apostate**.
@@ -79,7 +79,7 @@
 
 ## Huntsman
 - Identity: охотник из мёртвых лесов, теперь охотится на тварей жилы; арбалет и лук, меч на крайний случай. Без магии.
-- Attributes: 12 / 13 / 8 / 15 / 21 / 21.
+- Attributes: 8 / 9 / 6 / 11 / 15 / 15.
 - Weapons: луки, арбалеты, армейский меч, копья, факел. Стартовый набор: Crossbow, Arming Sword, Throwing Knife ×2, Crossbow Bolts ×20, Bandage ×2, Torch.
 - Любимое оружие: луки и арбалеты.
 - Subclasses: **Marksman**, **Tracker**, **Trapper**.
@@ -89,7 +89,7 @@
 
 ## Knave
 - Identity: расхититель могил, которого Собор гонял с кладбищ; жила — самое большое кладбище, здесь та же работа оплачивается. Яды, ножи, удар в спину.
-- Attributes: 11 / 12 / 8 / 15 / 22 / 22.
+- Attributes: 8 / 8 / 6 / 10 / 16 / 16.
 - Weapons: мечи, кинжалы, арбалеты, луки, копья, факел. Стартовый набор: Arming Sword, Throwing Knife ×2, Lockpick, Bandage ×2, Torch.
 - Любимое оружие: кинжал (ещё не сделан; пока в наборе Arming Sword).
 - Subclasses: **Assassin**, **Poisoner**, **Thrower**.

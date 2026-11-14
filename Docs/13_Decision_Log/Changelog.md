@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-14
+- Новая шкала атрибутов: сумма класса 64 вместо 90, нейтраль 10 вместо 15, пороги на 25 вместо 30, заряды памяти на 15 / 25 / 35 Знания. Цена очка прежняя (3%). Mercenary — 12 / 15 / 10 / 5 / 10 / 12 (раскладка пользователя), остальные классы пересчитаны пропорционально.
 - Mercenary / Shieldbearer: Shield Bash is now a shield strike in place with a short knockback (no stun), 16s cooldown; The Wall replaced by Brace: 6s unbreakable, unslowed block that throws back melee attackers.
 - Блок как в DaD: удар, попавший только в поднятый щит/оружие, не наносит урона; если лезвие задело и тело — полный урон. Процент поглощения (`BlockConfig.Mitigation`) и `PartialBlock` удалены.
 - Fighter perk **Shield Drill**: вместо +20% поглощения блок поднимается на 20% быстрее.

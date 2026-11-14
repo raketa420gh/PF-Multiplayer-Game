@@ -380,7 +380,7 @@ namespace Game.Scripts.Dungeon
         private string _description;
 
         [SerializeField]
-        private ClassStats _baseStats = new(15, 15, 15, 15, 15, 15);
+        private ClassStats _baseStats = new(10, 10, 10, 10, 10, 10);
 
         [SerializeField]
         private Color _color = Color.white;

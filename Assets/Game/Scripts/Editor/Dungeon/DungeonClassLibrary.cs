@@ -36,7 +36,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new ClassDef
             {
                 Id = 0, Name = "Mercenary", IsPlayable = true,Description = "A free blade: a soldier of a disbanded army gone below for the coin. Loyal to no one, trusts no ossarite: plain steel, and ossarite is only pay.",
-                Stats = new ClassStats(19, 19, 8, 9, 17, 18), Color = steel, Body = Color.white,
+                Stats = new ClassStats(12, 15, 10, 5, 10, 12), Color = steel, Body = Color.white,
                 Subclasses = new[]
                 {
                     Subclass("Shieldbearer", "Hardest to kill, deals less. Shield only. Held the passes for the guild convoys.", shield, "a battered round shield with a steel boss braced against a storm of arrows"),
@@ -144,7 +144,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new ClassDef
             {
                 Id = 1, Name = "Librarian", Description = "An outcast librarian: he kept the College library above, read the forbidden books of Mornheim from its own vault and was thrown out. One wheel of spells that come back only by a campfire. Fragile in melee.",
-                Stats = new ClassStats(8, 10, 23, 21, 15, 13), Color = arcane, Body = Color.white,
+                Stats = new ClassStats(6, 7, 16, 15, 11, 9), Color = arcane, Body = Color.white,
                 Subclasses = new[]
                 {
                     Subclass("Flamer", "Area damage and burning. Copied the funeral books of Mornheim: whom the vein would not take, the empire burned.", fire, "an open burning funeral book, flames rising from its pages"),
@@ -277,7 +277,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new ClassDef
             {
                 Id = 2, Name = "Alchemist", Description = "A guild alchemist's apprentice thrown out on the street. No money for dear reagents, so he went into the vein for ossarite: above, it buys everything else.",
-                Stats = new ClassStats(14, 15, 13, 18, 15, 15), Color = amber, Body = Color.white,
+                Stats = new ClassStats(10, 11, 9, 13, 10, 11), Color = amber, Body = Color.white,
                 Subclasses = new[]
                 {
                     Subclass("Physician", "Support: heals the squad. Thrown out for treating convicts for free.", physician, "a physician's leather satchel with green glowing vials"),
@@ -377,7 +377,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new ClassDef
             {
                 Id = 3, Name = "Confessor", IsPlayable = true,Description = "A burier of the Cathedral of Repose: sang the dead of the vein to rest so they would not rise, and gathered the tithe. Came down himself to atone for Mornheim's \"payment of the dead\". One wheel of prayers.",
-                Stats = new ClassStats(15, 14, 21, 16, 12, 12), Color = light, Body = Color.white,
+                Stats = new ClassStats(11, 10, 15, 11, 8, 9), Color = light, Body = Color.white,
                 Subclasses = new[]
                 {
                     Subclass("Healer", "Heals and shelters the squad. Served the Cathedral's infirmary at the entrance; came down to bury fewer.", mending, "gentle hands glowing with warm light over a wounded chest"),
@@ -510,7 +510,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new ClassDef
             {
                 Id = 4, Name = "Huntsman", Description = "A hunter from the dead forests: dust from the spoil heaps poisoned the woods above and the game left. Now his game is the creatures of the vein, and the House of Scales buys the trophies.",
-                Stats = new ClassStats(12, 13, 8, 15, 21, 21), Color = hunt, Body = Color.white,
+                Stats = new ClassStats(8, 9, 6, 11, 15, 15), Color = hunt, Body = Color.white,
                 Subclasses = new[]
                 {
                     Subclass("Marksman", "Damage from afar. The last hunter of his village.", marksman, "a longbow at full draw aimed into darkness"),
@@ -604,7 +604,7 @@ namespace Game.Scripts.Editor.Dungeon
             return new ClassDef
             {
                 Id = 5, Name = "Knave", Description = "A grave robber: the Cathedral chased him off every churchyard and threatened the stake. The vein is the biggest graveyard in the world, and here the same work pays. Takes what the dead wear.",
-                Stats = new ClassStats(11, 12, 8, 15, 22, 22), Color = shade, Body = Color.white,
+                Stats = new ClassStats(8, 8, 6, 10, 16, 16), Color = shade, Body = Color.white,
                 Subclasses = new[]
                 {
                     Subclass("Assassin", "One target: open it fast, finish it fast. Cut churchyard watchmen at night.", assassin, "a thin stiletto dripping blood in moonlight"),

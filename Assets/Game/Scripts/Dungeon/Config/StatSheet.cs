@@ -77,7 +77,7 @@ namespace Game.Scripts.Dungeon
             "The only source of the magical damage bonus; half as much it raises the healing you cast. Spirit plus flat bonuses.",
             "Magical Power run through the shared curve, plus Magical Damage bonuses of gear.",
             "Speed of casting spells and spell-like skills.",
-            "Extra charges of every spell that uses charges: +1 at 20, 30 and 40 Knowledge.",
+            "Extra charges of every spell that uses charges: +1 at 15, 25 and 35 Knowledge.",
             "Base 300, capped at 330. Armor and weapon penalties are subtracted as they are.",
             "Pace of attacks, blocks, bow draws and drinking potions, animations included.",
             "Sum of the armor worn. Converts into Physical Reduction with diminishing returns.",
