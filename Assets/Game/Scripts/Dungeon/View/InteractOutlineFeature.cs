@@ -34,7 +34,9 @@ namespace Game.Scripts.Dungeon
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (_material == null || InteractOutline.Renderers.Count == 0 || renderingData.cameraData.cameraType != CameraType.Game)
+            // The UI overlay camera in the stack has its own projection: a second pass there lays a second, shifted rim.
+            if (_material == null || InteractOutline.Renderers.Count == 0 || renderingData.cameraData.cameraType != CameraType.Game ||
+                renderingData.cameraData.renderType == CameraRenderType.Overlay)
                 return;
 
             _material.SetColor(OutlinePass.ColorId, _color);
