@@ -24,7 +24,7 @@ PvE должен:
 
 | Enemy | Role | HP | Damage | Move Speed | Aggro, м | Notes |
 |---|---|---:|---|---:|---:|---|
-| Skeleton Swordsman | Melee | 117 | Arming Sword ×1.5 | 220 | 10 | Блокирует, скорость действий 0.7 |
+| Skeleton Swordsman | Melee | 117 | Skeleton Sword ×1.5 | 220 | 10 | Свои анимации (Skeleton Footman из DaD, `SkeletonSwordMotions`): сгорбленный idle с остриём на полу, из него случайно одна из двух атак — диагональная (замах ≈1.0 с, вся ≈2.6 с) или вертикальная (замах ≈0.8 с, вся ≈2.9 с); не блокирует, серий нет (`PicksAttack`), скорость действий 1 |
 | Skeleton Archer | Ranged | 70 | Bow ×1 | 210 | 14 | Стоит на месте, пока цель в радиусе атаки; скорость действий 0.85 |
 | Skeleton Warrior | Tank | 165 | Sword & Écu ×1.3 | 200 | 10 | Блокирует щитом, броня +15 % (у остальных −22 %), скорость действий 0.65, 40 опыта, свой лут-тейбл `Warrior` |
 | Flying Head | Assassin / charger | 60 | Таран ×1 | 230 | 12 | Без гуманоидной модели, рывок (`ChargeSpeed` 900), визг перед атакой |

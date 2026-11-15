@@ -113,6 +113,7 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.Poniard] = new[] { (poniard, WeaponSocket.LeftHand) },
                 [DungeonWeaponLibrary.Zweihander] = new[] { (zweihander, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Club] = new[] { (club, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.SkeletonSword] = new[] { (sword, WeaponSocket.RightHand) },
                 // The torch is the belt item in the hand.
                 [DungeonWeaponLibrary.Torch] = Array.Empty<(GameObject, WeaponSocket)>()
             };

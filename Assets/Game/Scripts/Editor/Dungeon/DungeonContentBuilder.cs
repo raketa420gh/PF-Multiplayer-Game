@@ -81,7 +81,7 @@ namespace Game.Scripts.Editor.Dungeon
             BuildPreviewRig(pieceSet);
 
             BuildAdventurer(loadouts, arrow, orb, database, classes, config, weapons, worldItem, corpse, campfire, pieceSet, zone, vfx);
-            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 0.7f, Aggro = 10f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.ArmingSword), Experience = 25, Loot = loot["Monster"], Scale = 1f },
+            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 1f, Aggro = 10f, PicksAttack = true, WeaponIndex = Catalog(DungeonWeaponLibrary.SkeletonSword), Experience = 25, Loot = loot["Monster"], Scale = 1f },
                 loadouts, arrow, orb, database, pieceSet);
             BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Bow), Experience = 25, Loot = loot["Monster"], Scale = 1f },
                 loadouts, arrow, orb, database, pieceSet);
@@ -958,6 +958,7 @@ namespace Game.Scripts.Editor.Dungeon
             public float Aggro;
             public bool IsRanged;
             public bool CanBlock;
+            public bool PicksAttack;
             public int WeaponIndex;
             public int Experience;
             public LootTableConfig Loot;
@@ -1062,6 +1063,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_lootTable", def.Loot);
             BattleEditorUtility.Set(so, "_isRanged", def.IsRanged);
             BattleEditorUtility.Set(so, "_canBlock", def.CanBlock);
+            BattleEditorUtility.Set(so, "_picksAttack", def.PicksAttack);
             BattleEditorUtility.Set(so, "_bodyMaterial", def.Body);
             BattleEditorUtility.Set(so, "_scale", def.Scale);
             BattleEditorUtility.Set(so, "_isBoss", def.IsBoss);

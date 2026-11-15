@@ -119,6 +119,7 @@ namespace Game.Scripts.Editor.Battle
             ArmingSwordAttacks.Bake(false);
             ZweihanderMotions.Bake();
             ClubMotions.Bake();
+            SkeletonSwordMotions.Bake();
             BakeShieldSwings(weapons);
             StoreMarkers(weapons);
 

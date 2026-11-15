@@ -74,7 +74,7 @@ namespace Game.Scripts.Editor.Battle
 
         private static readonly Dictionary<string, string> s_weapons = new()
         {
-            ["ArmingSword"] = "arming", ["SwordEcu"] = "arming", ["SwordShield"] = "arming", ["SwordShieldLeft"] = "arming",
+            ["ArmingSword"] = "arming", ["SwordEcu"] = "arming", ["SwordShield"] = "arming", ["SwordShieldLeft"] = "arming", ["SkeletonSword"] = "arming",
             ["VikingSword"] = "viking", ["VikingEcu"] = "viking", ["VikingShield"] = "viking", ["BattleAxe"] = "axe",
             ["MaceEcu"] = "mace", ["MaceShield"] = "mace", ["MorningStar"] = "morning", ["Staff"] = "staff", ["Fists"] = "fists", ["Bow"] = "bow", ["Crossbow"] = "crossbow",
             ["Misericorde"] = "dagger", ["MisericordeShield"] = "dagger", ["MisericordeEcu"] = "dagger", ["Poniard"] = "poniard",

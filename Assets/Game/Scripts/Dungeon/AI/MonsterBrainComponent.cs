@@ -299,7 +299,8 @@ namespace Game.Scripts.Dungeon
             if (distance <= reach * (config.LungeImpulse > 0f ? 1.6f : 1f) && time >= _nextAttackTime && !_wasAttackDown && combat.State == CombatState.Idle)
             {
                 isAttackDown = true;
-                _plannedChain = config.IsBoss ? weapon.Attacks.Length : Random.Range(1, weapon.Attacks.Length + 1);
+                _plannedChain = config.PicksAttack ? 1 : config.IsBoss ? weapon.Attacks.Length : Random.Range(1, weapon.Attacks.Length + 1);
+                combat.SetSeriesStart(config.PicksAttack ? Random.Range(0, weapon.Attacks.Length) : 0);
             }
         }
 

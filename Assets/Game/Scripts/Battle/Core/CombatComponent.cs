@@ -309,6 +309,7 @@ namespace Game.Scripts.Battle
         private float _blockRaiseSpeed = 1f;
         private bool _isGuardUnbreakable;
         private bool _isAttackSuppressed;
+        private int _seriesStart;
         private int _renderedWorldHits;
         private bool _hasWorldHit;
         private LagCompensatedHit _worldHit;
@@ -355,6 +356,12 @@ namespace Game.Scripts.Battle
         public void SetBlockSlowIgnored(bool isIgnored)
         {
             _isBlockSlowIgnored = isIgnored;
+        }
+
+        /// The swing the next series opens with: a monster whose attacks each start from the rest picks one of them.
+        public void SetSeriesStart(int index)
+        {
+            _seriesStart = index;
         }
 
         /// The guard goes up this many times faster (a class perk).
@@ -590,7 +597,7 @@ namespace Game.Scripts.Battle
             }
             else if (isAttackPressed && IsSeriesReady)
             {
-                StartAttack(0);
+                StartAttack(Mathf.Min(_seriesStart, weapon.Attacks.Length - 1));
             }
             else if (isBlockHeld)
             {

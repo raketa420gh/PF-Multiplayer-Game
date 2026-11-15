@@ -35,6 +35,7 @@ namespace Game.Scripts.Dungeon
         public LootTableConfig LootTable => _lootTable;
         public bool IsRanged => _isRanged;
         public bool CanBlock => _canBlock;
+        public bool PicksAttack => _picksAttack;
         public float AttackPauseMin => _attackPause.x;
         public float AttackPauseMax => _attackPause.y;
         public Material BodyMaterial => _bodyMaterial;
@@ -92,6 +93,9 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private bool _canBlock;
+
+        [SerializeField, Tooltip("Every attack of the weapon starts from the rest: one is picked at random instead of chaining them as a series")]
+        private bool _picksAttack;
 
         [SerializeField]
         private Vector2 _attackPause = new(0.6f, 1.5f);

@@ -38,6 +38,8 @@ namespace Game.Scripts.Editor.Dungeon
         public const string Club = "Club";
         public const string ClubShield = "ClubShield";
         public const string ClubEcu = "ClubEcu";
+        /// Monster weapon: the arming sword as a skeleton swings it (SkeletonSwordMotions).
+        public const string SkeletonSword = "SkeletonSword";
 
         /// Seconds of clip per second of Dark and Darker footage, see Footage.
         public const float FootagePace = 0.75f;
@@ -86,7 +88,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static readonly string[] CatalogOrder =
         {
             SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu, Torch, Misericorde, MisericordeShield, MisericordeEcu, Poniard,
-            FistsShield, FistsEcu, Zweihander, Club, ClubShield, ClubEcu
+            FistsShield, FistsEcu, Zweihander, Club, ClubShield, ClubEcu, SkeletonSword
         };
 
         /// The entry whose shield is the model of a shield item, by its ShieldIndex: the round shield, the écu.
@@ -127,7 +129,7 @@ namespace Game.Scripts.Editor.Dungeon
             ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 4), ["Rat Bite"] = (1, 1), ["Arming Sword"] = (4, 3), ["Morning Star"] = (6, 3), ["Magic Staff"] = (4, 4),
             ["Round Shield"] = (1, 7), ["Écu"] = (1, 8), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1),
             ["Viking Sword"] = (5, 3), ["Torch"] = (2, 1), ["Misericorde"] = (2, 2), ["Poniard"] = (2, 2),
-            ["Zweihander"] = (7, 5), ["Club"] = (5, 2)
+            ["Zweihander"] = (7, 5), ["Club"] = (5, 2), ["Skeleton Sword"] = (4, 3)
         };
 
         /// A weapon with a shield hits with the weapon's Impact and blocks with the shield's Stability.
@@ -206,7 +208,8 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateMisericorde(),
                 CreatePoniard(),
                 CreateZweihander(),
-                CreateClub()
+                CreateClub(),
+                CreateSkeletonSword()
             };
 
             // Every pair is built from a definition of its own: WithShield changes the poses it is given.
@@ -270,11 +273,14 @@ namespace Game.Scripts.Editor.Dungeon
         /// it still makes of them: the swings beside a shield, the footwork, the timeline marks.
         private static WeaponDefinition FromFootage(SwordMotion[] motions, SwordSpec spec, int[] damage, int riposteDamage, float move)
         {
+            // A frame of the keys in seconds of the clip.
+            float pace = spec.Pace * Frame;
             SwordMotion Get(string id) => Array.Find(motions, motion => motion.Id == id);
             BodyPose idle = FootagePose(spec, Get("idle").Keys[0], default);
             BodyPose PoseOf(SwordKey key) => FootagePose(spec, key, idle);
             SwordKey Near(SwordMotion motion, float frame) => motion.Keys.Where(key => !key.IsIdle).OrderBy(key => Mathf.Abs(key.Frame - frame)).First();
-            List<PoseKey> Between(SwordMotion motion, float from, float to) => motion.Keys.Where(key => key.Frame > from && key.Frame < to).Select(key => Via(key.Frame, PoseOf(key))).ToList();
+            List<PoseKey> Between(SwordMotion motion, float from, float to) =>
+                motion.Keys.Where(key => key.Frame > from && key.Frame < to).Select(key => PoseKey.Flow(key.Frame * pace, PoseOf(key), 1f)).ToList();
 
             AttackDefinition Attack(SwordMotion motion, int hit, AttackDefinition after)
             {
@@ -282,7 +288,7 @@ namespace Game.Scripts.Editor.Dungeon
                 float active = motion.ActiveEnd - motion.Windup, windup = motion.Peak - active * 0.5f;
                 AttackDefinition attack = new AttackDefinition
                 {
-                    Windup = windup * Footage, Active = active * Footage, Recovery = (motion.Frames - windup - active) * Footage, Damage = hit, MoveMultiplier = move, Launch = 1f,
+                    Windup = windup * pace, Active = active * pace, Recovery = (motion.Frames - windup - active) * pace, Damage = hit, MoveMultiplier = move, Launch = 1f,
                     Raise = Between(motion, 0f, windup - 1f), WindupPose = PoseOf(Near(motion, windup)), MidPose = PoseOf(Near(motion, motion.Peak)),
                     EndPose = PoseOf(Near(motion, windup + active)), Return = Between(motion, windup + active + 1f, motion.Frames), After = after
                 };
@@ -292,43 +298,72 @@ namespace Game.Scripts.Editor.Dungeon
                 return attack;
             }
 
-            AttackDefinition[] attacks = new AttackDefinition[3];
+            // attack1, attack2...: one chained from the swing before starts where that one ends, the others from the rest.
+            AttackDefinition[] attacks = new AttackDefinition[motions.Count(motion => motion.Id.StartsWith("attack"))];
 
             for (int i = 0; i < attacks.Length; i++)
-                attacks[i] = Attack(Get("attack" + (i + 1)), damage[i], i > 0 ? attacks[i - 1] : null);
+            {
+                SwordMotion swing = Get("attack" + (i + 1));
+                attacks[i] = Attack(swing, damage[i], swing.AfterId != null ? attacks[i - 1] : null);
+            }
 
-            SwordMotion equip = Get("equip"), block = Get("block"), lower = Get("blockLower");
-            List<PoseKey> draw = Between(equip, -1f, equip.Frames);
-            draw.Add(Via(equip.Frames, idle));
-            float drawn = draw[^1].Time;
-            BodyPose guard = PoseOf(block.Keys[^1]);
-
-            return new WeaponDefinition
+            WeaponDefinition weapon = new WeaponDefinition
             {
                 BladeBase = spec.BladeBase,
                 BladeTip = spec.BladeTip,
                 Strike = spec.Strike,
                 Idle = idle,
                 Attacks = attacks,
-                Riposte = Attack(Get("riposte"), riposteDamage, null),
-                EquipVia = draw,
-                EquipShown = equip.Shown * Footage,
-                UnequipVia = draw.Select(key => PoseKey.Flow(drawn - key.Time, key.Pose, 1f)).Reverse().ToList(),
-                UnequipHidden = drawn - equip.Shown * Footage,
-                CanBlock = true,
-                BlockRaise = block.Frames * Footage,
-                BlockVia = Between(block, 0f, block.Frames),
-                BlockLower = lower.Frames * Footage,
-                BlockLowerVia = Between(lower, 0f, lower.Frames),
-                Block = guard,
-                BlockHit = Shifted(guard, new Vector3(0f, -0.03f, 0f)),
-                BlockLowered = Shifted(guard, new Vector3(0f, -0.02f, 0f)),
-                DeflectPose = attacks[0].WindupPose,
-                BlockAngle = 80f,
-                BlockSocket = WeaponSocket.RightHand,
-                BlockBoxCenter = new Vector3(0f, 0f, (spec.BladeBase + spec.BladeTip) * 0.5f),
-                BlockBoxExtents = new Vector3(0.08f, 0.08f, (spec.BladeTip - spec.BladeBase) * 0.5f)
+                DeflectPose = attacks[0].WindupPose
             };
+
+            if (Get("riposte") is SwordMotion riposte)
+                weapon.Riposte = Attack(riposte, riposteDamage, null);
+
+            if (Get("equip") is SwordMotion equip)
+            {
+                List<PoseKey> draw = Between(equip, -1f, equip.Frames);
+                draw.Add(PoseKey.Flow(equip.Frames * pace, idle, 1f));
+                float drawn = draw[^1].Time;
+                weapon.EquipVia = draw;
+                weapon.EquipShown = equip.Shown * pace;
+                weapon.UnequipVia = draw.Select(key => PoseKey.Flow(drawn - key.Time, key.Pose, 1f)).Reverse().ToList();
+                weapon.UnequipHidden = drawn - equip.Shown * pace;
+            }
+
+            if (Get("block") is SwordMotion block && Get("blockLower") is SwordMotion lower)
+            {
+                BodyPose guard = PoseOf(block.Keys[^1]);
+                weapon.CanBlock = true;
+                weapon.BlockRaise = block.Frames * pace;
+                weapon.BlockVia = Between(block, 0f, block.Frames);
+                weapon.BlockLower = lower.Frames * pace;
+                weapon.BlockLowerVia = Between(lower, 0f, lower.Frames);
+                weapon.Block = guard;
+                weapon.BlockHit = Shifted(guard, new Vector3(0f, -0.03f, 0f));
+                weapon.BlockLowered = Shifted(guard, new Vector3(0f, -0.02f, 0f));
+                weapon.BlockAngle = 80f;
+                weapon.BlockSocket = WeaponSocket.RightHand;
+                weapon.BlockBoxCenter = new Vector3(0f, 0f, (spec.BladeBase + spec.BladeTip) * 0.5f);
+                weapon.BlockBoxExtents = new Vector3(0.08f, 0.08f, (spec.BladeTip - spec.BladeBase) * 0.5f);
+            }
+
+            return weapon;
+        }
+
+        /// The arming sword in a skeleton's hand (Dark and Darker's Skeleton Footman, SkeletonSwordMotions): hunched over the
+        /// point dragged on the floor, it either cuts down the slant from over the right shoulder or straight down from over
+        /// the head. Each cut starts from the rest (MonsterConfig.PicksAttack); there is no block and no riposte.
+        private static WeaponDefinition CreateSkeletonSword()
+        {
+            WeaponDefinition sword = FromFootage(SkeletonSwordMotions.Read(), SkeletonSwordMotions.Spec, new[] { 27, 27 }, 0, 0.7f);
+            sword.Prefix = SkeletonSword;
+            sword.DisplayName = "Skeleton Sword";
+            sword.Kind = WeaponKind.OneHanded;
+            sword.Reach = 1.4f;
+            sword.DeflectDuration = 0.6f;
+
+            return sword;
         }
 
         /// A footage key as a generated pose: the grip, the blade, the chest's turn and bow; both fists on a two-handed hilt,
