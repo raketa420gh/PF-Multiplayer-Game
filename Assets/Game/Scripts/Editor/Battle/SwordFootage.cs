@@ -34,6 +34,13 @@ namespace Game.Scripts.Editor.Battle
         public bool IsLeftFree;
         public Vector3 LeftHand;
         public Vector3 LeftElbow;
+        /// How far from the shoulder the fist lies, as a share of the arm at full length (1 = the elbow all but straight); the
+        /// grip given is then only the way to the fist from the shoulder. 0 = the fist where the grip has it.
+        public float Reach;
+        /// The arm's turn about itself (its upper-arm and forearm twist muscles together, -1 palm down .. 1 palm up) where
+        /// HasTwist: the palm rolls round the haft through a swing.
+        public float Twist;
+        public bool HasTwist;
 
         public SwordKey El(float x, float y, float z)
         {
@@ -77,6 +84,10 @@ namespace Game.Scripts.Editor.Battle
         public float OffHand;
         /// How far the hilt may lie over in the palm toward the forearm's line, degrees: a long hilt swung at arm's length lies further.
         public float MaxLean = 24f;
+        /// What lying over in the palm costs against bending the wrist in a swing: a weapon swung at arm's length lies over sooner.
+        public float LeanEase = 1.8f;
+        /// How far the fist may slide along the haft from its grip point in a swing, metres: 0 = it holds one place.
+        public float MaxSlide;
         public string Keys;
         /// A weapon prefab (its name in the battle prefabs folder) shown until the weapon has a config of its own.
         public string Model;
@@ -141,6 +152,8 @@ namespace Game.Scripts.Editor.Battle
         public Vector3[] Torso;
         public float[] Lean;
         public float[] Roll;
+        /// How far the weapon has slid forward through the fist, metres.
+        public float[] Slide;
         public float[] Strain;
     }
 
@@ -158,7 +171,9 @@ namespace Game.Scripts.Editor.Battle
         private const float MaxRoll = 25f;
         private const float SoftLimit = 0.85f;
         private const int Arm = 9;
-        private const int OneHanded = Arm + 2;
+        private const int SlideAt = Arm + 2;
+        private const int ArmTwist = 4;
+        private const int ForearmTwist = 6;
 
         private static readonly Vector3 s_eye = BattleAnimationLibrary.Eye;
         private static readonly string[] s_arm = { "Shoulder Down-Up", "Shoulder Front-Back", "Arm Down-Up", "Arm Front-Back", "Arm Twist In-Out", "Forearm Stretch", "Forearm Twist In-Out", "Hand Down-Up", "Hand In-Out" };
@@ -171,7 +186,7 @@ namespace Game.Scripts.Editor.Battle
         {
             public readonly BattlePoseRig Source = new BattlePoseRig();
             public readonly Animator Animator;
-            public readonly Transform Socket, Hips, Chest, Head, Elbow, Hand, LeftElbow, LeftHand, LeftGrip;
+            public readonly Transform Socket, Hips, Chest, Head, Shoulder, Elbow, Hand, LeftElbow, LeftHand, LeftGrip;
             /// The body of the frame being posed; null = the stance.
             public BodyFrame? Lower;
             public readonly Vector3 PalmNormal;
@@ -192,6 +207,7 @@ namespace Game.Scripts.Editor.Battle
                 Hips = Animator.GetBoneTransform(HumanBodyBones.Hips);
                 Chest = Animator.GetBoneTransform(HumanBodyBones.UpperChest);
                 Head = Animator.GetBoneTransform(HumanBodyBones.Head);
+                Shoulder = Animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
                 Elbow = Animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
                 Hand = Animator.GetBoneTransform(HumanBodyBones.RightHand);
                 LeftElbow = Animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
@@ -224,7 +240,7 @@ namespace Game.Scripts.Editor.Battle
                 Source.Dispose();
             }
 
-            public void Set(float[] muscles, Vector3 position, Quaternion rotation, float lean, float roll)
+            public void Set(float[] muscles, Vector3 position, Quaternion rotation, float lean, float roll, float slide = 0f)
             {
                 Array.Copy(muscles, _pose.muscles, muscles.Length);
                 _pose.bodyPosition = position;
@@ -241,7 +257,8 @@ namespace Game.Scripts.Editor.Battle
                     Plant(_rightLeg, s_rightFoot, body.Right, body.RightYaw, body.RightHeel, body.Yaw);
                 }
 
-                Socket.SetLocalPositionAndRotation(GripPosition, Grip(lean, roll));
+                Quaternion grip = Grip(lean, roll);
+                Socket.SetLocalPositionAndRotation(GripPosition + grip * Vector3.forward * slide, grip);
             }
 
             /// A leg (thigh, shin, foot) bent to keep its foot where the body has it: off its stance, turned, the heel raised
@@ -280,13 +297,14 @@ namespace Game.Scripts.Editor.Battle
         {
             public float[][] Muscles;
             public Quaternion[] Grips;
+            public float[] Slides;
             public float Duration;
         }
 
         private struct Target
         {
             public Vector3 Grip, Blade, Edge, Elbow, Torso, LeftHand, LeftElbow;
-            public float EdgeWeight, ElbowWeight, Hard, Aim, Idle, Left, LeftElbowWeight;
+            public float EdgeWeight, ElbowWeight, Hard, Aim, Idle, Left, LeftElbowWeight, Reach, ReachWeight, Twist, TwistWeight;
         }
 
         private sealed class ClipPose
@@ -314,7 +332,7 @@ namespace Game.Scripts.Editor.Battle
         private static int[] s_right, s_left, s_legs, s_torso, s_neck, s_rightFingers, s_leftFingers;
         private static Vector3 s_torsoScale, s_neckScale, s_idleTorso;
         private static float[] s_idle, s_leftOpen;
-        private static float s_idleLean, s_idleRoll;
+        private static float s_idleLean, s_idleRoll, s_idleSlide, s_reach;
         private static bool s_hasIdleMotion, s_isIdleLeftFree, s_isStanding;
 
         private static float Strike => s_spec.Strike;
@@ -322,6 +340,11 @@ namespace Game.Scripts.Editor.Battle
         private static float MaxLean => s_spec.MaxLean;
 
         private static bool IsTwoHanded => s_spec.OffHand > 0f;
+
+        private static bool HasSlide => s_spec.MaxSlide > 0f;
+
+        /// What is solved for the right arm: its nine muscles, the hilt's lean and roll in the fist and, where the fist may slide, how far.
+        private static int OneHanded => Arm + (HasSlide ? 3 : 2);
         private static ClipPose s_idleClip;
         private static HumanPose s_stance;
         private static Pose s_hips, s_leftFoot, s_rightFoot;
@@ -359,7 +382,7 @@ namespace Game.Scripts.Editor.Battle
 
             if (Find("block") is SwordMotion block && Find("blockLower") is SwordMotion lower)
             {
-                (float[], Quaternion) held = Sample(block, block.Frames);
+                (float[], Quaternion, float) held = Sample(block, block.Frames);
                 clips.Add((s_spec.Prefix + FighterAnimComponent.BlockImpactSuffix, Blend(s_weapon.BlockImpact + s_weapon.BlockRecovery,
                     (0f, held), (0.08f, Sample(lower, 4f)), (s_weapon.BlockImpact, Sample(lower, 2f)), (s_weapon.BlockImpact + s_weapon.BlockRecovery, held))));
             }
@@ -460,7 +483,7 @@ namespace Game.Scripts.Editor.Battle
                         using Stage rig = CreateStage();
                         int index = Mathf.Clamp(frame, 0, motion.Frames);
                         Enter(rig, motion, index);
-                        rig.Set(motion.Muscles[index], motion.BodyPositions[index], motion.BodyRotations[index], motion.Lean[index], motion.Roll[index]);
+                        rig.Set(motion.Muscles[index], motion.BodyPositions[index], motion.BodyRotations[index], motion.Lean[index], motion.Roll[index], motion.Slide[index]);
 
                         if (index >= motion.Shown)
                             CreateSword(rig.Socket);
@@ -619,7 +642,7 @@ namespace Game.Scripts.Editor.Battle
             s_idle = s_idleClip.Read(0f);
             s_leftOpen = Array.ConvertAll(s_leftFingers, i => s_idle[i]);
             s_idleTorso = Vector3.zero;
-            s_idleLean = s_idleRoll = 0f;
+            s_idleLean = s_idleRoll = s_idleSlide = 0f;
             s_hasIdleMotion = s_isIdleLeftFree = false;
 
             // Both fists hold the hilt alike.
@@ -669,6 +692,7 @@ namespace Game.Scripts.Editor.Battle
                     motion.Torso = solved.Torso;
                     motion.Lean = solved.Lean;
                     motion.Roll = solved.Roll;
+                    motion.Slide = solved.Slide;
                     motion.Strain = solved.Strain;
                     motion.Left = solved.Left;
                     motion.Lower = solved.Lower;
@@ -681,7 +705,7 @@ namespace Game.Scripts.Editor.Battle
                     s_solved[motion.Text] = new SwordMotion
                     {
                         Muscles = motion.Muscles, BodyPositions = motion.BodyPositions, BodyRotations = motion.BodyRotations, Grips = motion.Grips, Torso = motion.Torso,
-                        Lean = motion.Lean, Roll = motion.Roll, Strain = motion.Strain, Left = motion.Left, Lower = motion.Lower, Name = Tables[i]
+                        Lean = motion.Lean, Roll = motion.Roll, Slide = motion.Slide, Strain = motion.Strain, Left = motion.Left, Lower = motion.Lower, Name = Tables[i]
                     };
                 }
 
@@ -695,6 +719,7 @@ namespace Game.Scripts.Editor.Battle
                 s_idleTorso = motion.Torso[0];
                 s_idleLean = motion.Lean[0];
                 s_idleRoll = motion.Roll[0];
+                s_idleSlide = motion.Slide[0];
 
                 foreach (int muscle in s_right.Concat(s_left))
                     s_idle[muscle] = motion.Muscles[0][muscle];
@@ -779,59 +804,59 @@ namespace Game.Scripts.Editor.Battle
             float duration = motion.Duration * s_spec.Pace, end = motion.Frames * s_spec.Pace;
             float peak = motion.ActiveEnd > motion.Windup ? Mathf.Round(motion.Peak * s_spec.Pace) : 0f;
             int count = Mathf.CeilToInt(duration * FrameRate - 1e-3f) + 1;
-            Track track = new Track { Muscles = new float[count][], Grips = new Quaternion[count], Duration = duration };
+            Track track = new Track { Muscles = new float[count][], Grips = new Quaternion[count], Slides = new float[count], Duration = duration };
 
             for (int frame = 0; frame < count; frame++)
             {
                 float at = Mathf.Min(frame, end);
                 float source = peak <= 0f ? at / s_spec.Pace
                     : at <= peak ? at * motion.Peak / peak : motion.Peak + (at - peak) * (motion.Frames - motion.Peak) / Mathf.Max(end - peak, 1e-3f);
-                (track.Muscles[frame], track.Grips[frame]) = Sample(motion, source);
+                (track.Muscles[frame], track.Grips[frame], track.Slides[frame]) = Sample(motion, source);
             }
 
             return track;
         }
 
         /// The solved pose at a frame of the motion, between two frames by a share of each.
-        private static (float[] Muscles, Quaternion Grip) Sample(SwordMotion motion, float frame)
+        private static (float[] Muscles, Quaternion Grip, float Slide) Sample(SwordMotion motion, float frame)
         {
             frame = Mathf.Clamp(frame, 0f, motion.Frames);
             int from = Mathf.Min((int)frame, motion.Frames), to = Mathf.Min(from + 1, motion.Frames);
             float t = frame - from;
 
             if (t <= 0f)
-                return ((float[])motion.Muscles[from].Clone(), motion.Grips[from]);
+                return ((float[])motion.Muscles[from].Clone(), motion.Grips[from], motion.Slide[from]);
 
             float[] muscles = new float[motion.Muscles[from].Length];
 
             for (int i = 0; i < muscles.Length; i++)
                 muscles[i] = Mathf.Lerp(motion.Muscles[from][i], motion.Muscles[to][i], t);
 
-            return (muscles, Quaternion.Slerp(motion.Grips[from], motion.Grips[to], t));
+            return (muscles, Quaternion.Slerp(motion.Grips[from], motion.Grips[to], t), Mathf.Lerp(motion.Slide[from], motion.Slide[to], t));
         }
 
-        private static Track Still((float[] Muscles, Quaternion Grip) pose, float duration)
+        private static Track Still((float[] Muscles, Quaternion Grip, float Slide) pose, float duration)
         {
             return Blend(duration, (0f, pose), (duration, pose));
         }
 
         private static Track Reverse(Track track)
         {
-            return new Track { Muscles = track.Muscles.Reverse().ToArray(), Grips = track.Grips.Reverse().ToArray(), Duration = track.Duration };
+            return new Track { Muscles = track.Muscles.Reverse().ToArray(), Grips = track.Grips.Reverse().ToArray(), Slides = track.Slides.Reverse().ToArray(), Duration = track.Duration };
         }
 
         /// Poses already solved, run into one another (easing in and out) at the times given: a short clip made of the motions.
-        private static Track Blend(float duration, params (float Time, (float[] Muscles, Quaternion Grip) Pose)[] keys)
+        private static Track Blend(float duration, params (float Time, (float[] Muscles, Quaternion Grip, float Slide) Pose)[] keys)
         {
             int count = Mathf.CeilToInt(duration * FrameRate - 1e-3f) + 1;
-            Track track = new Track { Muscles = new float[count][], Grips = new Quaternion[count], Duration = duration };
+            Track track = new Track { Muscles = new float[count][], Grips = new Quaternion[count], Slides = new float[count], Duration = duration };
 
             for (int frame = 0; frame < count; frame++)
             {
                 float time = Mathf.Min(frame / FrameRate, duration);
                 int next = Mathf.Clamp(Array.FindIndex(keys, key => key.Time > time), 1, keys.Length - 1);
-                (float start, (float[] Muscles, Quaternion Grip) a) = keys[next - 1];
-                (float stop, (float[] Muscles, Quaternion Grip) b) = keys[next];
+                (float start, (float[] Muscles, Quaternion Grip, float Slide) a) = keys[next - 1];
+                (float stop, (float[] Muscles, Quaternion Grip, float Slide) b) = keys[next];
                 float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((time - start) / Mathf.Max(stop - start, 1e-4f)));
                 track.Muscles[frame] = new float[a.Muscles.Length];
 
@@ -839,6 +864,7 @@ namespace Game.Scripts.Editor.Battle
                     track.Muscles[frame][i] = Mathf.Lerp(a.Muscles[i], b.Muscles[i], t);
 
                 track.Grips[frame] = Quaternion.Slerp(a.Grip, b.Grip, t);
+                track.Slides[frame] = Mathf.Lerp(a.Slide, b.Slide, t);
             }
 
             return track;
@@ -891,13 +917,15 @@ namespace Game.Scripts.Editor.Battle
                     axis < 3 ? s_stance.bodyPosition[axis] : s_stance.bodyRotation[axis - 3]);
             }
 
-            // The sword's socket turns in the fist as the swing was solved; the other sockets stay as the idle carries them.
+            // The sword's socket turns and slides in the fist as the swing was solved; the other sockets stay as the idle carries them.
             Quaternion[] grips = new Quaternion[count];
+            Vector3[] slid = new Vector3[count];
 
             for (int frame = 0; frame < count; frame++)
             {
                 Quaternion grip = track.Grips[frame];
                 grips[frame] = frame > 0 && Quaternion.Dot(grips[frame - 1], grip) < 0f ? new Quaternion(-grip.x, -grip.y, -grip.z, -grip.w) : grip;
+                slid[frame] = rig.GripPosition + grip * Vector3.forward * track.Slides[frame];
             }
 
             for (int s = 0; s < rig.Source.Sockets.Length; s++)
@@ -912,8 +940,8 @@ namespace Game.Scripts.Editor.Battle
                     int axis = i;
                     EditorCurveBinding binding = EditorCurveBinding.FloatCurve(path, typeof(Transform), s_socketCurves[i]);
                     AnimationCurve carried = idle == null ? null : AnimationUtility.GetEditorCurve(idle, binding);
-                    float still = isSword && axis < 3 ? rig.GripPosition[axis] : carried?.Evaluate(0f) ?? rest[axis];
-                    Add(binding, frame => isSword && axis >= 3 ? grips[frame][axis - 3] : still);
+                    float still = carried?.Evaluate(0f) ?? rest[axis];
+                    Add(binding, frame => !isSword ? still : axis < 3 ? slid[frame][axis] : grips[frame][axis - 3]);
                 }
             }
 
@@ -1032,6 +1060,8 @@ namespace Game.Scripts.Editor.Battle
                 return new Vector3(Mathf.Atan2(-ahead.y, ahead.z), Mathf.Atan2(ahead.x, ahead.z), Mathf.Atan2(up.x, up.y)) * (Mathf.Rad2Deg / 0.5f);
             }
 
+            // An arm at full length is not locked: the elbow keeps a little bend, the fist closes on the haft a palm past the wrist.
+            s_reach = (Vector3.Distance(rig.Shoulder.position, rig.Elbow.position) + Vector3.Distance(rig.Elbow.position, rig.Hand.position)) * 0.98f + rig.GripPosition.magnitude * 0.9f;
             s_torsoScale = new Vector3(Measure(s_torso, rig.Chest, 0).x, Measure(s_torso, rig.Chest, 2).y, Measure(s_torso, rig.Chest, 1).z);
             s_neckScale = new Vector3(Measure(s_neck, rig.Head, 0).x, Measure(s_neck, rig.Head, 2).y, Measure(s_neck, rig.Head, 1).z);
         }
@@ -1060,6 +1090,7 @@ namespace Game.Scripts.Editor.Battle
             motion.Torso = new Vector3[count];
             motion.Lean = new float[count];
             motion.Roll = new float[count];
+            motion.Slide = new float[count];
             motion.Strain = new float[count];
             motion.Left = new float[count];
             motion.Lower = BuildLower(motion, motions);
@@ -1083,13 +1114,13 @@ namespace Game.Scripts.Editor.Battle
                 SetTorso(rest, s_idleTorso);
 
             rig.Lower = null;
-            rig.Set(rest, motion.BodyPositions[0], motion.BodyRotations[0], s_idleLean, s_idleRoll);
+            rig.Set(rest, motion.BodyPositions[0], motion.BodyRotations[0], s_idleLean, s_idleRoll, s_idleSlide);
             SwordKey idle = new SwordKey
             {
                 Grip = rig.Socket.position, Blade = rig.Socket.forward, Edge = rig.Socket.up, Elbow = rig.Elbow.position, Torso = s_idleTorso, Flow = 0f, Hard = 2f, IsIdle = true,
                 IsLeftFree = s_isIdleLeftFree, LeftHand = rig.LeftHand.position
             };
-            float[] seed = Seed(s_idle, s_idleLean, s_idleRoll);
+            float[] seed = Seed(s_idle, s_idleLean, s_idleRoll, s_idleSlide);
             List<SwordKey> keys = new List<SwordKey>(motion.Keys);
 
             for (int i = 0; i < keys.Count; i++)
@@ -1106,7 +1137,7 @@ namespace Game.Scripts.Editor.Battle
                 SwordMotion before = motions[motion.After];
                 int from = motion.AfterFrame;
                 Enter(rig, before, from);
-                rig.Set(before.Muscles[from], motion.BodyPositions[0], motion.BodyRotations[0], before.Lean[from], before.Roll[from]);
+                rig.Set(before.Muscles[from], motion.BodyPositions[0], motion.BodyRotations[0], before.Lean[from], before.Roll[from], before.Slide[from]);
                 // Keys are given as the eyes see them: what the body adds comes back on every frame's target.
                 Vector3 eye = Eye(before, from);
                 keys[0] = new SwordKey
@@ -1114,7 +1145,7 @@ namespace Game.Scripts.Editor.Battle
                     Grip = rig.Socket.position - eye, Blade = rig.Socket.forward, Elbow = rig.Elbow.position - eye, Torso = before.Torso[from], Flow = 0f,
                     IsLeftFree = IsTwoHanded && before.Left[from] < 0.5f, LeftHand = rig.LeftHand.position - eye
                 };
-                seed = Seed(before.Muscles[from], before.Lean[from], before.Roll[from]);
+                seed = Seed(before.Muscles[from], before.Lean[from], before.Roll[from], before.Slide[from]);
             }
 
             // First the aimed moments find where the arm is at ease with the strike point on the crosshair; their keys take
@@ -1127,7 +1158,7 @@ namespace Game.Scripts.Editor.Battle
                 found = SolveArm(rig, motion, frame, rough[frame], found, frame == 0 ? 0f : 1f, null);
                 Apply(motion, frame, found, rough[frame].Left);
                 Enter(rig, motion, frame);
-                rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], motion.Roll[frame]);
+                rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], motion.Roll[frame], motion.Slide[frame]);
 
                 for (int i = 0; i < keys.Count; i++)
                 {
@@ -1168,7 +1199,11 @@ namespace Game.Scripts.Editor.Battle
             }
 
             // Away from the swing a jump between two ways to hold the same pose (the twist shared between the upper arm and the
-            // forearm) is spread over the frames around it: the fist keeps the hilt, the sword barely leaves its path.
+            // forearm) is spread over the frames around it: the fist keeps the hilt, the sword barely leaves its path. A fist
+            // free on a round haft rolls over as the arm goes through its full length right after the peak: there the spread
+            // starts with the peak behind.
+            float swingEnd = HasSlide && motion.ActiveEnd > motion.Windup ? Mathf.Min(motion.Peak + 2f, motion.ActiveEnd) : motion.ActiveEnd;
+
             for (int pass = 0; pass < 6; pass++)
             {
                 float[][] before = solved;
@@ -1177,7 +1212,7 @@ namespace Game.Scripts.Editor.Battle
                 for (int frame = 0; frame < count; frame++)
                 {
                     float free = frame == 0 || frame == count - 1 ? 0f
-                        : Mathf.Clamp01(Mathf.Max((motion.Windup - 4f - frame) / 4f, (frame - motion.ActiveEnd) / 4f));
+                        : Mathf.Clamp01(Mathf.Max((motion.Windup - 4f - frame) / 4f, (frame - swingEnd) / 4f));
                     float[] earlier = before[Mathf.Max(frame - 1, 0)], later = before[Mathf.Min(frame + 1, count - 1)];
                     solved[frame] = new float[earlier.Length];
 
@@ -1217,6 +1252,11 @@ namespace Game.Scripts.Editor.Battle
             int[] joints = Enumerable.Range(0, seed.Length).Where(i => i < Arm || i >= OneHanded).ToArray();
             StringBuilder limits = new StringBuilder();
             StringBuilder table = new StringBuilder("frame | grip-off blade-off edge | ShDU ShFB ArDU ArFB ArTw FoSt FoTw HaDU HaIO\n");
+            // In a swing a round haft does not turn about itself with the palm that rolls round it: it keeps the turn it had the
+            // frame before, and what is left of it at the end goes while the club comes back to the rest.
+            bool isFree = HasSlide && motion.ActiveEnd > motion.Windup;
+            float startRoll = motion.After >= 0 ? motions[motion.After].Roll[motion.AfterFrame] : s_idleRoll;
+            Vector3 keptUp = Vector3.zero;
 
             for (int frame = 0; frame < count; frame++)
             {
@@ -1224,8 +1264,17 @@ namespace Game.Scripts.Editor.Battle
                 values = solved[frame];
                 Apply(motion, frame, values, targets[frame].Left);
                 Enter(rig, motion, frame);
-                rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], motion.Roll[frame]);
+
+                if (isFree)
+                {
+                    rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], 0f, motion.Slide[frame]);
+                    motion.Roll[frame] = frame == 0 ? startRoll
+                        : Vector3.SignedAngle(rig.Socket.up, Vector3.ProjectOnPlane(keptUp, rig.Socket.forward), rig.Socket.forward);
+                }
+
+                rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], motion.Roll[frame], motion.Slide[frame]);
                 motion.Grips[frame] = rig.Grip(motion.Lean[frame], motion.Roll[frame]);
+                keptUp = rig.Socket.up;
                 motion.Torso[frame] = targets[frame].Torso;
                 motion.Left[frame] = targets[frame].Left;
                 float gap = IsTwoHanded ? Vector3.Distance(rig.LeftGrip.position, rig.Socket.position - rig.Socket.forward * s_spec.OffHand) * targets[frame].Left : 0f;
@@ -1248,9 +1297,10 @@ namespace Game.Scripts.Editor.Battle
                 for (int i = 0; i < 9; i++)
                     table.Append(string.Format(CultureInfo.InvariantCulture, " {0,5:F2}", values[i]));
 
-                table.AppendLine(string.Format(CultureInfo.InvariantCulture, " | lean {0,4:F0} roll {1,4:F0} | fore-blade {2,4:F0} | grip {3:F2} {4:F2} {5:F2} elbow {6:F2} {7:F2} {8:F2}",
+                table.AppendLine(string.Format(CultureInfo.InvariantCulture, " | lean {0,4:F0} roll {1,4:F0} slide {9,4:F1} | fore-blade {2,4:F0} arm {10,3:F0} | grip {3:F2} {4:F2} {5:F2} elbow {6:F2} {7:F2} {8:F2}",
                     motion.Lean[frame], motion.Roll[frame], Vector3.Angle(rig.Hand.position - rig.Elbow.position, rig.Socket.forward),
-                    rig.Socket.position.x, rig.Socket.position.y, rig.Socket.position.z, rig.Elbow.position.x, rig.Elbow.position.y, rig.Elbow.position.z));
+                    rig.Socket.position.x, rig.Socket.position.y, rig.Socket.position.z, rig.Elbow.position.x, rig.Elbow.position.y, rig.Elbow.position.z,
+                    motion.Slide[frame] * 100f, Vector3.Angle(rig.Shoulder.position - rig.Elbow.position, rig.Hand.position - rig.Elbow.position)));
 
                 if (!IsTwoHanded)
                     continue;
@@ -1265,8 +1315,15 @@ namespace Game.Scripts.Editor.Battle
                     rig.LeftHand.position.x, rig.LeftHand.position.y, rig.LeftHand.position.z, rig.LeftElbow.position.x, rig.LeftElbow.position.y, rig.LeftElbow.position.z));
             }
 
+            for (int frame = 0; frame < count && isFree && motion.Keys[^1].IsIdle; frame++)
+            {
+                float left = Mathf.DeltaAngle(motion.Roll[count - 1], s_idleRoll);
+                motion.Roll[frame] += left * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(motion.ActiveEnd, count - 2, frame));
+                motion.Grips[frame] = rig.Grip(motion.Lean[frame], motion.Roll[frame]);
+            }
+
             Enter(rig, motion, motion.Peak);
-            rig.Set(motion.Muscles[motion.Peak], motion.BodyPositions[motion.Peak], motion.BodyRotations[motion.Peak], motion.Lean[motion.Peak], motion.Roll[motion.Peak]);
+            rig.Set(motion.Muscles[motion.Peak], motion.BodyPositions[motion.Peak], motion.BodyRotations[motion.Peak], motion.Lean[motion.Peak], motion.Roll[motion.Peak], motion.Slide[motion.Peak]);
             Vector3 strike = rig.Socket.position + rig.Socket.forward * Strike - Eye(motion, motion.Peak);
             report.AppendLine(string.Format(CultureInfo.InvariantCulture,
                 "{0}: frames {1} peak {2} | peak miss {3:F1} cm (strike z {4:F2}) | grip off target max {5:F1} cm @{6} | blade off max {7:F0} deg @{8} | muscle step max {9:F2} @{10}",
@@ -1367,9 +1424,12 @@ namespace Game.Scripts.Editor.Battle
             return frames;
         }
 
-        private static float[] Seed(float[] muscles, float lean, float roll)
+        private static float[] Seed(float[] muscles, float lean, float roll, float slide)
         {
             IEnumerable<float> seed = Array.ConvertAll(s_right, i => muscles[i]).Concat(new[] { lean / MaxLean, roll / MaxRoll });
+
+            if (HasSlide)
+                seed = seed.Concat(new[] { slide / s_spec.MaxSlide });
 
             return (IsTwoHanded ? seed.Concat(Array.ConvertAll(s_left, i => muscles[i])) : seed).ToArray();
         }
@@ -1381,6 +1441,7 @@ namespace Game.Scripts.Editor.Battle
 
             motion.Lean[frame] = values[9] * MaxLean;
             motion.Roll[frame] = values[10] * MaxRoll;
+            motion.Slide[frame] = HasSlide && motion.ActiveEnd > motion.Windup ? values[SlideAt] * s_spec.MaxSlide : 0f;
 
             for (int i = OneHanded; i < values.Length; i++)
                 motion.Muscles[frame][s_left[i - OneHanded]] = values[i];
@@ -1423,6 +1484,12 @@ namespace Game.Scripts.Editor.Battle
                 float leftElbowA = a.LeftElbow == Vector3.zero ? 0f : 1f, leftElbowB = b.LeftElbow == Vector3.zero ? 0f : 1f;
                 target.LeftElbowWeight = Mathf.Lerp(leftElbowA, leftElbowB, t);
                 target.LeftElbow = leftElbowA + leftElbowB > 1.5f ? Vector3.Lerp(a.LeftElbow, b.LeftElbow, Mathf.SmoothStep(0f, 1f, t)) : leftElbowA > 0f ? a.LeftElbow : b.LeftElbow;
+                float reachA = a.Reach > 0f ? 1f : 0f, reachB = b.Reach > 0f ? 1f : 0f;
+                target.ReachWeight = Mathf.SmoothStep(0f, 1f, Mathf.Lerp(reachA, reachB, t));
+                target.Reach = reachA + reachB > 1.5f ? Mathf.Lerp(a.Reach, b.Reach, t) : reachA > 0f ? a.Reach : b.Reach;
+                float twistA = a.HasTwist ? 1f : 0f, twistB = b.HasTwist ? 1f : 0f;
+                target.TwistWeight = Mathf.Lerp(twistA, twistB, t);
+                target.Twist = twistA + twistB > 1.5f ? Mathf.Lerp(a.Twist, b.Twist, t) : twistA > 0f ? a.Twist : b.Twist;
                 float edgeA = a.Edge == Vector3.zero ? 0f : 1f, edgeB = b.Edge == Vector3.zero ? 0f : 1f;
                 target.EdgeWeight = Mathf.Lerp(edgeA, edgeB, t);
                 target.Edge = edgeA + edgeB > 1.5f ? Vector3.Slerp(a.Edge, b.Edge, t) : edgeA > 0f ? a.Edge : b.Edge;
@@ -1527,6 +1594,8 @@ namespace Game.Scripts.Editor.Battle
             SetTorso(muscles, target.Torso, body.Yaw, body.Pitch);
             Array.Copy(muscles, motion.Muscles[frame], muscles.Length);
             float hard = 1f + target.Hard;
+            bool isSwing = motion.ActiveEnd > motion.Windup;
+            float leanEase = isSwing ? s_spec.LeanEase : 1.8f, maxSlide = isSwing ? s_spec.MaxSlide : 0f;
 
             float[] Residuals(float[] x)
             {
@@ -1536,15 +1605,19 @@ namespace Game.Scripts.Editor.Battle
                 for (int i = OneHanded; i < x.Length; i++)
                     muscles[s_left[i - OneHanded]] = x[i];
 
-                rig.Set(muscles, motion.BodyPositions[frame], motion.BodyRotations[frame], x[9] * MaxLean, x[10] * MaxRoll);
+                rig.Set(muscles, motion.BodyPositions[frame], motion.BodyRotations[frame], x[9] * MaxLean, x[10] * MaxRoll, HasSlide ? x[SlideAt] * maxSlide : 0f);
                 List<float> r = new List<float>(48);
-                Add(r, (rig.Socket.position - target.Grip) * (35f * hard * (1f - 0.4f * target.Aim)));
+                // A reaching fist lies its share of the arm's length from the shoulder, the way the key has it from there.
+                Vector3 shoulder = rig.Shoulder.position;
+                Vector3 grip = Vector3.Lerp(target.Grip, shoulder + (target.Grip - shoulder).normalized * (s_reach * target.Reach), target.ReachWeight);
+                Add(r, (rig.Socket.position - grip) * (35f * hard * (1f - 0.4f * target.Aim)));
                 Add(r, (rig.Socket.forward - target.Blade) * (14f * hard * (1f - 0.5f * target.Aim)));
                 Vector3 strike = rig.Socket.position + rig.Socket.forward * Strike;
                 r.Add((strike.x - s_eye.x - body.Eye.x) * 300f * target.Aim);
                 r.Add((strike.y - s_eye.y - body.Eye.y) * 300f * target.Aim);
                 Add(r, (rig.Socket.up - target.Edge) * (3.5f * target.EdgeWeight));
                 Add(r, (rig.Elbow.position - target.Elbow) * (14f * target.ElbowWeight));
+                r.Add(6f * target.TwistWeight * ((x[ArmTwist] + x[ForearmTwist]) * 0.5f - target.Twist));
 
                 for (int i = 0; i < 9; i++)
                 {
@@ -1557,13 +1630,21 @@ namespace Game.Scripts.Editor.Battle
                 }
 
                 // The hilt lies square in the fist unless the wrist has nothing left to give.
-                r.Add(1.8f * x[9]);
+                r.Add(leanEase * x[9]);
                 r.Add(12f * Mathf.Max(0f, MinLean / MaxLean - x[9]));
                 r.Add(1.2f * x[10]);
                 r.Add(inertia * 1.5f * (x[9] - start[9]));
                 r.Add(inertia * 1.5f * (x[10] - start[10]));
                 r.Add(between == null ? 0f : 2f * (x[9] - between[9]));
                 r.Add(between == null ? 0f : 2f * (x[10] - between[10]));
+
+                // The fist keeps its place on the haft unless sliding eases the arm.
+                if (HasSlide)
+                {
+                    r.Add(0.6f * x[SlideAt]);
+                    r.Add(inertia * 1.5f * (x[SlideAt] - start[SlideAt]));
+                    r.Add(between == null ? 0f : 2f * (x[SlideAt] - between[SlideAt]));
+                }
 
                 if (x.Length == OneHanded)
                     return r.ToArray();
@@ -1745,7 +1826,7 @@ namespace Game.Scripts.Editor.Battle
 
         /// Keys of the attacks: the ones in the code, or a text file of the same lines while poses are being tuned. Lines:
         /// "motion <name> | after <attack> <frame>", "idle <frame>", "key <frame> x y z bx by bz", "aim <frame> x y z",
-        /// each followed by any of "to <bow> <turn> <lean>", "el x y z", "ed x y z", "hard <w>", "stop".
+        /// each followed by any of "to <bow> <turn> <lean>", "el x y z", "ed x y z", "hard <w>", "reach <share of the arm's length>", "tw <the arm's turn -1..1>", "stop".
         private static SwordMotion[] Parse(string path)
         {
             List<SwordMotion> motions = new List<SwordMotion>();
@@ -1866,6 +1947,13 @@ namespace Game.Scripts.Editor.Battle
                         case "hard":
                             key.Hard = Next();
                             break;
+                        case "reach":
+                            key.Reach = Next();
+                            break;
+                        case "tw":
+                            key.Twist = Next();
+                            key.HasTwist = true;
+                            break;
                         case "lh":
                             key.IsLeftFree = true;
                             key.LeftHand = new Vector3(Next(), Next(), Next());
@@ -1973,7 +2061,7 @@ namespace Game.Scripts.Editor.Battle
                 for (int frame = 0; frame < count; frame++)
                 {
                     Enter(rig, motion, frame);
-                    rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], motion.Roll[frame]);
+                    rig.Set(motion.Muscles[frame], motion.BodyPositions[frame], motion.BodyRotations[frame], motion.Lean[frame], motion.Roll[frame], motion.Slide[frame]);
 
                     for (int b = 0; b < bones.Count; b++)
                         Write(poses, (frame * bones.Count + b) * 10, bones[b].position, bones[b].rotation, bones[b].lossyScale);
