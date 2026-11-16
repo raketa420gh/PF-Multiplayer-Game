@@ -124,6 +124,9 @@ namespace Game.Scripts.Editor.Battle
         public string Id;
         public string Text = string.Empty;
         public string AfterId;
+        /// A clip of the weapon that is not authored here (its suffix): the motion starts as that clip ends. The riposte
+        /// answers from the block.
+        public string From;
         public bool HasTiming;
         /// The cut is led by the edge on the heel of the right hand, not by the one its knuckles face: the way back of a
         /// swing that does not turn the blade over.
@@ -329,6 +332,7 @@ namespace Game.Scripts.Editor.Battle
         private static readonly Dictionary<string, SwordMotion> s_solved = new Dictionary<string, SwordMotion>();
         private static readonly Dictionary<Color, Material> s_mockMaterials = new Dictionary<Color, Material>();
         private static SwordSpec s_spec;
+        private static string s_socketPath;
         private static int[] s_right, s_left, s_legs, s_torso, s_neck, s_rightFingers, s_leftFingers;
         private static Vector3 s_torsoScale, s_neckScale, s_idleTorso;
         private static float[] s_idle, s_leftOpen;
@@ -633,12 +637,10 @@ namespace Game.Scripts.Editor.Battle
             s_legs = Enumerable.Range(0, Body).Where(i => HumanTrait.MuscleName[i].Contains("Leg") || HumanTrait.MuscleName[i].Contains("Foot") || HumanTrait.MuscleName[i].Contains("Toes")).ToArray();
             s_torso = new[] { "Spine", "Chest", "UpperChest" }.SelectMany(bone => new[] { " Front-Back", " Left-Right", " Twist Left-Right" }.Select(axis => Muscle(bone + axis))).ToArray();
             s_neck = new[] { "Neck", "Head" }.SelectMany(bone => new[] { " Nod Down-Up", " Tilt Left-Right", " Turn Left-Right" }.Select(axis => Muscle(bone + axis))).ToArray();
-            string socketPath;
-
             using (Stage probe = new Stage())
-                socketPath = AnimationUtility.CalculateTransformPath(probe.Socket, probe.Animator.transform);
+                s_socketPath = AnimationUtility.CalculateTransformPath(probe.Socket, probe.Animator.transform);
 
-            s_idleClip = ReadClip(s_spec.Base + FighterAnimComponent.IdleSuffix, socketPath);
+            s_idleClip = ReadClip(s_spec.Base + FighterAnimComponent.IdleSuffix, s_socketPath);
             s_idle = s_idleClip.Read(0f);
             s_leftOpen = Array.ConvertAll(s_leftFingers, i => s_idle[i]);
             s_idleTorso = Vector3.zero;
@@ -666,7 +668,7 @@ namespace Game.Scripts.Editor.Battle
                 // has. A motion the model does not know yet carries its frames in the keys.
                 if (!motion.HasTiming)
                 {
-                    AttackDefinition attack = s_weapon.Attacks[i];
+                    AttackDefinition attack = motion.Id == "riposte" ? s_weapon.Riposte : s_weapon.Attacks[i];
                     motion.Duration = attack.Duration;
                     motion.Windup = attack.Windup * FrameRate;
                     motion.ActiveEnd = (attack.Windup + attack.Active) * FrameRate;
@@ -992,14 +994,14 @@ namespace Game.Scripts.Editor.Battle
 
             foreach (SwordMotion motion in motions)
             {
-                SerializedProperty attack = serialized.FindProperty("_attacks").GetArrayElementAtIndex(motion.Index);
+                SerializedProperty attack = motion.Id == "riposte" ? serialized.FindProperty("_riposte") : serialized.FindProperty("_attacks").GetArrayElementAtIndex(motion.Index);
                 SerializedProperty bases = attack.FindPropertyRelative("_traceBase"), tips = attack.FindPropertyRelative("_traceTip");
                 int count = motion.Frames + 1;
                 bases.arraySize = tips.arraySize = count;
 
                 for (int frame = 0; frame < count; frame++)
                 {
-                    Play(model, s_spec.Prefix + FighterAnimComponent.AttackSuffix + motion.Index, Mathf.Min(frame / FrameRate, motion.Duration) / motion.Duration);
+                    Play(model, ClipName(motion), Mathf.Min(frame / FrameRate, motion.Duration) / motion.Duration);
                     bases.GetArrayElementAtIndex(frame).vector3Value = socket.TransformPoint(0f, 0f, s_weapon.BladeBase);
                     tips.GetArrayElementAtIndex(frame).vector3Value = socket.TransformPoint(0f, 0f, s_weapon.BladeTip);
 
@@ -1146,6 +1148,30 @@ namespace Game.Scripts.Editor.Battle
                     IsLeftFree = IsTwoHanded && before.Left[from] < 0.5f, LeftHand = rig.LeftHand.position - eye
                 };
                 seed = Seed(before.Muscles[from], before.Lean[from], before.Roll[from], before.Slide[from]);
+            }
+
+            if (motion.From != null)
+            {
+                ClipPose held = ReadClip(s_spec.Prefix + motion.From, s_socketPath);
+                float end = held.Muscles.Where(curve => curve != null && curve.length > 0).Max(curve => curve[curve.length - 1].time);
+                float[] pose = held.Read(end);
+                rig.Set(pose, motion.BodyPositions[0], motion.BodyRotations[0], 0f, 0f);
+
+                if (held.Socket[3] != null)
+                    rig.Socket.localRotation = new Quaternion(held.Socket[3].Evaluate(end), held.Socket[4].Evaluate(end), held.Socket[5].Evaluate(end), held.Socket[6].Evaluate(end)).normalized;
+
+                // The chest as the clip has it, in the degrees a key gives: bowed, turned, leant.
+                Vector3 chest = Vector3.zero;
+
+                for (int i = 0; i < s_torso.Length; i++)
+                    chest[i % 3] += (pose[s_torso[i]] - s_idle[s_torso[i]]) / 3f;
+
+                keys[0] = new SwordKey
+                {
+                    Grip = rig.Socket.position, Blade = rig.Socket.forward, Elbow = rig.Elbow.position,
+                    Torso = new Vector3(chest.x * s_torsoScale.x, chest.z * s_torsoScale.y, chest.y * s_torsoScale.z), Flow = 0f, Hard = 2f
+                };
+                seed = Seed(pose, 0f, 0f, 0f);
             }
 
             // First the aimed moments find where the arm is at ease with the strike point on the crosshair; their keys take
@@ -1857,6 +1883,9 @@ namespace Game.Scripts.Editor.Battle
                         motion.AfterId = words[after + 1];
                         motion.AfterFrame = words[after + 2] == "end" ? -1 : int.Parse(words[after + 2]);
                     }
+
+                    if (Array.IndexOf(words, "from", 2) is int from and > 0)
+                        motion.From = words[from + 1];
 
                     if (title > 0)
                         motion.Name = words[title + 1].Replace('_', ' ');

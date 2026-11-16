@@ -197,9 +197,12 @@
     return clip;
   });
   // A play list is a run of segments; the combo chains each attack from the frame the next one starts at.
-  var lists = clips.map(function (c, i) { return { name: c.name.replace("Attack", "Атака"), segments: [{ clip: i, from: 0, to: c.last }] }; });
-  if (clips.length > 1) lists.push({ name: "Связка " + clips.map(function (c, i) { return i + 1; }).join("→"), segments: clips.map(function (c, i) {
-    return { clip: i, from: 0, to: i + 1 < clips.length ? clips[i + 1].afterFrame : c.last }; }) });
+  function title(name) { return name.replace("Attack", "Атака").replace("Riposte", "Рипост"); }
+  var lists = clips.map(function (c, i) { return { name: title(c.name), segments: [{ clip: i, from: 0, to: c.last }] }; });
+  // The series is the attacks only: the riposte answers from the block and chains from nothing.
+  var series = clips.filter(function (c) { return c.name.indexOf("Attack") === 0; }).length;
+  if (series > 1) lists.push({ name: "Связка " + clips.slice(0, series).map(function (c, i) { return i + 1; }).join("→"), segments: clips.slice(0, series).map(function (c, i) {
+    return { clip: i, from: 0, to: i + 1 < series ? clips[i + 1].afterFrame : c.last }; }) });
   var list = lists[0], total = 0, time = 0, playing = true, speed = 0.525;
 
   var trail = new T.Group(); scene.add(trail);
@@ -296,22 +299,25 @@
   var video = $("video"), refs = "../arming_sword_refs/", refSeg = null, refKey = "B";
   var MAIN = "arming_sword.mp4", FP = "arming_sword_all_attacks.mp4", TP = "arming_sword_all_attacks_2.mp4";
   var segments = {
-    A: { name: "спереди", file: MAIN, clips: [[649, 756], [1252, 1349], [1817, 1929]] },
-    B: { name: "¾ справа", file: MAIN, clips: [[757, 864], [1350, 1446], [1930, 2045]] },
-    T: { name: "сверху", file: MAIN, clips: [[865, 978], [1447, 1541], [2046, 2161]] },
-    D: { name: "хитбокс (0.1×)", file: MAIN, clips: [[979, 1251], [1542, 1816], [2162, 2446]], own: true },
+    A: { name: "спереди", file: MAIN, clips: [[649, 756], [1252, 1349], [1817, 1929], [2447, 2535]] },
+    B: { name: "справа", file: MAIN, clips: [[757, 864], [1350, 1446], [1930, 2045], [2536, 2629]] },
+    T: { name: "сверху", file: MAIN, clips: [[865, 978], [1447, 1541], [2046, 2161], [2630, 2714]] },
+    D: { name: "хитбокс (0.1×)", file: MAIN, clips: [[979, 1251], [1542, 1816], [2162, 2446], [2715, 2972]], own: true },
     F: { name: "FP", file: FP, clips: [[104, 150], [148, 222], [222, 340]], combo: [100, 345] },
     S: { name: "FP 0.5×", file: FP, clips: [[372, 470], [470, 618], [618, 826]], combo: [366, 826], slow: 0.5 },
     P: { name: "3-е лицо, связка", file: TP, clips: [[40, 300], [40, 300], [40, 300]], combo: [40, 300] }
   };
   function setRef(key) {
     refKey = key; var seg = segments[key], index = lists.indexOf(list);
-    var range = index >= clips.length ? (seg.combo || [seg.clips[0][0], seg.clips[seg.clips.length - 1][1]]) : seg.clips[index];
+    var range = index >= clips.length ? (seg.combo || [seg.clips[0][0], seg.clips[2][1]]) : seg.clips[index];
+    // The riposte is only in the main video: the first-person and the series videos have nothing to show for it.
+    video.style.visibility = range ? "" : "hidden";
+    Array.prototype.forEach.call($("refviews").querySelectorAll("button"), function (b) { b.classList.toggle("on", b.dataset.key === key); });
+    if (!range) { refSeg = null; video.pause(); return; }
     refSeg = { start: range[0] / 60, end: range[1] / 60, slow: seg.slow || 1, own: !!seg.own };
     var src = refs + seg.file;
     if (video.getAttribute("src") !== src) video.setAttribute("src", src);
     restartRef();
-    Array.prototype.forEach.call($("refviews").querySelectorAll("button"), function (b) { b.classList.toggle("on", b.dataset.key === key); });
   }
   function restartRef() {
     if (!refSeg || !$("showref").checked) return;
@@ -417,7 +423,7 @@
     var c = state.clip, fr = state.frame, i = Math.max(0, Math.min(Math.round(fr), c.last));
     var phase = fr < c.windup ? "замах" : fr <= c.activeEnd ? "АКТИВНАЯ ФАЗА" : "проводка / возврат";
     var miss = c.strikePath[c.peak], off = Math.hypot(miss.x - eye.x, miss.y - eye.y) * 100;
-    $("hud").textContent = c.name.replace("Attack", "Атака") + " · кадр " + fr.toFixed(1) + " / " + c.last + " · " + phase +
+    $("hud").textContent = title(c.name) + " · кадр " + fr.toFixed(1) + " / " + c.last + " · " + phase +
       "\nпик: кадр " + c.peak + ", точка удара от прицела " + off.toFixed(1) + " см" +
       "\nсуставы руки: " + (c.strain[i] * 100).toFixed(0) + "% предела · рукоять в кулаке: наклон " + c.lean[i].toFixed(0) + "°, поворот " + c.roll[i].toFixed(0) + "°";
   }
