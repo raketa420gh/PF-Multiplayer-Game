@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-16
+- Confessor, навыки: **Psalm by Heart** (следующая молитва в течение 10 с читается мгновенно, КД 45 с) вместо Rosary, **Absolution** (снимает Slow, Burn, Poison и Cursed с себя и союзников в 3 м, КД 45 с) вместо Holy Water. Новый `AbilityKind.Cleanse` и `StatusEffectComponent.Cleanse`. Звуки и нарисованные иконки старых навыков переименованы под новые.
 - Mercenary / Shieldbearer: **Shield Drill** влит в **Steady Stance** — блок замедляет вдвое меньше (было: не замедляет совсем, как Brace) и поднимается на 20% быстрее. На месте Shield Drill — **Ready Again**: +15% Cooldown Recovery. У перка может быть второй эффект (`PerkDefinition.SecondEffect`); `CombatComponent.SetBlockSlowRelief` принимает долю вместо флага.
 - Mercenary, общие перки: **Head Down** (+20% Projectile Reduction) вместо Drill Arms, **Long Breath** (+25% Buff Duration) вместо Field Rations. Два новых параметра персонажа на листе: Projectile Reduction (`StatType.ProjectileReduction` — урон стрел, болтов и метательного) и Buff Duration (`StatType.BuffDuration` — длительность баффов и криков своих навыков).
 - Mercenary: **Over Here!** вместо замедления 20% на 4 с вешает на врагов в 8 м −10% физического урона на 6 с. Новый `StatusEffectKind.PhysicalWeakness` (п. п. из бонуса физического урона; у монстров — из множителя урона физических ударов). Провокация монстров по-прежнему 4 с.

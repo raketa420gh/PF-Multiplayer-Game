@@ -390,14 +390,14 @@ namespace Game.Scripts.Editor.Dungeon
                         "PM", light, "a prayer book with a ring of five golden glowing sigils"),
                     new AbilityDef
                     {
-                        Name = "Rosary", Description = Text("Pray on your knees for 5s, then every prayer gets one charge back.", "...and once more. And once more."), Kind = AbilityKind.RestoreCharges,
-                        Magnitude = 1f, Channel = 5f, Cooldown = 120f, Glyph = "Ro", Color = light, Vfx = VfxStyle.Holy, Art = "worn wooden prayer beads wrapped around clasped hands"
+                        Name = "Psalm by Heart", Description = Text("Your next prayer within 10s is read at once.", "This one I know without the book."), Kind = AbilityKind.QuickCast,
+                        Duration = 10f, Cooldown = 45f, CastTime = 0.2f, Glyph = "PH", Color = light, Vfx = VfxStyle.Holy, Art = "a priest's lips whispering a psalm with eyes closed, a shut prayer book under the arm"
                     },
                     new AbilityDef
                     {
-                        Name = "Holy Water", Description = Text("Sprinkle yourself and allies within 3m: +10% armor for 10s.", "Not against the blade. Against what stands behind it."), Kind = AbilityKind.AreaBuff,
-                        Effect = StatusEffectKind.ArmorPercent, Magnitude = 10f, Duration = 10f, Radius = 3f, Cooldown = 60f, CastTime = 0.4f, Glyph = "HW", Color = light, Vfx = VfxStyle.Holy,
-                        Art = "a silver aspergillum sprinkling glowing droplets of holy water"
+                        Name = "Absolution", Description = Text("Lift slow, burn, poison and curse off yourself and allies within 3m.", "Whatever it was, it is forgiven."), Kind = AbilityKind.Cleanse,
+                        Radius = 3f, Cooldown = 45f, CastTime = 0.4f, Glyph = "Ab", Color = light, Vfx = VfxStyle.Holy,
+                        Art = "a silver aspergillum sprinkling glowing droplets of holy water over a bowed head, dark smoke leaving the body"
                     }
                 },
                 Spells = new[]

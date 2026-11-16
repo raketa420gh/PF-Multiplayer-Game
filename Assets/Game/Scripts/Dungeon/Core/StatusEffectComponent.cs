@@ -242,6 +242,16 @@ namespace Game.Scripts.Dungeon
                 _effects.Set(index, default);
         }
 
+        /// Lifts slow, burn, poison and curse.
+        public void Cleanse()
+        {
+            for (int i = 0; i < Capacity; i++)
+            {
+                if (_effects[i].Kind is StatusEffectKind.Slow or StatusEffectKind.Burn or StatusEffectKind.Poison or StatusEffectKind.Cursed)
+                    _effects.Set(i, default);
+            }
+        }
+
         public void ClearAll()
         {
             for (int i = 0; i < Capacity; i++)

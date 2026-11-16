@@ -38,7 +38,9 @@ namespace Game.Scripts.Dungeon
         /// Hitscan on the body under the crosshair: damage and a status effect.
         TargetEffect,
         /// Puts items on the belt.
-        GiveItem
+        GiveItem,
+        /// Lifts slow, burn, poison and curse off the caster and every ally around.
+        Cleanse
     }
 
     [System.Flags]
@@ -186,7 +188,7 @@ namespace Game.Scripts.Dungeon
             AbilityKind.Projectile => AbilityTargeting.Projectile,
             AbilityKind.ChainLightning or AbilityKind.LightningStrike => AbilityTargeting.Hitscan,
             AbilityKind.Heal or AbilityKind.Buff or AbilityKind.Shield or AbilityKind.WeaponEnchant => _isSpell || _isOnAlly ? AbilityTargeting.Hitscan : AbilityTargeting.Self,
-            AbilityKind.AreaDamage or AbilityKind.AreaHeal or AbilityKind.AreaBuff or AbilityKind.Zone => AbilityTargeting.Aura,
+            AbilityKind.AreaDamage or AbilityKind.AreaHeal or AbilityKind.AreaBuff or AbilityKind.Zone or AbilityKind.Cleanse => AbilityTargeting.Aura,
             AbilityKind.TargetEffect => AbilityTargeting.Hitscan,
             AbilityKind.Throw => AbilityTargeting.Projectile,
             _ => AbilityTargeting.Self

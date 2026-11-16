@@ -1439,6 +1439,9 @@ namespace Game.Scripts.Dungeon
                 case AbilityKind.AreaBuff:
                     StartAura(ability);
                     break;
+                case AbilityKind.Cleanse:
+                    Cleanse(ability);
+                    break;
                 case AbilityKind.Shield:
                     SupportTarget(ability)._effects.Add(StatusEffectKind.Protection, Power(ability), buffDuration);
                     break;
@@ -1761,6 +1764,18 @@ namespace Game.Scripts.Dungeon
 
             if (isFlash)
                 RpcFlash(transform.position + Vector3.up, ability.Color, radius * 2f);
+        }
+
+        private void Cleanse(AbilityConfig ability)
+        {
+            foreach (FighterComponent fighter in FighterComponent.All)
+            {
+                if ((fighter.transform.position - transform.position).sqrMagnitude <= ability.Radius * ability.Radius
+                    && fighter.TryGetComponent(out AdventurerComponent ally) && ally.State == AdventurerState.Alive && IsAllyOf(ally))
+                    ally._effects.Cleanse();
+            }
+
+            RpcFlash(transform.position + Vector3.up, ability.Color, ability.Radius * 2f);
         }
 
         private void FireSpell(AbilityConfig ability, CombatComponent combat, int index)
