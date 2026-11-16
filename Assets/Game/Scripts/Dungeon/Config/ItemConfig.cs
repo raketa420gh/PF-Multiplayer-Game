@@ -106,6 +106,10 @@ namespace Game.Scripts.Dungeon
         ProjectileReduction,
         /// Fraction longer buffs and war cries of the adventurer's own skills.
         BuffDuration,
+        /// Fraction shorter harmful effects on the adventurer.
+        DebuffReduction,
+        /// Points of damage taken off every hit after the percent reductions.
+        FlatReduction,
         Count
     }
 

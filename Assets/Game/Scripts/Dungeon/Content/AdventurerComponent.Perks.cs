@@ -300,7 +300,13 @@ namespace Game.Scripts.Dungeon
             if ((request.Tag & DamageTag.Trap) != 0)
                 taken *= 1f - Perk(PerkEffect.TrapSense);
 
-            return _effects.Absorb(Mathf.RoundToInt(reduced * Mathf.Max(0f, taken)));
+            int result = Mathf.RoundToInt(reduced * Mathf.Max(0f, taken));
+
+            // The flat cut never eats a hit whole.
+            if (result > 0)
+                result = Mathf.Max(1, result - _stats.FlatReduction);
+
+            return _effects.Absorb(result);
         }
 
         /// What a landed hit leaves: marks, venom, healing tithe, a quickening onslaught, caustic splashes; and what a kill brings.

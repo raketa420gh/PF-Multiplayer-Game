@@ -90,6 +90,8 @@ namespace Game.Scripts.Dungeon
                 StatType.HeadshotReduction => $"Headshot Damage Reduction {modifier.Value * 100f:0.#}%",
                 StatType.ProjectileReduction => $"Projectile Damage Reduction {modifier.Value * 100f:0.#}%",
                 StatType.BuffDuration => $"Buff Duration {modifier.Value * 100f:+0.#;-0.#}%",
+                StatType.DebuffReduction => $"Debuff Reduction {modifier.Value * 100f:0.#}%",
+                StatType.FlatReduction => $"Flat Damage Reduction {modifier.Value:0.#}",
                 _ => $"{modifier.Stat} {modifier.Value:+0.#;-0.#}"
             };
         }

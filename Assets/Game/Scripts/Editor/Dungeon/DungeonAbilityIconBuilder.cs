@@ -253,7 +253,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             return stat switch
             {
-                StatType.ArmorRating or StatType.MagicResistance or StatType.ProjectileReduction => "Armor",
+                StatType.ArmorRating or StatType.MagicResistance or StatType.ProjectileReduction or StatType.FlatReduction => "Armor",
                 StatType.MaxHealth or StatType.Vitality => "Heart",
                 StatType.PhysicalPower or StatType.PhysicalDamageBonus or StatType.Strength => "Axe",
                 StatType.MoveSpeed or StatType.Agility => "Dash",
@@ -261,7 +261,7 @@ namespace Game.Scripts.Editor.Dungeon
                 StatType.MagicalPower or StatType.MagicalDamageBonus or StatType.Spirit => "Burst",
                 StatType.Knowledge => "Book",
                 StatType.RangedDamageBonus => "Arrow",
-                StatType.ReloadSpeed or StatType.BuffDuration => "Hourglass",
+                StatType.ReloadSpeed or StatType.BuffDuration or StatType.DebuffReduction => "Hourglass",
                 StatType.HeadshotDamage => "Crosshair",
                 _ => "Chevrons"
             };

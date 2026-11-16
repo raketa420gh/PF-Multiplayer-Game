@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-16
+- Confessor, общие перки: **Hair Shirt** (каждый удар наносит на 3 урона меньше, минимум 1) вместо Gravedigger's Back, **Clean Conscience** (+20% Debuff Reduction) вместо Night Vigil. Два новых параметра персонажа на листе: Flat Reduction (`StatType.FlatReduction`) и Debuff Reduction (`StatType.DebuffReduction`, список вредных эффектов — `StatusEffectComponent.IsHarmful`). В `Classes.md` стартовый набор приведён к коду: Round Shield в нём есть.
 - Confessor, навыки: **Psalm by Heart** (следующая молитва в течение 10 с читается мгновенно, КД 45 с) вместо Rosary, **Absolution** (снимает Slow, Burn, Poison и Cursed с себя и союзников в 3 м, КД 45 с) вместо Holy Water. Новый `AbilityKind.Cleanse` и `StatusEffectComponent.Cleanse`. Звуки и нарисованные иконки старых навыков переименованы под новые.
 - Mercenary / Shieldbearer: **Shield Drill** влит в **Steady Stance** — блок замедляет вдвое меньше (было: не замедляет совсем, как Brace) и поднимается на 20% быстрее. На месте Shield Drill — **Ready Again**: +15% Cooldown Recovery. У перка может быть второй эффект (`PerkDefinition.SecondEffect`); `CombatComponent.SetBlockSlowRelief` принимает долю вместо флага.
 - Mercenary, общие перки: **Head Down** (+20% Projectile Reduction) вместо Drill Arms, **Long Breath** (+25% Buff Duration) вместо Field Rations. Два новых параметра персонажа на листе: Projectile Reduction (`StatType.ProjectileReduction` — урон стрел, болтов и метательного) и Buff Duration (`StatType.BuffDuration` — длительность баффов и криков своих навыков).

@@ -77,14 +77,16 @@
 ## Confessor
 - Identity: погребальщик Собора Упокоения, отпевает мёртвых жилы; булава, щит и одно колесо молитв.
 - Attributes: 11 / 10 / 15 / 11 / 8 / 9.
-- Weapons: булавы, посохи, книга заклинаний, щиты, факел. Стартовый набор: Morning Star, Spellbook, Campfire Kit, Bandage ×2, Torch. Щит носить может, но по умолчанию его нет.
+- Weapons: булавы, посохи, книга заклинаний, щиты, факел. Стартовый набор: Morning Star + Round Shield, Spellbook, Campfire Kit, Bandage ×2, Torch.
 - Любимое оружие: Morning Star.
 - Subclasses: **Healer**, **Smiter**, **Apostate**.
 - Skills (изменены 2026-11-16, заменены на месте — билды хранят навыки по индексу):
   - **Psalm by Heart** (вместо Rosary) — следующая молитва в течение 10 с читается мгновенно, перезарядка 45 с (`AbilityKind.QuickCast`).
   - **Absolution** (вместо Holy Water) — снимает Slow, Burn, Poison и Cursed с себя и союзников в 3 м, перезарядка 45 с, каст 0,4 с (`AbilityKind.Cleanse`, `StatusEffectComponent.Cleanse`). Root, Silence, Vulnerable, Weakened и побочки микстур не снимает.
 - Spells: общие Minor Healing, Rest; Healing, Circle of Intercession, Blessing (Healer); Hallowed Weapon, Sentence, Light of the Cathedral (Smiter); Wither, Curse, Whisper of the Sleeper (Apostate).
-- Perks: общие Firm Faith, Requiem, Altar Boy, Gravedigger's Back, Night Vigil; Warm Hands, Shroud, Patience, Last Rites / Heavy Hand, Strength of Faith, Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
+- Perks: общие Firm Faith, Requiem, Altar Boy, Hair Shirt, Clean Conscience; Warm Hands, Shroud, Patience, Last Rites / Heavy Hand, Strength of Faith, Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
+  - **Hair Shirt** (2026-11-16, вместо Gravedigger's Back) — Flat Reduction 3 (`StatType.FlatReduction`): каждый полученный удар наносит на 3 урона меньше, но не меньше 1.
+  - **Clean Conscience** (2026-11-16, вместо Night Vigil) — +20% Debuff Reduction (`StatType.DebuffReduction`): вредные эффекты на тебе длятся на 20% меньше.
 
 ## Huntsman
 - Identity: охотник из мёртвых лесов, теперь охотится на тварей жилы; арбалет и лук, меч на крайний случай. Без магии.

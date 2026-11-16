@@ -168,6 +168,14 @@ namespace Game.Scripts.Dungeon
         /// State authority only: an effect ran out on its own (not removed, not replaced).
         public event Action<StatusEffectKind, float> OnExpired;
 
+        /// Effects an enemy puts on a body; the side effects of one's own mixtures are not among them.
+        public static bool IsHarmful(StatusEffectKind kind)
+        {
+            return kind is StatusEffectKind.Slow or StatusEffectKind.Burn or StatusEffectKind.Poison or StatusEffectKind.Silence or StatusEffectKind.Root
+                or StatusEffectKind.Vulnerable or StatusEffectKind.Weakened or StatusEffectKind.Cursed or StatusEffectKind.Marked or StatusEffectKind.Festering
+                or StatusEffectKind.PhysicalWeakness;
+        }
+
         public override void FixedUpdateNetwork()
         {
             if (!HasStateAuthority)

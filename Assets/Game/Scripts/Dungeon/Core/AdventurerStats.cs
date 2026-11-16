@@ -36,6 +36,10 @@ namespace Game.Scripts.Dungeon
         public float ProjectileReduction => Mathf.Clamp01(_flat[(int)StatType.ProjectileReduction]);
         /// Buffs and war cries the adventurer casts last this many times longer.
         public float BuffDuration => Mathf.Max(0f, 1f + _flat[(int)StatType.BuffDuration]);
+        /// Share of the duration of harmful effects on the adventurer taken off.
+        public float DebuffReduction => Mathf.Clamp01(_flat[(int)StatType.DebuffReduction]);
+        /// Points taken off every hit after the percent reductions.
+        public int FlatReduction => Mathf.Max(0, Mathf.RoundToInt(_flat[(int)StatType.FlatReduction]));
 
         private ClassStats _attributes;
         private int _maxHealth = 100;
@@ -191,10 +195,13 @@ namespace Game.Scripts.Dungeon
             float ThresholdPower(StatType attribute) => HasThreshold(attribute) ? DungeonFormulas.ThresholdPower : 0f;
         }
 
-        /// Debuffs last as long as they were cast, only Agility 30 ignores slows.
+        /// Agility 30 ignores slows; Debuff Reduction shortens every harmful effect.
         public float GetDurationScale(StatusEffectKind kind)
         {
-            return kind == StatusEffectKind.Slow && HasThreshold(StatType.Agility) ? 0f : 1f;
+            if (kind == StatusEffectKind.Slow && HasThreshold(StatType.Agility))
+                return 0f;
+
+            return StatusEffectComponent.IsHarmful(kind) ? 1f - DebuffReduction : 1f;
         }
 
         public float GetDamageScale(StatusEffectKind kind)
