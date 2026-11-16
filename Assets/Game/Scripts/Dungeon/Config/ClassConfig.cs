@@ -118,7 +118,7 @@ namespace Game.Scripts.Dungeon
         HeavyArmorTraining,
         /// Share more healing from bandages.
         BandageHealing,
-        /// A raised block does not slow.
+        /// Share of the raised block's move slow taken off.
         SteadyBlock,
         /// The block goes up this share faster.
         ShieldTraining,
@@ -282,6 +282,9 @@ namespace Game.Scripts.Dungeon
         public bool IsPerStack => _isPerStack;
         public PerkEffect Effect => _effect;
         public float Value => _value;
+        /// A perk that does two things: the second one, None when there is none.
+        public PerkEffect SecondEffect => _secondEffect;
+        public float SecondValue => _secondValue;
 
         [SerializeField]
         private string _name;
@@ -306,6 +309,12 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField]
         private float _value;
+
+        [SerializeField]
+        private PerkEffect _secondEffect;
+
+        [SerializeField]
+        private float _secondValue;
     }
 
     [Serializable]
@@ -504,6 +513,7 @@ namespace Game.Scripts.Dungeon
 
                 applied++;
                 values[(int)_perks[i].Effect] += _perks[i].Value;
+                values[(int)_perks[i].SecondEffect] += _perks[i].SecondValue;
             }
         }
 

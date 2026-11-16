@@ -535,6 +535,8 @@ namespace Game.Scripts.Editor.Dungeon
                     perk.FindPropertyRelative("_isPerStack").boolValue = def.Perks[p].PerStack;
                     perk.FindPropertyRelative("_effect").intValue = (int)def.Perks[p].Effect;
                     perk.FindPropertyRelative("_value").floatValue = def.Perks[p].Value;
+                    perk.FindPropertyRelative("_secondEffect").intValue = (int)def.Perks[p].SecondEffect;
+                    perk.FindPropertyRelative("_secondValue").floatValue = def.Perks[p].SecondValue;
                     string symbol = def.Perks[p].Icon ?? (def.Perks[p].Modifiers.Length > 0 ? DungeonAbilityIconBuilder.SymbolFor(def.Perks[p].Modifiers[0].Stat) : "Chevrons");
                     Color perkColor = def.Perks[p].Color ?? (def.Perks[p].Subclass >= 0 ? def.Subclasses[def.Perks[p].Subclass].Color : def.Color);
                     perk.FindPropertyRelative("_icon").objectReferenceValue = DungeonAbilityIconBuilder.BuildOrPainted(Sanitize(def.Perks[p].Name), symbol, perkColor);

@@ -133,6 +133,8 @@ namespace Game.Scripts.Editor.Dungeon
         public bool PerStack;
         public PerkEffect Effect;
         public float Value;
+        public PerkEffect SecondEffect;
+        public float SecondValue;
         /// What the icon shows, for the icon generator.
         public string Art;
 

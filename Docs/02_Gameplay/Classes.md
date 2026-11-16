@@ -49,9 +49,11 @@
   - **Shoulder Blow** (Hewer, изменён 2026-11-14) — следующий физический удар оружием в течение 10 с получает +40 п. п. к бонусу физического урона (складывается с бонусом от Physical Power и аффиксов, а не умножает итог; было ×1,5 к итогу). Перезарядка 20 с (`StatusEffectKind.HeavyBlow`).
   - **Hold the Line!** (Captain, изменён 2026-11-14) — ты и союзники в 8 м получают +15 п. к Physical Reduction и +15 п. к Magical Reduction на 8 с (было −15% любого урона через `Guard`). Перезарядка 40 с, флаг `Shout`. PDR-часть — тот же `StatusEffectKind.PhysicalReduction`, что у Grit Your Teeth: они не складываются. MDR — `StatusEffectKind.MagicalReduction`; второй эффект у `AreaBuff` задаётся через `SecondEffect`.
   - Остальные: Charge!, Banner (Captain).
-- Perks: общие Hardened, Plate Habit, Used to Wounds, Head Down, Long Breath; Steady Stance, Shield Drill, Counterblow, Heavy Bones / Anything Sharp, Light Step, Onslaught, Quick Hands / Under the Banner, Set the Example, Battle Order, Voice.
+- Perks: общие Hardened, Plate Habit, Used to Wounds, Head Down, Long Breath; Steady Stance, Ready Again, Counterblow, Heavy Bones / Anything Sharp, Light Step, Onslaught, Quick Hands / Under the Banner, Set the Example, Battle Order, Voice.
   - **Head Down** (2026-11-16, вместо Drill Arms) — +20% Projectile Reduction (`StatType.ProjectileReduction`): меньше урона от стрел, болтов и метательного оружия.
   - **Long Breath** (2026-11-16, вместо Field Rations) — +25% Buff Duration (`StatType.BuffDuration`): баффы и крики своих навыков действуют дольше (Grit Your Teeth 7,5 с, Fury 10 с, Hold the Line! 10 с на всех союзниках, провокация Over Here! 5 с). Не удлиняет Second Wind, зоны (Banner) и эффекты на врагах.
+  - **Steady Stance** (Shieldbearer, изменён 2026-11-16) — блок замедляет вдвое меньше (множитель скорости в блоке 0,55 → 0,775) и поднимается на 20% быстрее: в него влит Shield Drill. Полное снятие замедления осталось только у Brace. Два эффекта у одного перка — `PerkDefinition.SecondEffect`.
+  - **Ready Again** (Shieldbearer, 2026-11-16, на месте Shield Drill) — +15% Cooldown Recovery (`StatType.CooldownRecovery`): Shield Bash 16 → 13,9 с, Brace 30 → 26,1 с. Перки в билдах хранятся маской по индексу — перк заменён на месте, список не сдвигался.
 
 ## Librarian
 - Identity: изгнанный библиотекарь Коллегии, одно колесо из пяти заклинаний, заряды возвращаются у костра. Хрупок в ближнем бою.

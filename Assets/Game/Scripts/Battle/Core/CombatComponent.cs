@@ -152,7 +152,7 @@ namespace Game.Scripts.Battle
                 return State switch
                 {
                     CombatState.Attack => Attack.MoveMultiplier,
-                    CombatState.BlockRaise or CombatState.Block or CombatState.BlockImpact => _isBlockSlowIgnored ? 1f : Weapon.Block.MoveMultiplier,
+                    CombatState.BlockRaise or CombatState.Block or CombatState.BlockImpact => Mathf.Lerp(Weapon.Block.MoveMultiplier, 1f, _blockSlowRelief),
                     CombatState.Draw => Weapon.Ranged.DrawMoveMultiplier,
                     CombatState.Deflected => _deflectedMoveMultiplier,
                     // Taken damage does not slow: only a broken guard or a stun does.
@@ -305,7 +305,7 @@ namespace Game.Scripts.Battle
         private IShotModifier _shotModifier;
         private bool _isBlockHeld;
         private bool _isBlockSuppressed;
-        private bool _isBlockSlowIgnored;
+        private float _blockSlowRelief;
         private float _blockRaiseSpeed = 1f;
         private bool _isGuardUnbreakable;
         private bool _isAttackSuppressed;
@@ -352,10 +352,10 @@ namespace Game.Scripts.Battle
             _isBlockSuppressed = isSuppressed;
         }
 
-        /// A raised block keeps the full pace (a class perk).
-        public void SetBlockSlowIgnored(bool isIgnored)
+        /// Share of the raised block's move slow taken off: 1 keeps the full pace (a class perk or skill).
+        public void SetBlockSlowRelief(float share)
         {
-            _isBlockSlowIgnored = isIgnored;
+            _blockSlowRelief = Mathf.Clamp01(share);
         }
 
         /// The swing the next series opens with: a monster whose attacks each start from the rest picks one of them.

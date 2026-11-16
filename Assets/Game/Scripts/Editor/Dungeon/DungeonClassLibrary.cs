@@ -114,8 +114,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Perk("Used to Wounds", "Bandages heal 30% more.", "Bind it tight. Walk on.", PerkEffect.BandageHealing, 0.3f, "bloody linen bandage tied around a sword arm"),
                     Stats("Head Down", "+20% projectile damage reduction: arrows, bolts and thrown weapons.", "The ones who looked up stayed in the field.", "a soldier hunched behind a raised pauldron, arrows glancing off the steel", -1, new StatModifier(StatType.ProjectileReduction, 0.2f)),
                     Stats("Long Breath", "+25% buff duration: the buffs and war cries of your skills last longer.", "Shout once. Make it last.", "a veteran with a deep chest drawing a long breath before a shout, veins on his neck", -1, new StatModifier(StatType.BuffDuration, 0.25f)),
-                    Perk("Steady Stance", "Your block does not slow you down.", "Feet first, then the shield.", PerkEffect.SteadyBlock, 1f, "armored boots planted firmly in mud behind a shield", 0),
-                    Perk("Shield Drill", "You raise your block 20% faster.", "The shield is a wall, not a plate.", PerkEffect.ShieldTraining, 0.2f, "a heater shield deflecting a sword blow, sparks flying", 0),
+                    Perk("Steady Stance", "Your block slows you half as much and goes up 20% faster.", "Feet first, then the shield.", PerkEffect.SteadyBlock, 0.5f, "armored boots planted firmly in mud behind a shield", 0, PerkEffect.ShieldTraining, 0.2f),
+                    Stats("Ready Again", "+15% cooldown recovery: your skills come back sooner.", "Breathe out. Shield up.", "a mercenary shaking out his shield arm, shield already rising again", 0, new StatModifier(StatType.CooldownRecovery, 15f)),
                     Perk("Counterblow", "After a blocked hit your attacks are 25% faster for 2s.", "Your turn is over.", PerkEffect.Retaliation, 25f, "a sword thrusting out from behind a raised shield", 0),
                     Perk("Heavy Bones", "Nothing can knock you back.", "Push. I will wait.", PerkEffect.KnockbackImmune, 1f, "a broad-shouldered warrior standing firm against a wave of dust", 0),
                     Perk("Anything Sharp", "You can wield any weapon.", "A weapon is a weapon.", PerkEffect.AnyWeapon, 1f, "a pile of mismatched weapons: axe, mace, sword, spear", 1),
@@ -699,9 +699,9 @@ namespace Game.Scripts.Editor.Dungeon
             return new SubclassDef { Name = name, Description = description, Color = color, Art = art };
         }
 
-        private static PerkDef Perk(string name, string effect, string flavor, PerkEffect perk, float value, string art, int subclass = -1)
+        private static PerkDef Perk(string name, string effect, string flavor, PerkEffect perk, float value, string art, int subclass = -1, PerkEffect second = PerkEffect.None, float secondValue = 0f)
         {
-            return new PerkDef(name, Text(effect, flavor)) { Effect = perk, Value = value, Art = art, Subclass = subclass };
+            return new PerkDef(name, Text(effect, flavor)) { Effect = perk, Value = value, Art = art, Subclass = subclass, SecondEffect = second, SecondValue = secondValue };
         }
 
         private static PerkDef Stats(string name, string effect, string flavor, string art, int subclass, params StatModifier[] modifiers)
