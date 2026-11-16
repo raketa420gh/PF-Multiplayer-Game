@@ -34,7 +34,9 @@ namespace Game.Scripts.Dungeon
         PhysicalReduction,
         MagicResistance,
         MagicalReduction,
-        CooldownSpeed
+        CooldownSpeed,
+        ProjectileReduction,
+        BuffDuration
     }
 
     /// Names, values and hover texts of the character sheet.
@@ -54,7 +56,8 @@ namespace Game.Scripts.Dungeon
             "Physical Healing", "Magical Healing", "Magical Interaction", "Perception", "Interaction Speed", "Handling",
             "Physical Power", "Physical Damage", "Health", "Magical Power", "Magical Damage",
             "Cast Speed", "Spell Memory", "Move Speed", "Action Speed",
-            "Armor Rating", "Physical Reduction", "Magic Resistance", "Magical Reduction", "Cooldown Recovery"
+            "Armor Rating", "Physical Reduction", "Magic Resistance", "Magical Reduction", "Cooldown Recovery",
+            "Projectile Reduction", "Buff Duration"
         };
 
         private static readonly string[] s_descriptions =
@@ -84,7 +87,9 @@ namespace Game.Scripts.Dungeon
             "Share of incoming physical damage removed. Capped at 65%.",
             "Base 30 plus gear. Converts into Magical Reduction with diminishing returns.",
             "Share of incoming magical damage removed. Capped at 65%.",
-            "Skill cooldowns and spell recovery by the fire run this much faster. Comes from gear and perks only."
+            "Skill cooldowns and spell recovery by the fire run this much faster. Comes from gear and perks only.",
+            "Share of damage from arrows, bolts and thrown weapons removed, on top of the armor.",
+            "The buffs and war cries of your skills last this much longer."
         };
 
         private static readonly string[] s_thresholds =
@@ -103,10 +108,11 @@ namespace Game.Scripts.Dungeon
             new(0.38f, 0.62f, 0.96f), new(0.32f, 0.8f, 0.62f), new(0.82f, 0.84f, 0.32f)
         };
 
-        /// Armor Rating, Physical Reduction, Magic Resistance, Magical Reduction, Cooldown Recovery.
+        /// Armor Rating, Physical Reduction, Magic Resistance, Magical Reduction, Cooldown Recovery, Projectile Reduction, Buff Duration.
         private static readonly Color[] s_gearColors =
         {
-            new(0.8f, 0.82f, 0.88f), new(0.62f, 0.66f, 0.78f), new(0.5f, 0.8f, 0.96f), new(0.36f, 0.6f, 0.9f), new(0.62f, 0.9f, 0.86f)
+            new(0.8f, 0.82f, 0.88f), new(0.62f, 0.66f, 0.78f), new(0.5f, 0.8f, 0.96f), new(0.36f, 0.6f, 0.9f), new(0.62f, 0.9f, 0.86f),
+            new(0.78f, 0.7f, 0.56f), new(0.95f, 0.78f, 0.42f)
         };
 
         private static readonly StatId[][] s_ownStats =
@@ -309,6 +315,8 @@ namespace Game.Scripts.Dungeon
                 case StatId.PhysicalReduction: return Share(stats.PhysicalReduction, out sign);
                 case StatId.MagicResistance: return stats.MagicResistance.ToString("0");
                 case StatId.MagicalReduction: return Share(stats.MagicalReduction, out sign);
+                case StatId.ProjectileReduction: return Share(stats.ProjectileReduction, out sign);
+                case StatId.BuffDuration: return Bonus(stats.BuffDuration, out sign);
                 default: return stats.Attributes.Get((StatType)stat).ToString();
             }
         }

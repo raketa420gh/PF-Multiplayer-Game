@@ -102,6 +102,10 @@ namespace Game.Scripts.Dungeon
         HeadshotDamage,
         /// Fraction of damage taken from hits on the head that helmets absorb.
         HeadshotReduction,
+        /// Fraction of damage taken from arrows, bolts and thrown weapons that is removed.
+        ProjectileReduction,
+        /// Fraction longer buffs and war cries of the adventurer's own skills.
+        BuffDuration,
         Count
     }
 

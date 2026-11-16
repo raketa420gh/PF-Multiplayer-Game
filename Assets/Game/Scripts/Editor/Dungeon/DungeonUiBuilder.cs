@@ -1717,7 +1717,7 @@ namespace Game.Scripts.Editor.Dungeon
             // right above the share it turns into.
             void Add(params StatId[] stats) => list.AddRange(System.Array.ConvertAll(stats, stat => (stat, (string)null)));
 
-            Add(StatId.Health, StatId.MoveSpeed, StatId.ActionSpeed, StatId.CastSpeed, StatId.BonusCharges, StatId.CooldownSpeed);
+            Add(StatId.Health, StatId.MoveSpeed, StatId.ActionSpeed, StatId.CastSpeed, StatId.BonusCharges, StatId.CooldownSpeed, StatId.BuffDuration);
 
             for (int i = 0; i < StatSheet.AttributeCount; i++)
                 Add(StatSheet.Edge(i));
@@ -1725,7 +1725,7 @@ namespace Game.Scripts.Editor.Dungeon
             list.Add((default, "Damage"));
             Add(StatId.PhysicalPower, StatId.PhysicalDamage, StatId.MagicalPower, StatId.MagicalDamage);
             list.Add((default, "Defense"));
-            Add(StatId.ArmorRating, StatId.PhysicalReduction, StatId.MagicResistance, StatId.MagicalReduction);
+            Add(StatId.ArmorRating, StatId.PhysicalReduction, StatId.MagicResistance, StatId.MagicalReduction, StatId.ProjectileReduction);
             int columns = isCompact ? 2 : 1;
             int rows = (list.Count + columns - 1) / columns;
             float rowHeight = isCompact ? 17f : 23f;

@@ -32,6 +32,10 @@ namespace Game.Scripts.Dungeon
         public float RangedDamageMultiplier => 1f + _flat[(int)StatType.RangedDamageBonus];
         public float ReloadSpeed => Mathf.Max(0.4f, 1f + _flat[(int)StatType.ReloadSpeed] / 100f);
         public float HeadshotBonus => _flat[(int)StatType.HeadshotDamage];
+        /// Share of the damage of arrows, bolts and thrown weapons removed, on top of the armor.
+        public float ProjectileReduction => Mathf.Clamp01(_flat[(int)StatType.ProjectileReduction]);
+        /// Buffs and war cries the adventurer casts last this many times longer.
+        public float BuffDuration => Mathf.Max(0f, 1f + _flat[(int)StatType.BuffDuration]);
 
         private ClassStats _attributes;
         private int _maxHealth = 100;

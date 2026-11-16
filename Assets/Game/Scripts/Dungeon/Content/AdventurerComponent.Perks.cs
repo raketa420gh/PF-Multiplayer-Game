@@ -294,6 +294,9 @@ namespace Game.Scripts.Dungeon
             if (request.Attacker == _fighter.Receiver && (request.Tag & (DamageTag.Flask | DamageTag.Fire)) != 0)
                 taken *= 1f - Perk(PerkEffect.BlastHabit);
 
+            if ((request.Tag & (DamageTag.Ranged | DamageTag.Thrown)) != 0)
+                taken *= 1f - _stats.ProjectileReduction;
+
             if ((request.Tag & DamageTag.Trap) != 0)
                 taken *= 1f - Perk(PerkEffect.TrapSense);
 

@@ -1404,7 +1404,7 @@ namespace Game.Scripts.Dungeon
         {
             AbilityConfig ability = _abilities[index];
             CombatComponent combat = _fighter.Combat;
-            float buffDuration = ability.Duration * (ability.Has(AbilityFlags.Mixture) ? 1f + Perk(PerkEffect.DoubleDose) : 1f);
+            float buffDuration = ability.Duration * (ability.Has(AbilityFlags.Mixture) ? 1f + Perk(PerkEffect.DoubleDose) : 1f) * _stats.BuffDuration;
             _spentStacks = ability.SpendsResource ? Resource : 0;
 
             if (ability.SpendsResource)
@@ -1531,7 +1531,7 @@ namespace Game.Scripts.Dungeon
 
             bool isMixture = ability.Has(AbilityFlags.Mixture);
             bool isSide = isMixture && ability.SecondEffect is StatusEffectKind.Sluggish or StatusEffectKind.Drain;
-            float duration = ability.SecondDuration * (isSide ? 1f - Perk(PerkEffect.Accustomed) : isMixture ? 1f + Perk(PerkEffect.DoubleDose) : 1f);
+            float duration = ability.SecondDuration * (isSide ? 1f - Perk(PerkEffect.Accustomed) : (isMixture ? 1f + Perk(PerkEffect.DoubleDose) : 1f) * _stats.BuffDuration);
 
             if (ability.Effect == StatusEffectKind.BullBlood)
             {
@@ -1713,7 +1713,7 @@ namespace Game.Scripts.Dungeon
         /// A burst buffs once; with an aura time the buff keeps being renewed on whoever stands in it, the caster moving it along.
         private void StartAura(AbilityConfig ability)
         {
-            AreaBuff(ability, ability.Duration);
+            AreaBuff(ability, ability.Duration * _stats.BuffDuration);
 
             if (ability.AuraTime <= 0f)
                 return;
