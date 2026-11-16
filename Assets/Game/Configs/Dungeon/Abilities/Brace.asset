@@ -12,18 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c3213d3d36f3484f82b8a7ded1e01fd, type: 3}
   m_Name: Brace
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
-  _displayName: The Wall
-  _description: 'For 3s nothing hurts you from the front, but you cannot move. Needs
-    a shield.
+  _displayName: Brace
+  _description: 'For 6s no blow breaks your block and blocking does not slow you;
+    every melee hit you block throws the attacker back. Needs a shield.
 
-    <i><color=#a89f8a>"Not one step."</color></i>'
+    <i><color=#a89f8a>"Not
+    one step."</color></i>'
   _kind: 1
   _isSpell: 0
   _charges: 1
   _cooldown: 30
   _castTime: 0.15
-  _magnitude: 1
-  _duration: 3
+  _magnitude: 4
+  _duration: 6
   _radius: 0
   _effect: 47
   _damageType: 1
@@ -35,7 +36,7 @@ MonoBehaviour:
   _effectMagnitude: 0
   _effectDuration: 0
   _color: {r: 0.62, g: 0.72, b: 0.86, a: 1}
-  _glyph: Wa
+  _glyph: Br
   _icon: {fileID: 21300000, guid: 0b23eb52d1ed2df45a3141de2d61316c, type: 3}
   _healthCost: 0
   _lifeSteal: 0
@@ -50,9 +51,9 @@ MonoBehaviour:
   _range: 20
   _auraTime: 0
   _isGround: 0
-  _secondEffect: 29
-  _secondMagnitude: 1
-  _secondDuration: 3
+  _secondEffect: 0
+  _secondMagnitude: 0
+  _secondDuration: 0
   _isPercentHealth: 0
   _flags: 256
   _zone: 0

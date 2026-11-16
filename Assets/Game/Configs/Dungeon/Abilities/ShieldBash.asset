@@ -13,18 +13,18 @@ MonoBehaviour:
   m_Name: ShieldBash
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Shield Bash
-  _description: 'Swing your shield ahead without a lunge: 8 physical damage to everyone
-    in front and a 1s stun. Needs a shield.
+  _description: 'Strike with your shield where you stand: 8 physical damage to everyone
+    in front and a short knockback. Needs a shield.
 
     <i><color=#a89f8a>"Down."</color></i>'
   _kind: 3
   _isSpell: 0
   _charges: 1
-  _cooldown: 15
+  _cooldown: 16
   _castTime: 0.15
   _magnitude: 8
   _duration: 0
-  _radius: 2.4
+  _radius: 2.2
   _effect: 0
   _damageType: 0
   _projectileSpeed: 26
@@ -40,13 +40,13 @@ MonoBehaviour:
   _healthCost: 0
   _lifeSteal: 0
   _spawnPrefab: {fileID: 0}
-  _staggerDuration: 1
+  _staggerDuration: 0.3
   _subclass: 0
   _resourceCost: 0
   _stackBonus: 0
   _isOnAlly: 0
-  _coneAngle: 50
-  _push: 0
+  _coneAngle: 40
+  _push: 3
   _range: 20
   _auraTime: 0
   _isGround: 0
