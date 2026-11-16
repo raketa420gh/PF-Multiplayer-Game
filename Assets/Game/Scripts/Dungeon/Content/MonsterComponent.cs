@@ -104,7 +104,7 @@ namespace Game.Scripts.Dungeon
 
         public float GetDamageMultiplier(DamageType type)
         {
-            return _config.DamageMultiplier * StatusDamage.Dealt(_effects, true);
+            return _config.DamageMultiplier * StatusDamage.Dealt(_effects, true, type == DamageType.Physical);
         }
 
 

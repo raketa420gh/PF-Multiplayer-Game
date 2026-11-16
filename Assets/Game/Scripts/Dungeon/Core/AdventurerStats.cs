@@ -42,6 +42,7 @@ namespace Game.Scripts.Dungeon
         private float _moveSpeedRating = DungeonFormulas.BaseMoveSpeed;
         private float _moveSpeedMultiplier = 1f;
         private float _physicalPower;
+        private float _physicalWeakness;
         private float _magicalPower;
         private float _actionSpeed = 1f;
         private float _handlingSpeed = 1f;
@@ -61,7 +62,7 @@ namespace Game.Scripts.Dungeon
         {
             return type switch
             {
-                DamageType.Physical => 1f + DungeonFormulas.PowerBonus(_physicalPower) + _flat[(int)StatType.PhysicalDamageBonus],
+                DamageType.Physical => Mathf.Max(0f, 1f + DungeonFormulas.PowerBonus(_physicalPower) + _flat[(int)StatType.PhysicalDamageBonus] - _physicalWeakness),
                 DamageType.Magical => 1f + DungeonFormulas.PowerBonus(_magicalPower) + _flat[(int)StatType.MagicalDamageBonus],
                 _ => 1f
             };
@@ -142,6 +143,7 @@ namespace Game.Scripts.Dungeon
 
             // Strength and Spirit only raise the powers; the damage bonus grows from the power alone.
             _physicalPower = strength + _flat[(int)StatType.PhysicalPower] + Effect(effects, StatusEffectKind.Power) + ThresholdPower(StatType.Strength);
+            _physicalWeakness = Effect(effects, StatusEffectKind.PhysicalWeakness) * 0.01f;
 
             // Vitality
             float healthBonus = _flat[(int)StatType.MaxHealth] + Effect(effects, StatusEffectKind.Fortify) + FormHealthBonus(form);

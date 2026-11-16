@@ -591,6 +591,7 @@ namespace Game.Scripts.Dungeon
 
                     return true;
                 case StatusEffectKind.Weakened:
+                case StatusEffectKind.PhysicalWeakness:
                     Spawn(root, Body(new Layer { Material = c.Smoke, Rate = 4f, Life = new(1.5f, 2.2f), Velocity = new Vector3(0f, 0.2f, 0f), Size = new(0.3f, 0.6f), From = new Color(0.45f, 0.47f, 0.42f, 0.25f), Noise = 0.3f, Max = 10 }, chest, torso));
 
                     return true;

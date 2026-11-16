@@ -102,8 +102,8 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Over Here!", Description = Text("Monsters within 8m go for you for 4s; every enemy within 8m is slowed by 20% for 4s.", "Me. Look at me."), Kind = AbilityKind.Taunt,
-                        Magnitude = 1f, Duration = 4f, Radius = 8f, HitEffect = StatusEffectKind.Slow, HitMagnitude = 20f, HitDuration = 4f, Flags = AbilityFlags.Shout, Cooldown = 30f, CastTime = 0.3f,
+                        Name = "Over Here!", Description = Text("Monsters within 8m go for you for 4s; every enemy within 8m deals 10% less physical damage for 6s.", "Me. Look at me."), Kind = AbilityKind.Taunt,
+                        Magnitude = 1f, Duration = 4f, Radius = 8f, HitEffect = StatusEffectKind.PhysicalWeakness, HitMagnitude = 10f, HitDuration = 6f, Flags = AbilityFlags.Shout, Cooldown = 30f, CastTime = 0.3f,
                         Glyph = "OH", Color = steel, Vfx = VfxStyle.Shout, Art = "a scarred mercenary bellowing with arms spread wide, sword banging on a shield, ghouls turning toward him"
                     }
                 },

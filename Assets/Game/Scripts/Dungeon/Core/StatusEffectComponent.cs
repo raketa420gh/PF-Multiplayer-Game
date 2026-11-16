@@ -122,7 +122,9 @@ namespace Game.Scripts.Dungeon
         /// Percent points added to physical damage reduction.
         PhysicalReduction,
         /// Percent points added to magical damage reduction.
-        MagicalReduction
+        MagicalReduction,
+        /// Percent points taken from the physical damage bonus.
+        PhysicalWeakness
     }
 
     public struct StatusEffect : INetworkStruct
