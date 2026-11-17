@@ -494,8 +494,10 @@ namespace Game.Scripts.Editor.Dungeon
                 {
                     Stats("Firm Faith", "+5 Spirit, -2 Strength.", "The words are the same. The voice is mine.", "a worn holy symbol on a leather cord", -1, new StatModifier(StatType.Spirit, 5f), new StatModifier(StatType.Strength, -2f)),
                     Perk("Requiem", "The undead deal you 25% less damage.", "Sleep. You've been sung to rest.", PerkEffect.Requiem, 0.25f, "a candle burning on a skull in a crypt niche"),
-                    Perk("Altar Boy", "Prayers are cast 10% faster.", "A hundred times a day. The tongue remembers.", PerkEffect.Acolyte, 0.1f, "a young acolyte's lips moving over an open psalter"),
-                    Stats("Hair Shirt", "Every hit you take deals 3 less damage.", "After the hair shirt a blade is almost a mercy.", "a coarse hair shirt under a priest's cassock, scourge marks on the shoulders", -1, new StatModifier(StatType.FlatReduction, 3f)),
+                    Perk("Pilgrim", "A spellbook or a staff in hand slows your walk half as much.", "From the Cathedral to the vein on foot. The book never got heavier.", PerkEffect.Pilgrim, 0.5f,
+                        "a lone pilgrim in a dusty cassock walking a mountain road, a heavy prayer book under the arm"),
+                    Stats("Scourge", "You take 3 less damage from any source, but never less than 1; a burn or a poison loses 3 of its whole damage.", "After the scourge a blade is almost a mercy.",
+                        "a knotted leather scourge on a stone floor, a priest's bare back with old scourge marks", -1, new StatModifier(StatType.FlatReduction, 3f)),
                     Stats("Clean Conscience", "+20% debuff reduction: slows, burns, poisons, curses and other harmful effects on you end sooner.", "Nothing sticks to a clean conscience.", "a calm priest with closed eyes, dark smoke sliding off his shoulders like water", -1, new StatModifier(StatType.DebuffReduction, 0.2f)),
                     Perk("Warm Hands", "+20% to your healing.", "Everything is cold down here. Except the hands.", PerkEffect.WarmHands, 0.2f, "hands glowing warm orange over a cold stone slab", 0),
                     Perk("Shroud", "The one you heal takes 10% less damage for 4s.", "Under my hand they won't touch you.", PerkEffect.Shroud, 10f, "a translucent golden veil over a kneeling warrior", 0),

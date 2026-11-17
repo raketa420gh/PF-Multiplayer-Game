@@ -89,11 +89,12 @@
   - **Bind** (2026-11-17) — цель под прицелом до 15 м не может сделать шаг 1,5 с (Root), 2 заряда.
   - **Holy Bolt** (2026-11-17) — снаряд света, 15 магического урона, нежить отбрасывает, 4 заряда.
   - Новые молитвы добавлены в конец списка — раскладки колёс хранят молитвы по индексу.
-- Perks: общие Firm Faith, Requiem, Altar Boy, Hair Shirt, Clean Conscience; Warm Hands, Shroud, Patience, Last Rites / Heavy Hand, Strength of Faith, Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
-  - **Hair Shirt** (2026-11-16, вместо Gravedigger's Back) — Flat Reduction 3 (`StatType.FlatReduction`): каждый полученный удар наносит на 3 урона меньше, но не меньше 1.
+- Perks: общие Firm Faith, Requiem, Pilgrim, Scourge, Clean Conscience; Warm Hands, Shroud, Patience, Last Rites / Heavy Hand, Strength of Faith, Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
+  - **Scourge / Бичевание** (2026-11-16 как Hair Shirt, вместо Gravedigger's Back; переименован 2026-11-17) — Flat Reduction 3 (`StatType.FlatReduction`): на 3 урона меньше от любого источника, но не меньше 1; горение и яд теряют 3 от всего урона каждого наложения.
   - **Clean Conscience** (2026-11-16, вместо Night Vigil) — +20% Debuff Reduction (`StatType.DebuffReduction`): вредные эффекты на тебе длятся на 20% меньше.
   - **Firm Faith** (2026-11-17) — +5 Spirit, −2 Strength (было +3 Spirit).
   - **Requiem** (2026-11-17) — нежить наносит тебе на 25% меньше урона (было +15% урона по нежити): `PerkEffect.Requiem` теперь режет входящий урон, если `HitRequest.Attacker` — нежить.
+  - **Pilgrim / Паломник** (2026-11-17, вместо Altar Boy) — штраф скорости ходьбы от книги и посоха в руках вдвое меньше (`PerkEffect.Pilgrim` 0.5).
 
 ## Huntsman
 - Identity: охотник из мёртвых лесов, теперь охотится на тварей жилы; арбалет и лук, меч на крайний случай. Без магии.

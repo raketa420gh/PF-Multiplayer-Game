@@ -144,8 +144,8 @@ namespace Game.Scripts.Dungeon
         public interface IResistance
         {
             float GetDurationScale(StatusEffectKind kind);
-            /// Scales the damage of a damage-over-time effect.
-            float GetDamageScale(StatusEffectKind kind);
+            /// The whole damage of a damage-over-time effect after resistances.
+            float ScaleDamage(StatusEffectKind kind, float damage);
         }
 
         public const int Capacity = 16;
@@ -217,7 +217,7 @@ namespace Game.Scripts.Dungeon
 
             // Burn and poison deal their magnitude over the whole duration: a shorter one is a weaker one.
             if (kind is StatusEffectKind.Burn or StatusEffectKind.Poison)
-                magnitude *= scale * (_resistance?.GetDamageScale(kind) ?? 1f);
+                magnitude = _resistance?.ScaleDamage(kind, magnitude * scale) ?? magnitude * scale;
 
             int slot = -1;
 

@@ -115,7 +115,7 @@ namespace Game.Scripts.Dungeon
                 }
                 else if (item is WeaponItemConfig weaponItem)
                 {
-                    moveAdd -= weaponItem.MoveSpeedPenalty;
+                    moveAdd -= weaponItem.MoveSpeedPenalty * (weaponItem.WeaponClass is WeaponClass.Spellbook or WeaponClass.Staff ? 1f - Perk(perks, PerkEffect.Pilgrim) : 1f);
                 }
             }
 
@@ -204,9 +204,12 @@ namespace Game.Scripts.Dungeon
             return StatusEffectComponent.IsHarmful(kind) ? 1f - DebuffReduction : 1f;
         }
 
-        public float GetDamageScale(StatusEffectKind kind)
+        /// Poison resistance, then the flat cut once per application, never below 1.
+        public float ScaleDamage(StatusEffectKind kind, float damage)
         {
-            return kind == StatusEffectKind.Poison ? _poisonScale : 1f;
+            damage *= kind == StatusEffectKind.Poison ? _poisonScale : 1f;
+
+            return damage > 0f ? Mathf.Max(1f, damage - FlatReduction) : damage;
         }
 
         /// Altars answer to magic; doors, levers, portals and the rest to the hands.

@@ -1277,10 +1277,10 @@ namespace Game.Scripts.Dungeon
             return Perk(PerkEffect.BloodPrayer) > 0f && _fighter.Health.CurrentHealth > BloodPrice;
         }
 
-        /// Knowledge, a concentration buff, the altar boy's habit and the quick word of the stormcaller.
+        /// Knowledge, a concentration buff and the quick word of the stormcaller.
         private float SpellCastSpeed(AbilityConfig spell)
         {
-            return _stats.CastSpeed * (1f + Perk(PerkEffect.Acolyte) + (spell.Has(AbilityFlags.Lightning) ? Perk(PerkEffect.QuickWord) : 0f));
+            return _stats.CastSpeed * (1f + (spell.Has(AbilityFlags.Lightning) ? Perk(PerkEffect.QuickWord) : 0f));
         }
 
         private void TryUseAbility(int index)

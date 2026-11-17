@@ -214,8 +214,8 @@ namespace Game.Scripts.Dungeon
         QuickWord,
         /// Share less damage taken from the undead.
         Requiem,
-        /// Share faster prayers.
-        Acolyte,
+        /// Share of the spellbook and staff walking penalty taken off.
+        Pilgrim,
         /// Share more healing done.
         WarmHands,
         /// Percent less damage for a moment taken by the one he heals.
