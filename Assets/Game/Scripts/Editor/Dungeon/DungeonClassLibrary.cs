@@ -404,8 +404,8 @@ namespace Game.Scripts.Editor.Dungeon
                 {
                     new AbilityDef
                     {
-                        Name = "Minor Healing", Description = Text("The ally under the crosshair within 10m (or you): 15% of health over 3s.", "Hold on."), Kind = AbilityKind.Heal, IsSpell = true, Charges = 4,
-                        Cooldown = 1f, CastTime = 1f, Magnitude = 15f, Duration = 3f, PercentHealth = true, Range = 10f, Flags = AbilityFlags.Healing, Glyph = "MH", Color = mending,
+                        Name = "Minor Healing", Description = Text("The ally under the crosshair within 10m (or you): 15 health at once.", "Hold on."), Kind = AbilityKind.Heal, IsSpell = true, Charges = 4,
+                        Cooldown = 1f, CastTime = 0.5f, Magnitude = 15f, Range = 10f, Flags = AbilityFlags.Healing, Glyph = "MH", Color = mending,
                         Vfx = VfxStyle.Heal, Art = "a small warm glow cupped between two hands"
                     },
                     new AbilityDef

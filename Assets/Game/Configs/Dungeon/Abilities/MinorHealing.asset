@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: MinorHealing
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Minor Healing
-  _description: 'The ally under the crosshair within 10m (or you): 15% of health
-    over 3s.
+  _description: 'The ally under the crosshair within 10m (or you): 15 health at
+    once.
 
     <i><color=#a89f8a>"Hold on."</color></i>'
   _kind: 0
   _isSpell: 1
   _charges: 4
   _cooldown: 1
-  _castTime: 1
+  _castTime: 0.5
   _magnitude: 15
-  _duration: 3
+  _duration: 0
   _radius: 0
   _effect: 0
   _damageType: 1
@@ -53,7 +53,7 @@ MonoBehaviour:
   _secondEffect: 0
   _secondMagnitude: 0
   _secondDuration: 0
-  _isPercentHealth: 1
+  _isPercentHealth: 0
   _flags: 2048
   _zone: 0
   _zoneRadius: 0
