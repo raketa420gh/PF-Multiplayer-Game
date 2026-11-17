@@ -188,7 +188,7 @@ namespace Game.Scripts.Dungeon
             bool isWeapon = (tag & DamageTag.Melee) != 0 && !_isBonusHit;
             bool isPhysical = (tag & (DamageTag.Melee | DamageTag.Ranged | DamageTag.Thrown)) != 0;
             HealthComponent health = victim.Health;
-            bool isMonster = victim.TryGetComponent(out MonsterComponent monster);
+            bool isMonster = victim.TryGetComponent(out MonsterComponent _);
             victim.TryGetComponent(out StatusEffectComponent effects);
             float bonus = _effects.GetMagnitude(StatusEffectKind.DamageBonus) / 100f - _effects.GetMagnitude(StatusEffectKind.Weakened) / 100f;
 
@@ -214,7 +214,7 @@ namespace Game.Scripts.Dungeon
                 bonus += Perk(PerkEffect.DarkVoice);
 
             if (isMonster)
-                bonus += Perk(PerkEffect.BeastHabit) + (monster.Config.IsUndead ? Perk(PerkEffect.Requiem) : 0f);
+                bonus += Perk(PerkEffect.BeastHabit);
 
             if (health.Progress < LowHealth)
                 bonus += Perk(PerkEffect.FinishOff);
@@ -299,6 +299,9 @@ namespace Game.Scripts.Dungeon
 
             if ((request.Tag & DamageTag.Trap) != 0)
                 taken *= 1f - Perk(PerkEffect.TrapSense);
+
+            if (request.Attacker != null && request.Attacker.TryGetComponent(out MonsterComponent monster) && monster.Config.IsUndead)
+                taken *= 1f - Perk(PerkEffect.Requiem);
 
             int result = Mathf.RoundToInt(reduced * Mathf.Max(0f, taken));
 

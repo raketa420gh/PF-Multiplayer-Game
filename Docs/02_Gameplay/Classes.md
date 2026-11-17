@@ -92,6 +92,8 @@
 - Perks: общие Firm Faith, Requiem, Altar Boy, Hair Shirt, Clean Conscience; Warm Hands, Shroud, Patience, Last Rites / Heavy Hand, Strength of Faith, Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
   - **Hair Shirt** (2026-11-16, вместо Gravedigger's Back) — Flat Reduction 3 (`StatType.FlatReduction`): каждый полученный удар наносит на 3 урона меньше, но не меньше 1.
   - **Clean Conscience** (2026-11-16, вместо Night Vigil) — +20% Debuff Reduction (`StatType.DebuffReduction`): вредные эффекты на тебе длятся на 20% меньше.
+  - **Firm Faith** (2026-11-17) — +5 Spirit, −2 Strength (было +3 Spirit).
+  - **Requiem** (2026-11-17) — нежить наносит тебе на 25% меньше урона (было +15% урона по нежити): `PerkEffect.Requiem` теперь режет входящий урон, если `HitRequest.Attacker` — нежить.
 
 ## Huntsman
 - Identity: охотник из мёртвых лесов, теперь охотится на тварей жилы; арбалет и лук, меч на крайний случай. Без магии.

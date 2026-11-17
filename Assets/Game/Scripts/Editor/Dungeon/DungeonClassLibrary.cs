@@ -492,8 +492,8 @@ namespace Game.Scripts.Editor.Dungeon
                 },
                 Perks = new[]
                 {
-                    Stats("Firm Faith", "+3 Spirit.", "The words are the same. The voice is mine.", "a worn holy symbol on a leather cord", -1, new StatModifier(StatType.Spirit, 3f)),
-                    Perk("Requiem", "+15% damage to the undead.", "Sleep. You've been sung to rest.", PerkEffect.Requiem, 0.15f, "a candle burning on a skull in a crypt niche"),
+                    Stats("Firm Faith", "+5 Spirit, -2 Strength.", "The words are the same. The voice is mine.", "a worn holy symbol on a leather cord", -1, new StatModifier(StatType.Spirit, 5f), new StatModifier(StatType.Strength, -2f)),
+                    Perk("Requiem", "The undead deal you 25% less damage.", "Sleep. You've been sung to rest.", PerkEffect.Requiem, 0.25f, "a candle burning on a skull in a crypt niche"),
                     Perk("Altar Boy", "Prayers are cast 10% faster.", "A hundred times a day. The tongue remembers.", PerkEffect.Acolyte, 0.1f, "a young acolyte's lips moving over an open psalter"),
                     Stats("Hair Shirt", "Every hit you take deals 3 less damage.", "After the hair shirt a blade is almost a mercy.", "a coarse hair shirt under a priest's cassock, scourge marks on the shoulders", -1, new StatModifier(StatType.FlatReduction, 3f)),
                     Stats("Clean Conscience", "+20% debuff reduction: slows, burns, poisons, curses and other harmful effects on you end sooner.", "Nothing sticks to a clean conscience.", "a calm priest with closed eyes, dark smoke sliding off his shoulders like water", -1, new StatModifier(StatType.DebuffReduction, 0.2f)),

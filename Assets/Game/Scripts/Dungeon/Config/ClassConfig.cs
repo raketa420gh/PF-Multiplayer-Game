@@ -212,7 +212,7 @@ namespace Game.Scripts.Dungeon
         LongChain,
         /// Share faster lightning casting.
         QuickWord,
-        /// Share more damage to the undead.
+        /// Share less damage taken from the undead.
         Requiem,
         /// Share faster prayers.
         Acolyte,
