@@ -1,0 +1,294 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Справочник наёмника</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Forum&family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+/* Layout: a free company's muster roll — one column of ruled rows per group (shared first, then each
+   subclass under its emblem); skills carry a right-hand numbers column, perks sit two-up. */
+:root {
+  color-scheme: dark;
+  --bg: #13161b; --surface: #1a1e25; --line: #2c323d; --fg: #e1e5ec; --muted: #97a0af;
+  --steel: #b8bdc7; --shield: #9eb8db; --hewer: #e66b47; --captain: #f2bf59;
+  --display: "Forum", "Times New Roman", serif;
+  --body: "Golos Text", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #e9ecf0; --surface: #f6f7f9; --line: #cdd3dc; --fg: #1a1e25; --muted: #566070;
+    --steel: #5a6474; --shield: #3b659c; --hewer: #b5411f; --captain: #8a6208;
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #e9ecf0; --surface: #f6f7f9; --line: #cdd3dc; --fg: #1a1e25; --muted: #566070;
+  --steel: #5a6474; --shield: #3b659c; --hewer: #b5411f; --captain: #8a6208;
+}
+
+body { background: var(--bg); color: var(--fg); font: 400 16px/1.55 var(--body); }
+.page {
+  max-width: 1040px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 48px;
+}
+h1, h2, h3, h4, p, dl, dd, ol, ul { margin: 0; padding: 0; }
+h1, h2, h4 { font-family: var(--display); font-weight: 400; text-wrap: balance; }
+.label { font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--steel); outline-offset: 3px; border-radius: 4px; }
+
+/* top */
+.top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 32px 48px; align-items: center; }
+.top h1 { font-size: clamp(52px, 9vw, 88px); line-height: 1; letter-spacing: .01em; margin-top: 6px; }
+.lead { max-width: 56ch; margin-top: 18px; font-size: 17px; }
+.facts { margin-top: 24px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 20px; font-size: 14.5px; }
+.facts dt { color: var(--muted); }
+.hex svg { display: block; width: 100%; max-width: 360px; height: auto; margin: 0 auto; }
+.hex .grid { fill: none; stroke: var(--line); stroke-width: 1; }
+.hex .neutral { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 4; }
+.hex .shape { fill: var(--steel); fill-opacity: .22; stroke: var(--steel); stroke-width: 1.6; stroke-linejoin: round; }
+.hex .dot { fill: var(--steel); }
+.hex text { fill: var(--muted); font: 400 12.5px var(--body); }
+.hex text .v { fill: var(--fg); font: 400 19px var(--display); }
+.hex figcaption { text-align: center; font-size: 13px; color: var(--muted); margin-top: 4px; }
+.hex { margin: 0; }
+
+/* level track */
+.track-wrap { display: flex; flex-direction: column; gap: 14px; }
+.track { list-style: none; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.track li { position: relative; padding: 14px 12px 0 0; font-size: 13.5px; line-height: 1.4; color: var(--muted); }
+.track li::before { content: ""; position: absolute; top: -4px; left: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--tone, var(--steel)); }
+.track b { display: block; font: 400 28px/1.1 var(--display); color: var(--fg); font-variant-numeric: tabular-nums lining-nums; }
+.track .sub { --tone: var(--fg); }
+.track-note { font-size: 14px; color: var(--muted); max-width: 80ch; }
+
+/* nav */
+.nav { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 15px; }
+.nav a { text-decoration: none; display: inline-flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid transparent; }
+.nav a:hover { border-bottom-color: var(--tone); }
+.nav a::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--tone); }
+.nav small { color: var(--muted); font-size: 13px; }
+
+/* groups */
+.g-shared { --tone: var(--steel); } .g-shield { --tone: var(--shield); } .g-hewer { --tone: var(--hewer); } .g-captain { --tone: var(--captain); }
+.group { display: flex; flex-direction: column; gap: 22px; scroll-margin-top: 16px; }
+.group-head { display: flex; align-items: center; gap: 20px; padding-bottom: 18px; border-bottom: 1px solid var(--tone); }
+.group-head h2 { font-size: 40px; line-height: 1.05; }
+.group-head p { color: var(--muted); max-width: 62ch; margin-top: 4px; }
+.group-head .label { color: var(--tone); }
+.icon { border-radius: 50%; background: #000; box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--tone); flex: none; display: block; }
+.block { display: flex; flex-direction: column; }
+.block > .label { padding-bottom: 10px; }
+
+.skill { display: grid; grid-template-columns: 72px minmax(0, 1fr) 216px; gap: 6px 22px; padding: 18px 0; border-top: 1px solid var(--line); align-items: start; }
+.skill .icon { width: 72px; height: 72px; margin: 3px; }
+.body { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.name h4 { font-size: 25px; line-height: 1.15; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px; white-space: nowrap; }
+.tag.req { color: var(--tone); border-color: var(--tone); }
+.desc { max-width: 62ch; }
+.note { max-width: 66ch; font-size: 14px; color: var(--muted); }
+.quote { font-size: 14px; font-style: italic; color: var(--muted); }
+.nums { display: grid; grid-template-columns: auto auto; gap: 4px 14px; font-size: 14px; font-variant-numeric: tabular-nums; justify-content: end; padding-top: 6px; }
+.nums div { display: contents; }
+.nums dt { color: var(--muted); }
+.nums dd { text-align: right; font-weight: 500; }
+
+.perks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); column-gap: 40px; }
+.perk { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 18px; padding: 16px 0; border-top: 1px solid var(--line); align-items: start; }
+.perk .icon { width: 54px; height: 54px; margin: 3px; }
+.perk .name h4 { font-size: 21px; }
+
+footer { border-top: 1px solid var(--line); padding-top: 18px; font-size: 13.5px; color: var(--muted); }
+footer code { font: 500 12.5px ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--fg); overflow-wrap: anywhere; }
+
+@media (max-width: 860px) {
+  .top { grid-template-columns: minmax(0, 1fr); }
+  .track { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 20px; border-top: 0; }
+  .track li { border-top: 1px solid var(--line); }
+}
+@media (max-width: 640px) {
+  .page { gap: 40px; padding-block: 24px 48px; }
+  .track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .group-head { gap: 14px; }
+  .group-head h2 { font-size: 32px; }
+  .group-head .icon { width: 64px; height: 64px; }
+  .skill { grid-template-columns: 56px minmax(0, 1fr); gap: 10px 16px; }
+  .skill .icon { width: 56px; height: 56px; }
+  .nums { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 18px; justify-content: flex-start; padding-top: 2px; }
+  .nums div { display: flex; gap: 6px; }
+}
+</style>
+
+<div class="page">
+  <header class="top">
+    <div>
+      <p class="label">Класс · простая сталь, без магии</p>
+      <h1>Mercenary</h1>
+      <p class="lead">Вольный клинок: солдат распущенной армии, спустившийся вниз за монетой. Никому не верен и оссариту не доверяет — простая сталь, а оссарит годится только как плата.</p>
+      <dl class="facts">
+        <dt>В наборе</dt><dd>10 навыков, 17 перков, 3 подкласса</dd>
+        <dt>Оружие</dt><dd>мечи, топоры, булавы, копья, кинжалы, щиты, факел</dd>
+        <dt>Любимое</dt><dd>Arming Sword + Écu</dd>
+        <dt>На старте</dt><dd>Arming Sword, Round Shield, Battle Axe, одежда жильщика, Bandage ×3, Torch</dd>
+      </dl>
+    </div>
+    <figure class="hex">
+      <div id="hex"></div>
+      <figcaption>Гексаграмма: сумма 64, пунктир — нейтральные 10</figcaption>
+    </figure>
+  </header>
+
+  <section class="track-wrap" aria-label="Что открывается по уровням">
+    <p class="label">Что открывает уровень</p>
+    <ol class="track">
+      <li><b>1</b>1-й слот перка и слот навыка Q</li>
+      <li><b>5</b>2-й слот перка</li>
+      <li><b>10</b>2-й слот навыка, E</li>
+      <li><b>15</b>3-й слот перка</li>
+      <li><b>20</b>4-й слот перка</li>
+      <li class="sub"><b>30</b>первый подкласс</li>
+      <li class="sub"><b>40</b>второй подкласс</li>
+      <li class="sub"><b>50</b>третий подкласс, потолок</li>
+    </ol>
+    <p class="track-note">В бою одновременно работают два навыка и четыре перка. До 30 уровня выбирать можно только из общих; каждый подкласс добавляет к выбору свои два-три навыка и четыре перка. Сила, здоровье и урон от уровня не растут.</p>
+  </section>
+
+  <nav class="nav" aria-label="Разделы">
+    <a class="g-shared" href="#shared">Общие <small>3 навыка · 5 перков</small></a>
+    <a class="g-shield" href="#shieldbearer">Shieldbearer <small>2 · 4</small></a>
+    <a class="g-hewer" href="#hewer">Hewer <small>2 · 4</small></a>
+    <a class="g-captain" href="#captain">Captain <small>3 · 4</small></a>
+  </nav>
+
+  <main id="groups" class="page" style="padding:0;max-width:none"></main>
+
+  <footer>
+    Данные на 16.11.2026 из <code>Editor/Dungeon/DungeonClassLibrary.cs</code> и <code>Docs/02_Gameplay/Classes.md</code>. Цитаты под описаниями — внутриигровой текст, как в игре.
+  </footer>
+</div>
+
+<script>
+const ATTRS = [["Сила", 12], ["Живучесть", 15], ["Дух", 10], ["Знание", 5], ["Ловкость", 10], ["Проворство", 12]];
+
+const GROUPS = [
+  { id: "shared", cls: "g-shared", title: "Общие", label: "С 1 уровня",
+    text: "Доступны любому наёмнику с первого уровня и остаются в выборе при любом подклассе.",
+    skills: [
+      { icon: "SecondWind", name: "Second Wind", tags: ["Лечение", "Костёр"],
+        desc: "Восстанавливает 40% здоровья за 12 с. Заряд один: чтобы вернуть его, отдохни у костра 15 с.",
+        note: "Long Breath это лечение не продлевает.", quote: "Breathe. Again.",
+        nums: [["Заряды", "1"], ["Возврат", "костёр, 15 с"], ["Каст", "0,3 с"], ["Длительность", "12 с"]] },
+      { icon: "GritYourTeeth", name: "Grit Your Teeth", tags: ["Усиление"],
+        desc: "+15 п. к снижению физического урона на 6 с.",
+        note: "Не складывается с физической частью Hold the Line! — это один и тот же эффект. С Long Breath длится 7,5 с.", quote: "Hurts. Later.",
+        nums: [["Перезарядка", "60 с"], ["Каст", "0,2 с"], ["Длительность", "6 с"]] },
+      { icon: "OverHere", name: "Over Here!", tags: ["Провокация", "Крик"],
+        desc: "Монстры в 8 м выбирают тебя целью на 4 с. Все враги в 8 м, монстры и игроки, 6 с наносят на 10% меньше физического урона.",
+        note: "Штраф вычитается из бонуса физического урона (−10 п. п.). С Long Breath провокация длится 5 с, штраф врагам не продлевается.", quote: "Me. Look at me.",
+        nums: [["Перезарядка", "30 с"], ["Каст", "0,3 с"], ["Провокация", "4 с"], ["Штраф урона", "6 с"], ["Радиус", "8 м"]] }
+    ],
+    perks: [
+      { icon: "Hardened", name: "Hardened", desc: "+10% к максимальному здоровью.", quote: "So many scars there is no room for new ones." },
+      { icon: "PlateHabit", name: "Plate Habit", desc: "Тяжёлая броня замедляет вдвое меньше.", quote: "Twenty years in iron." },
+      { icon: "UsedtoWounds", name: "Used to Wounds", desc: "Бинты лечат на 30% больше.", quote: "Bind it tight. Walk on." },
+      { icon: "HeadDown", name: "Head Down", desc: "+20% к снижению урона от снарядов: стрел, болтов и метательного оружия.", quote: "The ones who looked up stayed in the field." },
+      { icon: "LongBreath", name: "Long Breath", desc: "+25% к длительности усилений: баффы и боевые кличи твоих навыков действуют дольше.",
+        note: "Grit Your Teeth 7,5 с, Fury 10 с, Hold the Line! 10 с на всех союзниках, провокация Over Here! 5 с. Не продлевает Second Wind, зоны (Banner) и эффекты на врагах.", quote: "Shout once. Make it last." }
+    ] },
+  { id: "shieldbearer", cls: "g-shield", title: "Shieldbearer", label: "Подкласс", emblem: "Subclass_Shieldbearer",
+    text: "Убить труднее всех, бьёт слабее. Только щит. Держал перевалы для гильдейских обозов.",
+    skills: [
+      { icon: "ShieldBash", name: "Shield Bash", tags: ["Удар по области"], req: "Нужен щит",
+        desc: "Удар щитом на месте, без рывка: 8 физического урона всем перед тобой и короткий отброс.",
+        note: "Конус 40° на 2,2 м, сила отброса 3, стаггер 0,3 с. С Ready Again перезарядка 13,9 с.", quote: "Down.",
+        nums: [["Перезарядка", "16 с"], ["Каст", "0,15 с"], ["Урон", "8 физ."], ["Дальность", "2,2 м"]] },
+      { icon: "Brace", name: "Brace", tags: ["Усиление"], req: "Нужен щит",
+        desc: "6 с ни один удар не пробивает твой блок, блок не замедляет, а каждый заблокированный удар ближнего боя отбрасывает атакующего.",
+        note: "Сила отброса 4. Единственный способ полностью снять замедление в блоке. С Ready Again перезарядка 26,1 с.", quote: "Not one step.",
+        nums: [["Перезарядка", "30 с"], ["Каст", "0,15 с"], ["Длительность", "6 с"]] }
+    ],
+    perks: [
+      { icon: "SteadyStance", name: "Steady Stance", desc: "Блок замедляет вдвое меньше и поднимается на 20% быстрее.", note: "Множитель скорости в блоке 0,55 → 0,775.", quote: "Feet first, then the shield." },
+      { icon: "ReadyAgain", name: "Ready Again", desc: "+15% к восстановлению перезарядки: навыки возвращаются раньше.", note: "Shield Bash 16 → 13,9 с, Brace 30 → 26,1 с.", quote: "Breathe out. Shield up." },
+      { icon: "Counterblow", name: "Counterblow", desc: "После заблокированного удара 2 с атакуешь на 25% быстрее.", quote: "Your turn is over." },
+      { icon: "HeavyBones", name: "Heavy Bones", desc: "Тебя ничто не может отбросить.", quote: "Push. I will wait." }
+    ] },
+  { id: "hewer", cls: "g-hewer", title: "Hewer", label: "Подкласс", emblem: "Subclass_Hewer",
+    text: "Быстрый и менее крепкий; дерётся любым оружием. Берёт долю добычи, а не жалованье.",
+    skills: [
+      { icon: "ShoulderBlow", name: "Shoulder Blow", tags: ["Усиление"],
+        desc: "Следующий удар оружием в течение 10 с получает +40% к бонусу физического урона.",
+        note: "Прибавляется к бонусу от Physical Power и аффиксов (+40 п. п.), а не умножает итоговый урон.", quote: "All the weight. All of it.",
+        nums: [["Перезарядка", "20 с"], ["Каст", "0,15 с"], ["Окно", "10 с"]] },
+      { icon: "Fury", name: "Fury", tags: ["Усиление"],
+        desc: "8 с атакуешь на 20% быстрее и двигаешься на 5% быстрее.",
+        note: "С Long Breath длится 10 с.", quote: "Red. Everything red.",
+        nums: [["Перезарядка", "45 с"], ["Каст", "0,2 с"], ["Длительность", "8 с"]] }
+    ],
+    perks: [
+      { icon: "AnythingSharp", name: "Anything Sharp", desc: "Можешь сражаться любым оружием: классовое ограничение снято.", quote: "A weapon is a weapon." },
+      { icon: "LightStep", name: "Light Step", desc: "+15 к скорости передвижения, пока на тебе нет лат.", quote: "Iron is for the dead." },
+      { icon: "Onslaught", name: "Onslaught", desc: "Каждый удар подряд по одному и тому же врагу ускоряет атаки на 5%, до 25%.", quote: "Don't let him breathe." },
+      { icon: "QuickHands", name: "Quick Hands", desc: "+5% к скорости действий.", quote: "Faster than the other side." }
+    ] },
+  { id: "captain", cls: "g-captain", title: "Captain", label: "Подкласс", emblem: "Subclass_Captain",
+    text: "Держит отряд вместе; сам во всём середняк. Вёл вольную роту, которой больше нет.",
+    skills: [
+      { icon: "HoldtheLine", name: "Hold the Line!", tags: ["Усиление отряда", "Крик"],
+        desc: "Ты и союзники в 8 м получаете +15 п. к снижению физического и +15 п. к снижению магического урона на 8 с.",
+        note: "Физическая часть не складывается с Grit Your Teeth. С Long Breath длится 10 с на всех союзниках.", quote: "Shields together!",
+        nums: [["Перезарядка", "40 с"], ["Каст", "0,3 с"], ["Длительность", "8 с"], ["Радиус", "8 м"]] },
+      { icon: "Charge", name: "Charge!", tags: ["Усиление отряда", "Крик"],
+        desc: "Ты и союзники в 8 м 8 с атакуете на 15% быстрее.", quote: "At them!",
+        nums: [["Перезарядка", "40 с"], ["Каст", "0,3 с"], ["Длительность", "8 с"], ["Радиус", "8 м"]] },
+      { icon: "Banner", name: "Banner", tags: ["Зона"],
+        desc: "Втыкаешь знамя на 20 с: союзники в 5 м от него получают +3 ко всем атрибутам.",
+        note: "Long Breath зоны не продлевает.", quote: "Here we stand.",
+        nums: [["Перезарядка", "60 с"], ["Каст", "0,6 с"], ["Длительность", "20 с"], ["Радиус", "5 м"]] }
+    ],
+    perks: [
+      { icon: "UndertheBanner", name: "Under the Banner", desc: "Союзники в 6 м получают +15 брони.", quote: "Stay in sight of the colours." },
+      { icon: "SettheExample", name: "Set the Example", desc: "Союзники в 6 м двигаются на 5% быстрее.", quote: "Follow me." },
+      { icon: "BattleOrder", name: "Battle Order", desc: "Союзники в 6 м наносят на 5% больше урона.", quote: "Each one to his place." },
+      { icon: "Voice", name: "Voice", desc: "Боевые кличи достают на 50% дальше.", note: "Кличи — навыки с пометкой «Крик»: Over Here!, Hold the Line!, Charge!.", quote: "Heard over any steel." }
+    ] }
+];
+
+const img = (file, size, alt) => `<img class="icon" src="icons/${file}.webp" width="${size}" height="${size}" alt="${alt}" loading="lazy">`;
+const text = e => `<p class="desc">${e.desc}</p>${e.note ? `<p class="note">${e.note}</p>` : ""}<p class="quote">«${e.quote}»</p>`;
+const head = e => `<div class="name"><h4>${e.name}</h4><span class="tags">${(e.tags || []).map(t => `<span class="tag">${t}</span>`).join("")}${e.req ? `<span class="tag req">${e.req}</span>` : ""}</span></div>`;
+
+document.getElementById("groups").innerHTML = GROUPS.map(g => `
+  <section id="${g.id}" class="group ${g.cls}">
+    <header class="group-head">
+      ${g.emblem ? img(g.emblem, 84, "Эмблема " + g.title) : ""}
+      <div><span class="label">${g.label}</span><h2>${g.title}</h2><p>${g.text}</p></div>
+    </header>
+    <div class="block"><p class="label">Навыки · ${g.skills.length}</p>${g.skills.map(s => `
+      <article class="skill">${img(s.icon, 72, "")}<div class="body">${head(s)}${text(s)}</div>
+        <dl class="nums">${s.nums.map(n => `<div><dt>${n[0]}</dt><dd>${n[1]}</dd></div>`).join("")}</dl>
+      </article>`).join("")}</div>
+    <div class="block"><p class="label">Перки · ${g.perks.length}</p><div class="perks">${g.perks.map(p => `
+      <article class="perk">${img(p.icon, 54, "")}<div class="body">${head(p)}${text(p)}</div></article>`).join("")}</div></div>
+  </section>`).join("");
+
+(() => {
+  const cx = 180, cy = 116, R = 76, MAX = 16;
+  const pt = (i, v) => { const a = (-90 + i * 60) * Math.PI / 180, r = R * v / MAX; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; };
+  const ring = v => ATTRS.map((a, i) => pt(i, v == null ? a[1] : v).map(n => n.toFixed(1)).join(",")).join(" ");
+  const anchor = ["middle", "start", "start", "middle", "end", "end"];
+  document.getElementById("hex").innerHTML = `<svg viewBox="0 0 360 232" role="img" aria-label="Атрибуты: ${ATTRS.map(a => a.join(" ")).join(", ")}">
+    <polygon class="grid" points="${ring(MAX)}"/><polygon class="grid" points="${ring(5)}"/><polygon class="neutral" points="${ring(10)}"/>
+    ${ATTRS.map((a, i) => { const p = pt(i, MAX); return `<line class="grid" x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}"/>`; }).join("")}
+    <polygon class="shape" points="${ring()}"/>
+    ${ATTRS.map((a, i) => { const p = pt(i, a[1]); return `<circle class="dot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.6"/>`; }).join("")}
+    ${ATTRS.map((a, i) => { const p = pt(i, MAX + 2.4), dy = i === 0 ? -2 : i === 3 ? 14 : 5;
+      return `<text x="${p[0].toFixed(1)}" y="${(p[1] + dy).toFixed(1)}" text-anchor="${anchor[i]}">${a[0]} <tspan class="v">${a[1]}</tspan></text>`; }).join("")}
+  </svg>`;
+})();
+</script>
+
+</body></html>
