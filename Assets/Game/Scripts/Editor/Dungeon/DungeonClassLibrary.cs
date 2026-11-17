@@ -402,7 +402,7 @@ namespace Game.Scripts.Editor.Dungeon
                     new AbilityDef
                     {
                         Name = "Hallowed Weapon", Description = Text("For 7s your weapon hits deal 6 more magical damage of light, twice that to the undead.", "Bless the steel. I'll do the rest."),
-                        Kind = AbilityKind.WeaponEnchant, Duration = 7f, Cooldown = 14f, CastTime = 0.3f, Magnitude = 6f, Effect = StatusEffectKind.HolyWeapon,
+                        Kind = AbilityKind.WeaponEnchant, Duration = 7f, Cooldown = 28f, CastTime = 0.3f, Magnitude = 6f, Effect = StatusEffectKind.HolyWeapon,
                         Flags = AbilityFlags.Holy, Glyph = "HW", Color = zeal, Subclass = 1, Vfx = VfxStyle.Holy, Art = "a flanged mace blazing with golden holy light"
                     }
                 },
@@ -446,9 +446,9 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Light of the Cathedral", Description = Text("A flash 3m around you: the undead take 18 magical damage and are slowed by 30% for 2s; the living are unharmed.", "Look. It's the last thing you'll see."),
-                        Kind = AbilityKind.AreaDamage, IsSpell = true, Charges = 2, Cooldown = 1f, CastTime = 0.8f, Magnitude = 18f, Radius = 3f, Stagger = 0.3f, HitEffect = StatusEffectKind.Slow,
-                        HitMagnitude = 30f, HitDuration = 2f, Flags = AbilityFlags.Holy | AbilityFlags.UndeadOnly, Glyph = "LC", Color = light, Subclass = 1, Vfx = VfxStyle.Holy,
+                        Name = "Light of the Cathedral", Description = Text("A flash 3m around you: everyone in it takes 18 magical damage of light; the undead take double and are slowed by 20% for 2s.", "Look. It's the last thing you'll see."),
+                        Kind = AbilityKind.AreaDamage, IsSpell = true, Charges = 2, Cooldown = 1f, CastTime = 0.8f, Magnitude = 36f, Radius = 3f, Stagger = 0.3f, HitEffect = StatusEffectKind.Slow,
+                        HitMagnitude = 20f, HitDuration = 2f, Flags = AbilityFlags.Holy | AbilityFlags.HalfVsLiving | AbilityFlags.UndeadHitEffect, Glyph = "LC", Color = light, Subclass = 1, Vfx = VfxStyle.Holy,
                         Art = "a blinding burst of cathedral light through stained glass, skeletons recoiling"
                     },
                     new AbilityDef
@@ -520,8 +520,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Perk("Heavy Hand", "+10% damage with blunt weapons.", "Bone is not cut. Bone is crushed.", PerkEffect.HeavyHand, 0.1f, "a heavy iron flanged mace resting on a broken skull", 1),
                     Stats("Strength of Faith", "+5 Strength, -2 Knowledge.", "Prayed with a mace in hand. Holds better.", "a muscular arm gripping a mace with a rosary wrapped on the haft", 1,
                         new StatModifier(StatType.Strength, 5f), new StatModifier(StatType.Knowledge, -2f)),
-                    Perk("Righteous Wrath", "After you take a hit your next attack deals 20% more damage (at most once in 5s).", "You struck. Here's my answer.", PerkEffect.RighteousWrath, 20f, "a priest's furious eyes glowing gold behind a raised mace", 1),
-                    Perk("Blood Tithe", "Every weapon hit heals you for 2% of your health.", "The Cathedral takes a tithe. So do I.", PerkEffect.BloodTithe, 2f, "a tithe bowl filling with drops of blood", 1),
+                    Perk("Righteous Wrath", "After you take physical damage your next weapon attack deals 15% more physical damage (at most once in 12s).", "You struck. Here's my answer.", PerkEffect.RighteousWrath, 15f, "a priest's furious eyes glowing gold behind a raised mace", 1),
+                    Perk("Bone Breaker", "Your weapon hits deal 15% more physical damage to the undead.", "They've had their rest. Now they get the mace.", PerkEffect.BoneBreaker, 0.15f, "a flanged mace shattering a skeleton's ribcage into bone shards", 1),
                     Perk("Blood Prayer", "A prayer without charges can be read for 15% of your health.", "He lends. The interest is blood.", PerkEffect.BloodPrayer, 15f, "a bleeding palm pressed onto a black prayer book", 2),
                     Perk("Louder in the Dark", "While below half health your prayers deal 15% more damage.", "The less life in me, the louder He is.", PerkEffect.DarkVoice, 0.15f, "a gaunt figure screaming prayers with violet light from the mouth", 2),
                     Perk("Rot", "Foes you curse take 10% more damage from everyone.", "Rot does not choose.", PerkEffect.Rot, 10f, "rotting flesh with violet mould spreading", 2),

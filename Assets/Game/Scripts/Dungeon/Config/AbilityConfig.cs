@@ -64,9 +64,9 @@ namespace Game.Scripts.Dungeon
         Dark = 128,
         /// Needs a shield in hand.
         RequiresShield = 256,
-        /// Harms only the undead.
-        UndeadOnly = 512,
-        /// Half damage to the living.
+        /// Its hit effect lands only on the undead.
+        UndeadHitEffect = 512,
+        /// Half damage to the living (the magnitude is the damage to the undead).
         HalfVsLiving = 1024,
         /// A healing prayer: patience adds charges to it.
         Healing = 2048,

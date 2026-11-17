@@ -115,7 +115,7 @@ namespace Game.Scripts.Dungeon
         Retaliation,
         /// Hits in a row on one body: percent faster actions.
         Onslaught,
-        /// The next weapon hit deals the magnitude in percent more damage (righteous wrath).
+        /// The next weapon hit deals the magnitude in percent more physical damage (righteous wrath).
         Wrath,
         /// Percent less healing received.
         Festering,
@@ -126,7 +126,9 @@ namespace Game.Scripts.Dungeon
         /// Percent points taken from the physical damage bonus.
         PhysicalWeakness,
         /// Slows and roots neither hold nor land.
-        Splint
+        Splint,
+        /// Righteous wrath cannot stir again while it lasts.
+        WrathSpent
     }
 
     public struct StatusEffect : INetworkStruct

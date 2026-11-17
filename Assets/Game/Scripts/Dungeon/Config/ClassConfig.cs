@@ -226,8 +226,8 @@ namespace Game.Scripts.Dungeon
         HeavyHand,
         /// Percent more damage of the next attack after a hit taken.
         RighteousWrath,
-        /// Percent of maximum health every weapon hit heals.
-        BloodTithe,
+        /// Share more physical weapon damage to the undead.
+        BoneBreaker,
         /// Percent of maximum health a prayer without charges costs.
         BloodPrayer,
         /// Share more prayer damage below half health.

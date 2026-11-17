@@ -2030,15 +2030,13 @@ namespace Game.Scripts.Dungeon
             if (ability.ConeAngle > 0f)
                 s_struck.RemoveAll(receiver => Vector3.Angle(forward, Vector3.ProjectOnPlane(BodyPoint(receiver) - center, Vector3.up)) > ability.ConeAngle);
 
-            if (ability.Has(AbilityFlags.UndeadOnly))
-                s_struck.RemoveAll(receiver => !IsUndead(receiver));
-
             foreach (DamageReceiverComponent receiver in s_struck)
             {
                 Vector3 point = BodyPoint(receiver);
+                bool isUndead = IsUndead(receiver);
                 receiver.ApplyHit(new HitRequest
                 {
-                    BaseDamage = damage,
+                    BaseDamage = ability.Has(AbilityFlags.HalfVsLiving) && !isUndead ? damage / 2 : damage,
                     BodyRays = 1,
                     Zone = HitZone.Torso,
                     Point = point,
@@ -2050,7 +2048,8 @@ namespace Game.Scripts.Dungeon
                     Tag = ability.IsSpell ? TagOf(ability.Flags) : DamageTag.Melee | TagOf(ability.Flags) & ~DamageTag.Spell
                 });
 
-                if (ability.Effect != StatusEffectKind.None && receiver.IsAlive && receiver.TryGetComponent(out StatusEffectComponent effects))
+                if (ability.Effect != StatusEffectKind.None && receiver.IsAlive && (isUndead || !ability.Has(AbilityFlags.UndeadHitEffect))
+                    && receiver.TryGetComponent(out StatusEffectComponent effects))
                     ApplyEffectTo(effects, ability.Effect, ability.EffectMagnitude, ability.EffectDuration, ability.Flags);
 
                 Push(receiver, center, ability.Push);

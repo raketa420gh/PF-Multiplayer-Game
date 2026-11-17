@@ -13,7 +13,7 @@ namespace Game.Scripts.Dungeon
         private const float RetaliationTime = 2f;
         private const float OnslaughtTime = 2.5f;
         private const int OnslaughtMax = 5;
-        private const float WrathCooldown = 5f;
+        private const float WrathCooldown = 12f;
         private const float WrathTime = 6f;
         private const float MarkTime = 5f;
         private const float CausticTime = 4f;
@@ -33,7 +33,6 @@ namespace Game.Scripts.Dungeon
         private readonly float[] _perks = new float[(int)PerkEffect.Count];
         private DamageReceiverComponent _onslaughtVictim;
         private int _onslaughtStacks;
-        private int _wrathReadyTick;
         private int _perkAuraTick;
         private DamageReceiverComponent _drainTarget;
         private float _drainLeft;
@@ -231,6 +230,9 @@ namespace Game.Scripts.Dungeon
             if (isWeapon && IsHolding(WeaponClass.Mace))
                 bonus += Perk(PerkEffect.HeavyHand);
 
+            if (isWeapon && isPhysical && IsUndead(victim))
+                bonus += Perk(PerkEffect.BoneBreaker);
+
             if (isWeapon && IsHolding(WeaponClass.Dagger))
                 bonus += Perk(PerkEffect.ShortBlade);
 
@@ -280,7 +282,7 @@ namespace Game.Scripts.Dungeon
             if (request.DamageType == DamageType.Physical && Take(StatusEffectKind.HeavyBlow, out float heavy))
                 multiplier += heavy / 100f / _stats.GetDamageMultiplier(DamageType.Physical);
 
-            if (Take(StatusEffectKind.Wrath, out float wrath))
+            if (request.DamageType == DamageType.Physical && Take(StatusEffectKind.Wrath, out float wrath))
                 bonus += wrath / 100f;
 
             if (Take(StatusEffectKind.Expose, out float expose))
@@ -376,9 +378,6 @@ namespace Game.Scripts.Dungeon
 
             if (isMelee)
             {
-                if (Perk(PerkEffect.BloodTithe) > 0f)
-                    _fighter.Health.Restore(Mathf.Max(1, Mathf.RoundToInt(_fighter.Health.MaxHealth * Perk(PerkEffect.BloodTithe) / 100f)));
-
                 if (Perk(PerkEffect.Onslaught) > 0f)
                 {
                     _onslaughtStacks = victim == _onslaughtVictim ? Mathf.Min(_onslaughtStacks + 1, OnslaughtMax) : 1;
@@ -419,7 +418,7 @@ namespace Game.Scripts.Dungeon
             _isBonusHit = false;
         }
 
-        /// A blocked hit quickens the counter and, braced, throws a melee attacker back; a hit taken stirs righteous wrath at most once in a while.
+        /// A blocked hit quickens the counter and, braced, throws a melee attacker back; physical damage taken stirs righteous wrath at most once in a while.
         private void OnHitTaken(HitResult result, int damage, HitRequest request)
         {
             if (!HasStateAuthority)
@@ -433,10 +432,11 @@ namespace Game.Scripts.Dungeon
             if (result != HitResult.Hit && request.Attacker != null && (request.Tag & DamageTag.Melee) != 0)
                 Push(request.Attacker, transform.position, _effects.GetMagnitude(StatusEffectKind.Brace));
 
-            if (result == HitResult.Hit && damage > 0 && request.Attacker != null && Perk(PerkEffect.RighteousWrath) > 0f && Runner.Tick >= _wrathReadyTick)
+            if (result == HitResult.Hit && damage > 0 && request.DamageType == DamageType.Physical && Perk(PerkEffect.RighteousWrath) > 0f
+                && !_effects.Has(StatusEffectKind.WrathSpent))
             {
                 _effects.Add(StatusEffectKind.Wrath, Perk(PerkEffect.RighteousWrath), WrathTime);
-                _wrathReadyTick = Runner.Tick + Mathf.CeilToInt(WrathCooldown / Runner.DeltaTime);
+                _effects.Add(StatusEffectKind.WrathSpent, 1f, WrathCooldown);
             }
         }
 

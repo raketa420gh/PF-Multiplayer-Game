@@ -200,7 +200,7 @@ const GROUPS = [
       { glyph: "Pi", name: "Pilgrim", desc: "Книга или посох в руках замедляют ходьбу вдвое меньше.", note: "Иконки пока нет.", quote: "From the Cathedral to the vein on foot. The book never got heavier." },
       { glyph: "Sc", name: "Scourge", desc: "Ты получаешь на 3 урона меньше от любого источника, но не меньше 1. Горение и яд теряют 3 урона с каждого наложения.", note: "Иконки пока нет.", quote: "After the scourge a blade is almost a mercy." },
       { glyph: "CC", name: "Clean Conscience", desc: "+20% к сопротивлению дебаффам: замедления, горение, яды, проклятия и другие вредные эффекты на тебе кончаются раньше.", note: "Иконки пока нет.", quote: "Nothing sticks to a clean conscience." },
-      { glyph: "IV", name: "Iron Vestments", desc: "Можно носить латы (Cervelliere, Great Bascinet, Plate Harness). Без перка Духовник лат не носит.", note: "Иконки пока нет.", quote: "The Cathedral armed its brothers before it taught them to read." }
+      { glyph: "IV", name: "Iron Vestments", desc: "Вы можете носить латы.", note: "Иконки пока нет.", quote: "The Cathedral armed its brothers before it taught them to read." }
     ] },
   { id: "healer", cls: "g-healer", title: "Infirmarian", label: "Подкласс", emblem: "Subclass_Infirmarian",
     text: "Лечит и бережёт отряд. Служил при лазарете Собора у входа; спустился, чтобы отпевать меньше.",
@@ -232,22 +232,22 @@ const GROUPS = [
     skills: [
       { icon: "HallowedWeapon", name: "Hallowed Weapon", tags: ["Усиление", "Свет"],
         desc: "7 с удары оружием наносят ещё 6 магического урона светом, по нежити вдвое больше.", quote: "Bless the steel. I'll do the rest.",
-        nums: [["Перезарядка", "14 с"], ["Каст", "0,3 с"], ["Длительность", "7 с"], ["Урон", "+6 маг."]] }
+        nums: [["Перезарядка", "28 с"], ["Каст", "0,3 с"], ["Длительность", "7 с"], ["Урон", "+6 маг."]] }
     ],
     spells: [
       { icon: "Sentence", name: "Sentence", tags: ["Усиление", "Контроль"],
         desc: "Следующий удар оружием в течение 10 с оглушает на 1 с.", quote: "In the name of the Cathedral.",
         nums: [["Заряды", "3"], ["Чтение", "0,5 с"], ["Окно", "10 с"], ["Оглушение", "1 с"]] },
       { icon: "LightoftheCathedral", name: "Light of the Cathedral", tags: ["Урон по области", "Свет"],
-        desc: "Вспышка 3 м вокруг тебя: нежить получает 18 магического урона и замедляется на 30% на 2 с; живых не ранит.",
+        desc: "Вспышка 3 м вокруг тебя: все вокруг в радиусе 3 м получают 18 магического урона светом. Нежить получает двойной урон и замедляется на 20% на 2 с.",
         note: "Стаггер 0,3 с.", quote: "Look. It's the last thing you'll see.",
         nums: [["Заряды", "2"], ["Чтение", "0,8 с"], ["Урон", "18 маг."], ["Радиус", "3 м"]] }
     ],
     perks: [
       { icon: "HeavyHand", name: "Heavy Hand", desc: "+10% урона дробящим оружием.", quote: "Bone is not cut. Bone is crushed." },
       { icon: "StrengthofFaith", name: "Strength of Faith", desc: "+5 Силы, −2 Знания.", quote: "Prayed with a mace in hand. Holds better." },
-      { icon: "RighteousWrath", name: "Righteous Wrath", desc: "После полученного удара следующая атака наносит на 20% больше урона.", note: "Не чаще раза в 5 с.", quote: "You struck. Here's my answer." },
-      { icon: "BloodTithe", name: "Blood Tithe", desc: "Каждый удар оружием лечит тебя на 2% здоровья.", quote: "The Cathedral takes a tithe. So do I." }
+      { icon: "RighteousWrath", name: "Righteous Wrath", desc: "После полученного физического урона следующая атака оружием получает +15% физического урона.", note: "Не чаще раза в 12 с: после срабатывания вешается дебафф-запрет Wrath Spent.", quote: "You struck. Here's my answer." },
+      { glyph: "BB", name: "Bone Breaker", desc: "Удары оружием по нежити наносят на 15% больше физического урона.", note: "Иконки пока нет.", quote: "They've had their rest. Now they get the mace." }
     ] },
   { id: "apostate", cls: "g-apostate", title: "Apostate", label: "Подкласс", emblem: "Subclass_Apostate",
     text: "Проклятия, сила за своё здоровье. Услышал, как дышит жила, и ушёл к Спящим; молитвы отвечают, но не Собор.",
