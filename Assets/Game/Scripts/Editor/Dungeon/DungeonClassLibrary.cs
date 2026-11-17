@@ -380,7 +380,7 @@ namespace Game.Scripts.Editor.Dungeon
                 Stats = new ClassStats(11, 10, 15, 11, 8, 9), Color = light, Body = Color.white,
                 Subclasses = new[]
                 {
-                    Subclass("Healer", "Heals and shelters the squad. Served the Cathedral's infirmary at the entrance; came down to bury fewer.", mending, "gentle hands glowing with warm light over a wounded chest"),
+                    Subclass("Infirmarian", "Heals and shelters the squad. Served the Cathedral's infirmary at the entrance; came down to bury fewer.", mending, "gentle hands glowing with warm light over a wounded chest"),
                     Subclass("Smiter", "A mace against the undead. A temple brother of the graveyard guard, sent down first when the seal broke.", zeal, "a holy mace wreathed in golden light smashing bone"),
                     Subclass("Apostate", "Curses, power paid with his own health. Heard the vein breathe and went to the Sleepers; his prayers are answered, but not by the Cathedral.", godless, "a cracked holy symbol oozing black ichor and violet light")
                 },

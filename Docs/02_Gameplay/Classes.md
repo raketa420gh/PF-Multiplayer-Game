@@ -79,11 +79,11 @@
 - Attributes: 11 / 10 / 15 / 11 / 8 / 9.
 - Weapons: булавы, посохи, книга заклинаний, щиты, факел. Стартовый набор: Morning Star + Round Shield, Spellbook, Campfire Kit, Bandage ×2, Torch.
 - Любимое оружие: Morning Star.
-- Subclasses: **Healer**, **Smiter**, **Apostate**.
+- Subclasses: **Infirmarian** (Лазаретник, до 2026-11-17 Healer), **Smiter**, **Apostate**.
 - Skills (изменены 2026-11-16, заменены на месте — билды хранят навыки по индексу):
   - **Psalm by Heart** (вместо Rosary) — следующая молитва в течение 10 с читается мгновенно, перезарядка 45 с (`AbilityKind.QuickCast`).
   - **Absolution** (вместо Holy Water) — снимает Slow, Burn, Poison и Cursed с себя и союзников в 3 м, перезарядка 45 с, каст 0,4 с (`AbilityKind.Cleanse`, `StatusEffectComponent.Cleanse`). Root, Silence, Vulnerable, Weakened и побочки микстур не снимает.
-- Spells: общие Minor Healing, Rest, Holy Light, Bind, Holy Bolt; Healing, Circle of Intercession, Blessing (Healer); Hallowed Weapon, Sentence, Light of the Cathedral (Smiter); Wither, Curse, Whisper of the Sleeper (Apostate).
+- Spells: общие Minor Healing, Rest, Holy Light, Bind, Holy Bolt; Healing, Circle of Intercession, Blessing (Infirmarian); Hallowed Weapon, Sentence, Light of the Cathedral (Smiter); Wither, Curse, Whisper of the Sleeper (Apostate).
   - **Rest** (2026-11-17, механика прежняя, новое описание) — 11 магического урона светом, по нежити вдвое больше.
   - **Holy Light** (2026-11-17) — светящийся шар над точкой под прицелом до 15 м на 60 с, 2 заряда (`ZoneKind.HolyLight`).
   - **Bind** (2026-11-17) — цель под прицелом до 15 м не может сделать шаг 1,5 с (Root), 2 заряда.
