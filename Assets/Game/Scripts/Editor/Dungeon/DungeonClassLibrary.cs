@@ -398,6 +398,12 @@ namespace Game.Scripts.Editor.Dungeon
                         Name = "Absolution", Description = Text("Lift slow, burn, poison and curse off yourself and allies within 3m.", "Whatever it was, it is forgiven."), Kind = AbilityKind.Cleanse,
                         Radius = 3f, Cooldown = 45f, CastTime = 0.4f, Glyph = "Ab", Color = light, Vfx = VfxStyle.Holy,
                         Art = "a silver aspergillum sprinkling glowing droplets of holy water over a bowed head, dark smoke leaving the body"
+                    },
+                    new AbilityDef
+                    {
+                        Name = "Hallowed Weapon", Description = Text("For 7s your weapon hits deal 6 more magical damage of light, twice that to the undead.", "Bless the steel. I'll do the rest."),
+                        Kind = AbilityKind.WeaponEnchant, Duration = 7f, Cooldown = 14f, CastTime = 0.3f, Magnitude = 6f, Effect = StatusEffectKind.HolyWeapon,
+                        Flags = AbilityFlags.Holy, Glyph = "HW", Color = zeal, Subclass = 1, Vfx = VfxStyle.Holy, Art = "a flanged mace blazing with golden holy light"
                     }
                 },
                 Spells = new[]
@@ -431,12 +437,6 @@ namespace Game.Scripts.Editor.Dungeon
                         Name = "Blessing", Description = Text("The ally under the crosshair (or you): +2 to every attribute for 30s.", "Go. He is watching."), Kind = AbilityKind.Buff, IsSpell = true, Charges = 2,
                         Cooldown = 1f, CastTime = 0.8f, Effect = StatusEffectKind.AllAttributes, Magnitude = 2f, Duration = 30f, Range = 15f, Glyph = "Bl", Color = light, Subclass = 0, Vfx = VfxStyle.Holy,
                         Art = "a priest's hand raised in benediction over a bowed armored head"
-                    },
-                    new AbilityDef
-                    {
-                        Name = "Hallowed Weapon", Description = Text("For 15s your weapon hits deal 6 more magical damage of light, twice that to the undead.", "Bless the steel. I'll do the rest."),
-                        Kind = AbilityKind.WeaponEnchant, IsSpell = true, Charges = 2, Cooldown = 1f, CastTime = 0.8f, Magnitude = 6f, Duration = 15f, Range = 0f, Effect = StatusEffectKind.HolyWeapon,
-                        Flags = AbilityFlags.Holy, Glyph = "HW", Color = zeal, Subclass = 1, Vfx = VfxStyle.Holy, Art = "a flanged mace blazing with golden holy light"
                     },
                     new AbilityDef
                     {
@@ -518,7 +518,8 @@ namespace Game.Scripts.Editor.Dungeon
                     Perk("Patience", "+1 charge to healing prayers.", "Pray longer than it hurts.", PerkEffect.Patience, 1f, "an hourglass with glowing golden sand beside a prayer book", 0),
                     Perk("Last Rites", "+5 bonus healing on targets below 25% health.", "Not today. I'm not ready to bury you.", PerkEffect.LastRites, 5f, "a priest holding a dying soldier's hand, light between them", 0),
                     Perk("Heavy Hand", "+10% damage with blunt weapons.", "Bone is not cut. Bone is crushed.", PerkEffect.HeavyHand, 0.1f, "a heavy iron flanged mace resting on a broken skull", 1),
-                    Stats("Strength of Faith", "+3 Strength.", "Prayed with a mace in hand. Holds better.", "a muscular arm gripping a mace with a rosary wrapped on the haft", 1, new StatModifier(StatType.Strength, 3f)),
+                    Stats("Strength of Faith", "+5 Strength, -2 Knowledge.", "Prayed with a mace in hand. Holds better.", "a muscular arm gripping a mace with a rosary wrapped on the haft", 1,
+                        new StatModifier(StatType.Strength, 5f), new StatModifier(StatType.Knowledge, -2f)),
                     Perk("Righteous Wrath", "After you take a hit your next attack deals 20% more damage (at most once in 5s).", "You struck. Here's my answer.", PerkEffect.RighteousWrath, 20f, "a priest's furious eyes glowing gold behind a raised mace", 1),
                     Perk("Blood Tithe", "Every weapon hit heals you for 2% of your health.", "The Cathedral takes a tithe. So do I.", PerkEffect.BloodTithe, 2f, "a tithe bowl filling with drops of blood", 1),
                     Perk("Blood Prayer", "A prayer without charges can be read for 15% of your health.", "He lends. The interest is blood.", PerkEffect.BloodPrayer, 15f, "a bleeding palm pressed onto a black prayer book", 2),

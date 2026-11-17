@@ -228,10 +228,12 @@ const GROUPS = [
     ] },
   { id: "smiter", cls: "g-smiter", title: "Smiter", label: "Подкласс", emblem: "Subclass_Smiter",
     text: "Булава против нежити. Храмовый брат кладбищенской стражи; когда печать вскрыли, его послали первым.",
-    spells: [
+    skills: [
       { icon: "HallowedWeapon", name: "Hallowed Weapon", tags: ["Усиление", "Свет"],
-        desc: "15 с удары оружием наносят ещё 6 магического урона светом, по нежити вдвое больше.", quote: "Bless the steel. I'll do the rest.",
-        nums: [["Заряды", "2"], ["Чтение", "0,8 с"], ["Длительность", "15 с"], ["Урон", "+6 маг."]] },
+        desc: "7 с удары оружием наносят ещё 6 магического урона светом, по нежити вдвое больше.", quote: "Bless the steel. I'll do the rest.",
+        nums: [["Перезарядка", "14 с"], ["Каст", "0,3 с"], ["Длительность", "7 с"], ["Урон", "+6 маг."]] }
+    ],
+    spells: [
       { icon: "Sentence", name: "Sentence", tags: ["Усиление", "Контроль"],
         desc: "Следующий удар оружием в течение 10 с оглушает на 1 с.", quote: "In the name of the Cathedral.",
         nums: [["Заряды", "3"], ["Чтение", "0,5 с"], ["Окно", "10 с"], ["Оглушение", "1 с"]] },
@@ -242,7 +244,7 @@ const GROUPS = [
     ],
     perks: [
       { icon: "HeavyHand", name: "Heavy Hand", desc: "+10% урона дробящим оружием.", quote: "Bone is not cut. Bone is crushed." },
-      { icon: "StrengthofFaith", name: "Strength of Faith", desc: "+3 Силы.", quote: "Prayed with a mace in hand. Holds better." },
+      { icon: "StrengthofFaith", name: "Strength of Faith", desc: "+5 Силы, −2 Знания.", quote: "Prayed with a mace in hand. Holds better." },
       { icon: "RighteousWrath", name: "Righteous Wrath", desc: "После полученного удара следующая атака наносит на 20% больше урона.", note: "Не чаще раза в 5 с.", quote: "You struck. Here's my answer." },
       { icon: "BloodTithe", name: "Blood Tithe", desc: "Каждый удар оружием лечит тебя на 2% здоровья.", quote: "The Cathedral takes a tithe. So do I." }
     ] },
