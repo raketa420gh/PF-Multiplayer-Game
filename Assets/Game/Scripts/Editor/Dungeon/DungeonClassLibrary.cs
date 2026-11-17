@@ -465,10 +465,9 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Whisper of the Sleeper", Description = Text("3m under the crosshair for 5s: everyone in it, allies too, loses 6 health a second and is slowed by 20%. Costs 10% of your health.", "He doesn't sleep. He listens."),
-                        Kind = AbilityKind.Zone, IsSpell = true, Ground = true, Charges = 1, Cooldown = 1f, CastTime = 1.2f, Zone = ZoneKind.Whisper, ZoneRadius = 3f, ZoneDuration = 5f, ZoneTick = 6f,
-                        HitEffect = StatusEffectKind.Slow, HitMagnitude = 20f, HitDuration = 0.6f, HealthCostPercent = 10f, Flags = AbilityFlags.Dark, Glyph = "WS", Color = godless, Subclass = 2,
-                        Vfx = VfxStyle.Dark, Art = "a dark miasma of whispering faces swirling over a crypt floor"
+                        Name = "Dark Bolt", Description = Text("A bolt of darkness: 18 magical damage, half as much again to the cursed.", "He doesn't sleep. He reaches."), Kind = AbilityKind.Projectile, IsSpell = true,
+                        Charges = 3, Cooldown = 1f, CastTime = 0.8f, Magnitude = 18f, Speed = 25f, Projectile = ProjectileKind.Dark, Stagger = 0.1f, Flags = AbilityFlags.Dark | AbilityFlags.CursedBonus,
+                        Glyph = "DB", Color = godless, Subclass = 2, Vfx = VfxStyle.Dark, Art = "a bolt of violet darkness flying from an open black prayer book, whispering faces in its trail"
                     },
                     // Shared prayers added 2026-11-17: appended, since saved wheels keep spells by index.
                     new AbilityDef
@@ -522,10 +521,11 @@ namespace Game.Scripts.Editor.Dungeon
                         new StatModifier(StatType.Strength, 5f), new StatModifier(StatType.Knowledge, -2f)),
                     Perk("Righteous Wrath", "After you take physical damage your next weapon attack deals 15% more physical damage (at most once in 12s).", "You struck. Here's my answer.", PerkEffect.RighteousWrath, 15f, "a priest's furious eyes glowing gold behind a raised mace", 1),
                     Perk("Bone Breaker", "Your weapon hits deal 15% more physical damage to the undead.", "They've had their rest. Now they get the mace.", PerkEffect.BoneBreaker, 0.15f, "a flanged mace shattering a skeleton's ribcage into bone shards", 1),
-                    Perk("Blood Prayer", "A prayer without charges can be read for 15% of your health.", "He lends. The interest is blood.", PerkEffect.BloodPrayer, 15f, "a bleeding palm pressed onto a black prayer book", 2),
+                    Perk("Lingering Curse", "Your curses last 50% longer.", "He forgets nothing.", PerkEffect.LingeringCurse, 0.5f, "a violet curse sigil slowly burning down like a long candle", 2),
                     Perk("Louder in the Dark", "While below half health your prayers deal 15% more damage.", "The less life in me, the louder He is.", PerkEffect.DarkVoice, 0.15f, "a gaunt figure screaming prayers with violet light from the mouth", 2),
-                    Perk("Rot", "Foes you curse take 10% more damage from everyone.", "Rot does not choose.", PerkEffect.Rot, 10f, "rotting flesh with violet mould spreading", 2),
-                    Perk("Take Back", "Killing a cursed foe restores 10% of your health.", "Given, and taken back.", PerkEffect.TakeBack, 10f, "a violet wisp of soul flowing from a corpse into an open hand", 2),
+                    Perk("Rot", "Foes you curse lose 10% physical and 10% magical damage reduction.", "Rot does not choose.", PerkEffect.Rot, 10f, "rotting flesh with violet mould spreading", 2),
+                    Perk("Contagion", "When you kill a cursed foe, the curse jumps with the time it had left to the nearest foe within 6m.", "It does not end with you.", PerkEffect.Contagion, 6f,
+                        "a violet wisp of a curse leaping from a corpse to a living man's chest", 2),
                     // Appended 2026-11-17: saved builds keep perks by bit index.
                     Perk("Iron Vestments", "You can wear plate armor.", "The Cathedral armed its brothers before it taught them to read.", PerkEffect.PlateWear, 1f,
                         "a priest's white surcoat with a golden sun worn over a steel breastplate")

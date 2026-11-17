@@ -82,9 +82,9 @@ namespace Game.Scripts.Dungeon
 
                     return;
                 case StatusEffectKind.Cursed:
-                    if (Perk(PerkEffect.Rot) > 0f)
-                        target.Add(StatusEffectKind.Vulnerable, Perk(PerkEffect.Rot), duration);
-                    break;
+                    Curse(target, magnitude, duration * (1f + Perk(PerkEffect.LingeringCurse)));
+
+                    return;
             }
 
             target.Add(kind, magnitude, duration);
@@ -401,8 +401,8 @@ namespace Game.Scripts.Dungeon
                 }
             }
 
-            if (effects != null && effects.Has(StatusEffectKind.Cursed) && Perk(PerkEffect.TakeBack) > 0f)
-                _fighter.Health.Restore(Mathf.RoundToInt(_fighter.Health.MaxHealth * Perk(PerkEffect.TakeBack) / 100f));
+            if (effects != null && effects.Has(StatusEffectKind.Cursed) && Perk(PerkEffect.Contagion) > 0f)
+                SpreadCurse(victim, effects);
 
             if ((tag & DamageTag.Fire) == 0 || Perk(PerkEffect.FuneralHeat) <= 0f)
                 return;
@@ -416,6 +416,35 @@ namespace Game.Scripts.Dungeon
                 ZoneHit(receiver, Perk(PerkEffect.FuneralHeat), DamageType.Magical, AbilityFlags.Fire, 0.2f, center);
 
             _isBonusHit = false;
+        }
+
+        /// A curse and the rot it brings: the cursed lose damage reduction.
+        private void Curse(StatusEffectComponent target, float magnitude, float duration)
+        {
+            if (Perk(PerkEffect.Rot) > 0f)
+                target.Add(StatusEffectKind.Rotting, Perk(PerkEffect.Rot), duration);
+
+            target.Add(StatusEffectKind.Cursed, magnitude, duration);
+        }
+
+        /// Contagion: the curse of a dying body jumps with the time it had left to the nearest foe around.
+        private void SpreadCurse(DamageReceiverComponent victim, StatusEffectComponent effects)
+        {
+            Vector3 center = BodyPoint(victim);
+            GatherBodies(center, Perk(PerkEffect.Contagion));
+            DamageReceiverComponent nearest = null;
+
+            foreach (DamageReceiverComponent receiver in s_struck)
+            {
+                if (receiver != victim && receiver.IsAlive && (nearest == null || (BodyPoint(receiver) - center).sqrMagnitude < (BodyPoint(nearest) - center).sqrMagnitude))
+                    nearest = receiver;
+            }
+
+            if (nearest == null || !nearest.TryGetComponent(out StatusEffectComponent target))
+                return;
+
+            Curse(target, effects.GetMagnitude(StatusEffectKind.Cursed), effects.GetRemaining(StatusEffectKind.Cursed));
+            RpcBeam(VfxStyle.Dark, center, BodyPoint(nearest), new Color(0.6f, 0.25f, 0.9f));
         }
 
         /// A blocked hit quickens the counter and, braced, throws a melee attacker back; physical damage taken stirs righteous wrath at most once in a while.

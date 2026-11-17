@@ -74,7 +74,9 @@ namespace Game.Scripts.Dungeon
         /// A curse: the godless perks follow it.
         Curse = 8192,
         /// A skill spent on use: its charges come back only resting by a campfire.
-        Campfire = 16384
+        Campfire = 16384,
+        /// Half as much damage again to the cursed.
+        CursedBonus = 32768
     }
 
     /// The lasting zone an ability leaves.

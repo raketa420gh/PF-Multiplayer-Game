@@ -228,14 +228,14 @@ namespace Game.Scripts.Dungeon
         RighteousWrath,
         /// Share more physical weapon damage to the undead.
         BoneBreaker,
-        /// Percent of maximum health a prayer without charges costs.
-        BloodPrayer,
+        /// Share longer curses.
+        LingeringCurse,
         /// Share more prayer damage below half health.
         DarkVoice,
-        /// Percent more damage taken by the ones he cursed.
+        /// Percent points of physical and magical damage reduction the ones he cursed lose.
         Rot,
-        /// Percent of maximum health a kill of a cursed body brings back.
-        TakeBack,
+        /// Metres within which a curse jumps from a dying body to the nearest foe.
+        Contagion,
         /// Share faster searching of bodies.
         GraveSense,
         /// Share more damage of the first hit on a body at full health.

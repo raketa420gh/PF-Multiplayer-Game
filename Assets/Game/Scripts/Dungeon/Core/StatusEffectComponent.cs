@@ -128,7 +128,9 @@ namespace Game.Scripts.Dungeon
         /// Slows and roots neither hold nor land.
         Splint,
         /// Righteous wrath cannot stir again while it lasts.
-        WrathSpent
+        WrathSpent,
+        /// Percent points taken from both physical and magical damage reduction.
+        Rotting
     }
 
     public struct StatusEffect : INetworkStruct
@@ -177,7 +179,7 @@ namespace Game.Scripts.Dungeon
         {
             return kind is StatusEffectKind.Slow or StatusEffectKind.Burn or StatusEffectKind.Poison or StatusEffectKind.Silence or StatusEffectKind.Root
                 or StatusEffectKind.Vulnerable or StatusEffectKind.Weakened or StatusEffectKind.Cursed or StatusEffectKind.Marked or StatusEffectKind.Festering
-                or StatusEffectKind.PhysicalWeakness;
+                or StatusEffectKind.PhysicalWeakness or StatusEffectKind.Rotting;
         }
 
         public override void FixedUpdateNetwork()
@@ -260,12 +262,12 @@ namespace Game.Scripts.Dungeon
                 _effects.Set(index, default);
         }
 
-        /// Lifts slow, burn, poison and curse.
+        /// Lifts slow, burn, poison and curse with its rot.
         public void Cleanse()
         {
             for (int i = 0; i < Capacity; i++)
             {
-                if (_effects[i].Kind is StatusEffectKind.Slow or StatusEffectKind.Burn or StatusEffectKind.Poison or StatusEffectKind.Cursed)
+                if (_effects[i].Kind is StatusEffectKind.Slow or StatusEffectKind.Burn or StatusEffectKind.Poison or StatusEffectKind.Cursed or StatusEffectKind.Rotting)
                     _effects.Set(i, default);
             }
         }

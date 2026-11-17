@@ -91,6 +91,8 @@ namespace Game.Scripts.Dungeon
         /// A lit campfire heals the seated this many times faster; without one spells come back this many times slower.
         private const float FireRestBoost = 4f;
         private const float FanSpread = 7f;
+        /// Share of a dark bolt's damage added on the cursed.
+        private const float CursedBonus = 0.5f;
 
         public FighterComponent Fighter => _fighter;
         public InventoryComponent Inventory => _inventory;
@@ -413,7 +415,6 @@ namespace Game.Scripts.Dungeon
         /// A follow-up hit of an enchant or an empowered strike is under way: it triggers nothing itself.
         private bool _isBonusHit;
         private bool _isChanneling;
-        private bool _isPaidInBlood;
         /// Health and spell charges brought down from the floor above, restored on the first server tick.
         private FloorTransfer.Carry _arrival;
 
@@ -1237,7 +1238,7 @@ namespace Game.Scripts.Dungeon
 
             int index = _skillCount + ReadiedSpell;
 
-            if (!_cooldowns[index].ExpiredOrNotRunning(Runner) || (!spell.IsCooldownBased && _charges[index] == 0 && !CanPayInBlood()))
+            if (!_cooldowns[index].ExpiredOrNotRunning(Runner) || (!spell.IsCooldownBased && _charges[index] == 0))
                 return;
 
             bool isQuick = _effects.Has(StatusEffectKind.QuickCast);
@@ -1268,7 +1269,7 @@ namespace Game.Scripts.Dungeon
             ApplySpell(index);
         }
 
-        /// A read spell takes its health cost, then a charge or, with none left, the blood price; false when neither can be paid.
+        /// A read spell takes its health cost, then a charge; false when no charge is left.
         private bool ApplySpell(int index)
         {
             AbilityConfig ability = _abilities[index];
@@ -1277,16 +1278,9 @@ namespace Game.Scripts.Dungeon
                 _fighter.Health.TakeDamage(ability.HealthCost);
 
             if (!ability.IsCooldownBased && _charges[index] == 0)
-            {
-                if (!CanPayInBlood())
-                    return false;
-
-                _fighter.Health.TakeDamage(BloodPrice);
-                _isPaidInBlood = true;
-            }
+                return false;
 
             ApplyAbility(index);
-            _isPaidInBlood = false;
 
             return true;
         }
@@ -1331,14 +1325,6 @@ namespace Game.Scripts.Dungeon
 
             HealTarget(ally, Power(ability) * TouchPulse, ability.IsPercentHealth, false, TouchPulse, HealScale(ability), ability.DamageType == DamageType.Magical);
             RpcFlash(BodyPoint(ally._fighter.Receiver), ability.Color, 2f);
-        }
-
-        /// Blood prayer: a prayer with no charges left is read for a share of health.
-        private int BloodPrice => Mathf.CeilToInt(_fighter.Health.MaxHealth * Perk(PerkEffect.BloodPrayer) / 100f);
-
-        private bool CanPayInBlood()
-        {
-            return Perk(PerkEffect.BloodPrayer) > 0f && _fighter.Health.CurrentHealth > BloodPrice;
         }
 
         /// Knowledge, a concentration buff and the quick word of the stormcaller.
@@ -1582,9 +1568,6 @@ namespace Game.Scripts.Dungeon
 
             if (ability.IsSpell && !ability.IsCooldownBased)
             {
-                if (_isPaidInBlood)
-                    return;
-
                 if (_isAttuned && _stats.HasThreshold(StatType.Knowledge))
                     _isAttuned = false;
                 else if (Random.value >= Perk(PerkEffect.FrugalWord))
@@ -2113,6 +2096,9 @@ namespace Game.Scripts.Dungeon
             // Light throws back only the undead.
             if (ability != null && (!ability.Has(AbilityFlags.Holy) || IsUndead(receiver)))
                 Push(receiver, data.HitPoint, ability.Push);
+
+            if (ability != null && ability.Has(AbilityFlags.CursedBonus) && receiver.TryGetComponent(out StatusEffectComponent cursed) && cursed.Has(StatusEffectKind.Cursed))
+                BonusHit(receiver, data.Damage * CursedBonus, ability.DamageType, 0f);
 
             if (data.Effect == 0 || !receiver.IsAlive || !receiver.TryGetComponent(out StatusEffectComponent effects))
                 return;

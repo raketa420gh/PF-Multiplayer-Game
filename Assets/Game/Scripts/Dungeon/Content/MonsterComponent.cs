@@ -116,7 +116,8 @@ namespace Game.Scripts.Dungeon
 
         int DamageReceiverComponent.IHitModifier.ModifyIncomingDamage(int damage, in HitRequest request)
         {
-            float reduction = request.IgnoreArmor ? 0f : request.DamageType == DamageType.Physical ? _config.ArmorReduction : request.DamageType == DamageType.Magical ? _config.MagicReduction : 0f;
+            float rot = _effects == null ? 0f : _effects.GetMagnitude(StatusEffectKind.Rotting) / 100f;
+            float reduction = request.IgnoreArmor ? 0f : request.DamageType == DamageType.Physical ? _config.ArmorReduction - rot : request.DamageType == DamageType.Magical ? _config.MagicReduction - rot : 0f;
 
             return Mathf.RoundToInt(damage * (1f - reduction) * StatusDamage.Taken(_effects));
         }
