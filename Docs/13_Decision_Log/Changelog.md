@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-17 — v0.3.0
+- Версия игры 0.3.0 (`PlayerSettings.bundleVersion`), git tag `v0.3.0`, плейтест-сборка `Builds/Playtest.zip`.
+- Arena: столы и койки больше не врезаются в стены — модели стола и кровати разворачиваются по длинной стороне макета (`CatacombRoomBuilder`), мебель галерей переставлена; лавка, стоявшая вплотную к южным воротам арены, и стол перед западной дверью галереи убраны с прохода; стойка с оружием отодвинута от стены.
+- Модель кровати (`Medieval/Bed`) стоит на полу: раньше её пивот топил её на 0,8 м в пол и сдвигал на 0,47 м (`DungeonMedievalBuilder`, `s_grounded`).
+- Лобби: dev-кнопка **Max Level** — персонаж сразу получает максимальный уровень.
+
 ## 2026-11-16
 - Confessor, общие перки: **Hair Shirt** (каждый удар наносит на 3 урона меньше, минимум 1) вместо Gravedigger's Back, **Clean Conscience** (+20% Debuff Reduction) вместо Night Vigil. Два новых параметра персонажа на листе: Flat Reduction (`StatType.FlatReduction`) и Debuff Reduction (`StatType.DebuffReduction`, список вредных эффектов — `StatusEffectComponent.IsHarmful`). В `Classes.md` стартовый набор приведён к коду: Round Shield в нём есть.
 - Confessor, навыки: **Psalm by Heart** (следующая молитва в течение 10 с читается мгновенно, КД 45 с) вместо Rosary, **Absolution** (снимает Slow, Burn, Poison и Cursed с себя и союзников в 3 м, КД 45 с) вместо Holy Water. Новый `AbilityKind.Cleanse` и `StatusEffectComponent.Cleanse`. Звуки и нарисованные иконки старых навыков переименованы под новые.

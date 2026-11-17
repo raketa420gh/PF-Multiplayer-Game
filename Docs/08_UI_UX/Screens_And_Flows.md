@@ -28,4 +28,5 @@ LobbyScene (Home / Skills / Stash / Merchants) → Loading → DungeonScene | Ba
 ```
 - Каждая сцена — отдельная Fusion-сессия; переход через `SceneTravel.Load`, экран загрузки — `LoadingView`.
 - Кит, стеш и профиль передаются через PlayerPrefs; `BattleScene` ничего не сохраняет.
+- Home, кнопки внизу справа: Change Character, Wipe Save, Squire Kit и dev-кнопка **Max Level** (`PlayerSessionComponent.RpcMaxLevel`: в таверне ставит персонажу кап уровня `DungeonConfig.MaxLevel`, опыт 0; открываются все слоты перков/навыков и подклассы).
 

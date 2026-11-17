@@ -38,6 +38,8 @@ namespace Game.Scripts.Editor.Dungeon
 
         /// Models whose pivot sits at an end or a corner: they are moved to stand on their middle.
         private static readonly HashSet<string> s_centered = new() { "Cage", "Gold Pile", "Seat", "Stocks", "Weapon Rack", "X Stocks" };
+        /// Pivot off the base: the pack's bed sank 0.8 m into the floor and stood 0.47 m off its spot.
+        private static readonly HashSet<string> s_grounded = new() { "Bed" };
 
         private static readonly Dictionary<string, Fire> s_fires = new()
         {
@@ -83,10 +85,10 @@ namespace Game.Scripts.Editor.Dungeon
                 GameObject root = new GameObject(name);
                 GameObject model = Model(name, root.transform);
 
-                if (s_centered.Contains(name))
+                if (s_centered.Contains(name) || s_grounded.Contains(name))
                 {
-                    Vector3 center = DungeonKitBuilder.Bounds(model).center;
-                    model.transform.localPosition = new Vector3(-center.x, 0f, -center.z);
+                    Bounds bounds = DungeonKitBuilder.Bounds(model);
+                    model.transform.localPosition = new Vector3(-bounds.center.x, s_grounded.Contains(name) ? -bounds.min.y : 0f, -bounds.center.z);
                 }
 
                 if (s_solid.Contains(name))

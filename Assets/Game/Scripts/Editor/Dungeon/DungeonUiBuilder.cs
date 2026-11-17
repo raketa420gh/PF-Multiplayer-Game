@@ -1241,6 +1241,7 @@ namespace Game.Scripts.Editor.Dungeon
             Button characters = Tool("Characters", "Change\nCharacter", "Chr", 0);
             Button wipe = Tool("Wipe", "Wipe\nSave", "Wipe", 1);
             Button reset = Tool("ResetKit", "Squire\nKit", "Kit", 2);
+            Button maxLevel = Tool("MaxLevel", "Dev\nMax Level", "Lv", 3);
 
             Image resultBack = CreateImage("Result", page, bottom, new Vector2(0f, 24f), new Vector2(640f, 34f), new Color(0f, 0f, 0f, 0.65f));
             TMP_Text result = CreateText("Text", resultBack.rectTransform, center, Vector2.zero, new Vector2(620f, 34f), 16f, TextAlignmentOptions.Center);
@@ -1275,6 +1276,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_noticeText", notice);
             BattleEditorUtility.Set(so, "_resetKitButton", reset);
             BattleEditorUtility.Set(so, "_wipeButton", wipe);
+            BattleEditorUtility.Set(so, "_maxLevelButton", maxLevel);
             BattleEditorUtility.Set(so, "_charactersButton", characters);
             BattleEditorUtility.Set(so, "_resultRoot", resultBack.gameObject);
             BattleEditorUtility.Set(so, "_resultText", result);

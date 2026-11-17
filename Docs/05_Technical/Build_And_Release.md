@@ -16,6 +16,8 @@
 - The server build must match the client scenes and code: an older build gives Fusion "Behaviour count mismatch" on scene NetworkObjects. In the editor `LocalServer` detects a stale build and falls back to Host — rebuild the server after any scene/code change.
 
 ## Versioning
+Текущая версия: **0.3.0** (2026-11-17, Core gameplay / Core Multiplayer Prototype, плейтест Dungeon Test на Arena), git tag `v0.3.0`. Плейтест-сборка: `Tools/Game/Network/Build Playtest` → `Builds/Playtest.zip` (клиент + dedicated server внутри).
+
 Один номер не решает несколько задач (DD-018). Четыре независимых идентификатора:
 
 | Идентификатор | Отвечает на вопрос | Формат | Пример | Где живёт |

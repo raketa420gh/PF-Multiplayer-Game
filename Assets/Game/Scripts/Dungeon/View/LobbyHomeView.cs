@@ -86,6 +86,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private Button _wipeButton;
 
+        [SerializeField, Tooltip("Dev: lifts the character to the level cap")]
+        private Button _maxLevelButton;
+
         [SerializeField]
         private Button _charactersButton;
 
@@ -108,6 +111,7 @@ namespace Game.Scripts.Dungeon
             _startButton.onClick.AddListener(StartRun);
             _resetKitButton.onClick.AddListener(() => { Click(); _session?.RpcResetKit(); });
             _wipeButton.onClick.AddListener(Wipe);
+            _maxLevelButton.onClick.AddListener(() => { Click(); _session?.RpcMaxLevel(); });
             _charactersButton.onClick.AddListener(ToCharacters);
             _queueButton.onClick.AddListener(() => { Click(); s_queue = s_queue == QueueMode.Solo ? QueueMode.Trio : QueueMode.Solo; });
             _createPartyButton.onClick.AddListener(CreateParty);

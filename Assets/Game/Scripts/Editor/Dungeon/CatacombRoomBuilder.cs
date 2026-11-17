@@ -645,7 +645,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             if (s_models.TryGetValue(item.Name, out string model) && Mathf.Max(item.W, item.D) <= 2.5f)
             {
-                float yaw = s_againstWall.Contains(model) ? WallFacing(item) : item.R + (model == "Bed" && item.W > item.D ? 90f : 0f);
+                float yaw = s_againstWall.Contains(model) ? WallFacing(item) : item.R + (model is "Bed" or "Table" && item.D > item.W ? 90f : 0f);
                 DungeonMapBuilder.Place(DungeonMedievalBuilder.Load(model), prop, Vector3.zero, yaw - item.R);
 
                 return;

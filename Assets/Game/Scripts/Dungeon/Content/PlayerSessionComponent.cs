@@ -299,6 +299,17 @@ namespace Game.Scripts.Dungeon
             }
         }
 
+        /// Dev: the character jumps to the level cap from the tavern.
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcMaxLevel()
+        {
+            if (State != SessionState.Lobby)
+                return;
+
+            Level = _config.MaxLevel;
+            Experience = 0;
+        }
+
         /// The leader registers the party for a dungeon queue (alone it is a party of one); a solo queue takes nobody along.
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcQueue(QueueMode mode)
