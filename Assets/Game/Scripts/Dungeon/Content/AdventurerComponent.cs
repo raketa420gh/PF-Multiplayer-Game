@@ -2655,7 +2655,7 @@ namespace Game.Scripts.Dungeon
             return item switch
             {
                 WeaponItemConfig weapon => weapon.Fits(_class) || Perk(PerkEffect.AnyWeapon) > 0f,
-                ArmorItemConfig armor => armor.Fits(_class),
+                ArmorItemConfig armor => armor.Fits(_class, Perk(PerkEffect.PlateWear) > 0f),
                 _ => true
             };
         }

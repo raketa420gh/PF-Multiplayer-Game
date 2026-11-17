@@ -93,7 +93,7 @@
   - **Splint / Шина** (2026-11-17, Infirmarian) — союзник под прицелом (или ты): снимает Slow/Root и 8 с не даёт наложить новые (`StatusEffectKind.Splint`). 2 заряда.
   - Новые молитвы добавлены в конец списка — раскладки колёс хранят молитвы по индексу.
 - **Bonus Healing** (2026-11-17, `StatType.BonusHealing`, строка в листе персонажа) — плоское здоровье к каждой магической лечащей молитве до множителя Magical Healing; лечение во времени (HoT, Healing Touch, Circle) получает его раз в 5 с покрытого времени. Зелья алхимика и физическое лечение его не получают.
-- Perks: общие Firm Faith, Requiem, Pilgrim, Scourge, Clean Conscience; Warm Hands, Shared Light, Patience, Last Rites / Heavy Hand, Strength of Faith (+5 Силы, −2 Знания), Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
+- Perks: общие Firm Faith, Requiem, Pilgrim, Scourge, Clean Conscience, Iron Vestments (можно носить латы; без перка Духовник лат не носит, `PerkEffect.PlateWear`); Warm Hands, Shared Light, Patience, Last Rites / Heavy Hand, Strength of Faith (+5 Силы, −2 Знания), Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
   - **Scourge / Бичевание** (2026-11-16 как Hair Shirt, вместо Gravedigger's Back; переименован 2026-11-17) — Flat Reduction 3 (`StatType.FlatReduction`): на 3 урона меньше от любого источника, но не меньше 1; горение и яд теряют 3 от всего урона каждого наложения.
   - **Warm Hands** (2026-11-17) — +5 Bonus Healing (было +20% лечения).
   - **Shared Light** (2026-11-17, вместо Shroud) — лечение союзника лечит и тебя на твой Bonus Healing (`PerkEffect.SharedLight`).

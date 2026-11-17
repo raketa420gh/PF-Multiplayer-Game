@@ -50,9 +50,10 @@ namespace Game.Scripts.Dungeon
             return slot == _slot;
         }
 
-        public bool Fits(ClassConfig config)
+        /// wearsPlate: a perk lets the class wear any plate.
+        public bool Fits(ClassConfig config, bool wearsPlate = false)
         {
-            return _classes.Length == 0 || Array.IndexOf(_classes, config) >= 0;
+            return (wearsPlate && _armorType == ArmorType.Plate) || _classes.Length == 0 || Array.IndexOf(_classes, config) >= 0;
         }
     }
 }

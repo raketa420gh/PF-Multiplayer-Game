@@ -264,6 +264,8 @@ namespace Game.Scripts.Dungeon
         OiledBlades,
         /// Share more armor rating.
         FrostSkin,
+        /// Plate can be worn whatever the piece's class list says.
+        PlateWear,
         Count
     }
 
@@ -513,6 +515,23 @@ namespace Game.Scripts.Dungeon
                 values[(int)_perks[i].Effect] += _perks[i].Value;
                 values[(int)_perks[i].SecondEffect] += _perks[i].SecondValue;
             }
+        }
+
+        /// Whether one of the perks in the mask (capped by perkCount, as in the stats) has the effect.
+        public bool HasPerkEffect(int perkMask, int perkCount, PerkEffect effect)
+        {
+            for (int i = 0, applied = 0; i < _perks.Length && applied < perkCount; i++)
+            {
+                if ((perkMask & (1 << i)) == 0)
+                    continue;
+
+                if (_perks[i].Effect == effect || _perks[i].SecondEffect == effect)
+                    return true;
+
+                applied++;
+            }
+
+            return false;
         }
 
         public bool CanUseWeapon(WeaponClass weaponClass)

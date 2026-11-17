@@ -525,7 +525,10 @@ namespace Game.Scripts.Editor.Dungeon
                     Perk("Blood Prayer", "A prayer without charges can be read for 15% of your health.", "He lends. The interest is blood.", PerkEffect.BloodPrayer, 15f, "a bleeding palm pressed onto a black prayer book", 2),
                     Perk("Louder in the Dark", "While below half health your prayers deal 15% more damage.", "The less life in me, the louder He is.", PerkEffect.DarkVoice, 0.15f, "a gaunt figure screaming prayers with violet light from the mouth", 2),
                     Perk("Rot", "Foes you curse take 10% more damage from everyone.", "Rot does not choose.", PerkEffect.Rot, 10f, "rotting flesh with violet mould spreading", 2),
-                    Perk("Take Back", "Killing a cursed foe restores 10% of your health.", "Given, and taken back.", PerkEffect.TakeBack, 10f, "a violet wisp of soul flowing from a corpse into an open hand", 2)
+                    Perk("Take Back", "Killing a cursed foe restores 10% of your health.", "Given, and taken back.", PerkEffect.TakeBack, 10f, "a violet wisp of soul flowing from a corpse into an open hand", 2),
+                    // Appended 2026-11-17: saved builds keep perks by bit index.
+                    Perk("Iron Vestments", "You can wear plate armor.", "The Cathedral armed its brothers before it taught them to read.", PerkEffect.PlateWear, 1f,
+                        "a priest's white surcoat with a golden sun worn over a steel breastplate")
                 },
                 Kit = new[] { ("Morning Star", EquipSlot.Weapon1Main, 1, true), ("Round Shield", EquipSlot.Weapon1Off, 1, true), ("Spellbook", EquipSlot.Weapon2Main, 1, true),
                     ("Veinworker Shirt", EquipSlot.Chest, 1, true), ("Veinworker Trousers", EquipSlot.Legs, 1, true), ("Veinworker Boots", EquipSlot.Feet, 1, true), ("Campfire Kit", EquipSlot.Utility1, 1, true),
