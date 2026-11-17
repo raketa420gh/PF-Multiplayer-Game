@@ -83,7 +83,12 @@
 - Skills (изменены 2026-11-16, заменены на месте — билды хранят навыки по индексу):
   - **Psalm by Heart** (вместо Rosary) — следующая молитва в течение 10 с читается мгновенно, перезарядка 45 с (`AbilityKind.QuickCast`).
   - **Absolution** (вместо Holy Water) — снимает Slow, Burn, Poison и Cursed с себя и союзников в 3 м, перезарядка 45 с, каст 0,4 с (`AbilityKind.Cleanse`, `StatusEffectComponent.Cleanse`). Root, Silence, Vulnerable, Weakened и побочки микстур не снимает.
-- Spells: общие Minor Healing, Rest; Healing, Circle of Intercession, Blessing (Healer); Hallowed Weapon, Sentence, Light of the Cathedral (Smiter); Wither, Curse, Whisper of the Sleeper (Apostate).
+- Spells: общие Minor Healing, Rest, Holy Light, Bind, Holy Bolt; Healing, Circle of Intercession, Blessing (Healer); Hallowed Weapon, Sentence, Light of the Cathedral (Smiter); Wither, Curse, Whisper of the Sleeper (Apostate).
+  - **Rest** (2026-11-17, механика прежняя, новое описание) — 11 магического урона светом, по нежити вдвое больше.
+  - **Holy Light** (2026-11-17) — светящийся шар над точкой под прицелом до 15 м на 60 с, 2 заряда (`ZoneKind.HolyLight`).
+  - **Bind** (2026-11-17) — цель под прицелом до 15 м не может сделать шаг 1,5 с (Root), 2 заряда.
+  - **Holy Bolt** (2026-11-17) — снаряд света, 15 магического урона, нежить отбрасывает, 4 заряда.
+  - Новые молитвы добавлены в конец списка — раскладки колёс хранят молитвы по индексу.
 - Perks: общие Firm Faith, Requiem, Altar Boy, Hair Shirt, Clean Conscience; Warm Hands, Shroud, Patience, Last Rites / Heavy Hand, Strength of Faith, Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
   - **Hair Shirt** (2026-11-16, вместо Gravedigger's Back) — Flat Reduction 3 (`StatType.FlatReduction`): каждый полученный удар наносит на 3 урона меньше, но не меньше 1.
   - **Clean Conscience** (2026-11-16, вместо Night Vigil) — +20% Debuff Reduction (`StatType.DebuffReduction`): вредные эффекты на тебе длятся на 20% меньше.

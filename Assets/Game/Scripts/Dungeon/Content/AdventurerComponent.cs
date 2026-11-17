@@ -2041,7 +2041,8 @@ namespace Game.Scripts.Dungeon
 
             AbilityConfig ability = data.Ability < _abilities.Count ? _abilities[data.Ability] : null;
 
-            if (ability != null)
+            // Light throws back only the undead.
+            if (ability != null && (!ability.Has(AbilityFlags.Holy) || IsUndead(receiver)))
                 Push(receiver, data.HitPoint, ability.Push);
 
             if (data.Effect == 0 || !receiver.IsAlive || !receiver.TryGetComponent(out StatusEffectComponent effects))

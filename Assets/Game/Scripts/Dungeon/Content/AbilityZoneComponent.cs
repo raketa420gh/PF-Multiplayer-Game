@@ -168,7 +168,7 @@ namespace Game.Scripts.Dungeon
                 return;
             }
 
-            if (Kind == ZoneKind.Flare || !_pulse.Expired(Runner))
+            if (Kind is ZoneKind.Flare or ZoneKind.HolyLight || !_pulse.Expired(Runner))
                 return;
 
             AdventurerComponent owner = Owner;

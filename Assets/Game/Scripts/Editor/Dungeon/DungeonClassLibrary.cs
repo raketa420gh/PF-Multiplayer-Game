@@ -410,7 +410,7 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Rest", Description = Text("A strike of light at the one under the crosshair within 15m: 22 magical damage, half to the living.", "Lie where you lay."), Kind = AbilityKind.TargetEffect,
+                        Name = "Rest", Description = Text("A strike of light at the one under the crosshair within 15m: 11 magical damage, double to the undead.", "Lie where you lay."), Kind = AbilityKind.TargetEffect,
                         IsSpell = true, Charges = 5, Cooldown = 1f, CastTime = 0.8f, Magnitude = 22f, Range = 15f, Stagger = 0.2f, Flags = AbilityFlags.Holy | AbilityFlags.HalfVsLiving,
                         Glyph = "Re", Color = light, Vfx = VfxStyle.Holy, Art = "a shaft of golden light striking a rising skeleton back into its grave"
                     },
@@ -469,6 +469,25 @@ namespace Game.Scripts.Editor.Dungeon
                         Kind = AbilityKind.Zone, IsSpell = true, Ground = true, Charges = 1, Cooldown = 1f, CastTime = 1.2f, Zone = ZoneKind.Whisper, ZoneRadius = 3f, ZoneDuration = 5f, ZoneTick = 6f,
                         HitEffect = StatusEffectKind.Slow, HitMagnitude = 20f, HitDuration = 0.6f, HealthCostPercent = 10f, Flags = AbilityFlags.Dark, Glyph = "WS", Color = godless, Subclass = 2,
                         Vfx = VfxStyle.Dark, Art = "a dark miasma of whispering faces swirling over a crypt floor"
+                    },
+                    // Shared prayers added 2026-11-17: appended, since saved wheels keep spells by index.
+                    new AbilityDef
+                    {
+                        Name = "Holy Light", Description = Text("A warm orb of light hangs over the spot under the crosshair within 15m for 60s.", "Let them see where they lie."), Kind = AbilityKind.Zone,
+                        IsSpell = true, Ground = true, Charges = 2, Cooldown = 1f, CastTime = 0.6f, Range = 15f, Zone = ZoneKind.HolyLight, ZoneRadius = 1f, ZoneDuration = 60f, Flags = AbilityFlags.Holy,
+                        Glyph = "HL", Color = light, Vfx = VfxStyle.Light, Art = "a floating orb of golden light hanging over a dark crypt corridor"
+                    },
+                    new AbilityDef
+                    {
+                        Name = "Bind", Description = Text("The one under the crosshair within 15m cannot take a step for 1.5s.", "Stay. The ground has a claim on you."), Kind = AbilityKind.TargetEffect, IsSpell = true,
+                        Charges = 2, Cooldown = 1f, CastTime = 0.8f, HitEffect = StatusEffectKind.Root, HitMagnitude = 1f, HitDuration = 1.5f, Range = 15f, Flags = AbilityFlags.Holy, Glyph = "Bi",
+                        Color = light, Vfx = VfxStyle.Holy, Art = "golden chains of light rising from the floor around a skeleton's ankles"
+                    },
+                    new AbilityDef
+                    {
+                        Name = "Holy Bolt", Description = Text("A bolt of light: 15 magical damage; it throws the undead back.", "Back where you came from."), Kind = AbilityKind.Projectile, IsSpell = true, Charges = 4,
+                        Cooldown = 1f, CastTime = 0.6f, Magnitude = 15f, Speed = 30f, Projectile = ProjectileKind.Holy, Push = 4f, Stagger = 0.1f, Flags = AbilityFlags.Holy, Glyph = "HB", Color = light,
+                        Vfx = VfxStyle.Holy, Art = "a bolt of golden light flying from a raised prayer book, a skeleton thrown backwards"
                     }
                 },
                 Perks = new[]

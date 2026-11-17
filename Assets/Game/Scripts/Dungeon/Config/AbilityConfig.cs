@@ -87,7 +87,9 @@ namespace Game.Scripts.Dungeon
         Storm,
         Sanctuary,
         Whisper,
-        Flare
+        Flare,
+        /// A floating orb of light over the marked spot: only light, for a while.
+        HolyLight
     }
 
     /// Look of a cast, a projectile, a zone or a status effect.

@@ -351,6 +351,13 @@ namespace Game.Scripts.Dungeon
                     Spawn(root, new Layer { Material = c.Smoke, Rate = 4f, Position = new Vector3(0f, 0.4f, 0f), Life = new(2.5f, 4f), Velocity = new Vector3(0f, 0.9f, 0f), Size = new(0.4f, 1.2f), From = new Color(0.35f, 0.25f, 0.22f, 0.35f), Grow = Curve(0.5f, 1.8f), Noise = 0.3f });
                     Lamp(root, c, new Color(1f, 0.72f, 0.42f), 14f, 4f, new Vector3(0f, 0.6f, 0f), true);
                     break;
+                case ZoneKind.HolyLight:
+                    Vector3 orb = new(0f, 2f, 0f);
+                    Hover(root, c.Glow, orb, 0.3f, new Color(1f, 0.95f, 0.8f, 1f), ParticleSystemRenderMode.Billboard);
+                    Hover(root, c.Glow, orb, 1f, new Color(1f, 0.88f, 0.6f, 0.25f), ParticleSystemRenderMode.Billboard);
+                    Spawn(root, new Layer { Material = c.Glow, Rate = 8f, Position = orb, Radius = 0.2f, Speed = new(0.05f, 0.2f), Life = new(1f, 1.8f), Size = new(0.02f, 0.04f), From = new Color(1f, 0.9f, 0.65f, 1f), Max = 14 });
+                    Lamp(root, c, new Color(1f, 0.9f, 0.7f), 12f, 3f, orb, false);
+                    break;
             }
 
             return root.gameObject;

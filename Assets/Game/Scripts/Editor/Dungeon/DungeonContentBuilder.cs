@@ -467,7 +467,7 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject root = new GameObject("AbilityZone");
             root.AddComponent<NetworkObject>();
             AbilityZoneComponent zone = root.AddComponent<AbilityZoneComponent>();
-            AudioClip[] loops = new AudioClip[(int)ZoneKind.Flare + 1];
+            AudioClip[] loops = new AudioClip[(int)ZoneKind.HolyLight + 1];
             AudioClip fire = AssetDatabase.LoadAssetAtPath<AudioClip>($"{AbilitySoundsFolder}/Zone_FireLoop.wav");
             loops[(int)ZoneKind.FirePool] = fire;
             loops[(int)ZoneKind.FireWall] = fire;
