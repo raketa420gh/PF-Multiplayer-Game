@@ -1667,15 +1667,15 @@ namespace Game.Scripts.Dungeon
                 DungeonAudioComponent.Play(item.PickSound(sound), point, 1f, Random.Range(0.96f, 1.04f), transform);
         }
 
-        private float HealScale()
+        /// A caught breath grows with physical healing, a prayer with magical healing only; both are the healer's.
+        private float HealScale(AbilityConfig ability)
         {
-            return 1f + DungeonFormulas.PowerBonus(_stats.MagicalPower) * 0.5f;
+            return ability.DamageType == DamageType.Physical ? _stats.PhysicalHealing : _stats.MagicalHealing;
         }
 
-        /// A caught breath grows with physical healing, a prayer with magical power and magical healing; both are the healer's.
         private float HealAmount(AbilityConfig ability)
         {
-            return Power(ability) * (ability.DamageType == DamageType.Physical ? _stats.PhysicalHealing : HealScale() * _stats.MagicalHealing);
+            return Power(ability) * HealScale(ability);
         }
 
         /// Healing, shielding and blessing spells go to the adventurer under the crosshair, or to the caster when the aim misses; skills stay on their user.
@@ -1686,8 +1686,7 @@ namespace Game.Scripts.Dungeon
 
         private void Heal(AdventurerComponent target, AbilityConfig ability)
         {
-            float scale = ability.DamageType == DamageType.Physical ? _stats.PhysicalHealing : HealScale() * _stats.MagicalHealing;
-            HealTarget(target, Power(ability), ability.IsPercentHealth, ability.Duration > 0f, ability.Duration, scale);
+            HealTarget(target, Power(ability), ability.IsPercentHealth, ability.Duration > 0f, ability.Duration, HealScale(ability));
 
             if (ability.IsSpell)
                 RpcFlash(BodyPoint(target._fighter.Receiver), ability.Color, 5f);
@@ -1707,7 +1706,7 @@ namespace Game.Scripts.Dungeon
                     || !fighter.TryGetComponent(out AdventurerComponent ally) || ally.State != AdventurerState.Alive)
                     continue;
 
-                HealTarget(ally, Power(ability), ability.IsPercentHealth, true, ability.Duration, HealScale() * _stats.MagicalHealing);
+                HealTarget(ally, Power(ability), ability.IsPercentHealth, true, ability.Duration, _stats.MagicalHealing);
             }
 
             RpcFlash(center + Vector3.up, ability.Color, ability.Radius * 2f);
