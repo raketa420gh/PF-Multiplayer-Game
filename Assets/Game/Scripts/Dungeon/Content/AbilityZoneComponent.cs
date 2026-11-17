@@ -304,12 +304,14 @@ namespace Game.Scripts.Dungeon
                 effects.Add(_effect, _effectMagnitude, _effectDuration);
         }
 
-        private void Heal(AdventurerComponent owner, AdventurerComponent ally, float percent)
+        private void Heal(AdventurerComponent owner, AdventurerComponent ally, float amount)
         {
+            bool isPercent = Kind == ZoneKind.HealPool;
+
             if (owner != null)
-                owner.HealTarget(ally, percent, true, false);
+                owner.HealTarget(ally, amount, isPercent, false);
             else
-                ally.Fighter.Health.Restore(Mathf.Max(1, Mathf.RoundToInt(ally.Fighter.Health.MaxHealth * percent / 100f)));
+                ally.Fighter.Health.Restore(Mathf.Max(1, Mathf.RoundToInt(isPercent ? ally.Fighter.Health.MaxHealth * amount / 100f : amount)));
         }
 
         [Rpc(RpcSources.StateAuthority, RpcTargets.All)]

@@ -422,8 +422,8 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Circle of Intercession", Description = Text("A 3m circle around you for 6s: allies in it heal 3% of health a second.", "Closer. Everyone closer."), Kind = AbilityKind.Zone, IsSpell = true,
-                        Charges = 2, Cooldown = 1f, CastTime = 1.2f, Zone = ZoneKind.Sanctuary, ZoneRadius = 3f, ZoneDuration = 6f, ZoneTick = 3f, Flags = AbilityFlags.Healing, Glyph = "CI",
+                        Name = "Circle of Intercession", Description = Text("A 3m circle around you for 6s: allies in it heal 4 health a second.", "Closer. Everyone closer."), Kind = AbilityKind.Zone, IsSpell = true,
+                        Charges = 2, Cooldown = 1f, CastTime = 1.2f, Zone = ZoneKind.Sanctuary, ZoneRadius = 3f, ZoneDuration = 6f, ZoneTick = 4f, Flags = AbilityFlags.Healing, Glyph = "CI",
                         Color = mending, Subclass = 0, Vfx = VfxStyle.Heal, Art = "a glowing golden circle of runes on a crypt floor with kneeling figures"
                     },
                     new AbilityDef
