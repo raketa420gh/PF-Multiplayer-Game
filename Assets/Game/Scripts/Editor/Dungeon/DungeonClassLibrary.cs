@@ -453,8 +453,8 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Wither", Description = Text("The one under the crosshair within 15m loses 24 health over 5s; you heal for half of it.", "Yours is mine now."), Kind = AbilityKind.TargetEffect,
-                        IsSpell = true, Charges = 4, Cooldown = 1f, CastTime = 0.9f, Magnitude = 24f, Duration = 5f, LifeSteal = 0.5f, Range = 15f, Flags = AbilityFlags.Dark, Glyph = "Wi",
+                        Name = "Wither", Description = Text("The one under the crosshair within 15m loses 24 health over 6s; you heal for half of it.", "Yours is mine now."), Kind = AbilityKind.TargetEffect,
+                        IsSpell = true, Charges = 3, Cooldown = 1f, CastTime = 1.2f, Magnitude = 24f, Duration = 6f, LifeSteal = 0.5f, Range = 15f, Flags = AbilityFlags.Dark, Glyph = "Wi",
                         Color = godless, Subclass = 2, Vfx = VfxStyle.Dark, Art = "a dark red tendril draining life from a withering hand"
                     },
                     new AbilityDef
