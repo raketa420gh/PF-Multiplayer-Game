@@ -516,7 +516,7 @@ namespace Game.Scripts.Editor.Dungeon
                     Perk("Shared Light", "Healing an ally heals you for your bonus healing too.", "What I give comes back to me.", PerkEffect.SharedLight, 1f,
                         "two hands clasped, one giving golden light, the same light flowing back along the arm", 0),
                     Perk("Patience", "+1 charge to healing prayers.", "Pray longer than it hurts.", PerkEffect.Patience, 1f, "an hourglass with glowing golden sand beside a prayer book", 0),
-                    Perk("Last Rites", "+10 bonus healing on allies below 30% health.", "Not today. I'm not ready to bury you.", PerkEffect.LastRites, 10f, "a priest holding a dying soldier's hand, light between them", 0),
+                    Perk("Last Rites", "+5 bonus healing on targets below 25% health.", "Not today. I'm not ready to bury you.", PerkEffect.LastRites, 5f, "a priest holding a dying soldier's hand, light between them", 0),
                     Perk("Heavy Hand", "+10% damage with blunt weapons.", "Bone is not cut. Bone is crushed.", PerkEffect.HeavyHand, 0.1f, "a heavy iron flanged mace resting on a broken skull", 1),
                     Stats("Strength of Faith", "+3 Strength.", "Prayed with a mace in hand. Holds better.", "a muscular arm gripping a mace with a rosary wrapped on the haft", 1, new StatModifier(StatType.Strength, 3f)),
                     Perk("Righteous Wrath", "After you take a hit your next attack deals 20% more damage (at most once in 5s).", "You struck. Here's my answer.", PerkEffect.RighteousWrath, 20f, "a priest's furious eyes glowing gold behind a raised mace", 1),

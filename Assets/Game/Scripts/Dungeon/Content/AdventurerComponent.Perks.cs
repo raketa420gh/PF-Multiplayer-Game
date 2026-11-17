@@ -23,6 +23,7 @@ namespace Game.Scripts.Dungeon
         private const float TransfusionCost = 0.5f;
         private const float ExecuteHealth = 0.4f;
         private const float LowHealth = 0.3f;
+        private const float DyingHealth = 0.25f;
         private const float LongShotRange = 20f;
         private const float FuneralRadius = 2f;
         private const float DeadRootTime = 6f;
@@ -96,7 +97,7 @@ namespace Game.Scripts.Dungeon
         {
             HealthComponent health = target._fighter.Health;
             float span = isMagical ? duration > 0f ? duration / BonusHealingSpan : 1f : 0f;
-            float bonus = (_stats.BonusHealing + (health.Progress < LowHealth ? Perk(PerkEffect.LastRites) : 0f)) * span;
+            float bonus = (_stats.BonusHealing + (health.Progress < DyingHealth ? Perk(PerkEffect.LastRites) : 0f)) * span;
             float heal = ((isPercent ? health.MaxHealth * amount / 100f : amount) + bonus) * scale;
 
             if (target != this && Perk(PerkEffect.SharedLight) > 0f)

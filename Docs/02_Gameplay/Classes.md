@@ -96,7 +96,7 @@
   - **Scourge / Бичевание** (2026-11-16 как Hair Shirt, вместо Gravedigger's Back; переименован 2026-11-17) — Flat Reduction 3 (`StatType.FlatReduction`): на 3 урона меньше от любого источника, но не меньше 1; горение и яд теряют 3 от всего урона каждого наложения.
   - **Warm Hands** (2026-11-17) — +5 Bonus Healing (было +20% лечения).
   - **Shared Light** (2026-11-17, вместо Shroud) — лечение союзника лечит и тебя на твой Bonus Healing (`PerkEffect.SharedLight`).
-  - **Last Rites** (2026-11-17) — +10 Bonus Healing по союзникам ниже 30% здоровья (было +30%).
+  - **Last Rites** (2026-11-17) — +5 Bonus Healing по целям ниже 25% здоровья (было +10 ниже 30%, до того +30%).
   - **Clean Conscience** (2026-11-16, вместо Night Vigil) — +20% Debuff Reduction (`StatType.DebuffReduction`): вредные эффекты на тебе длятся на 20% меньше.
   - **Firm Faith** (2026-11-17) — +5 Spirit, −2 Strength (было +3 Spirit).
   - **Requiem** (2026-11-17) — нежить наносит тебе на 25% меньше урона (было +15% урона по нежити): `PerkEffect.Requiem` теперь режет входящий урон, если `HitRequest.Attacker` — нежить.
