@@ -82,6 +82,8 @@ namespace Game.Scripts.Editor.Battle
         public float BladeTip;
         /// Two-handed: how far behind the right fist the left one closes on the hilt, metres. 0 = one-handed.
         public float OffHand;
+        /// The left hand can take the haft (OffHand), yet the weapon is carried and swung by the right one alone: the rest has it off.
+        public bool IsCarriedOneHanded;
         /// How far the hilt may lie over in the palm toward the forearm's line, degrees: a long hilt swung at arm's length lies further.
         public float MaxLean = 24f;
         /// What lying over in the palm costs against bending the wrist in a swing: a weapon swung at arm's length lies over sooner.
@@ -127,6 +129,8 @@ namespace Game.Scripts.Editor.Battle
         /// A clip of the weapon that is not authored here (its suffix): the motion starts as that clip ends. The riposte
         /// answers from the block.
         public string From;
+        /// The point that strikes, along the weapon from the fist; 0 = the weapon's. A staff answers with its butt.
+        public float Strike;
         public bool HasTiming;
         /// The cut is led by the edge on the heel of the right hand, not by the one its knuckles face: the way back of a
         /// swing that does not turn the blade over.
@@ -339,7 +343,7 @@ namespace Game.Scripts.Editor.Battle
         private static float s_idleLean, s_idleRoll, s_idleSlide, s_reach;
         private static bool s_hasIdleMotion, s_isIdleLeftFree, s_isStanding;
 
-        private static float Strike => s_spec.Strike;
+        private static float Strike => s_strike != 0f ? s_strike : s_spec.Strike;
 
         private static float MaxLean => s_spec.MaxLean;
 
@@ -353,6 +357,8 @@ namespace Game.Scripts.Editor.Battle
         private static HumanPose s_stance;
         private static Pose s_hips, s_leftFoot, s_rightFoot;
         private static WeaponDefinition s_weapon;
+        /// The strike point of the motion being read or solved, where it has one of its own.
+        private static float s_strike;
 
         /// Writes ArmingSword_Attack0-2 from the keys: body muscles, the fingers as the idle holds them and the sword's socket
         /// in the fist. Hand edits stored for these clips are baked back on top (a grip that holds the weapon keeps its path,
@@ -645,7 +651,8 @@ namespace Game.Scripts.Editor.Battle
             s_leftOpen = Array.ConvertAll(s_leftFingers, i => s_idle[i]);
             s_idleTorso = Vector3.zero;
             s_idleLean = s_idleRoll = s_idleSlide = 0f;
-            s_hasIdleMotion = s_isIdleLeftFree = false;
+            s_hasIdleMotion = false;
+            s_isIdleLeftFree = IsTwoHanded && s_spec.IsCarriedOneHanded;
 
             // Both fists hold the hilt alike.
             for (int i = 0; i < s_leftFingers.Length && IsTwoHanded; i++)
@@ -703,7 +710,9 @@ namespace Game.Scripts.Editor.Battle
                 }
                 else
                 {
+                    s_strike = motion.Strike;
                     Solve(rig, motion, motions, report);
+                    s_strike = 0f;
                     s_solved[motion.Text] = new SwordMotion
                     {
                         Muscles = motion.Muscles, BodyPositions = motion.BodyPositions, BodyRotations = motion.BodyRotations, Grips = motion.Grips, Torso = motion.Torso,
@@ -1008,7 +1017,7 @@ namespace Game.Scripts.Editor.Battle
                     if (frame != motion.Peak)
                         continue;
 
-                    Vector3 strike = socket.TransformPoint(0f, 0f, Strike);
+                    Vector3 strike = socket.TransformPoint(0f, 0f, motion.Strike != 0f ? motion.Strike : Strike);
                     report.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0}: through the controller the strike point is {1:F1} cm off the crosshair at the peak",
                         motion.Name, new Vector2(strike.x - s_eye.x, strike.y - s_eye.y).magnitude * 100f));
                 }
@@ -1169,7 +1178,10 @@ namespace Game.Scripts.Editor.Battle
                 keys[0] = new SwordKey
                 {
                     Grip = rig.Socket.position, Blade = rig.Socket.forward, Elbow = rig.Elbow.position,
-                    Torso = new Vector3(chest.x * s_torsoScale.x, chest.z * s_torsoScale.y, chest.y * s_torsoScale.z), Flow = 0f, Hard = 2f
+                    Torso = new Vector3(chest.x * s_torsoScale.x, chest.z * s_torsoScale.y, chest.y * s_torsoScale.z), Flow = 0f, Hard = 2f,
+                    // The left hand as the clip has it: on the haft or off it.
+                    IsLeftFree = IsTwoHanded && Vector3.Distance(rig.LeftGrip.position, rig.Socket.position - rig.Socket.forward * s_spec.OffHand) > 0.1f,
+                    LeftHand = rig.LeftHand.position
                 };
                 seed = Seed(pose, 0f, 0f, 0f);
             }
@@ -1323,10 +1335,11 @@ namespace Game.Scripts.Editor.Battle
                 for (int i = 0; i < 9; i++)
                     table.Append(string.Format(CultureInfo.InvariantCulture, " {0,5:F2}", values[i]));
 
-                table.AppendLine(string.Format(CultureInfo.InvariantCulture, " | lean {0,4:F0} roll {1,4:F0} slide {9,4:F1} | fore-blade {2,4:F0} arm {10,3:F0} | grip {3:F2} {4:F2} {5:F2} elbow {6:F2} {7:F2} {8:F2}",
+                table.AppendLine(string.Format(CultureInfo.InvariantCulture, " | lean {0,4:F0} roll {1,4:F0} slide {9,4:F1} | fore-blade {2,4:F0} arm {10,3:F0} | grip {3:F2} {4:F2} {5:F2} elbow {6:F2} {7:F2} {8:F2} strike {11:F2} {12:F2} {13:F2}",
                     motion.Lean[frame], motion.Roll[frame], Vector3.Angle(rig.Hand.position - rig.Elbow.position, rig.Socket.forward),
                     rig.Socket.position.x, rig.Socket.position.y, rig.Socket.position.z, rig.Elbow.position.x, rig.Elbow.position.y, rig.Elbow.position.z,
-                    motion.Slide[frame] * 100f, Vector3.Angle(rig.Shoulder.position - rig.Elbow.position, rig.Hand.position - rig.Elbow.position)));
+                    motion.Slide[frame] * 100f, Vector3.Angle(rig.Shoulder.position - rig.Elbow.position, rig.Hand.position - rig.Elbow.position),
+                    (rig.Socket.position + rig.Socket.forward * Strike).x, (rig.Socket.position + rig.Socket.forward * Strike).y, (rig.Socket.position + rig.Socket.forward * Strike).z));
 
                 if (!IsTwoHanded)
                     continue;
@@ -1876,6 +1889,7 @@ namespace Game.Scripts.Editor.Battle
 
                     motion.IsCut = Array.IndexOf(words, "thrust", 2) < 0;
                     motion.IsBackEdge = Array.IndexOf(words, "back", 2) > 0;
+                    s_strike = motion.Strike = Word("strike", 0f);
                     motion.Shown = (int)Word("shown", 0f);
 
                     if (after > 0)
@@ -2001,6 +2015,8 @@ namespace Game.Scripts.Editor.Battle
                 motions[^1].Keys.Add(key);
                 motions[^1].Text += "\n" + line;
             }
+
+            s_strike = 0f;
 
             return motions.ToArray();
         }
