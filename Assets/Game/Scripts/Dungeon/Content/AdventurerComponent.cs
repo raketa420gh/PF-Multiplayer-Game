@@ -59,6 +59,9 @@ namespace Game.Scripts.Dungeon
         private const float GroundProbe = 3f;
         private const int WorldMask = 1;
         private const float AuraPulse = 0.5f;
+        private const float TouchPulse = 0.5f;
+        /// Metres the touched ally may drift past the reach before the touch breaks.
+        private const float TouchSlack = 0.5f;
         private const float ChainFalloff = 0.7f;
         private const float StrikeHeight = 14f;
         private const float EnchantBurnTime = 3f;
@@ -346,6 +349,13 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         private NetworkBool _isHoldingCast { get; set; }
+
+        /// The ally a healing touch is on, none while the touch waits for one.
+        [Networked]
+        private NetworkBehaviourId _touchTarget { get; set; }
+
+        [Networked]
+        private TickTimer _touchTimer { get; set; }
 
         [Networked]
         private NetworkBool _isAttuned { get; set; }
@@ -967,11 +977,14 @@ namespace Game.Scripts.Dungeon
             if (IsHoldingCast)
             {
                 bool isReleased = !buttons.IsSet(PlayerInputButtons.Secondary);
+                bool isTouch = _abilities[_pendingIndex].Kind == AbilityKind.HealingTouch;
 
-                if (isReleased && Runner.Tick >= _pendingCompleteTick)
+                if (isReleased && Runner.Tick >= _pendingCompleteTick && !isTouch)
                     FinishCast();
                 else if (isReleased)
                     CancelPending();
+                else if (isTouch && Runner.Tick >= _pendingCompleteTick)
+                    SimulateTouch();
             }
             else
             {
@@ -990,7 +1003,7 @@ namespace Game.Scripts.Dungeon
             if (SimulateSeat(buttons, previous))
                 return;
 
-            _fighter.SetRooted((Pending == PendingAction.Interact && _isRooted) || (Pending == PendingAction.Ability && _isChanneling));
+            _fighter.SetRooted((Pending == PendingAction.Interact && _isRooted) || (Pending == PendingAction.Ability && (_isChanneling || _touchTarget.IsValid)));
             _fighter.SetCrouchForced(Pending == PendingAction.Ability && _isChanneling);
 
             if (Pending != PendingAction.None)
@@ -1241,6 +1254,7 @@ namespace Game.Scripts.Dungeon
             _pendingIndex = (byte)index;
             _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(duration / Runner.DeltaTime);
             _isHoldingCast = true;
+            _touchTarget = default;
         }
 
         /// The charged spell takes effect when the button is let go; letting go before the cast completes cancels it for free.
@@ -1251,6 +1265,12 @@ namespace Game.Scripts.Dungeon
             _isHoldingCast = false;
             _fighter.Combat.CancelBusy();
             _fighter.Combat.StartBusy(CastReleaseTime, BusyRelease);
+            ApplySpell(index);
+        }
+
+        /// A read spell takes its health cost, then a charge or, with none left, the blood price; false when neither can be paid.
+        private bool ApplySpell(int index)
+        {
             AbilityConfig ability = _abilities[index];
 
             if (ability.HealthCost > 0)
@@ -1259,7 +1279,7 @@ namespace Game.Scripts.Dungeon
             if (!ability.IsCooldownBased && _charges[index] == 0)
             {
                 if (!CanPayInBlood())
-                    return;
+                    return false;
 
                 _fighter.Health.TakeDamage(BloodPrice);
                 _isPaidInBlood = true;
@@ -1267,6 +1287,50 @@ namespace Game.Scripts.Dungeon
 
             ApplyAbility(index);
             _isPaidInBlood = false;
+
+            return true;
+        }
+
+        /// Healing touch: the read prayer waits in the hands for an ally under the crosshair within reach, spends a charge on him,
+        /// then heals him every pulse for as long as the button is held, he lives and stays close.
+        private void SimulateTouch()
+        {
+            AbilityConfig ability = _abilities[_pendingIndex];
+
+            if (!_touchTarget.IsValid)
+            {
+                if (AimReceiver(ability.Range, out _) is not { } receiver || !receiver.TryGetComponent(out AdventurerComponent touched) || touched.State != AdventurerState.Alive)
+                    return;
+
+                _touchTarget = touched.Id;
+                _touchTimer = TickTimer.CreateFromSeconds(Runner, TouchPulse);
+
+                if (!ApplySpell(_pendingIndex))
+                    CancelPending();
+
+                return;
+            }
+
+            float reach = ability.Range + TouchSlack;
+
+            if (!Runner.TryFindBehaviour(_touchTarget, out NetworkBehaviour behaviour) || behaviour is not AdventurerComponent ally || ally.State != AdventurerState.Alive
+                || (ally.transform.position - transform.position).sqrMagnitude > reach * reach)
+            {
+                CancelPending();
+
+                return;
+            }
+
+            if (!_touchTimer.Expired(Runner))
+                return;
+
+            _touchTimer = TickTimer.CreateFromSeconds(Runner, TouchPulse);
+
+            if (ally._fighter.Health.Progress >= 1f)
+                return;
+
+            HealTarget(ally, Power(ability) * TouchPulse, ability.IsPercentHealth, false, 0f, HealScale(ability));
+            RpcFlash(BodyPoint(ally._fighter.Receiver), ability.Color, 2f);
         }
 
         /// Blood prayer: a prayer with no charges left is read for a share of health.
@@ -1362,6 +1426,7 @@ namespace Game.Scripts.Dungeon
         {
             _isHoldingCast = false;
             _isChanneling = false;
+            _touchTarget = default;
 
             if (Pending == PendingAction.Interact && Runner.TryFindBehaviour(_pendingTarget, out NetworkBehaviour behaviour) && behaviour is InteractableComponent target)
                 target.Cancel(this);
@@ -1409,7 +1474,7 @@ namespace Game.Scripts.Dungeon
 
             if (ability.SpendsResource)
                 Resource = 0;
-            else if (ability.Kind is AbilityKind.Heal or AbilityKind.AreaHeal or AbilityKind.Shield || (ability.Kind == AbilityKind.Buff && (ability.IsSpell || ability.IsOnAlly)))
+            else if (ability.Kind is AbilityKind.Heal or AbilityKind.AreaHeal or AbilityKind.Shield or AbilityKind.HealingTouch ||(ability.Kind == AbilityKind.Buff && (ability.IsSpell || ability.IsOnAlly)))
                 GainResource(ResourceSource.Support);
 
             if (ability.HealthCostPercent > 0f)

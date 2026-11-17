@@ -40,7 +40,9 @@ namespace Game.Scripts.Dungeon
         /// Puts items on the belt.
         GiveItem,
         /// Lifts slow, burn, poison and curse off the caster and every ally around.
-        Cleanse
+        Cleanse,
+        /// Once read, waits for an ally within reach under the crosshair, then heals him a share of health a second while the button is held; the caster stands still.
+        HealingTouch
     }
 
     [System.Flags]
@@ -191,7 +193,7 @@ namespace Game.Scripts.Dungeon
             AbilityKind.ChainLightning or AbilityKind.LightningStrike => AbilityTargeting.Hitscan,
             AbilityKind.Heal or AbilityKind.Buff or AbilityKind.Shield or AbilityKind.WeaponEnchant => _isSpell || _isOnAlly ? AbilityTargeting.Hitscan : AbilityTargeting.Self,
             AbilityKind.AreaDamage or AbilityKind.AreaHeal or AbilityKind.AreaBuff or AbilityKind.Zone or AbilityKind.Cleanse => AbilityTargeting.Aura,
-            AbilityKind.TargetEffect => AbilityTargeting.Hitscan,
+            AbilityKind.TargetEffect or AbilityKind.HealingTouch => AbilityTargeting.Hitscan,
             AbilityKind.Throw => AbilityTargeting.Projectile,
             _ => AbilityTargeting.Self
         };

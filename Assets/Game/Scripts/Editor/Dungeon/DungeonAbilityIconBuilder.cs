@@ -234,7 +234,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             return kind switch
             {
-                AbilityKind.Heal or AbilityKind.AreaHeal or AbilityKind.Cleanse => "Cross",
+                AbilityKind.Heal or AbilityKind.AreaHeal or AbilityKind.Cleanse or AbilityKind.HealingTouch => "Cross",
                 AbilityKind.Buff => "Chevrons",
                 AbilityKind.Projectile => "Bolt",
                 AbilityKind.AreaDamage => "Burst",

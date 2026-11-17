@@ -416,8 +416,8 @@ namespace Game.Scripts.Editor.Dungeon
                     },
                     new AbilityDef
                     {
-                        Name = "Healing", Description = Text("The ally under the crosshair (or you): after a 2s prayer heals 30% of health at once.", "Stand up. It's not time yet."), Kind = AbilityKind.Heal, IsSpell = true,
-                        Charges = 2, Cooldown = 1f, CastTime = 2f, Magnitude = 30f, PercentHealth = true, Range = 15f, Flags = AbilityFlags.Healing, Glyph = "He", Color = mending, Subclass = 0,
+                        Name = "Healing Touch", Description = Text("Hold: lay hands on the ally under the crosshair within 1.5m and heal him 2% of health a second for as long as you hold, standing still. Breaks if he steps away.", "Stand up. It's not time yet."), Kind = AbilityKind.HealingTouch, IsSpell = true,
+                        Charges = 2, Cooldown = 1f, CastTime = 1f, Magnitude = 2f, PercentHealth = true, Range = 1.5f, Flags = AbilityFlags.Healing, Glyph = "He", Color = mending, Subclass = 0,
                         Vfx = VfxStyle.Heal, Art = "a radiant hand laid on a fallen warrior's forehead, wounds closing"
                     },
                     new AbilityDef
