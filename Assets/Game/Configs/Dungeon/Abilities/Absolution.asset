@@ -13,16 +13,19 @@ MonoBehaviour:
   m_Name: Absolution
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Absolution
-  _description: For 8s every weapon hit heals you for 15% of its damage.
-  _kind: 1
+  _description: 'Lift slow, burn, poison and curse off yourself and allies within
+    3m.
+
+    <i><color=#a89f8a>"Whatever it was, it is forgiven."</color></i>'
+  _kind: 23
   _isSpell: 0
   _charges: 1
-  _cooldown: 30
-  _castTime: 0.3
-  _magnitude: 15
-  _duration: 8
-  _radius: 0
-  _effect: 20
+  _cooldown: 45
+  _castTime: 0.4
+  _magnitude: 0
+  _duration: 0
+  _radius: 3
+  _effect: 0
   _damageType: 1
   _projectileSpeed: 26
   _projectileGravity: 0
@@ -31,16 +34,35 @@ MonoBehaviour:
   _projectileKind: 1
   _effectMagnitude: 0
   _effectDuration: 0
-  _color: {r: 0.95, g: 0.4, b: 0.3, a: 1}
+  _color: {r: 1, g: 0.9, b: 0.55, a: 1}
   _glyph: Ab
   _icon: {fileID: 21300000, guid: 40d037e904b4e274d87a9742ddb049f7, type: 3}
   _healthCost: 0
   _lifeSteal: 0
   _spawnPrefab: {fileID: 0}
   _staggerDuration: 0
-  _subclass: 0
+  _subclass: -1
   _resourceCost: 0
   _stackBonus: 0
   _isOnAlly: 0
   _coneAngle: 0
   _push: 0
+  _range: 20
+  _auraTime: 0
+  _isGround: 0
+  _secondEffect: 0
+  _secondMagnitude: 0
+  _secondDuration: 0
+  _isPercentHealth: 0
+  _flags: 0
+  _zone: 0
+  _zoneRadius: 0
+  _zoneDuration: 0
+  _zoneDelay: 0
+  _zoneTick: 0
+  _channel: 0
+  _healthCostPercent: 0
+  _item: {fileID: 0}
+  _castSound: {fileID: 8300000, guid: 615cb9ce26cb8e9419f410f42d3545a8, type: 3}
+  _impactSound: {fileID: 0}
+  _vfx: 6

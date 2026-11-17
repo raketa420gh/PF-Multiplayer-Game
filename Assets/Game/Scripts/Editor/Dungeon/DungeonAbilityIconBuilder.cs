@@ -234,7 +234,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             return kind switch
             {
-                AbilityKind.Heal or AbilityKind.AreaHeal or AbilityKind.Cleanse or AbilityKind.HealingTouch => "Cross",
+                AbilityKind.Heal or AbilityKind.AreaHeal or AbilityKind.Cleanse or AbilityKind.HealingTouch or AbilityKind.Transfusion => "Cross",
                 AbilityKind.Buff => "Chevrons",
                 AbilityKind.Projectile => "Bolt",
                 AbilityKind.AreaDamage => "Burst",
@@ -254,7 +254,7 @@ namespace Game.Scripts.Editor.Dungeon
             return stat switch
             {
                 StatType.ArmorRating or StatType.MagicResistance or StatType.ProjectileReduction or StatType.FlatReduction => "Armor",
-                StatType.MaxHealth or StatType.Vitality => "Heart",
+                StatType.MaxHealth or StatType.Vitality or StatType.BonusHealing => "Heart",
                 StatType.PhysicalPower or StatType.PhysicalDamageBonus or StatType.Strength => "Axe",
                 StatType.MoveSpeed or StatType.Agility => "Dash",
                 StatType.ActionSpeed or StatType.Dexterity => "Bolt",

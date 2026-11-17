@@ -29,8 +29,8 @@ MonoBehaviour:
   _bodyColor: {r: 1, g: 1, b: 1, a: 1}
   _skills:
   - {fileID: 11400000, guid: 04dd9acdaf9b83647b1df842bad90bfc, type: 2}
-  - {fileID: 11400000, guid: 9ea8cf1da4bca054bbac78f6bae5e8ab, type: 2}
-  - {fileID: 11400000, guid: cbbc2ebafafa1d14f87875ca49f7843d, type: 2}
+  - {fileID: 11400000, guid: 83e551918d40c6d46a08dd58335d5109, type: 2}
+  - {fileID: 11400000, guid: 6bee7b32cf5fe5f439bb54f280dfd989, type: 2}
   _spells:
   - {fileID: 11400000, guid: cf9f965ee78f6c244b6f0489bf2ddb20, type: 2}
   - {fileID: 11400000, guid: e7e885ac6e3c225499e139eaa24a80cb, type: 2}
@@ -43,88 +43,115 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 47ac215e0af4f814fb068a9f7a09a2ef, type: 2}
   - {fileID: 11400000, guid: 0900c985c8bfa404cb1eb90a81a601c2, type: 2}
   - {fileID: 11400000, guid: e335feac1f5a1f6499e4b641d92a6155, type: 2}
+  - {fileID: 11400000, guid: 9b7f3df24024f6d42ae18a686077eb87, type: 2}
+  - {fileID: 11400000, guid: b04ff78e37f3df54aaf9f527806b3334, type: 2}
+  - {fileID: 11400000, guid: fe39fe114a4924a4ba94636f34ff64c7, type: 2}
+  - {fileID: 11400000, guid: d8bccf41920cc9c49bc0d333a0e33bb9, type: 2}
+  - {fileID: 11400000, guid: 5a5fa79c463cdb94c8f4949691d2fcae, type: 2}
   _perks:
   - _name: Firm Faith
-    _description: '+3 Spirit.
+    _description: '+5 Spirit, -2 Strength.
 
-      <i><color=#a89f8a>"The words are the same. The
-      voice is mine."</color></i>'
+      <i><color=#a89f8a>"The words are
+      the same. The voice is mine."</color></i>'
     _modifiers:
     - Stat: 2
-      Value: 3
+      Value: 5
+    - Stat: 0
+      Value: -2
     _icon: {fileID: 21300000, guid: 95f8ff61b9f7fff42bd708329869a259, type: 3}
     _subclass: -1
     _isPerStack: 0
     _effect: 0
     _value: 0
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Requiem
-    _description: '+15% damage to the undead.
+    _description: 'The undead deal you 25% less damage.
 
-      <i><color=#a89f8a>"Sleep. You''ve
-      been sung to rest."</color></i>'
+      <i><color=#a89f8a>"Sleep.
+      You''ve been sung to rest."</color></i>'
     _modifiers: []
     _icon: {fileID: 21300000, guid: 024dc97d6cfd9b94f8cc2705232af6a0, type: 3}
     _subclass: -1
     _isPerStack: 0
     _effect: 50
-    _value: 0.15
-  - _name: Altar Boy
-    _description: 'Prayers are cast 10% faster.
+    _value: 0.25
+    _secondEffect: 0
+    _secondValue: 0
+  - _name: Pilgrim
+    _description: 'A spellbook or a staff in hand slows your walk half as much.
 
-      <i><color=#a89f8a>"A hundred
-      times a day. The tongue remembers."</color></i>'
+      <i><color=#a89f8a>"From
+      the Cathedral to the vein on foot. The book never got heavier."</color></i>'
     _modifiers: []
-    _icon: {fileID: 21300000, guid: 56708af6798b350409780c25df93e6b7, type: 3}
+    _icon: {fileID: 21300000, guid: a15a6d009ba35b640990530efcd96d3b, type: 3}
     _subclass: -1
     _isPerStack: 0
     _effect: 51
-    _value: 0.1
-  - _name: Gravedigger's Back
-    _description: '+3 Strength.
+    _value: 0.5
+    _secondEffect: 0
+    _secondValue: 0
+  - _name: Scourge
+    _description: 'You take 3 less damage from any source, but never less than 1;
+      a burn or a poison loses 3 of its whole damage.
 
-      <i><color=#a89f8a>"Every grave in the parish,
-      dug by hand."</color></i>'
+      <i><color=#a89f8a>"After
+      the scourge a blade is almost a mercy."</color></i>'
     _modifiers:
-    - Stat: 0
+    - Stat: 23
       Value: 3
-    _icon: {fileID: 21300000, guid: 2fcc8624306d3db4b8eb1fee565f9210, type: 3}
+    _icon: {fileID: 21300000, guid: 8089a42a39c93dc409175c28ac84a600, type: 3}
     _subclass: -1
     _isPerStack: 0
     _effect: 0
     _value: 0
-  - _name: Night Vigil
-    _description: 'Your torch lights 30% farther.
+    _secondEffect: 0
+    _secondValue: 0
+  - _name: Clean Conscience
+    _description: '+20% debuff reduction: slows, burns, poisons, curses and other
+      harmful effects on you end sooner.
 
-      <i><color=#a89f8a>"Someone
-      has to sit with the dead."</color></i>'
-    _modifiers: []
-    _icon: {fileID: 21300000, guid: 83c7d1cb19bab4d4d8c4fdf89f229024, type: 3}
+      <i><color=#a89f8a>"Nothing sticks
+      to a clean conscience."</color></i>'
+    _modifiers:
+    - Stat: 22
+      Value: 0.2
+    _icon: {fileID: 21300000, guid: c6cf0678e17a5e04d927d929a31d6705, type: 3}
     _subclass: -1
     _isPerStack: 0
-    _effect: 31
-    _value: 0.3
+    _effect: 0
+    _value: 0
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Warm Hands
-    _description: '+20% to your healing.
+    _description: '+5 bonus healing.
 
-      <i><color=#a89f8a>"Everything is
-      cold down here. Except the hands."</color></i>'
-    _modifiers: []
+      <i><color=#a89f8a>"Everything is cold
+      down here. Except the hands."</color></i>'
+    _modifiers:
+    - Stat: 24
+      Value: 5
     _icon: {fileID: 21300000, guid: d06ef3e10fbb1cf4bbe9f0546b2a4aad, type: 3}
     _subclass: 0
     _isPerStack: 0
-    _effect: 52
-    _value: 0.2
-  - _name: Shroud
-    _description: 'The one you heal takes 10% less damage for 4s.
+    _effect: 0
+    _value: 0
+    _secondEffect: 0
+    _secondValue: 0
+  - _name: Shared Light
+    _description: 'Healing an ally heals you for your bonus healing too.
 
-      <i><color=#a89f8a>"Under
-      my hand they won''t touch you."</color></i>'
+      <i><color=#a89f8a>"What
+      I give comes back to me."</color></i>'
     _modifiers: []
     _icon: {fileID: 21300000, guid: ff7cac60a6a42654e8a7f8d4e91bb29d, type: 3}
     _subclass: 0
     _isPerStack: 0
-    _effect: 53
-    _value: 10
+    _effect: 52
+    _value: 1
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Patience
     _description: '+1 charge to healing prayers.
 
@@ -134,10 +161,12 @@ MonoBehaviour:
     _icon: {fileID: 21300000, guid: 124325300dcb96f47b7bc534cb58485a, type: 3}
     _subclass: 0
     _isPerStack: 0
-    _effect: 54
+    _effect: 53
     _value: 1
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Last Rites
-    _description: 'Your healing is 30% stronger on allies below 30% health.
+    _description: '+10 bonus healing on allies below 30% health.
 
       <i><color=#a89f8a>"Not
       today. I''m not ready to bury you."</color></i>'
@@ -145,8 +174,10 @@ MonoBehaviour:
     _icon: {fileID: 21300000, guid: 2b0d57d2e3b497d4f91ecdfdcb6de5e1, type: 3}
     _subclass: 0
     _isPerStack: 0
-    _effect: 55
-    _value: 0.3
+    _effect: 54
+    _value: 10
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Heavy Hand
     _description: '+10% damage with blunt weapons.
 
@@ -156,8 +187,10 @@ MonoBehaviour:
     _icon: {fileID: 21300000, guid: 723b44d0ed468b343b0448133565975d, type: 3}
     _subclass: 1
     _isPerStack: 0
-    _effect: 56
+    _effect: 55
     _value: 0.1
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Strength of Faith
     _description: '+3 Strength.
 
@@ -171,6 +204,8 @@ MonoBehaviour:
     _isPerStack: 0
     _effect: 0
     _value: 0
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Righteous Wrath
     _description: 'After you take a hit your next attack deals 20% more damage (at
       most once in 5s).
@@ -180,8 +215,10 @@ MonoBehaviour:
     _icon: {fileID: 21300000, guid: 0ea1b1b9287bb0840b95f72dac42dd32, type: 3}
     _subclass: 1
     _isPerStack: 0
-    _effect: 57
+    _effect: 56
     _value: 20
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Blood Tithe
     _description: 'Every weapon hit heals you for 2% of your health.
 
@@ -191,8 +228,10 @@ MonoBehaviour:
     _icon: {fileID: 21300000, guid: 5ec62fdd105a48f4aa28ec0dbead9593, type: 3}
     _subclass: 1
     _isPerStack: 0
-    _effect: 58
+    _effect: 57
     _value: 2
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Blood Prayer
     _description: 'A prayer without charges can be read for 15% of your health.
 
@@ -202,8 +241,10 @@ MonoBehaviour:
     _icon: {fileID: 21300000, guid: e93dbc8a23318b74bab379cf7a4547d3, type: 3}
     _subclass: 2
     _isPerStack: 0
-    _effect: 59
+    _effect: 58
     _value: 15
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Louder in the Dark
     _description: 'While below half health your prayers deal 15% more damage.
 
@@ -213,8 +254,10 @@ MonoBehaviour:
     _icon: {fileID: 21300000, guid: 1e4b834d865916a409c17054f87e1836, type: 3}
     _subclass: 2
     _isPerStack: 0
-    _effect: 60
+    _effect: 59
     _value: 0.15
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Rot
     _description: 'Foes you curse take 10% more damage from everyone.
 
@@ -224,8 +267,10 @@ MonoBehaviour:
     _icon: {fileID: 21300000, guid: 732e7ce535364d04397f4b2a0ebf2d02, type: 3}
     _subclass: 2
     _isPerStack: 0
-    _effect: 61
+    _effect: 60
     _value: 10
+    _secondEffect: 0
+    _secondValue: 0
   - _name: Take Back
     _description: 'Killing a cursed foe restores 10% of your health.
 
@@ -235,8 +280,10 @@ MonoBehaviour:
     _icon: {fileID: 21300000, guid: 09b0343ef244c464bbc4ed4a18bd2ad8, type: 3}
     _subclass: 2
     _isPerStack: 0
-    _effect: 62
+    _effect: 61
     _value: 10
+    _secondEffect: 0
+    _secondValue: 0
   _subclasses:
   - _name: Infirmarian
     _description: Heals and shelters the squad. Served the Cathedral's infirmary

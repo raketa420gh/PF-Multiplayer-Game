@@ -216,13 +216,11 @@ namespace Game.Scripts.Dungeon
         Requiem,
         /// Share of the spellbook and staff walking penalty taken off.
         Pilgrim,
-        /// Share more healing done.
-        WarmHands,
-        /// Percent less damage for a moment taken by the one he heals.
-        Shroud,
+        /// Share of his bonus healing the healer gets back from every healing of an ally.
+        SharedLight,
         /// More charges of healing prayers.
         Patience,
-        /// Share more healing on allies below 30% health.
+        /// Bonus healing added on allies below 30% health.
         LastRites,
         /// Share more damage of blunt weapons.
         HeavyHand,

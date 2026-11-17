@@ -1329,7 +1329,7 @@ namespace Game.Scripts.Dungeon
             if (ally._fighter.Health.Progress >= 1f)
                 return;
 
-            HealTarget(ally, Power(ability) * TouchPulse, ability.IsPercentHealth, false, 0f, HealScale(ability));
+            HealTarget(ally, Power(ability) * TouchPulse, ability.IsPercentHealth, false, TouchPulse, HealScale(ability), ability.DamageType == DamageType.Magical);
             RpcFlash(BodyPoint(ally._fighter.Receiver), ability.Color, 2f);
         }
 
@@ -1474,7 +1474,7 @@ namespace Game.Scripts.Dungeon
 
             if (ability.SpendsResource)
                 Resource = 0;
-            else if (ability.Kind is AbilityKind.Heal or AbilityKind.AreaHeal or AbilityKind.Shield or AbilityKind.HealingTouch ||(ability.Kind == AbilityKind.Buff && (ability.IsSpell || ability.IsOnAlly)))
+            else if (ability.Kind is AbilityKind.Heal or AbilityKind.AreaHeal or AbilityKind.Shield or AbilityKind.HealingTouch or AbilityKind.Transfusion ||(ability.Kind == AbilityKind.Buff && (ability.IsSpell || ability.IsOnAlly)))
                 GainResource(ResourceSource.Support);
 
             if (ability.HealthCostPercent > 0f)
@@ -1492,6 +1492,11 @@ namespace Game.Scripts.Dungeon
                     break;
                 case AbilityKind.AreaHeal:
                     AreaHeal(ability, AreaCenter(ability));
+                    break;
+                case AbilityKind.Transfusion:
+                    if (!Transfuse(ability))
+                        return;
+
                     break;
                 case AbilityKind.Buff:
                     AdventurerComponent buffed = SupportTarget(ability);
@@ -1751,7 +1756,7 @@ namespace Game.Scripts.Dungeon
 
         private void Heal(AdventurerComponent target, AbilityConfig ability)
         {
-            HealTarget(target, Power(ability), ability.IsPercentHealth, ability.Duration > 0f, ability.Duration, HealScale(ability));
+            HealTarget(target, Power(ability), ability.IsPercentHealth, ability.Duration > 0f, ability.Duration, HealScale(ability), ability.DamageType == DamageType.Magical);
 
             if (ability.IsSpell)
                 RpcFlash(BodyPoint(target._fighter.Receiver), ability.Color, 5f);
@@ -1771,7 +1776,7 @@ namespace Game.Scripts.Dungeon
                     || !fighter.TryGetComponent(out AdventurerComponent ally) || ally.State != AdventurerState.Alive)
                     continue;
 
-                HealTarget(ally, Power(ability), ability.IsPercentHealth, true, ability.Duration, _stats.MagicalHealing);
+                HealTarget(ally, Power(ability), ability.IsPercentHealth, true, ability.Duration, _stats.MagicalHealing, true);
             }
 
             RpcFlash(center + Vector3.up, ability.Color, ability.Radius * 2f);

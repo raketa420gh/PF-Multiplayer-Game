@@ -38,7 +38,8 @@ namespace Game.Scripts.Dungeon
         ProjectileReduction,
         BuffDuration,
         DebuffReduction,
-        FlatReduction
+        FlatReduction,
+        BonusHealing
     }
 
     /// Names, values and hover texts of the character sheet.
@@ -59,7 +60,7 @@ namespace Game.Scripts.Dungeon
             "Physical Power", "Physical Damage", "Health", "Magical Power", "Magical Damage",
             "Cast Speed", "Spell Memory", "Move Speed", "Action Speed",
             "Armor Rating", "Physical Reduction", "Magic Resistance", "Magical Reduction", "Cooldown Recovery",
-            "Projectile Reduction", "Buff Duration", "Debuff Reduction", "Flat Reduction"
+            "Projectile Reduction", "Buff Duration", "Debuff Reduction", "Flat Reduction", "Bonus Healing"
         };
 
         private static readonly string[] s_descriptions =
@@ -93,7 +94,8 @@ namespace Game.Scripts.Dungeon
             "Share of damage from arrows, bolts and thrown weapons removed, on top of the armor.",
             "The buffs and war cries of your skills last this much longer.",
             "Slows, burns, poisons, curses and other harmful effects on you last this much shorter. Burn and poison deal that much less.",
-            "Points taken off every hit after armor and resistance; a hit always deals at least 1. Burn and poison are not hits."
+            "Points taken off every hit after armor and resistance; a hit always deals at least 1. Burn and poison are not hits.",
+            "Health added to every healing prayer you cast, before Magical Healing multiplies it. Healing over time gets it once per 5 seconds."
         };
 
         private static readonly string[] s_thresholds =
@@ -113,11 +115,11 @@ namespace Game.Scripts.Dungeon
         };
 
         /// Armor Rating, Physical Reduction, Magic Resistance, Magical Reduction, Cooldown Recovery, Projectile Reduction, Buff Duration,
-        /// Debuff Reduction, Flat Reduction.
+        /// Debuff Reduction, Flat Reduction, Bonus Healing.
         private static readonly Color[] s_gearColors =
         {
             new(0.8f, 0.82f, 0.88f), new(0.62f, 0.66f, 0.78f), new(0.5f, 0.8f, 0.96f), new(0.36f, 0.6f, 0.9f), new(0.62f, 0.9f, 0.86f),
-            new(0.78f, 0.7f, 0.56f), new(0.95f, 0.78f, 0.42f), new(0.74f, 0.6f, 0.88f), new(0.7f, 0.72f, 0.66f)
+            new(0.78f, 0.7f, 0.56f), new(0.95f, 0.78f, 0.42f), new(0.74f, 0.6f, 0.88f), new(0.7f, 0.72f, 0.66f), new(0.6f, 0.92f, 0.5f)
         };
 
         private static readonly StatId[][] s_ownStats =
@@ -327,6 +329,10 @@ namespace Game.Scripts.Dungeon
                     sign = stats.FlatReduction;
 
                     return stats.FlatReduction.ToString();
+                case StatId.BonusHealing:
+                    sign = stats.BonusHealing;
+
+                    return stats.BonusHealing.ToString("0.#", CultureInfo.InvariantCulture);
                 default: return stats.Attributes.Get((StatType)stat).ToString();
             }
         }

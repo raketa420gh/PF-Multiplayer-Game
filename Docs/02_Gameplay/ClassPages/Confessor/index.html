@@ -212,13 +212,19 @@ const GROUPS = [
         nums: [["Заряды", "2"], ["Чтение", "1,2 с"], ["Длительность", "6 с"], ["Радиус", "3 м"], ["Лечение", "4/с"]] },
       { icon: "Blessing", name: "Blessing", tags: ["Усиление"],
         desc: "Союзник под прицелом (или ты): +2 ко всем атрибутам на 30 с.", quote: "Go. He is watching.",
-        nums: [["Заряды", "2"], ["Чтение", "0,8 с"], ["Длительность", "30 с"], ["Дальность", "15 м"]] }
+        nums: [["Заряды", "2"], ["Чтение", "0,8 с"], ["Длительность", "30 с"], ["Дальность", "15 м"]] },
+      { glyph: "Tr", name: "Transfusion", tags: ["Лечение"],
+        desc: "Переливание: союзник под прицелом в 10 м получает 30 здоровья, ты отдаёшь 15 своего. Без союзника под прицелом ничего не происходит и заряд не тратится.", note: "Иконки пока нет.", quote: "Take mine. I have enough.",
+        nums: [["Заряды", "3"], ["Чтение", "0,8 с"], ["Дальность", "10 м"], ["Лечение", "30"], ["Цена", "15 здоровья"]] },
+      { glyph: "Sp", name: "Splint", tags: ["Усиление"],
+        desc: "Шина: с союзника под прицелом (или с тебя) спадают замедления и обездвиживание, 8 с новые не действуют.", note: "Иконки пока нет.", quote: "Walk. The bone will hold.",
+        nums: [["Заряды", "2"], ["Чтение", "0,6 с"], ["Длительность", "8 с"], ["Дальность", "15 м"]] }
     ],
     perks: [
-      { icon: "WarmHands", name: "Warm Hands", desc: "+20% к твоему лечению.", quote: "Everything is cold down here. Except the hands." },
-      { icon: "Shroud", name: "Shroud", desc: "Тот, кого ты лечишь, 4 с получает на 10% меньше урона.", quote: "Under my hand they won't touch you." },
+      { icon: "WarmHands", name: "Warm Hands", desc: "+5 к бонусному лечению (Bonus Healing): прибавляется к каждой твоей лечащей молитве до множителя Magical Healing, лечение во времени получает его раз в 5 с.", quote: "Everything is cold down here. Except the hands." },
+      { icon: "SharedLight", name: "Shared Light", desc: "Когда лечишь союзника, лечишь и себя на своё бонусное лечение.", quote: "What I give comes back to me." },
       { icon: "Patience", name: "Patience", desc: "+1 заряд лечащим молитвам.", note: "Minor Healing 4 → 5, Healing 2 → 3, Circle of Intercession 2 → 3.", quote: "Pray longer than it hurts." },
-      { icon: "LastRites", name: "Last Rites", desc: "Твоё лечение на 30% сильнее по союзникам ниже 30% здоровья.", quote: "Not today. I'm not ready to bury you." }
+      { icon: "LastRites", name: "Last Rites", desc: "+10 к бонусному лечению по союзникам ниже 30% здоровья.", quote: "Not today. I'm not ready to bury you." }
     ] },
   { id: "smiter", cls: "g-smiter", title: "Smiter", label: "Подкласс", emblem: "Subclass_Smiter",
     text: "Булава против нежити. Храмовый брат кладбищенской стражи; когда печать вскрыли, его послали первым.",

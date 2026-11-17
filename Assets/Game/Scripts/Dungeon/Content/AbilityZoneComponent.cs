@@ -309,7 +309,7 @@ namespace Game.Scripts.Dungeon
             bool isPercent = Kind == ZoneKind.HealPool;
 
             if (owner != null)
-                owner.HealTarget(ally, amount, isPercent, false);
+                owner.HealTarget(ally, amount, isPercent, false, Pulse, 1f, Kind == ZoneKind.Sanctuary);
             else
                 ally.Fighter.Health.Restore(Mathf.Max(1, Mathf.RoundToInt(isPercent ? ally.Fighter.Health.MaxHealth * amount / 100f : amount)));
         }

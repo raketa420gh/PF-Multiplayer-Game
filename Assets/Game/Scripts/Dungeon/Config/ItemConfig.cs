@@ -110,6 +110,8 @@ namespace Game.Scripts.Dungeon
         DebuffReduction,
         /// Points of damage taken off every hit after the percent reductions.
         FlatReduction,
+        /// Health added to every healing prayer cast, before Magical Healing multiplies it; heals over time get it once per 5 s.
+        BonusHealing,
         Count
     }
 

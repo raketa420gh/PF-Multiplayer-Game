@@ -40,6 +40,8 @@ namespace Game.Scripts.Dungeon
         public float DebuffReduction => Mathf.Clamp01(_flat[(int)StatType.DebuffReduction]);
         /// Points taken off every hit after the percent reductions.
         public int FlatReduction => Mathf.Max(0, Mathf.RoundToInt(_flat[(int)StatType.FlatReduction]));
+        /// Health added to every healing prayer cast.
+        public float BonusHealing => Mathf.Max(0f, _flat[(int)StatType.BonusHealing]);
 
         private ClassStats _attributes;
         private int _maxHealth = 100;

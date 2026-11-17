@@ -17,7 +17,10 @@ namespace Game.Scripts.Dungeon
         private const float WrathTime = 6f;
         private const float MarkTime = 5f;
         private const float CausticTime = 4f;
-        private const float ShroudTime = 4f;
+        /// Seconds of healing over time that get the bonus healing once.
+        private const float BonusHealingSpan = 5f;
+        /// Share of a transfusion's base healing the caster pays from his own health.
+        private const float TransfusionCost = 0.5f;
         private const float ExecuteHealth = 0.4f;
         private const float LowHealth = 0.3f;
         private const float LongShotRange = 20f;
@@ -36,6 +39,8 @@ namespace Game.Scripts.Dungeon
         private float _drainPerPulse;
         private float _drainSteal;
         private int _drainTick;
+        /// Shared light not yet restored: pulses of healing touch and zones bring less than a point each.
+        private float _sharedLight;
         /// Side effect a mixture leaves when its buff runs out.
         private StatusEffectKind _sideEffect;
         private float _sideMagnitude;
@@ -85,18 +90,20 @@ namespace Game.Scripts.Dungeon
             target.Add(kind, magnitude, duration);
         }
 
-        /// Healing given by this adventurer: warm hands and last rites make it stronger, pure blood cleanses poison, a shroud guards the healed.
-        public void HealTarget(AdventurerComponent target, float amount, bool isPercent, bool isOverTime, float duration = 0f, float scale = 1f)
+        /// Healing given by this adventurer. A magical one gets the bonus healing (once per BonusHealingSpan of the seconds it covers),
+        /// last rites add to it on the dying, shared light gives the healer his bonus back; pure blood cleanses poison.
+        public void HealTarget(AdventurerComponent target, float amount, bool isPercent, bool isOverTime, float duration = 0f, float scale = 1f, bool isMagical = false)
         {
             HealthComponent health = target._fighter.Health;
-            float heal = (isPercent ? health.MaxHealth * amount / 100f : amount) * scale;
-            heal *= 1f + Perk(PerkEffect.WarmHands) + (health.Progress < LowHealth ? Perk(PerkEffect.LastRites) : 0f);
+            float span = isMagical ? duration > 0f ? duration / BonusHealingSpan : 1f : 0f;
+            float bonus = (_stats.BonusHealing + (health.Progress < LowHealth ? Perk(PerkEffect.LastRites) : 0f)) * span;
+            float heal = ((isPercent ? health.MaxHealth * amount / 100f : amount) + bonus) * scale;
+
+            if (target != this && Perk(PerkEffect.SharedLight) > 0f)
+                ShareLight(_stats.BonusHealing * span * Perk(PerkEffect.SharedLight));
 
             if (Perk(PerkEffect.PureBlood) > 0f)
                 target._effects.Remove(StatusEffectKind.Poison);
-
-            if (Perk(PerkEffect.Shroud) > 0f && target._effects.GetMagnitude(StatusEffectKind.Guard) < Perk(PerkEffect.Shroud))
-                target._effects.Add(StatusEffectKind.Guard, Perk(PerkEffect.Shroud), ShroudTime);
 
             if (isOverTime && duration > 0f)
                 target._effects.Add(StatusEffectKind.HealOverTime, heal, duration);
@@ -149,6 +156,34 @@ namespace Game.Scripts.Dungeon
                 tag = (tag & ~DamageTag.Spell) | DamageTag.Flask;
 
             return tag;
+        }
+
+        /// Shared light: the healer gets his bonus healing back, the fractions of pulses are kept until they make a point.
+        private void ShareLight(float heal)
+        {
+            _sharedLight += heal;
+            int points = Mathf.FloorToInt(_sharedLight);
+
+            if (points <= 0)
+                return;
+
+            _sharedLight -= points;
+            _fighter.Health.Restore(_effects.ScaleHealing(points));
+        }
+
+        /// Transfusion: the ally under the crosshair gets the healing, the caster pays half of its base from his own health; false without an ally.
+        private bool Transfuse(AbilityConfig ability)
+        {
+            AdventurerComponent ally = FindAlly(ability);
+            int cost = Mathf.CeilToInt(Power(ability) * TransfusionCost);
+
+            if (ally == this || _fighter.Health.CurrentHealth <= cost)
+                return false;
+
+            _fighter.Health.TakeDamage(cost);
+            Heal(ally, ability);
+
+            return true;
         }
 
         /// Venom of this adventurer: the magnitude is the damage over the whole duration; his perks thicken it and add weakness and rot.

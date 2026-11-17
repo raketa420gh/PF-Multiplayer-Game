@@ -488,6 +488,19 @@ namespace Game.Scripts.Editor.Dungeon
                         Name = "Holy Bolt", Description = Text("A bolt of light: 15 magical damage; it throws the undead back.", "Back where you came from."), Kind = AbilityKind.Projectile, IsSpell = true, Charges = 4,
                         Cooldown = 1f, CastTime = 0.6f, Magnitude = 15f, Speed = 30f, Projectile = ProjectileKind.Holy, Push = 4f, Stagger = 0.1f, Flags = AbilityFlags.Holy, Glyph = "HB", Color = light,
                         Vfx = VfxStyle.Holy, Art = "a bolt of golden light flying from a raised prayer book, a skeleton thrown backwards"
+                    },
+                    // Infirmarian prayers added 2026-11-17: appended, since saved wheels keep spells by index.
+                    new AbilityDef
+                    {
+                        Name = "Transfusion", Description = Text("The ally under the crosshair within 10m gets 30 health; you give 15 of your own. Nothing happens without an ally.", "Take mine. I have enough."),
+                        Kind = AbilityKind.Transfusion, IsSpell = true, Charges = 3, Cooldown = 1f, CastTime = 0.8f, Magnitude = 30f, Range = 10f, Flags = AbilityFlags.Healing, Glyph = "Tr",
+                        Color = mending, Subclass = 0, Vfx = VfxStyle.Heal, Art = "a thread of red light flowing from a priest's open palm into a wounded ally's chest"
+                    },
+                    new AbilityDef
+                    {
+                        Name = "Splint", Description = Text("The ally under the crosshair within 15m (or you): slows and roots fall off and cannot hold him for 8s.", "Walk. The bone will hold."),
+                        Kind = AbilityKind.Buff, IsSpell = true, Charges = 2, Cooldown = 1f, CastTime = 0.6f, Effect = StatusEffectKind.Splint, Magnitude = 1f, Duration = 8f, Range = 15f, Glyph = "Sp",
+                        Color = mending, Subclass = 0, Vfx = VfxStyle.Heal, Art = "a wooden splint bound with glowing linen around a warrior's shin"
                     }
                 },
                 Perks = new[]
@@ -499,10 +512,11 @@ namespace Game.Scripts.Editor.Dungeon
                     Stats("Scourge", "You take 3 less damage from any source, but never less than 1; a burn or a poison loses 3 of its whole damage.", "After the scourge a blade is almost a mercy.",
                         "a knotted leather scourge on a stone floor, a priest's bare back with old scourge marks", -1, new StatModifier(StatType.FlatReduction, 3f)),
                     Stats("Clean Conscience", "+20% debuff reduction: slows, burns, poisons, curses and other harmful effects on you end sooner.", "Nothing sticks to a clean conscience.", "a calm priest with closed eyes, dark smoke sliding off his shoulders like water", -1, new StatModifier(StatType.DebuffReduction, 0.2f)),
-                    Perk("Warm Hands", "+20% to your healing.", "Everything is cold down here. Except the hands.", PerkEffect.WarmHands, 0.2f, "hands glowing warm orange over a cold stone slab", 0),
-                    Perk("Shroud", "The one you heal takes 10% less damage for 4s.", "Under my hand they won't touch you.", PerkEffect.Shroud, 10f, "a translucent golden veil over a kneeling warrior", 0),
+                    Stats("Warm Hands", "+5 bonus healing.", "Everything is cold down here. Except the hands.", "hands glowing warm orange over a cold stone slab", 0, new StatModifier(StatType.BonusHealing, 5f)),
+                    Perk("Shared Light", "Healing an ally heals you for your bonus healing too.", "What I give comes back to me.", PerkEffect.SharedLight, 1f,
+                        "two hands clasped, one giving golden light, the same light flowing back along the arm", 0),
                     Perk("Patience", "+1 charge to healing prayers.", "Pray longer than it hurts.", PerkEffect.Patience, 1f, "an hourglass with glowing golden sand beside a prayer book", 0),
-                    Perk("Last Rites", "Your healing is 30% stronger on allies below 30% health.", "Not today. I'm not ready to bury you.", PerkEffect.LastRites, 0.3f, "a priest holding a dying soldier's hand, light between them", 0),
+                    Perk("Last Rites", "+10 bonus healing on allies below 30% health.", "Not today. I'm not ready to bury you.", PerkEffect.LastRites, 10f, "a priest holding a dying soldier's hand, light between them", 0),
                     Perk("Heavy Hand", "+10% damage with blunt weapons.", "Bone is not cut. Bone is crushed.", PerkEffect.HeavyHand, 0.1f, "a heavy iron flanged mace resting on a broken skull", 1),
                     Stats("Strength of Faith", "+3 Strength.", "Prayed with a mace in hand. Holds better.", "a muscular arm gripping a mace with a rosary wrapped on the haft", 1, new StatModifier(StatType.Strength, 3f)),
                     Perk("Righteous Wrath", "After you take a hit your next attack deals 20% more damage (at most once in 5s).", "You struck. Here's my answer.", PerkEffect.RighteousWrath, 20f, "a priest's furious eyes glowing gold behind a raised mace", 1),

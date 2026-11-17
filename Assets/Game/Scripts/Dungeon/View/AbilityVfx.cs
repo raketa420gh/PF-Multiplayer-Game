@@ -611,6 +611,7 @@ namespace Game.Scripts.Dungeon
                     return true;
                 case StatusEffectKind.Guard:
                 case StatusEffectKind.Protection:
+                case StatusEffectKind.Splint:
                     Spawn(root, Body(new Layer { Material = c.Glow, Rate = 6f, Life = new(0.6f, 1.2f), Size = new(0.02f, 0.05f), From = new Color(0.9f, 0.9f, 1f, 0.8f), Local = true, Max = 10 }, chest, torso));
                     Hover(root, c.Ring, new Vector3(0f, 0.03f, 0f), 1.1f, new Color(0.85f, 0.88f, 1f, 0.18f), ParticleSystemRenderMode.HorizontalBillboard);
 

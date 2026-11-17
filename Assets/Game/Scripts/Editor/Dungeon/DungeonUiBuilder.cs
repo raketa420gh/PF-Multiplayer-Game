@@ -1726,7 +1726,7 @@ namespace Game.Scripts.Editor.Dungeon
             Add(StatId.PhysicalPower, StatId.PhysicalDamage, StatId.MagicalPower, StatId.MagicalDamage);
             list.Add((default, "Defense"));
             Add(StatId.ArmorRating, StatId.PhysicalReduction, StatId.MagicResistance, StatId.MagicalReduction, StatId.ProjectileReduction, StatId.FlatReduction,
-                StatId.DebuffReduction);
+                StatId.DebuffReduction, StatId.BonusHealing);
             int columns = isCompact ? 2 : 1;
             int rows = (list.Count + columns - 1) / columns;
             float rowHeight = isCompact ? 17f : 23f;

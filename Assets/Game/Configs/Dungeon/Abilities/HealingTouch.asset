@@ -12,17 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c3213d3d36f3484f82b8a7ded1e01fd, type: 3}
   m_Name: HealingTouch
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
-  _displayName: Healing
-  _description: 'The ally under the crosshair (or you): after a 2s prayer heals 30%
-    of health at once.
+  _displayName: Healing Touch
+  _description: 'Hold: lay hands on the ally under the crosshair within 1.5m and
+    heal him 2% of health a second for as long as you hold, standing still. Breaks
+    if he steps away.
 
     <i><color=#a89f8a>"Stand up. It''s not time yet."</color></i>'
-  _kind: 0
+  _kind: 24
   _isSpell: 1
   _charges: 2
   _cooldown: 1
-  _castTime: 2
-  _magnitude: 30
+  _castTime: 1
+  _magnitude: 2
   _duration: 0
   _radius: 0
   _effect: 0
@@ -47,7 +48,7 @@ MonoBehaviour:
   _isOnAlly: 0
   _coneAngle: 0
   _push: 0
-  _range: 15
+  _range: 1.5
   _auraTime: 0
   _isGround: 0
   _secondEffect: 0

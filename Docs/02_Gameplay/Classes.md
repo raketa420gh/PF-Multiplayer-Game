@@ -83,14 +83,20 @@
 - Skills (изменены 2026-11-16, заменены на месте — билды хранят навыки по индексу):
   - **Psalm by Heart** (вместо Rosary) — следующая молитва в течение 10 с читается мгновенно, перезарядка 45 с (`AbilityKind.QuickCast`).
   - **Absolution** (вместо Holy Water) — снимает Slow, Burn, Poison и Cursed с себя и союзников в 3 м, перезарядка 45 с, каст 0,4 с (`AbilityKind.Cleanse`, `StatusEffectComponent.Cleanse`). Root, Silence, Vulnerable, Weakened и побочки микстур не снимает.
-- Spells: общие Minor Healing, Rest, Holy Light, Bind, Holy Bolt; Healing Touch (Целебное касание: удержание, союзник в 1,5 м, 2%/с без лимита, кастер стоит), Circle of Intercession, Blessing (Infirmarian); Hallowed Weapon, Sentence, Light of the Cathedral (Smiter); Wither, Curse, Whisper of the Sleeper (Apostate).
+- Spells: общие Minor Healing, Rest, Holy Light, Bind, Holy Bolt; Healing Touch (Целебное касание: удержание, союзник в 1,5 м, 2%/с без лимита, кастер стоит), Circle of Intercession, Blessing, Transfusion, Splint (Infirmarian); Hallowed Weapon, Sentence, Light of the Cathedral (Smiter); Wither, Curse, Whisper of the Sleeper (Apostate).
   - **Rest** (2026-11-17, механика прежняя, новое описание) — 11 магического урона светом, по нежити вдвое больше.
   - **Holy Light** (2026-11-17) — светящийся шар над точкой под прицелом до 15 м на 60 с, 2 заряда (`ZoneKind.HolyLight`).
   - **Bind** (2026-11-17) — цель под прицелом до 15 м не может сделать шаг 1,5 с (Root), 2 заряда.
   - **Holy Bolt** (2026-11-17) — снаряд света, 15 магического урона, нежить отбрасывает, 4 заряда.
+  - **Transfusion / Переливание** (2026-11-17, Infirmarian) — союзник под прицелом в 10 м +30 здоровья, кастер платит половину базы (15) своим здоровьем; без союзника молитва не срабатывает и заряд не тратится (`AbilityKind.Transfusion`). 3 заряда.
+  - **Splint / Шина** (2026-11-17, Infirmarian) — союзник под прицелом (или ты): снимает Slow/Root и 8 с не даёт наложить новые (`StatusEffectKind.Splint`). 2 заряда.
   - Новые молитвы добавлены в конец списка — раскладки колёс хранят молитвы по индексу.
-- Perks: общие Firm Faith, Requiem, Pilgrim, Scourge, Clean Conscience; Warm Hands, Shroud, Patience, Last Rites / Heavy Hand, Strength of Faith, Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
+- **Bonus Healing** (2026-11-17, `StatType.BonusHealing`, строка в листе персонажа) — плоское здоровье к каждой магической лечащей молитве до множителя Magical Healing; лечение во времени (HoT, Healing Touch, Circle) получает его раз в 5 с покрытого времени. Зелья алхимика и физическое лечение его не получают.
+- Perks: общие Firm Faith, Requiem, Pilgrim, Scourge, Clean Conscience; Warm Hands, Shared Light, Patience, Last Rites / Heavy Hand, Strength of Faith, Righteous Wrath, Blood Tithe / Blood Prayer, Louder in the Dark, Rot, Take Back.
   - **Scourge / Бичевание** (2026-11-16 как Hair Shirt, вместо Gravedigger's Back; переименован 2026-11-17) — Flat Reduction 3 (`StatType.FlatReduction`): на 3 урона меньше от любого источника, но не меньше 1; горение и яд теряют 3 от всего урона каждого наложения.
+  - **Warm Hands** (2026-11-17) — +5 Bonus Healing (было +20% лечения).
+  - **Shared Light** (2026-11-17, вместо Shroud) — лечение союзника лечит и тебя на твой Bonus Healing (`PerkEffect.SharedLight`).
+  - **Last Rites** (2026-11-17) — +10 Bonus Healing по союзникам ниже 30% здоровья (было +30%).
   - **Clean Conscience** (2026-11-16, вместо Night Vigil) — +20% Debuff Reduction (`StatType.DebuffReduction`): вредные эффекты на тебе длятся на 20% меньше.
   - **Firm Faith** (2026-11-17) — +5 Spirit, −2 Strength (было +3 Spirit).
   - **Requiem** (2026-11-17) — нежить наносит тебе на 25% меньше урона (было +15% урона по нежити): `PerkEffect.Requiem` теперь режет входящий урон, если `HitRequest.Attacker` — нежить.

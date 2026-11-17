@@ -124,7 +124,9 @@ namespace Game.Scripts.Dungeon
         /// Percent points added to magical damage reduction.
         MagicalReduction,
         /// Percent points taken from the physical damage bonus.
-        PhysicalWeakness
+        PhysicalWeakness,
+        /// Slows and roots neither hold nor land.
+        Splint
     }
 
     public struct StatusEffect : INetworkStruct
@@ -210,8 +212,14 @@ namespace Game.Scripts.Dungeon
         {
             float scale = _resistance?.GetDurationScale(kind) ?? 1f;
 
-            if (scale <= 0f)
+            if (scale <= 0f || (kind is StatusEffectKind.Slow or StatusEffectKind.Root && Has(StatusEffectKind.Splint)))
                 return;
+
+            if (kind == StatusEffectKind.Splint)
+            {
+                Remove(StatusEffectKind.Slow);
+                Remove(StatusEffectKind.Root);
+            }
 
             duration *= scale;
 
