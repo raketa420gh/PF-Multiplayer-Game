@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Хаб «Устье» — макет</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Forum&family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #131216; --panel: #1a191e; --floor: #24232a; --line: #2f2d37; --fg: #e4e0d6; --muted: #9a958c;
+  --brass: #c9a24a; --bone: #d8d0bc; --wax: #a5382c; --oss: #5aa9e6; --raw: #aeb6bd; --fire: #e08a3c;
+  --display: "Forum", "Times New Roman", serif;
+  --body: "Golos Text", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 15.5px/1.55 var(--body); }
+.page { max-width: 1480px; margin: 0 auto; padding: 40px 20px 80px; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3, p, ul, dl, dd, figure { margin: 0; padding: 0; }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; text-wrap: balance; }
+h2 { font-size: 40px; line-height: 1.05; padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
+ul { list-style: none; }
+.label { font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.id { font: 600 12px/1 Consolas, "Courier New", monospace; color: var(--t, var(--brass)); border: 1px solid currentColor; border-radius: 4px; padding: 3px 5px; cursor: pointer; user-select: all; flex: none; white-space: nowrap; }
+.id.ok { background: var(--t, var(--brass)); color: var(--bg); }
+.hot { background: #ffffff0d; }
+
+.top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px 48px; align-items: center; }
+.top h1 { font-size: clamp(56px, 8vw, 96px); line-height: 1; margin-top: 6px; }
+.lead { max-width: 58ch; margin-top: 18px; font-size: 17px; }
+.facts { margin-top: 22px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 20px; font-size: 14.5px; }
+.facts dt { color: var(--muted); }
+.how { margin-top: 22px; padding: 12px 14px; border-left: 2px solid var(--brass); background: var(--panel); font-size: 14.5px; max-width: 62ch; }
+.how code { color: var(--brass); }
+.view svg { display: block; width: 100%; height: auto; border: 1px solid var(--line); }
+.view figcaption { margin-top: 8px; font-size: 13.5px; color: var(--muted); display: flex; gap: 10px; align-items: baseline; }
+
+.split { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 36px; }
+.plan { position: sticky; top: 12px; align-self: start; }
+.plan svg { display: block; width: 100%; height: auto; background: #0e0d11; border: 1px solid var(--line); }
+.plan-bar { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 10px; font-size: 13.5px; color: var(--muted); align-items: center; }
+.plan-bar label { cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.zone { fill: color-mix(in srgb, var(--t) 9%, var(--floor)); stroke: color-mix(in srgb, var(--t) 50%, var(--floor)); stroke-width: .3; }
+.door { fill: var(--floor); }
+.zl { font: 600 .82px var(--body); letter-spacing: .08em; fill: var(--t); text-transform: uppercase; }
+.fp { fill-opacity: .22; stroke-width: .12; }
+.fp.ln { fill: none; stroke-dasharray: .5 .35; }
+.fp.out { fill: none; }
+.mk { cursor: pointer; }
+.mk circle { fill: #0e0d11; stroke: var(--t); stroke-width: .16; }
+.mk text { font: 600 .8px Consolas, monospace; fill: var(--t); text-anchor: middle; }
+.mk.npc circle { fill: var(--t); }
+.mk.npc text { fill: #0e0d11; }
+.mk.hot circle { stroke: #fff; stroke-width: .3; }
+.route { fill: none; stroke-width: .22; stroke-dasharray: .9 .6; stroke-linejoin: round; opacity: .75; }
+.route.hot { opacity: 1; stroke-width: .4; }
+.no-routes .route { display: none; }
+.misc { font: 500 .8px var(--body); fill: var(--muted); }
+
+.list { display: flex; flex-direction: column; gap: 34px; min-width: 0; }
+.zcard { display: flex; flex-direction: column; gap: 10px; scroll-margin-top: 16px; }
+.zhead { display: flex; gap: 12px; align-items: baseline; padding-bottom: 10px; border-bottom: 1px solid var(--t); }
+.zhead h3 { font-size: 29px; line-height: 1.1; }
+.zcard > .label { color: var(--t); }
+.zcard > p { color: var(--muted); }
+.items li { display: flex; gap: 12px; align-items: baseline; padding: 9px 6px; border-top: 1px solid var(--line); }
+.items li:first-child { border-top: 0; }
+.items b { font-weight: 600; }
+.items p { color: var(--muted); font-size: 14.5px; }
+
+.npcs { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 28px; }
+.npc-card { background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--t); padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; scroll-margin-top: 16px; }
+.npc-card.hot { background: #201f25; }
+.npc-head { display: flex; gap: 16px; align-items: center; }
+.npc-head svg { width: 54px; height: 54px; flex: none; fill: none; stroke: var(--t); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; border: 1px solid var(--t); border-radius: 50%; padding: 11px; }
+.npc-head h3 { font-size: 34px; line-height: 1.05; }
+.npc-head .label { color: var(--t); display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+.npc-card dl { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 7px 14px; font-size: 14.5px; }
+.npc-card dt { color: var(--muted); }
+.quotes { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; font: 400 18.5px/1.3 var(--display); color: var(--bone); }
+
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 0 40px; }
+.cols li { display: flex; gap: 12px; align-items: baseline; padding: 12px 6px; border-top: 1px solid var(--line); }
+.cols p { color: var(--muted); font-size: 14.5px; }
+.cols b { font-weight: 600; color: var(--fg); }
+.sw { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; align-items: flex-start; }
+.sw div { width: 132px; font-size: 13px; color: var(--muted); }
+.sw i { display: block; height: 54px; border: 1px solid var(--line); margin-bottom: 6px; }
+.sw b { display: block; color: var(--fg); font-weight: 500; }
+@media (max-width: 1050px) { .top, .split { grid-template-columns: minmax(0, 1fr); } .plan { position: static; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="top">
+  <div>
+    <div class="label">Макет хаба · DD-031 · предложение</div>
+    <h1>Устье</h1>
+    <p class="lead">Посёлок Дома Весов в бывшей заставе Морнхейма, у самой Печати. Двор зажат между скалой и имперской стеной: старый камень империи, поверх него свежий тёс купцов. От койки до ворот в жилу 35 метров.</p>
+    <dl class="facts">
+      <dt>Размер</dt><dd>52 × 45 м, один уровень</dd>
+      <dt>Кто внутри</dt><dd>ты или отряд командира, чужих нет</dd>
+      <dt>Сборка</dt><dd>катакомбный кит + Medieval Village MegaKit, свет запечён (DD-027)</dd>
+      <dt>Источник</dt><dd><code>02_Gameplay/Hub.md</code>, <code>03_World/Lore.md</code></dd>
+    </dl>
+    <p class="how">У каждого элемента есть ID. Клик по ID копирует его. Правки удобно писать так: <code>B3: убрать</code>, <code>M2: другое имя</code>, <code>E: поменять местами с D</code>.<br>
+    <b>A–H</b> зоны и их предметы · <b>M</b> торговцы · <b>R</b> маршруты · <b>S</b> стиль · <b>V</b> вид · <b>Q</b> открытые вопросы.</p>
+  </div>
+  <figure class="view" data-id="V1">
+    <svg id="view" viewBox="0 0 120 46">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a4c54"/><stop offset=".3" stop-color="#2a2a31"/></linearGradient>
+        <filter id="glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="1.6"/></filter>
+      </defs>
+      <rect width="120" height="46" fill="url(#sky)"/>
+      <path d="M0 46V11l14-5 16 4 14-8 16-2 18 3 14 6 16-4 12 5v36z" fill="#17161b"/>
+      <path d="M4 16l22 3 14-4M82 12l18 5 16-3M92 20l22 2M6 21l28-1" stroke="#22212a" stroke-width=".5" fill="none"/>
+      <rect x="43" y="8" width="34" height="32" fill="#303037"/>
+      <path d="M43 14h34M43 20h7M70 20h7M43 26h7M70 26h7M43 32h7M70 32h7" stroke="#26262c" stroke-width=".4"/>
+      <path d="M50 40V20a10 10 0 0 1 20 0v20z" fill="#3a3832" stroke="#6d5a2c" stroke-width=".5"/>
+      <path d="M50 26h20M50 34h20" stroke="#6d5a2c" stroke-width=".7"/>
+      <circle cx="60" cy="21.5" r="4.6" fill="#55504a" stroke="#8a8170" stroke-width=".5"/>
+      <path d="M60 10.2l.7 6-1.2 4 1.4 4-1.3 5 .9 5-.5 5.8" stroke="#5aa9e6" stroke-width="2.4" fill="none" filter="url(#glow)"/>
+      <path d="M60 10.2l.7 6-1.2 4 1.4 4-1.3 5 .9 5-.5 5.8" stroke="#cfe8ff" stroke-width=".35" fill="none"/>
+      <path d="M7 21h38l-2 3H9z" fill="#3b2f23"/>
+      <rect x="9" y="24" width="34" height="16" fill="#27262c"/>
+      <g fill="#1c130c"><path id="arch" d="M11.5 40v-9a3 3 0 0 1 6 0v9z"/><use href="#arch" x="8.2"/><use href="#arch" x="16.4"/><use href="#arch" x="24.6"/></g>
+      <g fill="#e08a3c" filter="url(#glow)" opacity=".8"><circle cx="14.5" cy="36" r="1.2"/><circle cx="22.7" cy="35" r="2.2"/><circle cx="30.9" cy="36" r="1"/><circle cx="39.1" cy="36" r="1.2"/><circle cx="47" cy="37" r="1.6"/><circle cx="73" cy="37" r="1.6"/><circle cx="96" cy="43" r="1.5"/></g>
+      <path d="M46 40l.4-2.4h1.2L48 40zM72 40l.4-2.4h1.2L74 40z" fill="#111"/>
+      <rect x="77" y="22" width="22" height="18" fill="#57544c"/>
+      <path d="M76 22l12-9 12 9z" fill="#232228"/>
+      <rect x="86.6" y="15.8" width="2.8" height="3.4" fill="#0c0c10"/>
+      <g fill="#e6c27a"><rect x="80" y="27" width="1.4" height="6"/><rect x="84.5" y="27" width="1.4" height="6"/><rect x="93" y="27" width="1.4" height="6"/></g>
+      <path d="M87.3 40v-7a1.7 1.7 0 0 1 3.4 0v7z" fill="#1a1611"/>
+      <rect x="99" y="27" width="20" height="13" fill="#25242a"/><path d="M98 27h22l-1-2.4H99z" fill="#3b2f23"/>
+      <rect x="0" y="40" width="120" height="6" fill="#1d1c21"/>
+      <path d="M57.5 40L50 46M62.5 40L60 46" stroke="#3a3a42" stroke-width=".4"/>
+      <g stroke="#c9a24a" fill="none" stroke-linecap="round"><path d="M60 43V29.5M53 31.4l14-1.8" stroke-width=".8"/><path d="M53 31.4l-2 5h4zM67 29.6l-2 4.4h4z" stroke-width=".3"/><path d="M50.6 36.4a2.4 1.2 0 0 0 4.8 0zM64.6 34a2.4 1.2 0 0 0 4.8 0z" fill="#c9a24a" stroke="none"/><path d="M57 43h6" stroke-width="1"/></g>
+      <g id="ash" fill="#d8d0bc"></g>
+      <g font-family="Consolas,monospace" font-size="2.3" font-weight="600" fill="#e4e0d6">
+        <text x="66" y="17">A1</text><text x="70.5" y="33">B1</text><text x="24" y="19.6">C</text><text x="91" y="12.6">D</text><text x="107.5" y="23.4">E</text><text x="75" y="36">A5</text>
+      </g>
+    </svg>
+    <figcaption><code class="id">V1</code><span>Вид со двора на север: Печать в скале, перед ней Большие весы; слева аркада торгового ряда, справа белёная часовня с пустой звонницей и фехтовальный зал.</span></figcaption>
+  </figure>
+</header>
+
+<section>
+  <h2>План</h2>
+  <div class="split">
+    <div class="plan">
+      <svg id="plan" viewBox="2 0 56 46.5"></svg>
+      <div class="plan-bar">
+        <span>○ предмет · ● торговец · север (гора) сверху</span>
+        <label><input type="checkbox" id="routes" checked> маршруты R1, R2</label>
+        <span>клик по метке — к описанию</span>
+      </div>
+    </div>
+    <div class="list" id="zones"></div>
+  </div>
+</section>
+
+<section>
+  <h2>Торговцы</h2>
+  <div class="npcs" id="merchants"></div>
+</section>
+
+<section>
+  <h2>Маршруты</h2>
+  <ul class="cols">
+    <li data-id="R1" style="--t:var(--fire)"><code class="id">R1</code><div><b>Перед рейдом</b><p>Койка F1 → сундуки F2, F3 → ряд C4, C3, C2 → зал E (по желанию) → доска отряда B2 → помост A2 → книга спусков A3. Один проход с юга на север, около 60 м.</p></div></li>
+    <li data-id="R2" style="--t:var(--oss)"><code class="id">R2</code><div><b>После рейда</b><p>Якорь A4 → по колее B4 к оценщику C1 → часовня D (по желанию) → келья F, сундук F2. Первым на пути стоит тот, кому сдают добычу.</p></div></li>
+    <li style="--t:var(--muted)"><code class="id">R3</code><div><b>Точки появления</b><p>Вход в игру — койка F1. Член отряда входит в хаб командира — у ворот G2. Вернулся из рейда — якорь A4. Погиб в рейде — койка лазарета D2.</p></div></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Стиль</h2>
+  <div class="sw" data-id="S1">
+    <code class="id">S1</code>
+    <div><i style="background:#17161b"></i><b>Скала</b>гора, тени</div>
+    <div><i style="background:#3a3a40"></i><b>Камень Морнхейма</b>стены, мощение</div>
+    <div><i style="background:#3b2f23"></i><b>Тёс Дома</b>навесы, леса, ящики</div>
+    <div><i style="background:#c9a24a"></i><b>Латунь</b>весы, жетоны, вывески</div>
+    <div><i style="background:#a5382c"></i><b>Сургуч</b>печати Дома</div>
+    <div><i style="background:#d8d0bc"></i><b>Кость и известь</b>Собор</div>
+    <div><i style="background:#e08a3c"></i><b>Огонь</b>всё, с чем работают</div>
+    <div><i style="background:#5aa9e6"></i><b>Очищенный оссарит</b>только у Печати</div>
+    <div><i style="background:#aeb6bd"></i><b>Сырой оссарит</b>вагонетка, чаша весов</div>
+  </div>
+  <ul class="cols">
+    <li><code class="id">S2</code><div><b>Два слоя архитектуры</b><p>Камень Морнхейма: крупные серые блоки, точная кладка, полукруглые арки, сбитые гербы. Поверх него тёс Дома Весов: леса, навесы, ящики, канаты, всё поставлено на скорую руку. Чужой дом, занятый купцами.</p></div></li>
+    <li><code class="id">S3</code><div><b>Три цвета света</b><p>Серый рассеянный сверху — небо, солнца не бывает. Тёплый огонь — каждая точка, с которой можно работать, стоит в своём пятне. Синий — только жила: трещина Печати A1 и якорь A4.</p></div></li>
+    <li><code class="id">S4</code><div><b>Знаки фракций</b><p>Дом Весов: латунь, весы, сургучные печати, жетоны с номерами, конторские книги. Собор Упокоения: белёная известь, кость, свечи, серое полотно, колокола нет. Спящих в хабе нет.</p></div></li>
+    <li><code class="id">S5</code><div><b>Воздух</b><p>Сверху всегда идёт мелкая серая пыль с горы. У Печати холодный сквозняк. Тумана во дворе нет: все двери видны с одного места.</p></div></li>
+    <li><code class="id">S6</code><div><b>Звук</b><p>Ветер в арке, скрип цепей весов, молот из кузни, тихое чтение имён из часовни, треск костра, гул якоря. Музыки нет.</p></div></li>
+    <li><code class="id">S7</code><div><b>Статисты</b><p>Три немых NPC: носильщик у вагонетки, писарь у конторы, караульный у ворот G1. Не говорят и не торгуют.</p></div></li>
+    <li><code class="id">S8</code><div><b>Подсказки</b><p>Название и клавиша появляются над предметом, когда смотришь на него вблизи. Маркеров на экране и миникарты нет: ориентиры — вывески и свет.</p></div></li>
+    <li><code class="id">S9</code><div><b>Вывески</b><p>Кованые знаки без текста над каждой дверью: весы, молот, нагрудник, мешок, свеча. Те же знаки стоят в карточках торговцев.</p></div></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Открытые вопросы</h2>
+  <ul class="cols" style="--t:var(--wax)">
+    <li><code class="id">Q1</code><div><b>Название «Устье»</b><p>Моё: в лоре посёлок у входа без имени. Устье — верх шахтного ствола.</p></div></li>
+    <li><code class="id">Q2</code><div><b>Готовность через помост</b><p>A2 заменяет кнопку «готов»: встал на весы — готов. Вариант проще — обычная кнопка в окне книги A3.</p></div></li>
+    <li><code class="id">Q3</code><div><b>Келья в хабе командира</b><p>Келья одна, командира. Сундуки F2 и F3 открывают каждому его собственный стеш; трофеи на полке F4 — командира.</p></div></li>
+    <li><code class="id">Q4</code><div><b>Появление после гибели</b><p>Койка лазарета D2. Вариант — та же койка F1, что и при входе.</p></div></li>
+    <li><code class="id">Q5</code><div><b>Где менять перки</b><p>В Hub.md места для вкладки навыков нет. Предлагаю стойку E6 в зале: сменил — проверил на манекене.</p></div></li>
+    <li><code class="id">Q6</code><div><b>Небо или пещера</b><p>В макете двор под открытым небом. Целиком в пещере дешевле по свету и кадрам, но теряется серый свет «сверху».</p></div></li>
+    <li><code class="id">Q7</code><div><b>Кость с именем</b><p>Одна находка, два получателя: оценщику M5 за монету или сестре M4 за расположение Собора. Новая механика, в Hub.md её нет.</p></div></li>
+    <li><code class="id">Q8</code><div><b>Сверх Hub.md</b><p>Добавлены мной: A2, A6, B2, B3, B4, D2, E4, E5, E6, F6, G, H. Имена и характеры всех торговцев тоже мои.</p></div></li>
+  </ul>
+</section>
+
+</div>
+<script>
+const Z = [
+  { id: 'A', s: 'Привратный зал', name: 'Привратный зал «Вскрытая печать»', role: 'Выход в подземелье · Hub.md §4', tone: '#5aa9e6', r: [22, 1, 16, 9], doors: [[26, 9.5, 8, 1]], lp: [21.3, 5, 'end'],
+    look: 'Зал вырублен в скале империей: гладкие стены, свод 9 м, пол стёрт колеями вагонеток. Единственное место хаба с синим светом. Здесь холоднее и тише, чем во дворе, голоса гулкие.',
+    items: [
+      { id: 'A1', n: 'Печать', p: [30, 2.6], f: [[27, 1.1, 6, .6]], t: 'Ворота Морнхейма: две каменные створки в бронзовых полосах, 6 × 7 м. Свинцовый диск печати расколот надвое, из трещины идёт холодный свет и пыль. При запуске рейда створки расходятся, отряд уходит в трещину.' },
+      { id: 'A2', n: 'Весовой помост', p: [30, 5.6], f: [[27.5, 3.8, 5, 3.6]], t: 'Платформа-весы в полу перед Печатью: Дом взвешивает тех, кто уходит. Зона готовности: стоишь на помосте — готов. Над ним латунный циферблат: «на помосте 2 из 3».' },
+      { id: 'A3', n: 'Книга спусков', p: [36.3, 6.4], f: [[34.4, 5.8, 1, 1.3]], t: 'Пюпитр с книгой на цепи. Только командир: выбор подземелья и запуск рейда. Остальные видят состав отряда и кто готов.' },
+      { id: 'A4', n: 'Якорь портала', p: [24.6, 5.2], f: [[24.6, 5.2, 1.5]], t: 'Кованая клеть с глыбой очищенного оссарита, гудит и светит синим. Сюда отряд возвращается из рейда через синий портал.' },
+      { id: 'A5', n: 'Жаровни ×2', p: [23.6, 8.7], f: [[25.4, 8.7, .45], [34.6, 8.7, .45]], t: 'По сторонам арки. Тёплый огонь на границе с холодным залом: порог «двор — жила» читается по цвету.' },
+      { id: 'A6', n: 'Стена номеров', p: [36.3, 3], f: [[37.3, 1.6, .4, 2.8]], t: 'Латунные жетоны не вернувшихся, прибиты рядами. Декор; позже здесь можно показывать счёт спусков и возвращений.' },
+    ] },
+  { id: 'B', s: 'Двор Весов', name: 'Двор Весов', role: 'Центр, развязка всех путей', tone: '#aaa7b2', r: [18, 10, 24, 24], lp: [18.7, 11.5],
+    look: 'Мощёный двор 24 × 24 м под узкой полосой серого неба; сверху медленно сыплется пыль с горы. С любого места двора видны все пять дверей.',
+    items: [
+      { id: 'B1', n: 'Большие весы', p: [30, 21], f: [[30, 21, 2.3]], t: 'Коромысло 5 м на каменном столбе, латунь в патине. На одной чаше кость, на другой гири; стрелка чуть в сторону гирь. Знак Дома и главный ориентир. Цепи скрипят на ветру.' },
+      { id: 'B2', n: 'Доска отряда', p: [36.5, 12.2], f: [[35.2, 10.5, 2.6, .5]], t: 'Доска объявлений у арки. Создать отряд, войти по четырёхзначному коду, выйти. Показывает состав.' },
+      { id: 'B3', n: 'Костёр жильщиков', p: [36, 29], f: [[36, 29, 1.5]], t: 'Очаг с тремя скамьями, место сбора отряда. На скамью можно сесть (анимация LobbySeated).' },
+      { id: 'B4', n: 'Колея вагонетки', p: [26, 14.6], f: ['30,7.4 30,13 18.6,13'], t: 'Рельсы от Печати к весовой конторе C1, на них вагонетка с сырым оссаритом. Ведёт взгляд и ноги: вернулся — сдай добычу.' },
+      { id: 'B5', n: 'Фонари ×3', p: [39.4, 31.4], f: [[19.3, 32.7, .4], [40.7, 32.7, .4], [40.7, 11.3, .4]], t: 'Кованые фонари на столбах по углам двора. Тёплый свет у каждой двери.' },
+    ] },
+  { id: 'C', s: 'Торговый ряд Дома Весов', name: 'Торговый ряд Дома Весов', role: 'Четыре торговца Дома · Hub.md §2', tone: '#c9a24a', r: [4, 10, 14, 24], doors: [[17.5, 10.4, 1, 23.2]], lp: [4.2, 9.3],
+    deco: ['4,16 16,16', '4,22 16,22', '4,28 16,28', [15, 11, .8, 4], [15, 17, .8, 4], [15, 23, .8, 4], [15, 29, .8, 4]],
+    look: 'Бывшие конюшни заставы: каменная аркада в четыре пролёта, открыта во двор. Пролёт 14 × 6 м: прилавок у арки, мастерская в глубине.',
+    items: [
+      { id: 'C1', n: 'Весовая контора', p: [7, 13], t: 'Решётка, конторка, малые весы под стеклом, шкаф с опечатанными ящиками. Чисто и тихо. Вывеска: весы. Здесь M5.' },
+      { id: 'C2', n: 'Кузня', p: [7, 19], f: [[5.4, 20.7, .8]], t: 'Горн, наковальня, бочка для закалки, стойки с клинками. Самое яркое и шумное место ряда. Вывеска: молот. Здесь M2.' },
+      { id: 'C3', n: 'Латная мастерская', p: [7, 25], f: [[4.5, 22.5, .9, .9], [4.5, 26.6, .9, .9]], t: 'Деревянные болваны в доспехах, верстак, мотки ремней. Полумрак, одна лампа над верстаком. Вывеска: нагрудник. Здесь M3.' },
+      { id: 'C4', n: 'Каптёрка', p: [7, 31], f: [[4.5, 28.5, 2.2, 1.2], [4.5, 32.3, 1.5, 1.2]], t: 'Склад выдачи: стеллажи с тюками, бочки, связки верёвок, ящики с номерами. Вывеска: мешок. Здесь M1.' },
+      { id: 'C5', n: 'Аркада', p: [19.6, 22], f: [[17.6, 9.6, .8, .8], [17.6, 15.6, .8, .8], [17.6, 21.6, .8, .8], [17.6, 27.6, .8, .8], [17.6, 33.6, .8, .8]], t: 'Пять каменных столбов, между ними навесы из тёса. Прилавки стоят в арках: торговля идёт со двора, внутрь заходить не нужно.' },
+    ] },
+  { id: 'D', s: 'Часовня Упокоения', name: 'Часовня Упокоения', role: 'Сестра Собора · Hub.md §2', tone: '#d8d0bc', r: [42, 10, 14, 10], doors: [[41.5, 14, 1, 2.4]], lp: [42.2, 9.3],
+    look: 'Маленькая часовня Собора, пристроена к стене уже после вскрытия Печати: белёная известь поверх имперского камня, костяные чётки на притолоке, десятки свечей. Звонница пустая. Пахнет воском и травами.',
+    items: [
+      { id: 'D1', n: 'Алтарь-костница', p: [52.4, 15.4], f: [[54, 13.8, 1.4, 3.2]], t: 'Каменный алтарь с нишами для костей, поднятых из жилы. Сюда сдают останки по заданиям Собора.' },
+      { id: 'D2', n: 'Койки лазарета ×3', p: [50.6, 18.5], f: [[44, 17.6, 1, 2], [46, 17.6, 1, 2], [48, 17.6, 1, 2]], t: 'Три койки под серыми одеялами. Точка появления после гибели в рейде.' },
+      { id: 'D3', n: 'Стол сестры', p: [47.4, 11.6], f: [[43, 11, 3, .9]], t: 'Склянки, бинты, ступка. Торговля: зелья, бинты, лечение. Здесь M4.' },
+      { id: 'D4', n: 'Книга имён', p: [52.2, 11.7], f: [[53.6, 10.6, 1.6, 1]], t: 'Толстая книга на пюпитре. Задания Собора; сюда же вписывают имена найденных мёртвых.' },
+    ] },
+  { id: 'E', s: 'Фехтовальный зал', name: 'Фехтовальный зал', role: 'Тренировочная комната · Hub.md §1', tone: '#c8643c', r: [42, 20, 14, 20], doors: [[41.5, 27, 1, 2.4]], lp: [42.5, 39.3],
+    look: 'Бывший плац гарнизона под крышей: 14 × 20 м, потолок 6 м, утоптанная земля с опилками. На стенах выцветшие имперские мишени. Факелы дают ровный свет без тёмных углов: здесь смотрят на цифры урона.',
+    items: [
+      { id: 'E1', n: 'Порог', p: [44.2, 28.2], f: [[42.5, 26.6, .5, 3.2]], t: 'Железная полоса в полу у двери. Граница правил: внутри включён урон по своим, здоровье не падает ниже 1; снаружи урона нет.' },
+      { id: 'E2', n: 'Манекен 0%', p: [47, 22.4], t: 'Мешковина и солома на столбе. PDR 0%, MDR 0%, не умирает. Цифры урона над ним: белые — физический, голубые — магический, жёлтые — чистый.' },
+      { id: 'E3', n: 'Манекен 50%', p: [51.5, 22.4], t: 'Столб в латах гарнизона. PDR 50%, MDR 50%, не умирает.' },
+      { id: 'E4', n: 'Метки дистанции', p: [54.6, 25.4], f: ['45.5,27.4 55.5,27.4', '45.5,32.4 55.5,32.4', '45.5,37.4 55.5,37.4'], t: 'Линии на полу в 5, 10 и 15 м от манекенов: для луков, метательного и заклинаний.' },
+      { id: 'E5', n: 'Круг поединка', p: [49.5, 33.6], f: [[49.5, 33.6, 3.2, 'out']], t: 'Круг 6.4 м, выложен камнем. Место дуэлей внутри отряда.' },
+      { id: 'E6', n: 'Стойка навыков', p: [44.2, 36.6], f: [[42.5, 35.4, .6, 2.4]], t: 'Доска с крючками. Смена перков, активок и колеса заклинаний, не выходя из зала.' },
+      { id: 'E7', n: 'Оружейная стойка', p: [44.2, 22.2], f: [[42.5, 21, .6, 2.4]], t: 'Открывает стеш и экипировку: надел оружие и сразу проверил.' },
+    ] },
+  { id: 'F', s: 'Келья', name: 'Келья жильщика', role: 'Комната игрока · Hub.md §3', tone: '#d99a5b', r: [20, 34, 16, 10], doors: [[27, 33.5, 2.4, 1]], lp: [21.3, 35.4],
+    look: 'Казарменная келья 16 × 10 м: низкий потолок с балками, очаг, узкое окно во двор. Единственное место без знаков фракций — здесь всё твоё. Тёплый свет, самое тихое место хаба.',
+    items: [
+      { id: 'F1', n: 'Койка', p: [22.2, 40.2], f: [[20.6, 41.8, 2.4, 1.4]], t: 'Точка появления при входе в игру.' },
+      { id: 'F2', n: 'Сундук жильщика', p: [25.8, 41.4], f: [[25, 42.7, 1.6, 1]], t: 'Стеш персонажа. Окованный, с гильдейским номером на крышке.' },
+      { id: 'F3', n: 'Общий ларь', p: [29.5, 41.4], f: [[28.5, 42.7, 2, 1]], t: 'Общая страница на 100 клеток для всех персонажей аккаунта. Длинный, с тремя замками — по числу персонажей.' },
+      { id: 'F4', n: 'Полка трофеев', p: [22, 37.6], f: [[20.3, 36, .4, 3.4]], t: 'Награды и достижения, выставленные как предметы.' },
+      { id: 'F5', n: 'Доска записок', p: [34, 37], f: [[35.3, 35.5, .4, 3]], t: 'Найденные записки приколоты к доске; читаются по клику.' },
+      { id: 'F6', n: 'Стойка снаряжения', p: [33.6, 41.6], t: 'Болван с надетой экипировкой персонажа. Открывает окно персонажа.' },
+    ] },
+  { id: 'G', s: 'Дорожные ворота', name: 'Дорожные ворота', role: 'Вход и выход из хаба', tone: '#8fa38a', r: [37, 34, 5, 12], doors: [[38.3, 33.5, 2.4, 1]], lp: [42.6, 43.6],
+    look: 'Южные ворота заставы: проезд под надвратной башней, решётка, за ней тракт уходит в туман.',
+    items: [
+      { id: 'G1', n: 'Ворота на тракт', p: [39.5, 43.6], f: [[37.4, 45.2, 4.2, .5]], t: 'Выход к выбору персонажа и в главное меню.' },
+      { id: 'G2', n: 'Место прибытия', p: [39.5, 38.4], f: [[39.5, 38.4, 1.5, 'out']], t: 'Сюда попадают члены отряда, вошедшие в хаб командира.' },
+    ] },
+  { id: 'H', s: 'Склады Дома', name: 'Склады Дома', role: 'Резерв', tone: '#6f6b78', r: [4, 34, 15, 10], lp: [4.6, 35.4],
+    look: 'Запертые склады под печатями Дома. Только фасад.',
+    items: [{ id: 'H1', n: 'Резерв', p: [11.5, 39.4], t: 'Место под будущее: ремесло, аукцион, банк.' }] },
+];
+
+const M = [
+  { id: 'M1', p: [13, 31], tone: '#c9a24a', name: 'Хальвард Рик', role: 'Интендант · The Quartermaster', fac: 'Дом Весов', at: 'C4 Каптёрка',
+    sign: 'M9 4h6l-1 3c4 2 5 6 5 9 0 3-2 4-7 4s-7-1-7-4c0-3 1-7 5-9z',
+    sells: 'Базовый кит и расходники.',
+    look: 'За пятьдесят, широкий, седая щетина. Левый рукав подколот у локтя. Носит ту же казённую рубаху, что выдаёт; на поясе кольцо с латунными жетонами. Кашляет от старой пыли.',
+    nature: 'Единственный в ряду, кто сам ходил в жилу. Ровный и сухой: выдал, записал, забыл. Не утешает и не пугает. Имён не запоминает — помнит номера.',
+    voice: 'Коротко, сначала число, потом дело. На «ты».',
+    quests: 'Вернуть казённое: жетоны и выдачу тех, кто остался внизу.',
+    q: ['«Сорок один — двенадцать. Распишись.»', '«Капюшон затягивай до Осыпи, а не во время.»', '«Вернёшься — номер твой. Нет — он же, только на стене.»'] },
+  { id: 'M2', p: [13, 19], tone: '#e08a3c', name: 'Ютта Кольб', role: 'Оружейница', fac: 'Дом Весов', at: 'C2 Кузня',
+    sign: 'M4 7h11v5H4zM15 9.5h4M9 12v9',
+    sells: 'Оружие, щиты, стрелы и болты.',
+    look: 'Около сорока, коренастая, предплечья в старых ожогах. Кожаный фартук, виски выбриты, лицо в саже. Калит сталь в латунной чаше от старых весов.',
+    nature: 'Прямая и нетерпеливая, гордится работой. Судит о человеке по тому, как он берёт клинок. Потерянное оружие считает хуже сломанного.',
+    voice: 'Рублено, только про сталь. На «ты».',
+    quests: 'Принести сталь Морнхейма на перековку; испытать оружие в деле.',
+    q: ['«Здесь не маши. Заплати и маши в зале.»', '«Калено на оссарите. Кость держит кромку лучше угля.»', '«Сломаешь — неси обломок. Сталь я прощаю, потерю нет.»'] },
+  { id: 'M3', p: [13, 25], tone: '#aeb6bd', name: 'Освин Тарн', role: 'Бронник', fac: 'Дом Весов', at: 'C3 Латная мастерская',
+    sign: 'M7 4l5 2 5-2 2 5-2 3v8H7v-8L5 9z',
+    sells: 'Броня и одежда.',
+    look: 'За шестьдесят, высокий, сутулый, длинные пальцы. Очки с закопчёнными стёклами, на шее мерный шнур с узлами. Чистит старые латы от костяных наростов.',
+    nature: 'Молчаливый, медленный, дотошный. Мерку снимает без слов. Плохо подогнанный доспех считает опаснее врага.',
+    voice: 'Тихо и редко, полными фразами. На «вы».',
+    quests: 'Поднять латы гарнизона Морнхейма: по частям, с номерами рот.',
+    q: ['«Стойте ровно. Дышите.»', '«Эту кирасу носили трое. Она не подвела никого — подвели ноги.»', '«Вмятину выправлю. Привычку подставляться — нет.»'] },
+  { id: 'M4', p: [44.5, 13.2], tone: '#d8d0bc', name: 'Сестра Агнета', role: 'Сестра Собора', fac: 'Собор Упокоения', at: 'D Часовня Упокоения',
+    sign: 'M12 2c1.6 2 1.6 3.6 0 5-1.6-1.4-1.6-3 0-5zM10 9.5h4V21h-4zM7 21h10',
+    sells: 'Зелья, бинты, лечение.',
+    look: 'Чуть за тридцать, бледная. Костяно-белое облачение с серым от пыли подолом, волосы убраны, пальцы в пятнах от настоек. Книгу имён носит на ремне через плечо.',
+    nature: 'Спокойная и неутомимая, в вере твёрдая: грех империи был в жадности, и его можно замолить. Лечит всех одинаково. Десятину берёт без смущения. Большие весы во дворе ей не по душе, но за прилавком она об этом молчит.',
+    voice: 'Мягко, ровно, на «вы». Мёртвых зовёт упокоенными и неупокоенными.',
+    quests: 'Поднять кости и имена мёртвых для погребения, а не на весы.',
+    q: ['«Сядьте. Сначала рана, потом цена.»', '«Найдёте кость с именем — несите мне, не на весы.»', '«Десятина — не плата. Это то, что вы оставляете тем, кто не вышел.»'] },
+  { id: 'M5', p: [13, 13], tone: '#c9a24a', name: 'Кассиан Вейт', role: 'Оценщик', fac: 'Дом Весов', at: 'C1 Весовая контора',
+    sign: 'M12 3v18M5 7h14M5 7l-3 7h6zM19 7l-3 7h6zM8 21h8',
+    sells: 'Скупка ценностей, руды, самоцветов. Контракты Дома.',
+    look: 'Около сорока пяти, сухой, безупречно чистый в пыльном месте. Тёмный долгополый кафтан, серые перчатки — кость голыми руками не берёт. Латунная лупа на цепочке, перстень-печатка.',
+    nature: 'Вежливый, холодный, точный, никуда не спешит. Не торгуется: цену называют весы. Жильщиков помнит по весу сданного. Осыпь для него — издержка, которая уже в цене.',
+    voice: 'На «вы», конторскими формулами, с числами.',
+    quests: 'Контракты Дома: столько-то унций оссарита, реликвия, самоцвет к сроку.',
+    q: ['«Кладите на чашу. Весы не торгуются, и я не стану.»', '«Осыпь уже в цене. Потому цена такая.»', '«Контракт простой: Дому — вес, вам — монета.»'] },
+];
+
+const R = [['R1', '#e08a3c', '22.6,40.4 28.6,37 28.6,32.4 21.4,31 21.4,15 28.8,13.6 29.4,9.6 30,7'], ['R2', '#5aa9e6', '25.6,6.3 28,9.6 27.6,12.3 20.4,13.8 20.4,31.6 27.6,33.2 27.6,37.4 26,40.6']];
+
+const $ = (t, a, h = '') => `<${t}${Object.entries(a).map(([k, v]) => ` ${k}="${v}"`).join('')}>${h}</${t}>`;
+const shape = (s, c) => typeof s === 'string' ? $('polyline', { points: s, class: 'fp ln', stroke: c })
+  : typeof s[2] === 'number' && s.length === 4 ? $('rect', { x: s[0], y: s[1], width: s[2], height: s[3], class: 'fp', stroke: c, fill: c })
+  : $('circle', { cx: s[0], cy: s[1], r: s[2], class: 'fp' + (s[3] ? ' out' : ''), stroke: c, fill: c });
+const mark = (id, p, tone, npc) => $('g', { class: 'mk' + (npc ? ' npc' : ''), 'data-id': id, style: `--t:${tone}`, transform: `translate(${p[0]} ${p[1]})` }, $('circle', { r: .95 }) + $('text', { y: .28 }, id));
+
+let plan = '', zones = '';
+for (const z of Z) plan += $('rect', { x: z.r[0], y: z.r[1], width: z.r[2], height: z.r[3], class: 'zone', style: `--t:${z.tone}` });
+for (const z of Z) for (const d of z.doors || []) plan += $('rect', { x: d[0], y: d[1], width: d[2], height: d[3], class: 'door' });
+for (const z of Z) {
+  plan += (z.deco || []).map(s => shape(s, z.tone)).join('') + z.items.map(i => (i.f || []).map(s => shape(s, z.tone)).join('')).join('');
+  plan += $('text', { x: z.lp[0], y: z.lp[1], class: 'zl', style: `--t:${z.tone}`, 'text-anchor': z.lp[2] || 'start' }, `${z.id} · ${z.s}`);
+}
+plan += R.map(([id, c, pts]) => $('polyline', { points: pts, class: 'route', stroke: c, 'data-id': id })).join('');
+for (const z of Z) plan += z.items.map(i => mark(i.id, i.p, z.tone)).join('');
+plan += M.map(m => mark(m.id, m.p, m.tone, true)).join('');
+plan += $('path', { d: 'M4 45.6h10M4 45.2v.8M14 45.2v.8', stroke: '#9a958c', 'stroke-width': .12, fill: 'none' }) + $('text', { x: 14.6, y: 45.9, class: 'misc' }, '10 м') + $('text', { x: 4.2, y: 2.2, class: 'misc' }, '▲ гора, север');
+document.getElementById('plan').innerHTML = plan;
+
+for (const z of Z) zones += `<section class="zcard" data-id="${z.id}" style="--t:${z.tone}">
+  <div class="zhead"><code class="id">${z.id}</code><h3>${z.name}</h3></div>
+  <div class="label">${z.role}</div><p>${z.look}</p>
+  <ul class="items">${z.items.map(i => `<li data-id="${i.id}"><code class="id">${i.id}</code><div><b>${i.n}</b><p>${i.t}</p></div></li>`).join('')}</ul></section>`;
+document.getElementById('zones').innerHTML = zones;
+
+document.getElementById('merchants').innerHTML = M.map(m => `<article class="npc-card" data-id="${m.id}" style="--t:${m.tone}">
+  <div class="npc-head"><svg viewBox="0 0 24 24"><path d="${m.sign}"/></svg><div><div class="label"><code class="id">${m.id}</code>${m.role} · ${m.fac}</div><h3>${m.name}</h3></div></div>
+  <dl><dt>Где</dt><dd>${m.at}</dd><dt>Торгует</dt><dd>${m.sells}</dd><dt>Облик</dt><dd>${m.look}</dd><dt>Характер</dt><dd>${m.nature}</dd><dt>Речь</dt><dd>${m.voice}</dd><dt>Задания</dt><dd>${m.quests}</dd></dl>
+  <div class="quotes">${m.q.map(q => `<span>${q}</span>`).join('')}</div></article>`).join('');
+
+let ash = '';
+for (let i = 0, s = 7; i < 60; i++) { s = s * 16807 % 2147483647; const x = s % 1200 / 10; s = s * 16807 % 2147483647; ash += $('circle', { cx: x, cy: s % 400 / 10, r: .12 + i % 3 * .06, opacity: .18 + i % 4 * .08 }); }
+document.getElementById('ash').innerHTML = ash;
+
+const same = id => document.querySelectorAll(`[data-id="${id}"]`);
+document.addEventListener('mouseover', e => {
+  document.querySelectorAll('.hot').forEach(n => n.classList.remove('hot'));
+  const el = e.target.closest('[data-id]');
+  if (el) same(el.dataset.id).forEach(n => n.classList.add('hot'));
+});
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.id'), mk = e.target.closest('#plan [data-id]');
+  if (chip) { navigator.clipboard?.writeText(chip.textContent); chip.classList.add('ok'); setTimeout(() => chip.classList.remove('ok'), 600); }
+  else if (mk) [...same(mk.dataset.id)].find(n => !n.closest('#plan'))?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+document.getElementById('routes').addEventListener('change', e => document.getElementById('plan').classList.toggle('no-routes', !e.target.checked));
+</script>
+</body>
+</html>
