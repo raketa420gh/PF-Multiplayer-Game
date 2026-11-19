@@ -87,6 +87,19 @@ ul { list-style: none; }
 .sw div { width: 132px; font-size: 13px; color: var(--muted); }
 .sw i { display: block; height: 54px; border: 1px solid var(--line); margin-bottom: 6px; }
 .sw b { display: block; color: var(--fg); font-weight: 500; }
+.stage { position: relative; aspect-ratio: 16 / 9; max-height: 84vh; width: 100%; background: #0e0d11; border: 1px solid var(--line); overflow: hidden; }
+.stage:fullscreen { max-height: none; border: 0; }
+.stage canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
+.hud { position: absolute; pointer-events: none; background: #0e0d11b3; padding: 5px 10px; font-size: 14px; }
+.hud:empty { display: none; }
+#hz { left: 12px; top: 12px; }
+#ht { left: 50%; bottom: 14%; transform: translateX(-50%); font-size: 18px; white-space: nowrap; }
+.dot { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #fff; opacity: .8; pointer-events: none; }
+.mini { position: absolute; right: 12px; top: 12px; width: 270px; background: #0e0d11d9; border: 1px solid var(--line); pointer-events: none; }
+.veil { position: absolute; inset: auto 0 0 0; padding: 14px 18px; background: #0e0d11d9; text-align: center; pointer-events: none; }
+.stage.live .veil { display: none; }
+.me circle, .me path { fill: #fff; stroke: #0e0d11; stroke-width: .15; }
+button { font: inherit; color: var(--fg); background: var(--panel); border: 1px solid var(--line); padding: 4px 12px; cursor: pointer; }
 @media (max-width: 1050px) { .top, .split { grid-template-columns: minmax(0, 1fr); } .plan { position: static; } }
 </style>
 </head>
@@ -105,7 +118,7 @@ ul { list-style: none; }
       <dt>Источник</dt><dd><code>02_Gameplay/Hub.md</code>, <code>03_World/Lore.md</code></dd>
     </dl>
     <p class="how">У каждого элемента есть ID. Клик по ID копирует его. Правки удобно писать так: <code>B3: убрать</code>, <code>M2: другое имя</code>, <code>E: поменять местами с D</code>.<br>
-    <b>A–H</b> зоны и их предметы · <b>M</b> торговцы · <b>R</b> маршруты · <b>S</b> стиль · <b>V</b> вид · <b>Q</b> открытые вопросы.</p>
+    <b>A–H</b> зоны и их предметы · <b>M</b> торговцы · <b>R</b> маршруты · <b>S</b> стиль · <b>V</b> вид и прогулка · <b>Q</b> открытые вопросы.</p>
   </div>
   <figure class="view" data-id="V1">
     <svg id="view" viewBox="0 0 120 46">
@@ -147,10 +160,24 @@ ul { list-style: none; }
 </header>
 
 <section>
+  <h2>Прогулка</h2>
+  <div class="stage" id="stage">
+    <div class="hud" id="hz"></div><div class="hud" id="ht"></div><i class="dot"></i>
+    <svg class="mini" id="mini" viewBox="2 0 56 46.5"><use href="#plan"/><g class="me"><circle r=".8"/><path d="M0-2.2L1-.9H-1z"/></g></svg>
+    <div class="veil" id="veil">Клик по сцене — войти в хаб от первого лица</div>
+  </div>
+  <div class="plan-bar">
+    <code class="id">V2</code>
+    <span>WASD — ходьба · Shift — бег · мышь — обзор · ЛКМ — скопировать ID под прицелом · L — метки · M — карта · 1–7 — зоны A–G · Esc — выход</span>
+    <button id="fs">На весь экран</button>
+  </div>
+</section>
+
+<section>
   <h2>План</h2>
   <div class="split">
     <div class="plan">
-      <svg id="plan" viewBox="2 0 56 46.5"></svg>
+      <svg viewBox="2 0 56 46.5"><g id="plan"></g><g class="me"><circle r=".6"/><path d="M0-1.7L.8-.7H-.8z"/></g></svg>
       <div class="plan-bar">
         <span>○ предмет · ● торговец · север (гора) сверху</span>
         <label><input type="checkbox" id="routes" checked> маршруты R1, R2</label>
@@ -216,9 +243,10 @@ ul { list-style: none; }
 </section>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
 const Z = [
-  { id: 'A', s: 'Привратный зал', name: 'Привратный зал «Вскрытая печать»', role: 'Выход в подземелье · Hub.md §4', tone: '#5aa9e6', r: [22, 1, 16, 9], doors: [[26, 9.5, 8, 1]], lp: [21.3, 5, 'end'],
+  { id: 'A', s: 'Привратный зал', name: 'Привратный зал «Вскрытая печать»', role: 'Выход в подземелье · Hub.md §4', tone: '#5aa9e6', r: [22, 1, 16, 9], doors: [[26, 9.5, 8, 1, 7]], lp: [21.3, 5, 'end'],
     look: 'Зал вырублен в скале империей: гладкие стены, свод 9 м, пол стёрт колеями вагонеток. Единственное место хаба с синим светом. Здесь холоднее и тише, чем во дворе, голоса гулкие.',
     items: [
       { id: 'A1', n: 'Печать', p: [30, 2.6], f: [[27, 1.1, 6, .6]], t: 'Ворота Морнхейма: две каменные створки в бронзовых полосах, 6 × 7 м. Свинцовый диск печати расколот надвое, из трещины идёт холодный свет и пыль. При запуске рейда створки расходятся, отряд уходит в трещину.' },
@@ -237,7 +265,7 @@ const Z = [
       { id: 'B4', n: 'Колея вагонетки', p: [26, 14.6], f: ['30,7.4 30,13 18.6,13'], t: 'Рельсы от Печати к весовой конторе C1, на них вагонетка с сырым оссаритом. Ведёт взгляд и ноги: вернулся — сдай добычу.' },
       { id: 'B5', n: 'Фонари ×3', p: [39.4, 31.4], f: [[19.3, 32.7, .4], [40.7, 32.7, .4], [40.7, 11.3, .4]], t: 'Кованые фонари на столбах по углам двора. Тёплый свет у каждой двери.' },
     ] },
-  { id: 'C', s: 'Торговый ряд Дома Весов', name: 'Торговый ряд Дома Весов', role: 'Четыре торговца Дома · Hub.md §2', tone: '#c9a24a', r: [4, 10, 14, 24], doors: [[17.5, 10.4, 1, 23.2]], lp: [4.2, 9.3],
+  { id: 'C', s: 'Торговый ряд Дома Весов', name: 'Торговый ряд Дома Весов', role: 'Четыре торговца Дома · Hub.md §2', tone: '#c9a24a', r: [4, 10, 14, 24], doors: [[17.5, 10.4, 1, 23.2, 4]], lp: [4.2, 9.3],
     deco: ['4,16 16,16', '4,22 16,22', '4,28 16,28', [15, 11, .8, 4], [15, 17, .8, 4], [15, 23, .8, 4], [15, 29, .8, 4]],
     look: 'Бывшие конюшни заставы: каменная аркада в четыре пролёта, открыта во двор. Пролёт 14 × 6 м: прилавок у арки, мастерская в глубине.',
     items: [
@@ -276,7 +304,7 @@ const Z = [
       { id: 'F5', n: 'Доска записок', p: [34, 37], f: [[35.3, 35.5, .4, 3]], t: 'Найденные записки приколоты к доске; читаются по клику.' },
       { id: 'F6', n: 'Стойка снаряжения', p: [33.6, 41.6], t: 'Болван с надетой экипировкой персонажа. Открывает окно персонажа.' },
     ] },
-  { id: 'G', s: 'Дорожные ворота', name: 'Дорожные ворота', role: 'Вход и выход из хаба', tone: '#8fa38a', r: [37, 34, 5, 12], doors: [[38.3, 33.5, 2.4, 1]], lp: [42.6, 43.6],
+  { id: 'G', s: 'Дорожные ворота', name: 'Дорожные ворота', role: 'Вход и выход из хаба', tone: '#8fa38a', r: [37, 34, 5, 12], doors: [[38.3, 33.5, 2.4, 1], [37.6, 45.5, 3.8, 1, 4]], lp: [42.6, 43.6],
     look: 'Южные ворота заставы: проезд под надвратной башней, решётка, за ней тракт уходит в туман.',
     items: [
       { id: 'G1', n: 'Ворота на тракт', p: [39.5, 43.6], f: [[37.4, 45.2, 4.2, .5]], t: 'Выход к выбору персонажа и в главное меню.' },
@@ -334,7 +362,7 @@ const R = [['R1', '#e08a3c', '22.6,40.4 28.6,37 28.6,32.4 21.4,31 21.4,15 28.8,1
 
 const $ = (t, a, h = '') => `<${t}${Object.entries(a).map(([k, v]) => ` ${k}="${v}"`).join('')}>${h}</${t}>`;
 const shape = (s, c) => typeof s === 'string' ? $('polyline', { points: s, class: 'fp ln', stroke: c })
-  : typeof s[2] === 'number' && s.length === 4 ? $('rect', { x: s[0], y: s[1], width: s[2], height: s[3], class: 'fp', stroke: c, fill: c })
+  : typeof s[3] === 'number' ? $('rect', { x: s[0], y: s[1], width: s[2], height: s[3], class: 'fp', stroke: c, fill: c })
   : $('circle', { cx: s[0], cy: s[1], r: s[2], class: 'fp' + (s[3] ? ' out' : ''), stroke: c, fill: c });
 const mark = (id, p, tone, npc) => $('g', { class: 'mk' + (npc ? ' npc' : ''), 'data-id': id, style: `--t:${tone}`, transform: `translate(${p[0]} ${p[1]})` }, $('circle', { r: .95 }) + $('text', { y: .28 }, id));
 
@@ -378,6 +406,184 @@ document.addEventListener('click', e => {
   else if (mk) [...same(mk.dataset.id)].find(n => !n.closest('#plan'))?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
 document.getElementById('routes').addEventListener('change', e => document.getElementById('plan').classList.toggle('no-routes', !e.target.checked));
+
+/* ---------- Прогулка от первого лица (V2): сцена строится из тех же Z и M ---------- */
+if (!window.THREE) document.getElementById('veil').textContent = 'three.js не загрузился — для прогулки нужен интернет';
+else (() => {
+  const T = THREE, PI = Math.PI, stage = document.getElementById('stage'), hz = document.getElementById('hz'), ht = document.getElementById('ht');
+  const rnd = new T.WebGLRenderer({ antialias: true }), cv = rnd.domElement, scene = new T.Scene(), solids = [], targets = [];
+  rnd.setPixelRatio(Math.min(devicePixelRatio, 1.5)); rnd.shadowMap.enabled = true; rnd.shadowMap.type = T.PCFSoftShadowMap; rnd.toneMapping = T.ACESFilmicToneMapping; rnd.toneMappingExposure = 1.15;
+  stage.prepend(cv);
+  scene.background = new T.Color(0x565861); scene.fog = new T.Fog(0x41424a, 18, 110);
+  const cam = new T.PerspectiveCamera(72, 16 / 9, .08, 220); cam.rotation.order = 'YXZ';
+
+  // материалы
+  const tex = (paint, w = 256, h = 256) => { const c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d')); const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.colorSpace = T.SRGBColorSpace; t.anisotropy = 8; return t; };
+  const blocks = tex(g => { g.fillStyle = '#6d6d72'; g.fillRect(0, 0, 256, 256); for (let r = 0; r < 4; r++) for (let k = -1; k < 2; k++) { g.fillStyle = `hsl(240 4% ${70 + (r * 7 + k * 5 + 10) % 9}%)`; g.fillRect(k * 128 + r % 2 * 64 + 2, r * 64 + 2, 124, 60); } });
+  const tagTex = tex(g => { g.fillStyle = '#2a2622'; g.fillRect(0, 0, 256, 256); g.fillStyle = '#c9a24a'; for (let y = 4; y < 256; y += 16) for (let x = 4 + y % 32 / 4; x < 250; x += 11) g.fillRect(x, y, 7, 11); });
+  const strata = tex(g => { g.fillStyle = '#8f8d94'; g.fillRect(0, 0, 256, 256); for (let i = 0, r = 3; i < 90; i++) { r = r * 16807 % 2147483647; const y = r % 256; r = r * 16807 % 2147483647; g.fillStyle = `hsl(250 4% ${42 + r % 26}%)`; g.fillRect(r % 200 - 40, y, 60 + r % 180, 2 + r % 9); } });
+  const mat = (color, o) => new T.MeshStandardMaterial({ color, roughness: .9, ...o }), glow = color => new T.MeshBasicMaterial({ color });
+  const stone = mat(0xcfcfd8, { map: blocks }), lime = mat(0xf2ead8, { map: blocks }), paving = mat(0xa9a9b2, { map: blocks }), rock = mat(0x8e8c96, { map: strata }), earth = mat(0x6b5a45),
+    planks = mat(0x7a6248), timber = mat(0x3c3229), wood = mat(0x6a5238), brass = mat(0xc9a24a, { metalness: .35, roughness: .5 }), iron = mat(0x45454c, { metalness: .3, roughness: .6 }),
+    steel = mat(0xaab2ba, { metalness: .4, roughness: .45 }), bone = mat(0xd8d0bc), cloth = mat(0x77777b), straw = mat(0xb39a5c), rust = mat(0x8a3f28), gateM = mat(0x6a6558, { map: blocks }),
+    raw = mat(0xaeb6bd, { flatShading: true, metalness: .25, roughness: .5 }), tags = mat(0xffffff, { map: tagTex }), skin = mat(0xc9a58a), fireM = glow(0xffa64d), blueM = glow(0xa9d6ff);
+  const FIRE = 0xff9a4a, CANDLE = 0xffc878, BLUE = 0x6fb6ff;
+
+  // примитивы: x, z — координаты плана (метры), y — высота
+  const add = (g, m, x, y, z) => { const o = new T.Mesh(g, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = !m.isMeshBasicMaterial; scene.add(o); return o; };
+  const box = (x, z, w, d, h, m, y = 0, solid) => { const g = new T.BoxGeometry(w, h, d), uv = g.attributes.uv;
+    for (let i = 0; i < 24; i++) { const f = i >> 3; uv.setXY(i, uv.getX(i) * (f ? w : d) / 3, uv.getY(i) * (f === 1 ? d : h) / 3); }
+    if (solid) solids.push([x, z, x + w, z + d]);
+
+    return add(g, m, x + w / 2, y + h / 2, z + d / 2); };
+  const cyl = (x, z, r, h, m, y = 0, solid) => { if (solid) solids.push([x - r, z - r, x + r, z + r]);
+
+    return add(new T.CylinderGeometry(r, r, h, 20), m, x, y + h / 2, z); };
+  const ball = (x, y, z, r, m) => add(new T.SphereGeometry(r, 16, 12), m, x, y, z), ico = (x, y, z, r, m) => add(new T.IcosahedronGeometry(r), m, x, y, z);
+  const ring = (x, z, r0, r1, m) => { add(new T.RingGeometry(r0, r1, 48), m, x, .02, z).rotation.x = -PI / 2; };
+  const lamp = (x, y, z, c, i, d) => { const l = new T.PointLight(c, i, d, 2); l.position.set(x, y, z); scene.add(l); };
+  const brazier = (x, z) => { cyl(x, z, .06, 1, iron); cyl(x, z, .42, .22, iron, 1, 1); ball(x, 1.4, z, .26, fireM); lamp(x, 1.9, z, FIRE, 28, 12); };
+  const fig = (x, z, m) => { cyl(x, z, .26, 1.45, m, 0, 1); ball(x, 1.62, z, .17, skin); };
+  const dummy = (x, z, m) => { cyl(x, z, .09, 1.2, wood, 0, 1); box(x - .28, z - .15, .56, .3, .75, m, .85); ball(x, 1.8, z, .16, m); box(x - .6, z - .05, 1.2, .1, .1, wood, 1.42); };
+
+  // стены, полы, потолки из прямоугольников зон; проёмы — из doors (5-е число — высота проёма)
+  const HT = { A: 9, B: 7, C: 4.6, D: 5.5, E: 6, F: 3.2, G: 5, H: 4.6 }, FL = { E: earth, F: planks }, doors = Z.flatMap(z => z.doors || []);
+  for (const z of Z) {
+    const [x, y, w, d] = z.r, h = HT[z.id], m = z.id === 'D' ? lime : stone;
+    for (const [ax, a, b, c, inw] of [[0, x, x + w, y, 1], [0, x, x + w, y + d, -1], [1, y, y + d, x, 1], [1, y, y + d, x + w, -1]]) {
+      const cc = c + inw * .06 - .2, i = ax ? 0 : 1, j = 1 - i;
+      const wall = (s, e, y0 = 0) => e - s > .01 && h - y0 > .01 && (ax ? box(cc, s, .4, e - s, h - y0, m, y0, !y0) : box(s, cc, e - s, .4, h - y0, m, y0, !y0));
+      let s = a;
+      doors.filter(q => q[i] < c && c < q[i] + q[i + 2]).map(q => [Math.max(a, q[j]), Math.min(b, q[j] + q[j + 2]), q[4] || 2.6]).filter(q => q[1] > q[0]).sort((p, q) => p[0] - q[0])
+        .forEach(([p, q, dh]) => { wall(s, p); wall(p, q, dh); s = q; });
+      wall(s, b);
+    }
+    box(x, y, w, d, .2, FL[z.id] || paving, -.2);
+    if (z.id !== 'B') box(x, y, w, d, .3, z.id === 'A' ? rock : timber, h);
+  }
+  box(-40, -40, 140, 140, .2, earth, -.45);
+  box(2, -8, 20, 18, 16, rock); box(38, -8, 20, 18, 16, rock); box(22, -8, 16, 8.9, 16, rock); box(22, .8, 16, 9.2, 7, rock, 9.3);
+
+  // A — привратный зал
+  box(27, 1.3, 2.96, .5, 7, gateM, 0, 1); box(30.04, 1.3, 2.96, .5, 7, gateM, 0, 1);
+  [1, 3.4, 5.8].forEach(y => box(27, 1.8, 6, .05, .3, brass, y));
+  cyl(30, 1.86, 1.3, .1, iron, 3.85).rotation.x = PI / 2; box(29.94, 1.9, .12, .1, 7, blueM); lamp(30, 3.6, 3.2, BLUE, 60, 18);
+  box(27.4, 3.7, 5.2, 3.8, .05, brass); box(27.5, 3.8, 5, 3.6, .1, iron); cyl(33.2, 3.5, .06, 2.6, iron); cyl(33.2, 3.5, .55, .06, brass, 2.3).rotation.x = PI / 2;
+  box(34.6, 5.9, .7, .9, 1.1, wood, 0, 1); box(34.55, 5.85, .8, 1, .1, bone, 1.1);
+  ico(24.6, 1.3, 5.2, .75, blueM); solids.push([23.7, 4.3, 25.5, 6.1]); lamp(24.6, 1.9, 5.2, BLUE, 50, 16);
+  const cage = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(1.8, 2.8, 1.8)), new T.LineBasicMaterial({ color: 0x8a8a92 })); cage.position.set(24.6, 1.4, 5.2); scene.add(cage);
+  brazier(25.4, 8.7); brazier(34.6, 8.7);
+  box(37.63, 1.6, .1, 2.8, 2, tags, .8);
+
+  // B — двор
+  cyl(30, 21, 1.3, .9, stone, 0, 1); cyl(30, 21, .15, 5.2, brass, .9); box(27.4, 20.92, 5.2, .16, .18, brass, 5.9).rotation.z = -.06;
+  cyl(27.6, 21, .015, 2.3, brass, 3.83); cyl(27.6, 21, .8, .07, brass, 3.78); box(27.2, 20.8, .7, .12, .12, bone, 3.85); box(27.5, 21.1, .5, .1, .1, bone, 3.85); ball(27.95, 3.98, 20.75, .13, bone);
+  cyl(32.4, 21, .015, 2.3, brass, 3.55); cyl(32.4, 21, .8, .07, brass, 3.5); cyl(32.2, 21, .16, .3, iron, 3.57); cyl(32.6, 20.8, .12, .22, iron, 3.57); cyl(32.55, 21.25, .09, .16, iron, 3.57);
+  box(35.2, 10.3, 2.6, .1, 1.5, wood, 1); box(35.5, 10.4, .4, .02, .5, bone, 1.7); box(36.2, 10.4, .5, .02, .35, bone, 1.5); box(37, 10.4, .35, .02, .45, bone, 1.8);
+  cyl(36, 29, .75, .3, stone, 0, 1); ball(36, .55, 29, .3, fireM); lamp(36, 1.2, 29, FIRE, 45, 16);
+  box(35, 30.6, 2, .45, .45, wood, 0, 1); box(33.9, 28, .45, 2, .45, wood, 0, 1); box(37.65, 28, .45, 2, .45, wood, 0, 1);
+  box(29.3, 7.4, .08, 5.94, .07, iron); box(30.62, 7.4, .08, 5.94, .07, iron); box(18.6, 12.3, 10.78, .08, .07, iron); box(18.6, 13.26, 12.1, .08, .07, iron);
+  box(29.4, 10.2, 1.2, 1.7, .75, wood, .25, 1); [[29.8, 10.6], [30.2, 11.1], [29.8, 11.5], [30.25, 10.5]].forEach(([x, z], i) => ico(x, 1.08, z, .26 + i % 2 * .08, raw));
+  [[19.3, 32.7], [40.7, 32.7], [40.7, 11.3]].forEach(([x, z]) => { cyl(x, z, .06, 3.2, iron); box(x - .15, z - .15, .3, .3, .4, fireM, 2.9); lamp(x, 3, z, FIRE, 30, 14); });
+
+  // C — торговый ряд
+  [16, 22, 28].forEach(y => box(4, y - .15, 12, .3, 4.6, stone, 0, 1));
+  [11, 17, 23, 29].forEach(y => box(15, y, .8, 4, 1, wood, 0, 1));
+  [9.6, 15.6, 21.6, 27.6, 33.6].forEach(y => box(17.6, y, .8, .8, 4.6, stone, 0, 1));
+  box(4.3, 10.6, .9, 3, 2.4, wood, 0, 1); box(11, 14.6, 1.8, .9, .9, wood, 0, 1); lamp(11, 3.2, 13, FIRE, 16, 10);
+  cyl(15.4, 12, .025, .5, brass, 1); box(15.38, 11.65, .04, .7, .03, brass, 1.5); cyl(15.4, 11.7, .14, .02, brass, 1.25); cyl(15.4, 12.3, .14, .02, brass, 1.25);
+  box(4.4, 19.4, 1.8, 1.8, 1, stone, 0, 1); box(4.7, 19.7, 1.2, 1.2, .08, fireM, 1); lamp(5.3, 2, 20.3, 0xff7a30, 60, 14);
+  cyl(9, 19, .3, .6, wood, 0, 1); box(8.5, 18.82, 1, .36, .28, iron, .6); cyl(11, 20.8, .4, .9, wood, 0, 1);
+  box(4.3, 16.5, .3, 2.4, 1.9, wood, 0, 1); for (let i = 0; i < 5; i++) box(4.62, 16.75 + i * .45, .04, .08, 1.2, steel, .5);
+  [22.95, 27.05].forEach(z => { cyl(5, z, .05, 1.1, wood); box(4.7, z - .18, .6, .36, .7, steel, 1); ball(5, 1.9, z, .17, steel); });
+  box(8, 26.4, 2.4, .9, .9, wood, 0, 1); lamp(9, 2.6, 25, FIRE, 12, 9);
+  box(4.5, 28.5, 2.2, 1.2, 1.2, wood, 0, 1); box(4.7, 28.7, 1.2, .8, .7, wood, 1.2); box(4.5, 32.3, 1.5, 1.2, 1, wood, 0, 1); cyl(8, 33, .45, 1, wood, 0, 1); cyl(9, 32.9, .45, 1, wood, 0, 1);
+  box(8, 28.35, 5, .6, 2.6, wood, 0, 1); lamp(10, 3.2, 31, FIRE, 16, 10);
+
+  // D — часовня
+  box(41.69, 10.3, .05, 3.7, 5.5, lime); box(41.69, 16.4, .05, 3.6, 5.5, lime); box(41.69, 14, .05, 2.4, 2.9, lime, 2.6);
+  box(54, 13.8, 1.4, 3.2, 1.1, bone, 0, 1); for (let i = 0; i < 6; i++) { const h = .22 + i % 2 * .1; cyl(54.5, 14.2 + i * .5, .03, h, bone, 1.1); ball(54.5, 1.14 + h, 14.2 + i * .5, .04, fireM); }
+  lamp(53.3, 2, 15.4, CANDLE, 35, 13); lamp(46, 2.4, 12.8, CANDLE, 18, 10);
+  [44, 46, 48].forEach(x => { box(x, 17.6, 1, 2, .45, cloth, 0, 1); box(x + .1, 19.1, .8, .4, .12, bone, .45); });
+  box(43, 11, 3, .9, .9, wood, 0, 1); [43.4, 44, 44.5, 45.3].forEach((x, i) => cyl(x, 11.4, .06, .2 + i % 2 * .08, mat(i % 2 ? 0x7a2a2a : 0x3f6a4a), .9));
+  box(53.9, 10.5, 1, .6, 1.1, wood, 0, 1); box(53.85, 10.45, 1.1, .7, .1, bone, 1.1);
+
+  // E — фехтовальный зал
+  box(42.5, 26.6, .5, 3.2, .03, rust); dummy(47, 22.4, straw); dummy(51.5, 22.4, steel);
+  [27.4, 32.4, 37.4].forEach(z => box(45.5, z - .04, 10, .08, .02, lime)); ring(49.5, 33.6, 3.05, 3.2, lime);
+  box(42.28, 35.4, .1, 2.4, 1.4, wood, 1); for (let i = 0; i < 6; i++) box(42.38, 35.6 + i % 3 * .7, .03, .4, .4, brass, 1.2 + (i > 2) * .6);
+  box(42.3, 21, .45, 2.4, 1.9, wood, 0, 1); for (let i = 0; i < 4; i++) box(42.78, 21.3 + i * .55, .04, .08, 1.3, steel, .4);
+  lamp(49, 4.6, 25, FIRE, 70, 22); lamp(49, 4.6, 35, FIRE, 70, 22);
+
+  // F — келья
+  box(20.6, 41.8, 2.4, 1.4, .5, cloth, 0, 1); box(20.7, 42, .5, 1, .12, bone, .5);
+  box(25, 42.7, 1.6, 1, .9, wood, 0, 1); box(24.98, 43.1, 1.64, .12, .92, brass);
+  box(28.5, 42.7, 2, 1, .8, wood, 0, 1); [28.8, 29.44, 30.08].forEach(x => box(x, 42.66, .14, .05, .2, brass, .45));
+  box(20.28, 36, .4, 3.4, .06, wood, 1.5); cyl(20.48, 36.5, .1, .3, brass, 1.56); ico(20.48, 1.72, 37.6, .14, raw); box(20.38, 38.6, .2, .3, .25, bone, 1.56);
+  box(35.62, 35.5, .1, 3, 1.4, wood, 1); for (let i = 0; i < 4; i++) box(35.58, 35.8 + i * .7, .03, .4, .5, bone, 1.3 + i % 2 * .3);
+  dummy(33.6, 41.6, cloth); box(35.1, 39.4, .6, 1.8, 1.3, stone, 0, 1); box(35.02, 39.8, .1, 1, .5, fireM, .25); lamp(34.4, 1, 40.3, FIRE, 30, 13); lamp(24, 2.4, 38, FIRE, 12, 10);
+
+  // G — дорожные ворота
+  for (let x = 37.75; x < 41.4; x += .3) cyl(x, 45.94, .04, 4, iron); box(37.6, 45.9, 3.8, .08, .08, iron, 2); solids.push([37.4, 45.8, 41.6, 46.3]);
+  ring(39.5, 38.4, 1.35, 1.5, lime); lamp(39.5, 3.6, 41, FIRE, 24, 14);
+
+  // торговцы и метки ID
+  const labels = new T.Group(); scene.add(labels);
+  const label = (id, n, x, y, z, tone, zone) => { const t = tex(g => { g.font = '500 28px Segoe UI, sans-serif'; const w = Math.min(508, g.measureText(n).width + 110), l = 256 - w / 2;
+      g.fillStyle = '#0e0d11d9'; g.fillRect(l, 6, w, 60); g.strokeStyle = tone; g.lineWidth = 3; g.strokeRect(l, 6, w, 60); g.textBaseline = 'middle';
+      g.fillStyle = '#e4e0d6'; g.fillText(n, l + 86, 38); g.fillStyle = tone; g.font = '700 32px Consolas, monospace'; g.fillText(id, l + 14, 38); }, 512, 72);
+    const s = new T.Sprite(new T.SpriteMaterial({ map: t, fog: false })); s.scale.set(3.2, .45, 1); s.position.set(x, y, z); labels.add(s); targets.push({ id, n, x, y: y - 1, z, zone }); };
+  const LY = { A1: 7.6, B1: 6.9, B5: 3.8, C5: 3.4, E4: 1.2, E5: 1.2, G2: 1.2, E1: 1.4 };
+  for (const z of Z) for (const i of z.items) label(i.id, i.n, i.p[0], LY[i.id] || 2.3, i.p[1], z.tone, z.id);
+  for (const m of M) { fig(m.p[0], m.p[1], mat(m.tone)); label(m.id, m.name, m.p[0], 2.15, m.p[1], m.tone, m.at[0]); }
+
+  // свет: серое небо сверху (с тенью), остальное — огни
+  scene.add(new T.HemisphereLight(0xa4aaba, 0x2a2622, 1.1));
+  const sun = new T.DirectionalLight(0xbcc4d4, 2.6); sun.position.set(38, 45, 39); sun.target.position.set(30, 0, 23); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0004; sun.shadow.normalBias = .04;
+  Object.assign(sun.shadow.camera, { left: -36, right: 36, top: 36, bottom: -36, near: 1, far: 120 }); scene.add(sun, sun.target);
+  rnd.shadowMap.autoUpdate = false; rnd.shadowMap.needsUpdate = true;
+
+  // пыль над двором
+  const AN = 600, ap = new Float32Array(AN * 3); for (let i = 0; i < AN; i++) ap.set([18 + Math.random() * 24, Math.random() * 12, 10 + Math.random() * 24], i * 3);
+  const ashG = new T.BufferGeometry(); ashG.setAttribute('position', new T.BufferAttribute(ap, 3)); scene.add(new T.Points(ashG, new T.PointsMaterial({ color: 0xb9b3a6, size: .03, transparent: true, opacity: .55 })));
+
+  // игрок
+  let x = 30, z = 32, yaw = 0, pitch = 0, locked = false, last = 0, look = null;
+  const at = location.hash.match(/at=([\d.]+),([\d.]+),(-?\d+)/); if (at) [x, z, yaw] = [+at[1], +at[2], at[3] * PI / 180];
+  const keys = {}, SP = [[30, 8], [30, 27], [17, 19], [47, 15], [47, 30], [28, 38], [39.5, 41]], RAD = .35, dir = new T.Vector3(), mes = document.querySelectorAll('.me');
+  const free = (x, z) => !solids.some(s => x > s[0] - RAD && x < s[2] + RAD && z > s[1] - RAD && z < s[3] + RAD);
+  const draw = () => {
+    cam.position.set(x, 1.7, z); cam.rotation.set(pitch, yaw, 0); cam.getWorldDirection(dir);
+    const zone = Z.find(q => x >= q.r[0] && x <= q.r[0] + q.r[2] && z >= q.r[1] && z <= q.r[1] + q.r[3]); let best = .955; look = null;
+    for (const t of targets) { const vx = t.x - x, vy = t.y - 1.7, vz = t.z - z, l = Math.hypot(vx, vy, vz), d = (vx * dir.x + vy * dir.y + vz * dir.z) / l; if (d > best && l < (zone && t.zone === zone.id ? 16 : 8)) { best = d; look = t; } }
+    hz.textContent = zone ? `${zone.id} · ${zone.name}` : ''; ht.textContent = look ? `${look.id} · ${look.n}` : '';
+    mes.forEach(m => m.setAttribute('transform', `translate(${x} ${z}) rotate(${-yaw * 180 / PI})`));
+    rnd.render(scene, cam);
+  };
+  const tick = now => {
+    if (!locked) return;
+
+    const dt = Math.min(.05, (now - last) / 1000), f = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0), s = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0); last = now;
+    if (f || s) { const v = (keys.ShiftLeft ? 5.5 : 3.2) * dt / Math.hypot(f, s), dx = (-Math.sin(yaw) * f + Math.cos(yaw) * s) * v, dz = (-Math.cos(yaw) * f - Math.sin(yaw) * s) * v; if (free(x + dx, z)) x += dx; if (free(x, z + dz)) z += dz; }
+    for (let i = 1; i < AN * 3; i += 3) ap[i] = ap[i] < 0 ? 12 : ap[i] - .35 * dt;
+    ashG.attributes.position.needsUpdate = true; draw(); requestAnimationFrame(tick);
+  };
+  cv.addEventListener('click', () => { if (!locked) return cv.requestPointerLock(); if (look) { navigator.clipboard?.writeText(look.id); ht.textContent = `${look.id} — скопировано`; } });
+  document.addEventListener('pointerlockchange', () => { locked = document.pointerLockElement === cv; stage.classList.toggle('live', locked);
+    if (locked) { last = performance.now(); requestAnimationFrame(tick); } else history.replaceState(null, '', `#at=${x.toFixed(1)},${z.toFixed(1)},${Math.round(yaw * 180 / PI)}`); });
+  document.addEventListener('mousemove', e => { if (locked) { yaw -= e.movementX * .0022; pitch = Math.max(-1.5, Math.min(1.5, pitch - e.movementY * .0022)); } });
+  document.addEventListener('keyup', e => keys[e.code] = false);
+  document.addEventListener('keydown', e => {
+    if (!locked) return;
+
+    keys[e.code] = true; if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault(); const n = +e.code.slice(5);
+    if (e.code === 'KeyL') labels.visible = !labels.visible;
+    if (e.code === 'KeyM') document.getElementById('mini').style.display = document.getElementById('mini').style.display ? '' : 'none';
+    if (e.code.startsWith('Digit') && SP[n - 1]) [x, z] = SP[n - 1];
+  });
+  document.getElementById('fs').addEventListener('click', () => stage.requestFullscreen());
+  new ResizeObserver(() => { rnd.setSize(stage.clientWidth, stage.clientHeight, false); cam.aspect = stage.clientWidth / stage.clientHeight; cam.updateProjectionMatrix(); draw(); }).observe(stage);
+})();
 </script>
 </body>
 </html>
