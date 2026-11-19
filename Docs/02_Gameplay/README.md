@@ -11,3 +11,4 @@
 - `Economy.md`
 - `Death_And_Loss.md`
 - `Teamplay.md`
+- `Hub.md`
