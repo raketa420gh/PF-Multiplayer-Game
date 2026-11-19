@@ -259,7 +259,7 @@ button { font: inherit; color: var(--fg); background: var(--panel); border: 1px 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
 /* Геометрия плана: x — запад→восток, z — север→юг, метры. Дома заданы рамками fr(x, z, угол, ширина, глубина): u — вдоль фасада, v — вглубь. */
-const fr = (x, z, a = 0, W = 0, D = 0) => { const r = a * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), p = (u, v) => [+(x + u * c - v * s).toFixed(2), +(z + u * s + v * c).toFixed(2)];
+const fr = (x = 0, z = 0, a = 0, W = 0, D = 0) => { const r = a * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), p = (u, v) => [+(x + u * c - v * s).toFixed(2), +(z + u * s + v * c).toFixed(2)];
   return { p, a: r, poly: [p(0, 0), p(W, 0), p(W, D), p(0, D)], r: (u, v, w, d) => ({ g: [p(u, v), p(u + w, v), p(u + w, v + d), p(u, v + d)].join(' ') }) }; };
 const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i][1] > z) !== (p[j][1] > z) && x < (p[j][0] - p[i][0]) * (z - p[i][1]) / (p[j][1] - p[i][1]) + p[i][0]) c = !c;
