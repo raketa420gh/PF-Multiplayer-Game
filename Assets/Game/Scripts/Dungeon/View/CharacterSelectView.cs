@@ -76,7 +76,7 @@ namespace Game.Scripts.Dungeon
 
             if (!hasCharacter)
             {
-                _nameText.text = "Create a character to enter the tavern";
+                _nameText.text = "Create a character to enter the hub";
 
                 return;
             }

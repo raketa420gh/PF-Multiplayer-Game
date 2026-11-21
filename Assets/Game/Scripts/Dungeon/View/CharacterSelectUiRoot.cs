@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Game.Scripts.Dungeon
 {
     /// Character select scene, the first one of the game: switches between the slot list and the creation page and travels
-    /// to the tavern with the picked character. No network session runs here.
+    /// to the hub with the picked character. No network session runs here.
     public sealed class CharacterSelectUiRoot : MonoBehaviour
     {
         [SerializeField]
@@ -70,7 +70,7 @@ namespace Game.Scripts.Dungeon
         private void OnEnterRequested(int slot)
         {
             StashService.SelectSlot(slot);
-            SceneTravel.Load(null, SceneTravel.LobbyScene, SceneTravel.LobbyTitle);
+            SceneTravel.Load(null, SceneTravel.HubScene, SceneTravel.HubTitle);
         }
     }
 }

@@ -74,7 +74,7 @@ namespace Game.Scripts.Dungeon
             PlayerPrefs.Save();
         }
 
-        /// A new character is only its class and nickname; the kit, stash and build start from the class defaults on the first tavern visit.
+        /// A new character is only its class and nickname; the kit, stash and build start from the class defaults on the first hub visit.
         public static void CreateCharacter(int slot, byte classId, string name)
         {
             DeleteCharacter(slot);
@@ -89,7 +89,7 @@ namespace Game.Scripts.Dungeon
             foreach (string name in new[] { KitKey, LevelKey, ExperienceKey, ClassKey, NameKey, SkillAKey, SkillBKey, PerksKey, SpellsKey, SpellSlotsKey, SubclassKey })
                 PlayerPrefs.DeleteKey(Key(slot, name));
 
-            for (int page = 0; page < PlayerSessionComponent.StashPages; page++)
+            for (int page = 0; page < PlayerSessionComponent.SharedStashPage; page++)
                 PlayerPrefs.DeleteKey(StashPageKey(slot, page));
 
             PlayerPrefs.Save();
@@ -118,7 +118,7 @@ namespace Game.Scripts.Dungeon
         public static void Clear()
         {
             PlayerPrefs.DeleteKey(Key(s_slot, KitKey));
-            for (int page = 0; page < PlayerSessionComponent.StashPages; page++)
+            for (int page = 0; page < PlayerSessionComponent.SharedStashPage; page++)
                 PlayerPrefs.DeleteKey(StashPageKey(page));
 
             PlayerPrefs.DeleteKey(Key(s_slot, LevelKey));
@@ -159,7 +159,8 @@ namespace Game.Scripts.Dungeon
             return GameServer.Account + (slot == 0 ? "dad." + name : $"dad{slot + 1}.{name}");
         }
 
-        private static string StashPageKey(int page) => StashPageKey(s_slot, page);
+        /// The shared page has one key for the whole account; a character's own pages are kept under its slot.
+        private static string StashPageKey(int page) => page == PlayerSessionComponent.SharedStashPage ? GameServer.Account + "dad.shared" : StashPageKey(s_slot, page);
 
         /// The first page keeps the key of the single stash it used to be, so old saves load into it.
         private static string StashPageKey(int slot, int page)
@@ -226,14 +227,14 @@ namespace Game.Scripts.Dungeon
         {
             for (int slot = 0; slot < SlotCount; slot++)
             {
-                for (int page = PlayerSessionComponent.StashPages; page < LegacyStashPages; page++)
+                for (int page = PlayerSessionComponent.SharedStashPage; page < LegacyStashPages; page++)
                 {
                     string key = StashPageKey(slot, page);
 
                     if (!PlayerPrefs.HasKey(key))
                         continue;
 
-                    string target = StashPageKey(slot, page % PlayerSessionComponent.StashPages);
+                    string target = StashPageKey(slot, page % PlayerSessionComponent.SharedStashPage);
                     byte[] merged = AppendBag(Load(target), Load(key));
 
                     if (merged != null)

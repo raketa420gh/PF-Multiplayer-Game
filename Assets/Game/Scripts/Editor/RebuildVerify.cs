@@ -20,7 +20,7 @@ namespace Game.Scripts.Editor
         private static readonly string[] Scenes =
         {
             "Assets/Game/Scenes/DungeonScene.unity",
-            "Assets/Game/Scenes/LobbyScene.unity", "Assets/Game/Scenes/CharacterSelectScene.unity"
+            "Assets/Game/Scenes/HubScene.unity", "Assets/Game/Scenes/CharacterSelectScene.unity"
         };
         private static readonly string[] PrefabFolders = { "Assets/Game/Prefabs" };
         private static readonly Regex GuidRegex = new Regex(@"guid: ([0-9a-f]{32})", RegexOptions.Compiled);

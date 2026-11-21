@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// "Perks and Skills" page of the tavern: attribute sheet, the subclass tabs (while subclasses are enabled), the doll with the equipped
+    /// "Perks and Skills" page of the hub: attribute sheet, the subclass tabs (while subclasses are enabled), the doll with the equipped
     /// perk and skill slots (or, on the second tab, the spell wheels), the pools of the class and the chosen subclass to pick from. Perks and skills are equipped by a click or by dragging them onto a slot of their kind.
     public sealed class SkillsView : DisplayableView
     {

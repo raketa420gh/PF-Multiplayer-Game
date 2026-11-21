@@ -18,7 +18,7 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonContentBuilder.Build();
             CombatSoundBuilder.Build();
             DungeonSceneBuilder.Build();
-            LobbySceneBuilder.Build();
+            HubSceneBuilder.Build();
             CharacterSelectSceneBuilder.Build();
         }
 
@@ -65,10 +65,20 @@ namespace Game.Scripts.Editor.Dungeon
             DungeonSceneBuilder.Build();
         }
 
-        [MenuItem("Tools/Game/Dungeon/Build Lobby Scene")]
-        public static void BuildLobbyScene()
+        [MenuItem("Tools/Game/Dungeon/Build Hub Scene")]
+        public static void BuildHubScene()
         {
-            LobbySceneBuilder.Build();
+            HubSceneBuilder.Build();
+        }
+
+        /// The whole hub from the mockup export: content it relies on, the blockout prefab (overwritten) and the scene.
+        [MenuItem("Tools/Game/Dungeon/Hub/Rebuild Hub From Mockup")]
+        public static void RebuildHub()
+        {
+            DungeonContentBuilder.BuildHubContent();
+            HubBlockoutBuilder.Build();
+            HubSceneBuilder.Build();
+            CharacterSelectSceneBuilder.Build();
         }
 
         [MenuItem("Tools/Game/Dungeon/Build Character Select Scene")]

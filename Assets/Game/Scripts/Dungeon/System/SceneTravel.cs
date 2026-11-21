@@ -6,14 +6,14 @@ using UnityEngine.SceneManagement;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Moves the local player between the tavern and the dungeon. Every scene runs its own Fusion session;
+    /// Moves the local player between the character select, the hub and the dungeon. Every scene runs its own Fusion session;
     /// the loading screens of both scenes cover the trip.
     public static class SceneTravel
     {
         public const string CharacterSelectScene = "CharacterSelectScene";
-        public const string LobbyScene = "LobbyScene";
+        public const string HubScene = "HubScene";
         public const string DungeonScene = "DungeonScene";
-        public const string LobbyTitle = "The Tavern";
+        public const string HubTitle = "The Mouth";
         public const string DungeonTitle = "The Dungeon";
         public const string CharacterSelectTitle = "Characters";
 

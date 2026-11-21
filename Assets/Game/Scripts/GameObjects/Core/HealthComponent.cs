@@ -30,10 +30,18 @@ namespace Game.Scripts
         public float Progress => (float) CurrentHealth / MaxHealth;
         public float RecoverableProgress => (float) (CurrentHealth + RecoverableHealth) / MaxHealth;
 
+        private int _floor;
+
         public override void Spawned()
         {
             if (HasStateAuthority)
                 CurrentHealth = MaxHealth;
+        }
+
+        /// Damage and kills never take the health below the floor (the hub: nobody dies there).
+        public void SetFloor(int floor)
+        {
+            _floor = floor;
         }
 
         public void Restore(int heal)
@@ -61,7 +69,7 @@ namespace Game.Scripts
             if (damage <= 0 || IsDead)
                 return;
 
-            CurrentHealth = Math.Max(0, CurrentHealth - damage);
+            CurrentHealth = Math.Max(Math.Min(_floor, CurrentHealth), CurrentHealth - damage);
             RecoverableHealth = IsDead ? 0 : Math.Min(RecoverableHealth + (int)Math.Round(damage * recoverRatio), MaxHealth - CurrentHealth);
         }
 
@@ -77,7 +85,7 @@ namespace Game.Scripts
 
         public void Kill()
         {
-            CurrentHealth = 0;
+            CurrentHealth = Math.Min(_floor, CurrentHealth);
             RecoverableHealth = 0;
         }
 

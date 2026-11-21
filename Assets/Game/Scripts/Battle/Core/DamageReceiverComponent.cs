@@ -64,6 +64,7 @@ namespace Game.Scripts.Battle
         public short Damage;
         public byte Sound;
         public NetworkBool IsHandle;
+        public DamageType Type;
     }
 
     public sealed class DamageReceiverComponent : NetworkBehaviour
@@ -129,6 +130,7 @@ namespace Game.Scripts.Battle
         private DamageReceiverComponent _lastAttacker;
         private int _renderedEvents;
         private int _team = NoTeam;
+        private bool _isSparring;
         private Vector3 _lastHitPoint;
         private Vector3 _lastHitPush;
         private int _lastHitTick = int.MinValue / 2;
@@ -167,9 +169,15 @@ namespace Game.Scripts.Battle
             _team = team;
         }
 
+        /// Teammates who both spar hit each other like strangers.
+        public void SetSparring(bool isSparring)
+        {
+            _isSparring = isSparring;
+        }
+
         public bool CanBeHitBy(DamageReceiverComponent attacker)
         {
-            return IsAlive && (attacker == null || _team == NoTeam || _team != attacker.Team);
+            return IsAlive && (attacker == null || _team == NoTeam || _team != attacker.Team || (_isSparring && attacker._isSparring));
         }
 
         public HitResult ApplyHit(in HitRequest request)
@@ -213,7 +221,8 @@ namespace Game.Scripts.Battle
                 Zone = result == HitResult.Blocked ? HitZone.Block : hit.Zone,
                 Damage = (short)damage,
                 Sound = hit.Sound,
-                IsHandle = hit.IsHandle && result == HitResult.Hit
+                IsHandle = hit.IsHandle && result == HitResult.Hit,
+                Type = hit.DamageType
             });
             _eventCount++;
 

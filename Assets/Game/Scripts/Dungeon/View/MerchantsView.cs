@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// "Merchants" page of the tavern: the merchants on the left, the counter of the chosen one in the middle,
+    /// "Merchants" page of the hub: the merchants on the left, the counter of the chosen one in the middle,
     /// the purse and the details of the hovered ware on the right. A click buys the ware into the stash.
     public sealed class MerchantsView : DisplayableView
     {
@@ -62,6 +62,7 @@ namespace Game.Scripts.Dungeon
         private readonly List<MerchantWareView> _wares = new();
         private PlayerSessionComponent _session;
         private bool _isBuilt;
+        private int _opened;
         private int _merchant;
         private int _filter;
 
@@ -96,6 +97,15 @@ namespace Game.Scripts.Dungeon
             _isBuilt = false;
         }
 
+        /// The counter of one merchant, picked by the station the player stands at.
+        public void Open(int merchant)
+        {
+            _opened = merchant;
+
+            if (_isBuilt)
+                SelectMerchant(merchant);
+        }
+
         public override void Hide()
         {
             base.Hide();
@@ -123,7 +133,7 @@ namespace Game.Scripts.Dungeon
             }
 
             if (merchants.Length > 0)
-                SelectMerchant(0);
+                SelectMerchant(Mathf.Clamp(_opened, 0, merchants.Length - 1));
         }
 
         private void SelectMerchant(int index)

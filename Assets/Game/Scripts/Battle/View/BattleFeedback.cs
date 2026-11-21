@@ -143,6 +143,12 @@ namespace Game.Scripts.Battle
             PlayClip(GetClips(GetSounds(hit.Sound), surface) ?? (hit.Result == HitResult.Hit ? _hitClips : _blockClips), hit.Point);
         }
 
+        /// A number over the point of a hit, for targets that show what they take.
+        public void ShowDamage(Vector3 point, int damage, Color color)
+        {
+            ShowPopup(point, damage.ToString(), color);
+        }
+
         public void PlayWorldHit(Vector3 point, Vector3 normal, WeaponSoundConfig sounds, ImpactSurface surface)
         {
             _blockVfx.transform.SetPositionAndRotation(point, Quaternion.LookRotation(normal));

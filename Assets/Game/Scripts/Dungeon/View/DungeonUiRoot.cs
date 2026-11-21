@@ -42,11 +42,13 @@ namespace Game.Scripts.Dungeon
         private AdventurerComponent _adventurer;
         private SessionState _shownState = (SessionState)255;
         private bool _isInventoryOpen;
-        private int _wheelSkill = -1;
-        private int _wheelReadied = -1;
-        private readonly System.Collections.Generic.List<int> _wheelSpells = new();
-        private readonly System.Collections.Generic.List<(string, Sprite, string, Color, string)> _wheelEntries = new();
+        private SpellWheelDriver _wheels;
         private Fusion.NetworkBehaviourId _openedContainer;
+
+        private void Awake()
+        {
+            _wheels = new SpellWheelDriver(_wheel, _context);
+        }
 
         private void OnEnable()
         {
@@ -87,7 +89,7 @@ namespace Game.Scripts.Dungeon
 
             if (_pause.IsShown)
             {
-                CloseWheel(false);
+                _wheels.Close(_adventurer, false);
 
                 return;
             }
@@ -102,7 +104,7 @@ namespace Game.Scripts.Dungeon
                 SetTestOpen(!_test.IsShown);
 
             UpdateContainer();
-            UpdateWheel();
+            _wheels.Update(_adventurer, _isInventoryOpen);
         }
 
         /// Escape closes the inventory or the map first; otherwise it toggles the menu.
@@ -128,109 +130,6 @@ namespace Game.Scripts.Dungeon
         {
             _pause.SetShown(isOpen);
             _context.Battle.Input.SetUiOpen(isOpen);
-        }
-
-        private void UpdateWheel()
-        {
-            if (_isInventoryOpen || _adventurer.State != AdventurerState.Alive)
-            {
-                CloseWheel(false);
-
-                return;
-            }
-
-            if (_wheelSkill < 0)
-            {
-                for (int i = 0; i < _adventurer.SkillCount; i++)
-                {
-                    AbilityConfig skill = _adventurer.GetSkill(i);
-
-                    if (skill == null || skill.Kind is not (AbilityKind.SpellMemory or AbilityKind.Shapeshift) || !Input.GetKeyDown(i == 0 ? KeyCode.Q : KeyCode.E))
-                        continue;
-
-                    OpenWheel(i, skill);
-
-                    return;
-                }
-
-                return;
-            }
-
-            _wheel.Move(new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) * 12f);
-            ReadyHoveredSpell();
-
-            for (int i = 0; _adventurer.GetSkill(_wheelSkill).Kind == AbilityKind.SpellMemory && i < _wheelSpells.Count; i++)
-            {
-                int index = _adventurer.SkillCount + _wheelSpells[i];
-                _wheel.SetFill(i, _adventurer.Abilities[index].IsCooldownBased ? -1f : _adventurer.GetChargeFill(index));
-            }
-
-            if (!Input.GetKey(_wheelSkill == 0 ? KeyCode.Q : KeyCode.E))
-                CloseWheel(true);
-        }
-
-        private void OpenWheel(int skillIndex, AbilityConfig skill)
-        {
-            _wheelSkill = skillIndex;
-            _wheelEntries.Clear();
-            bool isForms = skill.Kind == AbilityKind.Shapeshift;
-
-            if (isForms)
-            {
-                _wheelEntries.Add(("Rat", null, "Rt", new Color(0.6f, 0.6f, 0.6f), "tiny, fragile, sneaky"));
-                _wheel.Open("Shapeshift", _wheelEntries);
-            }
-            else
-            {
-                AbilityConfig[] spells = _adventurer.Class.Spells;
-                _wheelSpells.Clear();
-
-                for (int slot = skillIndex * ClassConfig.SpellWheelSize; slot < (skillIndex + 1) * ClassConfig.SpellWheelSize; slot++)
-                {
-                    int i = _adventurer.GetSlotSpell(slot);
-
-                    if (i < 0 || i >= spells.Length)
-                        continue;
-
-                    int index = _adventurer.SkillCount + i;
-                    string detail = spells[i].IsCooldownBased ? $"{spells[i].Cooldown:0}s cd" : $"{_adventurer.GetCharges(index)}/{_adventurer.GetMaxCharges(index)}";
-                    _wheelSpells.Add(i);
-                    _wheelEntries.Add((spells[i].DisplayName, spells[i].Icon, spells[i].Glyph, spells[i].Color, detail));
-                }
-
-                _wheel.Open(skill.DisplayName, _wheelEntries, "Weapon");
-            }
-
-            _wheelReadied = -1;
-            _context.Battle.Input.SetLookFrozen(true);
-            ReadyHoveredSpell();
-        }
-
-        /// A spell is readied the moment the cursor enters its sector (the wheel opens on the centre); forms wait for the wheel to close.
-        private void ReadyHoveredSpell()
-        {
-            int selected = _wheel.Selected;
-
-            if (selected == _wheelReadied || _adventurer.GetSkill(_wheelSkill).Kind == AbilityKind.Shapeshift)
-                return;
-
-            _wheelReadied = selected;
-            _adventurer.RpcReadySpell(selected == SpellWheelView.Center ? AdventurerComponent.NoSpell : (byte)_wheelSpells[selected]);
-        }
-
-        private void CloseWheel(bool apply)
-        {
-            if (_wheelSkill < 0)
-                return;
-
-            int selected = _wheel.Selected;
-            AbilityConfig skill = _adventurer.GetSkill(_wheelSkill);
-            _wheel.Hide();
-            _context.Battle.Input.SetLookFrozen(false);
-            _wheelSkill = -1;
-
-            if (apply && selected >= 0 && skill.Kind == AbilityKind.Shapeshift)
-                _adventurer.RpcShapeshift((ShapeshiftForm)(selected + 1));
         }
 
         private void OnSessionChanged(PlayerSessionComponent session)

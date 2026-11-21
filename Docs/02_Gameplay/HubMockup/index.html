@@ -634,9 +634,9 @@ else (() => {
     raw = mat(0xaeb6bd, { flatShading: true, metalness: .25, roughness: .5 }), tags = mat(0xffffff, { map: tagTex }), skin = mat(0xc9a58a), fireM = glow(0xffa64d), blueM = glow(0xa9d6ff);
   const WM = { stone, lime, wood: planks }, FLM = { cobble, flag, planks, earth, straw: strawF }, FIRE = 0xff9a4a, CANDLE = 0xffc878, BLUE = 0x6fb6ff;
 
-  // примитивы: x, z — координаты плана (метры), y — высота; F — рамка fr, u/v — в ней
-  let par = scene; const lift = new T.Group(); lift.position.y = LIFT; scene.add(lift);   // par — куда кладутся меши; lift — всё, что стоит на поднятом полу часовни
-  const add = (g, m, x, y, z) => { const o = new T.Mesh(g, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = !m.isMeshBasicMaterial && !m.transparent; par.add(o);
+  // примитивы: x, z — координаты плана (метры), y — высота; F — рамка fr, u/v — в ней. TAG — ID элемента, к которому относятся меши и огни: по нему выгрузка #export раскладывает их в игре
+  let par = scene, TAG = ''; const lift = new T.Group(); lift.position.y = LIFT; scene.add(lift);   // par — куда кладутся меши; lift — всё, что стоит на поднятом полу часовни
+  const add = (g, m, x, y, z) => { const o = new T.Mesh(g, m); o.position.set(x, y, z); o.userData.t = TAG; o.castShadow = o.receiveShadow = !m.isMeshBasicMaterial && !m.transparent; par.add(o);
 
     return o; };
   const rot = (o, a, rx = 0, rz = 0) => { o.rotation.order = 'YXZ'; o.rotation.set(rx, a, rz);
@@ -659,7 +659,7 @@ else (() => {
     return o; };
   const ico = (x, y, z, r, m) => add(new T.IcosahedronGeometry(r), m, x, y, z);
   const ring = (x, z, r0, r1, m) => { add(new T.RingGeometry(r0, r1, 48), m, x, .03, z).rotation.x = -PI / 2; };
-  const lamp = (x, y, z, c, i, d) => { const l = new T.PointLight(c, i, d, 2); l.position.set(x, y, z); par.add(l); };
+  const lamp = (x, y, z, c, i, d) => { const l = new T.PointLight(c, i, d, 2); l.position.set(x, y, z); l.userData.t = TAG; par.add(l); };
   const lie = (x, y, z, r, len, m, a, n = 10) => rot(add(new T.CylinderGeometry(r, r, len, n), m, x, y, z), a, 0, PI / 2);   // цилиндр лёжа, ось вдоль направления a
   const seg = (a, b, y0, y1, th, m, sol) => { const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz);
     if (L < .02 || y1 - y0 < .02) return;
@@ -670,7 +670,7 @@ else (() => {
   const slab = (pts, y, d, m) => { const g = new T.ExtrudeGeometry(new T.Shape(pts.map(p => new T.Vector2(p[0], p[1]))), { depth: d, bevelEnabled: false }), uv = g.attributes.uv;
     g.rotateX(PI / 2); for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 3, uv.getY(i) / 3); add(g, m, 0, y, 0); };
   const arch = (p, w, top, a, th, m) => { const r = w / 2, s = new T.Shape(); s.moveTo(-r, 0); s.lineTo(-r, r); s.lineTo(r, r); s.lineTo(r, 0); s.absarc(0, 0, r, 0, PI, false);
-    const g = new T.ExtrudeGeometry(s, { depth: th, bevelEnabled: false, curveSegments: 12 }); g.translate(0, 0, -th / 2); rot(add(g, m, p[0], top - r, p[1]), a); };
+    const g = new T.ExtrudeGeometry(s, { depth: th, bevelEnabled: false, curveSegments: 12 }); g.translate(0, 0, -th / 2); rot(add(g, m, p[0], top - r, p[1]), a).userData.nc = 1; };   // nc — в игре без коллизии: пазухи арки не цепляют голову в узком проёме
   const gable = (q, y, rise, wm) => { const len = i => Math.hypot(q[(i + 1) % 4][0] - q[i][0], q[(i + 1) % 4][1] - q[i][1]), k = len(0) + len(2) <= len(1) + len(3) ? 0 : 1;
     const c = q.reduce((s, p) => [s[0] + p[0] / 4, s[1] + p[1] / 4], [0, 0]), base = [0, 1, 2, 3].map(i => q[(i + k) % 4]), ex = base.map(p => [p[0] + (p[0] - c[0]) * .08, p[1] + (p[1] - c[1]) * .08]);
     const V = (p, h) => [p[0], y + h, p[1]], mk = (tri, m, dir) => { const g = new T.BufferGeometry(), pos = tri.flat(), uv = []; for (let i = 0; i < pos.length; i += 3) uv.push((pos[i] * dir[0] + pos[i + 2] * dir[1]) / 2, pos[i + 1] / 1.5);
@@ -684,7 +684,7 @@ else (() => {
   // гора (I1) и обрыв (I7): поле высот вокруг двора P; за рёбрами скалы отвес вверх прямо от ребра, за обрывом — вниз, за стеной пологий склон.
   // У стыков скала главнее (n = 1, пока она не дальше стены и обрыва), поэтому концы стены и парапета упираются в гору; под двором у скалы сетка опущена, чтобы подножие не вылезало внутрь.
   // Подножие — PT: над залом A гора сплошная; вершины, которые оказались бы внутри зала или на уступе ворота (cut), из сетки выброшены
-  const nz = (x, z) => Math.sin(x * .31 + Math.sin(z * .17) * 2) * Math.cos(z * .27 - x * .11) + .5 * Math.sin(x * .73 + z * .61), gs = (x, z, a, b, s) => Math.exp(-((x - a) ** 2 + (z - b) ** 2) / (2 * s * s));
+  TAG = 'I1'; const nz = (x, z) => Math.sin(x * .31 + Math.sin(z * .17) * 2) * Math.cos(z * .27 - x * .11) + .5 * Math.sin(x * .73 + z * .61), gs = (x, z, a, b, s) => Math.exp(-((x - a) ** 2 + (z - b) ** 2) / (2 * s * s));
   const cl = v => Math.min(1, Math.max(0, v)), EK = edges({ p: PT, w: PWT }), dK = (x, z, k) => EK.reduce((m, e) => e.k === k ? Math.min(m, dSeg(x, z, ...e.a, ...e.c)) : m, 1e9);
   const tg = new T.PlaneGeometry(160, 180, 160, 180); tg.rotateX(-PI / 2); tg.translate(42, 0, 10);
   const tp = tg.attributes.position, tc = [], cut = new Uint8Array(tp.count);
@@ -729,7 +729,7 @@ else (() => {
 
   // стены, полы, крыши из Z: рёбра и проёмы (арки — сами), крепостные зубцы и контрфорсы, парапет обрыва; b.y — подъём пола, b.roofs — несколько скатных крыш.
   // Ребро скалы — преграда; конец стены или парапета, за которым идёт скала, продлён в неё (s0, s1)
-  for (const z of Z) for (const b of z.b || []) { const y0 = b.y || 0, H = b.h + y0, E = edges(b), rk = i => E[(i + E.length) % E.length].k === '-';
+  for (const z of Z) for (const b of z.b || []) { TAG = z.id; const y0 = b.y || 0, H = b.h + y0, E = edges(b), rk = i => E[(i + E.length) % E.length].k === '-';
     for (const [i, e] of E.entries()) {
       if (e.k === '-') { solid(...e.a, ...e.c, .2); continue; }
 
@@ -750,10 +750,11 @@ else (() => {
     if (z.id !== 'B' && b.top !== 'open') slab(b.p, H + .3, .3, b.top === 'rock' ? rock : timber);
     (b.roofs || (b.g ? [[(b.gq || [0, 1, 2, 3]).map(i => b.p[i]), b.g]] : [])).forEach(([q, r]) => gable(q, H + (b.top === 'open' ? 0 : .3), r, WM[b.m]));
   }
-  [[47.2, 41.8, 1.5], [48.9, 40.9, 1.9], [49.4, 42.4, 1.3], [47.9, 42.9, 1.1], [50.1, 41.2, .9]].forEach(([x, z, r], i) => { const o = ico(x, r * .55, z, r, rockF); o.scale.y = 1.25; o.rotation.set(i, i * 2.1, 0); solid(x, z, x, z, r * .85); });
-  TOWERS.forEach(([x, z]) => { cyl(x, z, 2.4, 9.5, stone, 0, 1); for (let i = 0; i < 8; i++) box(x + Math.cos(i * PI / 4) * 2 - .4, z + Math.sin(i * PI / 4) * 2 - .4, .8, .8, .9, stone, 9.5); });
+  TAG = 'I9'; [[47.2, 41.8, 1.5], [48.9, 40.9, 1.9], [49.4, 42.4, 1.3], [47.9, 42.9, 1.1], [50.1, 41.2, .9]].forEach(([x, z, r], i) => { const o = ico(x, r * .55, z, r, rockF); o.scale.y = 1.25; o.rotation.set(i, i * 2.1, 0); solid(x, z, x, z, r * .85); });
+  TAG = 'I3'; TOWERS.forEach(([x, z]) => { cyl(x, z, 2.4, 9.5, stone, 0, 1); for (let i = 0; i < 8; i++) box(x + Math.cos(i * PI / 4) * 2 - .4, z + Math.sin(i * PI / 4) * 2 - .4, .8, .8, .9, stone, 9.5); });
 
   // A — привратный зал: реквизит задан от старой линии фасада и стоит в группе, сдвинутой на DEEP; преграды сдвигаются следом
+  TAG = 'A';
   const deep = new T.Group(), nA = solids.length; deep.position.z = -DEEP; scene.add(deep); par = deep;
   box(37.5, 1.7, 2.96, .5, 7, gateM, 0, 1); box(40.54, 1.7, 2.96, .5, 7, gateM, 0, 1); [1, 3.4, 5.8].forEach(y => box(37.5, 2.2, 6, .05, .3, brass, y));
   rot(cyl(40.5, 2.26, 1.3, .1, iron, 3.8), 0, PI / 2); box(40.44, 2.3, .12, .1, 7, blueM); lamp(40.5, 3.6, 3.6, BLUE, 60, 18);
@@ -765,14 +766,17 @@ else (() => {
   box(46.1, 4.4, .1, 3, 2, tags, .8);
   [[37.6, 2.5], [43.4, 2.5], [35, 12], [46.2, 3.4]].forEach(([x, z]) => ball(x, 0, z, .7, cloth, .25));
   // A7 — фасад
+  TAG = 'A7';
   [34.5, 36.7, 44.3, 46.5].forEach(x => box(x - .25, 13.1, .5, .45, 9, stone, 0, 1)); box(33.8, 13.05, 13.4, .65, .45, stone, 8.4);
   rot(add(new T.CylinderGeometry(1.1, 1.1, .25, 24, 1, false, .6, 4.6), stone, 40.5, 8, 13.35), 0, PI / 2);
   [35.6, 45.4].forEach(x => { box(x - .5, 13.2, 1, .03, 4, wax, 4.2); box(x - .22, 13.24, .44, .03, .44, brass, 6.6); box(x - .6, 13.15, 1.2, .1, .1, iron, 8.2); });
   // I5 — ворот на крыше
+  TAG = 'I5';
   cyl(45.6, 11.6, .14, 4.5, timber, 9.3); box(45.5, 11.4, .2, 5.2, .22, timber, 13.4); lie(45.6, 9.8, 12.4, .22, 1, wood, PI / 2); cyl(45.6, 16.3, .02, 5.6, straw, 7.8); box(45.2, 15.9, .8, .8, .7, wood, 7.1);
   par = scene; solids.slice(nA).forEach(s => { s[1] -= DEEP; s[3] -= DEEP; });
 
   // B — двор
+  TAG = 'B';
   const sx = 39, sz = 30, fx = 45.8, fz = 50.2, wx = 28, wz = 28;
   cyl(sx, sz, 1.3, .9, stone, 0, 1); cyl(sx, sz, .15, 5.2, brass, .9); box(sx - 2.6, sz - .08, 5.2, .16, .18, brass, 5.9).rotation.z = -.06;
   cyl(sx - 2.4, sz, .015, 2.3, brass, 3.83); cyl(sx - 2.4, sz, .8, .07, brass, 3.78); box(sx - 2.8, sz - .2, .7, .12, .12, bone, 3.85); box(sx - 2.5, sz + .1, .5, .1, .1, bone, 3.85); ball(sx - 2.05, 3.98, sz - .25, .13, bone);
@@ -782,6 +786,7 @@ else (() => {
   [0, 1.1, 2.2].forEach(a => rot(add(new T.CylinderGeometry(.07, .07, 1.2, 6), wood, fx, .25, fz), a, 0, PI / 2 - .25)); ball(fx, .5, fz, .3, fireM); lamp(fx, 1.2, fz, FIRE, 45, 16);
   [.4, 2.5, 4.4].forEach(a => { const x = fx + Math.cos(a) * 2.3, z = fz + Math.sin(a) * 2.3, t = [-Math.sin(a) * .8, Math.cos(a) * .8]; lie(x, .24, z, .24, 1.9, wood, PI / 2 - a); solid(x - t[0], z - t[1], x + t[0], z + t[1], .3); });
   // B4 — колея, стрелка, вагонные весы у грузового окна конторы, упоры, рудный ларь (всё в рамке последней прямой FT)
+  TAG = 'B4';
   rails(TRACK); rails(SIDING); cart(...FT.p(5.5, 0), T1.h, 1); cart(...FB.p(-1.3, 0), TS.h, 0);
   rb(FT, 4, -.9, 3, 1.8, .04, iron, .005); rc(FT, 5.5, -1.6, .06, 1.6, iron, 0, 1); { const [x, z] = FT.p(5.5, -1.6); rot(add(new T.CylinderGeometry(.3, .3, .05, 20), brass, x, 1.75, z), -FT.a, PI / 2); }
   [fr(...FT.p(11, 0), T1.h), FB].forEach(F => { rb(F, -.2, -.8, .4, 1.6, .7, timber, 0, 1); rb(F, -.9, -.7, .7, .15, .15, timber, .2); rb(F, -.9, .55, .7, .15, .15, timber, .2); });
@@ -796,11 +801,13 @@ else (() => {
   strip(GUTTER, .8, 0, .04, flag); strip(GUTTER, .45, 0, .045, coal); box(40, 57.8, .8, .8, .06, iron);
   PATHS.forEach(s => strip(s, 1.3, 0, .008, earth));
   // B9 — тачка у двери каптёрки: кузов вдоль фасада, оглобли к воротам на подпорке, два мешка ждут на земле у порога
+  TAG = 'B9';
   rb(FQ, 7, -2, 1.8, 1.1, .3, wood, .5, 1); [-2.08, -.82].forEach(v => { const [x, z] = FQ.p(7.9, v); rot(add(new T.CylinderGeometry(.42, .42, .08, 14), timber, x, .42, z), -FQ.a, PI / 2); });
   [-1.9, -1.1].forEach(v => rb(FQ, 8.8, v, 1.5, .08, .08, wood, .75)); rb(FQ, 10.22, -1.9, .08, .88, .08, wood, .75); rc(FQ, 10.26, -1.46, .04, .75, wood);
   [[7.4, -1.7, .32, cloth], [8.1, -1.3, .3, cloth], [7.6, -1.4, .27, straw], [6.7, -.5, .3, cloth], [7.25, -.42, .28, straw]].forEach(([u, v, r, m], i) => { const [x, z] = FQ.p(u, v); ball(x, i > 2 ? .2 : i > 1 ? 1.3 : .98, z, r, m, .7); });
 
   // C1 — весовая контора
+  TAG = 'C1';
   rb(FK, .3, 2.7, .6, 2, 1, wood, 0, 1); for (let i = 0; i < 8; i++) rb(FK, -.02, 2.8 + i * .25, .04, .04, 1.1, iron, 1); rc(FK, .5, 3.9, .1, .03, brass, 1);
   rb(FK, .35, 3.0, .5, .9, .45, glass, 1); rc(FK, .6, 3.45, .02, .3, brass, 1); rb(FK, .58, 3.15, .04, .6, .03, brass, 1.3);
   rb(FK, 5.9, .6, .5, 3.4, 2.2, wood, 0, 1); for (let i = 0; i < 6; i++) rb(FK, 5.86, .9 + i * .5, .05, .12, .12, wax, .6 + i % 3 * .6);
@@ -810,6 +817,7 @@ else (() => {
   [[6.8, -.6], [7.3, -.3], [7, .2]].forEach(([u, v]) => { const [x, z] = FK.p(u, v); ball(x, .3, z, .34, cloth, .75); });
 
   // C2 — кузня: горн, мехи, наковальня, закалка, точило, инструменты, уголь, товар
+  TAG = 'C2';
   rb(FC, 3.6, 4.7, 2, 1.6, .9, stone, 0, 1); rb(FC, 3.8, 4.9, 1.6, 1.2, .06, fireM, .9); { const [x, z] = FC.p(4.6, 5.5); lamp(x, 1.6, z, 0xff7a30, 70, 14); }
   { const [x, z] = FC.p(4.6, 5.5); rot(add(new T.CylinderGeometry(.35, 1.05, 1.1, 4), stone, x, 2.4, z), -FC.a + PI / 4); } rb(FC, 4.3, 5.2, .6, .6, 4.8, stone, 2.9);
   rb(FC, 5.8, 5, 1.1, 1.1, .5, leather, .5); rb(FC, 5.8, 5, 1.1, 1.1, .07, wood, .45); rb(FC, 5.8, 5, 1.1, 1.1, .07, wood, 1.0); rb(FC, 5.9, 5.1, .1, .1, .5, wood); rb(FC, 6.8, 5.1, .1, .1, .5, wood); rb(FC, 6.3, 3.7, .07, 2.2, .07, wood, 1.6);
@@ -831,6 +839,7 @@ else (() => {
   const emG = new T.BufferGeometry(); emG.setAttribute('position', new T.BufferAttribute(ep, 3)); scene.add(new T.Points(emG, new T.PointsMaterial({ color: 0xffa040, size: .05 })));
 
   // C3 — конюшни: дощатые перегородки, стойла, бронник
+  TAG = 'C3';
   [3.38, 6.76, 10.14, 13.52].forEach(u => rb(FS, u - .04, .6, .08, 5.9, 1.5, planks, 0, 1)); [0, 1, 3, 4].forEach(i => rb(FS, i * 3.38 + .15, -1.25, .06, 1.2, 1.3, planks, .1));
   { const [x, z] = FS.p(1.5, 4.4); ball(x, .1, z, 1.1, straw, .45); } rb(FS, .3, 5.9, 2.8, .5, .7, wood, .3); rb(FS, 3.2, 1.6, .36, .7, .3, leather, 1.5);
   { const [x, z] = FS.p(3.3, 3.2); rot(add(new T.TorusGeometry(.35, .04, 6, 16), leather, x, 1.1, z), PI / 2 - FS.a); }
@@ -842,6 +851,7 @@ else (() => {
   { const [x, z] = FS.p(8.4, 3); lamp(x, 3, z, CANDLE, 16, 12); } rb(FS, 8.4, -.9, .06, .9, .06, iron, 3.2); rb(FS, 8.2, -.75, .4, .04, .45, iron, 2.6);
 
   // C4 — каптёрка
+  TAG = 'C4';
   rb(FQ, 1.2, .3, 2, .55, 1, wood, 0, 1); rb(FQ, 1.6, .4, .5, .35, .08, bone, 1); rb(FQ, .4, 5.3, 6.7, .5, 2.2, wood, 0, 1);
   [.5, 1.2, 1.9].forEach((y, r) => { for (let i = 0; i < 6; i++) rb(FQ, .6 + i * 1.08, 5.34, .9, .42, .45, (i + r) % 3 ? cloth : straw, y); });
   rc(FQ, 6.6, 3.6, .38, .9, wood, 0, 1); rc(FQ, 6.6, 4.5, .38, .9, wood, 0, 1); [2.2, 2.8].forEach(v => { const [x, z] = FQ.p(7.32, v); rot(add(new T.TorusGeometry(.22, .06, 6, 14), straw, x, 1.5, z), PI / 2 - FQ.a); });
@@ -849,6 +859,7 @@ else (() => {
   { const [x, z] = FQ.p(3.7, 3); lamp(x, 2.6, z, FIRE, 14, 10); } rb(FQ, 4.2, -.9, .06, .9, .06, iron, 2.6); { const [x, z] = FQ.p(4.23, -.75); ball(x, 2.3, z, .22, cloth, 1.2); }
 
   // D — часовня: паперть и крыльцо в три ступени, контрфорсы, звонница с пустым ярусом и шатром; всё, что стоит на полу, — в группе lift
+  TAG = 'D';
   [[.64, .16], [.32, .32], [0, .48]].forEach(([e, h]) => { rb(FD, PV[0] - e, PV[1] - e, PV[2] - PV[0] + 2 * e, e - PV[1], h, flag); rb(FD, PS[0] - e, PS[1] - e, PS[2] - PS[0] + e, PS[3] - PS[1] + 2 * e, h, flag); });
   [.2, 3.2, 6.2].forEach(v => { rb(FD, -.85, v, .7, .6, 6.5, lime, 0, 1); rb(FD, 8.15, v, .7, .6, 6.5, lime, 0, 1); });
   [[8, 14.5], [6.2, 18], [1.8, 18], [0, 14.5], [11.5, 7], [11.5, 12], [-3.5, 7], [-3.5, 12]].forEach(([u, v]) => rc(FD, u, v, .42, 7.4, lime, 0, 1, 6));
@@ -856,6 +867,7 @@ else (() => {
   [[2, -3.6], [5.3, -3.6], [2, -1.06], [5.3, -1.06]].forEach(([u, v]) => rb(FD, u, v, .7, .7, 2.8, lime, TY)); rb(FD, 1.8, -3.8, 4.4, 3.64, .3, lime, TY + 2.8); rb(FD, 2.3, -2.05, 3.4, .14, .14, timber, TY + 2.5);
   rot(add(new T.ConeGeometry(3, 4.6, 4), shingle, bx, TY + 5.4, bz), -FD.a + PI / 4); cyl(bx, bz, .02, 1.8, straw, TY + .7); rb(FD, 3.7, -3.82, .6, .08, 3, coal, 7.5);
   // D9 — общая костница: клин земли, склеп-ларь на цоколе с двускатной крышкой и щелью для костей, плита имён, свечи
+  TAG = 'D9';
   slab(GE, .03, .1, earth); { const [u, v, w, d] = GT; rb(FD, u - .2, v - .2, w + .4, d + .4, .2, flag, 0, 1); rb(FD, u, v, w, d, .8, stone, .2); rb(FD, u - .1, v - .1, w + .2, d + .2, .14, flag, 1); rb(FD, u + .3, v + .1, w - .6, d - .2, .1, flag, 1.14); rb(FD, u - .03, v + .9, .04, .7, .28, coal, .55);
     [.3, .9, 1.7, 2.2].forEach((s, i) => { rc(FD, u - .12, v + s, .025, .1 + i % 2 * .05, bone, .2); const [x, z] = FD.p(u - .12, v + s); ball(x, .34 + i % 2 * .05, z, .03, fireM); }); }
   rb(FD, ...GS, 1.5, lime, 0, 1); for (let i = 0; i < 6; i++) rb(FD, GS[0] + .15, GS[1] - .012, GS[2] - .3 - i % 3 * .15, .012, .025, coal, .55 + i * .14);
@@ -863,6 +875,7 @@ else (() => {
   [1.2, 6.8].forEach(u => { rc(FD, u, -4.6, .05, 1.7, iron, 0, 1); rc(FD, u, -4.6, .22, .06, iron, 1.7); const [x, z] = FD.p(u, -4.6); ball(x, 1.9, z, .12, fireM); }); { const [x, z] = FD.p(4, -5); lamp(x, 2.6, z, CANDLE, 30, 14); }
   rb(FD, 2.5, -3.9, 3, .1, .1, bone, 4.7); for (let i = 0; i < 9; i++) { const [x, z] = FD.p(2.7 + i * .33, -3.86); ball(x, 4.62 - Math.sin(i * PI / 8) * .25, z, .07, bone); }
   // неф: скамьи, плиты с именами, ниши с костями, стропила, круг со свечами над книгой имён
+  TAG = 'D';
   [1.3, 2.9, 4.5, 6.1].forEach(v => [.7, 5].forEach(u => { rb(FD, u, v, 2.3, .4, .45, wood, 0, 1); rb(FD, u, v, 2.3, .06, .85, wood); })); [.5, 3.3].forEach(v => rb(FD, 3.3, v, 1.4, 2.2, .012, cloth, .02));
   [.19, 7.56].forEach(u => [.5, 3.1].forEach(v => { rb(FD, u, v, .25, 1.2, 1.1, coal, 1.2); for (let i = 0; i < 6; i++) { const [x, z] = FD.p(u + .12, v + .2 + i % 3 * .4); ball(x, 1.42 + (i > 2) * .5, z, .14, bone); } }));
   [1.5, 5, 13.3].forEach(v => rb(FD, 0, v, 8, .3, .32, timber, 7.7)); [7.2, 11.5].forEach(v => rb(FD, -3.5, v, 15, .3, .32, timber, 7.7));
@@ -881,7 +894,8 @@ else (() => {
   par = scene;
 
   // E — фехтовальный зал
-  dummy(FE, 4.2, 1.8, straw); dummy(FE, 8.8, 1.8, steel); [6.8, 11.8, 16.8].forEach(v => rb(FE, .8, v - .04, 11.4, .08, .02, lime, .015)); ring(...FE.p(4.4, 13.6), 3.05, 3.2, lime);
+  TAG = 'E';
+  TAG = 'E2'; dummy(FE, 4.2, 1.8, straw); TAG = 'E3'; dummy(FE, 8.8, 1.8, steel); TAG = 'E'; [6.8, 11.8, 16.8].forEach(v => rb(FE, .8, v - .04, 11.4, .08, .02, lime, .015)); ring(...FE.p(4.4, 13.6), 3.05, 3.2, lime);
   rb(FE, 12.5, 8.1, .5, 2.8, .03, rust, .015); rb(FE, 5.3, 18.5, 2.4, .5, .03, rust, .015);
   rb(FE, .2, 15, .1, 2.4, 1.4, wood, 1); for (let i = 0; i < 6; i++) rb(FE, .3, 15.2 + i % 3 * .7, .03, .4, .4, brass, 1.2 + (i > 2) * .6);
   rb(FE, .2, 4.6, .45, 2.4, 1.9, wood, 0, 1); for (let i = 0; i < 4; i++) rb(FE, .68, 4.9 + i * .55, .04, .08, 1.3, steel, .4);
@@ -890,6 +904,7 @@ else (() => {
   [[6.5, 6], [6.5, 14]].forEach(([u, v]) => { const [x, z] = FE.p(u, v); lamp(x, 4.6, z, FIRE, 70, 22); });
 
   // F — келья
+  TAG = 'F';
   rb(FF, .3, 4.2, 2.3, 1.2, .5, cloth, 0, 1); rb(FF, .4, 4.4, .5, .8, .12, bone, .5);
   rb(FF, 2.9, 4.8, 1.4, .7, .8, wood, 0, 1); rb(FF, 3.5, 4.76, .2, .74, .82, brass); rb(FF, 4.4, 4.8, 1.7, .7, .7, wood, 0, 1); [4.7, 5.2, 5.7].forEach(u => rb(FF, u, 4.76, .14, .05, .2, brass, .4));
   rb(FF, .05, 1.3, .3, 2.6, .06, wood, 1.5); rc(FF, .2, 1.8, .1, .3, brass, 1.56); { const [x, z] = FF.p(.2, 2.9); ico(x, 1.72, z, .14, raw); } rb(FF, .1, 3.4, .2, .3, .25, bone, 1.56);
@@ -898,18 +913,20 @@ else (() => {
   rb(FF, 2.6, 1.3, 1, .7, .75, wood, 0, 1); rc(FF, 3.1, 1.65, .05, .15, bone, .75); rc(FF, 2.2, 1.65, .2, .45, wood, 0, 1); rb(FF, 1.6, 2.2, 3, 1.8, .01, wax, .02);
 
   // G — ворота, H — склады
+  TAG = 'G';
   for (let u = 2.6; u < 6.3; u += .3) rc(FG, u, 7.4, .04, 4.3, iron, 0, 0, 6); rb(FG, 2.4, 7.36, 4, .08, .08, iron, 2.1); solid(...FG.p(2.4, 7.4), ...FG.p(6.4, 7.4), .15);
   ring(...FG.p(4.4, -3.2), 1.35, 1.5, lime); { const [x, z] = FG.p(4.4, 3.7); lamp(x, 3.6, z, FIRE, 24, 14); } { const [x, z] = FG.p(1.3, 5.6); fig(x, z, extra); }
-  rb(FH, 3.9, 4.05, 2, .1, 2.6, planks, 0, 1); rb(FH, 3.7, 4.22, 2.4, .1, .15, iron, 1.3); [4.4, 5.4].forEach(u => { const [x, z] = FH.p(u, 4.3); rot(add(new T.CylinderGeometry(.09, .09, .03, 12), wax, x, 1.15, z), -FH.a, PI / 2); });
+  TAG = 'H'; rb(FH, 3.9, 4.05, 2, .1, 2.6, planks, 0, 1); rb(FH, 3.7, 4.22, 2.4, .1, .15, iron, 1.3); [4.4, 5.4].forEach(u => { const [x, z] = FH.p(u, 4.3); rot(add(new T.CylinderGeometry(.09, .09, .03, 12), wax, x, 1.15, z), -FH.a, PI / 2); });
   rb(FH, 1, 5, 1, 1, .9, wood, 0, 1); rb(FH, 1.1, 5.1, .8, .8, .7, wood, .9); rb(FH, 7.8, 5.2, 1.2, .9, .8, wood, 0, 1);
 
   // I2 — осыпь у подножия, I4 — леса на западной стене
+  TAG = 'I2';
   for (let i = 0; i < 24; i += i === 11 ? 6 : 1) { const a = P[i], b = P[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]); let n = [-(b[1] - a[1]) / L, (b[0] - a[0]) / L]; const m = lerp(a, b, .5); if (!inPoly(m[0] + n[0], m[1] + n[1], P)) n = n.map(v => -v);
     for (let t = rn(); t < L; t += .5 + rn() * 1.2) { const k = .2 + rn() ** 2 * 2.2, p = lerp(a, b, t / L), x = p[0] + n[0] * k, z = p[1] + n[1] * k, r = .12 + rn() ** 2 * .7;
       if (Z.some(q => q.id !== 'B' && (q.b || []).some(bb => inPoly(x, z, bb.p) || dPoly(x, z, bb.p) < r + .5))) continue;
 
       const o = ico(x, r * .35, z, r, rockF); o.scale.y = .65; o.rotation.set(rn() * 3, rn() * 3, 0); if (r > .4) solid(x, z, x, z, r * .8); } }
-  for (const u of [0, 2.5, 5, 7.5, 10]) for (const v of [-.15, -1.25]) rc(FI, u, v, .07, 5.6, timber, 0, 1, 6);
+  TAG = 'I4'; for (const u of [0, 2.5, 5, 7.5, 10]) for (const v of [-.15, -1.25]) rc(FI, u, v, .07, 5.6, timber, 0, 1, 6);
   [2.4, 4.8].forEach(y => rb(FI, -.2, -1.35, 10.4, 1.3, .07, planks, y)); [8.6, 9.1].forEach(u => rb(FI, u, -1.52, .06, .06, 2.5, wood)); for (let y = .3; y < 2.4; y += .3) rb(FI, 8.6, -1.52, .56, .05, .05, wood, y);
   rc(FI, 3, -.7, .18, .3, wood, 2.47); rc(FI, 6.4, -.6, .18, .3, wood, 4.87); rb(FI, 1, -1, .8, .5, .3, stone, 2.47);
 
@@ -922,7 +939,7 @@ else (() => {
   const LY = { A1: 7.6, A7: 9.9, B1: 6.9, B4: 1.2, B5: 3.8, B8: .6, B10: .5, D5: 14, D6: 1.4, D7: 5.4, D9: 2.1, E1: 1.4, E4: 1.2, E5: 1.2, G2: 1.2, I1: 32, I3: 7.6, I4: 6.4, I5: 15, I6: 2, I7: 1.8, I8: 6, I9: 3.4 };
   for (const z of Z) for (const i of z.items) { const y = (LY[i.id] || 2.3) + (z.y || 0); label(i.id, i.n, i.p[0], y, i.p[1], z.tone); targets.push({ id: i.id, n: i.n, x: i.p[0], y: y - 1, z: i.p[1], zone: z.id });
     for (const s of i.sub || []) targets.push({ id: s.id, n: s.n, x: s.p[0], y: 1, z: s.p[1], zone: z.id }); }
-  for (const m of M) { const y = m.y || 0; par = y ? lift : scene; fig(m.p[0], m.p[1], mat(m.tone)); par = scene; label(m.id, m.name, m.p[0], 2.15 + y, m.p[1], m.tone); targets.push({ id: m.id, n: m.name, x: m.p[0], y: 1.15 + y, z: m.p[1], zone: m.at[0] }); }
+  for (const m of M) { const y = m.y || 0; TAG = m.id; par = y ? lift : scene; fig(m.p[0], m.p[1], mat(m.tone)); par = scene; label(m.id, m.name, m.p[0], 2.15 + y, m.p[1], m.tone); targets.push({ id: m.id, n: m.name, x: m.p[0], y: 1.15 + y, z: m.p[1], zone: m.at[0] }); }
 
   // свет: серое небо сверху (с тенью), остальное — огни
   scene.add(new T.HemisphereLight(0xa4aaba, 0x2a2622, 1.1));
@@ -978,6 +995,42 @@ else (() => {
   });
   document.getElementById('fs').addEventListener('click', () => stage.requestFullscreen());
   new ResizeObserver(() => { rnd.setSize(stage.clientWidth, stage.clientHeight, false); cam.aspect = stage.clientWidth / stage.clientHeight; cam.updateProjectionMatrix(); draw(); }).observe(stage);
+
+  // выгрузка в игру: #export кладёт в элемент pre#export JSON в координатах Unity (x — восток, z — север, то есть −z плана): меши по TAG (куб, цилиндр, шар или сырая сетка), материалы со средним цветом текстуры,
+  // огни, метки ID на полу, точки появления (ближайшее свободное место у метки в том же помещении) и рамка зала E. Читает его HubBlockoutBuilder
+  if (location.hash.includes('export')) { scene.updateMatrixWorld(true);
+    const MN = new Map(Object.entries({ stone, lime, flag, cobble, rock, rockF, earth, planks, strawF, shingle, timber, wood, brass, iron, steel, bone, cloth, straw, rust, gateM, leather, coal, extra, water, wax, glass, raw, tags, skin, fireM, blueM, mount }).map(([k, v]) => [v, k]));
+    const r3 = v => +v.toFixed(3), mats = {}, geos = [], meshes = [], lights = [], P3 = new T.Vector3(), Q4 = new T.Quaternion(), S3 = new T.Vector3(), U = (x, y, z) => [r3(x), r3(y), r3(-z)], rgb = c => { const h = c.getHexString(); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255); };
+    const avg = m => { if (!m.map) return [1, 1, 1];
+
+      const d = m.map.image.getContext('2d').getImageData(0, 0, m.map.image.width, m.map.image.height).data, s = [0, 0, 0]; for (let i = 0; i < d.length; i += 4) for (let c = 0; c < 3; c++) s[c] += d[i + c];
+
+      return s.map(v => v / (d.length / 4) / 255); };
+    const mid = m => { const n = MN.get(m) || 'c' + m.color.getHexString();
+      if (!mats[n]) { const a = avg(m); mats[n] = { c: n === 'mount' ? [.42, .41, .44] : rgb(m.color).map((v, k) => r3((v ** 2.2 * a[k] ** 2.2) ** (1 / 2.2))),
+        glow: +!!m.isMeshBasicMaterial, metal: m.metalness || 0, rough: m.roughness ?? 1, a: m.transparent ? m.opacity : 1, ds: +(m.side === T.DoubleSide) }; }
+
+      return n; };
+    scene.traverse(o => { if (o.isPointLight) { o.getWorldPosition(P3); lights.push({ t: o.userData.t, p: U(P3.x, P3.y, P3.z), c: rgb(o.color).map(r3), i: o.intensity, d: o.distance }); }
+      if (!o.isMesh) return;
+
+      o.matrixWorld.decompose(P3, Q4, S3); const g = o.geometry, gp = g.parameters || {}, e = { t: o.userData.t, m: mid(o.material), p: U(P3.x, P3.y, P3.z), q: [r3(-Q4.x), r3(-Q4.y), r3(Q4.z), r3(Q4.w)] }; let s = [S3.x, S3.y, S3.z];
+      if (g.type === 'BoxGeometry') { e.k = 'box'; s = [s[0] * gp.width, s[1] * gp.height, s[2] * gp.depth]; }
+      else if (g.type === 'CylinderGeometry' && gp.radiusTop === gp.radiusBottom) { e.k = 'cyl'; s = [s[0] * gp.radiusTop * 2, s[1] * gp.height / 2, s[2] * gp.radiusTop * 2]; }
+      else if (g.type === 'SphereGeometry') { e.k = 'sph'; s = s.map(v => v * gp.radius * 2); }
+      else { e.k = 'raw'; e.g = geos.length; const a = g.attributes.position, v = [], ix = g.index ? [...g.index.array] : [...Array(a.count).keys()]; for (let i = 0; i < a.count; i++) v.push(...U(a.getX(i), a.getY(i), a.getZ(i)));
+        for (let i = 0; i < ix.length; i += 3) [ix[i + 1], ix[i + 2]] = [ix[i + 2], ix[i + 1]]; geos.push({ v, i: ix, flat: +(!g.index || !!o.material.flatShading) }); }
+      if (o.userData.nc) e.nc = 1;
+
+      e.s = s.map(r3); meshes.push(e); });
+    const rooms = Z.flatMap(q => q.id === 'B' ? [] : q.b || []), home = (x, z) => rooms.find(b => inPoly(x, z, b.p)), clear = (x, z) => solids.every(s => dSeg(x, z, s[0], s[1], s[2], s[3]) > s[4] + .6);
+    const stand = p => { const H = home(...p); for (let r = 0; r < 5; r += .25) for (let a = 0; a < 16; a++) { const x = p[0] + Math.cos(a * PI / 8) * r, q = p[1] + Math.sin(a * PI / 8) * r; if (clear(x, q) && home(x, q) === H && (H || inPoly(x, q, P))) return [x, q]; }
+
+      return p; };
+    const spawns = {}; for (const t of targets) if (['F1', 'G2', 'A4', 'D2'].includes(t.id)) { const [x, q] = stand([t.x, t.z]); spawns[t.id] = { p: U(x, gy(x, q), q), yaw: r3(Math.atan2(39 - x, q - 30) * 180 / PI) }; }
+    const [hx, hz2] = FE.p(6.5, 9.5), pre = document.createElement('pre'); pre.id = 'export';
+    pre.textContent = JSON.stringify({ meshes, geos, mats: Object.entries(mats).map(([n, m]) => ({ n, ...m })), lights, spawns: Object.entries(spawns).map(([id, s]) => ({ id, ...s })), markers: targets.map(t => ({ id: t.id, n: t.n, p: U(t.x, gy(t.x, t.z), t.z) })), hall: { p: U(hx, 0, hz2), yaw: r3(FE.a * 180 / PI), s: [13, 6, 19] } });
+    document.body.append(pre); }
 
   function rails(s) { pl(s).reduce((a, b) => { const L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = [-(b[1] - a[1]) / L * .6, (b[0] - a[0]) / L * .6];
     [1, -1].forEach(k => seg([a[0] + n[0] * k, a[1] + n[1] * k], [b[0] + n[0] * k, b[1] + n[1] * k], .02, .1, .08, iron));

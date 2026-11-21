@@ -13,7 +13,7 @@ using UnityEngine.SceneManagement;
 namespace Game.Scripts.Editor.Dungeon
 {
     /// Assembles DungeonScene: dark lighting, Fusion bootstrap, context, director, the dungeon and the gameplay UI.
-    /// Players come here from LobbyScene and are dropped into the dungeon as soon as the session has their kit.
+    /// Players come here from HubScene and are dropped into the dungeon as soon as the session has their kit.
     internal static class DungeonSceneBuilder
     {
         public const string ScenePath = "Assets/Game/Scenes/DungeonScene.unity";
@@ -30,7 +30,7 @@ namespace Game.Scripts.Editor.Dungeon
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             EditorSceneManager.SaveScene(scene, ScenePath);
 
-            // Darker and hazier than the tavern: the hall is lit by its torches as in Dark and Darker.
+            // Darker and hazier than the hub: the hall is lit by its torches as in Dark and Darker.
             Light fill = SetupLighting(0.55f, 0.018f);
             BuildVolume($"{DungeonContentBuilder.ConfigsFolder}/DungeonVolume.asset", 0.6f);
             Camera camera = BuildCamera();
@@ -388,7 +388,7 @@ namespace Game.Scripts.Editor.Dungeon
             return AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab(name)).GetComponent<NetworkObject>();
         }
 
-        private static BattleFeedback BuildFeedback(Transform parent)
+        internal static BattleFeedback BuildFeedback(Transform parent)
         {
             GameObject go = BattleEditorUtility.CreateChild("Feedback", parent);
             BattleFeedback feedback = go.AddComponent<BattleFeedback>();

@@ -4,8 +4,9 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Page tabs and the sell counter under the tavern stash: a click on a tab opens that page, an item dropped on a tab moves to
-    /// that page, an item dropped on the counter is sold for coins that land in the stash.
+    /// Page tabs and the sell counter under the stash of the hub: a click on a tab opens that page, an item dropped on a tab moves
+    /// to that page, an item dropped on the counter is sold for coins that land in the stash. The station decides what is shown:
+    /// the character's own pages, the page shared by the account, the appraiser's counter or no stash at all.
     public sealed class StashPagesView : MonoBehaviour
     {
         [SerializeField]
@@ -38,13 +39,9 @@ namespace Game.Scripts.Dungeon
             for (int i = 0; i < _tabs.Length; i++)
             {
                 int page = i;
-                bool isOpen = page < PlayerSessionComponent.OpenStashPages;
-                _tabs[i].interactable = isOpen;
-                _tabs[i].GetComponentInChildren<TMP_Text>().text = isOpen ? $"Page {page + 1}" : $"Page {page + 1}  <size=80%>(locked)</size>";
+                _tabs[i].GetComponentInChildren<TMP_Text>().text = $"Page {page + 1}";
                 _tabs[i].onClick.AddListener(() => OnTabClicked(page));
-
-                if (isOpen)
-                    _tabs[i].GetComponent<ItemDropZone>().OnDropped += item => MoveToPage(item, page);
+                _tabs[i].GetComponent<ItemDropZone>().OnDropped += item => MoveToPage(item, page);
             }
 
             _sellZone.OnPreview += OnSellPreview;
@@ -61,17 +58,28 @@ namespace Game.Scripts.Dungeon
         public void Bind(PlayerSessionComponent session)
         {
             _session = session;
+        }
 
-            if (session != null)
-                Select(0);
+        public void Open(HubStation station)
+        {
+            bool isShared = station == HubStation.SharedStash;
+            _sellZone.gameObject.SetActive(station == HubStation.Appraiser);
+
+            for (int i = 0; i < _tabs.Length; i++)
+                _tabs[i].gameObject.SetActive(!isShared && i < PlayerSessionComponent.SharedStashPage);
+
+            if (station == HubStation.Character)
+                _inventory.SetOther(null, string.Empty);
+            else
+                Select(isShared ? PlayerSessionComponent.SharedStashPage : 0);
         }
 
         private void Select(int page)
         {
-            _inventory.SetOther(_session.Stashes[page], $"Stash · page {page + 1}");
+            _inventory.SetOther(_session.Stashes[page], page == PlayerSessionComponent.SharedStashPage ? "Shared chest" : $"Stash · page {page + 1}");
 
             for (int i = 0; i < _tabs.Length; i++)
-                _tabs[i].image.color = i == page ? _activeTab : i < PlayerSessionComponent.OpenStashPages ? _idleTab : _idleTab * 0.6f;
+                _tabs[i].image.color = i == page ? _activeTab : _idleTab;
         }
 
         private void MoveToPage(ItemView item, int page)

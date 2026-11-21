@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Shown after death or extraction until the player returns to the tavern.
+    /// Shown after death or extraction until the player returns to the hub.
     public sealed class ResultView : DisplayableView
     {
         [SerializeField]
@@ -45,8 +45,9 @@ namespace Game.Scripts.Dungeon
             if (_session == null)
                 return;
 
+            NetworkLaunch.Arrival = _session.State == SessionState.Dead ? HubArrival.Infirmary : HubArrival.Anchor;
             _session.SaveLocal();
-            SceneTravel.Load(_session.Runner, SceneTravel.LobbyScene, SceneTravel.LobbyTitle);
+            SceneTravel.Load(_session.Runner, SceneTravel.HubScene, SceneTravel.HubTitle);
         }
     }
 }

@@ -8,7 +8,7 @@ using UnityEngine.AI;
 namespace Game.Scripts.Dungeon
 {
     /// Host-side orchestration: sessions on join, adventurer spawns, dungeon population, portals and match reset.
-    /// A session holds one floor (DungeonAdmission.Floor): players arrive from the tavern on the first one and from the
+    /// A session holds one floor (DungeonAdmission.Floor): players arrive from the hub on the first one and from the
     /// floor above on deeper ones, and enter as soon as their kit is loaded. The floor is populated and its clock starts
     /// when the first adventurer reaches it; its ways down hand adventurers over to the next floor's session.
     public sealed class DungeonDirector : MonoBehaviour
@@ -358,11 +358,11 @@ namespace Game.Scripts.Dungeon
             runner.Despawn(session);
         }
 
-        /// The server or host left: the run is over for everyone, back to the tavern with the kit the player came in with.
+        /// The server or host left: the run is over for everyone, back to the hub with the kit the player came in with.
         private void OnShutdown(NetworkRunner runner, ShutdownReason reason)
         {
             if (reason != ShutdownReason.Ok && _runner != null && !GameServer.IsDedicated)
-                SceneTravel.Load(runner, SceneTravel.LobbyScene, SceneTravel.LobbyTitle);
+                SceneTravel.Load(runner, SceneTravel.HubScene, SceneTravel.HubTitle);
         }
 
         private void StartMatch(int firstFloor)

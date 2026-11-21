@@ -11,11 +11,11 @@ namespace Game.Scripts.Dungeon
         /// Fills in or replaces the scene's default arguments and starts the runner; null on success, otherwise what went wrong.
         public abstract Task<string> Start(NetworkRunner runner, NetworkEvents events, StartGameArgs args);
 
-        /// The session could not be started: back to the tavern with a notice.
+        /// The session could not be started: back to the hub with a notice.
         public virtual void Fail(NetworkRunner runner, string error)
         {
             NetworkLaunch.Notice ??= $"Connection failed: {error}";
-            SceneTravel.Load(runner, SceneTravel.LobbyScene, SceneTravel.LobbyTitle);
+            SceneTravel.Load(runner, SceneTravel.HubScene, SceneTravel.HubTitle);
         }
 
         protected static async Task<string> Run(NetworkRunner runner, StartGameArgs args)

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// The local player's party between scenes. A party is a small hidden session of the tavern known by its four-digit code;
+    /// The local player's party between scenes. A party is a small hidden session of the hub known by its four-digit code;
     /// its host is the leader who registers everyone for a dungeon queue, the members follow with the same ticket.
     public static class PartyService
     {
@@ -55,7 +55,7 @@ namespace Game.Scripts.Dungeon
         {
             DungeonContext.Instance?.LocalSession?.SaveLocal();
             NetworkLaunch.Set(plan);
-            SceneTravel.Load(runner, SceneTravel.LobbyScene, SceneTravel.LobbyTitle);
+            SceneTravel.Load(runner, SceneTravel.HubScene, SceneTravel.HubTitle);
         }
     }
 }

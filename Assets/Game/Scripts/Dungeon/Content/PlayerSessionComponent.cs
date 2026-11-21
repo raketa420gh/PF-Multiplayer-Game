@@ -16,16 +16,18 @@ namespace Game.Scripts.Dungeon
         Descending
     }
 
-    /// Per-player object of a scene session: class, level, kit and stash. The tavern edits them, the dungeon takes the kit
+    /// Per-player object of a scene session: class, level, kit and stash. The hub edits them, the dungeon takes the kit
     /// in and hands the run result back; the owner's PlayerPrefs carry everything between the scenes.
     public sealed class PlayerSessionComponent : NetworkBehaviour, InventoryActionsComponent.IOwner
     {
         public const byte LoadKit = 0;
         /// Stash pages load as kinds LoadStash … LoadStash + StashPages - 1.
         public const byte LoadStash = 1;
-        public const int StashPages = 2;
+        public const int StashPages = 3;
         /// Pages the player may use; the rest are shown locked.
-        public const int OpenStashPages = 2;
+        public const int OpenStashPages = 3;
+        /// The last page is shared by every character of the account; the ones before it belong to the character.
+        public const int SharedStashPage = 2;
         /// Skill slot left empty (Q or E binds nothing).
         public const byte NoSkill = byte.MaxValue;
 
@@ -84,6 +86,9 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         public NetworkBool HasLoadedKit { get; private set; }
+
+        [Networked]
+        public HubArrival HubArrival { get; private set; }
 
         [Networked]
         public byte NextFloor { get; private set; }
@@ -175,6 +180,12 @@ namespace Game.Scripts.Dungeon
             if (carry != null)
                 RpcArrive(carry.Floor, carry.Health, carry.Kills, carry.Experience, carry.Charges);
 
+            if (NetworkLaunch.Arrival != HubArrival.Home)
+            {
+                RpcSetHubArrival(NetworkLaunch.Arrival);
+                NetworkLaunch.Arrival = HubArrival.Home;
+            }
+
             RpcSetProfile(StashService.LoadLevel(), StashService.LoadExperience(), StashService.LoadClass(), StashService.LoadName());
             RpcSetBuild(StashService.LoadSubclass(), StashService.LoadSubclassMask(), StashService.LoadSkillA(), StashService.LoadSkillB(), StashService.LoadPerkMask(), StashService.LoadSpellLayout());
             SendInventory(LoadKit, StashService.LoadKit());
@@ -247,6 +258,10 @@ namespace Game.Scripts.Dungeon
 
         public void OnDied(AdventurerComponent adventurer)
         {
+            // Only a run puts the kit at stake.
+            if (State != SessionState.InDungeon)
+                return;
+
             LastRunValue = 0;
             LastRunKills = adventurer.Kills;
             LastRunExperience = adventurer.RunExperience;
@@ -282,6 +297,12 @@ namespace Game.Scripts.Dungeon
             AdventurerId = default;
         }
 
+        /// Hub: the body the player walks the settlement with; the session stays in the lobby state, the kit is not at stake.
+        public void SetAdventurer(AdventurerComponent adventurer)
+        {
+            AdventurerId = adventurer.Id;
+        }
+
         public void OnAdventurerSpawned(AdventurerComponent adventurer)
         {
             AdventurerId = adventurer.Id;
@@ -299,7 +320,7 @@ namespace Game.Scripts.Dungeon
             }
         }
 
-        /// Dev: the character jumps to the level cap from the tavern.
+        /// Dev: the character jumps to the level cap from the hub.
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcMaxLevel()
         {
@@ -682,6 +703,12 @@ namespace Game.Scripts.Dungeon
                 return;
 
             GiveDefaultKit();
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RpcSetHubArrival(HubArrival arrival)
+        {
+            HubArrival = arrival;
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]

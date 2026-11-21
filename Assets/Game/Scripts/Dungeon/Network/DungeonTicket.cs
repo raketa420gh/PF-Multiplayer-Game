@@ -110,7 +110,7 @@ namespace Game.Scripts.Dungeon
             }
         }
 
-        /// A full or just closed session: look again, the queue may have moved on; after a few tries back to the tavern.
+        /// A full or just closed session: look again, the queue may have moved on; after a few tries back to the hub.
         public override void Fail(NetworkRunner runner, string error)
         {
             if (_attempt + 1 < MaxAttempts && _isRetryable)

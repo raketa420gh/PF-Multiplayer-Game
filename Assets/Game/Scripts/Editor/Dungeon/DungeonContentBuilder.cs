@@ -1385,20 +1385,47 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        /// Tavern merchants. The quartermaster is a developer stall: every item of the game in common quality for one coin.
+        /// Merchants of the hub, in the order of their stations (HubBlockoutBuilder): every one sells its own kind of things, the
+        /// quartermaster the rest. Developer prices for now: common quality, a single coin apiece.
         private static MerchantConfig[] BuildMerchants(ItemDatabase database)
         {
-            MerchantConfig quartermaster = BattleEditorUtility.LoadOrCreate<MerchantConfig>($"{MerchantsFolder}/Quartermaster.asset");
-            SerializedObject so = new SerializedObject(quartermaster);
-            BattleEditorUtility.Set(so, "_displayName", "The Quartermaster");
-            BattleEditorUtility.Set(so, "_description", "Developer stall: every item there is, in common quality, a single coin apiece.");
-            BattleEditorUtility.Set(so, "_color", new Color(0.85f, 0.72f, 0.45f));
-            BattleEditorUtility.Set(so, "_wares", database.Items);
-            BattleEditorUtility.Set(so, "_rarity", ItemRarity.Common);
-            BattleEditorUtility.Set(so, "_price", 1);
-            so.ApplyModifiedPropertiesWithoutUndo();
+            MerchantConfig Merchant(string asset, string name, string description, Color color, System.Func<ItemConfig, bool> sells)
+            {
+                MerchantConfig merchant = BattleEditorUtility.LoadOrCreate<MerchantConfig>($"{MerchantsFolder}/{asset}.asset");
+                SerializedObject so = new SerializedObject(merchant);
+                BattleEditorUtility.Set(so, "_displayName", name);
+                BattleEditorUtility.Set(so, "_description", description);
+                BattleEditorUtility.Set(so, "_color", color);
+                BattleEditorUtility.Set(so, "_wares", database.Items.Where(sells).ToArray());
+                BattleEditorUtility.Set(so, "_rarity", ItemRarity.Common);
+                BattleEditorUtility.Set(so, "_price", 1);
+                so.ApplyModifiedPropertiesWithoutUndo();
 
-            return new[] { quartermaster };
+                return merchant;
+            }
+
+            Color scales = new Color(0.79f, 0.64f, 0.29f);
+
+            return new[]
+            {
+                Merchant("Quartermaster", "Halvard Rik · Quartermaster", "House of Scales issue: tools, pouches and whatever the other counters do not carry. A single coin apiece.", scales,
+                    item => item is not (WeaponItemConfig or ArmorItemConfig or ConsumableItemConfig)),
+                Merchant("Weaponsmith", "Jutta Kolb · Weaponsmith", "Blades, shields, arrows and bolts, quenched on ossarite. A single coin apiece.", new Color(0.88f, 0.54f, 0.24f),
+                    item => item is WeaponItemConfig),
+                Merchant("Armourer", "Oswin Tarn · Armourer", "Armour and clothes, fitted to the wearer. A single coin apiece.", new Color(0.68f, 0.71f, 0.74f),
+                    item => item is ArmorItemConfig),
+                Merchant("Sister", "Sister Agneta · Cathedral of Repose", "Potions and bandages: the wound first, the price after. A single coin apiece.", new Color(0.85f, 0.82f, 0.74f),
+                    item => item is ConsumableItemConfig)
+            };
+        }
+
+        /// What the hub needs of the content without a full rebuild: the merchants, the session with its stash pages and the dummy.
+        internal static void BuildHubContent()
+        {
+            ItemDatabase database = AssetDatabase.LoadAssetAtPath<ItemDatabase>(DatabasePath);
+            BuildSession(database, DungeonSceneBuilder.LoadClasses(), AssetDatabase.LoadAssetAtPath<DungeonConfig>(DungeonConfigPath), BuildMerchants(database));
+            BuildTrainingDummy();
+            AssetDatabase.SaveAssets();
         }
 
         private static void BuildSession(ItemDatabase database, ClassConfig[] classes, DungeonConfig config, MerchantConfig[] merchants)
@@ -1568,10 +1595,14 @@ namespace Game.Scripts.Editor.Dungeon
         {
             GameObject root = new GameObject("TrainingDummy");
             root.AddComponent<NetworkObject>();
+            root.AddComponent<NetworkTransform>();
             HealthComponent health = root.AddComponent<HealthComponent>();
             HitboxRoot hitboxRoot = root.AddComponent<HitboxRoot>();
             DamageReceiverComponent receiver = root.AddComponent<DamageReceiverComponent>();
-            BattleEditorUtility.Set(root.AddComponent<TrainingDummyComponent>(), "_health", health);
+            SerializedObject dummy = new SerializedObject(root.AddComponent<TrainingDummyComponent>());
+            BattleEditorUtility.Set(dummy, "_health", health);
+            BattleEditorUtility.Set(dummy, "_receiver", receiver);
+            dummy.ApplyModifiedPropertiesWithoutUndo();
             Material linen = BattleEditorUtility.GetMaterial("Mannequin", new Color(0.78f, 0.7f, 0.56f), 0f, 0.15f);
             AnimationClip clip = BattleEditorUtility.LoadLibraryClip("Idle_Loop");
             BattleCharacterBuilder.CreateFigure("TrainingDummy", false, clip, 0f, linen, linen).transform.SetParent(root.transform, false);

@@ -3,11 +3,11 @@ using Fusion;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Tavern session of a party (party-<code>, hidden). Creating or coming back from the dungeon takes whichever role is free,
+    /// Hub session of a party (party-<code>, hidden). Creating or coming back from the dungeon takes whichever role is free,
     /// so the first member back hosts it; joining by code needs the party to exist.
     public sealed class PartyLaunch : LaunchPlan
     {
-        public override string Scene => SceneTravel.LobbyScene;
+        public override string Scene => SceneTravel.HubScene;
 
         private readonly bool _isJoining;
 

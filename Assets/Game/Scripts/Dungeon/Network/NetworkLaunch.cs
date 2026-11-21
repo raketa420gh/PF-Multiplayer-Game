@@ -1,13 +1,15 @@
 namespace Game.Scripts.Dungeon
 {
     /// Hand-over of the launch plan between scenes. Without an explicit plan a dedicated server hosts the dungeon and a party
-    /// member re-enters the party session of the tavern; everything else starts with the scene's own defaults.
+    /// member re-enters the party session of the hub; everything else starts with the scene's own defaults.
     public static class NetworkLaunch
     {
-        /// Message for the tavern about the last failed trip, shown once.
+        /// Message for the hub about the last failed trip, shown once.
         public static string Notice;
         /// Connection token of the local player, for a host that reads its own ticket.
         public static byte[] LocalToken;
+        /// Where the local player turns up in the hub next: set when a run ends, taken by the session the hub spawns.
+        public static HubArrival Arrival;
 
         private static LaunchPlan s_next;
 
@@ -24,7 +26,7 @@ namespace Game.Scripts.Dungeon
                 s_next = null;
             else if (scene == SceneTravel.DungeonScene && GameServer.IsDedicated)
                 plan = new ServerLaunch();
-            else if (scene == SceneTravel.LobbyScene && PartyService.IsInParty)
+            else if (scene == SceneTravel.HubScene && PartyService.IsInParty)
                 plan = new PartyLaunch(false);
 
             return plan;

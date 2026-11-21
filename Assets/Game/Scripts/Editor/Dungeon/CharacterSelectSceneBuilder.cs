@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 namespace Game.Scripts.Editor.Dungeon
 {
     /// Assembles CharacterSelectScene, where the game starts: the account's character slots and the creation page in front
-    /// of the tavern backdrop. No network session runs here; Enter travels to LobbyScene with the picked slot.
+    /// of the tavern backdrop. No network session runs here; Enter travels to HubScene with the picked slot.
     internal static class CharacterSelectSceneBuilder
     {
         public const string ScenePath = "Assets/Game/Scenes/CharacterSelectScene.unity";
@@ -55,12 +55,12 @@ namespace Game.Scripts.Editor.Dungeon
             Debug.Log($"[{nameof(CharacterSelectSceneBuilder)}] Scene built: {ScenePath}");
         }
 
-        /// The game starts at the character select, the tavern comes right after it.
+        /// The game starts at the character select, the hub comes right after it; scenes that are gone leave the list.
         internal static void OrderBuildSettings()
         {
-            string[] first = new[] { ScenePath, LobbySceneBuilder.ScenePath }.Where(path => AssetDatabase.LoadAssetAtPath<SceneAsset>(path) != null).ToArray();
+            string[] first = new[] { ScenePath, HubSceneBuilder.ScenePath }.Where(path => AssetDatabase.LoadAssetAtPath<SceneAsset>(path) != null).ToArray();
             EditorBuildSettings.scenes = first.Select(path => new EditorBuildSettingsScene(path, true))
-                .Concat(EditorBuildSettings.scenes.Where(scene => !first.Contains(scene.path))).ToArray();
+                .Concat(EditorBuildSettings.scenes.Where(scene => !first.Contains(scene.path) && AssetDatabase.LoadAssetAtPath<SceneAsset>(scene.path) != null)).ToArray();
         }
     }
 }

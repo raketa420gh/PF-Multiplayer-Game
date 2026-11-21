@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Spells of the tavern skills page: the class spells in their pool section and the spell wheels tab as rings of slots. A spell goes into a wheel
+    /// Spells of the hub skills page: the class spells in their pool section and the spell wheels tab as rings of slots. A spell goes into a wheel
     /// by dragging it onto one of its slots (or by LMB / RMB for wheel I / II); a slot clicked or dragged off the wheels frees its spell.
     public sealed class SpellsView : MonoBehaviour
     {

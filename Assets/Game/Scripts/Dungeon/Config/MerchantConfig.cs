@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Dungeon
 {
-    /// A tavern merchant: every ware costs the same number of coins and comes in one rarity.
+    /// A hub merchant: every ware costs the same number of coins and comes in one rarity.
     [CreateAssetMenu(menuName = "Game/Dungeon/Merchant Config")]
     public sealed class MerchantConfig : ScriptableObject
     {

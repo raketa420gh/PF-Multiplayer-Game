@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace Game.Scripts.Editor.Dungeon
 {
     /// Builds the uGUI layers laid out like Dark and Darker. Gameplay scenes: compass, HP bar with Q/E, belt, weapon row, minimap,
-    /// inventory with 3D doll, result and loading screens. Tavern scene: the lobby, skills, stash and merchants pages.
+    /// inventory with 3D doll, result and loading screens. Hub scene: the HUD and the pages its stations open (board, skills, kit and stash, merchants).
     internal static class DungeonUiBuilder
     {
         public const string PreviewLayer = "Preview";
@@ -95,23 +95,46 @@ namespace Game.Scripts.Editor.Dungeon
             return canvasObject;
         }
 
-        /// UI of the tavern scene: the lobby pages under a loading screen that lifts when the session is ready.
-        public static GameObject BuildLobbyScene(Inputs inputs)
+        /// UI of the hub scene: the gameplay HUD over the settlement, the pages its stations open, the spell wheels and the menu,
+        /// all under a loading screen that lifts when the body stands in the hub.
+        public static GameObject BuildHubScene(Inputs inputs)
         {
             GameObject canvasObject = BuildCanvas(inputs, out Canvas canvas);
             Transform root = canvasObject.transform;
-            LobbyView lobby = BuildLobby(root, canvas, inputs, BuildItemPrefab(), BuildCellPrefab());
+            DungeonHudView hud = BuildHud(root, inputs);
+
+            // No run and no map here: neither a timer nor a minimap.
+            foreach (string name in new[] { "Minimap", "Timer", "Swarm", "Floor" })
+                hud.transform.Find(name).gameObject.SetActive(false);
+
+            TMP_Text prompt = CreateText("StationPrompt", root, new Vector2(0.5f, 0.5f), new Vector2(0f, -110f), new Vector2(700f, 30f), 20f, TextAlignmentOptions.Center);
+            prompt.color = s_text;
+            TMP_Text notice = CreateText("Notice", root, new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(900f, 30f), 18f, TextAlignmentOptions.Center);
+            notice.color = new Color(1f, 0.78f, 0.45f);
+            HubPagesView pages = BuildHubPages(root, canvas, inputs, BuildItemPrefab(), BuildCellPrefab());
             HelpView help = BuildHelp(root);
+            SpellWheelView wheel = BuildWheel(root);
+            PauseMenuView pause = BuildPause(root);
             LoadingView loading = BuildLoading(root, inputs.Title);
 
-            SerializedObject so = new SerializedObject(canvasObject.AddComponent<LobbyUiRoot>());
+            SerializedObject so = new SerializedObject(canvasObject.AddComponent<HubUiRoot>());
             BattleEditorUtility.Set(so, "_context", inputs.Context);
-            BattleEditorUtility.Set(so, "_lobby", lobby);
-            BattleEditorUtility.Set(so, "_help", help);
             BattleEditorUtility.Set(so, "_loading", loading);
+            BattleEditorUtility.Set(so, "_hud", hud);
+            BattleEditorUtility.Set(so, "_pages", pages);
+            BattleEditorUtility.Set(so, "_help", help);
+            BattleEditorUtility.Set(so, "_wheel", wheel);
+            BattleEditorUtility.Set(so, "_pause", pause);
+            BattleEditorUtility.Set(so, "_promptText", prompt);
+            BattleEditorUtility.Set(so, "_noticeText", notice);
+            so.FindProperty("_stationMask").intValue = 1 | (1 << LayerMask.NameToLayer(HubBlockoutBuilder.StationLayer));
             so.ApplyModifiedPropertiesWithoutUndo();
 
+            hud.gameObject.SetActive(false);
+            pages.gameObject.SetActive(false);
             help.gameObject.SetActive(false);
+            wheel.gameObject.SetActive(false);
+            pause.gameObject.SetActive(false);
             BattleEditorUtility.SetLayerRecursively(canvasObject, LayerMask.NameToLayer("UI"));
 
             return canvasObject;
@@ -135,7 +158,7 @@ namespace Game.Scripts.Editor.Dungeon
             vignette.sprite = DungeonUiSpriteBuilder.Load("Vignette");
             Stretch(vignette.rectTransform, 0f);
 
-            RectTransform selectPage = CharacterPage(root, "Select", "Select Character", "Enter Tavern", "Delete",
+            RectTransform selectPage = CharacterPage(root, "Select", "Select Character", "Enter Hub", "Delete",
                 out TMP_Text selectName, out Button enter, out Button delete);
             Button[] slots = new Button[StashService.SlotCount];
             TMP_Text[] slotTexts = new TMP_Text[slots.Length];
@@ -976,14 +999,16 @@ namespace Game.Scripts.Editor.Dungeon
             return view;
         }
 
-        private static LobbyView BuildLobby(Transform root, Canvas canvas, Inputs inputs, ItemView itemPrefab, Image cellPrefab)
+        /// Pages of the hub stations over the whole screen: the board, the skills, the kit with the stash and the merchant counter
+        /// under a bar with the level shield and the name of the station.
+        private static HubPagesView BuildHubPages(Transform root, Canvas canvas, Inputs inputs, ItemView itemPrefab, Image cellPrefab)
         {
-            RectTransform panel = CreateRect("Lobby", root, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            RectTransform panel = CreateRect("Pages", root, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             Stretch(panel, 0f);
             Image back = CreateImage("Back", panel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_lobbyBack);
             Stretch(back.rectTransform, 0f);
 
-            LobbyHomeView home = BuildLobbyHome(panel, inputs);
+            HubBoardView board = BuildHubBoard(panel, inputs);
             SkillsView skills = BuildSkills(panel, inputs);
             InventoryView inventory = BuildInventory(panel, canvas, inputs, itemPrefab, cellPrefab, "Kit", false, 1, out CharacterPreviewView preview);
             LayoutLobbyStash(inventory);
@@ -991,7 +1016,7 @@ namespace Game.Scripts.Editor.Dungeon
 
             MerchantsView merchants = BuildMerchants(panel);
 
-            // Top bar: rank shield and the page tabs, each marked by a diamond tick on the rule.
+            // Top bar: rank shield and the name of the station that opened the page.
             RectTransform bar = CreateRect("TopBar", panel, new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 82f));
             bar.anchorMin = new Vector2(0f, 1f);
             bar.anchorMax = Vector2.one;
@@ -1000,21 +1025,11 @@ namespace Game.Scripts.Editor.Dungeon
             rule.anchorMin = Vector2.zero;
             rule.anchorMax = new Vector2(1f, 0f);
 
-            string[] names = { "Lobby", "Skills", "Stash", "Merchants" };
-            Button[] tabs = new Button[names.Length];
-
-            for (int i = 0; i < names.Length; i++)
-            {
-                float x = 240f + i * 170f;
-                tabs[i] = CreateButton("Tab" + names[i], bar, new Vector2(0f, 0.5f), new Vector2(x, 0f), new Vector2(170f, 72f), names[i]);
-                ((RectTransform)tabs[i].transform).pivot = new Vector2(0.5f, 0.5f);
-                tabs[i].image.sprite = DungeonUiSpriteBuilder.Load("Glow");
-                tabs[i].image.type = Image.Type.Simple;
-                tabs[i].GetComponentInChildren<TMP_Text>().fontSize = 26f;
-                RectTransform tick = CreateImage("Tick", bar, Vector2.zero, new Vector2(x, 1f), new Vector2(9f, 9f), s_gold).rectTransform;
-                tick.pivot = new Vector2(0.5f, 0.5f);
-                tick.localRotation = Quaternion.Euler(0f, 0f, 45f);
-            }
+            TMP_Text title = CreateText("Title", bar, new Vector2(0f, 0.5f), new Vector2(150f, 0f), new Vector2(900f, 60f), 30f, TextAlignmentOptions.MidlineLeft);
+            title.color = s_gold;
+            TMP_Text close = CreateText("Close", bar, new Vector2(1f, 0.5f), new Vector2(-30f, 0f), new Vector2(300f, 60f), 18f, TextAlignmentOptions.MidlineRight);
+            close.text = "[Esc] Close";
+            close.color = s_textDim;
 
             Image shield = CreateImage("Rank", bar, new Vector2(0f, 1f), new Vector2(26f, 0f), new Vector2(88f, 110f), Color.white);
             shield.sprite = DungeonUiSpriteBuilder.Load("Shield");
@@ -1023,23 +1038,22 @@ namespace Game.Scripts.Editor.Dungeon
             rank.fontStyle = FontStyles.Bold;
             rank.lineSpacing = -30f;
 
-            LobbyView view = panel.gameObject.AddComponent<LobbyView>();
+            HubPagesView view = panel.gameObject.AddComponent<HubPagesView>();
             SerializedObject so = new SerializedObject(view);
-            BattleEditorUtility.Set(so, "_home", home);
+            BattleEditorUtility.Set(so, "_board", board);
             BattleEditorUtility.Set(so, "_skills", skills);
             BattleEditorUtility.Set(so, "_inventory", inventory);
             BattleEditorUtility.Set(so, "_inventoryPreview", preview);
-            BattleEditorUtility.Set(so, "_tabs", tabs);
+            BattleEditorUtility.Set(so, "_titleText", title);
             BattleEditorUtility.Set(so, "_merchants", merchants);
             BattleEditorUtility.Set(so, "_stashPages", stashPages);
-            BattleEditorUtility.Set(so, "_pages", new DisplayableView[] { home, skills, inventory, merchants });
             BattleEditorUtility.Set(so, "_rankText", rank);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return view;
         }
 
-        /// Stash tab of the tavern over the whole screen under the top bar: the attribute sheet where the Skills page has it, the doll
+        /// Kit page of the hub over the whole screen under the top bar: the attribute sheet where the Skills page has it, the doll
         /// with the equipment beside it and the backpack under both in the middle, the stash on the right edge.
         private static void LayoutLobbyStash(InventoryView inventory)
         {
@@ -1136,8 +1150,9 @@ namespace Game.Scripts.Editor.Dungeon
             return view;
         }
 
-        /// Front page laid out like the Dark and Darker lobby: character in the middle, party on the right, map card and Start bottom left.
-        private static LobbyHomeView BuildLobbyHome(RectTransform lobby, Inputs inputs)
+        /// The party board and the book of descents on one page: the roster on the right for both, the party buttons under it for
+        /// the board, the map card, the queue, Start and the dev tools for the book.
+        private static HubBoardView BuildHubBoard(RectTransform lobby, Inputs inputs)
         {
             Vector2 center = new Vector2(0.5f, 0.5f);
             Vector2 top = new Vector2(0.5f, 1f);
@@ -1146,29 +1161,12 @@ namespace Game.Scripts.Editor.Dungeon
             Vector2 bottom = new Vector2(0.5f, 0f);
             Vector2 bottomLeft = Vector2.zero;
             Vector2 bottomRight = new Vector2(1f, 0f);
-            RectTransform page = CreateRect("Home", lobby, center, Vector2.zero, Vector2.zero);
+            RectTransform page = CreateRect("Board", lobby, center, Vector2.zero, Vector2.zero);
             Stretch(page, 0f);
-
-            RawImage backdrop = CreateRect("Backdrop", page, center, Vector2.zero, Vector2.zero).gameObject.AddComponent<RawImage>();
-            Stretch(backdrop.rectTransform, 0f);
-            AspectRatioFitter fitter = backdrop.gameObject.AddComponent<AspectRatioFitter>();
-            fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
-            fitter.aspectRatio = 16f / 9f;
-            CharacterPreviewView preview = BuildPreview(backdrop, inputs, 5, 1920, 1080, out Camera camera);
-            BuildSeatedTable(camera, preview, inputs);
-            Image vignette = CreateImage("Vignette", page, center, Vector2.zero, Vector2.zero, Color.white);
-            vignette.sprite = DungeonUiSpriteBuilder.Load("Vignette");
-            Stretch(vignette.rectTransform, 0f);
-
-            RectTransform help = CreateRect("Help", page, topLeft, new Vector2(56f, -128f), new Vector2(250f, 150f));
-            CreateImage("RuleTop", help, top, Vector2.zero, new Vector2(250f, 2f), s_frame);
-            TMP_Text helpTitle = CreateText("Title", help, top, new Vector2(0f, -6f), new Vector2(250f, 28f), 17f, TextAlignmentOptions.Center);
-            helpTitle.text = "Need help?";
-            helpTitle.color = s_gold;
-            TMP_Text helpText = CreateText("Text", help, top, new Vector2(0f, -40f), new Vector2(250f, 100f), 15f, TextAlignmentOptions.Top);
-            helpText.text = "Press <b>H</b> to see the controls.\nPick perks and skills on the <b>Skills</b> tab, fill the spell wheels on its <b>Spell Wheels</b> tab, pack the kit in the <b>Stash</b>.";
-            helpText.color = s_text;
-            CreateImage("RuleBottom", help, bottom, Vector2.zero, new Vector2(250f, 2f), s_frame);
+            RectTransform party = CreateRect("Party", page, center, Vector2.zero, Vector2.zero);
+            Stretch(party, 0f);
+            RectTransform descent = CreateRect("Descent", page, center, Vector2.zero, Vector2.zero);
+            Stretch(descent, 0f);
 
             TMP_Text nameText = CreateText("Name", page, top, new Vector2(0f, -196f), new Vector2(700f, 96f), 27f, TextAlignmentOptions.Bottom);
             nameText.color = s_text;
@@ -1189,24 +1187,24 @@ namespace Game.Scripts.Editor.Dungeon
             }
 
             float partyBottom = -180f - partySlots.Length * 98f;
-            Button createParty = CreateButton("CreateParty", page, topRight, new Vector2(-56f, partyBottom), new Vector2(270f, 40f), "Create Party");
-            Button leaveParty = CreateButton("LeaveParty", page, topRight, new Vector2(-56f, partyBottom), new Vector2(270f, 40f), "Leave Party");
-            TMP_InputField partyCode = CreateInput("PartyCode", page, topRight, new Vector2(-196f, partyBottom - 50f), new Vector2(130f, 40f), "Code");
+            Button createParty = CreateButton("CreateParty", party, topRight, new Vector2(-56f, partyBottom), new Vector2(270f, 40f), "Create Party");
+            Button leaveParty = CreateButton("LeaveParty", party, topRight, new Vector2(-56f, partyBottom), new Vector2(270f, 40f), "Leave Party");
+            TMP_InputField partyCode = CreateInput("PartyCode", party, topRight, new Vector2(-196f, partyBottom - 50f), new Vector2(130f, 40f), "Code");
             partyCode.contentType = TMP_InputField.ContentType.IntegerNumber;
             partyCode.characterLimit = 4;
-            Button joinParty = CreateButton("JoinParty", page, topRight, new Vector2(-56f, partyBottom - 50f), new Vector2(130f, 40f), "Join Party");
+            Button joinParty = CreateButton("JoinParty", party, topRight, new Vector2(-56f, partyBottom - 50f), new Vector2(130f, 40f), "Join Party");
 
-            Button queue = CreateButton("Queue", page, bottomLeft, new Vector2(24f, 356f), new Vector2(307f, 44f), string.Empty);
+            Button queue = CreateButton("Queue", descent, bottomLeft, new Vector2(24f, 356f), new Vector2(307f, 44f), string.Empty);
             queue.image.color = s_panel;
             TMP_Text queueText = queue.GetComponentInChildren<TMP_Text>();
             queueText.fontSize = 20f;
             TMP_Text notice = CreateText("Notice", page, bottom, new Vector2(0f, 66f), new Vector2(900f, 30f), 18f, TextAlignmentOptions.Center);
             notice.color = new Color(1f, 0.78f, 0.45f);
 
-            TMP_Text mapLabel = CreateText("MapLabel", page, bottomLeft, new Vector2(24f, 322f), new Vector2(307f, 26f), 17f, TextAlignmentOptions.Center);
+            TMP_Text mapLabel = CreateText("MapLabel", descent, bottomLeft, new Vector2(24f, 322f), new Vector2(307f, 26f), 17f, TextAlignmentOptions.Center);
             mapLabel.text = "Select Map";
             mapLabel.color = s_textDim;
-            Button map = CreateButton("Map", page, bottomLeft, new Vector2(24f, 122f), new Vector2(307f, 194f), "Change Map");
+            Button map = CreateButton("Map", descent, bottomLeft, new Vector2(24f, 122f), new Vector2(307f, 194f), "Change Map");
             map.image.color = s_panel;
             TMP_Text mapCaption = map.GetComponentInChildren<TMP_Text>();
             mapCaption.fontSize = 20f;
@@ -1220,13 +1218,13 @@ namespace Game.Scripts.Editor.Dungeon
             mapImage.uvRect = new Rect(0f, 0.33f, 1f, 0.33f);
             mapImage.color = new Color(0.8f, 0.75f, 0.65f);
 
-            Button start = CreateButton("Start", page, bottomLeft, new Vector2(24f, 24f), new Vector2(307f, 86f), "Start");
+            Button start = CreateButton("Start", descent, bottomLeft, new Vector2(24f, 24f), new Vector2(307f, 86f), "Start");
             start.image.color = new Color(0.17f, 0.16f, 0.15f, 0.97f);
             start.GetComponentInChildren<TMP_Text>().fontSize = 34f;
 
             Button Tool(string name, string caption, string glyph, int column)
             {
-                Button button = CreateButton(name, page, bottomRight, new Vector2(-24f - column * 86f, 24f), new Vector2(68f, 68f), glyph);
+                Button button = CreateButton(name, descent, bottomRight, new Vector2(-24f - column * 86f, 24f), new Vector2(68f, 68f), glyph);
                 button.image.sprite = DungeonUiSpriteBuilder.Load("Square");
                 button.image.type = Image.Type.Simple;
                 button.image.color = new Color(0.72f, 0.64f, 0.5f);
@@ -1255,10 +1253,11 @@ namespace Game.Scripts.Editor.Dungeon
                 ("Dungeon Test", "The Arena room with one chest of each kind, no monsters · F2 calls monsters in to test mechanics · party of up to 3", floorMap, SceneTravel.DungeonScene, true)
             };
 
-            LobbyHomeView view = page.gameObject.AddComponent<LobbyHomeView>();
+            HubBoardView view = page.gameObject.AddComponent<HubBoardView>();
             SerializedObject so = new SerializedObject(view);
             BattleEditorUtility.Set(so, "_context", inputs.Context);
-            BattleEditorUtility.Set(so, "_preview", preview);
+            BattleEditorUtility.Set(so, "_descentRoot", descent.gameObject);
+            BattleEditorUtility.Set(so, "_partyRoot", party.gameObject);
             BattleEditorUtility.Set(so, "_nameText", nameText);
             BattleEditorUtility.Set(so, "_partyTitleText", partyTitle);
             BattleEditorUtility.Set(so, "_partySlots", partySlots);
@@ -1338,70 +1337,6 @@ namespace Game.Scripts.Editor.Dungeon
             Prop("StandRangerMale", new Vector3(-1.8f, 0f, -1.6f), 15f);
             Prop("StandPeasantFemale", new Vector3(1.8f, 0f, -1.6f), -15f);
             Prop("SkullPile", new Vector3(-1.1f, 0f, -2.3f), 0f);
-            DimFlames(set);
-            BattleEditorUtility.SetLayerRecursively(set.gameObject, root.gameObject.layer);
-        }
-
-        /// Seats the preview character on a stool at a table laid with candles and odds and ends, on a bare dark background. The character can't be turned.
-        private static void BuildSeatedTable(Camera camera, CharacterPreviewView preview, Inputs inputs)
-        {
-            const string controllerPath = "Assets/Game/Animations/Dungeon/LobbySeated.controller";
-            const float tableTop = 0.813f;
-            const float stoolHeight = 0.582f;
-            AnimationClip sitting = BattleEditorUtility.LoadLibraryClip("Sitting_Idle_Loop");
-            BattleEditorUtility.EnsureFolder("Assets/Game/Animations/Dungeon");
-            AssetDatabase.DeleteAsset(controllerPath);
-            UnityEditor.Animations.AnimatorController controller = UnityEditor.Animations.AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
-            controller.layers[0].stateMachine.AddState("Sitting").motion = sitting;
-
-            // The seat and the table follow the pose itself: hips over the stool top, the table edge right in front of the belly.
-            GameObject probe = (GameObject)PrefabUtility.InstantiatePrefab(inputs.PreviewRig);
-            Animator animator = probe.GetComponentInChildren<Animator>();
-            BattleEditorUtility.SampleClip(animator, sitting, 0f);
-            Vector3 hips = animator.GetBoneTransform(HumanBodyBones.Hips).position - probe.transform.position;
-            Vector3 head = animator.GetBoneTransform(HumanBodyBones.Head).position - probe.transform.position;
-            Object.DestroyImmediate(probe);
-
-            SerializedObject so = new SerializedObject(preview);
-            BattleEditorUtility.Set(so, "_canTurn", false);
-            BattleEditorUtility.Set(so, "_poseController", controller);
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            Transform root = camera.transform.parent;
-            float tableZ = hips.z + 0.25f + 0.545f;
-            camera.transform.localPosition = new Vector3(0f, head.y + 0.45f, tableZ + 3.6f);
-            camera.transform.LookAt(root.position + new Vector3(0f, (tableTop + head.y) * 0.5f - 0.05f, hips.z + 0.3f));
-            camera.fieldOfView = 32f;
-            camera.farClipPlane = 30f;
-            camera.backgroundColor = s_lobbyBack;
-            UnityEngine.Rendering.Universal.UniversalAdditionalCameraData data = camera.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
-            data.renderPostProcessing = true;
-            data.antialiasing = UnityEngine.Rendering.Universal.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
-            // The rig spawns turned 15 degrees aside; here it faces the camera.
-            root.Find("Stage").localRotation = Quaternion.Euler(0f, 15f, 0f);
-
-            Transform set = BattleEditorUtility.CreateChild("Tavern", root).transform;
-
-            Transform Prop(GameObject prefab, Vector3 position, float yaw)
-            {
-                GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, set);
-                instance.transform.localPosition = position;
-                instance.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
-
-                return instance.transform;
-            }
-
-            void Item(string kit, float x, float z, float yaw) => Prop(DungeonKitBuilder.Load(kit), new Vector3(x, tableTop, tableZ + z), yaw);
-
-            // The camera looks down -Z, so +X is the left side of the picture.
-            Prop(AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("Table")), new Vector3(0f, 0f, tableZ), 180f);
-            Prop(DungeonKitBuilder.Load("Stool"), new Vector3(0f, 0f, hips.z - 0.05f), 0f).localScale = new Vector3(1f, (hips.y - 0.1f) / stoolHeight, 1f);
-            Prop(AssetDatabase.LoadAssetAtPath<GameObject>(DungeonContentBuilder.Prefab("CandleCluster")), new Vector3(0.85f, tableTop, tableZ - 0.1f), 0f);
-            Item("Book_Stack_1", 0.5f, -0.25f, 20f);
-            Item("Potion_1", 0.3f, 0.2f, 0f);
-            Item("Scroll_1", -0.1f, 0.3f, 75f);
-            Item("Mug", -0.45f, -0.2f, 140f);
-            Item("Coin_Pile_2", -0.7f, 0.15f, -30f);
             DimFlames(set);
             BattleEditorUtility.SetLayerRecursively(set.gameObject, root.gameObject.layer);
         }
@@ -2102,7 +2037,7 @@ namespace Game.Scripts.Editor.Dungeon
             TMP_Text title = CreateText("Title", panel, new Vector2(0.5f, 0.5f), new Vector2(0f, 120f), new Vector2(1000f, 100f), 72f, TextAlignmentOptions.Center);
             title.fontStyle = FontStyles.Bold;
             TMP_Text details = CreateText("Details", panel, new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), new Vector2(900f, 140f), 24f, TextAlignmentOptions.Center);
-            Button back2 = CreateButton("Return", panel, new Vector2(0.5f, 0.5f), new Vector2(0f, -130f), new Vector2(300f, 54f), "Return to the tavern");
+            Button back2 = CreateButton("Return", panel, new Vector2(0.5f, 0.5f), new Vector2(0f, -130f), new Vector2(300f, 54f), "Return to the hub");
 
             ResultView view = panel.gameObject.AddComponent<ResultView>();
             SerializedObject so = new SerializedObject(view);
