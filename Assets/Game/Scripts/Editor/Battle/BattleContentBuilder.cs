@@ -294,11 +294,13 @@ namespace Game.Scripts.Editor.Battle
 
         /// Assembles an unsaved fighter with the whole weapon catalog, hitboxes, animation, camera and views.
         /// Players are a fifth wider than monsters of their size: two of them shoulder to shoulder keep some room between them.
+        /// The capsule that keeps others off is a tenth wider still: nobody stands nose to nose in a melee.
         internal static void WidenPlayer(FighterParts parts)
         {
             const float scale = 1.2f;
+            const float blockerScale = 1.1f;
             parts.Root.GetComponent<CharacterController>().radius *= scale;
-            parts.Move.Blocker.radius *= scale;
+            parts.Move.Blocker.radius *= scale * blockerScale;
         }
 
         internal static FighterParts CreateFighter(Loadout[] loadouts, GameObject arrow, GameObject magicOrb, int slotCount, string name)

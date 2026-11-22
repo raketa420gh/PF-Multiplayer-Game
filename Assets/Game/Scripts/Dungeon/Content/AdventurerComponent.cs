@@ -2671,7 +2671,8 @@ namespace Game.Scripts.Dungeon
 
         private void OnUseItem(EquipSlot slot)
         {
-            if (State != AdventurerState.Alive || Pending != PendingAction.None)
+            // Hub: the body wears the kit of a session still in the lobby, nothing of it is spent there.
+            if (State != AdventurerState.Alive || Pending != PendingAction.None || _session is { State: SessionState.Lobby })
                 return;
 
             ItemStack equipped = _inventory.GetEquipped(slot);

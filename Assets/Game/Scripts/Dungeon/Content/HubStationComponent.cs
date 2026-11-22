@@ -23,7 +23,8 @@ namespace Game.Scripts.Dungeon
         Road
     }
 
-    /// A place of the hub tied to a page of the UI. Purely local: the trigger volume is found by the look ray of HubUiRoot.
+    /// A place of the hub tied to a page of the UI. Purely local. Its children are its model: the look ray of HubUiRoot takes
+    /// any collider of theirs, solid or trigger, and the rim goes around their renderers.
     public sealed class HubStationComponent : MonoBehaviour
     {
         public HubStation Station => _station;

@@ -11,17 +11,34 @@ namespace Game.Scripts.Dungeon
 
         private static readonly List<Renderer> s_renderers = new List<Renderer>();
         private static readonly List<int> s_subMeshes = new List<int>();
-        private static InteractableComponent s_target;
+        private static Component s_target;
+        private static Component s_station;
 
         public static void Set(InteractableComponent target)
         {
-            if (target == s_target)
+            Set(ref s_target, target);
+        }
+
+        /// Hub: the place under the crosshair, it is no interactable of the adventurer.
+        public static void SetStation(HubStationComponent station)
+        {
+            Set(ref s_station, station);
+        }
+
+        private static void Set(ref Component slot, Component target)
+        {
+            if (target == slot)
                 return;
 
-            s_target = target;
+            slot = target;
             s_renderers.Clear();
             s_subMeshes.Clear();
+            Add(s_target);
+            Add(s_station);
+        }
 
+        private static void Add(Component target)
+        {
             if (target == null)
                 return;
 

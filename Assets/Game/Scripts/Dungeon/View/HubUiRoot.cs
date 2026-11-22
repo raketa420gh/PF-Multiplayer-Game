@@ -37,11 +37,10 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private float _noticeTime = 10f;
 
-        [SerializeField, Tooltip("How far a station can be used from")]
-        private float _reach = 3f;
-
         [SerializeField, Tooltip("Stations and the world that hides them")]
         private LayerMask _stationMask;
+
+        private static readonly RaycastHit[] s_lookHits = new RaycastHit[16];
 
         private PlayerSessionComponent _session;
         private AdventurerComponent _adventurer;
@@ -65,6 +64,7 @@ namespace Game.Scripts.Dungeon
             _context.OnLocalSessionChanged -= OnSessionChanged;
             _context.OnLocalAdventurerChanged -= OnAdventurerChanged;
             _pause.OnResumeClicked -= OnResumeClicked;
+            InteractOutline.SetStation(null);
         }
 
         private void Start()
@@ -116,6 +116,7 @@ namespace Game.Scripts.Dungeon
                     _wheels.Close(_adventurer, false);
 
                 _promptText.text = string.Empty;
+                InteractOutline.SetStation(null);
 
                 return;
             }
@@ -128,6 +129,7 @@ namespace Game.Scripts.Dungeon
             }
 
             HubStationComponent station = FindStation();
+            InteractOutline.SetStation(station);
             _promptText.text = station != null ? $"[F] {station.Prompt}" : string.Empty;
 
             if (station != null && Input.GetKeyDown(KeyCode.F))
@@ -140,9 +142,30 @@ namespace Game.Scripts.Dungeon
         {
             Transform eye = _context.Battle.Camera.transform;
 
-            return Physics.Raycast(eye.position, eye.forward, out RaycastHit hit, _reach, _stationMask, QueryTriggerInteraction.Collide)
-                ? hit.collider.GetComponentInParent<HubStationComponent>()
-                : null;
+            // As with a chest: any part of the model counts, solid or trigger; anything else solid in front blocks the look.
+            int count = Physics.RaycastNonAlloc(eye.position, eye.forward, s_lookHits, AdventurerComponent.InteractRange, _stationMask, QueryTriggerInteraction.Collide);
+            HubStationComponent station = null;
+            float nearest = float.MaxValue;
+            float blocker = float.MaxValue;
+
+            for (int i = 0; i < count; i++)
+            {
+                RaycastHit hit = s_lookHits[i];
+                HubStationComponent found = hit.collider.GetComponentInParent<HubStationComponent>();
+
+                if (found == null)
+                {
+                    if (!hit.collider.isTrigger)
+                        blocker = Mathf.Min(blocker, hit.distance);
+                }
+                else if (hit.distance < nearest)
+                {
+                    nearest = hit.distance;
+                    station = found;
+                }
+            }
+
+            return nearest <= blocker ? station : null;
         }
 
         private void Use(HubStationComponent station)
@@ -169,6 +192,7 @@ namespace Game.Scripts.Dungeon
 
         private void SetPageOpen(bool isOpen)
         {
+            InteractOutline.SetStation(null);
             _pages.SetShown(isOpen);
             _hud.SetShown(!isOpen);
             _promptText.text = string.Empty;

@@ -634,7 +634,7 @@ else (() => {
     raw = mat(0xaeb6bd, { flatShading: true, metalness: .25, roughness: .5 }), tags = mat(0xffffff, { map: tagTex }), skin = mat(0xc9a58a), fireM = glow(0xffa64d), blueM = glow(0xa9d6ff);
   const WM = { stone, lime, wood: planks }, FLM = { cobble, flag, planks, earth, straw: strawF }, FIRE = 0xff9a4a, CANDLE = 0xffc878, BLUE = 0x6fb6ff;
 
-  // примитивы: x, z — координаты плана (метры), y — высота; F — рамка fr, u/v — в ней. TAG — ID элемента, к которому относятся меши и огни: по нему выгрузка #export раскладывает их в игре
+  // примитивы: x, z — координаты плана (метры), y — высота; F — рамка fr, u/v — в ней. TAG — ID элемента, к которому относятся меши и огни: по нему выгрузка #export раскладывает их в игре; у реквизита станции (книга, доска, сундук, прилавок, торговец) свой ID — в игре это модель, на которую наводят перекрестие
   let par = scene, TAG = ''; const lift = new T.Group(); lift.position.y = LIFT; scene.add(lift);   // par — куда кладутся меши; lift — всё, что стоит на поднятом полу часовни
   const add = (g, m, x, y, z) => { const o = new T.Mesh(g, m); o.position.set(x, y, z); o.userData.t = TAG; o.castShadow = o.receiveShadow = !m.isMeshBasicMaterial && !m.transparent; par.add(o);
 
@@ -760,7 +760,7 @@ else (() => {
   box(37.5, 1.7, 2.96, .5, 7, gateM, 0, 1); box(40.54, 1.7, 2.96, .5, 7, gateM, 0, 1); [1, 3.4, 5.8].forEach(y => box(37.5, 2.2, 6, .05, .3, brass, y));
   rot(cyl(40.5, 2.26, 1.3, .1, iron, 3.8), 0, PI / 2); box(40.44, 2.3, .12, .1, 7, blueM); lamp(40.5, 3.6, 3.6, BLUE, 60, 18);
   box(37.5, 4.5, 4.2, 4, .05, brass); box(37.6, 4.6, 4, 3.8, .1, iron); cyl(37.3, 4.5, .06, 2.6, iron); rot(cyl(37.3, 4.5, .55, .06, brass, 2.3), 0, PI / 2);
-  box(45.2, 9, .7, .9, 1.1, wood, 0, 1); box(45.15, 8.95, .8, 1, .1, bone, 1.1); cyl(46.2, 9.4, .02, 1, iron, .6);
+  TAG = 'A3'; box(45.2, 9, .7, .9, 1.1, wood, 0, 1); box(45.15, 8.95, .8, 1, .1, bone, 1.1); cyl(46.2, 9.4, .02, 1, iron, .6); TAG = 'A';
   ico(36.4, 1.3, 6.6, .75, blueM); solid(36.4, 6.6, 36.4, 6.6, .95); lamp(36.4, 1.9, 6.6, BLUE, 50, 16);
   const cage = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(1.8, 2.8, 1.8)), new T.LineBasicMaterial({ color: 0x8a8a92 })); cage.position.set(36.4, 1.4, 6.6); par.add(cage);
   [[36.4, 12.2], [44.6, 12.2]].forEach(([x, z]) => { cyl(x, z, .06, 1, iron); cyl(x, z, .42, .22, iron, 1, 1); ball(x, 1.4, z, .26, fireM); lamp(x, 1.9, z, FIRE, 28, 12); });
@@ -782,7 +782,7 @@ else (() => {
   cyl(sx, sz, 1.3, .9, stone, 0, 1); cyl(sx, sz, .15, 5.2, brass, .9); box(sx - 2.6, sz - .08, 5.2, .16, .18, brass, 5.9).rotation.z = -.06;
   cyl(sx - 2.4, sz, .015, 2.3, brass, 3.83); cyl(sx - 2.4, sz, .8, .07, brass, 3.78); box(sx - 2.8, sz - .2, .7, .12, .12, bone, 3.85); box(sx - 2.5, sz + .1, .5, .1, .1, bone, 3.85); ball(sx - 2.05, 3.98, sz - .25, .13, bone);
   cyl(sx + 2.4, sz, .015, 2.3, brass, 3.55); cyl(sx + 2.4, sz, .8, .07, brass, 3.5); cyl(sx + 2.2, sz, .16, .3, iron, 3.57); cyl(sx + 2.6, sz - .2, .12, .22, iron, 3.57); cyl(sx + 2.55, sz + .25, .09, .16, iron, 3.57);
-  box(34.6, 14.3, 2.6, .1, 1.5, wood, 1, 1); [34.6, 37.1].forEach(x => box(x, 14.25, .1, .1, 2.7, timber)); [[34.9, .4, 1.7], [35.6, .5, 1.5], [36.4, .35, 1.8]].forEach(([x, w, y]) => box(x, 14.41, w, .02, .45, bone, y));
+  TAG = 'B2'; box(34.6, 14.3, 2.6, .1, 1.5, wood, 1, 1); [34.6, 37.1].forEach(x => box(x, 14.25, .1, .1, 2.7, timber)); [[34.9, .4, 1.7], [35.6, .5, 1.5], [36.4, .35, 1.8]].forEach(([x, w, y]) => box(x, 14.41, w, .02, .45, bone, y)); TAG = 'B';
   for (let i = 0; i < 10; i++) ico(fx + Math.cos(i * .63) * .8, .12, fz + Math.sin(i * .63) * .8, .2, rockF); solid(fx, fz, fx, fz, .9);
   [0, 1.1, 2.2].forEach(a => rot(add(new T.CylinderGeometry(.07, .07, 1.2, 6), wood, fx, .25, fz), a, 0, PI / 2 - .25)); ball(fx, .5, fz, .3, fireM); lamp(fx, 1.2, fz, FIRE, 45, 16);
   [.4, 2.5, 4.4].forEach(a => { const x = fx + Math.cos(a) * 2.3, z = fz + Math.sin(a) * 2.3, t = [-Math.sin(a) * .8, Math.cos(a) * .8]; lie(x, .24, z, .24, 1.9, wood, PI / 2 - a); solid(x - t[0], z - t[1], x + t[0], z + t[1], .3); });
@@ -809,7 +809,7 @@ else (() => {
 
   // C1 — весовая контора
   TAG = 'C1';
-  rb(FK, .3, 2.7, .6, 2, 1, wood, 0, 1); for (let i = 0; i < 8; i++) rb(FK, -.02, 2.8 + i * .25, .04, .04, 1.1, iron, 1); rc(FK, .5, 3.9, .1, .03, brass, 1);
+  TAG = 'C1.1'; rb(FK, .3, 2.7, .6, 2, 1, wood, 0, 1); for (let i = 0; i < 8; i++) rb(FK, -.02, 2.8 + i * .25, .04, .04, 1.1, iron, 1); rc(FK, .5, 3.9, .1, .03, brass, 1); TAG = 'C1';
   rb(FK, .35, 3.0, .5, .9, .45, glass, 1); rc(FK, .6, 3.45, .02, .3, brass, 1); rb(FK, .58, 3.15, .04, .6, .03, brass, 1.3);
   rb(FK, 5.9, .6, .5, 3.4, 2.2, wood, 0, 1); for (let i = 0; i < 6; i++) rb(FK, 5.86, .9 + i * .5, .05, .12, .12, wax, .6 + i % 3 * .6);
   rb(FK, 2.6, .5, 1.6, .7, .85, wood, 0, 1); rb(FK, 3, .65, .6, .4, .06, bone, .85); { const [x, z] = FK.p(2, 3.5); lamp(x, 2.6, z, CANDLE, 16, 10); } { const [x, z] = FK.p(3.4, 1.8); fig(x, z, extra); }
@@ -845,7 +845,7 @@ else (() => {
   { const [x, z] = FS.p(1.5, 4.4); ball(x, .1, z, 1.1, straw, .45); } rb(FS, .3, 5.9, 2.8, .5, .7, wood, .3); rb(FS, 3.2, 1.6, .36, .7, .3, leather, 1.5);
   { const [x, z] = FS.p(3.3, 3.2); rot(add(new T.TorusGeometry(.35, .04, 6, 16), leather, x, 1.1, z), PI / 2 - FS.a); }
   [[4.6, 3.3], [5.8, 4.8]].forEach(([u, v]) => { rc(FS, u, v, .06, 1.1, wood, 0, 1); rb(FS, u - .28, v - .17, .56, .34, .7, steel, .95); rb(FS, u - .38, v - .13, .76, .26, .14, steel, 1.55); rb(FS, u - .26, v - .15, .52, .3, .35, cloth, .6); const [x, z] = FS.p(u, v); ball(x, 1.85, z, .17, steel); });
-  rb(FS, 6.9, .1, 3.1, .5, 1.05, wood, 0, 1); rb(FS, 7.3, .2, .4, .3, .18, steel, 1.05); { const [x, z] = FS.p(9.4, .35); ball(x, 1.2, z, .16, steel); }
+  TAG = 'C3.4'; rb(FS, 6.9, .1, 3.1, .5, 1.05, wood, 0, 1); rb(FS, 7.3, .2, .4, .3, .18, steel, 1.05); { const [x, z] = FS.p(9.4, .35); ball(x, 1.2, z, .16, steel); } TAG = 'C3';
   rb(FS, 10.5, 4.9, 2.6, .9, .85, wood, 0, 1); [[11, 5.3], [11.6, 5.4]].forEach(([u, v]) => { const [x, z] = FS.p(u, v); lie(x, .97, z, .12, .7, leather, -FS.a); }); rb(FS, 12.3, 5.1, .4, .3, .08, iron, .85); { const [x, z] = FS.p(11.8, 4.6); lamp(x, 1.9, z, CANDLE, 14, 8); }
   rb(FS, 13.7, 6.15, 3, .1, .1, wood, 1.9); [14.2, 15.1, 16].forEach(u => rb(FS, u - .3, 6.0, .6, .08, .75, iron, 1.1)); rb(FS, 16.4, 1.2, .4, 3, .05, wood, 1.5); [1.6, 2.6, 3.6].forEach(v => { const [x, z] = FS.p(16.6, v); ball(x, 1.68, z, .16, steel); });
   rb(FS, 1, -1.6, 2.6, .7, .55, wood, 0, 1); rb(FS, 1.08, -1.52, 2.44, .54, .02, water, .5); rc(FS, 11, -1.3, .07, 1, timber); rc(FS, 16, -1.3, .07, 1, timber); rb(FS, 11, -1.35, 5, .1, .1, wood, .9); solid(...FS.p(11, -1.3), ...FS.p(16, -1.3), .1);
@@ -853,7 +853,7 @@ else (() => {
 
   // C4 — каптёрка
   TAG = 'C4';
-  rb(FQ, 1.2, .3, 2, .55, 1, wood, 0, 1); rb(FQ, 1.6, .4, .5, .35, .08, bone, 1); rb(FQ, .4, 5.3, 6.7, .5, 2.2, wood, 0, 1);
+  TAG = 'C4.1'; rb(FQ, 1.2, .3, 2, .55, 1, wood, 0, 1); rb(FQ, 1.6, .4, .5, .35, .08, bone, 1); TAG = 'C4'; rb(FQ, .4, 5.3, 6.7, .5, 2.2, wood, 0, 1);
   [.5, 1.2, 1.9].forEach((y, r) => { for (let i = 0; i < 6; i++) rb(FQ, .6 + i * 1.08, 5.34, .9, .42, .45, (i + r) % 3 ? cloth : straw, y); });
   rc(FQ, 6.6, 3.6, .38, .9, wood, 0, 1); rc(FQ, 6.6, 4.5, .38, .9, wood, 0, 1); [2.2, 2.8].forEach(v => { const [x, z] = FQ.p(7.32, v); rot(add(new T.TorusGeometry(.22, .06, 6, 14), straw, x, 1.5, z), PI / 2 - FQ.a); });
   rb(FQ, .4, 1.6, 1.2, 1, .8, wood, 0, 1); rb(FQ, .5, 2.8, 1, 1, .7, wood, 0, 1); rb(FQ, .55, 1.7, .9, .8, .6, wood, .8); [1.8, 3.1].forEach(v => rb(FQ, 1.62, v, .02, .2, .14, brass, .4));
@@ -898,8 +898,8 @@ else (() => {
   TAG = 'E';
   TAG = 'E2'; dummy(FE, 4.2, 1.8, straw); TAG = 'E3'; dummy(FE, 8.8, 1.8, steel); TAG = 'E'; [6.8, 11.8, 16.8].forEach(v => rb(FE, .8, v - .04, 11.4, .08, .02, lime, .015)); ring(...FE.p(4.4, 13.6), 3.05, 3.2, lime);
   rb(FE, 12.5, 8.1, .5, 2.8, .03, rust, .015); rb(FE, 5.3, 18.5, 2.4, .5, .03, rust, .015);
-  rb(FE, .2, 15, .1, 2.4, 1.4, wood, 1); for (let i = 0; i < 6; i++) rb(FE, .3, 15.2 + i % 3 * .7, .03, .4, .4, brass, 1.2 + (i > 2) * .6);
-  rb(FE, .2, 4.6, .45, 2.4, 1.9, wood, 0, 1); for (let i = 0; i < 4; i++) rb(FE, .68, 4.9 + i * .55, .04, .08, 1.3, steel, .4);
+  TAG = 'E6'; rb(FE, .2, 15, .1, 2.4, 1.4, wood, 1); for (let i = 0; i < 6; i++) rb(FE, .3, 15.2 + i % 3 * .7, .03, .4, .4, brass, 1.2 + (i > 2) * .6);
+  TAG = 'E7'; rb(FE, .2, 4.6, .45, 2.4, 1.9, wood, 0, 1); for (let i = 0; i < 4; i++) rb(FE, .68, 4.9 + i * .55, .04, .08, 1.3, steel, .4); TAG = 'E';
   [3, 7, 11, 15].forEach(v => rb(FE, 0, v, 13, .25, .3, timber, 5.7)); rb(FE, .3, 8.4, .45, 3.2, .45, wood, 0, 1); rc(FE, .6, 12.2, .2, .4, wood, 0, 1);
   [[.25, 9.5], [12.75, 4], [12.75, 15]].forEach(([u, v]) => { const [x, z] = FE.p(u, v); rot(add(new T.CylinderGeometry(.6, .6, .04, 20), straw, x, 2.4, z), -FE.a, 0, PI / 2); });
   [[6.5, 6], [6.5, 14]].forEach(([u, v]) => { const [x, z] = FE.p(u, v); lamp(x, 4.6, z, FIRE, 70, 22); });
@@ -907,15 +907,15 @@ else (() => {
   // F — келья
   TAG = 'F';
   rb(FF, .3, 4.2, 2.3, 1.2, .5, cloth, 0, 1); rb(FF, .4, 4.4, .5, .8, .12, bone, .5);
-  rb(FF, 2.9, 4.8, 1.4, .7, .8, wood, 0, 1); rb(FF, 3.5, 4.76, .2, .74, .82, brass); rb(FF, 4.4, 4.8, 1.7, .7, .7, wood, 0, 1); [4.7, 5.2, 5.7].forEach(u => rb(FF, u, 4.76, .14, .05, .2, brass, .4));
+  TAG = 'F2'; rb(FF, 2.9, 4.8, 1.4, .7, .8, wood, 0, 1); rb(FF, 3.5, 4.76, .2, .74, .82, brass); TAG = 'F3'; rb(FF, 4.4, 4.8, 1.7, .7, .7, wood, 0, 1); [4.7, 5.2, 5.7].forEach(u => rb(FF, u, 4.76, .14, .05, .2, brass, .4)); TAG = 'F';
   rb(FF, .05, 1.3, .3, 2.6, .06, wood, 1.5); rc(FF, .2, 1.8, .1, .3, brass, 1.56); { const [x, z] = FF.p(.2, 2.9); ico(x, 1.72, z, .14, raw); } rb(FF, .1, 3.4, .2, .3, .25, bone, 1.56);
   rb(FF, 6.95, 1.4, .08, 2.4, 1.3, wood, 1); for (let i = 0; i < 4; i++) rb(FF, 6.9, 1.6 + i * .55, .03, .4, .5, bone, 1.2 + i % 2 * .3);
-  dummy(FF, 6.3, 4.1, cloth); rb(FF, .1, .1, 1, 1, 1.1, stone, 0, 1); rb(FF, .3, .85, .6, .3, .45, fireM, .2); { const [x, z] = FF.p(.6, 1.5); lamp(x, .9, z, FIRE, 26, 12); }
+  TAG = 'F6'; dummy(FF, 6.3, 4.1, cloth); TAG = 'F'; rb(FF, .1, .1, 1, 1, 1.1, stone, 0, 1); rb(FF, .3, .85, .6, .3, .45, fireM, .2); { const [x, z] = FF.p(.6, 1.5); lamp(x, .9, z, FIRE, 26, 12); }
   rb(FF, 2.6, 1.3, 1, .7, .75, wood, 0, 1); rc(FF, 3.1, 1.65, .05, .15, bone, .75); rc(FF, 2.2, 1.65, .2, .45, wood, 0, 1); rb(FF, 1.6, 2.2, 3, 1.8, .01, wax, .02);
 
   // G — ворота, H — склады
   TAG = 'G';
-  for (let u = 2.6; u < 6.3; u += .3) rc(FG, u, 7.4, .04, 4.3, iron, 0, 0, 6); rb(FG, 2.4, 7.36, 4, .08, .08, iron, 2.1); solid(...FG.p(2.4, 7.4), ...FG.p(6.4, 7.4), .15);
+  TAG = 'G1'; for (let u = 2.6; u < 6.3; u += .3) rc(FG, u, 7.4, .04, 4.3, iron, 0, 0, 6); rb(FG, 2.4, 7.36, 4, .08, .08, iron, 2.1); solid(...FG.p(2.4, 7.4), ...FG.p(6.4, 7.4), .15); TAG = 'G';
   ring(...FG.p(4.4, -3.2), 1.35, 1.5, lime); { const [x, z] = FG.p(4.4, 3.7); lamp(x, 3.6, z, FIRE, 24, 14); } { const [x, z] = FG.p(1.3, 5.6); fig(x, z, extra); }
   TAG = 'H'; rb(FH, 3.9, 4.05, 2, .1, 2.6, planks, 0, 1); rb(FH, 3.7, 4.22, 2.4, .1, .15, iron, 1.3); [4.4, 5.4].forEach(u => { const [x, z] = FH.p(u, 4.3); rot(add(new T.CylinderGeometry(.09, .09, .03, 12), wax, x, 1.15, z), -FH.a, PI / 2); });
   rb(FH, 1, 5, 1, 1, .9, wood, 0, 1); rb(FH, 1.1, 5.1, .8, .8, .7, wood, .9); rb(FH, 7.8, 5.2, 1.2, .9, .8, wood, 0, 1);

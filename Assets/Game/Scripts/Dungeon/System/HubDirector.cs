@@ -139,7 +139,7 @@ namespace Game.Scripts.Dungeon
             bool hasLeftHall = resident.IsSparring && !isSparring;
             resident.IsSparring = isSparring;
 
-            // What was shot, thrown and drunk in the hall comes back with the kit; wounds close at the door.
+            // What was shot and thrown in the hall comes back with the kit; wounds close at the door. Nothing is drunk or eaten in the hub (AdventurerComponent.OnUseItem).
             if (session.Kit.Version != resident.KitVersion || hasLeftHall)
             {
                 resident.KitVersion = session.Kit.Version;

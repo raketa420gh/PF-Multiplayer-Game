@@ -12,7 +12,7 @@ namespace Game.Scripts.Editor.Dungeon
 {
     /// Builds the hub blockout from the mockup export (Docs/02_Gameplay/HubMockup/export/hub.json, written by tools/export.js):
     /// one prefab with a group per element ID of the mockup, every piece a primitive (cube, cylinder, sphere) or a raw mesh in a
-    /// flat colour, fires as point lights, plus the stations of the UI, the arrival points, the dummy spots and the fencing hall.
+    /// flat colour, fires as point lights, plus the stations of the UI with their models, the arrival points, the dummy spots and the fencing hall.
     /// The scene build takes the prefab as it is, so its pieces can be swapped for models by hand; only Apply Mockup rebuilds it.
     internal static class HubBlockoutBuilder
     {
@@ -103,22 +103,24 @@ namespace Game.Scripts.Editor.Dungeon
         /// three.js candela to a URP point light: the Lambert 1/π, a little under for the brighter grade of the game.
         private const float LightScale = 0.6f / Mathf.PI;
 
-        /// Marker of the mockup → what pressing F there opens. Merchants behind a window or a counter are used from it.
-        private static readonly (string id, HubStation station, int index, string title, string prompt, Vector3 size)[] s_stations =
+        /// Marker of the mockup → what pressing F there opens, and the elements of the mockup that are its model: the crosshair
+        /// on any piece of them finds the station. A merchant behind a window or a counter is the figure and the counter.
+        /// A grille is mostly gaps: with the fill one box over the whole model catches the look between the bars.
+        private static readonly (string id, HubStation station, int index, string title, string prompt, string[] models, bool fill)[] s_stations =
         {
-            ("A3", HubStation.Descent, 0, "Book of Descents", "Open the Book of Descents", new Vector3(1.6f, 2.2f, 1.6f)),
-            ("B2", HubStation.Party, 0, "Party Board", "Read the party board", new Vector3(2.6f, 2.6f, 1.6f)),
-            ("E6", HubStation.Skills, 0, "Skill Rack", "Change perks, skills and spells", new Vector3(1.6f, 2.4f, 2.8f)),
-            ("E7", HubStation.Stash, 0, "Weapon Rack · Stash", "Open the stash", new Vector3(1.6f, 2.4f, 2.8f)),
-            ("F2", HubStation.Stash, 0, "Veinworker's Chest", "Open the stash", new Vector3(1.4f, 1.2f, 1f)),
-            ("F3", HubStation.SharedStash, 0, "Shared Chest", "Open the shared chest", new Vector3(1.4f, 1.2f, 1f)),
-            ("F6", HubStation.Character, 0, "Kit", "Look over the kit", new Vector3(0.9f, 2.2f, 0.9f)),
-            ("G1", HubStation.Road, 0, string.Empty, "Leave for the character select", new Vector3(4.6f, 4.4f, 1.6f)),
-            ("C4.1", HubStation.Merchant, 0, "Halvard Rik · Quartermaster", "Trade with Halvard Rik", new Vector3(2.2f, 2.4f, 2.2f)),
-            ("M2", HubStation.Merchant, 1, "Jutta Kolb · Weaponsmith", "Trade with Jutta Kolb", new Vector3(1.4f, 2.2f, 1.4f)),
-            ("C3.4", HubStation.Merchant, 2, "Oswin Tarn · Armourer", "Trade with Oswin Tarn", new Vector3(2.4f, 2.4f, 2.4f)),
-            ("M4", HubStation.Merchant, 3, "Sister Agneta · Cathedral of Repose", "Trade with Sister Agneta", new Vector3(1.4f, 2.2f, 1.4f)),
-            ("C1.1", HubStation.Appraiser, 0, "Cassian Veit · Appraiser", "Sell to Cassian Veit", new Vector3(2.2f, 2.4f, 2.2f))
+            ("A3", HubStation.Descent, 0, "Book of Descents", "Open the Book of Descents", new[] { "A3" }, false),
+            ("B2", HubStation.Party, 0, "Party Board", "Read the party board", new[] { "B2" }, false),
+            ("E6", HubStation.Skills, 0, "Skill Rack", "Change perks, skills and spells", new[] { "E6" }, false),
+            ("E7", HubStation.Stash, 0, "Weapon Rack · Stash", "Open the stash", new[] { "E7" }, false),
+            ("F2", HubStation.Stash, 0, "Veinworker's Chest", "Open the stash", new[] { "F2" }, false),
+            ("F3", HubStation.SharedStash, 0, "Shared Chest", "Open the shared chest", new[] { "F3" }, false),
+            ("F6", HubStation.Character, 0, "Kit", "Look over the kit", new[] { "F6" }, false),
+            ("G1", HubStation.Road, 0, string.Empty, "Leave for the character select", new[] { "G1" }, true),
+            ("C4.1", HubStation.Merchant, 0, "Halvard Rik · Quartermaster", "Trade with Halvard Rik", new[] { "M1", "C4.1" }, false),
+            ("M2", HubStation.Merchant, 1, "Jutta Kolb · Weaponsmith", "Trade with Jutta Kolb", new[] { "M2" }, false),
+            ("C3.4", HubStation.Merchant, 2, "Oswin Tarn · Armourer", "Trade with Oswin Tarn", new[] { "M3", "C3.4" }, false),
+            ("M4", HubStation.Merchant, 3, "Sister Agneta · Cathedral of Repose", "Trade with Sister Agneta", new[] { "M4" }, false),
+            ("C1.1", HubStation.Appraiser, 0, "Cassian Veit · Appraiser", "Sell to Cassian Veit", new[] { "M5", "C1.1" }, false)
         };
 
         /// Arrival points by the marker they stand at, named after HubArrival (and the gate of the guests).
@@ -145,44 +147,58 @@ namespace Game.Scripts.Editor.Dungeon
 
             GameObject root = new GameObject("HubBlockout");
             Transform geometry = BattleEditorUtility.CreateChild("Geometry", root.transform).transform;
-            Dictionary<string, Transform> groups = new();
-
-            Transform Group(string tag)
-            {
-                if (!groups.TryGetValue(tag, out Transform group))
-                    groups[tag] = group = BattleEditorUtility.CreateChild(tag, geometry).transform;
-
-                return group;
-            }
-
-            foreach (Piece piece in data.meshes.Where(piece => !s_dummies.Contains(piece.t)))
-                CreatePiece(piece, Group(piece.t), materials[piece.m], meshes);
-
-            foreach (Fire fire in data.lights)
-                DungeonPropBuilder.PointLight(Group(fire.t), ToVector(fire.p), new Color(fire.c[0], fire.c[1], fire.c[2]), fire.d, fire.i * LightScale, true);
-
             Dictionary<string, Marker> markers = data.markers.ToDictionary(marker => marker.id);
-            Transform markerRoot = BattleEditorUtility.CreateChild("Markers", root.transform).transform;
-
-            foreach (Marker marker in data.markers)
-                BattleEditorUtility.CreateChild($"{marker.id} {marker.n}", markerRoot, ToVector(marker.p));
-
+            Dictionary<string, Transform> groups = new();
+            // The model of a station lies under the station itself: whatever is put there in its place is found the same way.
+            Dictionary<string, Transform> models = new();
             Transform stations = BattleEditorUtility.CreateChild(Stations, root.transform).transform;
 
-            foreach ((string id, HubStation station, int index, string title, string prompt, Vector3 size) in s_stations)
+            foreach ((string id, HubStation station, int index, string title, string prompt, string[] tags, bool _) in s_stations)
             {
-                GameObject go = BattleEditorUtility.CreateChild(id, stations, ToVector(markers[id].p) + Vector3.up * size.y * 0.5f);
-                go.layer = LayerMask.NameToLayer(StationLayer);
-                BoxCollider volume = go.AddComponent<BoxCollider>();
-                volume.isTrigger = true;
-                volume.size = size;
+                GameObject go = BattleEditorUtility.CreateChild(id, stations, ToVector(markers[id].p));
                 SerializedObject so = new SerializedObject(go.AddComponent<HubStationComponent>());
                 so.FindProperty("_station").enumValueIndex = (int)station;
                 BattleEditorUtility.Set(so, "_index", index);
                 BattleEditorUtility.Set(so, "_title", title);
                 BattleEditorUtility.Set(so, "_prompt", prompt);
                 so.ApplyModifiedPropertiesWithoutUndo();
+
+                foreach (string tag in tags)
+                    models.Add(tag, go.transform);
             }
+
+            Transform Group(string tag)
+            {
+                if (groups.TryGetValue(tag, out Transform group))
+                    return group;
+
+                groups[tag] = group = BattleEditorUtility.CreateChild(tag, models.GetValueOrDefault(tag, geometry)).transform;
+                group.position = Vector3.zero;
+
+                return group;
+            }
+
+            foreach (Piece piece in data.meshes.Where(piece => !s_dummies.Contains(piece.t)))
+                CreatePiece(piece, Group(piece.t), materials[piece.m], meshes, models.ContainsKey(piece.t));
+
+            foreach ((string id, HubStation _, int _, string _, string _, string[] _, bool fill) in s_stations)
+            {
+                Transform station = stations.Find(id);
+
+                if (fill)
+                    Fill(station);
+
+                if (station.GetComponentInChildren<Collider>() == null)
+                    Debug.LogError($"[{nameof(HubBlockoutBuilder)}] Station {id} has no model in the export: nothing to aim at");
+            }
+
+            foreach (Fire fire in data.lights)
+                DungeonPropBuilder.PointLight(Group(fire.t), ToVector(fire.p), new Color(fire.c[0], fire.c[1], fire.c[2]), fire.d, fire.i * LightScale, true);
+
+            Transform markerRoot = BattleEditorUtility.CreateChild("Markers", root.transform).transform;
+
+            foreach (Marker marker in data.markers)
+                BattleEditorUtility.CreateChild($"{marker.id} {marker.n}", markerRoot, ToVector(marker.p));
 
             Dictionary<string, Marker> arrivals = data.spawns.ToDictionary(spawn => spawn.id);
             Transform spawns = BattleEditorUtility.CreateChild(Spawns, root.transform).transform;
@@ -213,7 +229,7 @@ namespace Game.Scripts.Editor.Dungeon
             return prefab;
         }
 
-        private static void CreatePiece(Piece piece, Transform parent, Material material, Mesh[] meshes)
+        private static void CreatePiece(Piece piece, Transform parent, Material material, Mesh[] meshes, bool isStation)
         {
             bool isRaw = piece.k == "raw";
             GameObject go = isRaw ? new GameObject() : GameObject.CreatePrimitive(piece.k == "box" ? PrimitiveType.Cube : piece.k == "cyl" ? PrimitiveType.Cylinder : PrimitiveType.Sphere);
@@ -222,6 +238,10 @@ namespace Game.Scripts.Editor.Dungeon
             go.transform.SetLocalPositionAndRotation(ToVector(piece.p), new Quaternion(piece.q[0], piece.q[1], piece.q[2], piece.q[3]));
             go.transform.localScale = ToVector(piece.s);
             go.isStatic = true;
+
+            // The rim of a station is drawn renderer by renderer: its pieces stay out of the static batch.
+            if (isStation)
+                GameObjectUtility.SetStaticEditorFlags(go, GameObjectUtility.GetStaticEditorFlags(go) & ~StaticEditorFlags.BatchingStatic);
 
             if (isRaw)
             {
@@ -240,16 +260,61 @@ namespace Game.Scripts.Editor.Dungeon
                 renderer.shadowCastingMode = ShadowCastingMode.Off;
 
             // A capsule would round the ends of a post or a drum: cylinders collide as what they are.
-            if (isClutter || piece.k == "cyl")
+            if ((isClutter && !isStation) || piece.k == "cyl")
                 UnityEngine.Object.DestroyImmediate(go.GetComponent<Collider>());
 
-            if (isClutter || piece.nc != 0)
+            bool isSolid = !isClutter && piece.nc == 0;
+
+            if (!isSolid && !isStation)
                 return;
 
-            if (isRaw)
-                go.AddComponent<MeshCollider>().sharedMesh = mesh;
-            else if (piece.k == "cyl")
-                go.AddComponent<MeshCollider>().convex = true;
+            if (isRaw || piece.k == "cyl")
+            {
+                MeshCollider hull = go.AddComponent<MeshCollider>();
+                hull.sharedMesh = mesh;
+                hull.convex = !isRaw || !isSolid;
+            }
+
+            if (isSolid)
+                return;
+
+            // Too small to stop a body, but still a part of what the crosshair rests on.
+            go.GetComponent<Collider>().isTrigger = true;
+            go.layer = LayerMask.NameToLayer(StationLayer);
+        }
+
+        /// One trigger box over the whole model of a station, turned as its first box is.
+        private static void Fill(Transform station)
+        {
+            Quaternion rotation = station.GetComponentInChildren<BoxCollider>().transform.rotation;
+            Quaternion inverse = Quaternion.Inverse(rotation);
+            Bounds bounds = default;
+            bool isEmpty = true;
+
+            foreach (MeshFilter filter in station.GetComponentsInChildren<MeshFilter>())
+            {
+                Bounds local = filter.sharedMesh.bounds;
+
+                for (int corner = 0; corner < 8; corner++)
+                {
+                    Vector3 sign = new Vector3((corner & 1) * 2 - 1, (corner >> 1 & 1) * 2 - 1, (corner >> 2 & 1) * 2 - 1);
+                    Vector3 point = inverse * filter.transform.TransformPoint(local.center + Vector3.Scale(local.extents, sign));
+
+                    if (isEmpty)
+                        bounds = new Bounds(point, Vector3.zero);
+                    else
+                        bounds.Encapsulate(point);
+
+                    isEmpty = false;
+                }
+            }
+
+            GameObject go = BattleEditorUtility.CreateChild("Fill", station);
+            go.layer = LayerMask.NameToLayer(StationLayer);
+            go.transform.SetPositionAndRotation(rotation * bounds.center, rotation);
+            BoxCollider volume = go.AddComponent<BoxCollider>();
+            volume.isTrigger = true;
+            volume.size = bounds.size;
         }
 
         private static Mesh[] CreateMeshes(Geometry[] geometries)
