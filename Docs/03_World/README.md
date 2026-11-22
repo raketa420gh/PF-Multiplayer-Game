@@ -9,3 +9,4 @@
 - `Quests.md`
 - `Extraction.md`
 - `Traps_And_Secrets.md`
+- `Intro_Cinematic.md`

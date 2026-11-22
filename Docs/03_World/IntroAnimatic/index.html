@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marrowdeep — аниматик вступительного ролика</title>
+<style>
+:root { --bg: #0e0f11; --panel: #16181b; --line: #2a2d32; --text: #d9d6cf; --dim: #8b8c8e; --accent: #c9a24a; --cold: #8fd0ff; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; }
+h1 { font: 600 22px/1.2 Georgia, serif; margin: 0 0 4px; letter-spacing: .02em; }
+.lead { color: var(--dim); margin: 0 0 16px; max-width: 78ch; }
+.stage { position: relative; aspect-ratio: 16 / 9; background: #000; overflow: hidden; border: 1px solid var(--line); }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage > div { position: absolute; pointer-events: none; }
+.fade, .flash { inset: 0; opacity: 0; }
+.fade { background: #000; } .flash { background: #fff; }
+.logo { inset: 0; display: grid; place-items: center; opacity: 0; font: 400 clamp(22px, 6.2vw, 78px)/1 Georgia, "Times New Roman", serif; letter-spacing: .32em; text-indent: .32em; color: #e9e4d8; text-shadow: 0 0 28px rgba(0, 0, 0, .9), 0 2px 3px #000; }
+.sub { left: 8%; right: 8%; bottom: 7%; text-align: center; font: 400 clamp(13px, 2.1vw, 25px)/1.35 Georgia, serif; color: #f1ede3; text-shadow: 0 0 8px #000, 0 1px 2px #000; }
+.hud { left: 12px; top: 10px; font: 12px/1.3 Consolas, monospace; color: #fff; text-shadow: 0 0 4px #000; opacity: .85; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 0; }
+button, select { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 6px 12px; font: inherit; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+#play { min-width: 104px; border-color: var(--accent); color: var(--accent); }
+label { color: var(--dim); display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+#clock { font: 14px Consolas, monospace; margin-left: auto; }
+.track { position: relative; height: 34px; background: var(--panel); border: 1px solid var(--line); cursor: pointer; user-select: none; touch-action: none; }
+.track i { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--line); font: normal 11px/34px Consolas, monospace; color: var(--dim); padding-left: 5px; overflow: hidden; white-space: nowrap; }
+.track i.on { background: #23201a; color: var(--accent); }
+.track b { position: absolute; bottom: 0; height: 4px; background: var(--cold); opacity: .55; }
+.track u { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--accent); }
+.keys { color: var(--dim); font-size: 13px; margin: 8px 0 22px; }
+.wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { color: var(--dim); font-weight: 500; white-space: nowrap; }
+td:first-child { font-family: Consolas, monospace; white-space: nowrap; color: var(--dim); }
+tr.on td { background: #1b1915; } tr.on td:first-child { color: var(--accent); }
+tbody tr { cursor: pointer; }
+td q { quotes: "«" "»"; font-family: Georgia, serif; }
+#err { color: #ff8a7a; white-space: pre-wrap; font: 13px Consolas, monospace; }
+body.full main { padding: 0; max-width: none; } body.full main > :not(.stage) { display: none; } body.full .stage { position: fixed; inset: 0; aspect-ratio: auto; border: 0; }
+body.sheet main { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Marrowdeep — вступительный ролик «Договор», аниматик</h1>
+  <p class="lead">Минута по сценарию: площадки собраны из макетов (хаб «Устье», «Ствол Морнхейма», «Погребальные ниши»), люди и реквизит — болванки. Здесь проверяются ракурсы, длины шотов и текст диктора, а не картинка.</p>
+  <div class="stage" id="stage">
+    <canvas id="view"></canvas>
+    <div class="flash" id="flash"></div><div class="fade" id="fade"></div><div class="logo" id="logo">MARROWDEEP</div><div class="sub" id="sub"></div><div class="hud" id="hud"></div>
+  </div>
+  <div class="bar">
+    <button id="play">▶ Играть</button><button id="prev" title="Предыдущий шот">⏮</button><button id="next" title="Следующий шот">⏭</button>
+    <select id="rate" title="Скорость"><option value="1">×1</option><option value="0.5">×0.5</option><option value="0.25">×0.25</option></select>
+    <label><input type="checkbox" id="sound" checked> черновой звук</label>
+    <label><input type="checkbox" id="voice"> голос диктора (синтез)</label>
+    <label><input type="checkbox" id="marks" checked> служебные надписи</label>
+    <button id="fs">На весь экран</button>
+    <span id="clock">0:00.0 / 1:00.0</span>
+  </div>
+  <div class="track" id="track"></div>
+  <p class="keys">Пробел — пуск и пауза · ← → — шот назад и вперёд · , . — кадр назад и вперёд · Home — в начало. Полоска под шотом — реплика диктора. Правки удобно давать по номеру шота или таймкоду.</p>
+  <div class="wrap"><table><thead><tr><th>Шот</th><th>В кадре</th><th>Звук</th><th>Диктор</th></tr></thead><tbody id="rows"></tbody></table></div>
+  <pre id="err"></pre>
+</main>
+<script>
+const ROOMS = {}; window.ATLAS = { room: (name, objects) => { ROOMS[name] = objects; } };
+window.onerror = (m, src, line) => { const e = document.getElementById('err'); e.textContent += `${m} (${(src || '').split('/').pop()}:${line})\n`; document.body.classList.remove('sheet', 'full'); };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="../../LevelMockups/Atlas/data/GreatHallShaft.js"></script>
+<script src="../../LevelMockups/Atlas/data/BurialNiches.js"></script>
+<script src="data/hub.js"></script>
+<script src="sets.js"></script>
+<script src="shots.js"></script>
+<script>
+const $ = id => document.getElementById(id), stage = $('stage'), hash = location.hash;
+const stamp = t => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
+const lineAt = t => (VO.find(v => t >= v[0] && t < v[1]) || [])[2] || '';
+init($('view'));
+
+if (hash.includes('sheet')) {
+  // Раскадровка одним изображением: #sheet или #sheet=1.5,27.3 · &w=320 — ширина кадра · &cols=4
+  const list = (hash.match(/sheet=([\d.,]+)/) || [])[1], times = list ? list.split(',').map(Number) : SHEET;
+  const w = +(hash.match(/w=(\d+)/) || [0, 320])[1], h = w * 9 / 16, cols = +(hash.match(/cols=(\d+)/) || [0, 4])[1];
+  const sheet = document.createElement('canvas'), g = sheet.getContext('2d'); sheet.width = cols * w; sheet.height = Math.ceil(times.length / cols) * h;
+  document.body.classList.add('sheet'); document.body.appendChild(sheet); renderer.setPixelRatio(1); renderer.setSize(w, h, false); camera.aspect = 16 / 9;
+  times.forEach((t, i) => {
+    const x = i % cols * w, y = Math.floor(i / cols) * h, st = frame(t); g.drawImage(renderer.domElement, x, y, w, h);
+    if (st.flash > .01) { g.fillStyle = `rgba(255,255,255,${st.flash})`; g.fillRect(x, y, w, h); }
+    if (st.fade > .01) { g.fillStyle = `rgba(0,0,0,${st.fade})`; g.fillRect(x, y, w, h); }
+    g.font = `${Math.round(w / 26)}px Consolas, monospace`; g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 3;
+    const tag = `${SHOTS[st.shot].id} · ${stamp(t)}${st.logo > .5 ? ' · ЛОГО' : ''}`; g.strokeText(tag, x + 6, y + w / 20); g.fillText(tag, x + 6, y + w / 20);
+    g.strokeStyle = '#444'; g.lineWidth = 1; g.strokeRect(x + .5, y + .5, w - 1, h - 1);
+  });
+  document.title = 'sheet ready';
+} else {
+  let T = 0, playing = false, rate = 1, last = 0, dirty = true, spoken = -1;
+  const track = $('track'), rows = $('rows'), segs = [], trs = [];
+  SHOTS.forEach((s, i) => {
+    const seg = document.createElement('i'); seg.style.left = s.t0 / DUR * 100 + '%'; seg.style.width = (s.t1 - s.t0) / DUR * 100 + '%'; seg.textContent = `${s.id} ${s.name}`; track.appendChild(seg); segs.push(seg);
+    const tr = document.createElement('tr'), said = VO.filter(v => v[0] >= s.t0 && v[0] < s.t1).map(v => `<q>${v[2]}</q>`).join(' ');
+    tr.innerHTML = `<td>${s.id}<br>${stamp(s.t0)}–${stamp(s.t1)}</td><td><b>${s.name}.</b> ${s.pic}</td><td>${s.snd}</td><td>${said || '—'}</td>`; tr.onclick = () => seek(s.t0); rows.appendChild(tr); trs.push(tr);
+  });
+  VO.forEach(v => { const b = document.createElement('b'); b.style.left = v[0] / DUR * 100 + '%'; b.style.width = (v[1] - v[0]) / DUR * 100 + '%'; b.title = v[2]; track.appendChild(b); });
+  const head = document.createElement('u'); track.appendChild(head);
+
+  function resize() { const w = stage.clientWidth, h = stage.clientHeight; renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(w, h, false); camera.aspect = w / h; dirty = true; }
+  function say(text) {
+    if (!$('voice').checked || !window.speechSynthesis) return;
+
+    speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text), ru = speechSynthesis.getVoices().find(v => v.lang.startsWith('ru'));
+    u.lang = 'ru-RU'; u.rate = 1.05 * rate; u.pitch = .7; if (ru) u.voice = ru; speechSynthesis.speak(u);
+  }
+  function setPlaying(on) {
+    if (on && T >= DUR - .05) T = 0;
+    playing = on; last = performance.now(); spoken = VO.findIndex(v => v[0] >= T) - 1; $('play').textContent = on ? '⏸ Пауза' : '▶ Играть';
+    if (on && $('sound').checked) Snd.play(T, rate); else Snd.stop();
+    if (!on && window.speechSynthesis) speechSynthesis.cancel();
+  }
+  function seek(t) { T = Math.min(Math.max(t, 0), DUR); dirty = true; if (playing) setPlaying(true); }
+  function paint() {
+    const st = frame(T), s = SHOTS[st.shot];
+    $('fade').style.opacity = st.fade; $('flash').style.opacity = st.flash; $('logo').style.opacity = st.logo; $('sub').textContent = lineAt(T);
+    $('hud').textContent = $('marks').checked ? `${s.id} ${s.name} · ${stamp(T)}` : ''; $('clock').textContent = `${stamp(T)} / ${stamp(DUR)}`; head.style.left = T / DUR * 100 + '%';
+    segs.forEach((e, i) => e.classList.toggle('on', i === st.shot)); trs.forEach((e, i) => e.classList.toggle('on', i === st.shot));
+  }
+  function tick(now) {
+    if (playing) {
+      T += (now - last) / 1000 * rate; last = now; dirty = true;
+      const due = VO.findIndex((v, i) => i > spoken && T >= v[0]); if (due >= 0) { spoken = due; say(VO[due][2]); }
+      if (T >= DUR) { T = DUR; setPlaying(false); }
+    }
+    if (dirty) { dirty = false; paint(); }
+    requestAnimationFrame(tick);
+  }
+
+  $('play').onclick = () => setPlaying(!playing);
+  $('prev').onclick = () => { const i = shotAt(T); seek(SHOTS[T - SHOTS[i].t0 > .4 || !i ? i : i - 1].t0); };
+  $('next').onclick = () => seek(SHOTS[Math.min(shotAt(T) + 1, SHOTS.length - 1)].t0);
+  $('rate').onchange = e => { rate = +e.target.value; if (playing) setPlaying(true); };
+  $('sound').onchange = () => { if (playing) setPlaying(true); };
+  $('marks').onchange = () => { dirty = true; };
+  $('fs').onclick = () => stage.requestFullscreen && stage.requestFullscreen();
+  const drag = e => { const r = track.getBoundingClientRect(); seek((e.clientX - r.left) / r.width * DUR); };
+  track.onpointerdown = e => { track.setPointerCapture(e.pointerId); drag(e); track.onpointermove = drag; };
+  track.onpointerup = () => { track.onpointermove = null; };
+  addEventListener('keydown', e => {
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+
+    const act = { ' ': () => setPlaying(!playing), ArrowLeft: $('prev').onclick, ArrowRight: $('next').onclick, ',': () => seek(T - 1 / 24), '.': () => seek(T + 1 / 24), Home: () => seek(0) }[e.key];
+    if (act) { e.preventDefault(); act(); }
+  });
+  addEventListener('resize', resize); document.addEventListener('fullscreenchange', resize);
+  // #t=12.5 — открыть на секунде, &full — кадр во всё окно (для снимков)
+  const at = hash.match(/t=([\d.]+)/); if (at) T = +at[1];
+  if (hash.includes('full')) document.body.classList.add('full');
+  resize(); requestAnimationFrame(tick);
+}
+</script>
+</body>
+</html>
