@@ -5,7 +5,8 @@ using UnityEngine;
 namespace Game.Scripts.Dungeon
 {
     /// Training target: blows land on it as on an adventurer and it is whole again the next tick. It may shrug off a share of
-    /// physical and magical damage, and it shows every hit as a number coloured by the kind of damage.
+    /// physical and magical damage, and it shows every hit as a number coloured by the kind of damage, risen from the point
+    /// the blow touched it; a dot stays on that point for a while.
     public sealed class TrainingDummyComponent : NetworkBehaviour, DamageReceiverComponent.IHitModifier
     {
         [SerializeField]
@@ -23,8 +24,17 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private Color _trueColor = new(1f, 0.9f, 0.3f);
 
-        [SerializeField, Tooltip("Numbers rise from this height above the feet")]
+        [SerializeField, Tooltip("Numbers of hits without a contact point rise from this height above the feet")]
         private float _numberHeight = 2f;
+
+        [SerializeField, Tooltip("Numbers start this far off the surface, so the body does not hide them")]
+        private float _numberOffset = 0.12f;
+
+        [SerializeField, Tooltip("Dot left where a blow touched the dummy: a switched off child, copied per hit")]
+        private GameObject _markTemplate;
+
+        [SerializeField]
+        private float _markLifetime = 15f;
 
         [Networked]
         private float _reduction { get; set; }
@@ -69,7 +79,15 @@ namespace Game.Scripts.Dungeon
                 return;
 
             Color color = hit.Type == DamageType.Magical ? _magicalColor : hit.Type == DamageType.True ? _trueColor : _physicalColor;
-            BattleContext.Instance.Feedback.ShowDamage(transform.position + Vector3.up * _numberHeight, hit.Damage, color);
+            bool hasContact = hit.Point != Vector3.zero;
+            BattleContext.Instance.Feedback.ShowDamage(hasContact ? hit.Point + hit.Normal * _numberOffset : transform.position + Vector3.up * _numberHeight, hit.Damage, color);
+
+            if (!hasContact)
+                return;
+
+            GameObject mark = Instantiate(_markTemplate, hit.Point, Quaternion.identity, transform);
+            mark.SetActive(true);
+            Destroy(mark, _markLifetime);
         }
     }
 }

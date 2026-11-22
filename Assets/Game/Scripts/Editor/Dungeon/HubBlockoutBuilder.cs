@@ -198,9 +198,10 @@ namespace Game.Scripts.Editor.Dungeon
 
             GameObject hall = BattleEditorUtility.CreateChild(FencingHall, root.transform, ToVector(data.hall.p));
             hall.transform.localRotation = Quaternion.Euler(0f, data.hall.yaw, 0f);
-            hall.layer = LayerMask.NameToLayer("Ignore Raycast");
+            // Only the box is read (HubDirector.IsInHall). Switched off: a live trigger on the Ignore Raycast layer is standing water to a body and slows it.
             BoxCollider area = hall.AddComponent<BoxCollider>();
             area.isTrigger = true;
+            area.enabled = false;
             area.size = ToVector(data.hall.s);
             area.center = Vector3.up * data.hall.s[1] * 0.5f;
 

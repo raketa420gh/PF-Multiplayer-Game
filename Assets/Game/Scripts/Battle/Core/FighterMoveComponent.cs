@@ -11,6 +11,8 @@ namespace Game.Scripts.Battle
         public Vector3 Velocity => _controller.Velocity;
         public bool IsGrounded => _controller.Grounded;
         public CapsuleCollider Blocker => _blocker;
+        /// Share of the run speed the body may move at right now: the stats, the stance, the direction, the water and what the fighter is doing.
+        public float SpeedShare => _speedShare;
 
         [Networked]
         public float Pitch { get; private set; }
@@ -59,6 +61,7 @@ namespace Game.Scripts.Battle
 
         private static readonly Collider[] s_water = new Collider[1];
         private float _fall;
+        private float _speedShare = 1f;
         private BodyConfig _body;
 
         public override void Spawned()
@@ -107,6 +110,7 @@ namespace Game.Scripts.Battle
 
             float riseSpeed = _controller.Velocity.y;
             _controller.maxSpeed = GetSpeed(move, isWalk) * speedMultiplier * (IsWading() ? _waterMultiplier : 1f);
+            _speedShare = _controller.maxSpeed / _config.RunSpeed;
             _controller.Move(transform.rotation * new Vector3(move.x, 0f, move.y));
 
             // The controller derives velocity from displacement: a step-up or a push out of another capsule would

@@ -5,16 +5,10 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// "Merchants" page of the hub: the merchants on the left, the counter of the chosen one in the middle,
-    /// the purse and the details of the hovered ware on the right. A click buys the ware into the stash.
+    /// Counter of one merchant of the hub, the one whose station the player stands at: its wares, the purse and the details
+    /// of the hovered ware on the right. A click buys the ware into the stash.
     public sealed class MerchantsView : DisplayableView
     {
-        [SerializeField]
-        private Button _merchantButtonPrefab;
-
-        [SerializeField]
-        private RectTransform _merchantsRoot;
-
         [SerializeField]
         private MerchantWareView _warePrefab;
 
@@ -51,14 +45,7 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private Color _idleColor = new(0.62f, 0.58f, 0.5f);
 
-        [SerializeField]
-        private Color _selectedPlate = new(0.34f, 0.26f, 0.13f, 0.97f);
-
-        [SerializeField]
-        private Color _idlePlate = new(0.12f, 0.1f, 0.08f, 0.95f);
-
         private const string DetailsHint = "<color=#9a927f>Hover a ware to inspect it.\nClick to buy it into the stash.</color>";
-        private readonly List<Button> _merchantButtons = new();
         private readonly List<MerchantWareView> _wares = new();
         private PlayerSessionComponent _session;
         private bool _isBuilt;
@@ -85,7 +72,8 @@ namespace Game.Scripts.Dungeon
             if (!_isBuilt)
             {
                 _isBuilt = true;
-                BuildMerchants();
+                _coinsIcon.sprite = _session.Currency.Icon;
+                SelectMerchant(_opened);
             }
 
             _coinsText.text = $"<color=#ffd98c>{_session.Coins}</color> <size=70%>gold</size>";
@@ -113,40 +101,13 @@ namespace Game.Scripts.Dungeon
             _statusText.text = string.Empty;
         }
 
-        private void BuildMerchants()
-        {
-            foreach (Button button in _merchantButtons)
-                Destroy(button.gameObject);
-
-            _merchantButtons.Clear();
-            MerchantConfig[] merchants = _session.Merchants;
-            _coinsIcon.sprite = _session.Currency.Icon;
-
-            for (int i = 0; i < merchants.Length; i++)
-            {
-                int index = i;
-                Button button = Instantiate(_merchantButtonPrefab, _merchantsRoot);
-                button.gameObject.SetActive(true);
-                button.GetComponentInChildren<TMP_Text>().text = $"<b>{merchants[i].DisplayName}</b>\n<size=70%><color=#9a927f>{merchants[i].Wares.Length} wares · {merchants[i].Price} gold each</color></size>";
-                button.onClick.AddListener(() => { Click(); SelectMerchant(index); });
-                _merchantButtons.Add(button);
-            }
-
-            if (merchants.Length > 0)
-                SelectMerchant(Mathf.Clamp(_opened, 0, merchants.Length - 1));
-        }
-
         private void SelectMerchant(int index)
         {
-            MerchantConfig merchant = _session.Merchants[index];
-            _merchant = index;
+            _merchant = Mathf.Clamp(index, 0, _session.Merchants.Length - 1);
+            MerchantConfig merchant = _session.Merchants[_merchant];
             _titleText.text = merchant.DisplayName;
             _titleText.color = merchant.Color;
-            _descriptionText.text = merchant.Description;
-
-            for (int i = 0; i < _merchantButtons.Count; i++)
-                _merchantButtons[i].image.color = i == index ? _selectedPlate : _idlePlate;
-
+            _descriptionText.text = $"{merchant.Description}   <color=#ffd98c>{merchant.Price} gold each</color>";
             SelectFilter(0);
         }
 

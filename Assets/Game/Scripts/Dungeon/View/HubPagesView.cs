@@ -50,6 +50,9 @@ namespace Game.Scripts.Dungeon
             }
 
             _previewStats.Recalculate(config, _session.Kit, null, 0, ClassConfig.PerkCountForLevel(_session.Level), ShapeshiftForm.None, _session.PerkMask);
+            // The body is rebuilt with every change of the build: the sheet follows the one that walks now.
+            AdventurerComponent adventurer = _session.Adventurer;
+            _inventory.SetMove(adventurer != null ? adventurer.Fighter.Move : null);
             _rankText.text = $"Lv\n<size=170%>{_session.Level}</size>";
         }
 

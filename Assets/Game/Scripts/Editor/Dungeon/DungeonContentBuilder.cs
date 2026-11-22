@@ -28,6 +28,9 @@ namespace Game.Scripts.Editor.Dungeon
         public const string MerchantsFolder = ConfigsFolder + "/Merchants";
         public const string ArmorFolder = DungeonPropBuilder.PrefabsFolder + "/Armor";
         public const string DatabasePath = ConfigsFolder + "/ItemDatabase.asset";
+        /// The bag of an adventurer, of the kit it is packed from and of the body it is left on: five rows take the longest weapons upright.
+        private const int BagWidth = 10;
+        private const int BagHeight = 5;
         public const string DungeonConfigPath = ConfigsFolder + "/Dungeon.asset";
         public const string InteractableLayer = "Interactable";
         private const string HelmetModelsFolder = "Assets/Game/Models/Armor";
@@ -751,7 +754,7 @@ namespace Game.Scripts.Editor.Dungeon
             GameObject root = parts.Root;
             BattleEditorUtility.Set(parts.Fighter, "_respawnDelay", 0f);
 
-            InventoryComponent inventory = AddInventory(root, database, 10, 4, true, "Inventory");
+            InventoryComponent inventory = AddInventory(root, database, BagWidth, BagHeight, true, "Inventory");
             InventoryActionsComponent actions = root.AddComponent<InventoryActionsComponent>();
             BattleEditorUtility.Set(actions, "_inventory", inventory);
             StatusEffectComponent effects = root.AddComponent<StatusEffectComponent>();
@@ -1334,7 +1337,7 @@ namespace Game.Scripts.Editor.Dungeon
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
 
-            InventoryComponent inventory = AddInventory(root, database, 10, 4, true, "Inventory");
+            InventoryComponent inventory = AddInventory(root, database, BagWidth, BagHeight, true, "Inventory");
             ContainerComponent container = root.AddComponent<ContainerComponent>();
             SerializedObject so = new SerializedObject(container);
             BattleEditorUtility.Set(so, "_inventory", inventory);
@@ -1432,7 +1435,7 @@ namespace Game.Scripts.Editor.Dungeon
         {
             GameObject root = new GameObject("PlayerSession");
             root.AddComponent<NetworkObject>();
-            InventoryComponent kit = AddInventory(root, database, 10, 4, true, "Kit");
+            InventoryComponent kit = AddInventory(root, database, BagWidth, BagHeight, true, "Kit");
             InventoryComponent[] stashes = new InventoryComponent[PlayerSessionComponent.StashPages];
 
             for (int i = 0; i < stashes.Length; i++)
@@ -1602,6 +1605,12 @@ namespace Game.Scripts.Editor.Dungeon
             SerializedObject dummy = new SerializedObject(root.AddComponent<TrainingDummyComponent>());
             BattleEditorUtility.Set(dummy, "_health", health);
             BattleEditorUtility.Set(dummy, "_receiver", receiver);
+            // The dot a blow leaves where it touched: bright and unlit, seen in the dark hall too.
+            GameObject mark = BattleEditorUtility.CreatePrimitive(PrimitiveType.Sphere, "Mark", root.transform, Vector3.zero, Vector3.zero, Vector3.one * 0.035f,
+                BattleEditorUtility.GetUnlitMaterial("HitMark", new Color(1f, 0.16f, 0.1f)));
+            mark.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mark.SetActive(false);
+            BattleEditorUtility.Set(dummy, "_markTemplate", mark);
             dummy.ApplyModifiedPropertiesWithoutUndo();
             Material linen = BattleEditorUtility.GetMaterial("Mannequin", new Color(0.78f, 0.7f, 0.56f), 0f, 0.15f);
             AnimationClip clip = BattleEditorUtility.LoadLibraryClip("Idle_Loop");

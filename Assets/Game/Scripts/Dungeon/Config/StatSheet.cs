@@ -196,6 +196,14 @@ namespace Game.Scripts.Dungeon
             return $"<color=#{(sign > 0f ? Good : sign < 0f ? Bad : Plain)}>{text}</color>";
         }
 
+        /// The speed a body moves at right now, on the scale of the Move Speed stat.
+        public static string FormatMoveSpeed(float rating)
+        {
+            float sign = Mathf.Round(rating - DungeonFormulas.BaseMoveSpeed);
+
+            return $"<color=#{(sign > 0f ? Good : sign < 0f ? Bad : Plain)}>{rating:0}</color>";
+        }
+
         public static string Describe(AdventurerStats stats, StatId stat)
         {
             s_builder.Clear();

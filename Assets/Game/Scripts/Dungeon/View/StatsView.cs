@@ -1,3 +1,4 @@
+using Game.Scripts.Battle;
 using TMPro;
 using UnityEngine;
 
@@ -27,6 +28,7 @@ namespace Game.Scripts.Dungeon
 
         private readonly Vector3[] _corners = new Vector3[4];
         private AdventurerStats _stats;
+        private FighterMoveComponent _move;
         private StatLabelView _hovered;
 
         private void Awake()
@@ -48,8 +50,9 @@ namespace Game.Scripts.Dungeon
             if (_stats == null)
                 return;
 
+            // The move speed row follows the body: backing off, a strafe, a crouch, a swing or a raised guard show at once.
             foreach (StatLabelView label in _labels)
-                label.SetValue(StatSheet.Format(_stats, label.Stat));
+                label.SetValue(_move != null && label.Stat == StatId.MoveSpeed ? StatSheet.FormatMoveSpeed(DungeonFormulas.BaseMoveSpeed * _move.SpeedShare) : StatSheet.Format(_stats, label.Stat));
 
             for (int i = 0; i < StatSheet.AttributeCount; i++)
                 _chart.SetValue(i, _stats.Attributes.Get((StatType)i) / _chartScale);
@@ -61,6 +64,12 @@ namespace Game.Scripts.Dungeon
         public void Bind(AdventurerStats stats)
         {
             _stats = stats;
+        }
+
+        /// The body whose speed of the moment the move speed row shows; without one it shows the stat.
+        public void SetMove(FighterMoveComponent move)
+        {
+            _move = move;
         }
 
         private void OnHovered(StatLabelView label, bool isHovered)

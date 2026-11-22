@@ -805,7 +805,8 @@ namespace Game.Scripts.Editor.Dungeon
                 Slot(equipPanel, EquipSlot.Utility6, "", 529f, 486f, 78f, 74f, itemPrefab)
             };
 
-            RectTransform bagPanel = CreateRect("BagPanel", panel, new Vector2(0f, 1f), new Vector2(530f, -560f), new Vector2(640f, 290f));
+            // Five rows of the bag and a row of pouch cells under them.
+            RectTransform bagPanel = CreateRect("BagPanel", panel, new Vector2(0f, 1f), new Vector2(530f, -560f), new Vector2(640f, 36f + Cell * 6f + 28f));
             bagPanel.pivot = new Vector2(0f, 1f);
             CreateImage("Back", bagPanel, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, s_panel).rectTransform.StretchFill();
             TMP_Text bagTitle = CreateText("BagTitle", bagPanel, new Vector2(0f, 1f), new Vector2(16f, -8f), new Vector2(300f, 24f), 16f, TextAlignmentOptions.MidlineLeft);
@@ -980,7 +981,7 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static ItemGridView Grid(RectTransform parent, string name, Vector2 position, ItemView itemPrefab, Image cellPrefab)
         {
-            RectTransform rect = CreateRect(name, parent, new Vector2(0f, 1f), position, new Vector2(Cell * 10f, Cell * 4f));
+            RectTransform rect = CreateRect(name, parent, new Vector2(0f, 1f), position, new Vector2(Cell * 10f, Cell * 5f));
             rect.pivot = new Vector2(0f, 1f);
             RectTransform cells = CreateRect("Cells", rect, new Vector2(0f, 1f), Vector2.zero, Vector2.zero);
             cells.pivot = new Vector2(0f, 1f);
@@ -1836,23 +1837,8 @@ namespace Game.Scripts.Editor.Dungeon
                 return title;
             }
 
-            Image list = CreateImage("List", page, new Vector2(0f, 1f), new Vector2(20f, -96f), new Vector2(360f, 964f), Color.white);
-            list.sprite = panelSprite;
-            Title(list.rectTransform, "Merchants", -34f, 23f);
-            CreateImage("Rule", list.rectTransform, top, new Vector2(0f, -76f), new Vector2(290f, 2f), s_frame);
-            RectTransform merchantsRoot = CreateRect("Merchants", list.rectTransform, top, new Vector2(0f, -92f), new Vector2(296f, 800f));
-            VerticalLayoutGroup merchantsLayout = merchantsRoot.gameObject.AddComponent<VerticalLayoutGroup>();
-            merchantsLayout.spacing = 10f;
-            merchantsLayout.childControlHeight = false;
-            merchantsLayout.childForceExpandHeight = false;
-            Button merchantButton = CreateButton("MerchantButton", merchantsRoot, top, Vector2.zero, new Vector2(296f, 72f), string.Empty);
-            TMP_Text merchantLabel = merchantButton.GetComponentInChildren<TMP_Text>();
-            merchantLabel.fontSize = 19f;
-            merchantLabel.alignment = TextAlignmentOptions.MidlineLeft;
-            merchantLabel.margin = new Vector4(16f, 0f, 8f, 0f);
-            merchantButton.gameObject.SetActive(false);
-
-            Image counter = CreateImage("Counter", page, top, new Vector2(-90f, -96f), new Vector2(940f, 964f), Color.white);
+            // One merchant per page, the one the player came to: the counter and the purse stand side by side in the middle.
+            Image counter = CreateImage("Counter", page, top, new Vector2(-270f, -96f), new Vector2(940f, 964f), Color.white);
             counter.sprite = panelSprite;
             TMP_Text title = Title(counter.rectTransform, string.Empty, -30f, 26f);
             title.fontStyle = FontStyles.Bold;
@@ -1916,7 +1902,7 @@ namespace Game.Scripts.Editor.Dungeon
             so.ApplyModifiedPropertiesWithoutUndo();
             wareRect.gameObject.SetActive(false);
 
-            Image purse = CreateImage("Purse", page, Vector2.one, new Vector2(-20f, -96f), new Vector2(520f, 964f), Color.white);
+            Image purse = CreateImage("Purse", page, top, new Vector2(480f, -96f), new Vector2(520f, 964f), Color.white);
             purse.sprite = panelSprite;
             Title(purse.rectTransform, "Your Purse", -34f, 23f);
             Image coinsIcon = CreateImage("CoinsIcon", purse.rectTransform, top, new Vector2(-84f, -84f), new Vector2(64f, 64f), Color.white);
@@ -1934,8 +1920,6 @@ namespace Game.Scripts.Editor.Dungeon
 
             MerchantsView view = page.gameObject.AddComponent<MerchantsView>();
             so = new SerializedObject(view);
-            BattleEditorUtility.Set(so, "_merchantButtonPrefab", merchantButton);
-            BattleEditorUtility.Set(so, "_merchantsRoot", merchantsRoot);
             BattleEditorUtility.Set(so, "_warePrefab", wareView);
             BattleEditorUtility.Set(so, "_waresRoot", waresRoot);
             BattleEditorUtility.Set(so, "_filterButtons", filterButtons);

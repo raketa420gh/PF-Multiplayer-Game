@@ -119,6 +119,12 @@ namespace Game.Scripts.Dungeon
             RefreshSlots();
         }
 
+        /// The body whose speed of the moment the sheet shows.
+        public void SetMove(FighterMoveComponent move)
+        {
+            _statsView.SetMove(move);
+        }
+
         /// The adventurer whose search of the other grid is shown on its unsearched items.
         public void SetSearcher(AdventurerComponent searcher)
         {
