@@ -1,0 +1,234 @@
+{
+ "name": "flangedmace_unequip",
+ "variants": 12,
+ "about": "Wp_Common_Cloth_UnEquip (the only event AM_FlangedMace_Stand_Unequip fires, at 0.033 s; 8 media, quiet: peaks -9..-20 dB): no weapon knock at all, just the stow - a cloth/leather rustle that is up within 50 ms, holds about -8..-12 dB with two or three soft swells to 0.55 s, -20 dB at 0.65-0.85 s, -30 dB by 1.0 s, gone by 1.2 s; 150-1500 Hz lead",
+ "length_ms": 1350,
+ "seed": 61500,
+ "peak_db": -8,
+ "match": 0.85,
+ "fade_ms": 250,
+ "layers": [
+  {
+   "src": "fabric_slices/torm__blanket-movement-*.wav",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 420,
+   "hp": 300
+  },
+  {
+   "src": "fabric_slices/Cloth_0*.wav",
+   "at_ms": [
+    20,
+    60
+   ],
+   "gain_db": [
+    -14,
+    -10
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 380,
+   "hp": 150
+  },
+  {
+   "src": "leather_slices/quiver/*.wav",
+   "at_ms": [
+    60,
+    260
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "hp": 200,
+   "max_ms": 110,
+   "snap": {
+    "hold": [
+     25,
+     40
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   }
+  },
+  {
+   "src": "fabric_slices/rustling_*.wav",
+   "at_ms": [
+    140,
+    220
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 420,
+   "hp": 300
+  },
+  {
+   "src": "leather_slices/sheath/*.wav",
+   "at_ms": [
+    200,
+    300
+   ],
+   "gain_db": [
+    -13,
+    -9
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 350,
+   "hp": 200
+  },
+  {
+   "src": "fabric_slices/torm__blanket-movement-*.wav",
+   "at_ms": [
+    330,
+    430
+   ],
+   "gain_db": [
+    -11,
+    -7
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 380,
+   "hp": 300
+  },
+  {
+   "src": "leather_slices/sheath/*.wav",
+   "at_ms": [
+    380,
+    520
+   ],
+   "gain_db": [
+    -6,
+    -2
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "hp": 200,
+   "max_ms": 100,
+   "snap": {
+    "hold": [
+     20,
+     35
+    ],
+    "tau": [
+     25,
+     35
+    ]
+   },
+   "chance": 0.6
+  },
+  {
+   "src": "fabric_slices/Cloth_0*.wav",
+   "at_ms": [
+    420,
+    520
+   ],
+   "gain_db": [
+    -15,
+    -11
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 300,
+   "hp": 150
+  },
+  {
+   "src": "fabric_slices/rustling_*.wav",
+   "at_ms": [
+    560,
+    680
+   ],
+   "gain_db": [
+    -15,
+    -11
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 450,
+   "hp": 300
+  },
+  {
+   "src": "fabric_slices/torm__blanket-movement-*.wav",
+   "at_ms": [
+    690,
+    780
+   ],
+   "gain_db": [
+    -15,
+    -11
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 300,
+   "hp": 200
+  },
+  {
+   "src": "fabric_slices/rustling_*.wav",
+   "at_ms": [
+    860,
+    930
+   ],
+   "gain_db": [
+    -33,
+    -29
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "max_ms": 220,
+   "hp": 300
+  }
+ ],
+ "shelf": {
+  "hz": 3000,
+  "db": -3
+ },
+ "room": {
+  "db": -34,
+  "decay_ms": 80,
+  "len_ms": 300,
+  "band": [
+   150,
+   6000
+  ]
+ },
+ "reference": "D:/DaD_Sounds/FlangedMace_Review/unequip"
+}

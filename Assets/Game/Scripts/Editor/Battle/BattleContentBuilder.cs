@@ -91,6 +91,7 @@ namespace Game.Scripts.Editor.Battle
             // 1.8 m from the pommel to the point as the footage's: a 33 cm grip, the guard 42 cm wide, the lugs above the ricasso.
             GameObject zweihander = BattleWeaponPrefabBuilder.BuildSword(DungeonWeaponLibrary.Zweihander, 0.09f, 1.43f, 0.044f, 0.42f, 0.33f, SwordStyle.Greatsword);
             GameObject club = DungeonWeaponPrefabBuilder.BuildClub();
+            GameObject flangedMace = DungeonWeaponPrefabBuilder.BuildFlangedMace();
             arrow = BattleWeaponPrefabBuilder.BuildArrow();
             magicOrb = DungeonWeaponPrefabBuilder.BuildMagicOrb();
 
@@ -113,6 +114,7 @@ namespace Game.Scripts.Editor.Battle
                 [DungeonWeaponLibrary.Poniard] = new[] { (poniard, WeaponSocket.LeftHand) },
                 [DungeonWeaponLibrary.Zweihander] = new[] { (zweihander, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.Club] = new[] { (club, WeaponSocket.RightHand) },
+                [DungeonWeaponLibrary.FlangedMace] = new[] { (flangedMace, WeaponSocket.RightHand) },
                 [DungeonWeaponLibrary.SkeletonSword] = new[] { (sword, WeaponSocket.RightHand) },
                 // The torch is the belt item in the hand.
                 [DungeonWeaponLibrary.Torch] = Array.Empty<(GameObject, WeaponSocket)>()

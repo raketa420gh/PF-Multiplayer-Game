@@ -351,6 +351,9 @@ namespace Game.Scripts.Editor.Dungeon
             harness.Sounds = "treasure_l";
             harness.Description = "Breast and back of one steel, arms in plate to the wrist. The great bascinet buckles onto it; the man inside turns like a door.";
             items.Add(harness);
+            // Dark and Darker's flanged mace, its motions taken from footage.
+            items.Add(Weapon("Flanged Mace", DungeonWeaponLibrary.FlangedMace, WeaponClass.Mace, 1, 3, 25f, "Fm", s_steel, 40,
+                "A mace on a wooden haft, its steel head a ring of flanges. Blows that dent plate; the third staggers. Pairs with a shield."));
 
             return items;
         }

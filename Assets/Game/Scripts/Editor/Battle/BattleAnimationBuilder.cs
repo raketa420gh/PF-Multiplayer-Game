@@ -119,6 +119,7 @@ namespace Game.Scripts.Editor.Battle
             ArmingSwordAttacks.Bake(false);
             ZweihanderMotions.Bake();
             ClubMotions.Bake();
+            FlangedMaceMotions.Bake();
             MorningStarAttacks.Bake();
             StaffAttacks.Bake();
             SkeletonSwordMotions.Bake();

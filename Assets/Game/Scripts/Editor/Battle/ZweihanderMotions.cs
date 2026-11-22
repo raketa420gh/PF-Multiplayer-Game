@@ -17,6 +17,7 @@ namespace Game.Scripts.Editor.Battle
 # motion <id> [after <id> <frame|end>] [thrust] [back] frames <n> [windup <f> active <f> peak <f>] [shown <f>] title <Name>
 # key <frame> grip(x y z) blade(x y z) | aim <frame> grip(x y z) -> strike point on the crosshair | idle <frame>
 # to <bow> <turn right> <lean right> | el/le <right/left elbow x y z> | ed <edge x y z> | lh <left hand off the hilt, x y z> | hard <w> | stop
+# reach <share>: the right fist that share of the arm's full length from the shoulder (1 = the elbow all but straight), the grip only says which way
 # body <frame> [h dx dy dz yaw [pitch]] [lf dx dz [yaw [heel]]] [rf dx dz [yaw [heel]]]: the hips off the stance (metres) and the pelvis
 #   turned right / pitched forward (degrees), each foot off its stance, turned right, its heel raised. From the third-person footage;
 #   the keys above stay as the eyes see them, the eyes ride with the body.
@@ -39,29 +40,32 @@ key 31  0.08 1.52 0.41   0.40 0.85 -0.35   to 0 22 0
 key 38  0.06 1.49 0.43   0.25 0.90 -0.36   to 0 22 0
 idle 54
 
-# Attack 1: the blade laid level back over the right shoulder, then a level cut round from the right to the left at the neck.
+# Attack 1: the blade laid level back over the right shoulder, then a level cut round from the right to the left at the neck: the hilt
+# goes out on a wide arc with the right arm long, the blade turns evenly through the crosshair and runs out round the left side.
 motion attack1 frames 120 windup 44 active 15 peak 52 title Attack_1
 idle 0
 key 8   0.14 1.54 0.30   0.15 0.60 -0.80   to 0 36 0
 key 18  0.24 1.62 0.08   0.15 0.05 -0.99   to 0 74 0
 key 31  0.25 1.62 0.07   0.20 0.03 -0.98   to 0 84 0   stop
-key 39  0.29 1.58 0.12   0.50 0.00 -0.87   to 0 74 0
-key 42  0.30 1.56 0.24   0.70 0.00 -0.70   to 1 58 0
-key 44  0.32 1.52 0.34   0.87 0.02 -0.50   to 2 42 0
-key 46  0.31 1.49 0.42   1.00 0.03 0.00    to 2 22 0
-key 48  0.25 1.47 0.48   0.70 0.06 0.70    to 3 8 0
-key 50  0.16 1.46 0.52   0.42 0.10 0.90    to 4 -2 0
-aim 52  0.05 1.46 0.55                     to 4 -10 0
-key 54 -0.08 1.46 0.53  -0.50 0.12 0.86    to 4 -22 0
-key 56 -0.20 1.46 0.47  -0.82 0.08 0.56    to 4 -32 0
-key 58 -0.28 1.45 0.40  -0.95 0.05 0.30    to 4 -40 0
-key 61 -0.33 1.44 0.31  -1.00 0.00 0.00    to 4 -50 0
-key 65 -0.35 1.42 0.25  -0.95 -0.02 -0.30  to 4 -58 0
-key 71 -0.33 1.38 0.23  -0.85 0.00 -0.50   to 4 -62 0
-key 79 -0.27 1.30 0.26  -0.88 0.25 -0.40   to 3 -58 0  stop
-key 89 -0.15 1.30 0.32  -0.55 0.65 -0.50   to 2 -36 0
-key 101 -0.02 1.40 0.40  -0.10 0.90 -0.40   to 1 -6 0
-key 112 0.04 1.47 0.43   0.06 0.88 -0.47   to 0 14 0
+key 38  0.30 1.59 0.12   0.26 0.02 -0.96   to 0 78 0
+key 40  0.37 1.58 0.16   0.40 0.02 -0.92   to 0 70 0
+key 42  0.45 1.57 0.21   0.64 0.03 -0.77   to 1 56 0   reach 0.9
+key 44  0.50 1.56 0.27   0.87 0.05 -0.50   to 2 42 0   reach 0.95
+key 46  0.40 1.53 0.40   0.99 0.08 0.00    to 2 26 0   reach 0.96
+key 48  0.26 1.51 0.50   0.86 0.11 0.50    to 3 12 0   reach 0.97
+key 50  0.08 1.48 0.56   0.50 0.13 0.86    to 4 0 0    reach 0.96
+aim 52 -0.10 1.45 0.56                     to 4 -10 0  reach 0.94
+key 54 -0.16 1.45 0.55  -0.34 0.13 0.93    to 4 -22 0  reach 0.93
+key 56 -0.24 1.45 0.50  -0.61 0.11 0.78    to 4 -34 0  reach 0.9
+key 58 -0.30 1.45 0.43  -0.80 0.09 0.59    to 4 -44 0  reach 0.86
+key 60 -0.33 1.44 0.36  -0.92 0.06 0.37    to 4 -50 0  reach 0.8
+key 62 -0.34 1.44 0.31  -0.98 0.03 0.19    to 4 -54 0  reach 0.75
+key 65 -0.35 1.42 0.26  -1.00 0.00 -0.05   to 4 -58 0  reach 0.7
+key 69 -0.34 1.40 0.24  -0.94 -0.02 -0.34  to 4 -62 0
+key 80 -0.30 1.34 0.24  -0.72 0.02 -0.69   to 3 -60 0
+key 92 -0.27 1.31 0.26  -0.64 0.10 -0.76   to 3 -56 0  stop
+key 103 -0.12 1.38 0.34 -0.35 0.75 -0.56   to 1 -22 0
+key 112 0.03 1.47 0.42   0.05 0.88 -0.47   to 0 12 0
 idle 120
 body 14 h 0.00 -0.05 -0.02 68 0    lf 0 0.05 25    rf 0.03 -0.12 70
 body 37 h 0.00 -0.06 -0.03 74 0
@@ -71,28 +75,33 @@ body 61 h -0.02 -0.08 0.14 -40 6
 body 85 h -0.02 -0.07 0.12 -46 5
 body 100 h 0.00 -0.03 0.05 -15 2   rf 0 0 0 10
 
-# Attack 2: from the first cut's end the blade goes up the left side and behind the head, then a level cut from the left to the right.
+# Attack 2: from the first cut's end the blade goes up the left side and behind the head, then in one even run-up a level cut from the
+# left to the right, the right arm opening to its full length at the crosshair and staying long as the blade runs out to the right.
 motion attack2 after attack1 82 back frames 116 windup 46 active 14 peak 53 title Attack_2
 idle 0
 key 14 -0.20 1.52 0.20  -0.15 0.70 -0.70   to 2 -56 0
 key 22 -0.22 1.60 0.14   0.50 0.30 -0.80   to 0 -62 0
-key 30 -0.22 1.61 0.12   0.65 0.10 -0.75   to 0 -64 0  stop
-key 36 -0.22 1.60 0.12  -0.15 0.05 -0.99   to 0 -62 0
-key 41 -0.25 1.57 0.15  -0.30 0.03 -0.95   to 0 -54 0
-key 44 -0.30 1.54 0.20  -0.70 0.00 -0.70   to 1 -44 0
-key 46 -0.32 1.51 0.25  -0.87 0.02 -0.50   to 2 -32 0
-key 48 -0.31 1.48 0.34  -1.00 0.03 0.00    to 2 -18 0
-key 50 -0.22 1.46 0.44  -0.70 0.06 0.70    to 3 -6 0
-key 52 -0.10 1.46 0.51  -0.40 0.10 0.90    to 4 2 0
-aim 53 -0.02 1.46 0.53                     to 4 6 0
-key 54  0.05 1.46 0.53   0.12 0.14 0.98    to 4 12 0
-key 56  0.16 1.46 0.50   0.50 0.12 0.86    to 4 26 0
-key 58  0.26 1.46 0.44   0.82 0.08 0.56    to 4 40 0
-key 61  0.34 1.45 0.34   1.00 0.02 0.00    to 4 56 0
-key 66  0.37 1.44 0.24   0.95 0.00 -0.30   to 3 72 0
-key 74  0.35 1.42 0.20   0.65 0.35 -0.65   to 2 80 0   stop
-key 84  0.26 1.44 0.28   0.35 0.70 -0.60   to 1 70 0
-key 96  0.14 1.47 0.38   0.16 0.84 -0.50   to 0 44 0
+key 30 -0.22 1.61 0.12   0.69 0.10 -0.72   to 0 -64 0  stop
+key 33 -0.22 1.61 0.12   0.56 0.08 -0.83   to 0 -64 0
+key 36 -0.22 1.60 0.12   0.37 0.06 -0.93   to 0 -62 0
+key 39 -0.24 1.59 0.14   0.10 0.05 -0.99   to 0 -58 0
+key 41 -0.28 1.58 0.18  -0.09 0.04 -1.00   to 0 -52 0
+key 43 -0.34 1.56 0.24  -0.47 0.03 -0.88   to 1 -44 0  reach 0.72
+key 45 -0.40 1.54 0.34  -0.83 0.03 -0.56   to 2 -34 0  reach 0.76
+key 47 -0.30 1.52 0.43  -1.00 0.05 -0.09   to 2 -22 0  reach 0.82
+key 49 -0.16 1.50 0.51  -0.90 0.08 0.44    to 3 -10 0  reach 0.88
+key 51 -0.03 1.49 0.57  -0.53 0.11 0.84    to 4 0 0    reach 0.93
+aim 53  0.10 1.48 0.55                     to 4 6 0    reach 0.96
+key 55  0.25 1.47 0.44   0.34 0.13 0.93    to 4 20 0   reach 0.96
+key 57  0.39 1.46 0.30   0.64 0.11 0.76    to 4 34 0   reach 0.95
+key 59  0.50 1.46 0.20   0.86 0.08 0.50    to 4 46 0   reach 0.94
+key 62  0.54 1.45 0.14   0.98 0.04 0.17    to 4 58 0   reach 0.92
+key 65  0.54 1.45 0.12   1.00 0.02 -0.03   to 3 66 0   reach 0.88
+key 70  0.50 1.44 0.10   0.96 0.00 -0.29   to 3 72 0   reach 0.82
+key 76  0.46 1.43 0.10   0.86 0.02 -0.51   to 2 76 0   reach 0.76
+key 84  0.40 1.42 0.14   0.74 0.10 -0.66   to 2 76 0
+key 94  0.34 1.42 0.20   0.66 0.25 -0.71   to 1 70 0   stop
+key 104 0.22 1.45 0.32   0.42 0.62 -0.66   to 0 48 0
 idle 116
 body 14 h -0.02 -0.07 0.12 -50 5
 body 30 h -0.02 -0.07 0.12 -52 5
@@ -103,20 +112,24 @@ body 61 h 0.03 -0.08 0.14 50 5     rf 0.03 -0.16 55 10
 body 74 h 0.03 -0.07 0.10 62 2     rf 0.03 -0.16 65 0
 body 92 h 0.02 -0.04 0.05 45 0
 
-# Attack 3: the sword comes down level by the right hip, its point ahead, and is driven straight into the crosshair.
+# Attack 3: the sword comes back level by the right ribs, its point ahead, and is driven up into the crosshair: fast at first, slowing
+# to a stop with both arms long.
 motion attack3 after attack2 104 thrust frames 116 windup 50 active 15 peak 58 title Attack_3
 idle 0
-key 12  0.20 1.22 0.30   0.00 0.70 0.70    to 3 50 0
-key 22  0.24 1.10 0.24  -0.04 0.06 1.00    to 5 74 0
-key 37  0.25 1.10 0.20  -0.04 0.06 1.00    to 5 80 0   stop
-key 46  0.25 1.10 0.20  -0.04 0.06 1.00    to 5 80 0   stop
-key 50  0.22 1.20 0.28  -0.08 0.10 0.99    to 5 52 0
-key 54  0.18 1.36 0.40  -0.10 0.14 0.98    to 6 10 0 el 0.40 1.22 0.16
-aim 58  0.14 1.46 0.52                     to 7 -24 0  hard 1 el 0.36 1.30 0.28
-aim 62  0.14 1.47 0.53                     to 7 -26 0  hard 1 stop el 0.36 1.30 0.29
-aim 67  0.15 1.47 0.50                     to 6 -22 0  hard 1 el 0.37 1.30 0.26
-key 74  0.20 1.44 0.36  -0.08 0.08 1.00    to 3 20 0 el 0.42 1.27 0.12
-key 84  0.20 1.42 0.34  -0.05 0.12 0.99    to 2 60 0   stop el 0.42 1.26 0.10
+key 12  0.22 1.30 0.26   0.00 0.70 0.70    to 3 50 0
+key 22  0.28 1.28 0.06  -0.05 0.10 0.99    to 5 74 0
+key 37  0.30 1.30 -0.06 -0.06 0.08 0.99    to 5 80 0   stop
+key 45  0.30 1.31 -0.06 -0.06 0.08 0.99    to 5 80 0   stop
+key 48  0.31 1.34 -0.02 -0.08 0.09 0.99    to 5 70 0
+key 50  0.30 1.38 0.10  -0.09 0.10 0.99    to 6 54 0
+key 52  0.26 1.43 0.33  -0.10 0.11 0.99    to 6 30 0
+key 54  0.21 1.50 0.54  -0.10 0.12 0.99    to 6 6 0
+key 56  0.15 1.55 0.66  -0.10 0.12 0.99    to 6 -14 0
+aim 58  0.10 1.60 0.73                     to 6 -26 0  hard 1
+aim 62  0.10 1.60 0.74                     to 6 -28 0  hard 1 stop
+aim 66  0.11 1.60 0.71                     to 6 -24 0  hard 1
+key 74  0.20 1.44 0.36  -0.08 0.08 1.00    to 3 20 0
+key 84  0.20 1.42 0.34  -0.05 0.12 0.99    to 2 60 0   stop
 key 96  0.14 1.44 0.40   0.00 0.60 0.80    to 1 50 0
 key 108 0.08 1.47 0.43   0.08 0.90 -0.30   to 0 28 0
 idle 116
@@ -146,24 +159,26 @@ key 14  0.08 1.49 0.42  -0.30 0.93 -0.10   to 0 19 0
 idle 20
 
 # Riposte: from the block the right hand takes the sword back over the head, the left hand lets go and comes back to the
-# hilt, then a cut from the upper right down to the lower left.
+# hilt, then a cut from the upper right down to the lower left with the arms long from the crosshair on.
 motion riposte after block end frames 94 windup 24 active 7 peak 27 title Riposte
 idle 0
 key 6   0.14 1.82 0.26  -0.95 0.05 0.30    to -2 12 0   lh -0.14 1.52 0.38
 key 12  0.10 1.84 0.18   0.10 0.10 -0.99   to -4 16 0   lh -0.02 1.70 0.34
-key 16  0.08 1.84 0.18   0.15 0.50 -0.85   to -4 16 0
-key 19  0.08 1.84 0.20   0.20 0.75 -0.63   to -3 14 0
-key 22  0.07 1.77 0.28   0.25 0.95 0.15    to 0 8 0
-key 24  0.05 1.60 0.40   0.35 0.75 0.55    to 4 2 0
-key 26  0.03 1.48 0.47   0.25 0.55 0.80    to 8 -8 0
-aim 27  0.02 1.42 0.50                     to 10 -12 0
-key 28  0.00 1.36 0.50  -0.15 0.08 0.98    to 12 -18 0
-key 30 -0.05 1.22 0.46  -0.40 -0.35 0.85   to 14 -28 0
-key 32 -0.10 1.08 0.40  -0.55 -0.60 0.58   to 15 -36 0
-key 35 -0.20 1.00 0.30  -0.90 -0.30 0.10   to 15 -44 0
-key 40 -0.24 1.00 0.24  -0.85 -0.10 -0.50  to 14 -52 0  stop
-key 62 -0.24 1.00 0.24  -0.85 -0.08 -0.50  to 12 -50 0  stop
-key 74 -0.12 1.20 0.32  -0.60 0.60 -0.40   to 6 -22 0
+key 16  0.08 1.84 0.20   0.15 0.50 -0.85   to -4 16 0
+key 19  0.08 1.82 0.24   0.20 0.78 -0.59   to -3 14 0
+key 22  0.06 1.74 0.36   0.26 0.96 0.10    to 0 8 0
+key 24  0.02 1.60 0.50   0.30 0.83 0.47    to 4 2 0     reach 0.9
+key 26 -0.10 1.48 0.55   0.24 0.50 0.83    to 8 -6 0    reach 0.97
+aim 27 -0.18 1.40 0.56                     to 10 -12 0  reach 1
+key 28 -0.22 1.31 0.52   0.03 -0.05 1.00   to 12 -18 0  reach 1
+key 29 -0.28 1.21 0.45  -0.13 -0.28 0.95   to 13 -24 0  reach 1
+key 30 -0.33 1.11 0.37  -0.28 -0.45 0.85   to 14 -28 0  reach 1
+key 32 -0.36 1.02 0.30  -0.41 -0.71 0.58   to 15 -36 0  reach 0.98 tw 0.5
+key 35 -0.33 0.99 0.25  -0.72 -0.62 0.30   to 15 -44 0  reach 0.98 tw 0.5
+key 38 -0.31 0.99 0.24  -0.86 -0.50 0.10   to 15 -48 0 tw 0.5
+key 42 -0.30 1.00 0.24  -0.88 -0.44 -0.16  to 14 -50 0 tw 0.5  stop
+key 62 -0.30 1.00 0.24  -0.88 -0.42 -0.18  to 12 -48 0 tw 0.5  stop
+key 74 -0.14 1.20 0.32  -0.60 0.60 -0.40   to 6 -22 0
 key 86  0.02 1.42 0.42  -0.05 0.90 -0.42   to 1 10 0
 idle 94
 body 6  h 0 -0.01 -0.02 12 0

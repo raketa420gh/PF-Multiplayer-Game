@@ -40,6 +40,9 @@ namespace Game.Scripts.Editor.Dungeon
         public const string ClubEcu = "ClubEcu";
         /// Monster weapon: the arming sword as a skeleton swings it (SkeletonSwordMotions).
         public const string SkeletonSword = "SkeletonSword";
+        public const string FlangedMace = "FlangedMace";
+        public const string FlangedMaceShield = "FlangedMaceShield";
+        public const string FlangedMaceEcu = "FlangedMaceEcu";
 
         /// Seconds of clip per second of Dark and Darker footage, see Footage.
         public const float FootagePace = 0.75f;
@@ -88,7 +91,7 @@ namespace Game.Scripts.Editor.Dungeon
         public static readonly string[] CatalogOrder =
         {
             SwordShield, Bow, SwordShieldLeft, Fists, ArmingSword, BattleAxe, Crossbow, Staff, MaceShield, Spellbook, RatBite, MorningStar, SwordEcu, MaceEcu, VikingSword, VikingShield, VikingEcu, Torch, Misericorde, MisericordeShield, MisericordeEcu, Poniard,
-            FistsShield, FistsEcu, Zweihander, Club, ClubShield, ClubEcu, SkeletonSword
+            FistsShield, FistsEcu, Zweihander, Club, ClubShield, ClubEcu, SkeletonSword, FlangedMace, FlangedMaceShield, FlangedMaceEcu
         };
 
         /// The entry whose shield is the model of a shield item, by its ShieldIndex: the round shield, the écu.
@@ -111,6 +114,7 @@ namespace Game.Scripts.Editor.Dungeon
             (VikingSword, CreateVikingSword, new[] { VikingShield, VikingEcu }),
             (Misericorde, CreateMisericorde, new[] { MisericordeShield, MisericordeEcu }),
             (Club, CreateClub, new[] { ClubShield, ClubEcu }),
+            (FlangedMace, CreateFlangedMace, new[] { FlangedMaceShield, FlangedMaceEcu }),
             // A shield with the main hand empty (DaD): the right hook alone and the shield's block.
             (Fists, CreateFists, new[] { FistsShield, FistsEcu })
         };
@@ -129,7 +133,7 @@ namespace Game.Scripts.Editor.Dungeon
             ["Bare Hands"] = (1, 1), ["Spellbook"] = (1, 4), ["Rat Bite"] = (1, 1), ["Arming Sword"] = (4, 3), ["Morning Star"] = (6, 3), ["Magic Staff"] = (4, 4),
             ["Round Shield"] = (1, 7), ["Écu"] = (1, 8), ["Battle Axe"] = (7, 4), ["Bow"] = (3, 1), ["Crossbow"] = (5, 1),
             ["Viking Sword"] = (5, 3), ["Torch"] = (2, 1), ["Misericorde"] = (2, 2), ["Poniard"] = (2, 2),
-            ["Zweihander"] = (7, 5), ["Club"] = (5, 2), ["Skeleton Sword"] = (4, 3)
+            ["Zweihander"] = (7, 5), ["Club"] = (5, 2), ["Skeleton Sword"] = (4, 3), ["Flanged Mace"] = (6, 3)
         };
 
         /// A weapon with a shield hits with the weapon's Impact and blocks with the shield's Stability.
@@ -209,7 +213,8 @@ namespace Game.Scripts.Editor.Dungeon
                 CreatePoniard(),
                 CreateZweihander(),
                 CreateClub(),
-                CreateSkeletonSword()
+                CreateSkeletonSword(),
+                CreateFlangedMace()
             };
 
             // Every pair is built from a definition of its own: WithShield changes the poses it is given.
@@ -266,6 +271,25 @@ namespace Game.Scripts.Editor.Dungeon
             club.BlockMove = 0.6f;
 
             return club;
+        }
+
+        /// The flanged mace of Dark and Darker, every motion solved from the footage (FlangedMaceMotions), swung by the right hand
+        /// alone; the third blow of the series staggers.
+        private static WeaponDefinition CreateFlangedMace()
+        {
+            WeaponDefinition mace = FromFootage(FlangedMaceMotions.Read(), FlangedMaceMotions.Spec, new[] { 32, 34, 35 }, 48, 0.7f);
+            mace.Prefix = FlangedMace;
+            mace.DisplayName = "Flanged Mace";
+            mace.Kind = WeaponKind.OneHanded;
+            mace.IsRound = true;
+            mace.Reach = 1.3f;
+            mace.DeflectDuration = 0.6f;
+            mace.Attacks[^1].Stagger = 0.35f;
+            mace.BlockImpact = 0.28f;
+            mace.BlockRecovery = 0.4f;
+            mace.BlockMove = 0.6f;
+
+            return mace;
         }
 
         /// A weapon whose clips are all written from footage (SwordFootage.Bake) over the generated ones. Its definition gives

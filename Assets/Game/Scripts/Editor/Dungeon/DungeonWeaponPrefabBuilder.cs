@@ -228,6 +228,71 @@ namespace Game.Scripts.Editor.Dungeon
             return Save(root);
         }
 
+        /// Dark and Darker's flanged mace, 0.87 m long: a thick hewn wooden haft cut off square at the butt, rougher where the fist
+        /// holds it, one iron ring at its top; over it the iron head, a socket that opens like a tulip into seven flat flanges
+        /// (13 cm across near the top, each drawn out to a knuckle) under a knob with a small point.
+        public static GameObject BuildFlangedMace()
+        {
+            const int flanges = 7;
+            const int steps = 10;
+            const float haft = 0.0175f;
+            float from = FlangedMaceMotions.HeadFrom, to = FlangedMaceMotions.HeadTo, back = FlangedMaceMotions.Back;
+            float socket = from - 0.07f;
+
+            Material iron = WeaponMaterials.Iron;
+            Material steel = WeaponMaterials.Steel;
+            GameObject root = new GameObject("FlangedMace");
+            Transform parent = BattleEditorUtility.CreateChild("Grip", root.transform, Vector3.zero).transform;
+            WeaponMesh mesh = new WeaponMesh();
+            List<Vector3> path = new(steps + 1);
+            List<Vector2> radii = new(steps + 1);
+
+            // A hewn stick: it wanders a hair and is a little thicker toward the butt.
+            for (int i = 0; i <= steps; i++)
+            {
+                float t = (float)i / steps;
+                path.Add(new Vector3(Mathf.Sin(t * 8f) * 0.002f, Mathf.Sin(t * 5f + 1f) * 0.002f, Mathf.Lerp(back, socket + 0.02f, t)));
+                radii.Add(new Vector2(Mathf.Lerp(haft + 0.0015f, haft - 0.001f, t), Mathf.Lerp(haft + 0.0015f, haft - 0.001f, t) * 0.95f));
+            }
+
+            mesh.Tube(WeaponMaterials.DarkWood, path, radii, 9, Vector3.up, WeaponMesh.Hard);
+            // The lower third is rougher and darker under the fist.
+            WeaponParts.Grip(mesh, WeaponMaterials.DarkLeather, back + 0.012f, 0.13f, haft + 0.002f, 0.03f, 0.96f);
+            WeaponParts.Band(mesh, iron, socket, haft + 0.004f, 0.008f, 0.002f);
+            // The socket widens into the core the flanges are forged to; a knob and a small point close it.
+            mesh.Revolve(iron, new[]
+            {
+                new Vector2(socket + 0.006f, haft + 0.001f), new Vector2(from - 0.015f, haft + 0.002f), new Vector2(from + 0.03f, haft + 0.008f), new Vector2(to - 0.04f, haft + 0.014f),
+                new Vector2(to - 0.012f, haft + 0.01f), new Vector2(to, haft - 0.002f)
+            }, flanges * 2);
+            mesh.Revolve(iron, new[]
+            {
+                new Vector2(to - 0.004f, 0.012f), new Vector2(to + 0.006f, 0.016f), new Vector2(to + 0.014f, 0.013f), new Vector2(to + 0.02f, 0.006f),
+                new Vector2(FlangedMaceMotions.Tip, 0.0015f)
+            }, 8);
+
+            // A flange: a flat plate narrow at the socket and widest near the top, cut back to the knob; thick at the root, thin and bright at the rim.
+            Vector2[] outline =
+            {
+                new Vector2(haft, from - 0.012f), new Vector2(haft + 0.012f, from + 0.005f), new Vector2(0.046f, from + 0.055f), new Vector2(0.066f, to - 0.042f),
+                new Vector2(0.058f, to - 0.026f), new Vector2(0.036f, to - 0.008f), new Vector2(haft - 0.004f, to + 0.002f)
+            };
+            float[] thickness = { 0.0045f, 0.004f, 0.0028f, 0.0014f, 0.0016f, 0.003f, 0.0045f };
+            Matrix4x4 matrix = mesh.Matrix;
+
+            for (int i = 0; i < flanges; i++)
+            {
+                mesh.Matrix = matrix * Matrix4x4.Rotate(Quaternion.Euler(0f, 0f, i * 360f / flanges));
+                mesh.Plate(i % 2 == 0 ? iron : steel, outline, thickness, new Vector2(0.03f, (from + to) * 0.5f), 0.0055f);
+            }
+
+            mesh.Matrix = matrix;
+            mesh.Attach(parent, "FlangedMace");
+            root.AddComponent<WeaponVisual>();
+
+            return Save(root);
+        }
+
         /// Below the muzzle line, how far the knuckles of the fist on the crossbow's grip point (degrees): the fist holds the
         /// wrist of the stock as a pistol grip, the stock over the thumb and running on past the knuckles, so a level stock
         /// leaves the wrist straight on a forearm that rises to it.

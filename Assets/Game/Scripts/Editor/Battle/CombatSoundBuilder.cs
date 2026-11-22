@@ -35,10 +35,10 @@ namespace Game.Scripts.Editor.Battle
         };
 
         /// Order is the network id: never reorder, only append.
-        private static readonly string[] s_sets = { "arming", "viking", "axe", "mace", "morning", "staff", "fists", "bow", "dagger", "crossbow", "poniard", "zweihander", "club" };
+        private static readonly string[] s_sets = { "arming", "viking", "axe", "mace", "morning", "staff", "fists", "bow", "dagger", "crossbow", "poniard", "zweihander", "club", "flanged" };
 
         /// A set borrows its parent's takes for the categories it has none of, apart from the parent's own mechanics (a crossbow is not drawn or restocked like a bow).
-        private static readonly Dictionary<string, string> s_parents = new() { ["crossbow"] = "bow", ["poniard"] = "dagger" };
+        private static readonly Dictionary<string, string> s_parents = new() { ["crossbow"] = "bow", ["poniard"] = "dagger", ["flanged"] = "morning" };
         private static readonly HashSet<string> s_unborrowed = new() { "draw", "creak", "hold", "restock" };
 
         /// Item sounds a consumable has no takes of its own for are borrowed from a related material or weapon.
@@ -59,7 +59,7 @@ namespace Game.Scripts.Editor.Battle
         };
 
         /// Share of the trace from the grip that is the haft (WeaponSoundConfig.HandleShare); sets without one never hit with the handle.
-        private static readonly Dictionary<string, float> s_handleShares = new() { ["morning"] = 0.6f, ["zweihander"] = 0.15f, ["club"] = 0.45f };
+        private static readonly Dictionary<string, float> s_handleShares = new() { ["morning"] = 0.6f, ["zweihander"] = 0.15f, ["club"] = 0.45f, ["flanged"] = 0.64f };
 
         /// Categories where the user kept no take borrow the nearest family's.
         private static readonly Dictionary<string, string> s_fallbacks = new()
@@ -78,7 +78,8 @@ namespace Game.Scripts.Editor.Battle
             ["VikingSword"] = "viking", ["VikingEcu"] = "viking", ["VikingShield"] = "viking", ["BattleAxe"] = "axe",
             ["MaceEcu"] = "mace", ["MaceShield"] = "mace", ["MorningStar"] = "morning", ["Staff"] = "staff", ["Fists"] = "fists", ["Bow"] = "bow", ["Crossbow"] = "crossbow",
             ["Misericorde"] = "dagger", ["MisericordeShield"] = "dagger", ["MisericordeEcu"] = "dagger", ["Poniard"] = "poniard",
-            ["Zweihander"] = "zweihander", ["Club"] = "club", ["ClubShield"] = "club", ["ClubEcu"] = "club"
+            ["Zweihander"] = "zweihander", ["Club"] = "club", ["ClubShield"] = "club", ["ClubEcu"] = "club",
+            ["FlangedMace"] = "flanged", ["FlangedMaceShield"] = "flanged", ["FlangedMaceEcu"] = "flanged"
         };
 
         private static readonly Dictionary<string, (ImpactSurface Body, ImpactSurface Block, Footwear Feet)> s_prefabs = new()
