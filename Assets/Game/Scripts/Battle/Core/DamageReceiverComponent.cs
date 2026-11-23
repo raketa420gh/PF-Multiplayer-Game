@@ -104,9 +104,14 @@ namespace Game.Scripts.Battle
         public Vector3 LastHitPoint => _lastHitPoint;
         public Vector3 LastHitPush => _lastHitPush;
         public int LastHitTick => _lastHitTick;
+        /// A hard thing (a clay pot, a crate): a blade that strikes it bounces off as off a wall.
+        public bool IsRigid => _isRigid;
 
         [SerializeField]
         private HealthComponent _health;
+
+        [SerializeField]
+        private bool _isRigid;
 
         [SerializeField]
         private HitboxRoot _hitboxRoot;

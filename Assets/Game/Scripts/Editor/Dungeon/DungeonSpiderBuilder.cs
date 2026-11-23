@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using Fusion;
+using Game.Scripts.Battle;
 using Game.Scripts.Editor.Battle;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -43,6 +45,12 @@ namespace Game.Scripts.Editor.Dungeon
             new[] { new Vector3(0.13f, 0.35f, -0.07f), new Vector3(0.24f, 0.46f, -0.19f), new Vector3(0.31f, 0.27f, -0.39f), new Vector3(0.23f, 0.02f, -0.46f) }
         };
 
+        /// Measured on the mesh: the skull (everything skinned to the body bone ahead of the spine) and the spine tail behind it.
+        private static readonly Bounds s_skull = new(new Vector3(0f, 0.425f, 0.175f), new Vector3(0.31f, 0.37f, 0.55f));
+        private static readonly Bounds s_spine = new(new Vector3(0f, 0.52f, -0.16f), new Vector3(0.08f, 0.12f, 0.1f));
+        /// Half thickness of a leg bone hitbox: the segments are 8-10 cm thick.
+        private const float LegRadius = 0.045f;
+
         private static readonly string[] s_segments = { "Femur", "Tibia", "Tarsus" };
         /// Degrees each segment folds at full Curl: the femur lifts, tibia and tarsus tuck under.
         private static readonly float[] s_curl = { -20f, 65f, 55f };
@@ -64,13 +72,34 @@ namespace Game.Scripts.Editor.Dungeon
             return animator;
         }
 
+        /// Hitboxes on the bones, so they follow the clips: the skull is the head, the spine tail the torso, every leg segment a limb.
+        /// Fusion ignores transform scale: offsets are in mesh units (the model scales them), sizes carry the scale.
+        public static void AddHitboxes(Animator model, HitboxRoot root, int layer, float scale)
+        {
+            Transform body = model.transform.Find("Root/Body");
+            BattleContentBuilder.CreateBoxHitbox(body, root, "Skull", HitZone.Head, s_skull.center - s_body, s_skull.extents * scale, layer);
+            BattleContentBuilder.CreateBoxHitbox(body.Find("Tail"), root, "Spine", HitZone.Torso, s_spine.center - s_tail, s_spine.extents * scale, layer);
+
+            foreach (Leg leg in Legs)
+            {
+                for (int s = 0; s < 3; s++)
+                {
+                    Vector3 segment = leg.Joints[s + 1] - leg.Joints[s];
+                    ZoneHitbox hitbox = BattleContentBuilder.CreateBoxHitbox(model.transform.Find(leg.Path(s)), root, $"{leg.Name}_{s_segments[s]}", HitZone.Legs,
+                        segment * 0.5f, new Vector3(LegRadius, LegRadius, segment.magnitude * 0.5f + LegRadius) * scale, layer);
+                    hitbox.transform.localRotation = Quaternion.LookRotation(segment);
+                }
+            }
+        }
+
         /// The skinned model alone, for previews: Animator without a controller, bones at rest.
         public static GameObject CreateModel()
         {
             GameObject model = new GameObject("BoneSpider");
             Animator animator = model.AddComponent<Animator>();
             animator.applyRootMotion = false;
-            animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+            // The hitboxes ride the bones: the host must pose a spider it does not see.
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             Transform root = BattleEditorUtility.CreateChild("Root", model.transform).transform;
             Transform body = BattleEditorUtility.CreateChild("Body", root, s_body).transform;
             List<Transform> bones = new List<Transform> { body, BattleEditorUtility.CreateChild("Tail", body, s_tail - s_body).transform };

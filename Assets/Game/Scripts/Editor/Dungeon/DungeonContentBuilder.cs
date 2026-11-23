@@ -1220,13 +1220,16 @@ namespace Game.Scripts.Editor.Dungeon
             BattleContentBuilder.SavePrefab(root, Prefab(def.Name));
         }
 
-        /// A small spider on its own animator (rig and clips from DungeonSpiderBuilder): one sphere hitbox over the skull, a short bite ahead of it.
+        /// A small spider on its own animator (rig and clips from DungeonSpiderBuilder): hitboxes on its bones, a bite that sweeps from the feet to the
+        /// knees a metre ahead. Its body config has no spine: the look pitch must not swing the bite about a man's chest.
         private static void BuildSpider(MonsterDef def, GameObject arrow, GameObject orb, ItemDatabase database)
         {
             float scale = def.Scale;
             MonsterConfig config = BuildMonsterConfig(def);
-            BattleContentBuilder.Loadout bite = BuildFixedAttack("SpiderBite", "Bite", 0.85f, new Vector3(0f, 0.45f, 0.15f) * scale, new Vector3(0f, 0.35f, 1.4f) * scale,
-                0.5f, 0.12f, 0.6f, 15, 0.25f);
+            BattleContentBuilder.Loadout bite = BuildFixedAttack("SpiderBite", "Bite", 1f, new Vector3(0f, 0.2f, 0.25f), new Vector3(0f, 0.45f, 1f),
+                0.5f, 0.15f, 0.6f, 15, 0.25f, new Vector3(0f, 0.4f, 0f));
+            // Its sweep grazes the floor: that is no wall to bounce off.
+            BattleEditorUtility.Set(bite.Config, "_ignoresWorld", true);
             BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(new[] { bite }, arrow, orb, 1, def.Name);
             GameObject root = parts.Root;
             Transform rig = parts.Animator.transform;
@@ -1236,32 +1239,37 @@ namespace Game.Scripts.Editor.Dungeon
             Object.DestroyImmediate(root.GetComponent<WeaponViewComponent>());
             Object.DestroyImmediate(rig.gameObject);
             parts.Animator = null;
-            Transform hitboxParent = null;
             int hitboxLayer = 0;
 
             foreach (ZoneHitbox hitbox in root.GetComponentsInChildren<ZoneHitbox>(true))
             {
-                hitboxParent = hitbox.transform.parent;
                 hitboxLayer = hitbox.gameObject.layer;
                 Object.DestroyImmediate(hitbox.gameObject);
             }
 
-            // Fusion hitboxes ignore transform scale: the sphere is sized by hand.
-            ZoneHitbox body = BattleContentBuilder.CreateSphereHitbox(hitboxParent, parts.HitboxRoot, "Body", HitZone.Torso, new Vector3(0f, 0.36f, 0.06f) * scale, 0.36f * scale,
-                hitboxLayer);
+            DungeonSpiderBuilder.AddHitboxes(animator, parts.HitboxRoot, hitboxLayer, scale);
             parts.HitboxRoot.InitHitboxes();
+            BodyConfig bodyConfig = BattleEditorUtility.LoadOrCreate<BodyConfig>($"{ConfigsFolder}/SpiderBody.asset");
+            BattleEditorUtility.Set(bodyConfig, "_spinePivots", new Vector3[0]);
+            BattleEditorUtility.Set(bodyConfig, "_eyePoint", new Vector3(0f, 0.5f, 0.4f) * scale);
+            BattleEditorUtility.Set(bodyConfig, "_crouchDrop", 0f);
             SerializedObject so = new SerializedObject(parts.Body);
-            BattleEditorUtility.Set(so, "_upperHitboxes", new[] { body.transform });
+            BattleEditorUtility.Set(so, "_config", bodyConfig);
+            BattleEditorUtility.Set(so, "_chestPoint", new Vector3(0f, 0.425f, 0.175f) * scale);
+            BattleEditorUtility.Set(so, "_upperHitboxes", new Transform[0]);
             BattleEditorUtility.Set(so, "_lowerHitboxes", new Transform[0]);
             so.ApplyModifiedPropertiesWithoutUndo();
 
+            // The blocker is a column as tall as a man: no spider climbs another, no adventurer steps onto one. Its radius keeps a player's
+            // blocker (r 0.528) off the spider's controller (r 0.18) while the player's controller (r 0.36) rests on it: 0.36 + 0.348 = 0.528 + 0.18,
+            // so a player walking into a spider stops dead and never pushes it, as in DaD.
             CharacterController controller = root.GetComponent<CharacterController>();
             controller.radius = 0.3f * scale;
             controller.height = 0.65f * scale;
             controller.center = new Vector3(0f, 0.33f * scale, 0f);
-            parts.Move.Blocker.radius = 0.4f * scale;
-            parts.Move.Blocker.height = 0.65f * scale;
-            parts.Move.Blocker.center = new Vector3(0f, 0.33f * scale, 0f);
+            parts.Move.Blocker.radius = 0.58f * scale;
+            parts.Move.Blocker.height = 1.85f;
+            parts.Move.Blocker.center = new Vector3(0f, 0.925f, 0f);
 
             so = new SerializedObject(root.AddComponent<CreatureAnimComponent>());
             BattleEditorUtility.Set(so, "_fighter", parts.Fighter);
@@ -1319,6 +1327,8 @@ namespace Game.Scripts.Editor.Dungeon
             hitboxRoot.BroadRadius = 1f;
             hitboxRoot.Offset = Vector3.up * radius;
             BattleContentBuilder.SetupReceiver(receiver, health, hitboxRoot, AssetDatabase.LoadAssetAtPath<HitZoneConfig>($"{BattleEditorUtility.ConfigsFolder}/HitZones.asset"));
+            // Fired clay: a blade bounces off it as off a wall, as in DaD.
+            BattleEditorUtility.Set(receiver, "_isRigid", true);
 
             AudioSource audio = root.AddComponent<AudioSource>();
             audio.playOnAwake = false;
@@ -1355,9 +1365,13 @@ namespace Game.Scripts.Editor.Dungeon
         }
 
         private static BattleContentBuilder.Loadout BuildFixedAttack(string name, string displayName, float reach, Vector3 from, Vector3 to, float windup, float active,
-            float recovery, int damage, float stagger)
+            float recovery, int damage, float stagger, Vector3 sweep = default)
         {
             const string attack = "_attacks.Array.data[0].";
+            // A sweep moves the tip from to - sweep to to + sweep over the active time: the rays fan over the area between.
+            int samples = sweep == Vector3.zero ? 2 : Mathf.CeilToInt((windup + active) * BattleAnimationBuilder.FrameRate) + 1;
+            Vector3[] tips = Enumerable.Range(0, samples)
+                .Select(i => to + sweep * (2f * Mathf.Clamp01((i / BattleAnimationBuilder.FrameRate - windup) / active) - 1f)).ToArray();
             WeaponConfig config = BattleEditorUtility.LoadOrCreate<WeaponConfig>($"{ConfigsFolder}/{name}.asset");
             SerializedObject so = new SerializedObject(config);
             BattleEditorUtility.Set(so, "_displayName", displayName);
@@ -1375,8 +1389,8 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, attack + "_moveMultiplier", 1f);
             BattleEditorUtility.Set(so, attack + "_staggerDuration", stagger);
             BattleEditorUtility.Set(so, attack + "_traceSampleRate", BattleAnimationBuilder.FrameRate);
-            BattleEditorUtility.Set(so, attack + "_traceBase", new[] { from, from });
-            BattleEditorUtility.Set(so, attack + "_traceTip", new[] { to, to });
+            BattleEditorUtility.Set(so, attack + "_traceBase", Enumerable.Repeat(from, samples).ToArray());
+            BattleEditorUtility.Set(so, attack + "_traceTip", tips);
             BattleEditorUtility.Set(so, "_block._canBlock", false);
             so.ApplyModifiedPropertiesWithoutUndo();
 

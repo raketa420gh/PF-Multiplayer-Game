@@ -955,7 +955,7 @@ namespace Game.Scripts.Battle
                     Tag = DamageTag.Melee
                 });
 
-                isDeflected |= result == HitResult.Blocked;
+                isDeflected |= result == HitResult.Blocked || receiver.IsRigid && weapon.IsStoppedByWorld;
             }
 
             if (_hasWorldHit && weapon.IsStoppedByWorld)
