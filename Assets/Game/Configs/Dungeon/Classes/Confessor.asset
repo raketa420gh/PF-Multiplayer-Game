@@ -31,13 +31,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 04dd9acdaf9b83647b1df842bad90bfc, type: 2}
   - {fileID: 11400000, guid: 83e551918d40c6d46a08dd58335d5109, type: 2}
   - {fileID: 11400000, guid: 6bee7b32cf5fe5f439bb54f280dfd989, type: 2}
+  - {fileID: 11400000, guid: d8f286b10af58bf40ba8e0e9cadff723, type: 2}
   _spells:
   - {fileID: 11400000, guid: cf9f965ee78f6c244b6f0489bf2ddb20, type: 2}
   - {fileID: 11400000, guid: e7e885ac6e3c225499e139eaa24a80cb, type: 2}
   - {fileID: 11400000, guid: 65e4d4dfceddf3b469508fb289e7a6fa, type: 2}
   - {fileID: 11400000, guid: 1d867cdf818cb5a4e8f6f46b05f1832a, type: 2}
   - {fileID: 11400000, guid: 222a45ac86b6d4b4cb76cca14b2a3a21, type: 2}
-  - {fileID: 11400000, guid: d8f286b10af58bf40ba8e0e9cadff723, type: 2}
   - {fileID: 11400000, guid: ba95bbd6fb8e0304989dd9cbea7dcb7e, type: 2}
   - {fileID: 11400000, guid: 064cb2bb29f780243a979498889ba729, type: 2}
   - {fileID: 11400000, guid: 47ac215e0af4f814fb068a9f7a09a2ef, type: 2}
@@ -192,13 +192,15 @@ MonoBehaviour:
     _secondEffect: 0
     _secondValue: 0
   - _name: Strength of Faith
-    _description: '+3 Strength.
+    _description: '+5 Strength, -2 Knowledge.
 
-      <i><color=#a89f8a>"Prayed with a mace in hand.
-      Holds better."</color></i>'
+      <i><color=#a89f8a>"Prayed with
+      a mace in hand. Holds better."</color></i>'
     _modifiers:
     - Stat: 0
-      Value: 3
+      Value: 5
+    - Stat: 3
+      Value: -2
     _icon: {fileID: 21300000, guid: e32fbc0c1ef69064f8c8a2eba9719495, type: 3}
     _subclass: 1
     _isPerStack: 0
@@ -207,42 +209,43 @@ MonoBehaviour:
     _secondEffect: 0
     _secondValue: 0
   - _name: Righteous Wrath
-    _description: 'After you take a hit your next attack deals 20% more damage (at
-      most once in 5s).
+    _description: 'After you take physical damage your next weapon attack deals 15%
+      more physical damage (at most once in 12s).
 
-      <i><color=#a89f8a>"You struck. Here''s my answer."</color></i>'
+      <i><color=#a89f8a>"You struck.
+      Here''s my answer."</color></i>'
     _modifiers: []
     _icon: {fileID: 21300000, guid: 0ea1b1b9287bb0840b95f72dac42dd32, type: 3}
     _subclass: 1
     _isPerStack: 0
     _effect: 56
-    _value: 20
+    _value: 15
     _secondEffect: 0
     _secondValue: 0
-  - _name: Blood Tithe
-    _description: 'Every weapon hit heals you for 2% of your health.
+  - _name: Bone Breaker
+    _description: 'Your weapon hits deal 15% more physical damage to the undead.
 
-      <i><color=#a89f8a>"The
-      Cathedral takes a tithe. So do I."</color></i>'
+      <i><color=#a89f8a>"They''ve
+      had their rest. Now they get the mace."</color></i>'
     _modifiers: []
-    _icon: {fileID: 21300000, guid: 5ec62fdd105a48f4aa28ec0dbead9593, type: 3}
+    _icon: {fileID: 21300000, guid: d2c8719d65df4804b9ec419157c15a16, type: 3}
     _subclass: 1
     _isPerStack: 0
     _effect: 57
-    _value: 2
+    _value: 0.15
     _secondEffect: 0
     _secondValue: 0
-  - _name: Blood Prayer
-    _description: 'A prayer without charges can be read for 15% of your health.
+  - _name: Lingering Curse
+    _description: 'Your curses last 50% longer.
 
-      <i><color=#a89f8a>"He
-      lends. The interest is blood."</color></i>'
+      <i><color=#a89f8a>"He forgets
+      nothing."</color></i>'
     _modifiers: []
     _icon: {fileID: 21300000, guid: e93dbc8a23318b74bab379cf7a4547d3, type: 3}
     _subclass: 2
     _isPerStack: 0
     _effect: 58
-    _value: 15
+    _value: 0.5
     _secondEffect: 0
     _secondValue: 0
   - _name: Louder in the Dark
@@ -259,7 +262,7 @@ MonoBehaviour:
     _secondEffect: 0
     _secondValue: 0
   - _name: Rot
-    _description: 'Foes you curse take 10% more damage from everyone.
+    _description: 'Foes you curse lose 10% physical and 10% magical damage reduction.
 
       <i><color=#a89f8a>"Rot
       does not choose."</color></i>'
@@ -271,17 +274,31 @@ MonoBehaviour:
     _value: 10
     _secondEffect: 0
     _secondValue: 0
-  - _name: Take Back
-    _description: 'Killing a cursed foe restores 10% of your health.
+  - _name: Contagion
+    _description: 'When you kill a cursed foe, the curse jumps with the time it had
+      left to the nearest foe within 6m.
 
-      <i><color=#a89f8a>"Given,
-      and taken back."</color></i>'
+      <i><color=#a89f8a>"It does not end
+      with you."</color></i>'
     _modifiers: []
     _icon: {fileID: 21300000, guid: 09b0343ef244c464bbc4ed4a18bd2ad8, type: 3}
     _subclass: 2
     _isPerStack: 0
     _effect: 61
-    _value: 10
+    _value: 6
+    _secondEffect: 0
+    _secondValue: 0
+  - _name: Iron Vestments
+    _description: 'You can wear plate armor.
+
+      <i><color=#a89f8a>"The Cathedral
+      armed its brothers before it taught them to read."</color></i>'
+    _modifiers: []
+    _icon: {fileID: 21300000, guid: aae4103bcd0f34049a16c596a898ae48, type: 3}
+    _subclass: -1
+    _isPerStack: 0
+    _effect: 76
+    _value: 1
     _secondEffect: 0
     _secondValue: 0
   _subclasses:

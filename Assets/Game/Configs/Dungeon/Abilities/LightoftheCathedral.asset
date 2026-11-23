@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: LightoftheCathedral
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Dungeon.AbilityConfig
   _displayName: Light of the Cathedral
-  _description: 'A flash 3m around you: the undead take 18 magical damage and are
-    slowed by 30% for 2s; the living are unharmed.
+  _description: 'A flash 3m around you: everyone in it takes 18 magical damage of
+    light; the undead take double and are slowed by 20% for 2s.
 
     <i><color=#a89f8a>"Look.
     It''s the last thing you''ll see."</color></i>'
@@ -23,7 +23,7 @@ MonoBehaviour:
   _charges: 2
   _cooldown: 1
   _castTime: 0.8
-  _magnitude: 18
+  _magnitude: 36
   _duration: 0
   _radius: 3
   _effect: 6
@@ -33,7 +33,7 @@ MonoBehaviour:
   _projectileCount: 1
   _projectileSpread: 0
   _projectileKind: 1
-  _effectMagnitude: 30
+  _effectMagnitude: 20
   _effectDuration: 2
   _color: {r: 1, g: 0.9, b: 0.55, a: 1}
   _glyph: LC
@@ -55,7 +55,7 @@ MonoBehaviour:
   _secondMagnitude: 0
   _secondDuration: 0
   _isPercentHealth: 0
-  _flags: 576
+  _flags: 1600
   _zone: 0
   _zoneRadius: 0
   _zoneDuration: 0
