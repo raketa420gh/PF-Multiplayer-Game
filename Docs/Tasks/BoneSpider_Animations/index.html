@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Анимации костяного паука</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+body { margin: 0; }
+/* Layout: one column, the clip player on top as the page's main object, then the rig and pot reference below. Palette: crypt stone, bone, ossarite glow. */
+:root {
+  --bg: #f1eee8; --panel: #e4dfd5; --ink: #22201c; --muted: #6b655a; --line: #cfc7b8;
+  --bone: #8a6a3e; --glow: #2f7f86; --stage: #1c1d20;
+  --display: "Alegreya SC", Georgia, serif; --body: "Alegreya Sans", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #16171a; --panel: #212226; --ink: #e9e3d6; --muted: #a39b8b; --line: #34353a;
+  --bone: #d8b884; --glow: #6fd3dc; --stage: #0f1012; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #16171a; --panel: #212226; --ink: #e9e3d6; --muted: #a39b8b; --line: #34353a;
+  --bone: #d8b884; --glow: #6fd3dc; --stage: #0f1012; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 17px/1.55 var(--body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 36px; }
+h1, h2 { font-family: var(--display); font-weight: 700; letter-spacing: .02em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.1; }
+h2 { font-size: 24px; color: var(--bone); }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); }
+header { display: grid; gap: 10px; }
+.eyebrow { font: 600 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--glow); }
+section { display: grid; gap: 14px; }
+
+.player { display: grid; gap: 12px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { font: 500 15px var(--body); padding: 7px 14px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.tab[aria-pressed="true"] { background: var(--bone); border-color: var(--bone); color: var(--bg); }
+.tab:focus-visible, .ctl:focus-visible, input:focus-visible { outline: 2px solid var(--glow); outline-offset: 2px; }
+.stage { position: relative; background: var(--stage); border-radius: 8px; overflow: hidden; aspect-ratio: 16 / 9; max-width: 100%; }
+.stage canvas { width: 100%; height: 100%; display: block; }
+.badge { position: absolute; left: 12px; top: 10px; font: 600 12px var(--mono); color: #e9e3d6; background: rgba(0,0,0,.45); padding: 4px 8px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.ctl { font: 500 14px var(--body); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+.ctl[aria-pressed="true"] { border-color: var(--glow); color: var(--glow); }
+.group { display: flex; gap: 6px; align-items: center; }
+.group span { font: 12px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+#scrub { flex: 1 1 200px; min-width: 0; accent-color: var(--bone); }
+.note { background: var(--panel); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; }
+.note b { color: var(--bone); font-weight: 700; }
+.meta { font: 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.twocol { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+.twocol > * { min-width: 0; }
+.tablebox { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+th { font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+td.n { font: 600 15px var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.hits { display: inline-flex; gap: 3px; vertical-align: middle; }
+.hits i { width: 10px; height: 10px; border-radius: 2px; background: var(--bone); display: inline-block; }
+code { font: 14px var(--mono); }
+ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { .tab, .ctl { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Marrowdeep · моб Bone Spider</div>
+    <h1>Костяной паук</h1>
+    <p class="lead">Модель из Tripo, риг и все клипы собраны кодом (<code>DungeonSpiderBuilder</code>). Ноги стоят на IK: опорная лапа прилипает к полу, пока тело проходит над ней. Кадры отрендерены в Unity, 30 к/с.</p>
+  </header>
+
+  <section class="player" aria-label="Проигрыватель клипов">
+    <div class="tabs" id="tabs" role="group" aria-label="Клип"></div>
+    <div class="stage"><canvas id="cv" width="960" height="540"></canvas><div class="badge" id="badge"></div></div>
+    <div class="controls">
+      <button class="ctl" id="play" type="button">Пауза</button>
+      <div class="group"><span>Скорость</span>
+        <button class="ctl" type="button" data-speed="0.25">¼</button>
+        <button class="ctl" type="button" data-speed="0.5">½</button>
+        <button class="ctl" type="button" data-speed="1" aria-pressed="true">1×</button>
+      </div>
+      <div class="group"><span>Камера</span>
+        <button class="ctl" type="button" data-view="0" aria-pressed="true">¾ спереди</button>
+        <button class="ctl" type="button" data-view="1">Сбоку</button>
+      </div>
+      <input id="scrub" type="range" min="0" max="1" value="0" aria-label="Кадр">
+    </div>
+    <div class="note" id="note"></div>
+  </section>
+
+  <section class="twocol">
+    <div>
+      <h2>Гнездо: горшок на боку</h2>
+      <p>Как Spider Pot в DaD: прочность 4, сопротивление 0. Удар снимает «силу удара по пропам» оружия (Impact Power из DaD). Ударов = ⌈4 / сила⌉. Удар рукоятью не считается, заклинание или ловушка разбивают сразу.</p>
+      <div class="tablebox" style="margin-top:12px">
+        <table>
+          <thead><tr><th>Оружие</th><th style="text-align:right">Сила</th><th>Ударов</th></tr></thead>
+          <tbody id="hits"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="display:grid;gap:14px;align-content:start">
+      <h2>Как работает</h2>
+      <ul>
+        <li>Пока рядом (12 м) есть искатель, из горшка выходят пауки, по одному раз в 1,5 с, максимум 3 живых.</li>
+        <li>Убитого заменяет новый через 6 с, строго по одному: троих разом вернёт через 6, 12 и 18 с.</li>
+        <li>Разбитый горшок превращается в кучу черепков, новых пауков нет, живые остаются.</li>
+        <li>На горшок можно запрыгнуть, как в DaD.</li>
+        <li>Паук: 25 HP, скорость 250, укус 15 урона, каждый укус −15 % скорости на 7 с, до 5 стаков.</li>
+        <li>Звуки сделаны по референсам DaD: SpiderMummy Footstep / Attack / Pain / Death, Pot Damaged Light, Destruction Pot.</li>
+      </ul>
+      <h2>Риг</h2>
+      <p class="meta">20 костей: Body, Tail и по 3 на каждую из 6 лап (Femur, Tibia, Tarsus). Походка: попеременный треножник R1·L2·R3 / L1·R2·L3, шаг 0,3 м, клип на 1,2 м/с, быстрее он проигрывается ускоренно.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+const CLIPS = [
+  { id: "Walk", name: "Ходьба", frames: 16, loop: true, note: "<b>Ходьба.</b> Попеременный треножник: передняя и задняя лапы одной стороны шагают вместе со средней лапой другой. Камера едет за пауком, клетки пола уходят назад, а опорные лапы стоят на месте. Корпус слегка покачивается, хвост-позвоночник виляет." },
+  { id: "Attack", name: "Укус", frames: 37, loop: false, note: "<b>Укус.</b> Замах: корпус отходит назад и вверх, передние лапы поднимаются. Затем череп рывком уходит вперёд и вниз на 16 см и дважды щёлкает. Удар приходится на 45 % клипа, в игре клип растягивается по фазам атаки." },
+  { id: "Idle", name: "Стойка", frames: 61, loop: true, note: "<b>Стойка.</b> Корпус дышит, хвост медленно покачивается, передние лапы по очереди постукивают по полу." },
+  { id: "Death", name: "Смерть", frames: 31, loop: false, note: "<b>Смерть.</b> Тело оседает и заваливается набок, лапы поджимаются под себя, последние подёргивания." },
+  { id: "Hit", name: "Попадание", frames: 10, loop: false, note: "<b>Попадание.</b> Короткий отброс корпуса и хвоста. Играет отдельным слоем, лапы продолжают идти." }
+];
+const WEAPONS = [["Боевой молот DaD (War Maul)", 6, true], ["Утренняя звезда", 5], ["Цвайхендер", 4], ["Дубина", 4], ["Шестопёр", 4], ["Посох", 4], ["Боевой топор", 4], ["Арбалет", 4], ["Меч (Arming)", 3], ["Меч викингов", 3], ["Лук (стрела)", 3], ["Мизерикордия", 2], ["Пуаньяр", 2], ["Факел", 2], ["Кулаки", 1], ["Книга заклинаний", 1]];
+
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+const badge = document.getElementById("badge"), note = document.getElementById("note"), scrub = document.getElementById("scrub"), play = document.getElementById("play");
+const strips = {};
+let clip = CLIPS[0], view = 0, speed = 1, playing = true, t = 0, last = performance.now();
+
+function strip(id, v) {
+  const key = id + "_" + v;
+  if (!strips[key]) { const img = new Image(); img.src = "strips/" + key + ".jpg"; img.onload = draw; strips[key] = img; }
+  return strips[key];
+}
+function count() { return clip.loop ? clip.frames - 1 : clip.frames; }
+function frame() { return Math.min(count() - 1, Math.floor(t * 30)); }
+function draw() {
+  const img = strip(clip.id, view), f = frame();
+  ctx.fillStyle = "#0f1012"; ctx.fillRect(0, 0, cv.width, cv.height);
+  if (img.complete && img.naturalWidth) ctx.drawImage(img, f * 480, 0, 480, 270, 0, 0, cv.width, cv.height);
+  badge.textContent = clip.name + " · кадр " + String(f + 1).padStart(2, "0") + "/" + count() + " · " + (f / 30).toFixed(2) + " с";
+  scrub.max = count() - 1; scrub.value = f;
+}
+function tick(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  if (playing) {
+    t += dt * speed;
+    const len = count() / 30;
+    if (t >= len) t = clip.loop ? t % len : (t > len + 0.6 ? 0 : len - 1 / 60);
+  }
+  draw(); requestAnimationFrame(tick);
+}
+function select(c) {
+  clip = c; t = 0; note.innerHTML = c.note;
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-pressed", b.dataset.id === c.id));
+  strip(c.id, 0); strip(c.id, 1); draw();
+}
+CLIPS.forEach(c => {
+  const b = document.createElement("button");
+  b.className = "tab"; b.type = "button"; b.textContent = c.name; b.dataset.id = c.id;
+  b.addEventListener("click", () => select(c));
+  document.getElementById("tabs").appendChild(b);
+});
+play.addEventListener("click", () => { playing = !playing; play.textContent = playing ? "Пауза" : "Играть"; });
+document.querySelectorAll("[data-speed]").forEach(b => b.addEventListener("click", () => {
+  speed = +b.dataset.speed; document.querySelectorAll("[data-speed]").forEach(x => x.setAttribute("aria-pressed", x === b));
+}));
+document.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => {
+  view = +b.dataset.view; document.querySelectorAll("[data-view]").forEach(x => x.setAttribute("aria-pressed", x === b)); draw();
+}));
+scrub.addEventListener("input", () => { playing = false; play.textContent = "Играть"; t = (+scrub.value + 0.5) / 30; draw(); });
+
+const tb = document.getElementById("hits");
+WEAPONS.forEach(([name, power, ref]) => {
+  const n = Math.ceil(4 / power), tr = document.createElement("tr");
+  tr.innerHTML = `<td>${name}${ref ? ' <span class="meta">(для сравнения, у нас нет)</span>' : ""}</td><td class="n">${power}</td><td><span class="hits">${"<i></i>".repeat(n)}</span> <span class="meta">${n}</span></td>`;
+  tb.appendChild(tr);
+});
+select(CLIPS[0]);
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
