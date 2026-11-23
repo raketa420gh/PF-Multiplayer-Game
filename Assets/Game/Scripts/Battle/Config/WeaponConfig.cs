@@ -265,6 +265,7 @@ namespace Game.Scripts.Battle
         public RangedConfig Ranged => _ranged;
         public DamageType DamageType => _damageType;
         public int Impact => _impact;
+        public int PropPower => _propPower;
         public WeaponSoundConfig Sounds => _sounds;
         public byte SoundId => _sounds != null ? _sounds.Id : (byte)0;
         public bool HasShield => Array.Exists(_attachments, attachment => attachment.Socket is WeaponSocket.RightShield or WeaponSocket.LeftShield);
@@ -344,5 +345,9 @@ namespace Game.Scripts.Battle
         /// How hard the weapon knocks a block, compared with BlockConfig.Stability of the defender.
         [SerializeField, Range(1, 10)]
         private int _impact = 3;
+
+        /// DaD's Impact Power: what one blow takes off a breakable prop's endurance, less the prop's resistance (a spider pot is 4/0).
+        [SerializeField, Range(0, 10)]
+        private int _propPower = 3;
     }
 }

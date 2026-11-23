@@ -1,0 +1,150 @@
+{
+ "name": "spider_death",
+ "about": "DaD Monsters_SpiderMummy_Death: ~1.9 s dying insect shriek - loud and rough for ~1.1 s (peak 0.1-0.9 s, within ~10 dB), then drops to -25..-40 dB where faint bone-leg clicks fold up to ~1.8 s; bright 1.5-10 kHz",
+ "reference": "D:/DaD_Sounds/Monsters_SpiderMummy_Death",
+ "length_ms": 1950,
+ "variants": 10,
+ "seed": 3400,
+ "layers": [
+  {
+   "src": "insect_scream/insectoralien.flac",
+   "at_ms": [
+    0,
+    40
+   ],
+   "gain_db": [
+    -7,
+    -4
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 900,
+   "max_ms": 1150
+  },
+  {
+   "src": "bat_screech/flac/*.flac",
+   "at_ms": [
+    250,
+    550
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -4,
+    -1
+   ],
+   "hp": 1200,
+   "max_ms": 750
+  },
+  {
+   "src": "insect_pack/insect[0-5].ogg",
+   "count": [
+    2,
+    3
+   ],
+   "at_ms": [
+    0,
+    80
+   ],
+   "gap_ms": [
+    300,
+    450
+   ],
+   "until_ms": 800,
+   "gain_db": [
+    -12,
+    -7
+   ],
+   "pitch": [
+    -6,
+    -2
+   ],
+   "hp": 900,
+   "max_ms": 400
+  },
+  {
+   "src": "alien_sounds/alien_hiss.mp3",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    -10,
+    -6
+   ],
+   "pitch": [
+    -3,
+    0
+   ],
+   "hp": 1200
+  },
+  {
+   "src": "bones_rattle/*.ogg",
+   "count": [
+    3,
+    6
+   ],
+   "at_ms": [
+    1150,
+    1300
+   ],
+   "gap_ms": [
+    60,
+    160
+   ],
+   "until_ms": 1800,
+   "gain_db": [
+    -26,
+    -18
+   ],
+   "pitch": [
+    -2,
+    4
+   ],
+   "hp": 600
+  },
+  {
+   "src": "deep_breaks/*.wav",
+   "at_ms": [
+    1080,
+    1200
+   ],
+   "gain_db": [
+    -16,
+    -11
+   ],
+   "pitch": [
+    3,
+    6
+   ],
+   "hp": 40,
+   "lp": 3000,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     40,
+     70
+    ]
+   }
+  }
+ ],
+ "room": {
+  "db": -20,
+  "decay_ms": 140,
+  "len_ms": 600,
+  "band": [
+   800,
+   9000
+  ]
+ },
+ "match": 0.85,
+ "fade_ms": 350,
+ "peak_db": -1
+}

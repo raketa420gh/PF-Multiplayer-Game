@@ -21,6 +21,10 @@ namespace Game.Scripts.Editor.Dungeon
         public const string ClassesFolder = ConfigsFolder + "/Classes";
         public const string AbilitySoundsFolder = "Assets/Game/Audio/Dungeon/Abilities";
         public const string PortalSoundsFolder = "Assets/Game/Audio/Dungeon/Portal";
+        private const string SpiderPotModel = "Assets/Game/Models/Environment/TerracottaPot/TerracottaPot.fbx";
+        private const string PotteryShardsPrefab = "Assets/Game/Prefabs/Dungeon/Tripo/PotteryShards.prefab";
+        /// The bone spider model is a metre across; DaD spider mummies are smaller.
+        private const float SpiderScale = 0.6f;
         private const string CatacombDoorModel = "Assets/Game/Models/Environment/Catacomb/CatacombDoorLeaf/CatacombDoorLeaf";
         private static ItemDatabase s_database;
         public const string LootFolder = ConfigsFolder + "/Loot";
@@ -96,6 +100,9 @@ namespace Game.Scripts.Editor.Dungeon
                 Voice = DungeonSound.Screech, Charge = 900f }, arrow, orb, database);
             BuildJuggernaut(new MonsterDef { Name = "Juggernaut", DisplayName = "Iron Juggernaut", Health = 220, Damage = 1f, MoveSpeed = 190f, ActionSpeed = 0.8f, Aggro = 12f, Experience = 60, Loot = loot["Monster"], Scale = 1f,
                 Voice = DungeonSound.Growl }, arrow, orb, database);
+            BuildSpider(new MonsterDef { Name = "BoneSpider", DisplayName = "Bone Spider", Health = 25, Damage = 1f, MoveSpeed = 250f, ActionSpeed = 1f, Aggro = 10f, Experience = 5,
+                Scale = SpiderScale, HitSlow = 15f }, arrow, orb, database);
+            BuildSpiderPot();
 
             BuildFigures();
             BuildSession(database, classes, config, BuildMerchants(database));
@@ -972,6 +979,7 @@ namespace Game.Scripts.Editor.Dungeon
             public bool IsBoss;
             public float Lunge;
             public float Charge;
+            public float HitSlow;
             public DungeonSound Voice = DungeonSound.Rattle;
             public float Armor = -0.22f;
             public (ArmorVisual, Color)[] Attachments = System.Array.Empty<(ArmorVisual, Color)>();
@@ -1074,6 +1082,7 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_isBoss", def.IsBoss);
             BattleEditorUtility.Set(so, "_lungeImpulse", def.Lunge);
             BattleEditorUtility.Set(so, "_chargeSpeed", def.Charge);
+            BattleEditorUtility.Set(so, "_hitSlow", def.HitSlow);
             BattleEditorUtility.Set(so, "_attackPause", def.IsBoss ? new Vector2(0.4f, 0.9f) : new Vector2(0.7f, 1.6f));
             BattleEditorUtility.Set(so, "_voice", def.Voice);
             SerializedProperty attachments = so.FindProperty("_attachments");
@@ -1209,6 +1218,125 @@ namespace Game.Scripts.Editor.Dungeon
             AddMonsterLogic(parts, def, config, database, null, new Vector3(0f, 0.4f, -0.3f), new Vector3(1.6f, 0.8f, 3f));
             BattleEditorUtility.Set(root.AddComponent<FootstepComponent>(), "_fighter", parts.Fighter);
             BattleContentBuilder.SavePrefab(root, Prefab(def.Name));
+        }
+
+        /// A small spider on its own animator (rig and clips from DungeonSpiderBuilder): one sphere hitbox over the skull, a short bite ahead of it.
+        private static void BuildSpider(MonsterDef def, GameObject arrow, GameObject orb, ItemDatabase database)
+        {
+            float scale = def.Scale;
+            MonsterConfig config = BuildMonsterConfig(def);
+            BattleContentBuilder.Loadout bite = BuildFixedAttack("SpiderBite", "Bite", 0.85f, new Vector3(0f, 0.45f, 0.15f) * scale, new Vector3(0f, 0.35f, 1.4f) * scale,
+                0.5f, 0.12f, 0.6f, 15, 0.25f);
+            BattleContentBuilder.FighterParts parts = BattleContentBuilder.CreateFighter(new[] { bite }, arrow, orb, 1, def.Name);
+            GameObject root = parts.Root;
+            Transform rig = parts.Animator.transform;
+            BattleEditorUtility.Set(parts.Fighter, "_respawnDelay", 0f);
+            Animator animator = DungeonSpiderBuilder.Attach(rig.parent, rig.gameObject.layer, scale);
+            Object.DestroyImmediate(root.GetComponent<FighterAnimComponent>());
+            Object.DestroyImmediate(root.GetComponent<WeaponViewComponent>());
+            Object.DestroyImmediate(rig.gameObject);
+            parts.Animator = null;
+            Transform hitboxParent = null;
+            int hitboxLayer = 0;
+
+            foreach (ZoneHitbox hitbox in root.GetComponentsInChildren<ZoneHitbox>(true))
+            {
+                hitboxParent = hitbox.transform.parent;
+                hitboxLayer = hitbox.gameObject.layer;
+                Object.DestroyImmediate(hitbox.gameObject);
+            }
+
+            // Fusion hitboxes ignore transform scale: the sphere is sized by hand.
+            ZoneHitbox body = BattleContentBuilder.CreateSphereHitbox(hitboxParent, parts.HitboxRoot, "Body", HitZone.Torso, new Vector3(0f, 0.36f, 0.06f) * scale, 0.36f * scale,
+                hitboxLayer);
+            parts.HitboxRoot.InitHitboxes();
+            SerializedObject so = new SerializedObject(parts.Body);
+            BattleEditorUtility.Set(so, "_upperHitboxes", new[] { body.transform });
+            BattleEditorUtility.Set(so, "_lowerHitboxes", new Transform[0]);
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            CharacterController controller = root.GetComponent<CharacterController>();
+            controller.radius = 0.3f * scale;
+            controller.height = 0.65f * scale;
+            controller.center = new Vector3(0f, 0.33f * scale, 0f);
+            parts.Move.Blocker.radius = 0.4f * scale;
+            parts.Move.Blocker.height = 0.65f * scale;
+            parts.Move.Blocker.center = new Vector3(0f, 0.33f * scale, 0f);
+
+            so = new SerializedObject(root.AddComponent<CreatureAnimComponent>());
+            BattleEditorUtility.Set(so, "_fighter", parts.Fighter);
+            BattleEditorUtility.Set(so, "_animator", animator);
+            BattleEditorUtility.Set(so, "_attackImpact", DungeonSpiderBuilder.AttackImpact);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            AddMonsterLogic(parts, def, config, database, null, new Vector3(0f, 0.2f, 0f), new Vector3(0.9f, 0.5f, 0.9f));
+            FootstepComponent steps = root.AddComponent<FootstepComponent>();
+            BattleEditorUtility.Set(steps, "_fighter", parts.Fighter);
+            BattleEditorUtility.Set(steps, "_stride", DungeonSpiderBuilder.StepStride * scale);
+            BattleContentBuilder.SavePrefab(root, Prefab(def.Name));
+        }
+
+        /// The spider nest stand-in: the clay pot on its side, mouth to +Z; spiders come out of the mouth, the pot shatters into a heap of shards.
+        private static void BuildSpiderPot()
+        {
+            const float scale = 0.7f;
+            const float radius = 0.46f * scale;
+            GameObject root = new GameObject("SpiderPot");
+            root.AddComponent<NetworkObject>();
+            root.AddComponent<NetworkTransform>();
+            HealthComponent health = root.AddComponent<HealthComponent>();
+            HitboxRoot hitboxRoot = root.AddComponent<HitboxRoot>();
+            DamageReceiverComponent receiver = root.AddComponent<DamageReceiverComponent>();
+
+            GameObject whole = BattleEditorUtility.CreateChild("Whole", root.transform);
+            GameObject pot = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(SpiderPotModel), whole.transform);
+            PrefabUtility.UnpackPrefabInstance(pot, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            // The model stands on its base with the mouth up: laid down, the mouth faces +Z and the belly rests on the floor.
+            pot.transform.SetLocalPositionAndRotation(new Vector3(0f, radius, -0.5f * scale), Quaternion.Euler(90f, 0f, 0f) * pot.transform.localRotation);
+            pot.transform.localScale = Vector3.one * scale;
+            // Stops bodies (and can be stood on, as in DaD), not blades: the character layer is outside the weapons' hit mask.
+            CapsuleCollider shell = whole.AddComponent<CapsuleCollider>();
+            shell.direction = 2;
+            shell.center = new Vector3(0f, radius, 0f);
+            shell.radius = radius;
+            shell.height = scale;
+            whole.layer = LayerMask.NameToLayer(BattleEditorUtility.CharacterLayer);
+
+            GameObject shards = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(PotteryShardsPrefab), root.transform);
+            PrefabUtility.UnpackPrefabInstance(shards, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            shards.name = "Shards";
+            shards.transform.localScale = Vector3.one * 1.3f;
+
+            foreach (Collider collider in shards.GetComponentsInChildren<Collider>())
+                Object.DestroyImmediate(collider);
+
+            shards.SetActive(false);
+            Transform mouth = BattleEditorUtility.CreateChild("Mouth", root.transform, new Vector3(0f, 0f, 0.5f * scale + 0.3f)).transform;
+
+            int hitboxLayer = LayerMask.NameToLayer(BattleEditorUtility.HitboxLayer);
+            Transform hitboxes = BattleEditorUtility.CreateChild("Hitboxes", root.transform).transform;
+            BattleContentBuilder.CreateBoxHitbox(hitboxes, hitboxRoot, "Pot", HitZone.Torso, new Vector3(0f, radius, 0f), new Vector3(radius, radius, 0.5f * scale), hitboxLayer);
+            hitboxRoot.InitHitboxes();
+            hitboxRoot.BroadRadius = 1f;
+            hitboxRoot.Offset = Vector3.up * radius;
+            BattleContentBuilder.SetupReceiver(receiver, health, hitboxRoot, AssetDatabase.LoadAssetAtPath<HitZoneConfig>($"{BattleEditorUtility.ConfigsFolder}/HitZones.asset"));
+
+            AudioSource audio = root.AddComponent<AudioSource>();
+            audio.playOnAwake = false;
+            audio.spatialBlend = 1f;
+            audio.rolloffMode = AudioRolloffMode.Linear;
+            audio.minDistance = 2f;
+            audio.maxDistance = 25f;
+
+            SerializedObject so = new SerializedObject(root.AddComponent<SpiderNestComponent>());
+            BattleEditorUtility.Set(so, "_health", health);
+            BattleEditorUtility.Set(so, "_receiver", receiver);
+            BattleEditorUtility.Set(so, "_spider", AssetDatabase.LoadAssetAtPath<NetworkObject>(Prefab("BoneSpider")));
+            BattleEditorUtility.Set(so, "_mouth", mouth);
+            BattleEditorUtility.Set(so, "_whole", whole);
+            BattleEditorUtility.Set(so, "_shards", shards);
+            BattleEditorUtility.Set(so, "_audio", audio);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            BattleContentBuilder.SavePrefab(root, Prefab("SpiderPot"));
         }
 
         /// The ram is not a swing of an animated weapon: its trace is a short ray ahead of the head, authored here.

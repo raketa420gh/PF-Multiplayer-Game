@@ -20,6 +20,12 @@ MonoBehaviour:
   - _prefab: {fileID: 583914697113205583, guid: 9af97d6f2153cb24584253867bf5ebe3, type: 3}
     _socket: 0
   _deflectDuration: 0.9
+  _ignoresWorld: 0
+  _isBareHands: 0
+  _equipTime: 0
+  _equipShown: 0
+  _unequipTime: 0
+  _unequipHidden: 0
   _reach: 1.65
   _attacks:
   - _windupTime: 0.75000006
@@ -719,6 +725,7 @@ MonoBehaviour:
     - {x: 0.6209513, y: 1.9682014, z: 0.50701684}
     - {x: 0.61783236, y: 1.9700519, z: 0.50666124}
     - {x: 0.6177645, y: 1.9700923, z: 0.5066532}
+  _comboCooldown: 1
   _hasRiposte: 1
   _riposte:
     _windupTime: 0.62500006
@@ -929,6 +936,8 @@ MonoBehaviour:
     _fullDrawTime: 0.9
     _reloadTime: 0.6
     _isManualReload: 0
+    _quiverSize: 0
+    _restockTime: 2.5
     _minSpeed: 14
     _maxSpeed: 30
     _minDamage: 14
@@ -940,3 +949,4 @@ MonoBehaviour:
   _sounds: {fileID: 11400000, guid: d6a276c2318e5e64788c1b8ceada4ac0, type: 2}
   _damageType: 0
   _impact: 7
+  _propPower: 4

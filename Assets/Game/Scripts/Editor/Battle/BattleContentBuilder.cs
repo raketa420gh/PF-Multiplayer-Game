@@ -190,6 +190,7 @@ namespace Game.Scripts.Editor.Battle
             (int impact, int stability) = DungeonWeaponLibrary.Force(definition.DisplayName);
             BattleEditorUtility.Set(so, "_impact", impact);
             BattleEditorUtility.Set(so, "_block._stability", stability);
+            BattleEditorUtility.Set(so, "_propPower", DungeonWeaponLibrary.PropPower(definition.DisplayName));
 
             so.FindProperty("_attachments").arraySize = attachments.Length;
 

@@ -18,6 +18,12 @@ MonoBehaviour:
   _animationPrefix: Torch
   _attachments: []
   _deflectDuration: 0.5
+  _ignoresWorld: 0
+  _isBareHands: 0
+  _equipTime: 0
+  _equipShown: 0
+  _unequipTime: 0
+  _unequipHidden: 0
   _reach: 1.05
   _attacks:
   - _windupTime: 0.37500003
@@ -254,6 +260,7 @@ MonoBehaviour:
     - {x: -0.2552728, y: 1.8474162, z: 0.59664094}
     - {x: -0.25827634, y: 1.8483803, z: 0.59562576}
     - {x: -0.25827634, y: 1.8483803, z: 0.59562576}
+  _comboCooldown: 1
   _hasRiposte: 0
   _riposte:
     _windupTime: 0.3
@@ -282,6 +289,8 @@ MonoBehaviour:
     _fullDrawTime: 0.9
     _reloadTime: 0.6
     _isManualReload: 0
+    _quiverSize: 0
+    _restockTime: 2.5
     _minSpeed: 14
     _maxSpeed: 30
     _minDamage: 14
@@ -293,3 +302,4 @@ MonoBehaviour:
   _sounds: {fileID: 0}
   _damageType: 0
   _impact: 2
+  _propPower: 2

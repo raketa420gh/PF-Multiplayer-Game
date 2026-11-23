@@ -6,7 +6,7 @@ const GAME_POOL = ENTRIES.filter(r => r.pool && r.name !== M.key).map(r => r.nam
 const OBJECT_NAMES = {
   Floor: 'Пол', Wall: 'Стена', 'Wall Column': 'Колонна', 'Wall Upper': 'Верх стены', Ceiling: 'Потолок', Platform: 'Платформа', Stairs: 'Лестница', 'Pit Wall': 'Стенка ямы', Bars: 'Решётка',
   Sword: 'Мечник', Archer: 'Лучник', Crossbow: 'Арбалетчик', Warrior: 'Воин', Mage: 'Маг', Skull: 'Череп', Barrel: 'Бочка', Coffin: 'Гроб', Crate: 'Ящик', GoldenChest: 'Золотой сундук',
-  LargeOakChest: 'Большой сундук', SmallOakChest: 'Малый сундук', Urn: 'Урна', GoldPile: 'Куча золота', Spike: 'Шипы', Blade: 'Маятник', Vent: 'Пыльный продув', Collapse: 'Обрушение',
+  LargeOakChest: 'Большой сундук', SmallOakChest: 'Малый сундук', Urn: 'Урна', GoldPile: 'Куча золота', Spike: 'Шипы', Blade: 'Маятник', SpiderPot: 'Паучий горшок', Vent: 'Пыльный продув', Collapse: 'Обрушение',
   ArrowGallery: 'Стрельчатая галерея', HallMachinery: 'Механизм зала', AcidMoat: 'Кислотный ров', BridgeLever: 'Рычаг моста', SecretLever: 'Рычаг тайника', SecretDoor: 'Потайная плита', Start: 'Старт', Spot: 'Место старта', Torch: 'Факел', Candle: 'Свечи',
   Brazier: 'Жаровня', Fire: 'Костёр', Acid: 'Кислотный свет', Shaft: 'Луч из пролома', Chandelier: 'Люстра'
 };

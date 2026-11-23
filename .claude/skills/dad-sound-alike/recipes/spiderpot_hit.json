@@ -1,0 +1,131 @@
+{
+ "name": "spiderpot_hit",
+ "about": "DaD Objects_Pot_Damaged_Light: clay pot hit that does not break - a faint pre-tick, the bright ceramic knock ~0.2 s in, then 2-4 small chip/rattle clinks 10-20 dB lower until ~0.5 s, silent tail; 1.5-24 kHz bright, little under 150 Hz",
+ "reference": "D:/DaD_Sounds/Objects_Pot_Damaged_Light",
+ "length_ms": 950,
+ "variants": 10,
+ "seed": 3500,
+ "layers": [
+  {
+   "src": "cc0_100/dishes_0*.ogg",
+   "at_ms": [
+    180,
+    210
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -2,
+    2
+   ],
+   "hp": 250,
+   "snap": {
+    "hold": [
+     15,
+     25
+    ],
+    "tau": [
+     40,
+     70
+    ]
+   }
+  },
+  {
+   "src": "cc0_100/pot_0*.ogg",
+   "at_ms": [
+    178,
+    208
+   ],
+   "gain_db": [
+    -12,
+    -8
+   ],
+   "pitch": [
+    0,
+    3
+   ],
+   "hp": 120,
+   "snap": {
+    "hold": [
+     8,
+     14
+    ],
+    "tau": [
+     20,
+     35
+    ]
+   }
+  },
+  {
+   "src": "sfx_breaking/bfh1_hit_0[59].ogg",
+   "at_ms": [
+    20,
+    70
+   ],
+   "gain_db": [
+    -30,
+    -22
+   ],
+   "pitch": [
+    2,
+    6
+   ],
+   "hp": 1000,
+   "chance": 0.8,
+   "max_ms": 120
+  },
+  {
+   "src": "sfx_breaking/bfh1_misc_0[457].ogg",
+   "count": [
+    2,
+    5
+   ],
+   "at_ms": [
+    250,
+    310
+   ],
+   "gap_ms": [
+    50,
+    110
+   ],
+   "until_ms": 560,
+   "gain_db": [
+    -12,
+    -4
+   ],
+   "pitch": [
+    1,
+    6
+   ],
+   "hp": 600,
+   "snap": {
+    "hold": [
+     10,
+     20
+    ],
+    "tau": [
+     35,
+     60
+    ]
+   }
+  }
+ ],
+ "shelf": {
+  "hz": 9000,
+  "db": 10
+ },
+ "room": {
+  "db": -26,
+  "decay_ms": 70,
+  "len_ms": 300,
+  "band": [
+   600,
+   9000
+  ]
+ },
+ "match": 0.85,
+ "fade_ms": 250,
+ "peak_db": -1
+}

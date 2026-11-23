@@ -1,0 +1,202 @@
+{
+ "name": "spider_step",
+ "about": "DaD Monsters_SpiderMummy_Footstep: 3-4 quick dry bone-leg ticks 80-130 ms apart over 0.35 s, a faint twig-crisp scratch under them, very bright (4-24 kHz), each tick dies in ~40 ms",
+ "reference": "D:/DaD_Sounds/Monsters_SpiderMummy_Footstep",
+ "length_ms": 380,
+ "variants": 12,
+ "seed": 3100,
+ "layers": [
+  {
+   "src": "bones_rattle/*.ogg",
+   "at_ms": [
+    2,
+    6
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    2,
+    6
+   ],
+   "hp": 250,
+   "snap": {
+    "hold": [
+     3,
+     6
+    ],
+    "tau": [
+     6,
+     10
+    ]
+   }
+  },
+  {
+   "src": "bones_rattle/*.ogg",
+   "count": [
+    2,
+    3
+   ],
+   "at_ms": [
+    80,
+    120
+   ],
+   "gap_ms": [
+    70,
+    130
+   ],
+   "until_ms": 300,
+   "gain_db": [
+    -6,
+    0
+   ],
+   "pitch": [
+    1,
+    7
+   ],
+   "hp": 250,
+   "snap": {
+    "hold": [
+     3,
+     6
+    ],
+    "tau": [
+     6,
+     10
+    ]
+   }
+  },
+  {
+   "src": "bones_rattle/*.ogg",
+   "count": [
+    1,
+    2
+   ],
+   "at_ms": [
+    20,
+    60
+   ],
+   "gap_ms": [
+    90,
+    180
+   ],
+   "until_ms": 300,
+   "gain_db": [
+    -20,
+    -14
+   ],
+   "pitch": [
+    4,
+    8
+   ],
+   "hp": 1500,
+   "snap": {
+    "hold": [
+     2,
+     4
+    ],
+    "tau": [
+     4,
+     8
+    ]
+   }
+  },
+  {
+   "src": "fantozzi/*/flac/*Stone*.flac",
+   "at_ms": [
+    2,
+    4
+   ],
+   "gain_db": [
+    -16,
+    -12
+   ],
+   "pitch": [
+    3,
+    6
+   ],
+   "hp": 120,
+   "snap": {
+    "hold": [
+     3,
+     5
+    ],
+    "tau": [
+     5,
+     8
+    ]
+   }
+  },
+  {
+   "src": "tinysized/sfx-cc0/wood-twigs-break-01.wav",
+   "count": [
+    1,
+    2
+   ],
+   "at_ms": [
+    60,
+    200
+   ],
+   "gap_ms": [
+    80,
+    140
+   ],
+   "until_ms": 300,
+   "gain_db": [
+    -10,
+    -4
+   ],
+   "pitch": [
+    3,
+    8
+   ],
+   "hp": 600,
+   "max_ms": 120,
+   "snap": {
+    "hold": [
+     3,
+     6
+    ],
+    "tau": [
+     8,
+     14
+    ]
+   },
+   "chance": 0.7
+  },
+  {
+   "src": "tinysized/sfx-cc0/handsaw-knife-scrape-0*.wav",
+   "at_ms": [
+    0,
+    40
+   ],
+   "gain_db": [
+    -22,
+    -16
+   ],
+   "pitch": [
+    4,
+    9
+   ],
+   "hp": 2500,
+   "max_ms": 260
+  }
+ ],
+ "shelf": {
+  "hz": 12000,
+  "db": 18
+ },
+ "room": {
+  "db": -34,
+  "decay_ms": 40,
+  "len_ms": 200,
+  "band": [
+   2000,
+   12000
+  ]
+ },
+ "match": 0.85,
+ "fade_ms": 40,
+ "peak_db": -1
+}

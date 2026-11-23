@@ -33,6 +33,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private int _team = 2;
 
+        private const int MaxSlowStacks = 5;
+        private const float SlowDuration = 7f;
+
         [SerializeField]
         private StatusEffectComponent _effects;
 
@@ -73,6 +76,9 @@ namespace Game.Scripts.Dungeon
             if (!HasStateAuthority)
                 return;
 
+            if (_config.HitSlow > 0f)
+                _fighter.Receiver.OnHitDealt += OnHitDealt;
+
             _fighter.Health.SetMaxHealth(_config.MaxHealth, true);
             _fighter.Combat.SetSlotWeapon(0, _config.WeaponIndex);
             _fighter.Combat.SetInitialSlot(0);
@@ -81,6 +87,7 @@ namespace Game.Scripts.Dungeon
         public override void Despawned(NetworkRunner runner, bool hasState)
         {
             s_all.Remove(this);
+            _fighter.Receiver.OnHitDealt -= OnHitDealt;
         }
 
         public override void FixedUpdateNetwork()
@@ -137,6 +144,16 @@ namespace Game.Scripts.Dungeon
 
             _corpse.Fill(_config.LootTable, Runner.Tick + (int)Object.Id.Raw * 7919);
             _despawnTimer = TickTimer.CreateFromSeconds(Runner, _corpse.Inventory.CountItems() > 0 ? _corpseLifetime.x : _corpseLifetime.y);
+        }
+
+        /// Each landed blow adds a stack of slow and restarts it, up to MaxSlowStacks.
+        private void OnHitDealt(DamageReceiverComponent victim, HitResult result, int damage, HitRequest request)
+        {
+            if (result != HitResult.Hit || !victim.TryGetComponent(out AdventurerComponent adventurer) || adventurer.Effects == null)
+                return;
+
+            float stacked = Mathf.Min(adventurer.Effects.GetMagnitude(StatusEffectKind.Slow) + _config.HitSlow, _config.HitSlow * MaxSlowStacks);
+            adventurer.Effects.Add(StatusEffectKind.Slow, stacked, SlowDuration);
         }
     }
 }

@@ -1,0 +1,115 @@
+{
+ "name": "spider_attack",
+ "about": "DaD Monsters_SpiderMummy_Attack: 1.2-1.5 s raspy insect screech, rises to peak in ~100 ms, holds 0.6 s within ~10 dB, falls to -30 dB by ~0.85 s; bright 1.5-24 kHz, almost nothing under 500 Hz. Jaw bone clicks on the bite.",
+ "reference": "D:/DaD_Sounds/Monsters_SpiderMummy_Attack",
+ "length_ms": 1350,
+ "variants": 12,
+ "seed": 3200,
+ "layers": [
+  {
+   "src": "insect_scream/*.flac",
+   "at_ms": [
+    0,
+    20
+   ],
+   "gain_db": [
+    0,
+    0
+   ],
+   "pitch": [
+    -3,
+    2
+   ],
+   "hp": 550,
+   "max_ms": 1150
+  },
+  {
+   "src": "bat_screech/flac/*.flac",
+   "at_ms": [
+    40,
+    120
+   ],
+   "gain_db": [
+    -12,
+    -6
+   ],
+   "pitch": [
+    -4,
+    0
+   ],
+   "hp": 1200,
+   "max_ms": 700
+  },
+  {
+   "src": "insect_pack/insect[0-4].ogg",
+   "at_ms": [
+    0,
+    60
+   ],
+   "gain_db": [
+    -12,
+    -7
+   ],
+   "pitch": [
+    -3,
+    1
+   ],
+   "hp": 800,
+   "max_ms": 700
+  },
+  {
+   "src": "alien_sounds/alien_hiss.mp3",
+   "at_ms": [
+    0,
+    10
+   ],
+   "gain_db": [
+    -10,
+    -5
+   ],
+   "pitch": [
+    -1,
+    3
+   ],
+   "hp": 1500
+  },
+  {
+   "src": "bones_rattle/*.ogg",
+   "count": [
+    1,
+    3
+   ],
+   "at_ms": [
+    80,
+    200
+   ],
+   "gap_ms": [
+    40,
+    120
+   ],
+   "until_ms": 500,
+   "gain_db": [
+    -14,
+    -8
+   ],
+   "pitch": [
+    0,
+    5
+   ],
+   "hp": 800,
+   "chance": 0.8
+  }
+ ],
+ "room": {
+  "db": -22,
+  "decay_ms": 110,
+  "len_ms": 500,
+  "band": [
+   800,
+   9000
+  ]
+ },
+ "match": 0.7,
+ "fade_ms": 350,
+ "peak_db": -1
+}

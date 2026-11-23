@@ -136,6 +136,19 @@ namespace Game.Scripts.Editor.Dungeon
             ["Zweihander"] = (7, 5), ["Club"] = (5, 2), ["Skeleton Sword"] = (4, 3), ["Flanged Mace"] = (6, 3)
         };
 
+        /// DaD's Impact Power of each weapon's blows against props (Weapons wiki, patch 6.13): hits to break = ceil(endurance / (power - resistance)).
+        private static readonly Dictionary<string, int> s_propPower = new()
+        {
+            ["Bare Hands"] = 1, ["Spellbook"] = 1, ["Rat Bite"] = 1, ["Arming Sword"] = 3, ["Morning Star"] = 5, ["Magic Staff"] = 4, ["Round Shield"] = 1, ["Écu"] = 1,
+            ["Battle Axe"] = 4, ["Bow"] = 3, ["Crossbow"] = 4, ["Viking Sword"] = 3, ["Torch"] = 2, ["Misericorde"] = 2, ["Poniard"] = 2, ["Zweihander"] = 4,
+            ["Club"] = 4, ["Skeleton Sword"] = 3, ["Flanged Mace"] = 4
+        };
+
+        public static int PropPower(string displayName)
+        {
+            return s_propPower.TryGetValue(displayName.Split(" & ")[0], out int power) ? power : 3;
+        }
+
         /// A weapon with a shield hits with the weapon's Impact and blocks with the shield's Stability.
         public static (int impact, int stability) Force(string displayName)
         {

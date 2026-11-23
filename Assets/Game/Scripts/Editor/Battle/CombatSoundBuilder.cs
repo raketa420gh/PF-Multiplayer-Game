@@ -21,11 +21,13 @@ namespace Game.Scripts.Editor.Battle
         private const string FootstepsPath = "Assets/Game/Configs/Dungeon/Footsteps.asset";
         private const string MonsterAudioFolder = "Assets/Game/Audio/Dungeon/Monsters";
         private const string MonstersFolder = "Assets/Game/Configs/Dungeon/Monsters";
+        private const string SpiderPotAudioFolder = "Assets/Game/Audio/Dungeon/Props/SpiderPot";
 
         /// Audio/Dungeon/Monsters/<kind>/<Category>_NN.wav → Configs/Dungeon/Monsters/Sounds/<kind>.asset, handed to the monster configs of that kind.
         private static readonly (string Kind, string[] Monsters)[] s_monsterSounds =
         {
-            ("Skeleton", new[] { "SkeletonSwordsman", "SkeletonArcher", "SkeletonCrossbowman", "SkeletonWarrior" })
+            ("Skeleton", new[] { "SkeletonSwordsman", "SkeletonArcher", "SkeletonCrossbowman", "SkeletonWarrior" }),
+            ("Spider", new[] { "BoneSpider" })
         };
 
         private static readonly (string Category, string Field)[] s_monsterCategories =
@@ -85,6 +87,7 @@ namespace Game.Scripts.Editor.Battle
         private static readonly Dictionary<string, (ImpactSurface Body, ImpactSurface Block, Footwear Feet)> s_prefabs = new()
         {
             ["Dungeon/SkeletonWarrior"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
+            ["Dungeon/BoneSpider"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
             ["Dungeon/SkeletonSwordsman"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
             ["Dungeon/SkeletonArcher"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
             ["Dungeon/SkeletonCrossbowman"] = (ImpactSurface.Bone, ImpactSurface.Clash, Footwear.Bare),
@@ -237,6 +240,15 @@ namespace Game.Scripts.Editor.Battle
                     SerializedObject so = new SerializedObject(feedback);
                     BattleEditorUtility.Set(so, "_body", look.Body);
                     BattleEditorUtility.Set(so, "_blockSurface", look.Block);
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                    isChanged = true;
+                }
+
+                if (root.TryGetComponent(out SpiderNestComponent nest))
+                {
+                    SerializedObject so = new SerializedObject(nest);
+                    BattleEditorUtility.Set(so, "_hitSounds", Load(SpiderPotAudioFolder, "Hit"));
+                    BattleEditorUtility.Set(so, "_breakSounds", Load(SpiderPotAudioFolder, "Break"));
                     so.ApplyModifiedPropertiesWithoutUndo();
                     isChanged = true;
                 }

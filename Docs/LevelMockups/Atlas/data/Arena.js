@@ -292,6 +292,7 @@ ATLAS.room("Arena",[
 {"id":"Tr35","cat":"trap","name":"Blade","p":[0,-5,-4.6],"ry":0,"s":[0.8,0.8,0.8]},
 {"id":"Tr36","cat":"trap","name":"Spike","p":[4.6,-5,0],"ry":0,"s":[0.8,0.8,0.8]},
 {"id":"Tr37","cat":"trap","name":"Vent","p":[-4.6,-5,0],"ry":0,"s":[0.8,0.8,0.8]},
+{"id":"Tr38","cat":"trap","name":"SpiderPot","p":[5.5,0,7.5],"ry":216,"s":[0.65,0.65,0.7]},
 {"id":"Mo6","cat":"monster","name":"Skull","p":[0,-5,4.4],"ry":180,"s":[0.7,1.8,0.7],"round":true},
 {"id":"Li7","cat":"light","name":"Candle","p":[-0.6,-4.7,-11],"ry":0,"color":"#FFB259","i":1.1,"r":4},
 {"id":"Li8","cat":"light","name":"Candle","p":[4.8,-4.7,-13.2],"ry":0,"color":"#FFB259","i":1.1,"r":4},

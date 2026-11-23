@@ -495,8 +495,15 @@ namespace Game.Scripts.Dungeon
                     SpawnContainer(_testChests[i], room.transform.TransformPoint(local), room.transform.rotation, random);
                 }
 
+                // Trap markers also place what is spawned as is, a spider nest among them: it learns its floor.
                 foreach (MonsterPlacement placement in room.Traps)
-                    _spawned.Add(_runner.Spawn(placement.Prefab, placement.Point.position, placement.Point.rotation));
+                {
+                    _spawned.Add(_runner.Spawn(placement.Prefab, placement.Point.position, placement.Point.rotation, PlayerRef.None, (_, obj) =>
+                    {
+                        if (obj.TryGetComponent(out SpiderNestComponent nest))
+                            nest.Setup(level);
+                    }));
+                }
 
                 foreach (MonsterPlacement placement in room.Monsters)
                 {

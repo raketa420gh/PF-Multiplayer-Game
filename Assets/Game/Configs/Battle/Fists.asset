@@ -18,7 +18,12 @@ MonoBehaviour:
   _animationPrefix: Fists
   _attachments: []
   _deflectDuration: 0.4
+  _ignoresWorld: 0
   _isBareHands: 1
+  _equipTime: 0
+  _equipShown: 0
+  _unequipTime: 0
+  _unequipHidden: 0
   _reach: 0.9
   _attacks:
   - _windupTime: 0.63750005
@@ -325,6 +330,7 @@ MonoBehaviour:
     - {x: -0.13369331, y: 1.5745019, z: 0.3997097}
     - {x: -0.13451591, y: 1.5748434, z: 0.39999208}
     - {x: -0.13451591, y: 1.5748434, z: 0.39999208}
+  _comboCooldown: 1
   _hasRiposte: 0
   _riposte:
     _windupTime: 0.3
@@ -353,6 +359,8 @@ MonoBehaviour:
     _fullDrawTime: 0.9
     _reloadTime: 0.6
     _isManualReload: 0
+    _quiverSize: 0
+    _restockTime: 2.5
     _minSpeed: 14
     _maxSpeed: 30
     _minDamage: 14
@@ -364,3 +372,4 @@ MonoBehaviour:
   _sounds: {fileID: 11400000, guid: 73ed92b8cc249764cb6005a0957e6cdc, type: 2}
   _damageType: 0
   _impact: 1
+  _propPower: 1

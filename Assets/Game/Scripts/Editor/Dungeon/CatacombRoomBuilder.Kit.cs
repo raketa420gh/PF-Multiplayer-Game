@@ -90,6 +90,8 @@ namespace Game.Scripts.Editor.Dungeon
             foreach (Snare snare in System.Enum.GetValues(typeof(Snare)))
                 Marker(MarkerName(new Item { Shape = Shape.Trap, Kind = (int)snare }), CatacombMarkerKind.Trap, $"{snare}Trap");
 
+            // A nest is placed like a trap: spawned as is, not rolled like a monster.
+            Marker("Trap SpiderPot", CatacombMarkerKind.Trap, "SpiderPot");
             Marker("Start", CatacombMarkerKind.Start, null);
         }
 
