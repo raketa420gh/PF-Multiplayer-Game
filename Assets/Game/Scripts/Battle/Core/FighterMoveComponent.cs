@@ -62,6 +62,7 @@ namespace Game.Scripts.Battle
         private static readonly Collider[] s_water = new Collider[1];
         private float _fall;
         private float _speedShare = 1f;
+        private bool _isSettled;
         private BodyConfig _body;
 
         public override void Spawned()
@@ -84,7 +85,8 @@ namespace Game.Scripts.Battle
         /// Sitting on the ground lowers the body past a full crouch, sitting down and getting up take SitTime.
         public void Simulate(Vector2 move, Vector2 look, bool isWalk, bool isCrouch, bool isJump, float speedMultiplier, bool isSeated = false, bool isInSeat = false)
         {
-            _collider.enabled = true;
+            _isSettled = false;
+            SetBodyActive(true);
             Pitch = Mathf.Clamp(look.x, -MaxPitch, MaxPitch);
             transform.rotation = Quaternion.Euler(0f, look.y, 0f);
 
@@ -124,14 +126,17 @@ namespace Game.Scripts.Battle
             TrackFall(wasGrounded);
         }
 
-        /// A dead body falls to the ground, then leaves physics: nobody pushes it or bumps into it.
+        /// A dead body falls to the ground, then leaves physics for good: nobody pushes it or bumps into it.
+        /// The network controller switches the collider back on before every tick, so a settled body is put away again each time.
         public void SimulateDead(Vector2 look)
         {
-            if (!_collider.enabled)
-                return;
+            if (!_isSettled)
+            {
+                Simulate(Vector2.zero, look, false, false, false, 0f);
+                _isSettled = _controller.Grounded;
+            }
 
-            Simulate(Vector2.zero, look, false, false, false, 0f);
-            _collider.enabled = !_controller.Grounded;
+            SetBodyActive(!_isSettled);
         }
 
         public void Teleport(Vector3 position, float yaw)
@@ -163,9 +168,11 @@ namespace Game.Scripts.Battle
                 _blocker.enabled = isBlocking;
         }
 
+        /// Off: the controller collides with nothing, so it stops no one even while the network controller has it enabled.
         public void SetBodyActive(bool isActive)
         {
             _collider.enabled = isActive;
+            _collider.excludeLayers = isActive ? 0 : ~0;
         }
 
         public void AddImpulse(Vector3 impulse)

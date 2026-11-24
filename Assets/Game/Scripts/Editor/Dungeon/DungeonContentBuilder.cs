@@ -88,20 +88,20 @@ namespace Game.Scripts.Editor.Dungeon
             BuildPreviewRig(pieceSet);
 
             BuildAdventurer(loadouts, arrow, orb, database, classes, config, weapons, worldItem, corpse, campfire, pieceSet, zone, vfx);
-            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 1f, Aggro = 10f, PicksAttack = true, WeaponIndex = Catalog(DungeonWeaponLibrary.SkeletonSword), Experience = 25, Loot = loot["Monster"], Scale = 1f },
+            BuildMonster(new MonsterDef { Name = "SkeletonSwordsman", IsDormant = true, DisplayName = "Skeleton Swordsman", Health = 117, Damage = 1.5f, MoveSpeed = 220f, ActionSpeed = 1f, Aggro = 10f, PicksAttack = true, WeaponIndex = Catalog(DungeonWeaponLibrary.SkeletonSword), Experience = 25, Loot = loot["Monster"], Scale = 1f },
                 loadouts, arrow, orb, database, pieceSet);
-            BuildMonster(new MonsterDef { Name = "SkeletonArcher", DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Bow), Experience = 25, Loot = loot["Monster"], Scale = 1f },
+            BuildMonster(new MonsterDef { Name = "SkeletonArcher", IsDormant = true, DisplayName = "Skeleton Archer", Health = 70, Damage = 1f, MoveSpeed = 210f, ActionSpeed = 0.85f, Aggro = 14f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Bow), Experience = 25, Loot = loot["Monster"], Scale = 1f },
                 loadouts, arrow, orb, database, pieceSet);
-            BuildMonster(new MonsterDef { Name = "SkeletonCrossbowman", DisplayName = "Skeleton Crossbowman", Health = 80, Damage = 1f, MoveSpeed = 200f, ActionSpeed = 0.8f, Aggro = 15f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Crossbow), Experience = 30, Loot = loot["Monster"], Scale = 1f },
+            BuildMonster(new MonsterDef { Name = "SkeletonCrossbowman", IsDormant = true, DisplayName = "Skeleton Crossbowman", Health = 80, Damage = 1f, MoveSpeed = 200f, ActionSpeed = 0.8f, Aggro = 15f, IsRanged = true, WeaponIndex = Catalog(DungeonWeaponLibrary.Crossbow), Experience = 30, Loot = loot["Monster"], Scale = 1f },
                 loadouts, arrow, orb, database, pieceSet);
-            BuildMonster(new MonsterDef { Name = "SkeletonWarrior", DisplayName = "Skeleton Warrior", Health = 165, Damage = 1.3f, MoveSpeed = 200f, ActionSpeed = 0.65f, Aggro = 10f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.SwordEcu), Experience = 40, Loot = loot["Warrior"], Scale = 1f,
+            BuildMonster(new MonsterDef { Name = "SkeletonWarrior", IsDormant = true, DisplayName = "Skeleton Warrior", Health = 165, Damage = 1.3f, MoveSpeed = 200f, ActionSpeed = 0.65f, Aggro = 10f, CanBlock = true, WeaponIndex = Catalog(DungeonWeaponLibrary.SwordEcu), Experience = 40, Loot = loot["Warrior"], Scale = 1f,
                 Armor = 0.15f }, loadouts, arrow, orb, database, pieceSet);
             BuildFlyingHead(new MonsterDef { Name = "FlyingHead", DisplayName = "Flying Head", Health = 60, Damage = 1f, MoveSpeed = 230f, ActionSpeed = 1f, Aggro = 12f, Experience = 30, Loot = loot["Monster"], Scale = 1f,
                 Voice = DungeonSound.Screech, Charge = 900f }, arrow, orb, database);
             BuildJuggernaut(new MonsterDef { Name = "Juggernaut", DisplayName = "Iron Juggernaut", Health = 220, Damage = 1f, MoveSpeed = 190f, ActionSpeed = 0.8f, Aggro = 12f, Experience = 60, Loot = loot["Monster"], Scale = 1f,
                 Voice = DungeonSound.Growl }, arrow, orb, database);
             BuildSpider(new MonsterDef { Name = "BoneSpider", DisplayName = "Bone Spider", Health = 25, Damage = 1f, MoveSpeed = 250f, ActionSpeed = 1f, Aggro = 10f, Experience = 5,
-                Scale = SpiderScale, HitSlow = 15f }, arrow, orb, database);
+                Scale = SpiderScale, HitSlow = 15f, IsDirect = true }, arrow, orb, database);
             BuildSpiderPot();
 
             BuildFigures();
@@ -117,7 +117,7 @@ namespace Game.Scripts.Editor.Dungeon
             BuildCrate(loot["Barrel"]);
             BuildBookshelf(loot["Bookshelf"]);
             BuildDoor("Door", DungeonPropBuilder.DoorLeaf());
-            BuildDoor("CellDoor", DungeonMedievalBuilder.CellDoorLeaf());
+            BuildDoor("CellDoor", DungeonMedievalBuilder.CellDoorLeaf(), endurance: 0);
             BuildDoor("HouseDoor", HouseDoorLeaf(), DungeonVillageKitBuilder.DoorHalf - 0.03f, DungeonVillageKitBuilder.DoorHalf * 2f);
             BuildCatacombDoor();
             BuildPortal("EscapePortal", PortalKind.Escape, DungeonPropBuilder.PortalBlue, true);
@@ -971,6 +971,8 @@ namespace Game.Scripts.Editor.Dungeon
             public bool IsRanged;
             public bool CanBlock;
             public bool PicksAttack;
+            public bool IsDirect;
+            public bool IsDormant;
             public int WeaponIndex;
             public int Experience;
             public LootTableConfig Loot;
@@ -1077,6 +1079,8 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_isRanged", def.IsRanged);
             BattleEditorUtility.Set(so, "_canBlock", def.CanBlock);
             BattleEditorUtility.Set(so, "_picksAttack", def.PicksAttack);
+            BattleEditorUtility.Set(so, "_isDirect", def.IsDirect);
+            BattleEditorUtility.Set(so, "_isDormant", def.IsDormant);
             BattleEditorUtility.Set(so, "_bodyMaterial", def.Body);
             BattleEditorUtility.Set(so, "_scale", def.Scale);
             BattleEditorUtility.Set(so, "_isBoss", def.IsBoss);
@@ -1123,7 +1127,12 @@ namespace Game.Scripts.Editor.Dungeon
                     hitbox.BoxExtents *= def.Scale;
             }
 
-            AddMonsterLogic(parts, def, config, database, pieceSet, new Vector3(0f, 0.4f, -0.3f) * def.Scale, new Vector3(1.6f, 0.8f, 3f) * def.Scale);
+            // The dead skeleton is a heap at its feet: the loot trigger covers the heap.
+            MonsterComponent monster = AddMonsterLogic(parts, def, config, database, pieceSet, new Vector3(0f, 0.4f, 0f) * def.Scale, new Vector3(1.4f, 0.8f, 1.6f) * def.Scale);
+
+            if (def.IsDormant)
+                DungeonSkeletonBuilder.AddFold(root, parts.Animator, monster);
+
             BattleEditorUtility.Set(root.AddComponent<FootstepComponent>(), "_fighter", parts.Fighter);
             BattleContentBuilder.SavePrefab(root, Prefab(def.Name));
         }
@@ -1226,7 +1235,8 @@ namespace Game.Scripts.Editor.Dungeon
         {
             float scale = def.Scale;
             MonsterConfig config = BuildMonsterConfig(def);
-            BattleContentBuilder.Loadout bite = BuildFixedAttack("SpiderBite", "Bite", 1f, new Vector3(0f, 0.2f, 0.25f), new Vector3(0f, 0.45f, 1f),
+            // The spider stops 0.9 m from its target's axis and the sweep goes half a metre past it: a bite at a target that stands still always lands.
+            BattleContentBuilder.Loadout bite = BuildFixedAttack("SpiderBite", "Bite", 1.1f, new Vector3(0f, 0.2f, 0.25f), new Vector3(0f, 0.45f, 1.4f),
                 0.5f, 0.15f, 0.6f, 15, 0.25f, new Vector3(0f, 0.4f, 0f));
             // Its sweep grazes the floor: that is no wall to bounce off.
             BattleEditorUtility.Set(bite.Config, "_ignoresWorld", true);
@@ -1402,17 +1412,24 @@ namespace Game.Scripts.Editor.Dungeon
             ArmorPieceSetConfig pieceSet, Vector3 triggerCenter, Vector3 triggerSize)
         {
             GameObject root = parts.Root;
-            InventoryComponent loot = AddInventory(root, database, 6, 4, false, "Loot");
-            BoxCollider trigger = AddInteractCollider(root, triggerCenter, triggerSize);
-            trigger.enabled = false;
-            ContainerComponent corpse = root.AddComponent<ContainerComponent>();
-            SerializedObject so = new SerializedObject(corpse);
-            BattleEditorUtility.Set(so, "_inventory", loot);
-            BattleEditorUtility.Set(so, "_displayName", def.DisplayName);
-            BattleEditorUtility.Set(so, "_openVerb", "Loot");
-            BattleEditorUtility.Set(so, "_body", parts.Health);
-            BattleEditorUtility.Set(so, "_trigger", trigger);
-            so.ApplyModifiedPropertiesWithoutUndo();
+            ContainerComponent corpse = null;
+            SerializedObject so;
+
+            // A monster without a loot table leaves a body nobody can search: no container, no interaction trigger, no outline.
+            if (def.Loot != null)
+            {
+                InventoryComponent loot = AddInventory(root, database, 6, 4, false, "Loot");
+                BoxCollider trigger = AddInteractCollider(root, triggerCenter, triggerSize);
+                trigger.enabled = false;
+                corpse = root.AddComponent<ContainerComponent>();
+                so = new SerializedObject(corpse);
+                BattleEditorUtility.Set(so, "_inventory", loot);
+                BattleEditorUtility.Set(so, "_displayName", def.DisplayName);
+                BattleEditorUtility.Set(so, "_openVerb", "Loot");
+                BattleEditorUtility.Set(so, "_body", parts.Health);
+                BattleEditorUtility.Set(so, "_trigger", trigger);
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
 
             StatusEffectComponent effects = root.AddComponent<StatusEffectComponent>();
             BattleEditorUtility.Set(effects, "_health", parts.Health);
@@ -1876,7 +1893,9 @@ namespace Game.Scripts.Editor.Dungeon
             return edges.Where(edge => edge < float.MaxValue).Max();
         }
 
-        private static void BuildDoor(string name, GameObject leaf, float hingeX = -1.05f, float width = 2.2f, bool isSpawned = false)
+        /// Endurance and resistance are DaD's single wooden door (Id_PropsEffect_WoodenDoorWithLock): prop power 4 breaks it in 5 blows, 5 in 3, 6 in 2,
+        /// 3 and less never. An iron door has no endurance: nothing breaks it.
+        private static void BuildDoor(string name, GameObject leaf, float hingeX = -1.05f, float width = 2.2f, bool isSpawned = false, int endurance = 5)
         {
             GameObject root = new GameObject(name);
             root.AddComponent<NetworkObject>();
@@ -1895,8 +1914,11 @@ namespace Game.Scripts.Editor.Dungeon
             SerializedObject so = new SerializedObject(door);
             BattleEditorUtility.Set(so, "_leaf", hinge.transform);
             BattleEditorUtility.Set(so, "_blocker", leaf.GetComponent<Collider>());
+            BattleEditorUtility.Set(so, "_endurance", endurance);
+            BattleEditorUtility.Set(so, "_resistance", 3);
+            BattleEditorUtility.Set(so, "_trigger", AddInteractCollider(root, new Vector3(0f, 1.5f, 0f), new Vector3(width, 3f, 0.6f)));
+            BattleEditorUtility.Set(so, "_debrisLayer", BattleEditorUtility.EnsureLayer(BattleRagdollBuilder.RagdollLayer));
             so.ApplyModifiedPropertiesWithoutUndo();
-            AddInteractCollider(root, new Vector3(0f, 1.5f, 0f), new Vector3(width, 3f, 0.6f));
             AudioSource creak = root.AddComponent<AudioSource>();
             creak.playOnAwake = false;
             creak.spatialBlend = 1f;

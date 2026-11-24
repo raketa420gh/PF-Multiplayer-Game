@@ -212,6 +212,7 @@ namespace Game.Scripts.Battle
         private float _landLeft;
         private bool _isFirstPerson;
         private bool _isSeated;
+        private bool _isDeathSkipped;
         private bool _isHolding;
         private bool _isHoldingTorch;
         private bool _isSocketsFlipped;
@@ -299,6 +300,12 @@ namespace Game.Scripts.Battle
         {
             _isHolding = isHolding;
             _isHoldingTorch = isTorch;
+        }
+
+        /// The death of this body is played by something else (a skeleton folds down into a heap): the animator keeps it standing.
+        public void SetDeathSkipped(bool isSkipped)
+        {
+            _isDeathSkipped = isSkipped;
         }
 
         /// Seconds since the fighter last took something from the floor: the left hand plays the pick-up over the rest for PickUpTime.
@@ -406,7 +413,7 @@ namespace Game.Scripts.Battle
             int token = 0;
             int state;
 
-            if (!isAlive)
+            if (!isAlive && !_isDeathSkipped)
             {
                 state = s_death;
             }

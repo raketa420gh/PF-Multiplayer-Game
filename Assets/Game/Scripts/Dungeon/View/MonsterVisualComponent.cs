@@ -27,6 +27,7 @@ namespace Game.Scripts.Dungeon
         private AttackPhase _phase;
         private bool _wasAlive = true;
         private bool _wasAlerted;
+        private bool _wasDormant;
         private float _nextIdleVoice;
         private float _nextAlert;
         private float _nextPain;
@@ -48,6 +49,7 @@ namespace Game.Scripts.Dungeon
             // A late joiner meets corpses and alerted monsters without hearing them die or notice anyone.
             _wasAlive = _monster.Fighter.Health.IsAlive;
             _wasAlerted = _monster.IsAlerted;
+            _wasDormant = _monster.IsDormant;
             _nextIdleVoice = Time.time + Random.Range(4f, 12f);
             _monster.Fighter.Receiver.OnHitEvent += OnHitEvent;
         }
@@ -101,6 +103,15 @@ namespace Game.Scripts.Dungeon
             }
 
             if (!isAlive)
+                return;
+
+            // A heap of bones is silent; they clatter as they come together.
+            if (_wasDormant && !_monster.IsDormant)
+                DungeonAudioComponent.Play(MonsterSoundConfig.Pick(sounds.BoneDrop), transform.position, 1f, Random.Range(0.95f, 1.05f));
+
+            _wasDormant = _monster.IsDormant;
+
+            if (_wasDormant)
                 return;
 
             if (isAlerted && !_wasAlerted && Time.time >= _nextAlert)

@@ -36,6 +36,8 @@ namespace Game.Scripts.Dungeon
         public bool IsRanged => _isRanged;
         public bool CanBlock => _canBlock;
         public bool PicksAttack => _picksAttack;
+        public bool IsDirect => _isDirect;
+        public bool IsDormant => _isDormant;
         public float AttackPauseMin => _attackPause.x;
         public float AttackPauseMax => _attackPause.y;
         public Material BodyMaterial => _bodyMaterial;
@@ -97,6 +99,12 @@ namespace Game.Scripts.Dungeon
 
         [SerializeField, Tooltip("Every attack of the weapon starts from the rest: one is picked at random instead of chaining them as a series")]
         private bool _picksAttack;
+
+        [SerializeField, Tooltip("Walks straight up to the target and strikes: no sidestepping around it in a fight")]
+        private bool _isDirect;
+
+        [SerializeField, Tooltip("Lies folded on the floor until an adventurer comes into the aggro range, then gets up; folds back down when it dies")]
+        private bool _isDormant;
 
         [SerializeField]
         private Vector2 _attackPause = new(0.6f, 1.5f);

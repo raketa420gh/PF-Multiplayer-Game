@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Scripts.Battle;
 using UnityEngine;
 
 namespace Game.Scripts.Dungeon
@@ -11,6 +12,7 @@ namespace Game.Scripts.Dungeon
 
         private static readonly List<Renderer> s_renderers = new List<Renderer>();
         private static readonly List<int> s_subMeshes = new List<int>();
+        private static readonly List<Renderer> s_buffer = new List<Renderer>();
         private static Component s_target;
         private static Component s_station;
 
@@ -23,6 +25,31 @@ namespace Game.Scripts.Dungeon
         public static void SetStation(HubStationComponent station)
         {
             Set(ref s_station, station);
+        }
+
+        /// The visible renderers of every fighter but the outlined one: bodies that hide the rim when they stand in front of it.
+        public static void CollectOccluders(List<Renderer> occluders)
+        {
+            occluders.Clear();
+
+            foreach (FighterComponent fighter in FighterComponent.All)
+            {
+                if (s_target != null && fighter.transform == s_target.transform)
+                    continue;
+
+                fighter.GetComponentsInChildren(s_buffer);
+
+                foreach (Renderer renderer in s_buffer)
+                {
+                    if (IsDrawn(renderer) && renderer.enabled && !renderer.forceRenderingOff)
+                        occluders.Add(renderer);
+                }
+            }
+        }
+
+        private static bool IsDrawn(Renderer renderer)
+        {
+            return renderer is MeshRenderer or SkinnedMeshRenderer && renderer.shadowCastingMode != UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
         }
 
         private static void Set(ref Component slot, Component target)
@@ -44,7 +71,7 @@ namespace Game.Scripts.Dungeon
 
             foreach (Renderer renderer in target.GetComponentsInChildren<Renderer>())
             {
-                if (renderer is not (MeshRenderer or SkinnedMeshRenderer) || renderer.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly)
+                if (!IsDrawn(renderer))
                     continue;
 
                 s_renderers.Add(renderer);

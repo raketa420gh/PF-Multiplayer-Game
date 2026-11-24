@@ -21,6 +21,17 @@ namespace Game.Scripts.Dungeon
         [Networked]
         public NetworkBool IsAlerted { get; private set; }
 
+        /// Lies folded on the floor, out of the fight, until an adventurer comes near or something hurts it.
+        [Networked]
+        public NetworkBool IsDormant { get; private set; }
+
+        /// 0 while it lies folded, 0..1 while it gets up, 1 once it stands.
+        public float Rise => IsDormant ? 0f : 1f - (_riseTimer.RemainingTime(Runner) ?? 0f) / RiseTime;
+        public bool IsRisen => !IsDormant && _riseTimer.ExpiredOrNotRunning(Runner);
+
+        /// Seconds a woken monster takes to get up; it can be hit meanwhile, but neither moves nor strikes.
+        public const float RiseTime = 2f;
+
         [SerializeField]
         private MonsterConfig _config;
 
@@ -44,6 +55,9 @@ namespace Game.Scripts.Dungeon
 
         [Networked]
         private TickTimer _despawnTimer { get; set; }
+
+        [Networked]
+        private TickTimer _riseTimer { get; set; }
 
         public float ActionSpeed => _config.ActionSpeed;
         public float HandlingSpeed => 1f;
@@ -82,6 +96,10 @@ namespace Game.Scripts.Dungeon
             _fighter.Health.SetMaxHealth(_config.MaxHealth, true);
             _fighter.Combat.SetSlotWeapon(0, _config.WeaponIndex);
             _fighter.Combat.SetInitialSlot(0);
+
+            // A heap of bones on the floor is nothing to strike at.
+            IsDormant = _config.IsDormant;
+            _fighter.Receiver.HitboxRoot.HitboxRootActive = !IsDormant;
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -98,6 +116,10 @@ namespace Game.Scripts.Dungeon
             if (_fighter.Health.IsDead && !IsRewarded)
                 Reward();
 
+            // A spell or a trap that reaches the heap wakes it.
+            if (IsDormant && _fighter.Health.IsAlive && _fighter.Health.CurrentHealth < _fighter.Health.MaxHealth)
+                Wake();
+
             if (_despawnTimer.Expired(Runner))
                 Runner.Despawn(Object);
         }
@@ -108,6 +130,17 @@ namespace Game.Scripts.Dungeon
         }
 
         public void SetAlerted(bool isAlerted) => IsAlerted = isAlerted;
+
+        /// The folded monster starts getting up. State authority only.
+        public void Wake()
+        {
+            if (!IsDormant)
+                return;
+
+            IsDormant = false;
+            _riseTimer = TickTimer.CreateFromSeconds(Runner, RiseTime);
+            _fighter.Receiver.HitboxRoot.HitboxRootActive = true;
+        }
 
         public float GetDamageMultiplier(DamageType type)
         {
@@ -142,8 +175,11 @@ namespace Game.Scripts.Dungeon
                 adventurer.AddKill();
             }
 
-            _corpse.Fill(_config.LootTable, Runner.Tick + (int)Object.Id.Raw * 7919);
-            _despawnTimer = TickTimer.CreateFromSeconds(Runner, _corpse.Inventory.CountItems() > 0 ? _corpseLifetime.x : _corpseLifetime.y);
+            // A monster without a corpse container (a spider) leaves nothing to search.
+            if (_corpse != null)
+                _corpse.Fill(_config.LootTable, Runner.Tick + (int)Object.Id.Raw * 7919);
+
+            _despawnTimer = TickTimer.CreateFromSeconds(Runner, _corpse != null && _corpse.Inventory.CountItems() > 0 ? _corpseLifetime.x : _corpseLifetime.y);
         }
 
         /// Each landed blow adds a stack of slow and restarts it, up to MaxSlowStacks.

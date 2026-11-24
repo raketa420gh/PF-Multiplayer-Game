@@ -85,6 +85,15 @@ namespace Game.Scripts.Dungeon
             }
 
             MonsterConfig config = _monster.Config;
+            input.LookRotation = _look;
+
+            if (_monster.IsDormant && FindTarget(config.AggroRange) != null)
+                _monster.Wake();
+
+            // Folded on the floor or getting up: it neither turns nor walks nor strikes.
+            if (!_monster.IsRisen)
+                return input;
+
             float time = Runner.SimulationTime;
             UpdateTarget(config, time);
             _monster.SetAlerted(_target != null);
@@ -420,7 +429,7 @@ namespace Game.Scripts.Dungeon
             if (time < _nextStrafeTime)
                 return;
 
-            _strafe = Random.Range(-1, 2);
+            _strafe = _monster.Config.IsDirect ? 0 : Random.Range(-1, 2);
             _nextStrafeTime = time + Random.Range(0.8f, 2f);
         }
 

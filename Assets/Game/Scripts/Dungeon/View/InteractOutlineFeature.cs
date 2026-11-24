@@ -8,7 +8,8 @@ using UnityEngine.Rendering.Universal;
 namespace Game.Scripts.Dungeon
 {
     /// White rim around InteractOutline's renderers, as in Dark and Darker: they are drawn into a mask, then the pixels
-    /// next to the mask, but outside it, are laid over the frame.
+    /// next to the mask, but outside it, are laid over the frame. The bodies of fighters (the own first-person hands among them) go into
+    /// the mask too, depth-tested: a body in front of the outlined thing covers it and its rim.
     public sealed class InteractOutlineFeature : ScriptableRendererFeature
     {
         [SerializeField]
@@ -54,7 +55,13 @@ namespace Game.Scripts.Dungeon
             public static readonly int ColorId = Shader.PropertyToID("_OutlineColor");
             public static readonly int WidthId = Shader.PropertyToID("_OutlineWidth");
 
+            private const int MaskPass = 0;
+            private const int OccluderPass = 1;
+            private const int RimPass = 2;
+
             private static readonly int MaskId = Shader.PropertyToID("_InteractOutlineMask");
+            private static readonly List<Renderer> s_occluders = new List<Renderer>();
+            private static readonly List<Material> s_materials = new List<Material>();
             private readonly Material _material;
 
             public OutlinePass(Material material)
@@ -67,15 +74,19 @@ namespace Game.Scripts.Dungeon
             {
                 UniversalResourceData resources = frameData.Get<UniversalResourceData>();
                 RenderTextureDescriptor desc = frameData.Get<UniversalCameraData>().cameraTargetDescriptor;
-                desc.graphicsFormat = GraphicsFormat.R8_UNorm;
+                desc.graphicsFormat = GraphicsFormat.R16G16_SFloat;
                 desc.depthStencilFormat = GraphicsFormat.None;
                 desc.msaaSamples = 1;
                 TextureHandle mask = UniversalRenderer.CreateRenderGraphTexture(renderGraph, desc, "InteractOutlineMask", true);
+                desc.graphicsFormat = GraphicsFormat.None;
+                desc.depthStencilFormat = GraphicsFormat.D32_SFloat;
+                TextureHandle depth = UniversalRenderer.CreateRenderGraphTexture(renderGraph, desc, "InteractOutlineDepth", true);
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass("Interact Outline Mask", out PassData data))
                 {
                     data.Material = _material;
                     builder.SetRenderAttachment(mask, 0);
+                    builder.SetRenderAttachmentDepth(depth, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(mask, MaskId);
                     builder.AllowPassCulling(false);
                     builder.SetRenderFunc((PassData pass, RasterGraphContext context) => DrawMask(pass, context.cmd));
@@ -86,7 +97,7 @@ namespace Game.Scripts.Dungeon
                     data.Material = _material;
                     builder.UseTexture(mask);
                     builder.SetRenderAttachment(resources.activeColorTexture, 0);
-                    builder.SetRenderFunc((PassData pass, RasterGraphContext context) => Blitter.BlitTexture(context.cmd, new Vector4(1f, 1f, 0f, 0f), pass.Material, 1));
+                    builder.SetRenderFunc((PassData pass, RasterGraphContext context) => Blitter.BlitTexture(context.cmd, new Vector4(1f, 1f, 0f, 0f), pass.Material, RimPass));
                 }
             }
 
@@ -102,7 +113,17 @@ namespace Game.Scripts.Dungeon
                         continue;
 
                     for (int subMesh = 0; subMesh < InteractOutline.SubMeshes[i]; subMesh++)
-                        cmd.DrawRenderer(renderer, pass.Material, subMesh, 0);
+                        cmd.DrawRenderer(renderer, pass.Material, subMesh, MaskPass);
+                }
+
+                InteractOutline.CollectOccluders(s_occluders);
+
+                foreach (Renderer renderer in s_occluders)
+                {
+                    renderer.GetSharedMaterials(s_materials);
+
+                    for (int subMesh = 0; subMesh < s_materials.Count; subMesh++)
+                        cmd.DrawRenderer(renderer, pass.Material, subMesh, OccluderPass);
                 }
             }
         }

@@ -18,6 +18,19 @@ namespace Game.Scripts.Editor.Dungeon
         // Tripo exports the body about 1 m tall: scaled to the fighter rig's height.
         private const float BodyScale = 1.75f;
 
+        /// The heap a dormant skeleton lies in: on its knees, doubled over them, the skull on the floor, the arms limp along the body.
+        /// Muscles by their HumanTrait names; the rest are 0.
+        private static readonly (string, float)[] s_folded =
+        {
+            ("Spine Front-Back", -1f), ("Chest Front-Back", -1f), ("UpperChest Front-Back", -0.8f), ("Neck Nod Down-Up", -0.6f), ("Head Nod Down-Up", -0.4f),
+            ("Spine Left-Right", 0.25f), ("Chest Twist Left-Right", 0.25f), ("Head Tilt Left-Right", 0.4f), ("Head Turn Left-Right", -0.7f),
+            ("Left Upper Leg Front-Back", -1f), ("Right Upper Leg Front-Back", -0.9f), ("Left Upper Leg In-Out", 0.35f), ("Right Upper Leg In-Out", 0.15f),
+            ("Left Lower Leg Stretch", -1f), ("Right Lower Leg Stretch", -1f), ("Left Foot Up-Down", -1f), ("Right Foot Up-Down", -1f),
+            ("Left Arm Down-Up", -1f), ("Right Arm Down-Up", -0.75f), ("Left Arm Front-Back", -0.2f), ("Left Forearm Stretch", -0.3f), ("Right Forearm Stretch", 0.1f)
+        };
+
+        private static readonly Vector3 s_foldedEuler = new(72f, 12f, 6f);
+
         /// The Tripo skull of the flying head.
         public static Material SkullMaterial => TripoMaterial("FlyingSkull", SkullFolder + "/Textures/FlyingSkull_");
 
@@ -40,6 +53,41 @@ namespace Game.Scripts.Editor.Dungeon
             Retarget(root, rig, model, avatar);
 
             return model.transform;
+        }
+
+        /// Makes the skeleton lie folded until it wakes and fold back when it dies (FoldedBodyComponent): bakes the folded pose into the component,
+        /// its lowest bone 5 cm over the floor.
+        public static void AddFold(GameObject root, Animator rig, MonsterComponent monster)
+        {
+            Transform[] bones = rig.GetComponentsInChildren<Transform>(true);
+            (Vector3, Quaternion)[] rest = bones.Select(bone => (bone.localPosition, bone.localRotation)).ToArray();
+            HumanPoseHandler handler = new HumanPoseHandler(rig.avatar, rig.transform);
+            HumanPose pose = default;
+            handler.GetHumanPose(ref pose);
+            System.Array.Clear(pose.muscles, 0, pose.muscles.Length);
+
+            foreach ((string muscle, float value) in s_folded)
+                pose.muscles[System.Array.IndexOf(HumanTrait.MuscleName, muscle)] = value;
+
+            pose.bodyRotation = Quaternion.Euler(s_foldedEuler);
+            pose.bodyPosition = Vector3.up;
+            handler.SetHumanPose(ref pose);
+            float lowest = Enumerable.Range(0, (int)HumanBodyBones.LastBone).Select(bone => rig.GetBoneTransform((HumanBodyBones)bone))
+                .Where(bone => bone != null).Min(bone => bone.position.y) - rig.transform.position.y;
+            handler.Dispose();
+
+            // The prefab keeps the rig at rest: the fighter measures its body on it.
+            for (int i = 0; i < bones.Length; i++)
+                bones[i].SetLocalPositionAndRotation(rest[i].Item1, rest[i].Item2);
+
+            SerializedObject so = new SerializedObject(root.AddComponent<FoldedBodyComponent>());
+            BattleEditorUtility.Set(so, "_monster", monster);
+            BattleEditorUtility.Set(so, "_anim", root.GetComponent<Game.Scripts.Battle.FighterAnimComponent>());
+            BattleEditorUtility.Set(so, "_rig", rig);
+            BattleEditorUtility.Set(so, "_muscles", pose.muscles);
+            BattleEditorUtility.Set(so, "_bodyPosition", Vector3.up * (1f - (lowest - 0.05f) / rig.humanScale));
+            so.FindProperty("_bodyRotation").quaternionValue = pose.bodyRotation;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         /// Places a humanoid model where the rig is, hides the rig's own body and makes the model copy the rig's pose.

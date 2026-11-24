@@ -313,6 +313,7 @@ namespace Game.Scripts.Battle
         private int _renderedWorldHits;
         private bool _hasWorldHit;
         private LagCompensatedHit _worldHit;
+        private float _worldHitReach;
 
         public override void Spawned()
         {
@@ -823,6 +824,7 @@ namespace Game.Scripts.Battle
 
             s_tallies.Clear();
             _hasWorldHit = false;
+            _worldHitReach = 0f;
 
             for (int i = 0; i < TracePoints; i++)
             {
@@ -849,10 +851,14 @@ namespace Game.Scripts.Battle
 
             foreach (LagCompensatedHit hit in s_hits)
             {
+                // How far along the weapon the contact is: the sweeping rays know their place, the ray along the weapon measures it.
+                float reach = alpha >= 0f ? alpha : hit.Distance / Mathf.Max(Vector3.Distance(from, to), 0.001f);
+
                 if (hit.Hitbox == null)
                 {
                     _hasWorldHit = true;
                     _worldHit = hit;
+                    _worldHitReach = Mathf.Max(_worldHitReach, reach);
 
                     break;
                 }
@@ -863,7 +869,7 @@ namespace Game.Scripts.Battle
                     continue;
 
                 s_rayRoots.Add(root);
-                AddToTally(root, hit, alpha >= 0f ? alpha : hit.Distance / Mathf.Max(Vector3.Distance(from, to), 0.001f));
+                AddToTally(root, hit, reach);
             }
         }
 
@@ -965,6 +971,9 @@ namespace Game.Scripts.Battle
                 _worldHitSurface = WorldSurface.Of(_worldHit.GameObject, _worldHit.Point);
                 _worldHitCount++;
                 isDeflected = true;
+
+                if (HasStateAuthority && _worldHit.GameObject.GetComponentInParent<IWorldHitReceiver>() is { } struck)
+                    struck.OnWorldHit(weapon, weapon.Sounds != null && _worldHitReach < weapon.Sounds.HandleShare);
             }
 
             if (isDeflected)
