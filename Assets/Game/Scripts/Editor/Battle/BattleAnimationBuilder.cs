@@ -19,6 +19,8 @@ namespace Game.Scripts.Editor.Battle
         private const float SprintSpeed = 1.44f;
         /// Ground speed the Mixamo run is authored at: what its planted foot travels back under the hips, in m/s.
         private const float RunPace = 2.3f;
+        /// Its own seat: how far below the standing height its hips ride on average.
+        private const float RunDrop = 0.06f;
         private const float BandageCycle = 0.9f;
         private const float IdleDrop = FighterAnimComponent.IdleDrop;
         private const float FootworkStride = 0.5f;
@@ -325,7 +327,7 @@ namespace Game.Scripts.Editor.Battle
             AnimationClip walkBack = RecordLegs(rig, "WalkBack", "Walk_Loop", 0.08f, -walkSpeed * backpedal);
             AnimationClip walkLeft = RecordWalk(rig, "WalkLeft", 0.4f, Vector2.left, 0.34f, 0.1f, 0.06f);
             AnimationClip walkRight = RecordWalk(rig, "WalkRight", 0.4f, Vector2.right, 0.34f, 0.1f, 0.06f);
-            AnimationClip run = RecordLegs(rig, "Run", BattleCharacterBuilder.RunClip, 0.1f, runSpeed, 8f, pace: RunPace);
+            AnimationClip run = RecordLegs(rig, "Run", BattleCharacterBuilder.RunClip, RunDrop, runSpeed, 8f, pace: RunPace);
             AnimationClip sprint = RecordLegs(rig, "Sprint", "Sprint_Loop", 0.1f, runSpeed * SprintSpeed, 8f);
             AnimationClip crouchIdle = RecordLegs(rig, "CrouchIdle", "Crouch_Idle_Loop", crouch);
             AnimationClip crouchForward = RecordLegs(rig, "CrouchForward", "Crouch_Fwd_Loop", crouch, crouchSpeed);
