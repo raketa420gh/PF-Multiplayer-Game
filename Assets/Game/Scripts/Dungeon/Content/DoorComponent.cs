@@ -122,8 +122,12 @@ namespace Game.Scripts.Dungeon
 
         public override void FixedUpdateNetwork()
         {
-            if (_blocker != null)
-                _blocker.enabled = !IsOpen && !IsBroken;
+            if (_blocker == null)
+                return;
+
+            // An open leaf stops no body, yet it is still there for blades and arrows: it takes blows and breaks like a closed one.
+            _blocker.enabled = !IsBroken;
+            _blocker.excludeLayers = IsOpen ? ~0 : 0;
         }
 
         public override void Begin(AdventurerComponent adventurer, int completeTick)
