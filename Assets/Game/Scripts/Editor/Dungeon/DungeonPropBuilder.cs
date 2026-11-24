@@ -485,6 +485,20 @@ namespace Game.Scripts.Editor.Dungeon
             return root;
         }
 
+        /// A lever on a wall: an iron plate at hand height, the rod sticks out of it along local +Z and swings up and down.
+        public static GameObject WallLever(out Transform handle)
+        {
+            Mesh plate = new DungeonMeshBuilder(1f).Box(new Vector3(0f, 1.2f, 0.04f), new Vector3(0.3f, 0.5f, 0.08f)).Save("WallLeverPlate");
+            Mesh rod = new DungeonMeshBuilder(1f).Box(new Vector3(0f, 0f, 0.25f), new Vector3(0.05f, 0.05f, 0.5f)).Save("WallLeverRod");
+            GameObject root = new GameObject("Lever");
+            MeshObject("Base", root.transform, plate, RustyMetal, default, default, false, false);
+            GameObject handleObject = BattleEditorUtility.CreateChild("Handle", root.transform, new Vector3(0f, 1.2f, 0.08f));
+            MeshObject("Rod", handleObject.transform, rod, RustyMetal, default, default, false, false);
+            handle = handleObject.transform;
+
+            return root;
+        }
+
         public static GameObject SpikeTrap(out Transform spikes)
         {
             Mesh plate = new DungeonMeshBuilder(0.5f).Box(new Vector3(0f, 0.03f, 0f), new Vector3(2f, 0.06f, 2f)).Save("SpikePlate");

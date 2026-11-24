@@ -92,14 +92,14 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Dungeon Test: a called monster appears this far ahead of the adventurer")]
         private float _testSpawnDistance = 5f;
 
-        [SerializeField, Tooltip("Dungeon Test: one of each stands in a row across the room's middle, to test loot")]
+        [SerializeField, Tooltip("Dungeon Test: one of each stands in a row in the first room, to test loot")]
         private NetworkObject[] _testChests;
 
-        [SerializeField, Tooltip("Dungeon Test: the middle of the chest row in room space (clear of the Arena's lift) and the step between chests")]
-        private Vector3 _testChestsAt = new(0f, 0f, -3.5f);
+        [SerializeField, Tooltip("Dungeon Test: the middle of the chest row in room space (the Arena's lowest stand, next to the start) and the step between chests")]
+        private Vector3 _testChestRow = new(-4.9f, 0.25f, 12f);
 
         [SerializeField]
-        private float _testChestStep = 2f;
+        private float _testChestGap = 1.5f;
 
         [SerializeField]
         private float _resetDelay = 8f;
@@ -489,9 +489,9 @@ namespace Game.Scripts.Dungeon
                 foreach (MonsterPlacement placement in room.Containers)
                     SpawnContainer(placement.Prefab, placement.Point.position, placement.Point.rotation, random);
 
-                for (int i = 0; _match.IsTest && i < _testChests.Length; i++)
+                for (int i = 0; _match.IsTest && room == _catacombs.Rooms[0] && i < _testChests.Length; i++)
                 {
-                    Vector3 local = _testChestsAt + Vector3.right * ((i - (_testChests.Length - 1) * 0.5f) * _testChestStep);
+                    Vector3 local = _testChestRow + Vector3.right * ((i - (_testChests.Length - 1) * 0.5f) * _testChestGap);
                     SpawnContainer(_testChests[i], room.transform.TransformPoint(local), room.transform.rotation, random);
                 }
 
@@ -526,14 +526,14 @@ namespace Game.Scripts.Dungeon
             _spawned.Add(spawned);
         }
 
-        /// Teams start in the key room (the Great Hall) or a room next to it.
+        /// Teams start in the key room (the Great Hall) or a room next to it; in Dungeon Test in its first room.
         private Transform[] Starts()
         {
             List<Transform> starts = new();
 
             foreach (CatacombRoomComponent room in _catacombs.Rooms)
             {
-                if (room.StartSpots != null && _catacombs.IsNearKeyRoom(room.transform.position))
+                if (room.StartSpots != null && (_match.IsTest ? room == _catacombs.Rooms[0] : _catacombs.IsNearKeyRoom(room.transform.position)))
                     starts.Add(room.StartSpots);
             }
 

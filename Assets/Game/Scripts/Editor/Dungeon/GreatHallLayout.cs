@@ -27,6 +27,8 @@ namespace Game.Scripts.Editor.Dungeon
         public float[] open;
         public string action;
         public float travel;
+        /// The lift is an iron cage, not a plank deck.
+        public bool cage;
 
         public Vector3 Position => new(p[0], p[1], p[2]);
         public Vector3 Size => s is { Length: 3 } ? new Vector3(s[0], s[1], s[2]) : Vector3.zero;

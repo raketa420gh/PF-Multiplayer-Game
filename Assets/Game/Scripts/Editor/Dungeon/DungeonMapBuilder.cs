@@ -124,7 +124,6 @@ namespace Game.Scripts.Editor.Dungeon
             BattleEditorUtility.Set(so, "_pitch", Pitch);
             BattleEditorUtility.Set(so, "_keyRoom", hall);
             BattleEditorUtility.Set(so, "_isKeyRoomLong", true);
-            BattleEditorUtility.Set(so, "_testRoom", rooms.Kinds.First(kind => kind.Prefab.name == "Arena").Prefab);
             BattleEditorUtility.Set(so, "_sides", rooms.Sides);
             BattleEditorUtility.Set(so, "_post", rooms.Post);
             BattleEditorUtility.Set(so, "_door", DungeonSceneBuilder.LoadNetworkObject("CatacombDoor"));

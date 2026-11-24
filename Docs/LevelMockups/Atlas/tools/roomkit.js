@@ -125,8 +125,8 @@ class Room {
   secretDoor(x, y, z, w, h, d, open, { ry = 0 } = {}) { return this.add('trap', 'SecretDoor', [x, y, z], [w, h, d], { ry, open }); }
   /// Нажимная плита на полу; order — номер в правильной последовательности.
   plate(x, z, order, { y = 0, w = 1.6, d = 1.6 } = {}) { return this.add('trap', 'FloorPlate', [x, y, z], [w, 0.1, d], { order }); }
-  /// Лифт: пол кабины w × d на высоте y (верхняя остановка), едет на travel вниз (< 0).
-  lift(x, y, z, w, d, travel) { return this.add('trap', 'Lift', [x, y, z], [w, 0.2, d], { travel }); }
+  /// Лифт: пол кабины w × d на высоте y (верхняя остановка), едет на travel вниз (< 0). cage — железная клеть на цепи: сквозная вдоль X, стороны по Z закрыты.
+  lift(x, y, z, w, d, travel, { cage } = {}) { return this.add('trap', 'Lift', [x, y, z], [w, 0.2, d], { travel, cage }); }
   /// Точка, откуда за ошибку в последовательности падает монстр (люк в потолке).
   drop(x, y, z) { return this.add('trap', 'MonsterDrop', [x, y, z], [1.4, 0.3, 1.4]); }
 

@@ -652,7 +652,7 @@ namespace Game.Scripts.Editor.Dungeon
             }
 
             Material material = s_stone.Contains(item.Name) ? CatacombSurfaceBuilder.Block
-                : item.Name == "Котёл" ? DungeonPropBuilder.RustyMetal
+                : item.Name is "Котёл" or "Сток" or "Поднятая решётка" ? DungeonPropBuilder.RustyMetal
                 : item.Name == "Кости" ? DungeonPropBuilder.Bone
                 : item.Name is "Спальник" or "Мешки" ? DungeonPropBuilder.WoodPlanks
                 : DungeonPropBuilder.DarkWood;

@@ -37,6 +37,13 @@ namespace Game.Scripts.Editor.Dungeon
             FinishRooms(layouts);
         }
 
+        /// Only the room prefabs selected in the Project window.
+        [MenuItem("Tools/Game/Dungeon/Catacombs/Apply Mockups Of Selected Rooms")]
+        public static void ApplySelectedMockups()
+        {
+            ApplyMockups(Selection.objects.Select(selected => selected.name).ToArray());
+        }
+
         /// Only the named rooms are rebuilt from their mockups: the others and the pool stay as they are, the prefab keeps its asset.
         public static void ApplyMockups(params string[] names)
         {
@@ -141,10 +148,8 @@ namespace Game.Scripts.Editor.Dungeon
 
             List<HallItem> parts = items.Where(item => item.cat == "trap" && RoomMechanismBuilder.IsPart(item.name)).ToList();
 
-            if (parts.Count > 0)
+            foreach (string mechanism in parts.Count > 0 ? RoomMechanismBuilder.Build(layout.Name, parts) : new List<string>())
             {
-                string mechanism = RoomMechanismBuilder.PrefabName(layout.Name);
-                RoomMechanismBuilder.Build(layout.Name, parts);
                 Marker($"Trap {mechanism}", CatacombMarkerKind.Trap, mechanism);
                 Kit($"Trap {mechanism}", room.Root, Vector3.zero, 0f);
             }

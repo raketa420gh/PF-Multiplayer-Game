@@ -1,7 +1,7 @@
 // Проверка макета: растр 0,2 м, поверхности для тела с запасом до стен 0,6 и высотой 1,8, подъём за шаг 0,3 м. Два прохода:
 // закрытый (секреты заперты, лифт стоит) и открытый (плиты сдвинуты, лифт соединяет остановки).
 const { DOOR_OFFSET, MIN_Y, MAX_Y } = require('./roomkit');
-const STEP = 0.2, EXT = 17.4, N = Math.round(2 * EXT / STEP), R_CELLS = 2, BODY = 1.8, CLIMB = 0.31, MIN_FLIGHT_W = 1.6;
+const STEP = 0.2, EXT = 17.4, N = Math.round(2 * EXT / STEP), R_CELLS = 2, BODY = 1.8, CLIMB = 0.31, MIN_FLIGHT_W = 1.6, LANDING = 1.5;
 const toI = v => Math.floor((v + EXT) / STEP), toV = i => -EXT + (i + 0.5) * STEP;
 const idx = (i, j) => i * N + j;
 const footprint = o => {
@@ -160,6 +160,31 @@ function validate(room) {
   };
   const dangling = items.filter(o => o.cat === 'stairs').flatMap(o => [[-1, o.p[1], 'низ'], [1, o.p[1] + o.s[1], 'верх']].filter(([sign, y]) => !landed(o, sign, y)).map(([, y, end]) => `${o.id} (${o.p[0]}, ${o.p[2]}) ry${o.ry || 0} ${end} ${y}`));
   dangling.forEach(d => warnings.push(`марш обрывается: ${d}`));
+  // Марш не упирается: за обоими торцами LANDING м свободного пола во всю ширину, без стен, мебели и сундуков.
+  const chests = items.filter(o => o.cat === 'chest'), furniture = items.filter(o => o.cat === 'chest' || o.cat === 'prop' && o.s[1] > 0.3);
+  const clear = (x, z, y) => {
+    const c = idx(toI(x), toI(z));
+    return closedCols.tops[c].some(t => Math.abs(t - y) <= CLIMB) && !closedCols.solids[c].some(([a, b]) => b > y + 0.35 && a < y + BODY) && !chests.some(o => Math.abs(o.p[1] - y) < 1 && inside(o, x, z));
+  };
+  for (const o of items.filter(o => o.cat === 'stairs')) {
+    const yaw = (o.ry || 0) * Math.PI / 180, dx = Math.sin(yaw), dz = Math.cos(yaw);
+    for (const [sign, y, end] of [[-1, o.p[1], 'низ'], [1, o.p[1] + o.s[1], 'верх']]) {
+      let run = LANDING;
+      for (let u = 0.3 - o.s[0] / 2; u <= o.s[0] / 2 - 0.3 + 1e-6; u += 0.2) for (let t = 0.1; t < run - 0.05; t += 0.2)
+        if (!clear(o.p[0] + dx * sign * (o.s[2] / 2 + t) + dz * u, o.p[2] + dz * sign * (o.s[2] / 2 + t) - dx * u, y)) run = t - 0.1;
+      if (run < LANDING) warnings.push(`марш упирается: ${o.id} (${o.p[0]}, ${o.p[2]}) ${end}, свободно ${run.toFixed(1)} м из ${LANDING}`);
+    }
+  }
+  // Проход не загорожен: по метру с обеих сторон двери и за проёмом клетки нет сундуков и мебели.
+  const ways = [...items.filter(o => o.name === 'Door'), ...doors.map(([x, z]) => ({ id: 'проём', p: [x, 0, z], ry: Math.abs(z) > Math.abs(x) ? 0 : 90 }))];
+  for (const d of ways) {
+    const alongX = (d.ry || 0) % 180 === 0, found = new Set();
+    for (const s of [-1, 1]) for (let t = 0.5; t <= 1.11; t += 0.2) for (const u of [-0.4, 0, 0.4]) {
+      const x = d.p[0] + (alongX ? u : s * t), z = d.p[2] + (alongX ? s * t : u);
+      furniture.filter(o => o.p[1] < d.p[1] + BODY && o.p[1] + o.s[1] > d.p[1] + 0.3 && inside(o, x, z)).forEach(o => found.add(`${o.id} ${o.name}`));
+    }
+    if (found.size) warnings.push(`проход загорожен: ${d.id} (${d.p[0]}, ${d.p[2]}) — ${[...found].join(', ')}`);
+  }
   const floors = [...new Set([...seenOpen].map(k => Math.round(+k.split('|')[1] / 50) / 2))].length;
   const levels = [...closedY].filter(y => Number.isInteger(y * 4)).sort((a, b) => a - b);
   const cat = c => items.filter(o => o.cat === c).length;
