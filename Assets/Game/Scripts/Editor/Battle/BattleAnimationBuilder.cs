@@ -17,6 +17,8 @@ namespace Game.Scripts.Editor.Battle
         private const float FingerOpen = 0.4f;
         private const float MaxStrideScale = 2f;
         private const float SprintSpeed = 1.44f;
+        /// Ground speed the Mixamo run is authored at: what its planted foot travels back under the hips, in m/s.
+        private const float RunPace = 2.3f;
         private const float BandageCycle = 0.9f;
         private const float IdleDrop = FighterAnimComponent.IdleDrop;
         private const float FootworkStride = 0.5f;
@@ -323,7 +325,7 @@ namespace Game.Scripts.Editor.Battle
             AnimationClip walkBack = RecordLegs(rig, "WalkBack", "Walk_Loop", 0.08f, -walkSpeed * backpedal);
             AnimationClip walkLeft = RecordWalk(rig, "WalkLeft", 0.4f, Vector2.left, 0.34f, 0.1f, 0.06f);
             AnimationClip walkRight = RecordWalk(rig, "WalkRight", 0.4f, Vector2.right, 0.34f, 0.1f, 0.06f);
-            AnimationClip run = RecordLegs(rig, "Run", "Jog_Fwd_Loop", 0.1f, runSpeed, 8f);
+            AnimationClip run = RecordLegs(rig, "Run", BattleCharacterBuilder.RunClip, 0.1f, runSpeed, 8f, pace: RunPace);
             AnimationClip sprint = RecordLegs(rig, "Sprint", "Sprint_Loop", 0.1f, runSpeed * SprintSpeed, 8f);
             AnimationClip crouchIdle = RecordLegs(rig, "CrouchIdle", "Crouch_Idle_Loop", crouch);
             AnimationClip crouchForward = RecordLegs(rig, "CrouchForward", "Crouch_Fwd_Loop", crouch, crouchSpeed);
@@ -382,9 +384,10 @@ namespace Game.Scripts.Editor.Battle
         /// hips stay where the combat model has them (only the vertical bob is taken over): the upper body, the hitboxes and
         /// the weapon traces are the same whatever the legs do. A non-zero speed retimes the cycle so the stride covers that
         /// ground speed (negative = played backwards). The bob is measured from the average height of the hips, or from
-        /// their height at the anchor moment (a share of the clip) for clips that start or end standing.
+        /// their height at the anchor moment (a share of the clip) for clips that start or end standing. A take whose feet
+        /// leave the ground covers more than they swing: it gives the pace it was authored at instead.
         private static AnimationClip RecordLegs(BattlePoseRig rig, string name, string library, float drop, float speed = 0f, float lean = 0f,
-            float anchor = -1f)
+            float anchor = -1f, float pace = 0f)
         {
             const int samples = 24;
             AnimationClip source = BattleEditorUtility.LoadLibraryClip(library);
@@ -404,7 +407,7 @@ namespace Game.Scripts.Editor.Battle
                 height = rig.SampleLegs(source, source.length * anchor).Hips.y;
 
             // Two steps per loop: the cycle is as long as its stride needs at the given speed.
-            float stride = (max - min) * 2f;
+            float stride = pace > 0f ? pace * source.length : (max - min) * 2f;
             float duration = speed == 0f ? source.length : Mathf.Clamp(stride / Mathf.Abs(speed), source.length / MaxStrideScale, source.length);
 
             return Record(rig, name, duration, source.isLooping, time =>

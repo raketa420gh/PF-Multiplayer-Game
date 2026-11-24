@@ -88,7 +88,7 @@ namespace Game.Scripts.Editor.Battle
         /// Finds a clip of the imported animation libraries by its take name.
         public static AnimationClip LoadLibraryClip(string name)
         {
-            foreach (string path in new[] { BattleCharacterBuilder.AnimationsPath1, BattleCharacterBuilder.AnimationsPath2 })
+            foreach (string path in new[] { BattleCharacterBuilder.AnimationsPath1, BattleCharacterBuilder.AnimationsPath2, BattleCharacterBuilder.RunPath })
             {
                 foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
                 {

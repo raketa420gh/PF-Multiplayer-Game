@@ -70,14 +70,12 @@ namespace Game.Scripts.Battle
             },
             new[]
             {
-                FighterAnimComponent.CastState, FighterAnimComponent.CastFirstPersonState, FighterAnimComponent.CastReleaseState,
-                FighterAnimComponent.UseState, FighterAnimComponent.UseFirstPersonState, FighterAnimComponent.HoldState,
-                FighterAnimComponent.InteractState, FighterAnimComponent.InteractFirstPersonState, FighterAnimComponent.ThrowState,
-                FighterAnimComponent.OpenState, FighterAnimComponent.PickUpState,
-                FighterAnimComponent.BandageState, FighterAnimComponent.BandageFirstPersonState, FighterAnimComponent.AbilityFirstPersonState, FighterAnimComponent.HoldTorchState,
-                FighterAnimComponent.TorchAimState, FighterAnimComponent.TorchThrowState
+                FighterAnimComponent.CastFirstPersonState, FighterAnimComponent.CastReleaseFirstPersonState, FighterAnimComponent.UseFirstPersonState,
+                FighterAnimComponent.HoldState, FighterAnimComponent.InteractFirstPersonState, FighterAnimComponent.BandageFirstPersonState,
+                FighterAnimComponent.AbilityFirstPersonState, FighterAnimComponent.HoldTorchState, FighterAnimComponent.TorchAimState,
+                FighterAnimComponent.TorchThrowState
             },
-            new[] { FighterAnimComponent.HitChestState, FighterAnimComponent.HitHeadState, FighterAnimComponent.HitStaggerState }
+            new[] { FighterAnimComponent.HitStaggerState }
         };
 
         /// A clip of the locomotion blend trees with the parameters that give it the whole weight.

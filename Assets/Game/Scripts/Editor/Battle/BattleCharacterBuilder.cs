@@ -14,6 +14,9 @@ namespace Game.Scripts.Editor.Battle
     {
         public const string AnimationsPath1 = PacksFolder + "/Animations/UniversalAnimationLibrary/Unity/UAL1_Standard.fbx";
         public const string AnimationsPath2 = PacksFolder + "/Animations/UniversalAnimationLibrary2/Unity/UAL2_Standard.fbx";
+        /// A single Mixamo take without a root node; its clip is named RunClip.
+        public const string RunPath = PacksFolder + "/Animations/Mixamo/Run.fbx";
+        public const string RunClip = "Mixamo_Run_Loop";
         public const string PeasantMaterial = "OutfitPeasant";
         public const string PeasantAltMaterial = "OutfitPeasant2";
         // The peasant atlas with leather grain instead of the weave, for the boots.
@@ -37,6 +40,8 @@ namespace Game.Scripts.Editor.Battle
         private const string AvatarPath = BattleEditorUtility.ModelsFolder + "/CharacterAvatar.asset";
         // Root bone of the animation libraries, their root motion node.
         private const string MotionNode = "Armature/root";
+        // How far below level the foot bone of the Mixamo rig points when the foot stands flat.
+        private const float MixamoFootPitch = 35f;
         private const int MaskSize = 1024;
         // The combat body model (hitboxes, eye point, weapon poses) is authored for a head joint at this height.
         private const float HeadHeight = 1.63f;
@@ -329,6 +334,7 @@ namespace Game.Scripts.Editor.Battle
         {
             SetupModel(AnimationsPath1, true);
             SetupModel(AnimationsPath2, true);
+            SetupModel(RunPath, true, string.Empty, RunClip);
             SetupModel(MaleBodyPath, false);
             SetupModel(FemaleBodyPath, false);
             SetupModel(ManPath, false);
@@ -348,16 +354,17 @@ namespace Game.Scripts.Editor.Battle
             }
         }
 
-        /// Pack setup: bake the axis conversion; animation libraries become humanoid with in-place clips named after their takes.
-        private static void SetupModel(string path, bool hasAnimations)
+        /// Pack setup: bake the axis conversion; animation libraries become humanoid with in-place clips named after their takes
+        /// (or the given name, for a file of one take).
+        private static void SetupModel(string path, bool hasAnimations, string motionNode = MotionNode, string clip = null)
         {
             ModelImporter importer = (ModelImporter)AssetImporter.GetAtPath(path);
             List<ModelImporterClipAnimation> clips = new();
 
             foreach (ModelImporterClipAnimation take in hasAnimations ? importer.defaultClipAnimations : Array.Empty<ModelImporterClipAnimation>())
             {
-                string name = take.takeName.Substring(take.takeName.IndexOf('|') + 1);
-                clips.Add(CreateClip(take, name, 0f, 1f, name.EndsWith("_Loop")));
+                string name = clip ?? take.takeName.Substring(take.takeName.IndexOf('|') + 1);
+                clips.Add(CreateClip(take, name, 0f, 1f, name.EndsWith("_Loop"), clip == null ? 0f : 180f));
 
                 foreach ((string cut, string source, float start, float end, bool isLoop) in s_cuts)
                 {
@@ -367,7 +374,7 @@ namespace Game.Scripts.Editor.Battle
             }
 
             bool isHuman = importer.animationType == ModelImporterAnimationType.Human && importer.clipAnimations.Length == clips.Count
-                && importer.motionNodeName == MotionNode;
+                && (importer.motionNodeName ?? string.Empty) == motionNode;
 
             if (!importer.isReadable || !importer.bakeAxisConversion || hasAnimations && !isHuman)
             {
@@ -378,15 +385,63 @@ namespace Game.Scripts.Editor.Battle
                 {
                     importer.animationType = ModelImporterAnimationType.Human;
                     importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-                    importer.motionNodeName = MotionNode;
+                    importer.motionNodeName = motionNode;
                     importer.clipAnimations = clips.ToArray();
                 }
 
                 importer.SaveAndReimport();
             }
 
-            if (hasAnimations)
+            if (hasAnimations && clip == null)
                 SetRestPose(path);
+            else if (hasAnimations)
+                SetMixamoRestPose(path);
+        }
+
+        /// A Mixamo file of one take rests in the first frame of it, and Unity's automatic T-pose leaves every bone up to
+        /// 15 degrees off. The T-pose is put together from what the rig is: each bone runs along its own Y and bends around
+        /// its X, so the spine and the limbs are straight with no turn at all, the legs hang down, the feet stand flat (the
+        /// ankle that far above the toes in the stance of the take) and the arms point to the sides. The model faces -Z
+        /// after the axis baking while an avatar reads its T-pose as facing +Z: the hips are turned around, and so is the
+        /// take (CreateClip).
+        private static void SetMixamoRestPose(string path)
+        {
+            ModelImporter importer = (ModelImporter)AssetImporter.GetAtPath(path);
+            HumanDescription description = importer.humanDescription;
+            SkeletonBone[] skeleton = description.skeleton;
+            bool isRest = true;
+
+            SkeletonBone Find(string bone) => Array.Find(skeleton, candidate => candidate.name.EndsWith(bone));
+
+            float height = -Find("LeftUpLeg").position.y + Find("LeftLeg").position.magnitude + Find("LeftFoot").position.magnitude +
+                           Find("LeftToeBase").position.magnitude * Mathf.Sin(MixamoFootPitch * Mathf.Deg2Rad);
+
+            for (int i = 1; i < skeleton.Length; i++)
+            {
+                string name = skeleton[i].name;
+                Quaternion rotation = name.EndsWith("Hips") ? Quaternion.Euler(0f, 180f, 0f)
+                    : name.EndsWith("UpLeg") ? Quaternion.Euler(0f, 0f, 180f)
+                    : name.EndsWith("Foot") ? Quaternion.Euler(MixamoFootPitch - 90f, 0f, 0f)
+                    : name.EndsWith("ToeBase") ? Quaternion.Euler(-MixamoFootPitch, 0f, 0f)
+                    : name.EndsWith("LeftShoulder") ? Quaternion.Euler(0f, 0f, -90f)
+                    : name.EndsWith("RightShoulder") ? Quaternion.Euler(0f, 0f, 90f)
+                    : Quaternion.identity;
+                Vector3 position = name.EndsWith("Hips") ? Vector3.up * height : skeleton[i].position;
+
+                if (Quaternion.Angle(skeleton[i].rotation, rotation) < 0.1f && skeleton[i].position == position)
+                    continue;
+
+                skeleton[i].rotation = rotation;
+                skeleton[i].position = position;
+                isRest = false;
+            }
+
+            if (isRest)
+                return;
+
+            description.skeleton = skeleton;
+            importer.humanDescription = description;
+            importer.SaveAndReimport();
         }
 
         /// Unity's automatic avatar turns the clavicles, upper arms and thumbs into its own T-pose. The character avatar takes
@@ -419,7 +474,7 @@ namespace Game.Scripts.Editor.Battle
             importer.SaveAndReimport();
         }
 
-        private static ModelImporterClipAnimation CreateClip(ModelImporterClipAnimation take, string name, float start, float end, bool isLoop)
+        private static ModelImporterClipAnimation CreateClip(ModelImporterClipAnimation take, string name, float start, float end, bool isLoop, float turn = 0f)
         {
             return new ModelImporterClipAnimation
             {
@@ -428,6 +483,7 @@ namespace Game.Scripts.Editor.Battle
                 firstFrame = Mathf.Lerp(take.firstFrame, take.lastFrame, start),
                 lastFrame = Mathf.Lerp(take.firstFrame, take.lastFrame, end),
                 loopTime = isLoop,
+                rotationOffset = turn,
                 lockRootRotation = true,
                 lockRootHeightY = true,
                 lockRootPositionXZ = true,
