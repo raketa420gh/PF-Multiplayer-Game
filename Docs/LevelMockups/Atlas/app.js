@@ -8,9 +8,10 @@ const OBJECT_NAMES = {
   Sword: 'Мечник', Archer: 'Лучник', Crossbow: 'Арбалетчик', Warrior: 'Воин', Mage: 'Маг', Skull: 'Череп', Barrel: 'Бочка', Coffin: 'Гроб', Crate: 'Ящик', GoldenChest: 'Золотой сундук',
   LargeOakChest: 'Большой сундук', SmallOakChest: 'Малый сундук', Urn: 'Урна', GoldPile: 'Куча золота', Spike: 'Шипы', Blade: 'Маятник', SpiderPot: 'Паучий горшок', Vent: 'Пыльный продув', Collapse: 'Обрушение',
   ArrowGallery: 'Стрельчатая галерея', HallMachinery: 'Механизм зала', AcidMoat: 'Кислотный ров', BridgeLever: 'Рычаг моста', SecretLever: 'Рычаг тайника', SecretDoor: 'Потайная плита', Start: 'Старт', Spot: 'Место старта', Torch: 'Факел', Candle: 'Свечи',
-  Brazier: 'Жаровня', Fire: 'Костёр', Acid: 'Кислотный свет', Shaft: 'Луч из пролома', Chandelier: 'Люстра'
+  Brazier: 'Жаровня', Fire: 'Костёр', Acid: 'Кислотный свет', Shaft: 'Луч из пролома', Chandelier: 'Люстра', Lift: 'Лифт на цепях', Door: 'Дверь'
 };
-const VERDICTS = { ok: '✔ Готов', rework: '✎ Правка', no: '✖ Нет' };
+const nameOf = o => o.name === 'SecretLever' && o.action === 'lift' ? 'Рычаг лифта' : OBJECT_NAMES[o.name] || o.name;
+const VERDICTS ={ ok: '✔ Готов', rework: '✎ Правка', no: '✖ Нет' };
 const LEVEL_MIN_AREA = 25;
 const CLEAR_HEIGHT = 2.4;
 const DEFAULT_CUT = 2;
@@ -304,7 +305,7 @@ function renderInfo() {
   if (state.screen !== 'room') return;
   if (!o) { const story = (ATLAS.titles[state.room] || {}).story; info.innerHTML = `${story ? `<h2>История</h2><div class="sub" style="margin:0 0 12px">${story}</div>` : ''}<h2>Описание</h2><div class="sub" style="margin:0">${(ATLAS.titles[state.room] || {}).desc || 'Кликни объект, чтобы увидеть размеры и написать правку.'}</div>`; return; }
   const n = noteOf(state.room), s = o.s;
-  info.innerHTML = `<h2>${CATS[o.cat].label} · ${o.id}</h2><div class="big">${OBJECT_NAMES[o.name] || o.name}</div><div class="sub"></div><dl><dt>Позиция</dt><dd>${o.p.map(fmt).join(', ')}</dd>${s ? `<dt>Размер</dt><dd>${s.map(fmt).join(' × ')}</dd><dt>Верх</dt><dd>${fmt(o.p[1] + s[1])} м</dd>` : `<dt>Цвет</dt><dd>${o.color}</dd><dt>Сила</dt><dd>${o.i}</dd><dt>Радиус</dt><dd>${o.r} м</dd>`}${o.ry ? `<dt>Поворот</dt><dd>${fmt(o.ry)}°</dd>` : ''}</dl><textarea id="objNote" placeholder="Что поменять в этом объекте"></textarea>`;
+  info.innerHTML = `<h2>${CATS[o.cat].label} · ${o.id}</h2><div class="big">${nameOf(o)}</div><div class="sub"></div><dl><dt>Позиция</dt><dd>${o.p.map(fmt).join(', ')}</dd>${s ? `<dt>Размер</dt><dd>${s.map(fmt).join(' × ')}</dd><dt>Верх</dt><dd>${fmt(o.p[1] + s[1])} м</dd>` : `<dt>Цвет</dt><dd>${o.color}</dd><dt>Сила</dt><dd>${o.i}</dd><dt>Радиус</dt><dd>${o.r} м</dd>`}${o.ry ? `<dt>Поворот</dt><dd>${fmt(o.ry)}°</dd>` : ''}</dl><textarea id="objNote" placeholder="Что поменять в этом объекте"></textarea>`;
   const t = $('objNote'); t.value = n.objs[o.id] || '';
   t.oninput = () => { if (t.value.trim()) n.objs[o.id] = t.value; else delete n.objs[o.id]; saveNotes(); renderList(); };
 }
@@ -313,11 +314,11 @@ function renderList() {
   if (state.screen !== 'room') return;
   const q = $('objFind').value.trim().toLowerCase(), n = noteOf(state.room), order = Object.keys(CATS);
   const list = ATLAS.rooms[state.room].filter(o => o.cat !== 'start' || o.name !== 'Spot').slice().sort((a, b) => order.indexOf(b.cat) - order.indexOf(a.cat));
-  const show = list.filter(o => !q || `${o.id} ${OBJECT_NAMES[o.name] || o.name}`.toLowerCase().includes(q));
+  const show = list.filter(o => !q || `${o.id} ${nameOf(o)}`.toLowerCase().includes(q));
   $('list').innerHTML = '';
   show.forEach(o => {
     const b = document.createElement('button'); b.setAttribute('aria-pressed', state.selected === o);
-    b.innerHTML = `<span class="id">${o.id}</span><span>${OBJECT_NAMES[o.name] || o.name}</span>${n.objs[o.id] ? '<span class="dot"></span>' : ''}`;
+    b.innerHTML = `<span class="id">${o.id}</span><span>${nameOf(o)}</span>${n.objs[o.id] ? '<span class="dot"></span>' : ''}`;
     b.onclick = () => { select(o); if (state.view !== 'plan') stage.focus(o, state.items[0]); };
     $('list').appendChild(b);
   });
@@ -329,7 +330,7 @@ function buildLabels() {
   $('labels').innerHTML = ''; labelEls = [];
   ATLAS.rooms[state.room].forEach(o => {
     if (!['trap', 'chest', 'monster'].includes(o.cat) && !(o.cat === 'start' && o.name === 'Start')) return;
-    const d = document.createElement('div'); d.className = `lbl ${o.cat}`; d.textContent = OBJECT_NAMES[o.name] || o.name;
+    const d = document.createElement('div'); d.className = `lbl ${o.cat}`; d.textContent = nameOf(o);
     $('labels').appendChild(d);
     const y = o.p[1] + (o.s ? o.s[1] : 0) + 0.3;
     labelEls.push({ d, o, v: new THREE.Vector3(o.p[0], y, -o.p[2]) });
@@ -459,7 +460,7 @@ function notesText() {
     lines.push(`${r.name} (${title(r.name)})${n.status ? ` [${VERDICTS[n.status]}]` : ''}${n.note ? `: ${n.note.trim()}` : ''}`);
     Object.entries(n.objs).forEach(([id, text]) => {
       const o = ATLAS.rooms[r.name].find(x => x.id === id);
-      lines.push(`  ${id} (${o ? `${OBJECT_NAMES[o.name] || o.name} @ ${o.p.map(fmt).join(', ')}` : '?'}): ${text.trim()}`);
+      lines.push(`  ${id} (${o ? `${nameOf(o)} @ ${o.p.map(fmt).join(', ')}` : '?'}): ${text.trim()}`);
     });
   });
   return lines.join('\n') || 'Правок нет';
