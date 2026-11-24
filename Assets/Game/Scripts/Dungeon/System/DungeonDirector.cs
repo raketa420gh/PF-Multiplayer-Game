@@ -96,10 +96,10 @@ namespace Game.Scripts.Dungeon
         private NetworkObject[] _testChests;
 
         [SerializeField, Tooltip("Dungeon Test: the middle of the chest row in room space (the Arena's lowest stand, next to the start) and the step between chests")]
-        private Vector3 _testChestRow = new(-4.9f, 0.25f, 12f);
+        private Vector3 _testChestRow = new(-4.95f, 0.25f, 11.95f);
 
         [SerializeField]
-        private float _testChestGap = 1.5f;
+        private float _testChestGap = 1.45f;
 
         [SerializeField]
         private float _resetDelay = 8f;
