@@ -46,6 +46,9 @@ namespace Game.Scripts.Editor.Battle
         public Vector3 RightFoot;
         public Vector3 LeftFootEuler;
         public Vector3 RightFootEuler;
+        /// Where the knee stands off the line from the hip to the ankle, as a sampled take has it; zero = where the foot is headed.
+        public Vector3 LeftKnee;
+        public Vector3 RightKnee;
         public float ArmDrop;
         public bool HasHands;
         public HandPose Main;
@@ -102,6 +105,9 @@ namespace Game.Scripts.Editor.Battle
         }
 
         private const float ShoulderAssist = 0.35f;
+        /// How far off the leg's line a sampled knee starts to count, and where it counts in full (knee angles of 175 and 165 degrees).
+        private const float KneeMin = 0.02f;
+        private const float KneeMax = 0.06f;
         // A fist holds the handle diagonally: with a neutral wrist the weapon leans ~15 deg past perpendicular toward
         // where the forearm points; the wrist adds about +-30 deg of radial/ulnar deviation on top.
         private const float GripTilt = 15f * Mathf.Deg2Rad;
@@ -263,8 +269,8 @@ namespace Game.Scripts.Editor.Battle
             _neck.rotation = headStep * _neck.rotation;
             _head.rotation = headStep * _head.rotation;
 
-            SolveLeg(_leftLeg, pose.LeftFoot, pose.LeftFootEuler);
-            SolveLeg(_rightLeg, pose.RightFoot, pose.RightFootEuler);
+            SolveLeg(_leftLeg, pose.LeftFoot, pose.LeftFootEuler, pose.LeftKnee);
+            SolveLeg(_rightLeg, pose.RightFoot, pose.RightFootEuler, pose.RightKnee);
 
             if (pose.HasHands)
             {
@@ -296,6 +302,8 @@ namespace Game.Scripts.Editor.Battle
                 RightFoot = _rightLeg.Foot.position - drift - _rightLeg.FootPosition,
                 LeftFootEuler = (_leftLeg.Foot.rotation * Quaternion.Inverse(_leftLeg.FootRotation)).eulerAngles,
                 RightFootEuler = (_rightLeg.Foot.rotation * Quaternion.Inverse(_rightLeg.FootRotation)).eulerAngles,
+                LeftKnee = GetKnee(_leftLeg),
+                RightKnee = GetKnee(_rightLeg),
                 ArmDrop = 70f
             };
         }
@@ -459,11 +467,20 @@ namespace Game.Scripts.Editor.Battle
             };
         }
 
-        private void SolveLeg(in Leg leg, Vector3 offset, Vector3 euler)
+        private static Vector3 GetKnee(in Leg leg)
+        {
+            return Vector3.ProjectOnPlane(leg.Lower.position - leg.Upper.position, leg.Foot.position - leg.Upper.position);
+        }
+
+        /// The knee points where the foot is headed, or where a sampled take had it: the heading of a foot kicked up heel
+        /// first is down and back, which threw the knee out to the side. A nearly straight leg says too little about its
+        /// knee, so the heading takes over there.
+        private void SolveLeg(in Leg leg, Vector3 offset, Vector3 euler, Vector3 knee)
         {
             Quaternion rotation = Quaternion.Euler(euler);
             Vector3 target = leg.FootPosition + offset;
-            Vector3 hint = (leg.Upper.position + target) * 0.5f + rotation * Vector3.forward + Vector3.up * 0.2f;
+            Vector3 heading = rotation * Vector3.forward + Vector3.up * 0.2f;
+            Vector3 hint = (leg.Upper.position + target) * 0.5f + Vector3.Lerp(heading, knee.normalized, Mathf.InverseLerp(KneeMin, KneeMax, knee.magnitude));
 
             SolveTwoBone(leg.Upper, leg.Lower, leg.Foot, target, hint);
             leg.Foot.rotation = rotation * leg.FootRotation;
