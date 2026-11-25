@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI Screens</title>
+<style>
+  :root { --bg:#0d0c0b; --side:#151311; --ink:#e9e4d8; --dim:#9a927f; --gold:#d9b873; --rule:#3a3226; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 "Segoe UI", Arial, sans-serif; display:flex; min-height:100vh; }
+  nav { position:sticky; top:0; height:100vh; overflow:auto; width:250px; flex:none; background:var(--side); border-right:1px solid var(--rule); padding:14px 12px 30px; }
+  nav h1 { font-size:16px; color:var(--gold); margin:0 0 4px; }
+  nav .sub { color:var(--dim); font-size:12px; margin-bottom:12px; }
+  nav h2 { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); margin:16px 0 4px; }
+  nav a { display:block; color:var(--ink); text-decoration:none; padding:3px 6px; border-radius:4px; font-size:13px; }
+  nav a:hover, nav a.on { background:#2a241c; }
+  nav a b { color:var(--gold); font-weight:600; display:inline-block; width:34px; }
+  nav label { display:block; font-size:12px; color:var(--dim); margin-top:6px; cursor:pointer; }
+  main { flex:1; min-width:0; padding:18px 24px 80px; }
+  section { margin:0 0 42px; scroll-margin-top:12px; }
+  section h3 { margin:0; font-size:19px; font-weight:600; }
+  section h3 b { color:var(--gold); margin-right:8px; }
+  .meta { color:var(--dim); font-size:12.5px; margin:3px 0 9px; }
+  .meta code { color:#cdbf9f; font-size:12px; }
+  .frame { position:relative; width:100%; aspect-ratio:16/9; overflow:hidden; border:1px solid var(--rule); background:#000; }
+  .stage { position:absolute; left:0; top:0; transform-origin:0 0; overflow:hidden; font-family:"Liberation Sans", Arial, sans-serif; }
+  .n { position:absolute; }
+  .spr { position:absolute; inset:0; pointer-events:none; }
+  .txt { display:flex; line-height:1.17; white-space:normal; overflow:visible; }
+  .txt > span { display:block; width:100%; }
+  .stage.boxes .n { outline:1px solid rgba(80,200,255,.35); }
+  .stage .hl { outline:2px solid #4cf !important; }
+  #inspect { position:fixed; z-index:9; pointer-events:none; background:#000d; border:1px solid #4cf8; color:#bfefff; font:12px/1.4 Consolas, monospace; padding:6px 8px; border-radius:4px; display:none; max-width:520px; }
+  .world { background:radial-gradient(ellipse at 50% 55%, #3b342b 0%, #17130f 60%, #070605 100%); }
+  .world::after { content:""; position:absolute; inset:0; background:url(../../../Assets/Game/Textures/Dungeon/Ashlar.png) center/480px; opacity:.16; mix-blend-mode:screen; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .note { color:var(--dim); font-size:12.5px; margin-top:6px; }
+</style>
+</head>
+<body>
+<nav id="nav">
+  <h1>Экраны UI</h1>
+  <div class="sub">Все экраны из <code>DungeonUiBuilder</code> в пикселях канваса 1920×1080. Наведи на элемент — путь в иерархии и rect.</div>
+  <label><input type="checkbox" id="boxes"> рамки всех RectTransform</label>
+  <label><input type="checkbox" id="insp" checked> инспектор под курсором</label>
+</nav>
+<main id="main"></main>
+<div id="inspect"></div>
+<script src="sprites.js"></script>
+<script src="engine.js"></script>
+<script src="data.js"></script>
+<script src="screens.js"></script>
+<script>
+  const main = document.getElementById('main'), nav = document.getElementById('nav'), stages = [];
+  let group = null;
+  // #shot=ID renders one screen alone at 1920 x 1080 (headless checks).
+  const shot = (location.hash.match(/shot=(\w+)/) || [])[1];
+  if (shot) document.head.insertAdjacentHTML('beforeend', '<style>nav,section h3,.meta,.note{display:none}main{padding:0}section{margin:0}.frame{border:0}</style>');
+  for (const s of SCREENS) {
+    if (shot && s.id !== shot) continue;
+    if (s.group !== group) { group = s.group; nav.insertAdjacentHTML('beforeend', `<h2>${group}</h2>`); }
+    nav.insertAdjacentHTML('beforeend', `<a href="#${s.id}"><b>${s.id}</b>${s.name}</a>`);
+    const sec = document.createElement('section'); sec.id = s.id;
+    sec.innerHTML = `<h3><b>${s.id}</b>${s.name}</h3><div class="meta">${s.meta}</div><div class="frame"></div>${s.note ? `<div class="note">${s.note}</div>` : ''}`;
+    main.append(sec);
+    const root = stage(sec.querySelector('.frame'));
+    if (s.world) root.el.classList.add('world');
+    try { s.build(root); } catch (e) { console.error(s.id, e); root.el.insertAdjacentHTML('beforeend', `<div style="color:#f66;font-size:30px;padding:40px">${s.id}: ${e}</div>`); }
+    stages.push(root.el);
+  }
+  const fit = () => stages.forEach(el => el.style.transform = `scale(${el.parentNode.clientWidth / 1920})`);
+  addEventListener('resize', fit); fit();
+  document.getElementById('boxes').onchange = e => stages.forEach(el => el.classList.toggle('boxes', e.target.checked));
+  const box = document.getElementById('inspect'); let hl = null;
+  main.addEventListener('mousemove', e => {
+    const el = document.getElementById('insp').checked && e.target.closest('.stage .n');
+    if (hl) hl.classList.remove('hl');
+    if (!el || !el.__node) { box.style.display = 'none'; hl = null; return; }
+    const n = el.__node, st = el.closest('.stage'), r = el.getBoundingClientRect(), sr = st.getBoundingClientRect(), k = 1920 / sr.width;
+    hl = el; el.classList.add('hl');
+    box.innerHTML = `<b>${n.path}</b><br>rect ${Math.round((r.left - sr.left) * k)}, ${Math.round((r.top - sr.top) * k)} · ${Math.round(n.w)}×${Math.round(n.h)}` +
+      (n.stretchPad !== undefined ? `<br>stretch, padding ${n.stretchPad}` : `<br>anchor (${n.anchor}) pivot (${n.pivot}) pos (${n.pos})`);
+    box.style.display = 'block';
+    box.style.left = Math.min(e.clientX + 14, innerWidth - 540) + 'px'; box.style.top = (e.clientY + 16) + 'px';
+  });
+  main.addEventListener('mouseleave', () => { box.style.display = 'none'; });
+  const links = [...nav.querySelectorAll('a')];
+  addEventListener('scroll', () => { let cur = links[0]; for (const a of links) if (document.getElementById(a.hash.slice(1)).getBoundingClientRect().top < 120) cur = a; links.forEach(a => a.classList.toggle('on', a === cur)); });
+</script>
+</body>
+</html>
