@@ -202,16 +202,32 @@ function buildHud(root, o = {}) {
   abilitySlot(hud, BOTTOM, V(272, 44), 'E', h.e);
   txt('Readied', hud, BOTTOM, V(372, 44), V(360, 44), 15, 'MidlineLeft', o.readied ? h.readied : '', { pivot: LEFT });
   for (let i = 0; i < 6; i++) beltSlot(hud, BOTTOM, V((i < 3 ? -182 : 78) + i % 3 * 52, 104), String(3 + Math.floor(i / 3)), h.belt[i]);
-  txt('Effects', hud, BOTTOM, V(0, 138), V(700, 24), 13, 'Center', h.effects, { color: [.8, .95, 1, 1] });
+  const fx = rect('Effects', hud, BOTTOM, V(0, 152), V(h.effects.length * 46, 42));
+  h.effects.forEach((e, i) => {
+    const c = rect('Effect' + i, fx, LEFT, V(i * 46 + 2, 0), V(42, 42), { pivot: LEFT });
+    img('Frame', c, CENTER, V(0, 0), V(42, 42), e.debuff ? [.55, .16, .12, 1] : COL.frame);
+    img('Back', c, CENTER, V(0, 0), V(38, 38), COL.panelLight);
+    img('Icon', c, CENTER, V(0, 0), V(36, 36), COL.white, { src: e.icon });
+    if (e.stacks) txt('Stacks', c, BOTTOMRIGHT, V(-2, 1), V(30, 14), 11, 'BottomRight', String(e.stacks), { pivot: BOTTOMRIGHT });
+  });
 
-  const row = rect('WeaponRow', hud, BOTTOMRIGHT, V(-330, 56), V(240, 40));
-  for (let i = 0; i < 4; i++) {
-    const s = rect('Slot' + (i + 1), row, LEFT, V(i * 62, 0), V(28, 28), { pivot: LEFT });
-    img('Frame', s, CENTER, V(0, 0), V(32, 32), i === h.weaponSlot ? COL.gold : COL.frame);
+  const row = rect('WeaponRow', hud, BOTTOMRIGHT, V(-330, 56), V(90, 40));
+  h.weaponSets.forEach((set, i) => {
+    const on = i === h.weaponSlot, s = rect('Slot' + (i + 1), row, LEFT, V(i * 62, 0), V(28, 28), { pivot: LEFT });
+    img('Frame', s, CENTER, V(0, 0), V(32, 32), on ? COL.gold : COL.frame);
     img('Back', s, CENTER, V(0, 0), V(28, 28), COL.panelLight);
-    txt('Key', s, CENTER, V(0, 0), V(28, 28), 14, 'Center', String(i + 1), { color: i === h.weaponSlot ? COL.gold : COL.white });
-    if (i < 3) img('Line', row, LEFT, V(i * 62 + 30, 0), V(30, 2), [.5, .45, .35, .8], { pivot: LEFT });
-  }
+    txt('Key', s, CENTER, V(0, 0), V(28, 28), 14, 'Center', String(i + 1), { color: on ? COL.gold : COL.white });
+    const w = rect('Weapons', s, CENTER, V(0, 70), V(54, 96));
+    img('Frame', w, CENTER, V(0, 0), V(56, 98), on ? COL.gold : COL.frame);
+    img('Back', w, CENTER, V(0, 0), V(52, 94), COL.panelLight);
+    const a = [1, 1, 1, on ? 1 : .6];
+    if (set.main) img('Main', w, CENTER, V(0, 0), V(50, 90), a, { src: ICON(set.main) });
+    if (set.off) {
+      img('OffBack', w, BOTTOMRIGHT, V(-2, 2), V(24, 24), COL.frame, { pivot: BOTTOMRIGHT });
+      img('Off', w, BOTTOMRIGHT, V(-3, 3), V(22, 22), a, { pivot: BOTTOMRIGHT, src: ICON(set.off) });
+    }
+    if (i === 0) img('Line', row, LEFT, V(30, 0), V(30, 2), [.5, .45, .35, .8], { pivot: LEFT });
+  });
   img('WeaponBack', hud, BOTTOMRIGHT, V(-280, 22), V(300, 26), [.05, .04, .03, .85]);
   txt('Weapon', hud, BOTTOMRIGHT, V(-280, 22), V(300, 26), 16, 'Center', h.weapon);
 
