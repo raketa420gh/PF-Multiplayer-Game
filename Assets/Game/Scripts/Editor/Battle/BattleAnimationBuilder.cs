@@ -43,7 +43,7 @@ namespace Game.Scripts.Editor.Battle
         private static readonly string[] s_firstPersonStates =
         {
             FighterAnimComponent.CastFirstPersonState, FighterAnimComponent.CastReleaseFirstPersonState, FighterAnimComponent.UseFirstPersonState,
-            FighterAnimComponent.HoldState, FighterAnimComponent.HoldTorchState, FighterAnimComponent.BandageFirstPersonState, FighterAnimComponent.InteractFirstPersonState,
+            FighterAnimComponent.HoldState, FighterAnimComponent.HoldTorchState, FighterAnimComponent.HoldDrawState, FighterAnimComponent.HoldTorchDrawState, FighterAnimComponent.BandageFirstPersonState, FighterAnimComponent.InteractFirstPersonState,
             FighterAnimComponent.AbilityFirstPersonState, FighterAnimComponent.TorchAimState, FighterAnimComponent.TorchThrowState,
             FighterAnimComponent.ThrowAimState, FighterAnimComponent.ThrowReleaseState
         };
@@ -706,6 +706,8 @@ namespace Game.Scripts.Editor.Battle
             AddKeyed(rig, upper, FighterAnimComponent.UseFirstPersonState, BattleAnimationLibrary.DrinkTime, use);
             AddState(upper, FighterAnimComponent.HoldState, Record(rig, FighterAnimComponent.HoldState, 1f, true, _ => use[0].Pose));
             AddState(upper, FighterAnimComponent.HoldTorchState, Record(rig, FighterAnimComponent.HoldTorchState, 1f, true, _ => BattleAnimationLibrary.HoldTorch()));
+            AddKeyed(rig, upper, FighterAnimComponent.HoldDrawState, BattleAnimationLibrary.HoldDrawTime, SettleRoll(rig, BattleAnimationLibrary.HoldDrawKeys()));
+            AddKeyed(rig, upper, FighterAnimComponent.HoldTorchDrawState, BattleAnimationLibrary.HoldDrawTime, SettleRoll(rig, BattleAnimationLibrary.HoldTorchDrawKeys()));
             AddKeyed(rig, upper, FighterAnimComponent.TorchAimState, BattleAnimationLibrary.TorchRaiseTime, SettleRoll(rig, BattleAnimationLibrary.TorchAimKeys()));
             AddKeyed(rig, upper, FighterAnimComponent.TorchThrowState, FighterAnimComponent.TorchThrowTime, SettleRoll(rig, BattleAnimationLibrary.TorchThrowKeys()));
             AddKeyed(rig, upper, FighterAnimComponent.ThrowAimState, BattleAnimationLibrary.ThrowRaiseTime, SettleRoll(rig, BattleAnimationLibrary.ThrowAimKeys()));

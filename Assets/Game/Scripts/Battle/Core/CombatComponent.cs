@@ -124,6 +124,7 @@ namespace Game.Scripts.Battle
         public ProjectileComponent Projectiles => _projectiles;
         public FighterBodyComponent Body => _body;
         public bool IsBlocking => State == CombatState.Block;
+        public bool IsPeaceful => _isPeaceful;
         /// A weapon loaded by hand has a bolt on the string.
         public bool IsLoaded => (_loadedSlots & (1 << WeaponSlot)) != 0;
         /// Arrows left at the hip of a bow with a quiver, no more than the bag still has; a weapon without one never runs out.
@@ -309,6 +310,7 @@ namespace Game.Scripts.Battle
         private float _blockRaiseSpeed = 1f;
         private bool _isGuardUnbreakable;
         private bool _isAttackSuppressed;
+        private bool _isPeaceful;
         private int _seriesStart;
         private int _renderedWorldHits;
         private bool _hasWorldHit;
@@ -383,6 +385,12 @@ namespace Game.Scripts.Battle
             _isAttackSuppressed = isSuppressed;
         }
 
+        /// Hub outside the fencing hall: no swing, shot, cast or throw starts; blocking still works.
+        public void SetPeaceful(bool isPeaceful)
+        {
+            _isPeaceful = isPeaceful;
+        }
+
         public int GetWeaponIndex(int slot)
         {
             int index = _slotWeapons[Mathf.Clamp(slot, 0, MaxSlots - 1)];
@@ -417,7 +425,8 @@ namespace Game.Scripts.Battle
             _slotOffWeapons.Set(slot, off);
             _slotsInitialized = true;
 
-            if (isChanged && slot == WeaponSlot && State != CombatState.Busy)
+            // The slot being taken out, not the one still committed: a set key pressed this tick is not overridden.
+            if (isChanged && slot == _pendingSlot && State != CombatState.Busy)
                 StartEquip(slot, previous, isPutAway && isInitialized);
         }
 
@@ -474,14 +483,21 @@ namespace Game.Scripts.Battle
         {
             WeaponConfig weapon = Weapon;
             // Two weapons: each hand strikes with its own button and neither blocks.
-            bool hasOff = OffWeapon != null && !weapon.IsRanged;
-            bool isAttackHeld = buttons.IsSet(weapon.AttackButton) && !_isAttackSuppressed;
-            bool isAttackPressed = buttons.WasPressed(previous, weapon.AttackButton) && !_isAttackSuppressed;
+            bool hasOff = OffWeapon != null && !weapon.IsRanged && !_isPeaceful;
+            bool canAttack = !_isAttackSuppressed && !_isPeaceful;
+            bool isAttackHeld = buttons.IsSet(weapon.AttackButton) && canAttack;
+            bool isAttackPressed = buttons.WasPressed(previous, weapon.AttackButton) && canAttack;
             bool isOffHeld = hasOff && buttons.IsSet(weapon.BlockButton) && !_isBlockSuppressed;
             bool isOffPressed = hasOff && buttons.WasPressed(previous, weapon.BlockButton) && !_isBlockSuppressed;
             bool isBlockHeld = !hasOff && buttons.IsSet(weapon.BlockButton) && weapon.Block.CanBlock && !_isBlockSuppressed;
             bool isBlockPressed = !hasOff && buttons.WasPressed(previous, weapon.BlockButton) && !_isBlockSuppressed;
             bool isReloadPressed = buttons.WasPressed(previous, PlayerInputButtons.Reload);
+            int requestedSlot = GetRequestedSlot(buttons, previous);
+
+            // A set key is never lost: it also takes over an equip under way or a raised block.
+            if (requestedSlot >= 0 && requestedSlot != _pendingSlot && State is CombatState.Equip or CombatState.BlockRaise or CombatState.Block)
+                StartEquip(requestedSlot, WeaponIndex, true);
+
             float time = StateTime;
             _isBlockHeld = isBlockHeld;
 
@@ -559,7 +575,7 @@ namespace Game.Scripts.Battle
                     break;
 
                 case CombatState.Draw:
-                    if (isBlockPressed)
+                    if (isBlockPressed || _isPeaceful)
                         SetState(CombatState.Idle);
                     else if (!isAttackHeld)
                         ReleaseDraw(weapon.Ranged, time);

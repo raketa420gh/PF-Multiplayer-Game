@@ -188,6 +188,8 @@ namespace Game.Scripts.Editor.Battle
         public const float TorchRaiseTime = 24f / 60f;
         /// A throwing weapon is drawn back and the aiming hand is up 16 frames after LMB, as in the footage.
         public const float ThrowRaiseTime = 16f / 60f;
+        /// A belt item comes up from the hip into the hold in 18 frames.
+        public const float HoldDrawTime = 18f / 60f;
         public const float AbilityTime = FighterAnimComponent.AbilityTime;
         public const float AbilityPeak = FighterAnimComponent.AbilityPeak;
         /// A belt item is no handle to close the fist on: the fingers lie around it.
@@ -780,6 +782,32 @@ namespace Game.Scripts.Editor.Battle
         {
             return Torch(new(-0.29f, 1.43f, 0.615f), new(0.08f, 1f, -0.05f), new(0.25f, 0.45f, 0.85f), new(0.12f, 1.495f, 0.45f),
                 new(0f, 0.96f, -0.27f), new(-0.35f, 0.25f, 0.9f), 0.4f);
+        }
+
+        /// A belt item taken into the hand: the fist comes up from the right hip, below the view, into the hold.
+        public static List<PoseKey> HoldDrawKeys()
+        {
+            return new List<PoseKey>
+            {
+                new(0f, Held(new(0.22f, 1f, 0.08f), new(0f, 0.95f, 0.3f), new(-0.1f, 0.5f, 0.86f))),
+                new(8f / 60f, Held(new(0.2f, 1.2f, 0.3f), new(-0.05f, 0.97f, 0.2f), new(-0.2f, 0.47f, 0.86f)), Ease.In),
+                new(HoldDrawTime, Hold(), Ease.Out)
+            };
+        }
+
+        /// A torch taken from the belt: the off hand brings it up from the left hip into the hold, the main hand stays at rest.
+        public static List<PoseKey> HoldTorchDrawKeys()
+        {
+            Vector3 main = new(0.12f, 1.495f, 0.45f);
+            Vector3 thumb = new(0f, 0.96f, -0.27f);
+            Vector3 fingers = new(-0.35f, 0.25f, 0.9f);
+
+            return new List<PoseKey>
+            {
+                new(0f, Torch(new(-0.22f, 1f, 0.08f), new(0.08f, 1f, -0.05f), new(0.25f, 0.45f, 0.85f), main, thumb, fingers, 0.4f)),
+                new(8f / 60f, Torch(new(-0.25f, 1.2f, 0.35f), new(0.08f, 1f, -0.05f), new(0.25f, 0.45f, 0.85f), main, thumb, fingers, 0.4f), Ease.In),
+                new(HoldDrawTime, HoldTorch(), Ease.Out)
+            };
         }
 
         /// Drawing a knife or a francisca back to throw as in the Dark and Darker footage: the main hand whips it up and back over

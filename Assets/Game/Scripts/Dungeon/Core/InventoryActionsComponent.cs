@@ -226,6 +226,23 @@ namespace Game.Scripts.Dungeon
             }
         }
 
+        /// The whole bag goes into the target (a stash page) as far as it fits; what is worn stays on.
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        public void RpcStoreAll(NetworkBehaviourId target)
+        {
+            if (!TryResolve(target, out InventoryComponent to) || to == _inventory)
+                return;
+
+            for (int i = 0; i < InventoryComponent.Capacity; i++)
+            {
+                ItemStack stack = _inventory.Bag[i];
+
+                // Room for a whole new stack first: TryAdd may top up stacks and still fail, which would copy the rest.
+                if (!stack.IsEmpty && !stack.IsHidden && _inventory.GetConfig(stack) is { } config && to.HasRoom(config) && to.TryAdd(stack))
+                    _inventory.RemoveAt(i);
+            }
+        }
+
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         public void RpcLoad(byte kind, byte chunk, byte chunkCount, byte[] data)
         {

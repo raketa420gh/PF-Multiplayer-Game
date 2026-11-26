@@ -94,6 +94,8 @@ namespace Game.Scripts.Editor.Dungeon
             FistsShield, FistsEcu, Zweihander, Club, ClubShield, ClubEcu, SkeletonSword, FlangedMace, FlangedMaceShield, FlangedMaceEcu
         };
 
+        private static readonly string[] s_drawnOverShoulder = { ArmingSword, BattleAxe, Staff, VikingSword, Misericorde, Poniard };
+
         /// The entry whose shield is the model of a shield item, by its ShieldIndex: the round shield, the écu.
         public static readonly string[] ShieldModels = { SwordShield, SwordEcu };
 
@@ -229,6 +231,17 @@ namespace Game.Scripts.Editor.Dungeon
                 CreateSkeletonSword(),
                 CreateFlangedMace()
             };
+
+            // Every weapon of the hands without a draw of its own is taken out from over the shoulder; belt items come up from the
+            // hip (BattleAnimationLibrary.HoldDrawKeys).
+            foreach (WeaponDefinition weapon in all)
+            {
+                if (weapon.EquipVia.Count > 0 || Array.IndexOf(s_drawnOverShoulder, weapon.Prefix) < 0)
+                    continue;
+
+                weapon.EquipVia = OverShoulder(weapon.Idle);
+                weapon.EquipShown = DrawReach;
+            }
 
             // Every pair is built from a definition of its own: WithShield changes the poses it is given.
             foreach ((string _, Func<WeaponDefinition> create, string[] withShield) in ShieldPairs)

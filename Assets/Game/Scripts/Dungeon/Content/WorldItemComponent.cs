@@ -216,6 +216,10 @@ namespace Game.Scripts.Dungeon
                 velocity = Vector3.Reflect(velocity, hit.normal) * Bounce;
             }
 
+            // A torch thrown in the hub's fencing hall bounces back from its doorway.
+            if (ProjectileComponent.ClipToPen(transform.position, ref position))
+                velocity = new Vector3(-velocity.x, velocity.y, -velocity.z) * Bounce;
+
             _velocity = velocity;
             // The head is up at the throw (the model lies along -x) and goes over forward.
             transform.SetPositionAndRotation(position, heading * Quaternion.Euler(_tumble, 0f, 0f) * Quaternion.Euler(0f, 0f, -90f));

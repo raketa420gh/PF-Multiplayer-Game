@@ -1300,10 +1300,14 @@ namespace Game.Scripts.Editor.Dungeon
             Stretch(sellText.rectTransform, 8f);
             sellText.color = new Color(0.85f, 0.8f, 0.7f);
 
+            Button unload = CreateButton("UnloadAll", inventory.transform.Find("BagPanel"), new Vector2(1f, 1f), new Vector2(-104f, -34f), new Vector2(120f, 26f), "Unload all");
+            ((RectTransform)unload.transform).pivot = new Vector2(1f, 1f);
+
             StashPagesView view = other.gameObject.AddComponent<StashPagesView>();
             SerializedObject so = new SerializedObject(view);
             BattleEditorUtility.Set(so, "_inventory", inventory);
             BattleEditorUtility.Set(so, "_tabs", tabs);
+            BattleEditorUtility.Set(so, "_unloadButton", unload);
             BattleEditorUtility.Set(so, "_sellZone", sellZone);
             BattleEditorUtility.Set(so, "_sellText", sellText);
             BattleEditorUtility.Set(so, "_coinsText", coins);

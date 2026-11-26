@@ -50,12 +50,6 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private StatusEffectComponent _effects;
 
-        [SerializeField, Tooltip("Seconds the body stays when it carries loot / when it is empty")]
-        private Vector2 _corpseLifetime = new(300f, 30f);
-
-        [Networked]
-        private TickTimer _despawnTimer { get; set; }
-
         [Networked]
         private TickTimer _riseTimer { get; set; }
 
@@ -119,9 +113,6 @@ namespace Game.Scripts.Dungeon
             // A spell or a trap that reaches the heap wakes it.
             if (IsDormant && _fighter.Health.IsAlive && _fighter.Health.CurrentHealth < _fighter.Health.MaxHealth)
                 Wake();
-
-            if (_despawnTimer.Expired(Runner))
-                Runner.Despawn(Object);
         }
 
         public void Setup(byte floor)
@@ -162,7 +153,7 @@ namespace Game.Scripts.Dungeon
             return Mathf.RoundToInt(damage * (1f - reduction) * StatusDamage.Taken(_effects));
         }
 
-        /// The loot stays on the body: the corpse is a container the adventurers search.
+        /// The loot stays on the body: the corpse is a container the adventurers search. It lies there till the run ends, as a trace for others.
         private void Reward()
         {
             IsRewarded = true;
@@ -178,8 +169,6 @@ namespace Game.Scripts.Dungeon
             // A monster without a corpse container (a spider) leaves nothing to search.
             if (_corpse != null)
                 _corpse.Fill(_config.LootTable, Runner.Tick + (int)Object.Id.Raw * 7919);
-
-            _despawnTimer = TickTimer.CreateFromSeconds(Runner, _corpse != null && _corpse.Inventory.CountItems() > 0 ? _corpseLifetime.x : _corpseLifetime.y);
         }
 
         /// Each landed blow adds a stack of slow and restarts it, up to MaxSlowStacks.

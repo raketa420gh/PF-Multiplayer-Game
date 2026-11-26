@@ -79,10 +79,9 @@ namespace Game.Scripts.Dungeon
         private const float TorchThrowSpeed = 14f;
         private const float PinTime = 3f;
         private const float ThrowSpeed = 22f;
-        /// A throw let go at once flies this share of the full speed, high as a candle; held FullDrawTime it flies almost
-        /// straight at full speed and power.
-        private const float LobSpeed = 0.25f;
-        private const float LobLift = 6.5f;
+        /// A throw always leaves toward the crosshair: let go at once it flies this share of the full speed and drops soon (DaD);
+        /// held FullDrawTime it flies almost straight at full speed and power.
+        private const float LobSpeed = 0.4f;
         private const float StraightLift = 0.6f;
         private const float LobDamage = 0.5f;
         private const float FullDrawTime = 1f;
@@ -972,7 +971,7 @@ namespace Game.Scripts.Dungeon
 
             bool isCancelPressed = buttons.WasPressed(previous, PlayerInputButtons.Interact) && IsCancelable;
 
-            if (isCancelPressed || (IsHoldingCast && _effects.Has(StatusEffectKind.Silence)))
+            if (isCancelPressed || (IsHoldingCast && _effects.Has(StatusEffectKind.Silence)) || (combat.IsPeaceful && (IsHoldingCast || IsAimingThrow)))
                 CancelPending();
 
             if (IsHoldingCast)
@@ -1014,6 +1013,10 @@ namespace Game.Scripts.Dungeon
                 TryInteract();
 
             bool isBeltInHand = SimulateBelt(buttons, previous);
+
+            // Hub outside the fencing hall: no skill, spell or throw.
+            if (combat.IsPeaceful)
+                return;
 
             for (int slot = 0; slot < _skillAbilities.Length; slot++)
             {
@@ -1096,7 +1099,7 @@ namespace Game.Scripts.Dungeon
         /// The held torch or throwing weapon is drawn back; it flies when the button is let go, the harder the longer it was held.
         private void TryAimThrow(byte kind)
         {
-            if (!_fighter.Combat.StartBusy(float.PositiveInfinity, kind))
+            if (_fighter.Combat.IsPeaceful || !_fighter.Combat.StartBusy(float.PositiveInfinity, kind))
                 return;
 
             Pending = PendingAction.Throw;
@@ -1117,10 +1120,10 @@ namespace Game.Scripts.Dungeon
             _pendingCompleteTick = Runner.Tick + Mathf.CeilToInt(letGo / speed / Runner.DeltaTime);
         }
 
-        /// Let go at once the throw goes up as a candle and lands near; fully drawn it flies almost straight, slightly dropping.
+        /// Toward the crosshair at the drawn share of the speed: a weak throw drops early, a full one flies almost straight.
         private Vector3 ThrowVelocity(float fullSpeed)
         {
-            return _fighter.Body.AimDirection * (fullSpeed * Mathf.Lerp(LobSpeed, 1f, _throwPower)) + Vector3.up * Mathf.Lerp(LobLift, StraightLift, _throwPower);
+            return _fighter.Body.AimDirection * (fullSpeed * Mathf.Lerp(LobSpeed, 1f, _throwPower)) + Vector3.up * StraightLift;
         }
 
         private void Throw(EquipSlot slot)

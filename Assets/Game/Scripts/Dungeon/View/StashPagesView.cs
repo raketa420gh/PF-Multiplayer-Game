@@ -15,6 +15,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private Button[] _tabs;
 
+        [SerializeField, Tooltip("Moves the whole bag (not what is worn) into the stash pages, first page first")]
+        private Button _unloadButton;
+
         [SerializeField]
         private ItemDropZone _sellZone;
 
@@ -44,6 +47,7 @@ namespace Game.Scripts.Dungeon
                 _tabs[i].GetComponent<ItemDropZone>().OnDropped += item => MoveToPage(item, page);
             }
 
+            _unloadButton.onClick.AddListener(OnUnloadClicked);
             _sellZone.OnPreview += OnSellPreview;
             _sellZone.OnDropped += Sell;
             _sellText.text = SellHint;
@@ -125,6 +129,15 @@ namespace Game.Scripts.Dungeon
         {
             DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.4f);
             Select(page);
+        }
+
+        /// The own pages in order, then the shared chest: what does not fit on one page goes on to the next.
+        private void OnUnloadClicked()
+        {
+            DungeonAudioComponent.PlayUi(DungeonSound.Click, 0.4f);
+
+            foreach (InventoryComponent stash in _session.Stashes)
+                _session.Actions.RpcStoreAll(stash.Id);
         }
 
         private void OnSellPreview(ItemView item)

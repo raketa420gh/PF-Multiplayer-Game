@@ -73,6 +73,7 @@ namespace Game.Scripts.Dungeon
             _networkEvents.PlayerJoined.AddListener(OnPlayerJoined);
             _networkEvents.PlayerLeft.AddListener(OnPlayerLeft);
             _networkEvents.OnShutdown.AddListener(OnShutdown);
+            ProjectileComponent.SetPen(_hall);
         }
 
         private void OnDisable()
@@ -80,6 +81,7 @@ namespace Game.Scripts.Dungeon
             _networkEvents.PlayerJoined.RemoveListener(OnPlayerJoined);
             _networkEvents.PlayerLeft.RemoveListener(OnPlayerLeft);
             _networkEvents.OnShutdown.RemoveListener(OnShutdown);
+            ProjectileComponent.SetPen(null);
         }
 
         private void Update()
@@ -87,8 +89,10 @@ namespace Game.Scripts.Dungeon
             // Every peer resolves hits by the same rule, so it is set on all of them.
             foreach (FighterComponent fighter in FighterComponent.All)
             {
+                bool isInHall = IsInHall(fighter.transform.position);
                 fighter.Receiver.SetTeam(Team);
-                fighter.Receiver.SetSparring(IsInHall(fighter.transform.position));
+                fighter.Receiver.SetSparring(isInHall);
+                fighter.Combat.SetPeaceful(!isInHall);
             }
 
             if (_runner == null || !_runner.IsServer)

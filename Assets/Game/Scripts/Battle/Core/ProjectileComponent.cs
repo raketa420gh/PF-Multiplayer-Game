@@ -120,6 +120,7 @@ namespace Game.Scripts.Battle
 
         private static readonly List<LagCompensatedHit> s_hits = new(16);
         private static readonly List<LagCompensatedHit> s_overlaps = new(16);
+        private static BoxCollider s_pen;
 
         public override void FixedUpdateNetwork()
         {
@@ -136,6 +137,41 @@ namespace Game.Scripts.Battle
                 Simulate(ref data);
                 _projectiles.Set(i, data);
             }
+        }
+
+        /// Hub fencing hall: nothing shot or thrown inside it leaves it, it stops on the box's side as on a wall. Null = none.
+        public static void SetPen(BoxCollider pen)
+        {
+            s_pen = pen;
+        }
+
+        /// True when the step from → to leaves the pen from inside; to becomes the point where it crosses the side.
+        public static bool ClipToPen(Vector3 from, ref Vector3 to)
+        {
+            if (s_pen == null)
+                return false;
+
+            Transform space = s_pen.transform;
+            Vector3 a = space.InverseTransformPoint(from) - s_pen.center;
+            Vector3 b = space.InverseTransformPoint(to) - s_pen.center;
+            Vector3 half = s_pen.size * 0.5f;
+            float exit = 1f;
+
+            for (int i = 0; i < 3; i++)
+            {
+                if (Mathf.Abs(a[i]) > half[i])
+                    return false;
+
+                if (Mathf.Abs(b[i]) > half[i])
+                    exit = Mathf.Min(exit, (Mathf.Sign(b[i]) * half[i] - a[i]) / (b[i] - a[i]));
+            }
+
+            if (exit >= 1f)
+                return false;
+
+            to = Vector3.Lerp(from, to, exit);
+
+            return true;
         }
 
         public void Fire(Vector3 origin, Vector3 velocity, float gravity, int damage, float staggerDuration,
@@ -174,6 +210,7 @@ namespace Game.Scripts.Battle
             float time = Runner.SecondsSince(data.FireTick);
             Vector3 from = data.GetPosition(time - Runner.DeltaTime);
             Vector3 to = data.GetPosition(time);
+            bool isPenned = ClipToPen(from, ref to);
 
             Runner.RaycastAllSorted(from, to, Object.InputAuthority, s_hits, _hitMask,
                 HitOptions.IncludePhysX | HitOptions.SubtickAccuracy);
@@ -194,6 +231,20 @@ namespace Game.Scripts.Battle
                     ApplyHit(data, hit, from);
 
                 OnImpact?.Invoke(data, hit.Point, hit.Normal);
+
+                return;
+            }
+
+            if (isPenned)
+            {
+                data.FinishTick = Runner.Tick;
+                data.HitPoint = to;
+                data.IsHidden = true;
+
+                if (data.Radius > 0f)
+                    Explode(data, to);
+
+                OnImpact?.Invoke(data, to, (from - to).normalized);
 
                 return;
             }

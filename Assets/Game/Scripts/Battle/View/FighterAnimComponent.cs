@@ -42,6 +42,9 @@ namespace Game.Scripts.Battle
         public const string UseFirstPersonState = "UseFp";
         public const string HoldState = "Hold";
         public const string HoldTorchState = "HoldTorch";
+        /// A belt item or a torch taken into the hand from the belt.
+        public const string HoldDrawState = "HoldDraw";
+        public const string HoldTorchDrawState = "HoldTorchDraw";
         public const string ThrowState = "Throw";
         public const string TorchAimState = "TorchAim";
         public const string TorchThrowState = "TorchThrow";
@@ -151,6 +154,8 @@ namespace Game.Scripts.Battle
         private static readonly int s_hitStagger = Animator.StringToHash(HitStaggerState);
         private static readonly int s_hold = Animator.StringToHash(HoldState);
         private static readonly int s_holdTorch = Animator.StringToHash(HoldTorchState);
+        private static readonly int s_holdDraw = Animator.StringToHash(HoldDrawState);
+        private static readonly int s_holdTorchDraw = Animator.StringToHash(HoldTorchDrawState);
         private static readonly int s_pickUp = Animator.StringToHash(PickUpFirstPersonState);
 
         /// Indexed by CombatComponent.BusyKind.
@@ -513,7 +518,8 @@ namespace Game.Scripts.Battle
                     break;
                 case CombatState.Equip:
                     bool isUnequipping = combat.IsUnequipping;
-                    state = isUnequipping ? states.Unequip : states.Equip;
+                    // A belt item comes up from the hip, a weapon along its own draw.
+                    state = isUnequipping ? states.Unequip : _isHoldingTorch ? s_holdTorchDraw : _isHolding ? s_holdDraw : states.Equip;
                     state = state != 0 ? state : states.Idle;
                     time = combat.EquipClipTime;
                     token = combat.StateTick + (isUnequipping ? 0 : 1);
@@ -529,7 +535,10 @@ namespace Game.Scripts.Battle
                     break;
                 default:
                     // A thrown spell plays its follow-through out before the idle takes over.
-                    if (_upperState == states.Busy[ReleaseBusy] && _animator.GetCurrentAnimatorStateInfo(UpperLayer).normalizedTime < 1f)
+                    // So does the draw of a belt item, which outlasts the short equip of empty hands.
+                    bool isDrawing = _isHolding && (_upperState == s_holdDraw || _upperState == s_holdTorchDraw);
+
+                    if ((_upperState == states.Busy[ReleaseBusy] || isDrawing) && _animator.GetCurrentAnimatorStateInfo(UpperLayer).normalizedTime < 1f)
                         return;
 
                     // A let-go block brings the guard down along a clip of its own before the idle takes over.
