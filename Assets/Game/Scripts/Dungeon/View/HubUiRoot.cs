@@ -1,10 +1,11 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Game.Scripts.Dungeon
 {
     /// Hub scene: the adventurer walks the settlement under the gameplay HUD; a station under the crosshair opens its page on F,
-    /// Tab opens the kit, Escape closes the page or toggles the menu. Owns the cursor state through the input polling.
+    /// Tab/I toggles the kit (closes any page), Escape closes the page or toggles the menu. Owns the cursor state through the input polling.
     public sealed class HubUiRoot : MonoBehaviour
     {
         [SerializeField]
@@ -109,6 +110,12 @@ namespace Game.Scripts.Dungeon
                 else
                     SetPauseOpen(!_pause.IsShown);
             }
+            else if (_pages.IsShown && !IsTyping() && (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.I)))
+            {
+                SetPageOpen(false);
+
+                return;
+            }
 
             if (_pause.IsShown || _pages.IsShown || !hasBody)
             {
@@ -197,6 +204,13 @@ namespace Game.Scripts.Dungeon
             _hud.SetShown(!isOpen);
             _promptText.text = string.Empty;
             _context.Battle.Input.SetUiOpen(isOpen);
+        }
+
+        private static bool IsTyping()
+        {
+            GameObject selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+
+            return selected != null && selected.TryGetComponent(out TMP_InputField field) && field.isFocused;
         }
 
         private void SetPauseOpen(bool isOpen)
