@@ -53,6 +53,29 @@ namespace Game.Scripts.Dungeon
         public static string LoadName(int slot) => PlayerPrefs.GetString(Key(slot, NameKey), string.Empty);
 
         public static byte[] LoadKit() => Load(Key(s_slot, KitKey));
+
+        /// The equipped items of a slot's saved kit, by EquipSlot, read without an inventory (the character select).
+        public static ItemConfig[] LoadEquipment(int slot, ItemDatabase database)
+        {
+            ItemConfig[] equipment = new ItemConfig[InventoryComponent.EquipmentCapacity];
+            byte[] data = Load(Key(slot, KitKey));
+
+            if (data.Length < 2)
+                return equipment;
+
+            int count = data[0] + data[1];
+            int size = count > 0 && data.Length - 2 < count * ItemStack.ByteSize ? ItemStack.LegacyByteSize : ItemStack.ByteSize;
+
+            for (int i = 0, offset = 2 + data[0] * size; i < data[1] && offset + size <= data.Length; i++, offset += size)
+            {
+                ItemStack stack = ItemStack.Read(data, offset, size);
+
+                if (stack.X < equipment.Length)
+                    equipment[stack.X] = database.Get(stack.ItemId);
+            }
+
+            return equipment;
+        }
         public static byte[] LoadStash(int page) => Load(StashPageKey(page));
         public static int LoadLevel() => LoadLevel(s_slot);
         public static int LoadExperience() => PlayerPrefs.GetInt(Key(s_slot, ExperienceKey), 0);

@@ -87,13 +87,16 @@ namespace Game.Scripts.Dungeon
         }
 
         /// Dresses from an inventory's equipment slots.
-        public void Apply(InventoryComponent inventory)
+        public void Apply(InventoryComponent inventory) => Apply(inventory.GetEquippedConfigs());
+
+        /// Dresses from the item configs of the equipment slots, by EquipSlot.
+        public void Apply(ItemConfig[] equipment)
         {
             Clear();
 
-            for (int i = 0; i < InventoryComponent.EquipmentCapacity; i++)
+            foreach (ItemConfig config in equipment)
             {
-                if (inventory.GetConfig(inventory.Equipment[i]) is ArmorItemConfig armor)
+                if (config is ArmorItemConfig armor)
                     Show(armor.Visual, armor.VisualColor);
             }
         }

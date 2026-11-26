@@ -1012,7 +1012,8 @@ namespace Game.Scripts.Battle
             {
                 SetState(CombatState.BlockImpact, block.ImpactDuration + block.RecoveryDuration);
             }
-            else if (staggerDuration > 0f)
+            // A hit does not cut a swing short: the attack plays out, as in Dark and Darker.
+            else if (staggerDuration > 0f && State != CombatState.Attack)
             {
                 SetState(CombatState.Stagger, staggerDuration);
                 IsHitStagger = true;

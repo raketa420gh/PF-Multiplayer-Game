@@ -82,7 +82,7 @@ namespace Game.Scripts.Dungeon
             }
 
             ClassConfig config = FindClass(StashService.LoadClass(slot));
-            _preview.Bind(null, config);
+            _preview.Bind(slot, config);
             _nameText.text = $"{StashService.LoadName(slot)}  <color=#c8e632>Lv. {StashService.LoadLevel(slot)}</color> {config.DisplayName}"
                 + (config.IsPlayable ? string.Empty : "  <color=#e05040>(class unavailable)</color>");
         }

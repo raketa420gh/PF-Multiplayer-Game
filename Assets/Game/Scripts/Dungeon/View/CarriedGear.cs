@@ -53,6 +53,17 @@ namespace Game.Scripts.Dungeon
 
             _shownVersion = inventory.Version;
             _shownHeld = held;
+            Show(inventory.GetEquippedConfigs(), heldSet, heldBelt);
+
+            return true;
+        }
+
+        /// equipment: the item configs of the equipment slots, by EquipSlot.
+        public void Show(ItemConfig[] equipment, int heldSet = -1, int heldBelt = -1)
+        {
+            if (_back == null || _hips == null)
+                return;
+
             WeaponItemConfig[] weapons = new WeaponItemConfig[Sets * 2];
 
             for (int set = 0; set < Sets; set++)
@@ -60,17 +71,15 @@ namespace Game.Scripts.Dungeon
                 if (set == heldSet)
                     continue;
 
-                weapons[set * 2] = inventory.GetEquippedConfig<WeaponItemConfig>(set == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main);
-                weapons[set * 2 + 1] = inventory.GetEquippedConfig<WeaponItemConfig>(set == 0 ? EquipSlot.Weapon1Off : EquipSlot.Weapon2Off);
+                weapons[set * 2] = equipment[(int)(set == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main)] as WeaponItemConfig;
+                weapons[set * 2 + 1] = equipment[(int)(set == 0 ? EquipSlot.Weapon1Off : EquipSlot.Weapon2Off)] as WeaponItemConfig;
             }
 
-            Show(weapons, FindBeltItem(inventory, EquipSlot.Utility1, heldBelt), FindBeltItem(inventory, EquipSlot.Utility4, heldBelt));
-
-            return true;
+            Show(weapons, FindBeltItem(equipment, EquipSlot.Utility1, heldBelt), FindBeltItem(equipment, EquipSlot.Utility4, heldBelt));
         }
 
         /// weapons: main and off hand of the first set, then of the second; null entries carry nothing.
-        public void Show(WeaponItemConfig[] weapons, ItemConfig leftHip, ItemConfig rightHip)
+        private void Show(WeaponItemConfig[] weapons, ItemConfig leftHip, ItemConfig rightHip)
         {
             DestroyInstances();
             float backDepth = 0f;
@@ -113,12 +122,12 @@ namespace Game.Scripts.Dungeon
         }
 
         /// The first item of a belt group that is not the one in the hand.
-        private static ItemConfig FindBeltItem(InventoryComponent inventory, EquipSlot first, int heldBelt)
+        private static ItemConfig FindBeltItem(ItemConfig[] equipment, EquipSlot first, int heldBelt)
         {
             for (int i = 0; i < AdventurerComponent.BeltGroupSize; i++)
             {
                 EquipSlot slot = (EquipSlot)((int)first + i);
-                ItemConfig config = (int)slot != heldBelt ? inventory.GetConfig(inventory.GetEquipped(slot)) : null;
+                ItemConfig config = (int)slot != heldBelt ? equipment[(int)slot] : null;
 
                 if (config != null && config.WorldModel != null)
                     return config;

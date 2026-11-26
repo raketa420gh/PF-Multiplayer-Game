@@ -82,6 +82,17 @@ namespace Game.Scripts.Dungeon
             return _database.Get<T>(_equipment[(int)slot].ItemId);
         }
 
+        /// The item config in each equipment slot, by EquipSlot.
+        public ItemConfig[] GetEquippedConfigs()
+        {
+            ItemConfig[] configs = new ItemConfig[EquipmentCapacity];
+
+            for (int i = 0; i < EquipmentCapacity; i++)
+                configs[i] = GetConfig(_equipment[i]);
+
+            return configs;
+        }
+
         public int CountItems()
         {
             int count = 0;

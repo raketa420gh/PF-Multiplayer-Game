@@ -36,6 +36,10 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("Replaces the fighter controller with a still pose (the seated tavern character)")]
         private RuntimeAnimatorController _poseController;
 
+        private const int UpperLayer = 1;
+
+        private static readonly int s_guard = Animator.StringToHash("Fists" + FighterAnimComponent.IdleSuffix);
+
         private GameObject _rig;
         private Animator _animator;
         private CharacterModelComponent _model;
@@ -43,6 +47,7 @@ namespace Game.Scripts.Dungeon
         private CarriedGear _carried;
         private InventoryComponent _inventory;
         private int _shownVersion = -1;
+        private int _savedSlot = -1;
 
         private void OnEnable()
         {
@@ -62,13 +67,18 @@ namespace Game.Scripts.Dungeon
             if (_rig == null)
                 return;
 
-            // The hands are empty: the whole body stands in the relaxed library idle instead of the fist guard.
-            if (_animator != null && _poseController == null)
-                _animator.SetLayerWeight(1, 0f);
+            // The hands are empty: the character stands in the fist guard, as in the game.
+            if (_animator != null && _poseController == null && _animator.isActiveAndEnabled
+                && _animator.GetCurrentAnimatorStateInfo(UpperLayer).shortNameHash != s_guard)
+                _animator.Play(s_guard, UpperLayer);
 
-            // Bound to a class only (character select): the bare body.
+            // Bound to a saved slot (character select): dressed from the saved kit once the context is up.
             if (_inventory == null || _inventory.Object == null || !_inventory.Object.IsValid)
+            {
+                DressSaved();
+
                 return;
+            }
 
             _rig.transform.Rotate(0f, _turnSpeed * Time.deltaTime, 0f, Space.Self);
             _carried.Apply(_inventory, -1, -1);
@@ -85,12 +95,20 @@ namespace Game.Scripts.Dungeon
             EnsureRig();
             _inventory = inventory;
             _shownVersion = -1;
+            _savedSlot = -1;
 
             if (_carried != null)
                 _carried.Clear();
 
             if (_model != null && config != null)
                 _model.SetBodyColor(config.BodyColor);
+        }
+
+        /// A character that is not in the game yet: the kit saved in its slot.
+        public void Bind(int savedSlot, ClassConfig config)
+        {
+            Bind(null, config);
+            _savedSlot = savedSlot;
         }
 
         public void SetCharacterShown(bool isShown)
@@ -118,6 +136,17 @@ namespace Game.Scripts.Dungeon
                 _animator.runtimeAnimatorController = _poseController;
             else
                 _animator.SetFloat("ActionSpeed", 1f);
+        }
+
+        private void DressSaved()
+        {
+            if (_savedSlot < 0 || _dresser == null || DungeonContext.Instance == null)
+                return;
+
+            ItemConfig[] equipment = StashService.LoadEquipment(_savedSlot, DungeonContext.Instance.Items);
+            _savedSlot = -1;
+            _dresser.Apply(equipment);
+            _carried.Show(equipment);
         }
 
         void IDragHandler.OnDrag(PointerEventData eventData)
