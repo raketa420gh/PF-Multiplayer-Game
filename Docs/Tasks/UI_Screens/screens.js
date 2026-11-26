@@ -49,7 +49,7 @@ function hexChart(parent, radius, values) {
 }
 
 // BuildStats: hexagram with attribute badges and stat dots on its sides, then the list.
-function buildStats(parent, position, width, radius, compact) {
+function buildStats(parent, position, width, radius, compact, withList = true) {
   const chartHeight = 2 * radius + 116;
   const root = rect('StatSheet', parent, TOP, position, V(width, chartHeight));
   const chartRoot = rect('Hexagram', root, TOP, V(0, -chartHeight * .5), V(0, 0), { pivot: CENTER });
@@ -69,6 +69,7 @@ function buildStats(parent, position, width, radius, compact) {
   }
   D.attributes.forEach((s, i) => statNode(chartRoot, s, corner(i), badge, compact ? 17 : 19, compact ? 14 : 15));
 
+  if (!withList) return root;
   const list = [];
   const add = (...ids) => ids.forEach(s => list.push({ s }));
   add(...D.listTop); D.edge.forEach(e => e && add(e));
@@ -140,9 +141,22 @@ function buildLoading(root, title, status, progress) {
   img('BarBack', p, CENTER, V(0, -74), V(424, 12), COL.frame);
   img('BarInner', p, CENTER, V(0, -74), V(420, 8), [.05, .04, .03, 1]);
   img('BarFill', p, CENTER, V(0, -74), V(420, 8), COL.gold, { fill: progress });
-  const sp = img('Spinner', p, BOTTOMRIGHT, V(-70, 70), V(54, 54), COL.gold, { pivot: CENTER, sprite: 'Diamond' });
-  sp.el.style.animation = 'spin 1.6s linear infinite';
+  scales(p, BOTTOMRIGHT, V(-90, 90), 120);
   txt('Tip', p, BOTTOM, V(0, 60), V(1200, 30), 16, 'Center', 'Containers open at once, but their loot has to be searched. Perception makes the search faster.', { color: COL.textDim });
+}
+
+// Loading icon: scales with a bone on one pan and a pinch of coins on the other, tipping from side to side (keyframes in index.html).
+function scales(parent, anchor, pos, size) {
+  const n = rect('Scales', parent, anchor, pos, V(size, size), { pivot: CENTER }), g = rgba(COL.gold), f = rgba(COL.frame);
+  const pan = (x, cls, load) => `<g class="${cls}"><path d="M${x} 30L${x - 13} 63M${x} 30L${x + 13} 63" stroke="${f}" stroke-width="1.2"/>${load}<path d="M${x - 15} 63Q${x} 76 ${x + 15} 63Z" fill="${g}"/></g>`;
+  const bone = '<g fill="#e8dcc0"><rect x="12" y="57" width="16" height="3.4" rx="1.5"/><circle cx="12" cy="56.6" r="2.4"/><circle cx="12" cy="60.6" r="2.4"/><circle cx="28" cy="56.6" r="2.4"/><circle cx="28" cy="60.6" r="2.4"/></g>';
+  const coins = [[95, 61], [105, 61], [100, 61], [97.5, 57.5], [102.5, 57.5], [100, 54]]
+    .map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="4.6" ry="2.1" fill="#f0c860" stroke="#8a6a24" stroke-width=".8"/>`).join('');
+  n.el.innerHTML = `<svg viewBox="0 0 120 120" width="${size}" height="${size}" style="position:absolute;left:0;top:0;overflow:visible">
+    <path d="M42 106H78L71 98H49Z" fill="${f}"/><rect x="58.5" y="28" width="3" height="72" fill="${f}"/><circle cx="60" cy="24" r="4" fill="${g}"/>
+    <g class="beam"><path d="M20 30H100" stroke="${g}" stroke-width="3" stroke-linecap="round"/><circle cx="60" cy="30" r="3" fill="${g}"/></g>
+    ${pan(20, 'panL', bone)}${pan(100, 'panR', coins)}</svg>`;
+  return n;
 }
 
 // ---------- HUD ----------
@@ -200,9 +214,10 @@ function buildHud(root, o = {}) {
   txt('RestKey', hud, BOTTOM, V(-124, 74), V(30, 20), 12, 'Center', 'G');
   abilitySlot(hud, BOTTOM, V(-272, 44), 'Q', h.q);
   abilitySlot(hud, BOTTOM, V(272, 44), 'E', h.e);
-  txt('Readied', hud, BOTTOM, V(372, 44), V(360, 44), 15, 'MidlineLeft', o.readied ? h.readied : '', { pivot: LEFT });
-  for (let i = 0; i < 6; i++) beltSlot(hud, BOTTOM, V((i < 3 ? -182 : 78) + i % 3 * 52, 104), String(3 + Math.floor(i / 3)), h.belt[i]);
-  const fx = rect('Effects', hud, BOTTOM, V(0, 152), V(h.effects.length * 46, 42));
+  txt('Readied', hud, BOTTOM, V(0, 156), V(800, 28), 15, 'Center', o.readied ? h.readied : '');
+  // Belt 3 left of Q, belt 4 right of E.
+  for (let i = 0; i < 6; i++) beltSlot(hud, BOTTOM, V((i < 3 ? -440 : 336) + i % 3 * 52, 50), String(3 + Math.floor(i / 3)), h.belt[i]);
+  const fx = rect('Effects', hud, BOTTOM, V(0, 106), V(h.effects.length * 46, 42));
   h.effects.forEach((e, i) => {
     const c = rect('Effect' + i, fx, LEFT, V(i * 46 + 2, 0), V(42, 42), { pivot: LEFT });
     img('Frame', c, CENTER, V(0, 0), V(42, 42), e.debuff ? [.55, .16, .12, 1] : COL.frame);
@@ -211,7 +226,8 @@ function buildHud(root, o = {}) {
     if (e.stacks) txt('Stacks', c, BOTTOMRIGHT, V(-2, 1), V(30, 14), 11, 'BottomRight', String(e.stacks), { pivot: BOTTOMRIGHT });
   });
 
-  const row = rect('WeaponRow', hud, BOTTOMRIGHT, V(-330, 56), V(90, 40));
+  // Row centred over the weapon name: name centre = 1920 - 270 - 130, row centre = 1920 - 355 - 45.
+  const row = rect('WeaponRow', hud, BOTTOMRIGHT, V(-355, 56), V(90, 40));
   h.weaponSets.forEach((set, i) => {
     const on = i === h.weaponSlot, s = rect('Slot' + (i + 1), row, LEFT, V(i * 62, 0), V(28, 28), { pivot: LEFT });
     img('Frame', s, CENTER, V(0, 0), V(32, 32), on ? COL.gold : COL.frame);
@@ -228,8 +244,8 @@ function buildHud(root, o = {}) {
     }
     if (i === 0) img('Line', row, LEFT, V(30, 0), V(30, 2), [.5, .45, .35, .8], { pivot: LEFT });
   });
-  img('WeaponBack', hud, BOTTOMRIGHT, V(-280, 22), V(300, 26), [.05, .04, .03, .85]);
-  txt('Weapon', hud, BOTTOMRIGHT, V(-280, 22), V(300, 26), 16, 'Center', h.weapon);
+  img('WeaponBack', hud, BOTTOMRIGHT, V(-270, 22), V(260, 26), [.05, .04, .03, .85]);
+  txt('Weapon', hud, BOTTOMRIGHT, V(-270, 22), V(260, 26), 16, 'Center', h.weapon);
 
   if (!o.hub) {
     const mm = rect('Minimap', hud, BOTTOMRIGHT, V(-24, 50), V(230, 230), { pivot: BOTTOMRIGHT });
@@ -376,40 +392,85 @@ function hubPages(root, title, build) {
   txt('Text', sh, CENTER, V(0, 10), V(88, 70), 15, 'Center', D.rank, { color: [.16, .1, .03, 1], bold: true, lineSpacing: -30 });
 }
 
-function buildBoard(lobby, mode) {
-  const b = D.board, page = rect('Board', lobby, CENTER, V(0, 0), V(0, 0), { stretch: 0 });
-  const party = rect('Party', page, CENTER, V(0, 0), V(0, 0), { stretch: 0 }), descent = rect('Descent', page, CENTER, V(0, 0), V(0, 0), { stretch: 0 });
-  dollPlaceholder(page, 'Preview', TOP, V(0, -330), V(480, 620)).el.style.background = 'radial-gradient(ellipse at 50% 45%, #241e17, #000 70%)';
-  txt('Name', page, TOP, V(0, -196), V(700, 96), 27, 'Bottom', b.name, { color: COL.text });
-  img('NameRule', page, TOP, V(0, -298), V(260, 2), COL.frame);
-  txt('PartyTitle', page, TOPRIGHT, V(-56, -128), V(270, 30), 17, 'Center', b.partyTitle, { color: COL.text });
-  img('PartyRule', page, TOPRIGHT, V(-56, -164), V(270, 2), COL.frame);
-  b.slots.forEach((t, i) => {
-    const c = rect('PartySlot' + i, page, TOPRIGHT, V(-56, -180 - i * 98), V(270, 86));
-    img('Frame', c, CENTER, V(0, 0), V(0, 0), COL.frame, { stretch: 0 });
-    img('Back', c, CENTER, V(0, 0), V(0, 0), [.05, .04, .035, .96], { stretch: 2 });
-    txt('Text', c, CENTER, V(0, 0), V(0, 0), 20, 'MidlineLeft', t, { stretch: 14 });
+// A hub page as a see-through window over the world (Party Board, Book of Descents).
+function hubWindow(root, title, size, build) {
+  img('Dim', root, CENTER, V(0, 0), V(0, 0), [0, 0, 0, .3], { stretch: 0 });
+  const w = img('Window', root, CENTER, V(0, 0), size, [.03, .025, .02, .78]);
+  w.el.style.boxShadow = `inset 0 0 0 2px ${rgba(COL.frame)}, 0 24px 70px rgba(0,0,0,.6)`;
+  build(w);
+  const bar = rect('TopBar', w, TOP, V(0, 0), V(0, 64), { xStretch: true });
+  img('Back', bar, CENTER, V(0, 0), V(0, 0), [0, 0, 0, .45], { stretch: 0 });
+  img('Rule', bar, BOTTOM, V(0, 0), V(0, 2), COL.frame, { xStretch: true });
+  txt('Title', bar, LEFT, V(112, 0), V(800, 50), 28, 'MidlineLeft', title, { color: COL.gold });
+  txt('Close', bar, RIGHT, V(-24, 0), V(300, 50), 17, 'MidlineRight', '[Esc] Close', { color: COL.textDim });
+  const sh = img('Rank', bar, TOPLEFT, V(20, 12), V(72, 90), COL.white, { sprite: 'Shield' });
+  txt('Text', sh, CENTER, V(0, 8), V(72, 60), 13, 'Center', D.rank, { color: [.16, .1, .03, 1], bold: true, lineSpacing: -30 });
+  return w;
+}
+
+const memberText = (m, big) => `<color=${m.me ? '#ffd98c' : '#f2ede0'}>${m.name}</color>\n<size=75%><color=#c8e632>Lv. ${m.lv}</color> ${m.cls}</size>`
+  + (big && m.xp ? `\n<size=62%><color=#b9b29a>${m.xp}</color>  ·  <color=#7fd4c8>${m.gear}</color></size>` : '');
+
+// Party Board: three full-height slots, you in the middle; an empty side slot is a big "+" that invites a player.
+function buildParty(w) {
+  const b = D.board;
+  b.members.forEach((m, i) => {
+    const me = m && m.me, size = me ? V(340, 600) : V(290, 540);
+    const c = rect(me ? 'You' : 'Slot' + i, w, TOP, V((i - 1) * 375, me ? -100 : -130), size);
+    img('Back', c, CENTER, V(0, 0), V(0, 0), [.02, .02, .02, m ? .75 : .35], { stretch: 0 })
+      .el.style.boxShadow = `inset 0 0 0 ${me ? 3 : 2}px ${rgba(me ? COL.gold : m ? COL.frame : [.45, .36, .22, .5])}`;
+    if (m) {
+      dollPlaceholder(c, 'Preview', TOP, V(0, -6), V(size[0] - 12, size[1] - (me ? 110 : 90))).el.style.background = 'radial-gradient(ellipse at 50% 45%, #2a231a, #0a0806 75%)';
+      const band = img('NameBand', c, BOTTOM, V(0, 3), V(size[0] - 6, me ? 104 : 84), [0, 0, 0, .6]);
+      txt('Name', band, CENTER, V(0, 0), V(0, 0), me ? 25 : 21, 'Center', memberText(m, me), { stretch: 4 });
+      if (m.leader) txt('Leader', c, TOP, V(0, -12), V(200, 22), 14, 'Center', 'LEADER', { color: COL.gold, bold: true });
+    } else {
+      const plus = btn('Invite', c, CENTER, V(0, 30), V(150, 150), '+', { sprite: 'Knob', color: [.85, .72, .45, .12], fs: 120, textColor: [.85, .72, .45, .8] });
+      plus.label.el.style.lineHeight = '1';
+      txt('Caption', c, CENTER, V(0, -80), V(260, 28), 18, 'Center', 'Invite a player', { color: COL.textDim });
+    }
   });
-  const pb = -180 - 3 * 98;
-  if (mode === 'party') {
-    btn(b.inParty ? 'LeaveParty' : 'CreateParty', party, TOPRIGHT, V(-56, pb), V(270, 40), b.inParty ? 'Leave Party' : 'Create Party');
-    if (!b.inParty) { input('PartyCode', party, TOPRIGHT, V(-196, pb - 50), V(130, 40), 'Code'); btn('JoinParty', party, TOPRIGHT, V(-56, pb - 50), V(130, 40), 'Join Party'); }
-  } else {
-    btn('Queue', descent, BOTTOMLEFT, V(24, 356), V(307, 44), b.queue, { color: COL.panel, fs: 20 });
-    txt('MapLabel', descent, BOTTOMLEFT, V(24, 322), V(307, 26), 17, 'Center', 'Select Map', { color: COL.textDim });
-    const map = btn('Map', descent, BOTTOMLEFT, V(24, 122), V(307, 194), 'Change Map', { color: COL.panel, fs: 20, align: 'Bottom', margin: [0, 0, 0, 6] });
-    txt('Title', map, TOP, V(0, -8), V(291, 26), 19, 'Center', b.mapTitle);
-    txt('Info', map, TOP, V(0, -34), V(291, 20), 13, 'Center', b.mapInfo, { color: [.45, .7, .95, 1] });
-    const pic = rect('Picture', map, TOP, V(0, -60), V(291, 96)); pic.el.style.overflow = 'hidden'; pic.el.style.filter = 'sepia(.3) brightness(.85)';
-    floorTiles(rect('Floor', pic, CENTER, V(0, 0), V(291, 291), { pivot: CENTER }), 3, D.minimap.slice(9));
-    btn('Start', descent, BOTTOMLEFT, V(24, 24), V(307, 86), 'Start', { color: [.17, .16, .15, .97], fs: 34 });
-    [['Characters', 'Change\nCharacter', 'Chr'], ['Wipe', 'Wipe\nSave', 'Wipe'], ['ResetKit', 'Squire\nKit', 'Kit'], ['MaxLevel', 'Dev\nMax Level', 'Lv']].forEach(([n, cap, g], col) => {
-      const t = btn(n, descent, BOTTOMRIGHT, V(-24 - col * 86, 24), V(68, 68), g, { sprite: 'Square', color: [.72, .64, .5, 1] });
-      txt('Caption', t, TOP, V(0, 4), V(86, 36), 12, 'Bottom', cap, { pivot: BOTTOM, color: COL.text });
-    });
-  }
-  txt('Notice', page, BOTTOM, V(0, 66), V(900, 30), 18, 'Center', b.notice, { color: [1, .78, .45, 1] });
-  if (b.result && mode !== 'party') { const r = img('Result', page, BOTTOM, V(0, 24), V(640, 34), [0, 0, 0, .65]); txt('Text', r, CENTER, V(0, 0), V(620, 34), 16, 'Center', b.result, { color: COL.text }); }
+  btn('LeaveParty', w, TOP, V(0, -718), V(300, 46), 'Leave Party', { fs: 18 });
+  txt('Notice', w, BOTTOM, V(0, 26), V(900, 30), 18, 'Center', b.notice, { color: [1, .78, .45, 1] });
+}
+
+// Book of Descents: map page on the left, run page on the right, a thin footer for the character switch and dev buttons.
+function buildDescent(w) {
+  const b = D.board, dim = { color: COL.textDim, bold: true };
+  img('Spine', w, TOP, V(0, -90), V(2, 540), [.45, .36, .22, .6]);
+  const L = rect('MapPage', w, TOP, V(-300, -86), V(540, 560));
+  txt('Label', L, TOP, V(0, 0), V(540, 24), 15, 'Center', 'MAP', dim);
+  const pic = img('Picture', L, TOP, V(0, -32), V(500, 260), COL.frame);
+  const clip = rect('Clip', pic, CENTER, V(0, 0), V(0, 0), { stretch: 2 }); clip.el.style.overflow = 'hidden'; clip.el.style.filter = 'sepia(.3) brightness(.85)';
+  floorTiles(rect('Floor', clip, CENTER, V(0, 0), V(496, 496)), 3, D.minimap.slice(9));
+  ['Prev', 'Next'].forEach((n, i) => btn(n, pic, i ? RIGHT : LEFT, V(0, 0), V(40, 64), i ? '›' : '‹', { pivot: CENTER, fs: 34, color: [0, 0, 0, .75], textColor: COL.gold }));
+  txt('Title', L, TOP, V(0, -306), V(500, 36), 28, 'Center', b.mapTitle, { color: COL.gold, bold: true });
+  txt('Info', L, TOP, V(0, -350), V(500, 100), 16, 'Top', b.mapInfo, { color: [.75, .71, .62, 1] });
+  txt('Portals', L, TOP, V(0, -424), V(500, 24), 15, 'Center', b.portals, { color: [.45, .7, .95, 1] });
+
+  const R = rect('RunPage', w, TOP, V(300, -86), V(540, 560));
+  txt('Label', R, TOP, V(0, 0), V(540, 24), 15, 'Center', 'QUEUE', dim);
+  ['Solo', 'Duo', 'Trio'].forEach((q, i) => {
+    const on = i === b.queue, t = btn('Queue' + q, R, TOP, V((i - 1) * 170, -32), V(160, 48), q, { fs: 21, color: on ? [.3, .24, .14, .97] : COL.panelLight, textColor: on ? COL.gold : COL.text });
+    if (on) t.el.style.boxShadow = `inset 0 0 0 2px ${rgba(COL.gold)}`;
+  });
+  txt('QueueNote', R, TOP, V(0, -88), V(540, 22), 14, 'Center', b.queueNote, { color: COL.textDim });
+  txt('PartyLabel', R, TOP, V(0, -134), V(540, 24), 15, 'Center', 'PARTY  ' + b.partyCode, dim);
+  [b.members[1], b.members[0], b.members[2]].forEach((m, i) => {
+    const c = img('Member' + i, R, TOP, V((i - 1) * 170, -166), V(160, 64), [.02, .02, .02, m ? .7 : .3]);
+    c.el.style.boxShadow = `inset 0 0 0 1px ${rgba(m && m.me ? COL.gold : COL.frame)}`;
+    txt('Text', c, CENTER, V(0, 0), V(0, 0), 17, 'Center', m ? memberText(m) : '<color=#6f6a5f>+  Open</color>', { stretch: 4 });
+  });
+  txt('ResultLabel', R, TOP, V(0, -262), V(540, 24), 15, 'Center', 'LAST RUN', dim);
+  const res = img('Result', R, TOP, V(0, -292), V(500, 44), [0, 0, 0, .5]);
+  txt('Text', res, CENTER, V(0, 0), V(0, 0), 17, 'Center', b.result, { stretch: 0, color: COL.text });
+  txt('Notice', R, BOTTOM, V(0, 108), V(540, 28), 17, 'Center', b.notice, { color: [1, .78, .45, 1] });
+  btn('Start', R, BOTTOM, V(0, 0), V(500, 92), 'Start', { fs: 40, bold: true, color: [.3, .22, .1, .97], textColor: COL.gold }).el.style.boxShadow = `inset 0 0 0 2px ${rgba(COL.gold)}`;
+
+  img('FooterRule', w, BOTTOM, V(0, 58), V(1160, 1), [.45, .36, .22, .6]);
+  btn('Characters', w, BOTTOMLEFT, V(20, 12), V(210, 34), 'Change Character', { fs: 15 });
+  ['Wipe Save', 'Squire Kit', 'Max Level'].forEach((t, i) => btn(t.replace(' ', ''), w, BOTTOMRIGHT, V(-20 - i * 128, 12), V(120, 34), t, { fs: 14, color: [.22, .1, .07, .9], textColor: [.9, .75, .65, 1] }));
+  txt('Dev', w, BOTTOMRIGHT, V(-20 - 3 * 128, 12), V(60, 34), 13, 'MidlineRight', 'DEV', dim);
 }
 
 function buildSkills(lobby, mode) {
@@ -596,7 +657,7 @@ function characterCard(page, name, row, label, on) {
 
 // ---------- screen list ----------
 const SCREENS = [
-  { group: 'Выбор персонажа', id: 'C1', name: 'Загрузка', meta: 'CharacterSelectScene · <code>LoadingView</code> · BuildLoading — чёрный экран с первого кадра',
+  { group: 'Выбор персонажа', id: 'C1', name: 'Загрузка', meta: 'CharacterSelectScene · <code>LoadingView</code> · BuildLoading — чёрный экран с первого кадра · значок загрузки: весы, кость против горстки монет, качаются',
     build: r => buildLoading(r, D.loadingTitles.select, D.loadingStatus[0], .35) },
   { group: 'Выбор персонажа', id: 'C2', name: 'Выбор персонажа', meta: 'CharacterSelectScene · <code>CharacterSelectView</code> · фон = рендер таверны (3D, здесь заглушка) + Vignette',
     build: r => {
@@ -606,29 +667,27 @@ const SCREENS = [
       const p = characterPage(r, 'Select', 'Select Character', 'Enter Hub', 'Delete', D.select.name);
       D.select.slots.forEach((t, i) => characterCard(p, 'Slot' + i, i, t, i === D.select.selected));
     } },
-  { group: 'Выбор персонажа', id: 'C3', name: 'Создание персонажа', meta: 'CharacterSelectScene · <code>CharacterCreateView</code> · классы слева, гексаграмма класса в центре, описание справа',
+  { group: 'Выбор персонажа', id: 'C3', name: 'Создание персонажа', meta: 'CharacterSelectScene · <code>CharacterCreateView</code> · классы слева, в центре только гексаграмма класса и под ней описание (список статов убран)',
     build: r => {
       const p = characterPage(r, 'Create', 'Create Character', 'Create', 'Back', D.create.name, { back: true });
       D.classes.forEach((c, i) => characterCard(p, 'Class' + c.name, i, c.name, i === D.create.selected));
-      const sheet = img('Stats', p, TOP, V(0, -236), V(520, 590), COL.white, { sprite: 'Panel' });
-      buildStats(sheet, V(0, -24), 520, 115, true);
-      const info = rect('Info', p, TOPRIGHT, V(-56, -140), V(520, 300));
-      img('Frame', info, CENTER, V(0, 0), V(0, 0), COL.frame, { stretch: 0 });
-      img('Back', info, CENTER, V(0, 0), V(0, 0), COL.panel, { stretch: 2 });
-      txt('Text', info, CENTER, V(0, 0), V(0, 0), 19, 'TopLeft', D.create.description, { stretch: 22, color: COL.text });
+      const sheet = img('Class', p, TOP, V(0, -236), V(560, 560), COL.white, { sprite: 'Panel' });
+      buildStats(sheet, V(0, -24), 560, 115, true, false);
+      img('Rule', sheet, TOP, V(0, -386), V(420, 2), COL.frame);
+      txt('Description', sheet, TOP, V(0, -404), V(480, 140), 19, 'Top', D.create.description, { color: COL.text });
       input('Nickname', p, BOTTOM, V(0, 150), V(360, 56), 'Nickname', { color: COL.panelLight, value: D.create.nickname, fs: 24 });
     } },
 
-  { group: 'Хаб «Устье»', id: 'H1', name: 'HUD в хабе + подсказка станции', world: true, meta: 'HubScene · <code>DungeonHudView</code> без Minimap/Timer/Swarm/Floor · <code>HubUiRoot</code>: StationPrompt, Notice',
+  { group: 'Хаб «Устье»', id: 'H1', name: 'HUD в хабе + подсказка станции', world: true, meta: 'HubScene · <code>DungeonHudView</code> без Minimap/Timer/Swarm/Floor · пояс 3 слева от Q, пояс 4 справа от E, эффекты ниже · <code>HubUiRoot</code>: StationPrompt, Notice',
     build: r => {
       buildHud(r, { hub: true });
       txt('StationPrompt', r, CENTER, V(0, -110), V(700, 30), 20, 'Center', D.hub.prompt, { color: COL.text });
       txt('Notice', r, TOP, V(0, -120), V(900, 30), 18, 'Center', D.hub.notice, { color: [1, .78, .45, 1] });
     } },
-  { group: 'Хаб «Устье»', id: 'H2', name: 'Доска отряда', meta: 'HubScene · <code>HubPagesView</code> → <code>HubBoardView</code> (режим Party)',
-    build: r => hubPages(r, D.titles.board, p => buildBoard(p, 'party')) },
-  { group: 'Хаб «Устье»', id: 'H3', name: 'Книга спусков', meta: 'HubScene · <code>HubBoardView</code> (режим Descent): карта, очередь, Start, dev-кнопки',
-    build: r => hubPages(r, D.titles.descent, p => buildBoard(p, 'descent')) },
+  { group: 'Хаб «Устье»', id: 'H2', name: 'Доска отряда', world: true, meta: 'HubScene · <code>HubBoardView</code> (режим Party) — полупрозрачное окно поверх хаба: ты в центре, по бокам слоты с «+» (пригласить), Leave Party под тобой',
+    build: r => hubWindow(r, `${D.titles.board}  <size=60%><color=#9a9283>${D.board.partyCode}</color></size>`, V(1240, 860), buildParty) },
+  { group: 'Хаб «Устье»', id: 'H3', name: 'Книга спусков', world: true, meta: 'HubScene · <code>HubBoardView</code> (режим Descent) — полупрозрачная книга: слева карта, справа очередь, отряд, итог прошлого забега и Start; внизу смена персонажа и dev',
+    build: r => hubWindow(r, D.titles.descent, V(1200, 720), buildDescent) },
   { group: 'Хаб «Устье»', id: 'H4', name: 'Перки и навыки', meta: 'HubScene · <code>SkillsView</code> · лист атрибутов, кукла в арке, пул класса',
     build: r => hubPages(r, D.titles.skills, p => buildSkills(p, 'perks')) },
   { group: 'Хаб «Устье»', id: 'H5', name: 'Колёса заклинаний', meta: 'HubScene · <code>SpellsView</code> — вкладка Spell Wheels страницы навыков (класс с заклинаниями)',

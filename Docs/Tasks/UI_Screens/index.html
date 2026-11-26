@@ -33,7 +33,13 @@
   #inspect { position:fixed; z-index:9; pointer-events:none; background:#000d; border:1px solid #4cf8; color:#bfefff; font:12px/1.4 Consolas, monospace; padding:6px 8px; border-radius:4px; display:none; max-width:520px; }
   .world { background:radial-gradient(ellipse at 50% 55%, #3b342b 0%, #17130f 60%, #070605 100%); }
   .world::after { content:""; position:absolute; inset:0; background:url(../../../Assets/Game/Textures/Dungeon/Ashlar.png) center/480px; opacity:.16; mix-blend-mode:screen; }
-  @keyframes spin { to { transform:rotate(360deg); } }
+  /* Loading scales: beam ±16° about (60,30), arm 40 → pans shift by 40·sin16 ≈ 11 down/up. */
+  .beam, .panL, .panR { animation:2.6s ease-in-out infinite; }
+  .beam { transform-origin:60px 30px; animation-name:tip; }
+  .panL { animation-name:panL; } .panR { animation-name:panR; }
+  @keyframes tip { 0%,12%,100% { transform:rotate(-16deg) } 50%,62% { transform:rotate(16deg) } }
+  @keyframes panL { 0%,12%,100% { transform:translate(1.5px,11px) } 50%,62% { transform:translate(1.5px,-11px) } }
+  @keyframes panR { 0%,12%,100% { transform:translate(-1.5px,-11px) } 50%,62% { transform:translate(-1.5px,11px) } }
   .note { color:var(--dim); font-size:12.5px; margin-top:6px; }
 </style>
 </head>

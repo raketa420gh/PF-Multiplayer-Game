@@ -74,12 +74,13 @@ const D = {
   rank: 'Lv\n<size=170%>7</size>',
   titles: { board: 'Party Board', descent: 'Book of Descents', skills: 'Skill Rack', kit: 'Weapon Rack · Stash', merchant: 'Jutta Kolb · Weaponsmith' },
   board: {
-    name: '<size=65%><color=#b9b29a>• XP 340/600</color>\n<color=#7fd4c8>• 412 Gear Value</color></size>\n<color=#c8e632>Lv. 7</color> Grimwald',
-    partyTitle: 'Party  <color=#ffd98c>#4172</color>', inParty: true,
-    slots: ['<color=#ffd98c>Grimwald</color>\n<size=80%>7 Mercenary</size>', '<color=#f2ede0>Ysolde</color>\n<size=80%>3 Librarian</size>', '<color=#6f6a5f><size=75%>Party Slot</size>\n- Open -</color>'],
-    queue: 'Queue: <color=#ffd98c>Trio</color>  <size=75%><color=#9a9283>(party of up to 3)</color></size>',
-    mapTitle: 'The Dungeon', mapInfo: 'The Tangled Catacombs · 7x7 rooms laid out anew every run around the Great Hall · dark crypts, skeletons, trapped corridors · 15 min · blue portals at 7:00, 10:00, 12:00, 14:30',
-    notice: 'The party leader starts the run', result: 'Last run:  loot 184g  ·  kills 6  ·  XP +142',
+    partyCode: '#4172',
+    // Slot order on the board: left, you (centre), right; null = open slot.
+    members: [{ name: 'Ysolde', lv: 3, cls: 'Librarian', leader: true }, { name: 'Grimwald', lv: 7, cls: 'Mercenary', me: true, xp: 'XP 340/600', gear: '412 Gear Value' }, null],
+    queue: 2, queueNote: 'Party of up to 3 · open slots stay empty',
+    mapTitle: 'The Tangled Catacombs', mapInfo: '7x7 rooms laid out anew every run around the Great Hall · dark crypts, skeletons, trapped corridors · 15 min',
+    portals: 'Blue portals at 7:00 · 10:00 · 12:00 · 14:30',
+    notice: 'The party leader starts the run', result: 'Loot 184g  ·  kills 6  ·  XP +142',
   },
   skills: {
     subclassText: 'Hardest to kill, deals less. Shield only.', subclass: 0,
