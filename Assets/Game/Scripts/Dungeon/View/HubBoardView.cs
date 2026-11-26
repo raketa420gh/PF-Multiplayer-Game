@@ -7,8 +7,9 @@ using UnityEngine.UI;
 
 namespace Game.Scripts.Dungeon
 {
-    /// Two boards of the hub on one page: the party board (create, join by code, leave) and the book of descents (map, queue
-    /// and the start button). The leader registers the party for the dungeon queue; everyone sees who is in the party.
+    /// Two see-through windows over the hub: the party board (three full-height slots, you in the middle, an empty side slot
+    /// invites a player) and the book of descents (map page on the left; queue, party, last run and Start on the right).
+    /// The leader registers the party for the dungeon queue; everyone sees who is in the party.
     public sealed class HubBoardView : DisplayableView
     {
         [Serializable]
@@ -16,6 +17,8 @@ namespace Game.Scripts.Dungeon
         {
             public string Title;
             public string Info;
+            [Tooltip("Blue line under the info: when the portals open")]
+            public string Portals;
             public Texture Picture;
             [Tooltip("Scene the Start button travels to")]
             public string Scene;
@@ -23,23 +26,70 @@ namespace Game.Scripts.Dungeon
             public bool IsTest;
         }
 
+        /// A full-height slot of the party board: the member's doll with the name band, or a big "+" while it is open.
+        [Serializable]
+        private sealed class MemberSlot
+        {
+            public Image Back;
+            public Image[] Border;
+            public CharacterPreviewView Preview;
+            public GameObject Band;
+            public TMP_Text Name;
+            public GameObject Leader;
+            [Tooltip("Side slots only: the big + of an open slot")]
+            public Button Invite;
+        }
+
+        /// A member chip of the book's party row.
+        [Serializable]
+        private sealed class MemberChip
+        {
+            public Image Back;
+            public TMP_Text Text;
+        }
+
+        [Serializable]
+        private sealed class QueueButton
+        {
+            public Button Button;
+            public TMP_Text Label;
+            public GameObject Mark;
+        }
+
+        private const int MeSlot = 1;
+
         [SerializeField]
         private DungeonContext _context;
 
-        [SerializeField]
-        private TMP_Text _nameText;
+        [SerializeField, Tooltip("Party board window: the slots, leave or join by code")]
+        private GameObject _partyWindow;
+
+        [SerializeField, Tooltip("Book of descents window: map, queue, start and the dev tools")]
+        private GameObject _descentWindow;
+
+        [SerializeField, Tooltip("Title of the party window, then of the descent one")]
+        private TMP_Text[] _titleTexts;
 
         [SerializeField]
-        private TMP_Text _partyTitleText;
+        private TMP_Text[] _rankTexts;
+
+        [SerializeField, Tooltip("Left, you (middle), right")]
+        private MemberSlot[] _slots;
+
+        [SerializeField, Tooltip("You, left, right")]
+        private MemberChip[] _chips;
 
         [SerializeField]
-        private TMP_Text[] _partySlots;
+        private TMP_Text _partyLabelText;
 
         [SerializeField]
         private Destination[] _destinations;
 
         [SerializeField]
-        private Button _mapButton;
+        private Button _prevMapButton;
+
+        [SerializeField]
+        private Button _nextMapButton;
 
         [SerializeField]
         private TMP_Text _mapTitleText;
@@ -48,19 +98,19 @@ namespace Game.Scripts.Dungeon
         private TMP_Text _mapInfoText;
 
         [SerializeField]
+        private TMP_Text _mapPortalsText;
+
+        [SerializeField]
         private RawImage _mapImage;
+
+        [SerializeField, Tooltip("Solo, Duo, Trio")]
+        private QueueButton[] _queueButtons;
+
+        [SerializeField]
+        private TMP_Text _queueNoteText;
 
         [SerializeField]
         private Button _startButton;
-
-        [SerializeField]
-        private Button _queueButton;
-
-        [SerializeField]
-        private TMP_Text _queueText;
-
-        [SerializeField]
-        private Button _createPartyButton;
 
         [SerializeField]
         private Button _joinPartyButton;
@@ -72,7 +122,7 @@ namespace Game.Scripts.Dungeon
         private Button _leavePartyButton;
 
         [SerializeField]
-        private TMP_Text _noticeText;
+        private TMP_Text[] _noticeTexts;
 
         [SerializeField]
         private float _noticeTime = 10f;
@@ -90,35 +140,37 @@ namespace Game.Scripts.Dungeon
         private Button _charactersButton;
 
         [SerializeField]
-        private GameObject _resultRoot;
-
-        [SerializeField, Tooltip("Book of descents: map, queue, start and the dev tools")]
-        private GameObject _descentRoot;
-
-        [SerializeField, Tooltip("Party board: create, join, leave")]
-        private GameObject _partyRoot;
-
-        [SerializeField]
         private TMP_Text _resultText;
 
         private static QueueMode s_queue = QueueMode.Solo;
+        private readonly PlayerSessionComponent[] _members = new PlayerSessionComponent[3];
+        private readonly PlayerSessionComponent[] _shownMembers = new PlayerSessionComponent[3];
         private PlayerSessionComponent _session;
         private string _notice;
+        private string _title;
         private float _noticeUntil;
         private int _destination;
 
         private void Awake()
         {
-            _mapButton.onClick.AddListener(() => { Click(); ShowDestination((_destination + 1) % _destinations.Length); });
+            _prevMapButton.onClick.AddListener(() => { Click(); ShowDestination((_destination + _destinations.Length - 1) % _destinations.Length); });
+            _nextMapButton.onClick.AddListener(() => { Click(); ShowDestination((_destination + 1) % _destinations.Length); });
             _startButton.onClick.AddListener(StartRun);
             _resetKitButton.onClick.AddListener(() => { Click(); _session?.RpcResetKit(); });
             _wipeButton.onClick.AddListener(Wipe);
             _maxLevelButton.onClick.AddListener(() => { Click(); _session?.RpcMaxLevel(); });
             _charactersButton.onClick.AddListener(ToCharacters);
-            _queueButton.onClick.AddListener(() => { Click(); s_queue = s_queue == QueueMode.Solo ? QueueMode.Trio : QueueMode.Solo; });
-            _createPartyButton.onClick.AddListener(CreateParty);
+            _queueButtons[0].Button.onClick.AddListener(() => { Click(); s_queue = QueueMode.Solo; });
+            _queueButtons[2].Button.onClick.AddListener(() => { Click(); s_queue = QueueMode.Trio; });
+            // No Duo queue on the servers yet.
+            _queueButtons[1].Button.interactable = false;
             _joinPartyButton.onClick.AddListener(JoinParty);
             _leavePartyButton.onClick.AddListener(LeaveParty);
+
+            foreach (MemberSlot slot in _slots)
+                if (slot.Invite != null)
+                    slot.Invite.onClick.AddListener(Invite);
+
             ShowDestination(0);
             Notify(NetworkLaunch.Notice);
             NetworkLaunch.Notice = null;
@@ -133,51 +185,107 @@ namespace Game.Scripts.Dungeon
                 return;
 
             RefreshQueue();
-
-            int needed = _context.Config.ExperienceForLevel(_session.Level);
-            _nameText.text = $"<size=65%><color=#b9b29a>• XP {_session.Experience}/{needed}</color>\n<color=#7fd4c8>• {_session.Kit.TotalValue()} Gear Value</color></size>\n" +
-                $"<color=#c8e632>Lv. {_session.Level}</color> {_session.DisplayName}";
             RefreshParty();
+            _titleTexts[0].text = PartyService.IsInParty ? $"{_title}  <size=60%><color=#9a9283>#{PartyService.Code}</color></size>" : _title;
+            _titleTexts[1].text = _title;
+
+            foreach (TMP_Text rank in _rankTexts)
+                rank.text = $"Lv\n<size=170%>{_session.Level}</size>";
         }
 
         public void Bind(PlayerSessionComponent session)
         {
             _session = session;
+            Array.Clear(_shownMembers, 0, _shownMembers.Length);
 
             if (session == null)
                 return;
 
-            _resultRoot.SetActive(session.LastRunValue > 0 || session.LastRunKills > 0 || session.LastRunExperience > 0);
-            _resultText.text = $"Last run:  loot {session.LastRunValue}g  ·  kills {session.LastRunKills}  ·  XP +{session.LastRunExperience}";
+            bool hasRun = session.LastRunValue > 0 || session.LastRunKills > 0 || session.LastRunExperience > 0;
+            _resultText.text = hasRun ? $"Loot {session.LastRunValue}g  ·  kills {session.LastRunKills}  ·  XP +{session.LastRunExperience}" : "<color=#6f6a5f>No runs yet</color>";
         }
 
-        public void SetMode(bool isParty)
+        public void SetMode(bool isParty, string title)
         {
-            _partyRoot.SetActive(isParty);
-            _descentRoot.SetActive(!isParty);
+            _title = title;
+            _partyWindow.SetActive(isParty);
+            _descentWindow.SetActive(!isParty);
         }
 
+        /// You stand in the middle, the others fill the left slot, then the right one. The host leads the party; a client takes
+        /// the earliest joined of the others for it.
         private void RefreshParty()
         {
             NetworkRunner runner = _session.Runner;
-            int slot = 0;
+            Array.Clear(_members, 0, _members.Length);
+            _members[MeSlot] = _session;
+            PlayerSessionComponent leader = runner.IsServer ? _session : null;
+            int side = 0;
 
-            foreach (PlayerRef player in runner.ActivePlayers)
+            foreach (PlayerRef player in runner.ActivePlayers.OrderBy(player => player.PlayerId))
             {
-                if (slot >= _partySlots.Length)
-                    break;
-
-                if (!runner.TryGetPlayerObject(player, out NetworkObject playerObject) || !playerObject.TryGetComponent(out PlayerSessionComponent member))
+                if (!runner.TryGetPlayerObject(player, out NetworkObject playerObject) || !playerObject.TryGetComponent(out PlayerSessionComponent member) || member == _session)
                     continue;
 
-                string color = member == _session ? "ffd98c" : "f2ede0";
-                _partySlots[slot++].text = $"<color=#{color}>{member.DisplayName}</color>\n<size=80%>{member.Level} {member.Class.DisplayName}</size>";
+                leader ??= member;
+
+                if (side < 2)
+                    _members[side++ * 2] = member;
             }
 
-            _partyTitleText.text = PartyService.IsInParty ? $"Party  <color=#ffd98c>#{PartyService.Code}</color>" : "No Party";
+            for (int i = 0; i < _slots.Length; i++)
+                ShowSlot(i, _members[i], PartyService.IsInParty && _members[i] == leader);
 
-            for (; slot < _partySlots.Length; slot++)
-                _partySlots[slot].text = "<color=#6f6a5f><size=75%>Party Slot</size>\n- Open -</color>";
+            for (int i = 0; i < _chips.Length; i++)
+            {
+                PlayerSessionComponent member = _members[i == 0 ? MeSlot : i == 1 ? 0 : 2];
+                _chips[i].Back.color = new Color(0.02f, 0.02f, 0.02f, member != null ? 0.7f : 0.3f);
+                _chips[i].Text.text = member != null ? MemberText(member, false) : "<color=#6f6a5f>+  Open</color>";
+            }
+
+            _partyLabelText.text = PartyService.IsInParty ? $"PARTY  #{PartyService.Code}" : "NO PARTY";
+        }
+
+        private void ShowSlot(int index, PlayerSessionComponent member, bool isLeader)
+        {
+            MemberSlot slot = _slots[index];
+            bool isTaken = member != null;
+            slot.Back.color = new Color(0.02f, 0.02f, 0.02f, isTaken ? 0.75f : 0.35f);
+            slot.Preview.gameObject.SetActive(isTaken);
+            slot.Band.SetActive(isTaken);
+            slot.Leader.SetActive(isLeader);
+
+            if (slot.Invite != null)
+            {
+                slot.Invite.gameObject.SetActive(!isTaken);
+
+                foreach (Image edge in slot.Border)
+                    edge.color = new Color(edge.color.r, edge.color.g, edge.color.b, isTaken ? 1f : 0.5f);
+            }
+
+            if (!isTaken)
+            {
+                _shownMembers[index] = null;
+
+                return;
+            }
+
+            slot.Name.text = MemberText(member, index == MeSlot);
+
+            if (_shownMembers[index] == member)
+                return;
+
+            _shownMembers[index] = member;
+            slot.Preview.Bind(member.Kit, member.Class);
+        }
+
+        private string MemberText(PlayerSessionComponent member, bool hasProgress)
+        {
+            string text = $"<color=#{(member == _session ? "ffd98c" : "f2ede0")}>{member.DisplayName}</color>\n<size=75%><color=#c8e632>Lv. {member.Level}</color> {member.Class.DisplayName}</size>";
+
+            return hasProgress
+                ? text + $"\n<size=62%><color=#b9b29a>XP {member.Experience}/{_context.Config.ExperienceForLevel(member.Level)}</color>  ·  <color=#7fd4c8>{member.Kit.TotalValue()} Gear Value</color></size>"
+                : text;
         }
 
         /// Only the leader starts a dungeon run; the solo queue takes nobody along.
@@ -186,19 +294,33 @@ namespace Game.Scripts.Dungeon
             NetworkRunner runner = _session.Runner;
             Destination destination = _destinations[_destination];
             bool isDungeon = destination.Scene == SceneTravel.DungeonScene;
+            bool hasQueue = isDungeon && !destination.IsTest;
             bool isLeader = runner.IsServer;
             bool isPartyTooBig = Queue() == QueueMode.Solo && runner.ActivePlayers.Count() > 1;
             bool isInParty = PartyService.IsInParty;
             _startButton.interactable &= !isDungeon || isLeader && !isPartyTooBig;
-            _queueButton.gameObject.SetActive(isDungeon && !destination.IsTest);
-            _queueText.text = $"Queue: <color=#ffd98c>{GameServer.Title(s_queue)}</color>  <size=75%><color=#9a9283>({(s_queue == QueueMode.Solo ? "alone" : "party of up to 3")})</color></size>";
-            _createPartyButton.gameObject.SetActive(!isInParty);
+
+            for (int i = 0; i < _queueButtons.Length; i++)
+            {
+                QueueButton button = _queueButtons[i];
+                bool isOn = i == (s_queue == QueueMode.Solo ? 0 : 2);
+                button.Button.gameObject.SetActive(hasQueue);
+                button.Button.image.color = isOn ? new Color(0.3f, 0.24f, 0.14f, 0.97f) : new Color(0.12f, 0.1f, 0.08f, 0.95f);
+                button.Label.color = isOn ? new Color(0.85f, 0.72f, 0.45f) : button.Button.interactable ? new Color(0.95f, 0.93f, 0.88f) : new Color(0.43f, 0.41f, 0.37f);
+                button.Mark.SetActive(isOn);
+            }
+
+            _queueNoteText.text = destination.IsTest ? "Dungeon Test has a queue of its own · party of up to 3"
+                : !hasQueue ? string.Empty : s_queue == QueueMode.Solo ? "Alone · a party cannot queue Solo" : "Party of up to 3 · open slots stay empty";
             _joinPartyButton.gameObject.SetActive(!isInParty);
             _partyCodeInput.gameObject.SetActive(!isInParty);
             _leavePartyButton.gameObject.SetActive(isInParty);
 
             string hint = !isDungeon ? null : !isLeader ? "The party leader starts the run" : isPartyTooBig ? "The Solo queue takes no party: switch to Trio or leave the party" : null;
-            _noticeText.text = Time.time < _noticeUntil ? _notice : hint ?? string.Empty;
+            string notice = Time.time < _noticeUntil ? _notice : hint ?? string.Empty;
+
+            foreach (TMP_Text text in _noticeTexts)
+                text.text = notice;
         }
 
         private void Notify(string notice)
@@ -207,11 +329,17 @@ namespace Game.Scripts.Dungeon
             _noticeUntil = string.IsNullOrEmpty(notice) ? 0f : Time.time + _noticeTime;
         }
 
-        private void CreateParty()
+        /// An open slot: outside a party it creates one, inside it tells the code the others join with.
+        private void Invite()
         {
             Click();
 
-            if (_session != null)
+            if (_session == null)
+                return;
+
+            if (PartyService.IsInParty)
+                Notify($"Friends join with the code #{PartyService.Code}");
+            else
                 PartyService.Create(_session.Runner);
         }
 
@@ -244,6 +372,7 @@ namespace Game.Scripts.Dungeon
             _destination = index;
             _mapTitleText.text = destination.Title;
             _mapInfoText.text = destination.Info;
+            _mapPortalsText.text = destination.Portals;
             _mapImage.texture = destination.Picture;
         }
 

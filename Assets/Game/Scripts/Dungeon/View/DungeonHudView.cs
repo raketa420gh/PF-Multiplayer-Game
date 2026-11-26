@@ -34,6 +34,27 @@ namespace Game.Scripts.Dungeon
             public Image Fuel;
         }
 
+        /// Weapon set key with the tall box of its weapons above: the main one, the off-hand one inset in the corner.
+        [System.Serializable]
+        private sealed class WeaponSet
+        {
+            public TMP_Text Key;
+            public Image KeyFrame;
+            public Image BoxFrame;
+            public Image Main;
+            public Image Off;
+        }
+
+        [System.Serializable]
+        private sealed class EffectCell
+        {
+            public GameObject Root;
+            public Image Frame;
+            public Image Icon;
+            public TMP_Text Glyph;
+            public TMP_Text Time;
+        }
+
         [SerializeField]
         private DungeonContext _context;
 
@@ -123,7 +144,16 @@ namespace Game.Scripts.Dungeon
         private TMP_Text _bossText;
 
         [SerializeField]
-        private TMP_Text[] _weaponSlotLabels;
+        private WeaponSet[] _weaponSets;
+
+        [SerializeField]
+        private EffectCell[] _effectCells;
+
+        [SerializeField, Tooltip("Icon of each status effect kind, by its value; an empty one shows the initials")]
+        private Sprite[] _effectIcons;
+
+        [SerializeField]
+        private Color _debuffColor = new(0.55f, 0.16f, 0.12f);
 
         [SerializeField]
         private Color _beltSelectedColor = new(1f, 0.85f, 0.4f);
@@ -364,11 +394,17 @@ namespace Game.Scripts.Dungeon
                 ? $"{held.DisplayName}  <size=70%>{(state.Length > 0 ? state : held is ConsumableItemConfig { IsLight: true } ? "[RMB] hold to throw  [X] put away" : "[LMB] use  [RMB] put away")}</size>"
                 : $"{combat.Weapon.DisplayName}  <size=70%>{state}{count}</size>";
 
-            int activeSlot = adventurer.HasBeltItemInHand ? 2 + (adventurer.BeltSlot - (int)EquipSlot.Utility1) / AdventurerComponent.BeltGroupSize
-                : adventurer.IsHolstered ? -1 : combat.WeaponSlot;
+            int activeSlot = adventurer.HasBeltItemInHand || adventurer.IsHolstered ? -1 : combat.WeaponSlot;
 
-            for (int i = 0; i < _weaponSlotLabels.Length; i++)
-                _weaponSlotLabels[i].color = i == activeSlot ? new Color(1f, 0.85f, 0.4f) : new Color(0.55f, 0.5f, 0.42f);
+            for (int i = 0; i < _weaponSets.Length; i++)
+            {
+                WeaponSet set = _weaponSets[i];
+                bool isActive = i == activeSlot;
+                set.Key.color = isActive ? _beltSelectedColor : new Color(0.55f, 0.5f, 0.42f);
+                set.KeyFrame.color = set.BoxFrame.color = isActive ? _beltSelectedColor : _beltIdleColor;
+                ShowIcon(set.Main, inventory.GetConfig(inventory.GetEquipped(i == 0 ? EquipSlot.Weapon1Main : EquipSlot.Weapon2Main)), isActive);
+                set.Off.transform.parent.gameObject.SetActive(ShowIcon(set.Off, inventory.GetConfig(inventory.GetEquipped(i == 0 ? EquipSlot.Weapon1Off : EquipSlot.Weapon2Off)), isActive));
+            }
 
             bool isCasting = combat.State == CombatState.Busy && !adventurer.IsDrinking && combat.BusyKind != AdventurerComponent.BusyAbility && adventurer.Pending is PendingAction.Ability or PendingAction.Consumable or PendingAction.Utility or PendingAction.Shapeshift;
             _castRoot.SetActive(isCasting || combat.State == CombatState.Draw);
@@ -468,20 +504,44 @@ namespace Game.Scripts.Dungeon
             }
         }
 
+        /// A held item's icon, dimmed on the set not in hand; false when the slot is empty.
+        private static bool ShowIcon(Image image, ItemConfig config, bool isActive)
+        {
+            Sprite icon = config != null ? config.Icon : null;
+            image.sprite = icon;
+            image.enabled = icon != null;
+            image.color = new Color(1f, 1f, 1f, isActive ? 1f : 0.6f);
+
+            return config != null;
+        }
+
+        /// Square icons of the active effects in a centred row, debuffs framed red, seconds left in the corner; the class
+        /// resource and the resting line go to the text above.
         private void UpdateEffects(AdventurerComponent adventurer)
         {
-            _builder.Clear();
+            int cell = 0;
 
-            for (int i = 0; i < StatusEffectComponent.Capacity; i++)
+            for (int i = 0; i < StatusEffectComponent.Capacity && cell < _effectCells.Length; i++)
             {
                 StatusEffect effect = adventurer.Effects.Effects[i];
 
                 if (!effect.IsActive)
                     continue;
 
-                _builder.AppendLine($"{System.Text.RegularExpressions.Regex.Replace(effect.Kind.ToString(), "(?<=[a-z])(?=[A-Z])", " ")} {Mathf.CeilToInt(effect.Remaining)}s");
+                EffectCell view = _effectCells[cell++];
+                Sprite icon = (int)effect.Kind < _effectIcons.Length ? _effectIcons[(int)effect.Kind] : null;
+                view.Root.SetActive(true);
+                view.Frame.color = StatusEffectComponent.IsHarmful(effect.Kind) ? _debuffColor : _beltIdleColor;
+                view.Icon.sprite = icon;
+                view.Icon.enabled = icon != null;
+                view.Glyph.text = icon != null ? string.Empty : System.Text.RegularExpressions.Regex.Replace(effect.Kind.ToString(), "[^A-Z]", string.Empty);
+                view.Time.text = Mathf.CeilToInt(effect.Remaining).ToString();
             }
 
+            for (; cell < _effectCells.Length; cell++)
+                _effectCells[cell].Root.SetActive(false);
+
+            _builder.Clear();
             SubclassDefinition subclass = adventurer.SubclassConfig;
 
             if (subclass != null && subclass.ResourceMax > 0)

@@ -31,6 +31,9 @@ namespace Game.Scripts.Dungeon
         [SerializeField]
         private TMP_Text _rankText;
 
+        [SerializeField, Tooltip("Opaque back and top bar of the full-screen pages; the board windows leave the hub in sight")]
+        private GameObject[] _chrome;
+
         private readonly AdventurerStats _previewStats = new();
         private PlayerSessionComponent _session;
         private int _shownClass = -1;
@@ -77,8 +80,11 @@ namespace Game.Scripts.Dungeon
             _merchants.SetShown(isMerchant);
             _inventory.SetShown(!isBoard && !isMerchant && !isSkills);
 
+            foreach (GameObject chrome in _chrome)
+                chrome.SetActive(!isBoard);
+
             if (isBoard)
-                _board.SetMode(station == HubStation.Party);
+                _board.SetMode(station == HubStation.Party, title);
             else if (isMerchant)
                 _merchants.Open(index);
             else if (!isSkills)
