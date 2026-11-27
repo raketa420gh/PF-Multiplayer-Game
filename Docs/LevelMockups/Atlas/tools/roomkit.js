@@ -37,10 +37,13 @@ class Level {
 }
 
 class Room {
+  /// opts.mats: материалы скалы яруса и его пола, { rock, floor }.
   constructor(name, opts = {}) {
     this.name = name; this.corner = !!opts.corner; this.items = []; this.levels = []; this.counters = {}; this.text = null;
-    this.expected = opts.expect || {};
+    this.expected = opts.expect || {}; this.m = undefined; this.mats = opts.mats || {};
   }
+  /// Материал (вид в атласе, поле m) для всего, что добавит fn: rock, stone, brick, cobble, planks, wood, moss, dirt, iron, cloth…
+  mat(m, fn) { const prev = this.m; this.m = m; fn(); this.m = prev; return this; }
   desc(text) { this.text = text; return this; }
 
   /// Ярус с полом на высоте y. h по умолчанию — до пола следующего яруса (минус плита 0,6), у верхнего 6 м.
@@ -53,6 +56,7 @@ class Room {
     if (extra.q === undefined) o.ry = extra.ry || 0;
     if (size) o.s = size.map(round);
     for (const k of Object.keys(extra)) if (k !== 'ry' && extra[k] !== undefined) o[k] = extra[k];
+    if (o.m === undefined && this.m) o.m = this.m;
     this.items.push(o);
     return o;
   }
@@ -65,16 +69,20 @@ class Room {
   }
 
   /// Стена с проёмами 2 × 2,4 м в точках at (координата вдоль стены); в каждом проёме дверь, door:false — пустой проём,
-  /// double:true — двойная. Над проёмом перемычка.
-  doorWall(x1, z1, x2, z2, at, { th = TH, y = 0, h = 6, door = true, double = false } = {}) {
+  /// double:true — двойная. Над проёмом перемычка. windows: окна [t, ширина, низ, верх] от низа стены, проёмы не должны пересекаться.
+  doorWall(x1, z1, x2, z2, at, { th = TH, y = 0, h = 6, door = true, double = false, windows = [] } = {}) {
     const alongX = z1 === z2, from = alongX ? Math.min(x1, x2) : Math.min(z1, z2), to = alongX ? Math.max(x1, x2) : Math.max(z1, z2);
     const seg = (a, b, yy, hh) => { if (b - a > 0.01) alongX ? this.wall(a, z1, b, z1, { th, y: yy, h: hh }) : this.wall(x1, a, x1, b, { th, y: yy, h: hh }); };
+    const gaps = [...at.map(t => ({ t, w: OPENING, y0: 0, y1: DOOR_H, door })), ...windows.map(([t, w, y0, y1]) => ({ t, w, y0, y1 }))].sort((a, b) => a.t - b.t);
     let cur = from;
-    for (const t of [...at].sort((a, b) => a - b)) {
-      seg(cur, t - OPENING / 2, y, h);
-      seg(t - OPENING / 2, t + OPENING / 2, y + DOOR_H, h - DOOR_H);
-      if (door) { const px = alongX ? t : x1, pz = alongX ? z1 : t; double ? this.doubleDoor(px, pz, alongX ? 0 : 90, { y }) : this.door(px, pz, alongX ? 0 : 90, { y }); }
-      cur = t + OPENING / 2;
+    for (const g of gaps) {
+      if (windows.length && g.t - g.w / 2 < cur - 1e-6) throw new Error(`${this.name}: openings overlap at ${g.t}`);
+      seg(cur, g.t - g.w / 2, y, h);
+      if (g.y0 > 0.01) seg(g.t - g.w / 2, g.t + g.w / 2, y, g.y0);
+      // Перемычка над дверью ставится всегда, даже нулевая: от неё зависят номера объектов в готовых макетах.
+      if (g.door !== undefined || h - g.y1 > 0.01) seg(g.t - g.w / 2, g.t + g.w / 2, y + g.y1, h - g.y1);
+      if (g.door) { const px = alongX ? g.t : x1, pz = alongX ? z1 : g.t; double ? this.doubleDoor(px, pz, alongX ? 0 : 90, { y }) : this.door(px, pz, alongX ? 0 : 90, { y }); }
+      cur = g.t + g.w / 2;
     }
     seg(cur, to, y, h);
   }
@@ -99,6 +107,12 @@ class Room {
 
   /// Проп по размерам: Стол, Лавка, Табурет, Койка, Скамья, Саркофаг, Гроб, Алтарь, Обломки, Штабель ящиков, Бочки, Мешки, Парапет, Стойка с оружием, Полки с припасами, Кости, Черепа, Очаг, Котёл.
   prop(name, x, z, w, d, h, { y = 0, ry = 0, round: isRound } = {}) { return this.add('prop', name, [x, y, z], [w, h, d], { ry, round: isRound }); }
+  /// Деталь окружения, только вид: камень кладки, доска, мох, цепь, посуда. Не твёрдая, проверка проходимости и Unity её пока не читают.
+  /// y — низ, q — поворот кватернионом Unity [x, y, z, w] вместо ry, m — материал.
+  decor(name, x, y, z, w, h, d, { ry = 0, q, m, round: isRound } = {}) {
+    const r2 = v => Math.round(v * 100) / 100;
+    return this.add('decor', name, [x, y, z].map(r2), [w, h, d].map(r2), { ry: Math.round(ry), q, m, round: isRound || undefined });
+  }
   /// Контейнер: GoldenChest, LargeOakChest, SmallOakChest, Coffin, Bookshelf, Barrel, Crate, Urn, GoldPile.
   chest(name, x, z, { y = 0, ry = 0 } = {}) { return this.add('chest', name, [x, y, z], [0.9, 0.8, 0.9], { ry }); }
   /// Sword, Archer, Crossbow, Warrior, Mage, Skull.
@@ -146,18 +160,18 @@ class Room {
           if (!this.corner) { l.carve(s * DOOR_OFFSET - 1.2, -INNER, s * DOOR_OFFSET + 1.2, -INNER + 1.8); l.carve(-INNER, s * DOOR_OFFSET - 1.2, -INNER + 1.8, s * DOOR_OFFSET + 1.2); }
         }
       }
-      for (const r of subtract(outer, l.carved)) this.add('wall', 'Wall', [(r.x1 + r.x2) / 2, l.y - TH, (r.z1 + r.z2) / 2], [r.x2 - r.x1, l.h + TH, r.z2 - r.z1]);
+      for (const r of subtract(outer, l.carved)) this.add('wall', 'Wall', [(r.x1 + r.x2) / 2, l.y - TH, (r.z1 + r.z2) / 2], [r.x2 - r.x1, l.h + TH, r.z2 - r.z1], { m: this.mats.rock });
       const floorArea = rect(-EDGE, -EDGE, EDGE, EDGE), thresholds = [];
       if (l.y === 0) for (const s of [-1, 1]) {
         thresholds.push(rect(s * DOOR_OFFSET - 1.2, INNER, s * DOOR_OFFSET + 1.2, EDGE), rect(INNER, s * DOOR_OFFSET - 1.2, EDGE, s * DOOR_OFFSET + 1.2));
         if (!this.corner) thresholds.push(rect(s * DOOR_OFFSET - 1.2, -EDGE, s * DOOR_OFFSET + 1.2, -INNER), rect(-EDGE, s * DOOR_OFFSET - 1.2, -INNER, s * DOOR_OFFSET + 1.2));
       }
-      for (const r of subtract(floorArea, l.holes, [...l.carved, ...thresholds])) this.add('floor', 'Floor', [(r.x1 + r.x2) / 2, l.y - TH, (r.z1 + r.z2) / 2], [r.x2 - r.x1, TH, r.z2 - r.z1]);
+      for (const r of subtract(floorArea, l.holes, [...l.carved, ...thresholds])) this.add('floor', 'Floor', [(r.x1 + r.x2) / 2, l.y - TH, (r.z1 + r.z2) / 2], [r.x2 - r.x1, TH, r.z2 - r.z1], { m: this.mats.floor });
     });
     const topLevel = levels[levels.length - 1], top = topLevel.y + topLevel.h;
-    this.add('ceiling', 'Ceiling', [0, top, 0], [34.2, TH, 34.2]);
+    this.add('ceiling', 'Ceiling', [0, top, 0], [34.2, TH, 34.2], { m: this.mats.rock });
     if (top > 6) for (const [x, z, sx, sz] of [[0, EDGE, 34.78, TH], [0, -EDGE, 34.78, TH], [-EDGE, 0, TH, 33.6], [EDGE, 0, TH, 33.6]])
-      this.add('upper', 'Wall Upper', [x, 6, z], [sx, top - 6, sz]);
+      this.add('upper', 'Wall Upper', [x, 6, z], [sx, top - 6, sz], { m: this.mats.rock });
     this.items.filter(o => o.name === 'Door').forEach(d => this.jambs(d));
     return this;
   }
@@ -167,14 +181,14 @@ class Room {
     const alongX = d.ry % 180 === 0, w = (OPENING - DOOR_W) / 2, [x, y, z] = d.p;
     const walls = this.items.filter(o => o.cat === 'wall' || o.cat === 'upper').map(o => {
       const [sx, sy, sz] = o.ry % 180 ? [o.s[2], o.s[1], o.s[0]] : o.s;
-      return { x1: o.p[0] - sx / 2, x2: o.p[0] + sx / 2, y1: o.p[1], y2: o.p[1] + sy, z1: o.p[2] - sz / 2, z2: o.p[2] + sz / 2 };
+      return { x1: o.p[0] - sx / 2, x2: o.p[0] + sx / 2, y1: o.p[1], y2: o.p[1] + sy, z1: o.p[2] - sz / 2, z2: o.p[2] + sz / 2, m: o.m };
     });
     for (const s of [-1, 1]) {
       const px = alongX ? x + s * (OPENING / 2 + 0.1) : x, pz = alongX ? z : z + s * (OPENING / 2 + 0.1);
       const b = walls.find(b => px >= b.x1 && px <= b.x2 && pz >= b.z1 && pz <= b.z2 && y + 1 >= b.y1 && y + 1 <= b.y2);
       const th = b ? (alongX ? b.z2 - b.z1 : b.x2 - b.x1) : TH, isWall = th <= 1.5, t = isWall ? th : TH;
       const off = b && isWall ? (alongX ? (b.z1 + b.z2) / 2 - z : (b.x1 + b.x2) / 2 - x) : 0, along = s * (DOOR_W + w) / 2;
-      this.add('wall', 'Wall', alongX ? [x + along, y, z + off] : [x + off, y, z + along], alongX ? [w, DOOR_H, t] : [t, DOOR_H, w]);
+      this.add('wall', 'Wall', alongX ? [x + along, y, z + off] : [x + off, y, z + along], alongX ? [w, DOOR_H, t] : [t, DOOR_H, w], { m: b && b.m });
     }
   }
 

@@ -13,6 +13,8 @@ const OBJECT_NAMES = {
 const nameOf = o => o.name === 'SecretLever' && o.action === 'lift' ? 'Рычаг лифта' : OBJECT_NAMES[o.name] || o.name;
 const VERDICTS ={ ok: '✔ Готов', rework: '✎ Правка', no: '✖ Нет' };
 const LEVEL_MIN_AREA = 25;
+/// Деталей в модуле тысячи: в список объектов они попадают только по поиску, и не больше этого числа строк.
+const LIST_LIMIT = 300;
 const CLEAR_HEIGHT = 2.4;
 const DEFAULT_CUT = 2;
 const SEED_LIMIT = 2147483647;
@@ -34,16 +36,17 @@ function loadRooms() {
   })));
 }
 
-const sideObjs = doorways => M.sides[doorways].map(o => ({ ...o, cat: 'shell' }));
-const postObjs = () => M.post.map(o => ({ ...o, cat: 'shell' }));
+const sideObjs = (doorways, m) => M.sides[doorways].map(o => ({ ...o, cat: 'shell', m }));
+const postObjs = m => M.post.map(o => ({ ...o, cat: 'shell', m }));
 
 // Один модуль как в игре: комната + её стороны и столбы. Обычная комната — со всеми проёмами, угловая — с глухими югом и западом.
 function moduleItems(name) {
   const entry = ENTRIES.find(r => r.name === name), half = M.pitch / 2, items = [{ objs: ATLAS.rooms[name], x: 0, z: 0, yaw: 0 }];
   if (name === M.key) return items;
-  const blind = entry.corner ? 0 : 3;
-  items.push({ objs: sideObjs(3), x: half, z: 0, yaw: -90 }, { objs: sideObjs(3), x: 0, z: half, yaw: 0 }, { objs: sideObjs(blind), x: -half, z: 0, yaw: -90 }, { objs: sideObjs(blind), x: 0, z: -half, yaw: 0 });
-  [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([x, z]) => items.push({ objs: postObjs(), x: x * half, z: z * half, yaw: 0 }));
+  // У макета с материалами стороны клетки — та же скала, что и его стены.
+  const blind = entry.corner ? 0 : 3, m = ATLAS.rooms[name].some(o => o.m) ? 'rock' : undefined;
+  items.push({ objs: sideObjs(3, m), x: half, z: 0, yaw: -90 }, { objs: sideObjs(3, m), x: 0, z: half, yaw: 0 }, { objs: sideObjs(blind, m), x: -half, z: 0, yaw: -90 }, { objs: sideObjs(blind, m), x: 0, z: -half, yaw: 0 });
+  [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([x, z]) => items.push({ objs: postObjs(m), x: x * half, z: z * half, yaw: 0 }));
   return items;
 }
 
@@ -96,7 +99,7 @@ function renderCards() {
 function drawThumb(canvas, name) {
   const items = moduleItems(name), b = boundsOf(items), size = Math.max(b.x1 - b.x0, b.z1 - b.z0) + 1, m = canvas.width / size;
   const cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2, ctx = canvas.getContext('2d');
-  drawPlan(ctx, items, { cut: DEFAULT_CUT, hidden: new Set(['ceiling', 'upper', 'door']), m, toScreen: (x, z) => [(x - cx) * m + canvas.width / 2, (cz - z) * m + canvas.height / 2] });
+  drawPlan(ctx, items, { cut: DEFAULT_CUT, hidden: new Set(['ceiling', 'upper', 'door', 'decor']), m, toScreen: (x, z) => [(x - cx) * m + canvas.width / 2, (cz - z) * m + canvas.height / 2] });
 }
 
 // --- Сцена: общее для модуля и подземелья ---
@@ -274,7 +277,7 @@ function openRoom(name) {
   ensureStage();
   state.screen = 'room'; state.room = name; state.selected = null; state.pan = null;
   state.items = moduleItems(name); state.bounds = boundsOf(state.items);
-  stage.load(state.items); stage.setLayers(hidden);
+  stage.load(state.items); stage.setLayers(hidden); stage.setShadows(true);
   ['genBox', 'statBox'].forEach(id => { $(id).hidden = true; });
   ['roomBox', 'objBox', 'labelsBox'].forEach(id => { $(id).hidden = false; });
   const e = ENTRIES.find(r => r.name === name), n = noteOf(name), c = counts(name);
@@ -313,8 +316,8 @@ function renderInfo() {
 function renderList() {
   if (state.screen !== 'room') return;
   const q = $('objFind').value.trim().toLowerCase(), n = noteOf(state.room), order = Object.keys(CATS);
-  const list = ATLAS.rooms[state.room].filter(o => o.cat !== 'start' || o.name !== 'Spot').slice().sort((a, b) => order.indexOf(b.cat) - order.indexOf(a.cat));
-  const show = list.filter(o => !q || `${o.id} ${nameOf(o)}`.toLowerCase().includes(q));
+  const list = ATLAS.rooms[state.room].filter(o => (o.cat !== 'start' || o.name !== 'Spot') && (q || o.cat !== 'decor' || o === state.selected)).slice().sort((a, b) => order.indexOf(b.cat) - order.indexOf(a.cat));
+  const show = list.filter(o => !q || `${o.id} ${nameOf(o)}`.toLowerCase().includes(q)).slice(0, LIST_LIMIT);
   $('list').innerHTML = '';
   show.forEach(o => {
     const b = document.createElement('button'); b.setAttribute('aria-pressed', state.selected === o);
@@ -365,7 +368,7 @@ function generate() {
   placed.posts.forEach(p => items.push({ objs: postObjs(), x: p.x, z: p.z, yaw: 0, bucket: `c${p.cell}`, reach }));
   placed.doors.forEach(d => items.push({ objs: [{ id: 'Do', cat: 'door', name: 'Дверь', p: [0, 0, 0], ry: 0, s: [M.doorWidth, M.doorHeight, 0.12] }], x: d.x, z: d.z, yaw: d.yaw, bucket: `c${d.cell}`, reach }));
   state.items = items; state.bounds = boundsOf(items); state.cell = null;
-  stage.load(items); stage.setLayers(hidden);
+  stage.load(items); stage.setLayers(hidden); stage.setShadows(false);
   setupCut(items); renderLayers(); renderStats();
   const hasCorners = kinds.some(k => k.corner);
   $('warn').hidden = hasCorners;

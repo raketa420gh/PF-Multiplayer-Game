@@ -90,7 +90,8 @@ function validate(room) {
   const items = room.items, errors = [], warnings = [];
   for (const o of items) {
     if (o.p[1] < MIN_Y - 0.61 || o.p[1] + (o.s ? o.s[1] : 0) > MAX_Y + 0.61) errors.push(`${o.id} ${o.name}: y вне ${MIN_Y}…${MAX_Y}`);
-    if (o.s && o.cat !== 'upper' && o.cat !== 'ceiling') { const f = footprint(o); if (Math.min(...f) < -17.11 || Math.max(...f) > 17.11) errors.push(`${o.id} ${o.name}: вне клетки`); }
+    if (o.cat === 'decor') { if (Math.max(Math.abs(o.p[0]), Math.abs(o.p[2])) > 17.1) errors.push(`${o.id} ${o.name}: вне клетки`); }
+    else if (o.s && o.cat !== 'upper' && o.cat !== 'ceiling') { const f = footprint(o); if (Math.min(...f) < -17.11 || Math.max(...f) > 17.11) errors.push(`${o.id} ${o.name}: вне клетки`); }
     if (o.cat === 'stairs') {
       if (o.s[0] < MIN_FLIGHT_W) errors.push(`${o.id}: марш уже ${MIN_FLIGHT_W} м`);
       if (o.s[1] / o.s[2] > 0.85) errors.push(`${o.id}: марш круче 40° (${o.s[1]}/${o.s[2]})`);

@@ -11,6 +11,7 @@ const CATS = {
   pit: { label: 'Стенки ям', color: '#5a4f45' },
   bars: { label: 'Решётки', color: '#a0a8b0' },
   prop: { label: 'Пропсы', color: '#b08a5a' },
+  decor: { label: 'Детали', color: '#8c7b62', ghost: true },
   machine: { label: 'Механизмы', color: '#c77dff', ghost: true },
   water: { label: 'Вода', color: '#2f6fb0', alpha: 0.6, ghost: true },
   acid: { label: 'Кислота', color: '#5ff07a', alpha: 0.7, ghost: true },
@@ -24,6 +25,106 @@ const CATS = {
   upper: { label: 'Верх стен', color: '#77837c', alpha: 0.3 },
   ceiling: { label: 'Потолок', color: '#3c4744', alpha: 0.3, ghost: true }
 };
+// Материалы макета (поле m объекта): цвет на плане и процедурная текстура в 3D. world — развёртка по миру: швы кладки и доски
+// сходятся между соседними блоками, как у WorldStone в игре; иначе по самому объекту, волокна вдоль его длинной стороны.
+// jitter — разброс тона у отдельных деталей и пропсов: ни одна доска не равна соседней.
+const MATS = {
+  rock: { color: '#55514b', tile: 3.2, world: true, jitter: 0.22, paint: 'rock' },
+  stone: { color: '#63615b', tile: 2.4, world: true, jitter: 0.16, paint: 'ashlar' },
+  slab: { color: '#67655f', tile: 1.1, jitter: 0.24, paint: 'dirt' },
+  pebble: { color: '#4f4c47', tile: 0.7, jitter: 0.28, paint: 'plain' },
+  brick: { color: '#57483f', tile: 1.2, world: true, jitter: 0.22, paint: 'brick' },
+  cobble: { color: '#4b4843', tile: 2.6, world: true, jitter: 0.12, paint: 'cobble' },
+  planks: { color: '#5d4b3a', tile: 1.3, world: true, jitter: 0.08, paint: 'planks' },
+  studs: { color: '#2b231c', tile: 1.3, world: true, jitter: 0.05, paint: 'planks' },
+  wood: { color: '#6c5843', tile: 1.1, jitter: 0.42, paint: 'grain' },
+  timber: { color: '#3f3125', tile: 1.1, jitter: 0.18, paint: 'grain' },
+  moss: { color: '#3d5226', tile: 1, world: true, jitter: 0.35, paint: 'moss' },
+  dirt: { color: '#463a2c', tile: 2, world: true, jitter: 0.15, paint: 'dirt' },
+  iron: { color: '#4f433a', tile: 0.6, jitter: 0.18, paint: 'rust', metal: 0.55 },
+  cloth: { color: '#8f8571', tile: 0.8, jitter: 0.3, paint: 'cloth' },
+  clothRed: { color: '#6e4337', tile: 0.8, jitter: 0.3, paint: 'cloth' },
+  clothBlue: { color: '#47535e', tile: 0.8, jitter: 0.3, paint: 'cloth' },
+  rope: { color: '#8c7852', tile: 0.5, jitter: 0.1, paint: 'grain' },
+  clay: { color: '#9c6040', tile: 0.6, jitter: 0.28, paint: 'plain' },
+  straw: { color: '#b49b58', tile: 0.7, jitter: 0.2, paint: 'grain' },
+  bone: { color: '#d9d0b6', tile: 0.6, jitter: 0.12, paint: 'plain' },
+  soot: { color: '#1e1b18', tile: 0.6, jitter: 0.1, paint: 'plain' },
+  fungus: { color: '#d2caa4', tile: 0.5, jitter: 0.2, paint: 'plain', emissive: '#55502a' },
+  ossarite: { color: '#a9d9ff', tile: 0.5, jitter: 0.15, paint: 'plain', emissive: '#3f9dff' },
+  ember: { color: '#ff8a3a', tile: 0.5, jitter: 0.3, paint: 'plain', emissive: '#ff5a14' }
+};
+const hash = (text, salt = 0) => { let h = 2166136261 ^ salt; for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619); return ((h ^ h >>> 15) >>> 0) / 4294967296; };
+
+// Бесшовная текстура материала на холсте: основной тон, рисунок кладки или досок, пятна и сколы.
+function paintMat(key) {
+  const def = MATS[key], S = 256, c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d'), base = new THREE.Color(def.color);
+  let seed = Math.floor(hash(key) * 1e9);
+  const rnd = () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const tone = k => `rgb(${[base.r, base.g, base.b].map(v => Math.max(0, Math.min(255, Math.round(v * 255 * k)))).join(',')})`;
+  // Всё рисуется со сдвигами на размер холста, чтобы края сходились.
+  const wrap = fn => { for (const dx of [-S, 0, S]) for (const dy of [-S, 0, S]) { g.save(); g.translate(dx, dy); fn(); g.restore(); } };
+  const blots = (n, min, max, alpha, lo = 0.6, hi = 1.4) => {
+    for (let i = 0; i < n; i++) {
+      const x = rnd() * S, y = rnd() * S, rx = min + rnd() * (max - min), ry = rx * (0.5 + rnd()), a = rnd() * 3;
+      g.fillStyle = tone(lo + rnd() * (hi - lo)); g.globalAlpha = alpha * (0.4 + rnd() * 0.6);
+      wrap(() => { g.beginPath(); g.ellipse(x, y, rx, ry, a, 0, 7); g.fill(); });
+    }
+    g.globalAlpha = 1;
+  };
+  const lines = (n, alongV, alpha, len = S) => {
+    for (let i = 0; i < n; i++) {
+      const p = rnd() * S, q = rnd() * S, run = len * (0.3 + rnd()), drift = (rnd() - 0.5) * 3;
+      g.strokeStyle = tone(rnd() < 0.5 ? 0.6 : 1.3); g.globalAlpha = alpha * rnd(); g.lineWidth = 0.6 + rnd() * 1.4;
+      wrap(() => { g.beginPath(); if (alongV) { g.moveTo(p, q); g.lineTo(p + drift, q + run); } else { g.moveTo(q, p); g.lineTo(q + run, p + drift); } g.stroke(); });
+    }
+    g.globalAlpha = 1;
+  };
+  // Ряды блоков вперевязку: cols × rows на плитку, шов тёмный, у каждого блока свой тон.
+  const courses = (cols, rows, joint, spread) => {
+    const bw = S / cols, bh = S / rows;
+    g.fillStyle = tone(0.38); g.fillRect(0, 0, S, S);
+    for (let j = 0; j < rows; j++) for (let i = -1; i <= cols; i++) {
+      const x = (i + (j % 2 ? 0.5 : 0) + (rnd() - 0.5) * 0.08) * bw, y = j * bh, k = 1 + (rnd() - 0.5) * 2 * spread;
+      g.fillStyle = tone(k); wrap(() => g.fillRect(x + joint, y + joint, bw - joint * 2, bh - joint * 2));
+      g.fillStyle = tone(k * 1.18); g.globalAlpha = 0.5; wrap(() => g.fillRect(x + joint, y + joint, bw - joint * 2, 1.5)); g.globalAlpha = 1;
+    }
+  };
+  g.fillStyle = tone(1); g.fillRect(0, 0, S, S);
+  const kind = def.paint;
+  if (kind === 'rock') { blots(30, 18, 60, 0.1, 0.65, 1.25); lines(110, false, 0.5, 120); lines(40, true, 0.4, 50); blots(110, 0.5, 1.6, 0.3, 0.5, 1.4); }
+  else if (kind === 'ashlar') { courses(3, 6, 1.2, 0.13); blots(50, 5, 22, 0.2); lines(20, true, 0.4, 30); blots(180, 0.8, 2.5, 0.4, 0.5, 1.35); }
+  else if (kind === 'brick') { courses(4, 10, 1.2, 0.2); blots(60, 6, 26, 0.3, 0.45, 1.1); blots(200, 0.8, 2.5, 0.4, 0.4, 1.4); }
+  else if (kind === 'cobble') {
+    g.fillStyle = tone(0.7); g.fillRect(0, 0, S, S);
+    // Булыжники: неровные многоугольники на сбитой сетке, вплотную друг к другу.
+    const n = 10, cell = S / n;
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+      const x = (i + 0.5 + (rnd() - 0.5) * 0.55) * cell, y = (j + 0.5 + (rnd() - 0.5) * 0.55) * cell, a0 = rnd() * 6, pts = [];
+      for (let k = 0; k < 7; k++) { const a = a0 + k / 7 * 2 * Math.PI, rr = cell * (0.4 + rnd() * 0.2); pts.push([x + Math.cos(a) * rr, y + Math.sin(a) * rr * (0.75 + rnd() * 0.3)]); }
+      g.fillStyle = tone(0.9 + rnd() * 0.22); wrap(() => { g.beginPath(); pts.forEach((p, k) => (k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]))); g.closePath(); g.fill(); });
+    }
+    blots(200, 0.8, 2.5, 0.35, 0.5, 1.35); blots(40, 8, 30, 0.2, 0.55, 1.05);
+  }
+  else if (kind === 'planks') {
+    const n = 5, bw = S / n;
+    for (let i = 0; i < n; i++) { g.fillStyle = tone(0.78 + rnd() * 0.44); g.fillRect(i * bw, 0, bw, S); g.fillStyle = tone(0.25); g.fillRect(i * bw, 0, 2 + rnd() * 1.5, S); }
+    lines(150, true, 0.5, 120); blots(10, 3, 6, 0.5, 0.35, 0.7); blots(30, 6, 20, 0.15);
+  }
+  else if (kind === 'grain') { lines(130, true, 0.55, 140); blots(8, 2, 5, 0.45, 0.4, 0.75); blots(20, 6, 18, 0.14); }
+  else if (kind === 'moss') { blots(120, 5, 20, 0.5, 0.5, 1.6); blots(260, 1, 3, 0.6, 0.4, 1.9); }
+  else if (kind === 'dirt') { blots(80, 6, 30, 0.35, 0.6, 1.3); blots(200, 1, 3, 0.45, 0.4, 1.5); }
+  else if (kind === 'rust') { blots(40, 10, 40, 0.25, 0.7, 1.5); blots(300, 0.6, 2.2, 0.5, 0.5, 1.6); }
+  else if (kind === 'cloth') { lines(110, true, 0.3, S); lines(110, false, 0.3, S); blots(18, 8, 30, 0.2, 0.6, 1.1); }
+  else blots(60, 3, 14, 0.2);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+  return t;
+}
+
+const HIDDEN = '#body';
+const BAR_SPACING = 0.25;
 const LIGHT_POWER = { Torch: 2.5, Candle: 3, Acid: 4 };
 const LIGHT_POOL = 16;
 const HAND_TORCH_RANGE = 5;
@@ -48,24 +149,34 @@ function transformOf(o, place) {
 }
 
 class Batch {
-  constructor(cat, place) { this.cat = cat; this.place = place; this.pos = []; this.nor = []; this.line = []; this.faces = []; }
-  tri(a, b, c, center, o) {
+  // mat — запись MATS: тогда у вершин есть развёртка и тон. Мелким деталям рёбра не рисуются: их тысячи, форму даёт свет.
+  constructor(cat, place, mat) { this.cat = cat; this.place = place; this.mat = mat; this.edges = cat !== 'decor'; this.tone = 1; this.shift = 0; this.pos = []; this.nor = []; this.uv = []; this.col = []; this.line = []; this.faces = []; }
+  tri(a, b, c, center, o, ua, ub, uc) {
     const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
     let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
     const len = Math.hypot(nx, ny, nz) || 1; nx /= len; ny /= len; nz /= len;
     const mid = [(a[0] + b[0] + c[0]) / 3 - center[0], (a[1] + b[1] + c[1]) / 3 - center[1], (a[2] + b[2] + c[2]) / 3 - center[2]];
-    if (nx * mid[0] + ny * mid[1] + nz * mid[2] < 0) { [b, c] = [c, b]; nx = -nx; ny = -ny; nz = -nz; }
+    if (nx * mid[0] + ny * mid[1] + nz * mid[2] < 0) { [b, c] = [c, b]; [ub, uc] = [uc, ub]; nx = -nx; ny = -ny; nz = -nz; }
     this.pos.push(...a, ...b, ...c);
     for (let i = 0; i < 3; i++) this.nor.push(nx, ny, nz);
+    if (this.mat) {
+      const m = this.mat, k = 1 / m.tile, ax = Math.abs(nx), ay = Math.abs(ny), az = Math.abs(nz);
+      if (m.world || !ua) for (const p of [a, b, c]) ay >= ax && ay >= az ? this.uv.push(p[0] * k, p[2] * k) : ax >= az ? this.uv.push(p[2] * k, p[1] * k) : this.uv.push(p[0] * k, p[1] * k);
+      else this.uv.push(...ua, ...ub, ...uc);
+      for (let i = 0; i < 3; i++) this.col.push(this.tone, this.tone, this.tone);
+    }
     this.faces.push(o);
   }
-  quad(a, b, c, d, center, o) { this.tri(a, b, c, center, o); this.tri(a, c, d, center, o); }
-  edge(a, b) { this.line.push(...a, ...b); }
+  quad(a, b, c, d, center, o, ua, ub, uc, ud) { this.tri(a, b, c, center, o, ua, ub, uc); this.tri(a, c, d, center, o, ua, uc, ud); }
+  edge(a, b) { if (this.edges) this.line.push(...a, ...b); }
   box(T, cx, cy, cz, w, h, d, o) {
-    const p = [];
-    for (let i = 0; i < 8; i++) p.push(T(cx + (i & 1 ? w : -w) / 2, cy + (i & 2 ? h : -h) / 2, cz + (i & 4 ? d : -d) / 2));
-    const center = T(cx, cy, cz);
-    [[0, 1, 3, 2], [4, 5, 7, 6], [0, 1, 5, 4], [2, 3, 7, 6], [0, 2, 6, 4], [1, 3, 7, 5]].forEach(f => this.quad(p[f[0]], p[f[1]], p[f[2]], p[f[3]], center, o));
+    const p = [], l = [];
+    for (let i = 0; i < 8; i++) { l.push([(i & 1 ? w : -w) / 2, (i & 2 ? h : -h) / 2, (i & 4 ? d : -d) / 2]); p.push(T(cx + l[i][0], cy + l[i][1], cz + l[i][2])); }
+    const center = T(cx, cy, cz), m = this.mat, local = m && !m.world, grain = w >= h && w >= d ? 0 : h >= d ? 1 : 2, k = m ? 1 / m.tile : 0;
+    // Своя развёртка: волокна (v текстуры) вдоль длинной стороны, сдвиг у каждого объекта свой.
+    const uv = (i, a, b) => a === grain ? [l[i][b] * k + this.shift, l[i][a] * k + this.shift * 7] : [l[i][a] * k + this.shift, l[i][b] * k + this.shift * 7];
+    [[0, 1, 3, 2, 0, 1], [4, 5, 7, 6, 0, 1], [0, 1, 5, 4, 0, 2], [2, 3, 7, 6, 0, 2], [0, 2, 6, 4, 1, 2], [1, 3, 7, 5, 1, 2]].forEach(f =>
+      this.quad(p[f[0]], p[f[1]], p[f[2]], p[f[3]], center, o, ...(local ? [0, 1, 2, 3].map(j => uv(f[j], f[4], f[5])) : [])));
     [[0, 1], [1, 3], [3, 2], [2, 0], [4, 5], [5, 7], [7, 6], [6, 4], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(e => this.edge(p[e[0]], p[e[1]]));
   }
   cylinder(T, w, h, d, o) {
@@ -79,7 +190,15 @@ class Batch {
   }
   add(o, place) {
     const T = transformOf(o, place), [w, h, d] = o.s || [0.25, 0.25, 0.25];
+    if (this.mat) { this.tone = o.cat === 'decor' || o.cat === 'prop' ? 1 + (hash(o.id) - 0.5) * 2 * this.mat.jitter : 1; this.shift = hash(o.id, 7); }
     if (o.cat === 'light') return this.box(T, 0, 0, 0, 0.25, 0.25, 0.25, o);
+    // Решётка: прутья с шагом, как в игре, и две полосы; её сплошное тело для ходьбы лежит в скрытой партии.
+    if (o.cat === 'bars' && !this.body) {
+      const alongX = w >= d, len = alongX ? w : d, n = Math.max(1, Math.round(len / BAR_SPACING));
+      for (let i = 0; i <= n; i++) { const t = -len / 2 + len * i / n; this.box(T, alongX ? t : 0, h / 2, alongX ? 0 : t, 0.05, h, 0.05, o); }
+      for (const y of [0.25, h - 0.25]) this.box(T, 0, y, 0, alongX ? len : 0.07, 0.07, alongX ? 0.07 : len, o);
+      return;
+    }
     if (o.cat === 'stairs') {
       const steps = Math.max(2, Math.round(h / 0.25)), run = d / steps;
       for (let i = 0; i < steps; i++) { const top = h * (i + 1) / steps; this.box(T, 0, top / 2, run * (i + 0.5) - d / 2, w, top, run, o); }
@@ -119,9 +238,16 @@ class Stage {
     this.mats = {}; this.lineMats = {};
     Object.entries(CATS).forEach(([k, c]) => {
       this.mats[k] = c.glow ? new THREE.MeshBasicMaterial({ color: c.color, clippingPlanes: [this.clip] })
-        : new THREE.MeshStandardMaterial({ color: c.color, roughness: 0.9, metalness: 0, transparent: !!c.alpha, opacity: c.alpha || 1, depthWrite: !c.alpha, clippingPlanes: [this.clip] });
+        : new THREE.MeshStandardMaterial({ color: c.color, roughness: 0.9, metalness: 0, transparent: !!c.alpha, opacity: c.alpha || 1, depthWrite: !c.alpha, clipShadows: true, clippingPlanes: [this.clip] });
       this.lineMats[k] = new THREE.LineBasicMaterial({ color: '#0b0f0e', transparent: true, opacity: 0.55, clippingPlanes: [this.clip] });
     });
+    this.texMats = {};
+    // Тело пропа, у которого вид собран из деталей: не рисуется, но держит ходьбу и выбор.
+    this.bodyMat = new THREE.MeshBasicMaterial({ visible: false });
+    // Тени от верхнего света только в макете модуля: на всё подземелье карты теней не хватит.
+    r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+    const sh = this.sun.shadow; sh.mapSize.set(4096, 4096); sh.bias = -0.0004; sh.normalBias = 0.03;
+    Object.assign(sh.camera, { left: -27, right: 27, top: 27, bottom: -27, near: 1, far: 110 }); sh.camera.updateProjectionMatrix();
     this.groups = {};
     Object.keys(CATS).forEach(k => { this.groups[k] = new THREE.Group(); this.scene.add(this.groups[k]); });
     this.selection = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#7dff8f', depthTest: false }));
@@ -153,6 +279,15 @@ class Stage {
     });
   }
 
+  // Материал с текстурой: один на ключ m, рельеф из той же картинки.
+  matOf(key) {
+    if (!this.texMats[key]) {
+      const d = MATS[key], map = paintMat(key);
+      this.texMats[key] = new THREE.MeshStandardMaterial({ map, bumpMap: map, bumpScale: 0.025, roughness: 0.93, metalness: d.metal || 0, vertexColors: true, clipShadows: true, emissive: d.emissive || '#000000', emissiveIntensity: d.emissive ? 1.6 : 0, clippingPlanes: [this.clip] });
+    }
+    return this.texMats[key];
+  }
+
   resize() {
     const w = this.el.clientWidth || innerWidth, h = this.el.clientHeight || innerHeight;
     this.renderer.setSize(w, h); this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
@@ -163,9 +298,10 @@ class Stage {
     this.meshes = []; this.lights = []; this.rings.clear(); this.selection.visible = false;
     const batches = new Map();
     items.forEach(item => item.objs.forEach(o => {
-      const key = `${item.bucket || 0}|${o.cat}`;
-      if (!batches.has(key)) batches.set(key, new Batch(o.cat, item));
-      batches.get(key).add(o, item);
+      const mat = o.hide ? HIDDEN : !CATS[o.cat].alpha && MATS[o.m] ? o.m : '', key = `${item.bucket || 0}|${o.cat}|${mat}`;
+      const batch = k => { if (!batches.has(k)) { batches.set(k, new Batch(o.cat, item, MATS[mat])); if (k.endsWith(HIDDEN)) { batches.get(k).edges = false; batches.get(k).body = true; } } return batches.get(k); };
+      batch(key).add(o, item);
+      if (o.cat === 'bars') batch(`${item.bucket || 0}|bars|${HIDDEN}`).add(o, item);
       if (o.cat === 'light') {
         const T = transformOf(o, item), [x, y, z] = T(0, 0, 0);
         this.lights.push({ pos: new THREE.Vector3(x, y, z), color: o.color, power: o.i * (LIGHT_POWER[o.name] || 3), r: o.r });
@@ -177,14 +313,17 @@ class Stage {
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3));
       g.setAttribute('normal', new THREE.Float32BufferAttribute(b.nor, 3));
-      const m = new THREE.Mesh(g, this.mats[b.cat]); m.userData = { faces: b.faces, cat: b.cat, place: b.place };
+      if (b.mat) { g.setAttribute('uv', new THREE.Float32BufferAttribute(b.uv, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(b.col, 3)); }
+      const m = new THREE.Mesh(g, key.endsWith(HIDDEN) ? this.bodyMat : b.mat ? this.matOf(key.split('|')[2]) : this.mats[b.cat]);
+      m.castShadow = m.receiveShadow = !key.endsWith(HIDDEN) && (b.cat === 'decor' || !CATS[b.cat].ghost) && !CATS[b.cat].alpha; m.userData = { faces: b.faces, cat: b.cat, place: b.place };
       const eg = new THREE.BufferGeometry(); eg.setAttribute('position', new THREE.Float32BufferAttribute(b.line, 3));
       const e = new THREE.LineSegments(eg, this.lineMats[b.cat]); e.raycast = () => {};
       m.add(e); this.groups[b.cat].add(m); this.meshes.push(m);
-      if (key.endsWith('floor')) m.geometry.computeBoundingBox();
+      if (b.cat === 'floor') m.geometry.computeBoundingBox();
     });
   }
 
+  setShadows(on) { this.sun.castShadow = on; }
   setLayers(hidden) { Object.keys(this.groups).forEach(k => { this.groups[k].visible = !hidden.has(k); }); }
   setCut(y) { this.clip.constant = y; }
   setExposure(v) { this.renderer.toneMappingExposure = v; }
@@ -268,7 +407,7 @@ class Stage {
 
   select(o, place) {
     if (!o) { this.selection.visible = false; return; }
-    const b = new Batch(o.cat, place); b.add(o, place);
+    const b = new Batch(o.cat, place); b.edges = true; b.add(o, place);
     this.selection.geometry.dispose();
     this.selection.geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(b.line, 3));
     this.selection.visible = true;
@@ -294,6 +433,8 @@ class Stage {
 
 // --- 2D-план ---
 const PLAN_DOT = { monster: 0.55, chest: 0.5, trap: 0.5, start: 0.6, light: 0.3 };
+/// Детали мельче этой площади на плане не рисуются.
+const PLAN_DECOR_AREA = 0.03;
 
 function planCorners(o, place) {
   const a = (o.ry || 0) * DEG, c = Math.cos(a), s = Math.sin(a), b = (place.yaw || 0) * DEG, pc = Math.cos(b), ps = Math.sin(b);
@@ -308,14 +449,14 @@ function planCorners(o, place) {
 function drawPlan(ctx, items, { cut, hidden, toScreen, m }) {
   const list = [];
   items.forEach(item => item.objs.forEach(o => {
-    if (hidden.has(o.cat) || o.cat === 'ceiling' || o.p[1] > cut) return;
+    if (hidden.has(o.cat) || o.cat === 'ceiling' || o.p[1] > cut || o.cat === 'decor' && o.s[0] * o.s[2] < PLAN_DECOR_AREA) return;
     const top = o.p[1] + (o.s ? o.s[1] : 0);
     list.push({ o, item, top: PLAN_DOT[o.cat] ? 1e4 : top });
   }));
   list.sort((a, b) => a.top - b.top);
   list.forEach(({ o, item }) => {
     const dot = PLAN_DOT[o.cat];
-    ctx.fillStyle = CATS[o.cat].color;
+    ctx.fillStyle = MATS[o.m] ? MATS[o.m].color : CATS[o.cat].color;
     if (dot) {
       if (o.cat === 'start' && o.name === 'Spot') return;
       const [c] = [planCorners({ ...o, s: [0, 0, 0] }, item)[0]], [x, y] = toScreen(c[0], c[1]);
