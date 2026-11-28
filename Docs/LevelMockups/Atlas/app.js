@@ -36,7 +36,7 @@ function loadRooms() { return Promise.all(ENTRIES.map(r => loadScript(`data/${r.
 // Вид поверх блокаута: материалы объектов и тела пропсов, чей вид собран из деталей.
 function applyLooks() {
   Object.entries(ATLAS.looks).forEach(([name, look]) => {
-    const byId = new Map((ATLAS.rooms[name] || []).map(o => [o.id, o]));
+    const byId = new Map((ATLAS.rooms[name] || []).map(o => [`${o.cat}:${o.id}`, o]));
     Object.entries(look.m || {}).forEach(([m, ids]) => ids.forEach(id => { if (byId.has(id)) byId.get(id).m = m; }));
     (look.hide || []).forEach(id => { if (byId.has(id)) byId.get(id).hide = true; });
   });

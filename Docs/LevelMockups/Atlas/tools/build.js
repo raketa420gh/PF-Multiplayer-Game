@@ -40,8 +40,9 @@ for (const name of names) {
   if (spec.dress) dress(room, spec);
   const decor = room.items.filter(o => o.cat === 'decor'), look = { detail: decor.length, side: room.side };
   for (const [o, [m, hide]] of before) {
-    if (o.m !== m) { look.m = look.m || {}; (look.m[o.m] = look.m[o.m] || []).push(o.id); }
-    if (o.hide && !hide) (look.hide = look.hide || []).push(o.id);
+    // Ключ «категория:id»: в выгрузке из Unity id лестниц и стартов совпадают (St1).
+    if (o.m !== m) { look.m = look.m || {}; (look.m[o.m] = look.m[o.m] || []).push(o.cat + ':' + o.id); }
+    if (o.hide && !hide) (look.hide = look.hide || []).push(o.cat + ':' + o.id);
   }
   if (decor.length) { writeWhole(path.join(detailDir, `${name}.js`), packDetail(name, decor)); writeWhole(path.join(detailDir, `${name}.look.json`), JSON.stringify(look)); report.stats.decor = decor.length; }
   const loose = spec.dress ? floaters(room) : [];

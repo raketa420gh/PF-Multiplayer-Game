@@ -69,3 +69,112 @@ exports.build = r => {
   r.monster('Sword', 9, -7, { y: -9, ry: 270 }); r.monster('Archer', -9, -3, { y: -9, ry: 180 });
   r.torch(-15.6, -6, 90, -9); r.torch(15.6, -6, 270, -9);
 };
+
+// Вид. Наверху поминальный двор рода в тёсаном камне среди скалы; внизу парадная гробница: мрамор, колоннада, помост лорда.
+// История: Эльмар дал одиннадцать унций — их число выбито на помосте и выставлено гирьками во дворе; имена младшей ветви сбиты
+// с родословной плиты, а под люками в своде лежат те, кто ошибся в порядке плит.
+exports.dress = S => {
+  const { D } = S, { put, tile, beam, R, J, pick, chance } = D, K = require('../kits'), A = require('../sets/rites')(S), T = -9, DAIS = -7.8, BALC = -5;
+  const W = (x, z, k, base = 0) => S.wall(x, z, k, base + 1.5), plates = S.base.filter(o => o.name === 'FloorPlate'), drops = S.base.filter(o => o.name === 'MonsterDrop');
+  S.theme({
+    rock: 'rock', wall: 'stone', floor: 'stone', column: 'stone', arch: 'slab', age: 1, density: 1.25, damp: (x, y, z) => y < -1 ? 0.1 + (z < -12 && y < -6 ? 0.15 : 0) : 0.16,
+    mat: o => {
+      const low = o.p[1] < -1;
+      if (o.cat === 'wall' && low) return o.s[1] < 4 ? 'marble' : 'stone';                                // гробница вытесана и облицована
+      if (low && (o.cat === 'floor' || o.cat === 'platform' || o.cat === 'stairs' || o.cat === 'column')) return 'marble';
+      if (o.cat === 'stairs') return 'marble';
+      if (o.name === 'Парапет' || o.name === 'Саркофаг') return low || Math.abs(o.p[0]) < 3 ? 'marble' : 'stone';
+    }
+  });
+  const lord = A.props('Саркофаг').find(o => o.p[1] === DAIS);
+  S.kit['Саркофаг'] = (S, x, y, z, w, d, h, ry, o) => {
+    K['Саркофаг'](S, x, y, z, w, d, h, ry, o);
+    if (o !== lord) { const P = A.grave(o, { rich: false, mark: 1, extras: 0.6 }); for (let i = 0; i < 4; i++) P.part('Сбитое имя', 'soot', P.len / 2 - 0.06, h * R(0.25, 0.6), J(0.3), 0.012, R(0.04, 0.08), R(0.1, 0.25)); return; }   // младшая ветвь: имена сбиты
+    const P = A.box(o); A.effigy(P, h, { len: 2 }); A.pall(P, h - 0.2, 1.1, P.wid - 0.04, { m: 'clothRed', drop: 0.5, slip: -0.9 });
+  };
+  for (const o of plates) S.keep(o.p[0] - 1, 0, o.p[2] - 1, o.p[0] + 1, 0.5, o.p[2] + 1);
+  S.auto();
+
+  // ================= Верх: поминальный двор =================
+  // --- Двор: гербы и знамёна рода, родословная плита со сбитой младшей ветвью, киот с одиннадцатью гирьками ---
+  A.crest(S.wall(-4, 11, 'N', 3.6), 3.4, { s: 0.9, m: 'bronze' }); S.banner(W(2, 11.5, 'N'), 4.6, { w: 1.2, h: 2.4, m: 'clothRed', torn: 0.4, sign: 'gold' }); S.banner(W(5, 11.5, 'N'), 4.6, { w: 1.2, h: 2.4, m: 'clothRed', torn: 0.8, sign: 'gold' });
+  const tree = W(3.5, 11.5, 'N');
+  if (tree) {
+    tile('Родословная плита', 'marble', tree[0], tree[1], 3.5, 1.05, 2.6, 1.5, 0.07, { sink: 0.01 });
+    for (let i = 0; i < 7; i++) for (const s of [-1, 1]) s < 0 ? tile('Имя старшей ветви', 'soot', tree[0], tree[1], 3.5 + 0.62 * (tree[0] === 'S' ? 1 : -1) + J(0.03), 2.35 - i * 0.18, R(0.6, 0.9), 0.025, 0.012, { sink: -0.055 }) : tile('Сбитое имя младшей ветви', 'soot', tree[0], tree[1], 3.5 - 0.62 * (tree[0] === 'S' ? 1 : -1) + J(0.06), 2.3 - i * 0.18, R(0.5, 1), R(0.07, 0.12), 0.012, { sink: -0.055, roll: J(5) });
+    tile('Ствол родословной', 'bronze', tree[0], tree[1], 3.5, 1.15, 0.04, 1.3, 0.02, { sink: -0.055 });
+  }
+  D.rubble(4.2, 12.4, 0.5, 9, { m: 'marble', pile: 0.1, name: 'Мраморная крошка' }); put('Зубило', 'iron', 4.6, 0, 12.3, 0.03, 0.03, 0.22, { ry: 40 });
+  const ounces = A.niche(W(-3.6, -3.5, 'S'), 1.35, { w: 1.5, h: 0.5, m: 'marble' });
+  if (ounces) { for (let i = 0; i < 11; i++) put('Гирька унции', 'bronze', ounces[0] - 0.6 + i * 0.12, ounces[1], ounces[2], 0.07, 0.06 + (i % 3) * 0.012, 0.07, { round: true }); A.plaque(W(-3.6, -3.5, 'S'), 0.75, { w: 1.4, h: 0.4, lines: 2, name: 'Плита: одиннадцать унций лорда Эльмара' }); }
+  A.sconce(W(-5.2, -3.5, 'S'), 1.7); A.sconce(W(-2, -3.5, 'S'), 1.7, { lit: true }); A.offer(-4.9, -4.2, { n: 4 });
+  for (const [x, z, k] of [[-5, -2.5, 'W'], [-5, 4.5, 'W'], [5, -3.4, 'E'], [5, 5.6, 'E'], [5, 11.6, 'E'], [-5, 10.6, 'W']]) A.pilaster(W(x, z, k), 0, 5.6, { m: 'marble', w: 0.6 });
+  S.banner(W(-5, 0.2, 'W'), 4.6, { w: 1.1, h: 2.2, m: 'clothRed', torn: 0.6, sign: 'gold' }); S.banner(W(5, 7.2, 'E'), 4.6, { w: 1.1, h: 2.2, m: 'clothRed', torn: 0.3, sign: 'gold' }); A.plaque(W(5, 4, 'E'), 1.5, { w: 1, h: 0.6, lines: 4, name: 'Плита поминального чина' });
+  A.lectern(-5.2, 11.9, { ry: 215 }); A.stand(-5.5, 9.4, { h: 1.6 }); A.stand(5.5, 12.1, { h: 1.6, arms: 1 }); A.stand(5.5, -4.1, { h: 1.6, fallen: true, ry: 300 });
+  for (const [x, z, ry] of [[-2.9, 5.6, 20], [-3.6, 6.9, 75], [2.9, 5.8, -30]]) A.kneeler(x, z, { ry }); A.kneeler(3.9, 7.4, { ry: 130 }); put('Упавшая подушка', 'clothRed', 4.4, 0, 6.6, 0.5, 0.05, 0.22, { ry: 60 });
+  // Крышка лестницы: полозья и борозды показывают, куда она уходит.
+  for (const z of [6.9, 10.8]) put('Кованый полоз', 'iron', 3.4, 0.004, z, 3.2, 0.012, 0.07); for (let i = 0; i < 5; i++) put('Борозда от плиты', 'soot', R(2.2, 4.6), 0.004, R(7.4, 10.4), R(0.5, 1.2), 0.012, 0.03);
+  A.wreath(W(-1, 9, 'W'), 0.55, { d: 0.4 }); A.candles(-2.3, 10.7, 4, { lit: true }); A.candles(2.4, 6.2, 3);
+  // --- Под люками: те, кто ошибся; старые пятна, царапины, брошенное оружие — и сами люки в своде ---
+  for (const [i, o] of drops.entries()) {
+    const [x, , z] = o.p;
+    put('Рама люка', 'iron', x, 6.3, z, 1.7, 0.1, 1.7); put('Створка люка', 'timber', x, 6.27, z, 1.4, 0.06, 1.4); beam('Цепь люка', 'iron', [x + 0.6, 5.2, z + 0.6], [x + 0.62, 6.3, z + 0.62], 0.03);
+    A.skeleton(x + 0.4, z + 0.5, { ry: 40 + i * 110, scatter: 0.12 }); if (i !== 1) A.skeleton(x - 0.9, z - 0.3, { ry: 200 + i * 60, scatter: 0.2 });
+    S.pool(x, z, 1.6, 1.1, { m: 'blood', name: 'Старое пятно' }); S.pool(x + 0.8, z - 0.6, 0.7, 0.5, { m: 'blood', name: 'Старое пятно' }); S.arms(x - 0.3, z + 0.9, 3, { spread: 0.9 });
+    for (let j = 0; j < 5; j++) put('Царапины на плитах', 'soot', x + J(0.9), 0.004, z + J(0.9), 0.02, 0.012, R(0.25, 0.6), { ry: R(0, 180) });
+    put(i ? 'Обрывок траурного плаща' : 'Траурная лента', 'clothBlue', x - 0.5, 0.012, z + 0.2, 0.5, 0.02, 0.9, { ry: R(0, 180) }); put('Поминальный венок', 'straw', x + 1.1, 0, z + 0.2, 0.4, 0.05, 0.4, { round: true }); put('Середина венка', 'soot', x + 1.1, 0.006, z + 0.2, 0.22, 0.05, 0.22, { round: true });
+  }
+  // --- Обход: саркофаги младшей ветви вне гробницы, стоянка и доска жильщиков, которые подбирают порядок ---
+  A.plaque(W(-15.5, 5, 'W'), 1.6, { w: 0.8, h: 0.4, lines: 2, m: 'stone', studs: null, name: 'Табличка без имени' }); A.sconce(W(-15.5, 3.3, 'W'), 1.6); A.plaque(W(15.5, -6, 'E'), 1.6, { w: 0.8, h: 0.4, lines: 2, m: 'stone', studs: null, name: 'Табличка без имени' }); A.sconce(W(15.5, -4.4, 'E'), 1.6);
+  A.camp(2.2, 15.9, { ry: 90 }); const note = W(2, 15, 'W');
+  if (note) { S.board(note, { y: 1.3, w: 1.2, h: 0.8, sheets: 1, name: 'Доска жильщиков: порядок плит' }); for (let i = 0; i < 5; i++) { A.disc('Плита мелом', 'bone', note[0], note[1], note[2] - 0.4 + i * 0.2, 1.52 + (i % 2) * 0.2, 0.12, 0.05); if (i > 1) for (const a of [45, -45]) tile('Зачёркнуто', 'soot', note[0], note[1], note[2] - 0.4 + i * 0.2, 1.5 + (i % 2) * 0.2, 0.16, 0.02, 0.012, { sink: -0.055, roll: a }); } }
+  for (const [i, o] of plates.entries()) { const wl = S.nearWall(o.p[0], o.p[2], 1.5, 5); if (wl && i !== 4) A.chalk(wl, 1.2, { [i % 2 ? 'ring' : 'cross']: true }); }
+  S.set('Мешки', 2.6, 13.9, 0.8, 0.6, 0.5); put('Фонарь', 'iron', 1.5, 0, 14.4, 0.16, 0.3, 0.16);
+  for (const [x, z] of [[-8.6, 3], [9, -6.5], [-9, -8.8], [8.2, 10]]) { const wl = S.wall(x, z - 1.5, 'N', 1.6, 2); A.sconce(wl, 1.7); }
+  D.rubble(4, -10, 2.4, 26, { m: 'rock', pile: 0.3, big: 0.3, name: 'Камень обвала' }); D.patch(4, -10, 2.2, { m: 'dirt', name: 'Каменная пыль', n: 7 }); S.roots(4.5, 6.42, -11.6, { n: 6, len: 1.6 });
+  for (const [x, z] of [[-10, -10], [10, 10.2], [-10, 10.2], [10, -9.9]]) { A.web(x, z, 5.6); D.patch(x, z, 0.9, { n: 4 }); }
+
+  // ================= Гробница =================
+  // --- Неф: парадный марш между колоннами, таблички предков и лампады на стенах, знамёна рода ---
+  for (const z of [10.5, 7.5, 4.5, 1.5]) for (const s of [-1, 1]) {
+    const wl = S.wall(s * 5.5, z, s > 0 ? 'E' : 'W', T + 1.5, 2);
+    if (Math.abs(z - (s < 0 ? 7.5 : 4.5)) > 1.6) { A.plaque(wl, T + 1.45, { w: 0.9, h: 0.6, lines: 4, name: 'Табличка предка' }); A.lamp(S.wall(s * 5.5, z + 1, s > 0 ? 'E' : 'W', T + 1.5, 2), T + 2); }
+    S.banner(S.wall(s * 5.5, z - 0.6, s > 0 ? 'E' : 'W', T + 5, 2), T + 6.6, { w: 1, h: 2.6, m: 'clothRed', torn: chance(0.5) ? 0.7 : 0.2, sign: 'gold' });
+  }
+  for (const o of A.chests('Coffin').filter(o => o.p[2] > 0)) { A.coffin(o, { m: 'marble', bands: 'bronze' }); A.candles(o.p[0], o.p[2] + 0.9, 3, { y: T }); A.offer(o.p[0], o.p[2] - 0.9, { y: T, n: 2 }); }
+  for (const s of [-1, 1]) { A.pilaster(S.wall(s * 2.5, 11, 'N', T + 1.5, 2), T, 7.6, { m: 'marble', w: 0.6 }); A.stand(s * 2.2, -0.6, { y: T, h: 1.7, lit: s > 0 }); }
+  A.web(-5.6, 11.6, T + 7.6); A.web(5.6, 11.6, T + 7.6);
+  // --- Помост лорда: фигура на крышке, одиннадцать золотых кружков на лице помоста, кадила под сводом, дары ---
+  for (let i = 0; i < 11; i++) if (Math.abs(-3.5 + i * 0.7) > 1.7) A.disc('Золотой кружок унции', 'gold', 'N', -5, -3.5 + i * 0.7, DAIS - 0.5, 0.26, 0.03); else put('Золотой кружок унции', 'gold', -1.05 + (i - 3) * 0.52, DAIS + 0.004, -5.5, 0.24, 0.012, 0.24, { round: true });
+  tile('Плита урожая лорда Эльмара', 'marble', 'N', -5, -3.4, DAIS - 1, 2.6, 0.26, 0.04, { sink: 0.01 }); tile('Плита урожая лорда Эльмара', 'marble', 'N', -5, 3.4, DAIS - 1, 2.6, 0.26, 0.04, { sink: 0.01 });
+  for (const [x, z, o] of [[-1.7, -6, {}], [1.7, -6, { arms: 1 }], [-1.7, -10, { fallen: true, ry: 250 }], [1.7, -10, { lit: true }]]) A.stand(x, z, { y: DAIS, h: 1.7, ...o });
+  A.censer(-2.6, -8, DAIS + 2.3, { max: 9 }); A.censer(2.6, -8, DAIS + 2.6, { max: 9 }); A.censer(0, -5.6, DAIS + 3.2, { max: 9 });
+  A.offer(-4, -5.6, { y: DAIS, n: 5, spread: 0.4 }); A.offer(4.1, -5.7, { y: DAIS, n: 4, spread: 0.4 }); A.candles(-4.4, -10.6, 5, { y: DAIS, spread: 0.3 }); A.candles(4.4, -10.5, 4, { y: DAIS, spread: 0.3, lit: true });
+  put('Щит лорда', 'bronze', -1.25, DAIS, -9.2, 0.7, 0.06, 0.9, { ry: 8 }); put('Умбон щита', 'gold', -1.25, DAIS + 0.06, -9.2, 0.22, 0.05, 0.22, { round: true }); put('Шлем лорда', 'bronze', 1.3, DAIS, -9.3, 0.26, 0.26, 0.3, { round: true }); put('Гребень шлема', 'clothRed', 1.3, DAIS + 0.26, -9.3, 0.04, 0.1, 0.3);
+  A.coins(0.5, DAIS, -9.9, 9, 0.5); A.coins(-0.6, DAIS, -10.9, 6, 0.3); put('Опрокинутый кубок', 'gold', 0.9, DAIS + 0.04, -9.8, 0.08, 0.14, 0.08, { round: true, pitch: 90, ry: 70 });
+  S.rug(0, -5.75, 2.6, 1.3, { m: 'clothRed', y: DAIS, name: 'Ковровая дорожка' }); S.rug(0, -1.9, 2.6, 1.8, { m: 'clothRed', y: T, name: 'Ковровая дорожка' });
+  // --- Поперечный неф: скамеечки рода перед помостом, стойки с оружием предков у стен ---
+  for (const s of [-1, 1]) {
+    for (const [dx, z, ry] of [[3, -3.2, 0], [4, -3.2, 8], [5, -3.1, -6], [3.4, -2.2, 0], [4.6, -2.2, 4]]) { A.kneeler(s * dx, z, { y: T, ry: chance(0.25) ? R(40, 140) : ry }); if (chance(0.3)) put('Упавшая подушка', 'clothRed', s * dx + J(0.4), T, z + 0.5, 0.5, 0.05, 0.22, { ry: R(0, 180) }); }
+    S.set('Стойка с оружием', s * 15.6, -3.2, 0.5, 2.4, 1.9, { y: T }); A.crest(S.wall(s * 14, -3.2, s > 0 ? 'E' : 'W', T + 3, 3), T + 3, { s: 0.8 }); A.pilaster(S.wall(s * 14, -1.9, 'N', T + 1.5, 2), T, 7.6, { m: 'marble', w: 0.6 });
+    for (const x of [8, 11.5]) { A.pilaster(S.wall(s * x, -3, 'N', T + 1.5, 3), T, 7.6, { m: 'marble', w: 0.6 }); S.banner(S.wall(s * (x + 1.7), -3, 'N', T + 5, 3), T + 6.4, { w: 1, h: 2.4, m: 'clothRed', torn: chance(0.5) ? 0.8 : 0.3, sign: 'gold' }); }
+    A.plaque(S.wall(s * 9.8, -3, 'N', T + 1.5, 3), T + 1.5, { w: 1.2, h: 0.7, lines: 5, name: 'Плита заслуг рода' }); A.lamp(S.wall(s * 7.2, -3, 'N', T + 1.5, 3), T + 2, { lit: s < 0 });
+  }
+  // --- Балкон: аналой отпевалы над залом, знамёна на парапете ---
+  A.lectern(0, -13.1, { y: BALC, ry: 0 }); A.candles(-1, -13, 3, { y: BALC }); A.kneeler(-5, -14.6, { y: BALC, ry: 10 }); A.kneeler(5.4, -14.4, { y: BALC, ry: -15 });
+  for (const x of [-8, -4, 4, 8]) { tile('Знамя на парапете', 'clothRed', 'N', -12.4, x, BALC - 0.85, 1.1, 1.8, 0.02, { sink: -0.01, roll: J(1.5) }); tile('Кайма знамени', 'gold', 'N', -12.4, x, BALC - 0.85, 1.1, 0.06, 0.025, { sink: -0.012 }); A.disc('Знак рода', 'gold', 'N', -12.37, x, BALC + 0.2, 0.4, 0.03); }
+  for (const s of [-1, 1]) { A.sconce(S.wall(s * 14.5, -14, s > 0 ? 'E' : 'W', BALC + 1.5, 3), BALC + 1.7); A.plaque(S.wall(s * 6, -14.5, 'S', BALC + 1.5, 3), BALC + 1.5, { w: 1.4, h: 0.6, lines: 4, name: 'Плита хора' }); }
+  A.web(-15, -15.6, BALC + 3.6); put('Забытый требник', 'leather', 8.8, BALC, -15.5, 0.26, 0.07, 0.34, { ry: 20 }); D.patch(-9, -14.5, 1.2, { m: 'dirt', name: 'Пыль', y: BALC, n: 6 });
+  // --- Склепы под балконом: супруга в середине, вскрытый жильщиками, угол Спящих, осыпавшийся ---
+  for (const o of A.chests('Coffin').filter(o => o.p[2] < -10)) {
+    const x = o.p[0], back = S.wall(x, -14.8, 'S', T + 1.5, 3);
+    A.coffin(o, { m: 'marble', bands: 'bronze', ajar: x === 7.4 ? 1 : 0 }); A.plaque(back, T + 1.7, { w: 0.9, h: 0.5, lines: 3 }); A.sconce(S.wall(x + 1.2, -14.8, 'S', T + 1.5, 3), T + 1.7, { lit: x === 0 });
+    if (x === 0) { A.wreath(S.wall(-1.2, -14.8, 'S', T + 1.5, 3), T + 1.6); A.offer(-1.3, -15.2, { y: T, n: 4 }); S.banner(S.wall(-2.4, -15, 'S', T + 1.5, 3), T + 3.1, { w: 0.8, h: 1.5, m: 'clothBlue', torn: 0.3, sign: 'gold' }); }
+    if (x === 7.4) { A.pry(8.6, -14.2, { y: T, ry: 60 }); A.chalk(S.wall(8.8, -14.8, 'S', T + 1.5, 3), T + 1.4, { cross: true }); A.shards(6.4, -15.4, { y: T, m: 'marble', n: 2, size: 0.4 }); }
+    if (x === -13.4) { A.sleepers(-14.7, -14.2, { y: T, r: 0.45, n: 6 }); A.runes(S.wall(-14.6, -14.8, 'S', T + 1.5, 3), T + 1.3, 4); }
+    if (x === 13.4) { D.rubble(14.6, -15, 1, 18, { m: 'stone', y: T, pile: 0.4, big: 0.3, name: 'Камень обвала' }); S.roots(15.2, BALC - 0.65, -15.2, { n: 5, len: 1.4 }); }
+    if (x === -7.4) { A.urn(-9.8, -15.4, { y: T, h: 0.55, m: 'bronze' }); A.urn(-9.2, -15.5, { y: T, h: 0.45, broken: true }); A.web(-10.1, -15.6, T + 3.2); }
+  }
+  // Под маршами балкона и в углах: пыль, кости, грибы у сырой южной стены.
+  for (const s of [-1, 1]) { D.bones(s * 15.2, -4.6, 4, { y: T, spread: 0.3 }); D.patch(s * 12.6, -9, 1.4, { m: 'dirt', name: 'Пыль', y: T, n: 6 }); D.fungus(s * 11.6, -15.6, 5, { y: T }); A.web(s * 15.6, -1.9, T + 7.6); }
+};

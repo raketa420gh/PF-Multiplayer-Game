@@ -79,7 +79,11 @@ function scene(room, spec = {}) {
   /// Стена в сторону toward (N, E, S, W) от точки: [сторона, куда она смотрит, её плоскость, координата вдоль] — аргументы настенных наборов detail.js.
   S.wall = (x, z, toward, y = 1.5, max = 14) => {
     const [dx, dz] = DIRS[toward];
-    for (let t = 0; t < max; t += 0.05) if (!air(x + dx * t, y, z + dz * t)) { const plane = dx ? x + dx * (t - 0.025) : z + dz * (t - 0.025); return [BACK[toward], Math.round(plane * 20) / 20, dx ? z : x]; }
+    for (let t = 0; t < max; t += 0.05) if (!air(x + dx * t, y, z + dz * t)) {
+      let lo = Math.max(0, t - 0.05), hi = t;                                                        // грань уточняется до миллиметра: тонкое настенное не тонет в стене
+      for (let i = 0; i < 7; i++) { const mid = (lo + hi) / 2; if (air(x + dx * mid, y, z + dz * mid)) lo = mid; else hi = mid; }
+      return [BACK[toward], Math.round((dx ? x + dx * hi : z + dz * hi) * 1000) / 1000, dx ? z : x];
+    }
     return null;
   };
   /// Ближайшая стена к точке: то же, что wall, по всем четырём сторонам.
@@ -466,6 +470,8 @@ function scene(room, spec = {}) {
     const fn = S.kit[name] || kits[name] || D.kit[name], fy = y === undefined ? S.floor(x, z, 0) || 0 : y;
     if (!fn) throw new Error(`${room.name}: нет набора «${name}»`);
     fn === D.kit[name] ? fn(x, fy, z, w, d, h, ry) : fn(S, x, fy, z, w, d, h, ry, { m, name });
+    // У стола без тела царга висит между ножками: её держат проножки.
+    if (name === 'Стол' && fn === D.kit[name]) { const L = kits.frame(S, x, fy, z, w, d, ry); for (const s of [-1, 1]) w >= d ? L.part('Проножка', 'timber', s * (w / 2 - 0.13), h * 0.35, 0, 0.05, 0.06, d - 0.2) : L.part('Проножка', 'timber', 0, h * 0.35, s * (d / 2 - 0.13), w - 0.2, 0.06, 0.05); }
     return S;
   };
   /// Знамя на стене: древко, полотнище, рваный низ. wall — результат S.wall(), y — верх.
@@ -554,10 +560,12 @@ function dress(room, spec) {
 /// Детали, которые ничего не касаются: ни тел, ни пропсов, ни других стоящих деталей. Возвращает «имя ×N».
 function floaters(room) {
   const S = room.scene || scene(room), PAD = 0.06, cell = 1.5, key = (i, j, k) => `${i}|${j}|${k}`;
+  // Описанный ящик: у наклонённой детали (кватернион) поворот идёт вокруг низа, центр уезжает вместе с ним.
   const aabb = o => {
-    const [w, h, d] = o.s, tilt = o.q ? Math.hypot(w, h, d) / 2 : 0, a = (o.ry || 0) * DEG, ex = o.q ? tilt : Math.abs(w / 2 * Math.cos(a)) + Math.abs(d / 2 * Math.sin(a)), ez = o.q ? tilt : Math.abs(w / 2 * Math.sin(a)) + Math.abs(d / 2 * Math.cos(a));
-    const cy = o.p[1] + h / 2, ey = o.q ? tilt : h / 2;
-    return [o.p[0] - ex - PAD, (o.q ? o.p[1] + Math.min(0, h / 2 - tilt) : cy - ey) - PAD, o.p[2] - ez - PAD, o.p[0] + ex + PAD, (o.q ? o.p[1] + tilt + h / 2 : cy + ey) + PAD, o.p[2] + ez + PAD];
+    const [w, h, d] = o.s, a = (o.ry || 0) * DEG, [qx, qy, qz, qw] = o.q || [0, Math.sin(a / 2), 0, Math.cos(a / 2)];
+    const m = [[1 - 2 * (qy * qy + qz * qz), 2 * (qx * qy - qz * qw), 2 * (qx * qz + qy * qw)], [2 * (qx * qy + qz * qw), 1 - 2 * (qx * qx + qz * qz), 2 * (qy * qz - qx * qw)], [2 * (qx * qz - qy * qw), 2 * (qy * qz + qx * qw), 1 - 2 * (qx * qx + qy * qy)]];
+    const c = m.map((r, i) => o.p[i] + r[1] * h / 2), e = m.map(r => Math.abs(r[0]) * w / 2 + Math.abs(r[1]) * h / 2 + Math.abs(r[2]) * d / 2 + PAD);
+    return [c[0] - e[0], c[1] - e[1], c[2] - e[2], c[0] + e[0], c[1] + e[1], c[2] + e[2]];
   };
   const decor = room.items.filter(o => o.cat === 'decor').map(o => ({ o, q: aabb(o), ok: false }));
   const solids = [...S.boxes.map(b => [b.x0, b.y0, b.z0, b.x1, b.y1, b.z1]), ...room.items.filter(o => o.s && ['prop', 'chest', 'water', 'acid', 'bars', 'machine', 'trap'].includes(o.cat)).map(o => aabb(o))];
