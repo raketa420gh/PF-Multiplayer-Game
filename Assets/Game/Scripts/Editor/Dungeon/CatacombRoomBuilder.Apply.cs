@@ -142,9 +142,14 @@ namespace Game.Scripts.Editor.Dungeon
             List<HallItem> items = LoadMockup(layout.Name);
             Site room = new Site { Layout = layout, Root = new GameObject(layout.Name).transform };
             room.Root.position = Workshop;
+            Dictionary<string, List<GameObject>> placed = new();
 
             foreach (HallItem item in items)
+            {
+                int before = room.Root.childCount;
                 PlaceMockupItem(room, item);
+                placed[$"{item.cat}:{item.id}"] = Enumerable.Range(before, room.Root.childCount - before).Select(i => room.Root.GetChild(i).gameObject).ToList();
+            }
 
             List<HallItem> parts = items.Where(item => item.cat == "trap" && RoomMechanismBuilder.IsPart(item.name)).ToList();
 
@@ -155,6 +160,7 @@ namespace Game.Scripts.Editor.Dungeon
             }
 
             Texture2D map = DungeonMinimapBuilder.Render(room.Root, Workshop, Pitch * 0.5f, MapPixels, $"Catacomb{layout.Name}", true);
+            CatacombDetailBuilder.Dress(layout.Name, room.Root, items, placed);
             SerializedObject so = new SerializedObject(room.Root.gameObject.AddComponent<CatacombRoomComponent>());
             BattleEditorUtility.Set(so, "_title", layout.Title);
             BattleEditorUtility.Set(so, "_isCorner", layout.IsCorner);

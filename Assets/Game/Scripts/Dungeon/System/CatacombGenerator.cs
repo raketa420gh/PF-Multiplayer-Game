@@ -70,8 +70,8 @@ namespace Game.Scripts.Dungeon
         [SerializeField, Tooltip("The key room covers the middle cell and the next one along its local +Z; its map is twice as tall")]
         private bool _isKeyRoomLong;
 
-        [SerializeField, Tooltip("Dungeon Test lays these rooms of the pool, by prefab name, in a row east from the middle cell; none = a random room of the pool")]
-        private string[] _testRooms = { "Arena", "MinersRow" };
+        [SerializeField, Tooltip("Dungeon Test lays these rooms of the pool, by prefab name, in rows of three east from the middle cell, the next row north of it; none = a random room of the pool")]
+        private string[] _testRooms = { "Arena", "MinersRow", "Aqueduct", "SleepersWarren", "ColossusWorks", "Chapel" };
 
         [SerializeField, Tooltip("Side between two cells by its open doorways (bit 0 at local -X, bit 1 at +X); length runs along local X")]
         private GameObject[] _sides = new GameObject[4];
@@ -111,6 +111,7 @@ namespace Game.Scripts.Dungeon
 
         private const int NotWalkable = 1;
         private const int BothDoorways = 3;
+        private const int TestColumns = 3;
         private const string KeyRoomSide = "Wall Doorways";
         public const string UpperWall = "Wall Upper";
 
@@ -351,8 +352,8 @@ namespace Game.Scripts.Dungeon
             return plan;
         }
 
-        /// Dungeon Test: the test rooms (else a random room of the pool, one with a team start if any has it) in a row east from the
-        /// middle cell, both doorways open between neighbours, rock all around.
+        /// Dungeon Test: the test rooms (else a random room of the pool, one with a team start if any has it) in rows of three east
+        /// from the middle cell, the next row north of it, both doorways open between neighbours, rock all around.
         public Plan LayTest(int seed)
         {
             System.Random random = new System.Random(seed);
@@ -361,14 +362,16 @@ namespace Game.Scripts.Dungeon
             RoomKind[] pool = _kinds.Where(kind => kind.Prefab.StartSpots != null).ToArray();
             pool = pool.Length > 0 ? pool : _kinds;
             CatacombRoomComponent[] rooms = _kinds.Select(kind => kind.Prefab).Where(room => Array.IndexOf(_testRooms, room.name) >= 0)
-                .OrderBy(room => Array.IndexOf(_testRooms, room.name)).Take(_grid / 2 + 1).ToArray();
+                .OrderBy(room => Array.IndexOf(_testRooms, room.name)).Take(TestColumns * (_grid / 2 + 1)).ToArray();
             rooms = rooms.Length > 0 ? rooms : new[] { pool[random.Next(pool.Length)].Prefab };
 
             for (int i = 0; i < rooms.Length; i++)
             {
-                plan.Rooms[KeyCell + i] = rooms[i];
-                plan.Turns[KeyCell + i] = random.Next(4);
-                plan.East[KeyCell + i] = i < rooms.Length - 1 ? BothDoorways : 0;
+                int cell = KeyCell + i % TestColumns + i / TestColumns * _grid;
+                plan.Rooms[cell] = rooms[i];
+                plan.Turns[cell] = random.Next(4);
+                plan.East[cell] = i % TestColumns < TestColumns - 1 && i + 1 < rooms.Length ? BothDoorways : 0;
+                plan.North[cell] = i + TestColumns < rooms.Length ? BothDoorways : 0;
             }
 
             return plan;

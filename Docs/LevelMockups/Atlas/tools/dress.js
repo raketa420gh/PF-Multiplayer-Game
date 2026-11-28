@@ -421,6 +421,7 @@ function scene(room, spec = {}) {
   const lights = () => {
     for (const o of room.items.filter(o => o.cat === 'light')) {
       const [x, y, z] = o.p;
+      room.owner = 'light';                                                      // Unity ставит свою модель лампы: эти детали ей не нужны
       if (o.name === 'Torch') {
         const k = 'NESW'[Math.round((o.ry || 0) / 90) % 4], w = S.wall(x + DIRS[k][0] * 0.3, z + DIRS[k][1] * 0.3, BACK[k], y - 0.2, 1.2);
         if (!w) continue;
@@ -448,6 +449,7 @@ function scene(room, spec = {}) {
         D.beam('Цепь люстры', 'iron', [x, y + 1.6, z], [x, top + 0.2, z], 0.05);
       }
     }
+    room.owner = undefined;
   };
 
   /// Пропсы: вид из частей по имени (kits.js, наборы detail.js и свои наборы комнаты S.kit), тело становится невидимым.
@@ -457,7 +459,9 @@ function scene(room, spec = {}) {
       const fn = S.kit[o.name] || kits[o.name] || D.kit[o.name];
       if (!fn) continue;
       const args = [o.p[0], o.p[1], o.p[2], o.s[0], o.s[2], o.s[1], o.ry || 0, o];
+      room.owner = o.id;                                                          // Unity берёт вид пропа из деталей, только если у него нет модели
       if (!(fn === D.kit[o.name] ? fn(...args) : fn(S, ...args))) o.hide = true;
+      room.owner = undefined;
       S.done.add(o);
     }
   };

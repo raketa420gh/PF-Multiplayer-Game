@@ -15,10 +15,11 @@ let failed = 0;
 
 /// Запись целиком: сборки разных комнат могут идти одновременно.
 const writeWhole = (file, text) => { const tmp = `${file}.${process.pid}.tmp`; fs.writeFileSync(tmp, text); fs.renameSync(tmp, file); };
-/// Детали компактно: таблицы имён и материалов, строка [имя, материал, x, y, z, w, h, d, ry | [кватернион], флаги]: 1 — круглая, 2 — на верхе стен (слой «Верх стен»).
+/// Детали компактно: таблицы имён и материалов, строка [имя, материал, x, y, z, w, h, d, ry | [кватернион], флаги, владелец]: флаги 1 — круглая, 2 — на верхе стен
+/// (слой «Верх стен»); владелец — id пропа или «light», чей вид собран из детали (Unity пропускает её, если у владельца есть модель).
 const packDetail = (name, decor) => {
   const names = [], mats = [], ix = (list, v) => { let i = list.indexOf(v); if (i < 0) { i = list.length; list.push(v); } return i; };
-  const rows = decor.map(o => JSON.stringify([ix(names, o.name), ix(mats, o.m || ''), ...o.p, ...o.s, o.q || o.ry || 0, ...(o.round || o.up ? [(o.round ? 1 : 0) | (o.up ? 2 : 0)] : [])]));
+  const rows = decor.map(o => JSON.stringify([ix(names, o.name), ix(mats, o.m || ''), ...o.p, ...o.s, o.q || o.ry || 0, ...(o.round || o.up || o.own ? [(o.round ? 1 : 0) | (o.up ? 2 : 0)] : []), ...(o.own ? [o.own] : [])]));
   return `ATLAS.detail(${JSON.stringify(name)},{"names":${JSON.stringify(names)},"mats":${JSON.stringify(mats)},"items":[\n${rows.join(',\n')}\n]});\n`;
 };
 

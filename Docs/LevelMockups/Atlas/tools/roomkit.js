@@ -111,7 +111,7 @@ class Room {
   /// y — низ, q — поворот кватернионом Unity [x, y, z, w] вместо ry, m — материал.
   decor(name, x, y, z, w, h, d, { ry = 0, q, m, round: isRound } = {}) {
     const r2 = v => Math.round(v * 100) / 100;
-    return this.add('decor', name, [x, y, z].map(r2), [w, h, d].map(r2), { ry: Math.round(ry), q, m, round: isRound || undefined });
+    return this.add('decor', name, [x, y, z].map(r2), [w, h, d].map(r2), { ry: Math.round(ry), q, m, round: isRound || undefined, own: this.owner });
   }
   /// Контейнер: GoldenChest, LargeOakChest, SmallOakChest, Coffin, Bookshelf, Barrel, Crate, Urn, GoldPile.
   chest(name, x, z, { y = 0, ry = 0 } = {}) { return this.add('chest', name, [x, y, z], [0.9, 0.8, 0.9], { ry }); }

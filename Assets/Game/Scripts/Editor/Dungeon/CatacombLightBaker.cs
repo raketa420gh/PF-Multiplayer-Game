@@ -219,8 +219,10 @@ namespace Game.Scripts.Editor.Dungeon
 
         private static void MarkOccluder(MeshRenderer renderer)
         {
+            // Small detail pieces shade nothing worth baking and would only slow the bake down.
             bool isSolid = renderer.sharedMaterial != null && renderer.sharedMaterial.renderQueue < (int)RenderQueue.Transparent
-                && renderer.GetComponent<MeshFilter>()?.sharedMesh != null;
+                && renderer.GetComponent<MeshFilter>()?.sharedMesh != null
+                && !(renderer.name.StartsWith(CatacombDetailBuilder.Root) && renderer.shadowCastingMode == ShadowCastingMode.Off);
             GameObjectUtility.SetStaticEditorFlags(renderer.gameObject, isSolid ? StaticEditorFlags.ContributeGI : default);
             renderer.receiveGI = ReceiveGI.LightProbes;
         }
