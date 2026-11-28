@@ -3,10 +3,10 @@
 // (мировая x для N и S, мировая z для E и W). Всё, что ставится на стену, утоплено в неё задней гранью.
 const FACE = { N: { ry: 0, n: [0, 1] }, E: { ry: 90, n: [1, 0] }, S: { ry: 180, n: [0, -1] }, W: { ry: 270, n: [-1, 0] } };
 const DEG = Math.PI / 180, INSIDE = 16.4;
-/// Россыпь у стены не уходит в саму стену.
-const inCell = v => Math.max(-INSIDE, Math.min(INSIDE, v));
 
-module.exports = (r, seed = 1) => {
+/// lim — границы россыпи { x: [от, до], z: [от, до] }, по умолчанию внутренность клетки: россыпь у стены не уходит в саму стену.
+module.exports = (r, seed = 1, lim = { x: [-INSIDE, INSIDE], z: [-INSIDE, INSIDE] }) => {
+  const inX = v => Math.max(lim.x[0], Math.min(lim.x[1], v)), inZ = v => Math.max(lim.z[0], Math.min(lim.z[1], v)), inU = (k, u) => k === 'N' || k === 'S' ? inX(u) : inZ(u);
   let s = seed >>> 0;
   const rnd = () => { s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const R = (a, b) => a + (b - a) * rnd(), pick = a => a[Math.floor(rnd() * a.length)], chance = p => rnd() < p, J = v => R(-v, v);
@@ -50,14 +50,14 @@ module.exports = (r, seed = 1) => {
   };
 
   /// Овальная нашлёпка на стене: центр (u, y), w вдоль стены, h по высоте, th наружу.
-  const blot = D.blot = (name, m, k, plane, u, y, w, h, th) => { const [x, z] = at(k, plane, inCell(u)); return put(name, m, x, Math.max(h / 2, y), z, w, th, h, { round: true, pitch: 90, ry: FACE[k].ry, roll: J(30) }); };
-  /// Пятно мха на стене: наплыв из овалов и свисающие пряди.
-  D.mossWall = (k, plane, u, y, size = 1, { strands = true } = {}) => {
+  const blot = D.blot = (name, m, k, plane, u, y, w, h, th, base = 0) => { const [x, z] = at(k, plane, inU(k, u)); return put(name, m, x, Math.max(base + h / 2, y), z, w, th, h, { round: true, pitch: 90, ry: FACE[k].ry, roll: J(30) }); };
+  /// Пятно мха на стене: наплыв из овалов и свисающие пряди. base — высота пола под стеной.
+  D.mossWall = (k, plane, u, y, size = 1, { strands = true, base = 0 } = {}) => {
     const n = Math.round(R(5, 9) * size);
-    for (let i = 0; i < n; i++) blot('Мох', 'moss', k, plane, u + J(0.6 * size), y + J(0.5 * size), R(0.25, 0.75) * size, R(0.2, 0.6) * size, R(0.03, 0.08));
+    for (let i = 0; i < n; i++) blot('Мох', 'moss', k, plane, u + J(0.6 * size), y + J(0.5 * size), R(0.25, 0.75) * size, R(0.2, 0.6) * size, R(0.03, 0.08), base);
     if (strands) for (let i = 0, c = Math.round(R(2, 5) * size); i < c; i++) {
       const h = R(0.25, 0.8) * size;
-      tile('Прядь мха', 'moss', k, plane, inCell(u + J(0.5 * size)), Math.max(0, y - h * R(0.6, 1)), R(0.04, 0.08), h, 0.03, { sink: 0, roll: J(4) });
+      tile('Прядь мха', 'moss', k, plane, inU(k, u + J(0.5 * size)), Math.max(base, y - h * R(0.6, 1)), R(0.04, 0.08), h, 0.03, { sink: 0, roll: J(4) });
     }
   };
 
@@ -65,7 +65,7 @@ module.exports = (r, seed = 1) => {
   D.patch = (x, z, radius, { m = 'moss', name = 'Мох', y = 0, n = 6 } = {}) => {
     for (let i = 0; i < n; i++) {
       const a = R(0, 360) * DEG, d = radius * Math.sqrt(rnd());
-      put(name, m, inCell(x + Math.cos(a) * d), y, inCell(z + Math.sin(a) * d), R(0.35, 0.95) * radius, R(0.012, 0.03), R(0.25, 0.7) * radius, { ry: R(0, 180), round: true });
+      put(name, m, inX(x + Math.cos(a) * d), y, inZ(z + Math.sin(a) * d), R(0.35, 0.95) * radius, R(0.012, 0.03), R(0.25, 0.7) * radius, { ry: R(0, 180), round: true });
     }
   };
 
@@ -75,7 +75,7 @@ module.exports = (r, seed = 1) => {
     for (let i = 0; i < n; i++) {
       const a = R(0, 360) * DEG, t = rnd() ** (0.5 + pile), d = radius * t, isBig = chance(big);
       const w = isBig ? R(0.4, 0.8) : R(0.24, 0.32), h = isBig ? R(0.25, 0.5) : R(0.1, 0.16), dp = isBig ? R(0.3, 0.6) : R(0.12, 0.17);
-      const px = inCell(x + Math.cos(a) * d), pz = inCell(z + Math.sin(a) * d), under = lain.filter(p => Math.hypot(p[0] - px, p[1] - pz) < 0.2).map(p => p[2]), rest = Math.min(pile * 1.6, under.length ? Math.max(...under) : 0);
+      const px = inX(x + Math.cos(a) * d), pz = inZ(z + Math.sin(a) * d), under = lain.filter(p => Math.hypot(p[0] - px, p[1] - pz) < 0.2).map(p => p[2]), rest = Math.min(pile * 1.6, under.length ? Math.max(...under) : 0);
       lain.push([px, pz, rest + h * 0.85]);
       put(isBig ? 'Обломок' : name, isBig && m === 'brick' ? 'slab' : m, px, y + rest, pz, w, h, dp, { ry: R(0, 360), pitch: chance(0.5) ? J(28) : 0, roll: chance(0.4) ? J(22) : 0 });
     }

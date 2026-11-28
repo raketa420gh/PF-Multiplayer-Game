@@ -96,3 +96,5 @@ exports.build = r => {
   r.monster('Sword', -1.4, 11.6, { ry: 180 }); r.monster('Skull', 8.4, 0.4, { ry: 270 }); r.monster('Skull', -1, -10.4, { ry: 0 }); r.monster('Sword', 12.6, 9, { y: Y, ry: 270 }); r.monster('Warrior', -7, -6.4, { y: Y, ry: 90 }); r.monster('Mage', CX + 3.9, CZ - 1.6, { y: -6.25, ry: 270 });
   r.start(-8.4, 13.6, 180);
 };
+
+exports.dress = S => { S.theme({ rock: "rock", wall: "rock", floor: "dirt", damp: 0.35 }); S.auto(); };

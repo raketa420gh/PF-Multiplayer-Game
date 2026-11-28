@@ -192,7 +192,8 @@ class Room {
     }
   }
 
-  toFile() { return `// "edited":true\nATLAS.room("${this.name}",[\n${this.items.map(o => JSON.stringify(o)).join(',\n')}\n]);\n`; }
+  /// Блокаут без деталей: они пишутся отдельно, в data/detail (см. build.js), Unity их не читает.
+  toFile() { return `// "edited":true\nATLAS.room("${this.name}",[\n${this.items.filter(o => o.cat !== 'decor').map(o => JSON.stringify(o)).join(',\n')}\n]);\n`; }
 }
 
 module.exports = { Room, subtract, rect, INNER, EDGE, DOOR_OFFSET, OPENING, DOOR_W, DOOR_H, TH, MIN_Y, MAX_Y };

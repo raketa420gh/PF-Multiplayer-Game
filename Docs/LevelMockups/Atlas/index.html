@@ -167,8 +167,24 @@ textarea { width: 100%; min-height: 62px; margin-top: 8px; resize: vertical; bac
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script>window.ATLAS = { rooms: {}, room(name, objs) { this.rooms[name] = objs; } };</script>
+<script>
+// Блокаут модуля лежит в data/<Room>.js, его вид — в data/looks.js (материалы, скрытые тела) и data/detail/<Room>.js (детали, грузятся при открытии модуля).
+window.ATLAS = {
+  rooms: {}, details: {}, looks: {},
+  room(name, objs) { this.rooms[name] = objs; },
+  detail(name, pack) {
+    this.details[name] = pack.items.map((r, i) => {
+      const o = { id: `De${i + 1}`, cat: 'decor', name: pack.names[r[0]], p: [r[2], r[3], r[4]], s: [r[5], r[6], r[7]], m: pack.mats[r[1]] || undefined };
+      if (Array.isArray(r[8])) o.q = r[8]; else o.ry = r[8];
+      if (r[9] & 1) o.round = true;
+      if (r[9] & 2) o.layer = 'upper';
+      return o;
+    });
+  }
+};
+</script>
 <script src="data/manifest.js"></script>
+<script src="data/looks.js"></script>
 <script src="data/titles.js"></script>
 <script src="generator.js"></script>
 <script src="viewer.js"></script>

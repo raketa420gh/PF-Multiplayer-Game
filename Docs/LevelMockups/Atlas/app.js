@@ -30,21 +30,30 @@ const noteOf = name => notes[name] || (notes[name] = { status: '', note: '', obj
 let stage = null;
 
 // --- Загрузка данных комнат ---
-function loadRooms() {
-  return Promise.all(ENTRIES.map(r => new Promise((done, fail) => {
-    const s = document.createElement('script'); s.src = `data/${r.name}.js`; s.onload = done; s.onerror = () => fail(new Error(r.name)); document.head.appendChild(s);
-  })));
+const loadScript = (src, label) => new Promise((done, fail) => { const s = document.createElement('script'); s.src = src; s.onload = done; s.onerror = () => fail(new Error(label)); document.head.appendChild(s); });
+function loadRooms() { return Promise.all(ENTRIES.map(r => loadScript(`data/${r.name}.js`, r.name))).then(applyLooks); }
+
+// Вид поверх блокаута: материалы объектов и тела пропсов, чей вид собран из деталей.
+function applyLooks() {
+  Object.entries(ATLAS.looks).forEach(([name, look]) => {
+    const byId = new Map((ATLAS.rooms[name] || []).map(o => [o.id, o]));
+    Object.entries(look.m || {}).forEach(([m, ids]) => ids.forEach(id => { if (byId.has(id)) byId.get(id).m = m; }));
+    (look.hide || []).forEach(id => { if (byId.has(id)) byId.get(id).hide = true; });
+  });
 }
+const hasDetail = name => !!(ATLAS.looks[name] || {}).detail;
+/// Все объекты открытого модуля: блокаут и его детали.
+const roomObjs = name => ATLAS.details[name] ? ATLAS.rooms[name].concat(ATLAS.details[name]) : ATLAS.rooms[name];
 
 const sideObjs = (doorways, m) => M.sides[doorways].map(o => ({ ...o, cat: 'shell', m }));
 const postObjs = m => M.post.map(o => ({ ...o, cat: 'shell', m }));
 
 // Один модуль как в игре: комната + её стороны и столбы. Обычная комната — со всеми проёмами, угловая — с глухими югом и западом.
 function moduleItems(name) {
-  const entry = ENTRIES.find(r => r.name === name), half = M.pitch / 2, items = [{ objs: ATLAS.rooms[name], x: 0, z: 0, yaw: 0 }];
+  const entry = ENTRIES.find(r => r.name === name), half = M.pitch / 2, items = [{ objs: roomObjs(name), x: 0, z: 0, yaw: 0, detailed: !!ATLAS.details[name] || !hasDetail(name) }];
   if (name === M.key) return items;
   // У макета с материалами стороны клетки — та же скала, что и его стены.
-  const blind = entry.corner ? 0 : 3, m = ATLAS.rooms[name].some(o => o.m) ? 'rock' : undefined;
+  const blind = entry.corner ? 0 : 3, m = (ATLAS.looks[name] || {}).side || (ATLAS.rooms[name].some(o => o.m) ? 'rock' : undefined);
   items.push({ objs: sideObjs(3, m), x: half, z: 0, yaw: -90 }, { objs: sideObjs(3, m), x: 0, z: half, yaw: 0 }, { objs: sideObjs(blind, m), x: -half, z: 0, yaw: -90 }, { objs: sideObjs(blind, m), x: 0, z: -half, yaw: 0 });
   [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([x, z]) => items.push({ objs: postObjs(m), x: x * half, z: z * half, yaw: 0 }));
   return items;
@@ -87,7 +96,7 @@ function renderCards() {
   shown.forEach(r => {
     const n = noteOf(r.name), c = counts(r.name), b = document.createElement('button'); b.className = 'card';
     const hasNote = n.note || Object.keys(n.objs).length;
-    const tags = [r.pool ? '<span class="tag live">в игре</span>' : '', r.name === M.key ? '<span class="tag">ключевая · 1×2</span>' : '', r.corner ? '<span class="tag">угловая</span>' : '',
+    const tags = [r.pool ? '<span class="tag live">в игре</span>' : '', hasDetail(r.name) ? '<span class="tag ok">детали</span>' : '', r.name === M.key ? '<span class="tag">ключевая · 1×2</span>' : '', r.corner ? '<span class="tag">угловая</span>' : '',
       n.status ? `<span class="tag ${n.status}">${VERDICTS[n.status]}</span>` : '', hasNote ? '<span class="tag note">заметки</span>' : ''].join('');
     b.innerHTML = `<canvas width="472" height="472"></canvas><span class="body"><b>${title(r.name)}</b><span class="en">${r.name}</span><span class="tags">${tags}</span><span class="stats">☠ ${c.monster}  ▣ ${c.chest}  ▲ ${c.trap}  ☼ ${c.light}</span></span>`;
     b.onclick = () => go(`room/${r.name}`);
@@ -107,7 +116,7 @@ function ensureStage() {
   if (stage) return;
   stage = new Stage($('view'));
   stage.onPick = hit => {
-    if (state.screen === 'room') select(hit && ATLAS.rooms[state.room].includes(hit.o) ? hit.o : null);
+    if (state.screen === 'room') select(hit && state.items[0].objs.includes(hit.o) ? hit.o : null);
     else if (hit) selectCell(hit.place.bucket);
   };
   stage.onWalk = p => { $('cur').innerHTML = `<b>x ${p.x.toFixed(1)}  z ${(-p.z).toFixed(1)}  ноги ${(p.y - 1.7).toFixed(2)} м</b>`; };
@@ -267,13 +276,14 @@ function planClickObject(x, z) {
     const a = -(o.ry || 0) * DEG, c = Math.cos(a), s = Math.sin(a), dx = x - o.p[0], dz = z - o.p[2];
     return Math.abs(dx * c + dz * s) <= Math.max(o.s[0], 0.6) / 2 && Math.abs(-dx * s + dz * c) <= Math.max(o.s[2], 0.6) / 2;
   };
-  const list = ATLAS.rooms[state.room].filter(o => !hidden.has(o.cat) && o.cat !== 'ceiling' && o.p[1] <= state.cut && inside(o));
+  const list = roomObjs(state.room).filter(o => !hidden.has(o.cat) && o.cat !== 'ceiling' && o.p[1] <= state.cut && inside(o));
   list.sort((a, b) => (CATS[b.cat].ghost ? 1 : 0) - (CATS[a.cat].ghost ? 1 : 0) || (b.p[1] + (b.s ? b.s[1] : 0)) - (a.p[1] + (a.s ? a.s[1] : 0)));
   select(list[0] || null);
 }
 
 // --- Экран модуля ---
 function openRoom(name) {
+  if (hasDetail(name) && !ATLAS.details[name]) { $('crumb').textContent = `${name}: загрузка деталей…`; loadScript(`data/detail/${name}.js`, name).catch(() => { ATLAS.details[name] = []; }).then(() => { if (location.hash.slice(1).split('/')[1] === name) route(); }); return; }
   ensureStage();
   state.screen = 'room'; state.room = name; state.selected = null; state.pan = null;
   state.items = moduleItems(name); state.bounds = boundsOf(state.items);
@@ -316,7 +326,7 @@ function renderInfo() {
 function renderList() {
   if (state.screen !== 'room') return;
   const q = $('objFind').value.trim().toLowerCase(), n = noteOf(state.room), order = Object.keys(CATS);
-  const list = ATLAS.rooms[state.room].filter(o => (o.cat !== 'start' || o.name !== 'Spot') && (q || o.cat !== 'decor' || o === state.selected)).slice().sort((a, b) => order.indexOf(b.cat) - order.indexOf(a.cat));
+  const list = roomObjs(state.room).filter(o => (o.cat !== 'start' || o.name !== 'Spot') && (q || o.cat !== 'decor' || o === state.selected)).slice().sort((a, b) => order.indexOf(b.cat) - order.indexOf(a.cat));
   const show = list.filter(o => !q || `${o.id} ${nameOf(o)}`.toLowerCase().includes(q)).slice(0, LIST_LIMIT);
   $('list').innerHTML = '';
   show.forEach(o => {
@@ -441,9 +451,24 @@ function tabs() {
 
 function go(hash) { if (location.hash === `#${hash}`) route(); else location.hash = hash; }
 
+// Снимок без интерфейса: #room/<Name>/shot/cam=x,y,z;at=x,y,z;light=game;cut=6;show=ceiling;hide=monster;expo=1.2 (координаты Unity).
+function applyShot(text) {
+  const arg = Object.fromEntries(text.split(';').map(p => p.split('=')));
+  document.querySelectorAll('.rail, #top, #status, #labels').forEach(e => { e.style.display = 'none'; });
+  $('stage').style.inset = '0'; setView('3d');
+  (arg.show || '').split(',').filter(Boolean).forEach(k => hidden.delete(k)); (arg.hide || '').split(',').filter(Boolean).forEach(k => hidden.add(k));
+  applyLayers();
+  if (arg.cut) setCut(+arg.cut);
+  if (arg.cam) { const [x, y, z] = arg.cam.split(',').map(Number), [tx, ty, tz] = (arg.at || '0,1,0').split(',').map(Number); stage.orbit.target.set(tx, ty, -tz); stage.camera.position.set(x, y, -z); stage.camera.near = 0.1; stage.camera.updateProjectionMatrix(); stage.orbit.update(); }
+  if (arg.fov) { stage.camera.fov = +arg.fov; stage.camera.updateProjectionMatrix(); }
+  if (arg.light === 'game') stage.setGameLight(true);
+  if (arg.expo) stage.setExposure(+arg.expo);
+  document.title = 'shot-ready';
+}
+
 function route() {
-  const [what, arg] = location.hash.slice(1).split('/');
-  if (what === 'room' && ATLAS.rooms[arg]) return openRoom(arg);
+  const [what, arg, mode, shot] = location.hash.slice(1).split('/');
+  if (what === 'room' && ATLAS.rooms[arg]) { openRoom(arg); if (mode === 'shot' && (ATLAS.details[arg] || !hasDetail(arg))) applyShot(shot || ''); return; }
   if (what === 'dungeon') return openDungeon(arg ? +arg : undefined);
   state.screen = 'rooms'; state.room = null;
   $('stage').hidden = true; $('gallery').hidden = false; $('prev').hidden = $('next').hidden = true; $('crumb').textContent = '';

@@ -52,7 +52,22 @@ const MATS = {
   soot: { color: '#1e1b18', tile: 0.6, jitter: 0.1, paint: 'plain' },
   fungus: { color: '#d2caa4', tile: 0.5, jitter: 0.2, paint: 'plain', emissive: '#55502a' },
   ossarite: { color: '#a9d9ff', tile: 0.5, jitter: 0.15, paint: 'plain', emissive: '#3f9dff' },
-  ember: { color: '#ff8a3a', tile: 0.5, jitter: 0.3, paint: 'plain', emissive: '#ff5a14' }
+  ember: { color: '#ff8a3a', tile: 0.5, jitter: 0.3, paint: 'plain', emissive: '#ff5a14' },
+  marble: { color: '#8d8a82', tile: 2.4, world: true, jitter: 0.1, paint: 'ashlar' },
+  plaster: { color: '#857e6d', tile: 3, world: true, jitter: 0.12, paint: 'dirt' },
+  sand: { color: '#8a7a5c', tile: 2.2, world: true, jitter: 0.12, paint: 'dirt' },
+  ash: { color: '#5f5c58', tile: 2, world: true, jitter: 0.18, paint: 'dirt' },
+  gold: { color: '#c9a23f', tile: 0.5, jitter: 0.22, paint: 'plain', metal: 0.7, emissive: '#3a2a05' },
+  bronze: { color: '#7a5c36', tile: 0.7, jitter: 0.18, paint: 'rust', metal: 0.6 },
+  lead: { color: '#5c6066', tile: 0.7, jitter: 0.12, paint: 'plain', metal: 0.45 },
+  glass: { color: '#7fa08f', tile: 0.5, jitter: 0.25, paint: 'plain', metal: 0.3 },
+  paper: { color: '#cdbf9a', tile: 0.6, jitter: 0.18, paint: 'plain' },
+  leather: { color: '#4a3024', tile: 0.6, jitter: 0.25, paint: 'grain' },
+  root: { color: '#3a2c1c', tile: 0.8, jitter: 0.2, paint: 'grain' },
+  blood: { color: '#3d1512', tile: 0.6, jitter: 0.2, paint: 'plain' },
+  wet: { color: '#2c3c45', tile: 0.6, jitter: 0.06, paint: 'plain', metal: 0.75 },
+  rune: { color: '#b48cff', tile: 0.5, jitter: 0.1, paint: 'plain', emissive: '#7a3cff' },
+  acid: { color: '#8dff6a', tile: 0.5, jitter: 0.15, paint: 'plain', emissive: '#3cff2a' }
 };
 const hash = (text, salt = 0) => { let h = 2166136261 ^ salt; for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619); return ((h ^ h >>> 15) >>> 0) / 4294967296; };
 
@@ -298,8 +313,8 @@ class Stage {
     this.meshes = []; this.lights = []; this.rings.clear(); this.selection.visible = false;
     const batches = new Map();
     items.forEach(item => item.objs.forEach(o => {
-      const mat = o.hide ? HIDDEN : !CATS[o.cat].alpha && MATS[o.m] ? o.m : '', key = `${item.bucket || 0}|${o.cat}|${mat}`;
-      const batch = k => { if (!batches.has(k)) { batches.set(k, new Batch(o.cat, item, MATS[mat])); if (k.endsWith(HIDDEN)) { batches.get(k).edges = false; batches.get(k).body = true; } } return batches.get(k); };
+      const mat = o.hide && item.detailed ? HIDDEN : !CATS[o.cat].alpha && MATS[o.m] ? o.m : '', key = `${item.bucket || 0}|${o.cat}${o.layer ? `>${o.layer}` : ''}|${mat}`;
+      const batch = k => { if (!batches.has(k)) { batches.set(k, new Batch(o.cat, item, MATS[mat])); batches.get(k).layer = k === key && o.layer || o.cat; if (k.endsWith(HIDDEN)) { batches.get(k).edges = false; batches.get(k).body = true; } } return batches.get(k); };
       batch(key).add(o, item);
       if (o.cat === 'bars') batch(`${item.bucket || 0}|bars|${HIDDEN}`).add(o, item);
       if (o.cat === 'light') {
@@ -318,7 +333,7 @@ class Stage {
       m.castShadow = m.receiveShadow = !key.endsWith(HIDDEN) && (b.cat === 'decor' || !CATS[b.cat].ghost) && !CATS[b.cat].alpha; m.userData = { faces: b.faces, cat: b.cat, place: b.place };
       const eg = new THREE.BufferGeometry(); eg.setAttribute('position', new THREE.Float32BufferAttribute(b.line, 3));
       const e = new THREE.LineSegments(eg, this.lineMats[b.cat]); e.raycast = () => {};
-      m.add(e); this.groups[b.cat].add(m); this.meshes.push(m);
+      m.add(e); this.groups[b.layer].add(m); this.meshes.push(m);
       if (b.cat === 'floor') m.geometry.computeBoundingBox();
     });
   }
@@ -356,7 +371,7 @@ class Stage {
 
   solids(position) {
     return this.meshes.filter(m => {
-      if (CATS[m.userData.cat].ghost || !this.groups[m.userData.cat].visible) return false;
+      if (CATS[m.userData.cat].ghost || !m.parent.visible) return false;
       const p = m.userData.place;
       return p.reach === undefined || Math.hypot((p.x || 0) - position.x, (p.z || 0) + position.z) < p.reach;
     });
@@ -399,7 +414,7 @@ class Stage {
     const r = this.renderer.domElement.getBoundingClientRect();
     const mouse = new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
     this.ray.setFromCamera(mouse, this.camera); this.ray.far = Infinity;
-    const list = this.meshes.filter(m => this.groups[m.userData.cat].visible);
+    const list = this.meshes.filter(m => m.parent.visible);
     const hit = this.ray.intersectObjects(list, false).find(h => h.point.y <= this.clip.constant);
     if (!hit) return null;
     return { o: hit.object.userData.faces[hit.faceIndex], place: hit.object.userData.place };
